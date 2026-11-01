@@ -431,11 +431,13 @@ test('dataScopeOf gives the pool path and connection id resolveDataScope gave be
 // ---------------------------------------------------------------------------
 
 test("an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)", async () => {
-	// A manifest directory in no registered repo: 25 files in two directories, and one the walk never enters.
+	// A manifest directory in no registered repo: 24 files and its ignore file in two
+	// directories, and one the walk never enters because the ignore file excludes it.
 	const deploy = join(dir, 'deploy');
 	mkdirSync(join(deploy, 'k8s'), { recursive: true });
 	mkdirSync(join(deploy, 'node_modules/pkg'), { recursive: true });
-	for (let i = 0; i < 25; i++) writeFileSync(join(deploy, i % 2 === 0 ? '' : 'k8s', `m${String(i).padStart(2, '0')}.yaml`), 'k: v\n');
+	writeFileSync(join(deploy, '.gitignore'), 'node_modules/\n');
+	for (let i = 0; i < 24; i++) writeFileSync(join(deploy, i % 2 === 0 ? '' : 'k8s', `m${String(i).padStart(2, '0')}.yaml`), 'k: v\n');
 	writeFileSync(join(deploy, 'node_modules/pkg/skipped.yaml'), 'k: v\n');
 
 	// The stored graph is not read at all, and the walk is asked for no cap.

@@ -1,3 +1,4 @@
+import { createFileFilter, excludesDirectory } from '../../indexer/file-filter.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -310,9 +311,13 @@ function scoreCandidate(
 // Candidate enumeration
 // ---------------------------------------------------------------------------
 
+const MAX_DIR_DEPTH = 8;
+
 /**
- * Enumerate directories under the repo, up to a depth cap. Skip
- * common noise directories (node_modules, .git, __pycache__, ...).
+ * Enumerate directories under the repo, up to a depth cap, keeping only the
+ * directories the repository's FileFilter includes (Epic c2ba6fa6 s6): its
+ * real ignore files, git's tracked files, and the built-in exclusions -- the
+ * same rule the indexer uses.
  *
  * We SCAN the filesystem for directories rather than relying on the
  * indexer's entity table because:
@@ -320,15 +325,6 @@ function scoreCandidate(
  *   - We want ALL directories, not just those with code
  *   - Filesystem walk is fast (thousands of dirs in <100ms)
  */
-const IGNORE_DIRS = new Set([
-	'node_modules', '.git', '__pycache__', '.venv', 'venv',
-	'.tox', 'dist', 'build', '.next', '.cache', 'target',
-	'.mypy_cache', '.pytest_cache', '.ruff_cache',
-	'.DS_Store', 'coverage', '.idea', '.vscode',
-]);
-
-const MAX_DIR_DEPTH = 8;
-
 function enumerateDirs(
 	repoPath: string,
 	ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter,
@@ -336,6 +332,7 @@ function enumerateDirs(
 	skipped: SkippedItem[],
 ): Candidate[] {
 	const out: Candidate[] = [];
+	const fileFilter = createFileFilter(repoPath);
 	function walk(dir: string, depth: number): void {
 		if (depth > MAX_DIR_DEPTH) return;
 		let entries: string[];
@@ -349,15 +346,8 @@ function enumerateDirs(
 			return;
 		}
 		for (const name of entries) {
-			if (IGNORE_DIRS.has(name)) continue;
 			if (name.startsWith('.') && depth === 0) continue;   // skip .git-like at root
 			const full = join(dir, name);
-			// Drop anything git considers gitignored (build/, dist/,
-			// target/, out/, .next/, node_modules/, ...). The hardcoded
-			// IGNORE_DIRS above is intentionally incomplete -- every
-			// toolchain names its build dir differently. Delegating to
-			// git guarantees the analyze surface matches the indexer's
-			// view of the repo.
 			if (!ignoreFilter.isIncluded(full)) continue;
 			let s;
 			try { s = statSync(full); }
@@ -367,6 +357,7 @@ function enumerateDirs(
 				continue;
 			}
 			if (!s.isDirectory()) continue;
+			if (excludesDirectory(fileFilter, full)) continue;
 			out.push({ kind: 'dir', path: full, name });
 			walk(full, depth + 1);
 		}

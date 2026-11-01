@@ -94,7 +94,15 @@ export function isGeneratedOrMinifiedFile(absPath: string): boolean {
 function isBuiltInExcluded(absPath: string, repoPath: string): boolean {
 	if (isGeneratedOrMinifiedFile(absPath)) return true;
 	const rel = relative(repoPath, absPath);
+	if (isGitDir(rel)) return true;
 	return rel === '.insrc' || rel.startsWith(`.insrc${sep}`);
+}
+
+/** Git's own repository directory (and a submodule's or worktree's `.git`
+ *  link file) at any depth: git never treats it as content and never reads
+ *  ignore rules inside it, so neither does this filter. */
+function isGitDir(rel: string): boolean {
+	return rel.split(sep).includes('.git');
 }
 
 // ---------------------------------------------------------------------------
@@ -237,6 +245,7 @@ function walk(repoPath: string, ig: Ignore, tracked: TrackedSets): RuleWalkResul
 		for (const entry of entries) {
 			const abs = join(dir, entry.name);
 			const rel = relative(repoPath, abs).split(sep).join('/');
+			if (entry.name === '.git') continue;
 			if (entry.isDirectory()) {
 				const ruleExcluded = ig.ignores(`${rel}/`);
 				if (ruleExcluded && !tracked.dirs.has(abs)) continue;
@@ -330,6 +339,26 @@ export function createFileFilter(repoPath: string): FileFilter {
 	};
 	stateByFilter.set(filter, buildState(absRepo));
 	return filter;
+}
+
+/**
+ * Whether a walker should not descend into `absDir`: the same pruning
+ * decision the filter's own walk makes -- a built-in exclusion, or a
+ * directory the ignore rules exclude that holds nothing git tracks. Unlike
+ * `includes()` on a directory, an empty or unreadable directory is NOT
+ * excluded here, so a walker still reports a directory it could not read
+ * (Epic c2ba6fa6 s6/t8: the analyzer's walkers).
+ */
+export function excludesDirectory(filter: FileFilter, absDir: string): boolean {
+	const state = stateByFilter.get(filter);
+	if (state === undefined) return true;
+	const abs = resolve(absDir);
+	if (isBuiltInExcluded(abs, filter.repoPath)) return true;
+	if (state.tracked.dirs.has(abs) || state.dirsWithIncludedDescendant.has(abs)) return false;
+	const rel = relative(filter.repoPath, abs).split(sep).join('/');
+	if (rel === '') return false;
+	if (rel.startsWith('../')) return true;
+	return state.ig.ignores(`${rel}/`);
 }
 
 // ---------------------------------------------------------------------------

@@ -387,20 +387,21 @@ The indexer embeds, writes the vectors (upsert) and only then calls a commitFile
 - OPEN (s8 sbdry3, HLD performance note): 'Story s2's design measures [the vector upsert] on this repository'. Proposed: record, as a smoke result in the Story's test record, the time of writeEntityEmbeddings (upsert) vs addEntityEmbeddings for this repository's vector table at a refresh-sized batch and at a backfill-sized batch, before choosing the backfill's batch size.
 - NOTE (s8 alt2 partial): alternatives a3 and a4 were not scored against Epic constraints k2 and k4; both lose on acceptance criteria already, so the choice of a1 does not depend on it.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q199561da` — OPEN (s8 sbdry3, s2's own HLD boundary item not yet in the contract): the queue rule 'index jobs go ahead of other jobs and a long job yields between its units, so that a commit is not held behind a model pass'. Proposed: the backfill (reembed) embeds and writes in batches (the embedder's batch size) and, between batches, returns control to the index lane so queued file / full / reconcile jobs run first, then continues. Confirm or choose another rule before the plan.
+  - **resolved**: (c) The backfill (reembed) moves to its own queue lane, like the document-summary lane: it runs beside the index lane, so file / full / reconcile jobs are never queued behind it and need no yield points in the backfill. — User decision 2026-11-01: per-batch yielding inside the index lane (option a) complicates job sequencing; a separate lane keeps the index lane's order simple. Accepted cost: the backfill's embedding calls may run while the index lane embeds a refreshed file, i.e. some contention on the local embedding model. _(2026-11-01T13:05:16.641Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-11-01T12:49:54.553Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `s1.analyzeBundles[0]: the existing whole-file replacement (src/db/entities.ts:362-519)`
+- **[[c2]]** `analyze-bundle` `s1.analyzeBundles[1]: the indexer's refresh and delete paths (src/indexer/index.ts:1093-1156)`
+- **[[c3]]** `analyze-bundle` `s1.analyzeBundles[2]: relationship and pending-row writers (src/db/relations.ts:116-180)`
+- **[[c4]]** `analyze-bundle` `s1.analyzeBundles[3]: entity cascade delete (src/db/entities.ts:1255-1295)`
+- **[[c5]]** `analyze-bundle` `s1.analyzeBundles[4]: vectors and the embedding marker (src/db/entities.ts:962-1010)`
+- **[[c6]]** `analyze-bundle` `s1.analyzeBundles[5]: IndexState fields (src/db/graph/codec.ts:262-263)`
+- **[[c7]]** `analyze-bundle` `s1.analyzeBundles[6]: queue lanes (src/daemon/queue.ts)`
+- **[[c8]]** `analyze-bundle` `s1.analyzeBundles[7]: tests to extend`
+- **[[c9]]** `step-output` `s3.winnerRationale`
+- **[[c10]]** `code` `src/db/graph/store.ts:1272-1297` — "withWriteTxn runs the callback in store.root.childTransaction(run), which aborts on a throw"
+- **[[c11]]** `prior-artifact` `HLD-c2ba6fa62a148ed1 sc2 FileCommit and s2 boundary.internal`

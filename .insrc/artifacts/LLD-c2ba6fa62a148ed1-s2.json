@@ -240,6 +240,15 @@
       "reviewedAt": "2026-11-01T12:49:54.553Z",
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "q199561da": {
+        "question": "OPEN (s8 sbdry3, s2's own HLD boundary item not yet in the contract): the queue rule 'index jobs go ahead of other jobs and a long job yields between its units, so that a commit is not held behind a model pass'. Proposed: the backfill (reembed) embeds and writes in batches (the embedder's batch size) and, between batches, returns control to the index lane so queued file / full / reconcile jobs run first, then continues. Confirm or choose another rule before the plan.",
+        "status": "resolved",
+        "choice": "(c) The backfill (reembed) moves to its own queue lane, like the document-summary lane: it runs beside the index lane, so file / full / reconcile jobs are never queued behind it and need no yield points in the backfill.",
+        "rationale": "User decision 2026-11-01: per-batch yielding inside the index lane (option a) complicates job sequencing; a separate lane keeps the index lane's order simple. Accepted cost: the backfill's embedding calls may run while the index lane embeds a refreshed file, i.e. some contention on the local embedding model.",
+        "resolvedAt": "2026-11-01T13:05:16.641Z"
+      }
     }
   },
   "body": {

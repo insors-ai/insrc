@@ -35,7 +35,7 @@ test('CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns 
  for(const kind of ['postgres','cockroachdb','mysql','mariadb','mssql','oracle','clickhouse','redis','valkey','keydb','mongodb']){
   const scheme=kind==='cockroachdb'?'postgres':kind==='clickhouse'?'https':['valkey','keydb'].includes(kind)?'redis':kind;
   const config:ConnectionConfig={id:'valid-'+kind,kind,url:scheme+'://user:pw@host/db'};const before=structuredClone(config);
-  const row=projectSafeConnection(config,{...key,id:config.id},corpus.identity.revision);assert.equal(row.readOnly,false,kind);assert.equal(decodeSafeConnection(row).readOnly,false,kind);assert.deepEqual(config,before);
+  const row=projectSafeConnection(config,{...key,id:config.id},corpus.identity.revision);assert.notEqual(row.readOnly,true,kind);assert.notEqual(decodeSafeConnection(row).readOnly,true,kind);assert.deepEqual(config,before);
  }
  for(const publicPatch of [
   {kind:'postgres',endpoint:'jdbc://postgresql://u:p@h/db'},

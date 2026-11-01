@@ -143,3 +143,16 @@ tests are findings; missing coverage inspection remains incomplete. Reports labe
 review limitations as blocking and optional verification/advice as nonblocking.
 The stored result shape and pinned historical assessments remain unchanged;
 explicit historical `incomplete` results are not automatically promoted.
+
+## Attribution scope
+
+Attribution uses the submitted task selection, not every task in the referenced
+Plan indiscriminately. A task-scoped review names only that task; a whole-story
+review names all applicable Plan tasks. This is identical for initial reviews,
+re-reviews and both reviewer routes. Instructions include the applicable IDs and
+exact row count, and the native schema constrains IDs and row count accordingly.
+The shared host validator still rejects duplicate/foreign/missing scopes and
+omitted submitted change or test attribution. Applicable tasks with completed
+results remain in attribution context; their saved results are never rewritten
+or rerun by same-attempt recovery. Schema generation clones its templates so
+concurrent scopes cannot alter one another's native constraints.

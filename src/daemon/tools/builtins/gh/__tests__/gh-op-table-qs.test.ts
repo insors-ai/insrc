@@ -16,10 +16,6 @@ import { Type } from '@sinclair/typebox';
 import { apiPath, buildArgv, field, lit, query } from '../op-table.js';
 import type { OpDef } from '../op-table.js';
 import { parseJsonLines } from '../helpers.js';
-import {
-	ghListIssueComments, ghListIssuesByLabelsStrict, ghListIssuesByTitleTokenStrict,
-} from '../../../../../workflow/tracker/github.js';
-import { installFakeGh } from './_fakegh.js';
 
 const COMMENTS_FILTER = '.[] | {id, author: .user.login, text: .body, at: .created_at, url: .html_url}';
 const LABELS_FILTER = '.[] | select(.pull_request | not) | .number';
@@ -79,25 +75,15 @@ test('gh-op-table-qs.test.ts: the complete argv of the three paginated ops is ap
 	}
 });
 
-test('gh-op-table-qs.test.ts: the positionals equal the argv the tracker wrappers in src/workflow/tracker/github.ts send for the same inputs', () => {
-	const gh = installFakeGh('ok', '');
-	try {
-		for (const run of [
-			() => ghListIssueComments('o', 'r', 'o/r#5'),
-			() => ghListIssueComments('o', 'r', 'o/r#5', '2026-10-26T00:00:00Z'),
-			() => ghListIssuesByLabelsStrict('o', 'r', ['a', 'b c']),
-			() => ghListIssuesByTitleTokenStrict('o', 'r', 'EP-1'),
-		]) { try { run(); } catch { /* the fake prints nothing useful; only the argv matters */ } }
-		const calls = gh.calls();
-		assert.equal(calls.length, 4);
-		const expected = [
-			buildArgv(commentsList, { owner: 'o', repo: 'r', number: 5 }),
-			buildArgv(commentsList, { owner: 'o', repo: 'r', number: 5, since: '2026-10-26T00:00:00Z' }),
-			buildArgv(issuesByLabels, { owner: 'o', repo: 'r', labels: ['a', 'b c'] }),
-			buildArgv(issuesTitles, { owner: 'o', repo: 'r' }),
-		];
-		for (let i = 0; i < 4; i++) assert.equal(calls[i], expected[i]!.slice(1).join(' '), `wrapper ${i}`);
-	} finally { gh.restore(); }
+test('gh-op-table-qs.test.ts: the positionals equal the argv the deleted tracker wrappers sent for the same inputs', () => {
+	// the argv the wrappers in src/workflow/tracker/github.ts sent (Story s10), written out
+	const expected = [
+		[buildArgv(commentsList, { owner: 'o', repo: 'r', number: 5 }), `api --paginate repos/o/r/issues/5/comments?per_page=100 -q ${COMMENTS_FILTER}`],
+		[buildArgv(commentsList, { owner: 'o', repo: 'r', number: 5, since: '2026-10-26T00:00:00Z' }), `api --paginate repos/o/r/issues/5/comments?per_page=100&since=2026-10-26T00%3A00%3A00Z -q ${COMMENTS_FILTER}`],
+		[buildArgv(issuesByLabels, { owner: 'o', repo: 'r', labels: ['a', 'b c'] }), `api --paginate repos/o/r/issues?state=all&per_page=100&labels=a,b%20c -q ${LABELS_FILTER}`],
+		[buildArgv(issuesTitles, { owner: 'o', repo: 'r' }), `api --paginate repos/o/r/issues?state=all&per_page=100 -q ${TITLES_FILTER}`],
+	] as const;
+	expected.forEach(([argv, text], i) => assert.equal(argv.slice(1).join(' '), text, `wrapper ${i}`));
 });
 
 test('gh-op-table-qs.test.ts: parseJsonLines returns the values in order across pages, skips blank lines, reads empty output as an empty list and reports the first bad line', () => {

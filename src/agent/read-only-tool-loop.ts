@@ -251,6 +251,7 @@ export const NOT_FILESYSTEM_ARGS: Readonly<Record<string, readonly string[]>> = 
 	'git_diff':           ['path', 'paths'],
 	'git_log':            ['path'],
 	'git_show':           ['path'],
+	'git_status':         ['paths'],
 	// A sub-path or sheet name inside a data file.
 	'db_file_aggregate':  ['path'],
 	'db_file_distinct':   ['path'],

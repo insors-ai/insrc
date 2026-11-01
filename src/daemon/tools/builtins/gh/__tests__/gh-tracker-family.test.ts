@@ -16,9 +16,6 @@ import { Value } from '@sinclair/typebox/value';
 
 import { validateAgainstSchema } from '../../../../../agent/providers/structured-output.js';
 import type { StructuredSchema } from '../../../../../shared/types.js';
-import {
-	ghListIssueComments, ghListIssuesByLabelsStrict, ghListIssuesByTitleTokenStrict, queryTasks,
-} from '../../../../../workflow/tracker/github.js';
 import { ghApprovalClass, ghTimeoutMs, parseJsonLines } from '../helpers.js';
 import { COMMENTS_FILTER, ISSUE_NUMBERS_FILTER, ISSUE_TITLES_FILTER, ghTrackerTool } from '../tracker.js';
 import type { ApprovalClass, ToolDeps, ToolResult } from '../../../types.js';
@@ -143,32 +140,24 @@ test('gh-tracker-family.test.ts: the three paginated ops return every page in AP
 	assert.equal((await run({ op: 'issues_titles', owner: 'o', repo: 'r' }, '{"number":"x"}\n')).r.success, false);
 });
 
-test('gh-tracker-family.test.ts: the paginated ops return the same items as the tracker wrappers do for the same gh output', async () => {
-	// comments: the wrapper sorts by time, the op keeps API order
+test('gh-tracker-family.test.ts: the paginated ops return the same items as the deleted tracker wrappers did for the same gh output', async () => {
+	// comments: the wrapper sorted by time then id, the op keeps API order; sorted the same way the items are those the wrapper returned
 	const raw = [...lines(30), ...lines(10, 30)].join('\n');
-	const gh = installFakeGh('ok', raw);
-	let wrapper: ReturnType<typeof ghListIssueComments>;
-	try { wrapper = ghListIssueComments('o', 'r', 'o/r#5'); } finally { gh.restore(); }
 	const op = (await run({ op: 'comments_list', owner: 'o', repo: 'r', number: 5 }, raw)).r.data as { comments: Array<{ id: string; author: string; text: string; at: string }> };
 	const sorted = [...op.comments].sort((a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id, undefined, { numeric: true }));
-	assert.deepEqual(sorted.map(c => [c.id, c.author, c.text, c.at]), wrapper.map(c => [c.externalId, c.author, c.text, c.at]));
-	// numbers
-	const gh2 = installFakeGh('ok', '12\n4\n8\n');
-	let refs: string[];
-	try { refs = ghListIssuesByLabelsStrict('o', 'r', ['a']); } finally { gh2.restore(); }
+	assert.equal(sorted.length, 40);
+	assert.deepEqual(sorted.slice(0, 3).map(c => [c.id, c.author, c.text, c.at]), [['0', 'x', 'c0', '2026-01-01T00:00:00Z'], ['28', 'x', 'c28', '2026-01-01T00:00:00Z'], ['1', 'x', 'c1', '2026-01-02T00:00:00Z']]);
+	// numbers: the wrapper returned owner/repo#N references in ascending order
 	const numbers = ((await run({ op: 'issues_by_labels', owner: 'o', repo: 'r', labels: ['a'] }, '12\n4\n8\n')).r.data as { numbers: number[] }).numbers;
-	assert.deepEqual([...numbers].sort((a, b) => a - b).map(n => `o/r#${n}`), refs);
-	// titles: the wrapper keeps the ones that match the token
+	assert.deepEqual([...numbers].sort((a, b) => a - b).map(n => `o/r#${n}`), ['o/r#4', 'o/r#8', 'o/r#12']);
+	// titles: the wrapper kept the ones that match the token
 	const titleLines = ['{"number":1,"title":"EP-1 — one"}', '{"number":2,"title":"EP-10 — ten"}', '{"number":3,"title":"EP-1"}'].join('\n');
-	const gh3 = installFakeGh('ok', titleLines);
-	let titled: string[];
-	try { titled = ghListIssuesByTitleTokenStrict('o', 'r', 'EP-1'); } finally { gh3.restore(); }
 	const all = ((await run({ op: 'issues_titles', owner: 'o', repo: 'r' }, titleLines)).r.data as { issues: Array<{ number: number; title: string }> }).issues;
 	const matching = all.filter(i => i.title === 'EP-1' || i.title.startsWith('EP-1 — ')).map(i => `o/r#${i.number}`).sort();
-	assert.deepEqual(matching, titled.sort());
+	assert.deepEqual(matching, ['o/r#1', 'o/r#3']);
 });
 
-test('gh-tracker-family.test.ts: tasks_query returns pageInfo { hasNextPage: false } without endCursor when the API gives none, keeps a non-empty endCursor with hasNextPage false, and returns issueCount only when it is a number; it matches queryTasks', async () => {
+test('gh-tracker-family.test.ts: tasks_query returns pageInfo { hasNextPage: false } without endCursor when the API gives none, keeps a non-empty endCursor with hasNextPage false, and returns issueCount only when it is a number; it matches what queryTasks returned', async () => {
 	const input = { op: 'tasks_query', q: 'repo:o/r is:issue is:open', first: 30 };
 	const asData = (stdout: string) => run(input, stdout).then(x => x.r.data as { issueCount?: number; pageInfo: { hasNextPage: boolean; endCursor?: string }; nodes: unknown[] });
 	assert.deepEqual(await asData('{"data":{"search":{"nodes":[]}}}'), { op: 'tasks_query', pageInfo: { hasNextPage: false }, nodes: [] } as never);
@@ -184,15 +173,12 @@ test('gh-tracker-family.test.ts: tasks_query returns pageInfo { hasNextPage: fal
 	// a response without search is a rejected failure
 	const none = await run(input, '{"data":{}}');
 	assert.equal(none.r.success, false); assert.equal(none.r.failure?.kind, 'rejected');
-	// it matches queryTasks for the same gh output
+	// it matches what queryTasks returned for the same gh output: two nodes, the page info as given, the count as the total
 	const out = '{"data":{"search":{"issueCount":2,"pageInfo":{"hasNextPage":true,"endCursor":"E"},"nodes":[{"number":1,"title":"a","state":"OPEN","url":"u","labels":{"nodes":[{"name":"epic:x"}]}},{"number":2,"title":"b","state":"CLOSED","url":"v"}]}}}';
-	const gh = installFakeGh('ok', out);
-	let page: ReturnType<typeof queryTasks>;
-	try { page = queryTasks('o', 'r', { state: 'open' }); } finally { gh.restore(); }
 	const op = await asData(out);
-	assert.equal(op.nodes.length, page.tasks.length);
-	assert.deepEqual(op.pageInfo, page.pageInfo);
-	assert.equal(op.issueCount, page.total);
+	assert.equal(op.nodes.length, 2);
+	assert.deepEqual(op.pageInfo, { hasNextPage: true, endCursor: 'E' });
+	assert.equal(op.issueCount, 2);
 });
 
 test('gh-tracker-family.test.ts: project_create returns {number, url} for the JSON ghCreateProject reads and a rejected failure for a missing or non-numeric number and for non-JSON output', async () => {

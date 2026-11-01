@@ -9,7 +9,7 @@ import {
   upsertRelations,
   deleteUnresolvedForRepo,
 } from '../db/relations.js';
-import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, addUncommittedFile, readIndexState, setUncommittedFiles } from '../db/index-state.js';
+import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, addUncommittedFile, readIndexState, setEmbeddingAvailable, setUncommittedFiles } from '../db/index-state.js';
 import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
@@ -73,6 +73,9 @@ function listRepoFiles(filter: FileFilter): string[] {
 const NO_MODEL: CheapTierModel = {
   complete: () => Promise.reject(new Error('no cheap-tier model configured')),
 };
+
+/** Entities the backfill embeds and writes per round (Epic c2ba6fa6 s2). */
+const BACKFILL_BATCH = 64;
 
 function contentHash(source: string): string {
   return createHash('sha256').update(source).digest('hex').slice(0, 16);
@@ -289,6 +292,8 @@ export class IndexerService {
         // by the clean-up pass -- queued, so start-up does not wait for it.
         this.queue.enqueue({ kind: 'reconcile', repoPath: repo.path });
       }
+      // The vector backfill, in its own lane, after the start-up reconciliation (Epic c2ba6fa6 s2).
+      this.queue.enqueue({ kind: 'reembed', repoPath: repo.path });
 
       // Watch project config dir if it exists
       const projectConfig = projectConfigBase(repo.path);
@@ -470,6 +475,7 @@ export class IndexerService {
       await attempt('the resolver run', () => this.resolveAfterReconcile(repoPath));
     }
     log.info({ repo: repoPath, ...counts }, 'index clean-up complete');
+    this.queue.enqueue({ kind: 'reembed', repoPath });
     if (failure !== undefined) throw failure;
   }
 
@@ -825,6 +831,7 @@ export class IndexerService {
       // whatever else is pending. Skip-if-unchanged inside the driver
       // makes re-runs cheap; safe to fire on every full-index.
       this.queue.enqueue({ kind: 'doc-summarise-repo', repoPath });
+      this.queue.enqueue({ kind: 'reembed', repoPath });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log.error({ repo: repoPath, err: msg }, 'full index failed');
@@ -1068,34 +1075,50 @@ export class IndexerService {
   // Reembed
   // ---------------------------------------------------------------------------
 
+  /**
+   * The vector backfill (Epic c2ba6fa6 s2), in its own queue lane: every
+   * entity of the repository the embed step selects whose marker is empty --
+   * a vector write that failed, a crash between a commit and its vectors, a
+   * vector store reset -- is embedded in batches and written vector first,
+   * marker second (updateEmbedding, an upsert). A batch the backend returns no
+   * vectors for means it cannot be reached: the repository records
+   * embeddingAvailable false and the job stops; a successful run records true.
+   */
   private async reembed(repoPath: string): Promise<void> {
     // Loaded lazily to avoid a circular import with db/entities
     const { listUnembeddedEntities, updateEmbedding } = await import('../db/entities.js');
     const { embeddingModel }                           = await import('./embedder.js');
-    const { Ollama }                                   = await import('ollama');
 
     const entities = await listUnembeddedEntities(this.db, repoPath);
     if (entities.length === 0) {
-      log.debug({ repo: repoPath }, 'reembed: no unembedded entities');
+      log.debug({ repo: repoPath }, 'backfill: no entity without a vector');
       return;
     }
 
-    log.info({ repo: repoPath, count: entities.length }, 'reembed started');
+    log.info({ repo: repoPath, count: entities.length }, 'backfill started');
     const t0 = Date.now();
-    await embedEntities(entities, { force: true });
-
-    const ollama = new Ollama();
-    void ollama; // suppress unused warning — embedEntities uses the module-level instance
-
-    let updated = 0;
-    for (const e of entities) {
-      if (e.embedding.length > 0) {
-        await updateEmbedding(this.db, e.id, e.embedding, embeddingModel());
-        updated++;
+    let written = 0;
+    for (let i = 0; i < entities.length; i += BACKFILL_BATCH) {
+      const batch = entities.slice(i, i + BACKFILL_BATCH);
+      await this.embed(batch);
+      const ready = batch.filter(e => e.embedding.length > 0);
+      if (ready.length === 0) {
+        await setEmbeddingAvailable(repoPath, false);
+        log.warn({ repo: repoPath, remaining: entities.length - written }, 'backfill: the embedding backend returned no vectors; recorded as unavailable');
+        return;
+      }
+      for (const e of ready) {
+        try {
+          await updateEmbedding(this.db, e.id, e.embedding, embeddingModel());
+          written++;
+        } catch (err) {
+          log.warn({ repo: repoPath, entity: e.id, err: err instanceof Error ? err.message : String(err) }, 'backfill: vector write failed; the entity stays unembedded');
+        }
       }
     }
+    await setEmbeddingAvailable(repoPath, true);
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-    log.info({ repo: repoPath, updated, total: entities.length, elapsed: `${elapsed}s` }, 'reembed complete');
+    log.info({ repo: repoPath, written, total: entities.length, elapsed: `${elapsed}s` }, 'backfill complete');
   }
 
   // -------------------------------------------------------------------------

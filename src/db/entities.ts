@@ -997,11 +997,15 @@ export async function listUnembeddedEntities(_db: DbClient, repo: string): Promi
 	if (repoId === undefined) return [];
 	const out: Entity[] = [];
 	const repoCache = new Map<number, string>([[repoId, repo]]);
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		if (row.repoId !== repoId) continue;
-		if (row.embeddingModel !== '') continue; // already embedded
-		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
+	// The repository's rows through entity_by_file (Story s3), not the whole
+	// entity table; only the rows the embed step selects (a non-empty body)
+	// whose marker is empty -- the ones IndexState counts as unembedded (s2).
+	const prefix = encodeEntityByFilePrefix(repoId);
+	for (const { value } of store.entityByFile.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+		const u64 = decodeKeyU64(value as Buffer);
+		const row = readEntityRow(store, u64);
+		if (row === null || row.body === '' || row.embeddingModel !== '') continue;
+		const stringId = lookupStringIdByU64(store, u64);
 		if (stringId === undefined) continue;
 		out.push(rowToDomainEntity(stringId, row, lookupRepoPath(store, row.repoId, repoCache)));
 	}

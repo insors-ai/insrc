@@ -158,6 +158,14 @@ export function addUncommittedFile(repoPath: string, file: string): Promise<void
 	return updateState(repoPath, row => { if (!row.uncommittedFiles.includes(file)) row.uncommittedFiles = [...row.uncommittedFiles, file]; });
 }
 
+/** Whether the embedding backend could be reached, as the backfill last found
+ *  it (Epic c2ba6fa6 s2): an unavailable backend is its own reason, so entities
+ *  without vectors then do not keep the repository from reading complete. */
+export function setEmbeddingAvailable(repoPath: string, available: boolean): Promise<void> {
+	assertNoSessionPersistence();
+	return updateState(repoPath, row => { row.embeddingAvailable = available; });
+}
+
 /** The full index finished: its cross-file and endpoint passes ran. */
 export function finishFullIndexState(repoPath: string, endpointPassFailed: boolean): Promise<void> {
 	return updateState(repoPath, row => {

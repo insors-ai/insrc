@@ -21932,14 +21932,6 @@
      "decodeEntityRow"
     ],
     [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "storage-call",
-     "decodeEntityRow"
-    ],
-    [
      "storage-call",
      "decodeEntityRow"
     ],
@@ -22205,6 +22197,14 @@
     ],
     [
      "serialization",
+     "encodeEntityByFilePrefix"
+    ],
+    [
+     "serialization",
+     "encodeEntityByFilePrefix"
+    ],
+    [
+     "storage-call",
      "encodeEntityByFilePrefix"
     ],
     [
@@ -22853,7 +22853,7 @@
     ],
     [
      "storage-call",
-     "putEntityRowInTxn"
+     "prefixSuccessor"
     ],
     [
      "storage-call",
@@ -22874,6 +22874,14 @@
     [
      "storage-call",
      "putEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "putEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "readEntityRow"
     ],
     [
      "storage-call",
@@ -23193,7 +23201,7 @@
     ],
     [
      "storage-call",
-     "store.entity.getRange"
+     "store.entityByFile.getRange"
     ],
     [
      "storage-call",
@@ -23376,9 +23384,9 @@
      "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 397,
-   "sitesDigest": "9455cf025f453b10758907c3eb17c692e105acc355471187840d0e80e3465375",
-   "sourceDigest": "f6122d0c08f0fed207a897cac31a684c5310f9fda391928aabda2fe1d49e3daf",
+   "siteCount": 399,
+   "sitesDigest": "9e64c4113e39e391c7b936d5b1f605af66161356dcbe34508dbcb95f1049620e",
+   "sourceDigest": "f90c8f6df3986b5fbf5f9a35dd0f6a79e2d1781fdb1257ff814abcb498bfcdcc",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -26160,6 +26168,10 @@
      "assertNoSessionPersistence"
     ],
     [
+     "serialization",
+     "assertNoSessionPersistence"
+    ],
+    [
      "storage-call",
      "deriveIndexState"
     ],
@@ -26249,6 +26261,10 @@
     ],
     [
      "storage-call",
+     "updateState"
+    ],
+    [
+     "storage-call",
      "withWriteTxn"
     ],
     [
@@ -26256,9 +26272,9 @@
      "zeroPending"
     ]
    ],
-   "siteCount": 29,
-   "sitesDigest": "bf3a56030a14087f284467724a79cb28fa77d9c81adcd52eb066b9893762f5db",
-   "sourceDigest": "7e3afd186804444f652710066b2b0702fcb1369bdbc4f2537064143501b83b06",
+   "siteCount": 31,
+   "sitesDigest": "8559d46a360879d1d447057710ec7273f9707dbc99ba7fb29b426d11117e8ef8",
+   "sourceDigest": "dcb8ac4c5eb0aa6a4a47753d335d7793720631b034bc12a457b02c198c7413e3",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -31395,14 +31411,6 @@
      "embedEntities"
     ],
     [
-     "provider-adapter",
-     "embedEntities"
-    ],
-    [
-     "provider-use",
-     "embedEntities"
-    ],
-    [
      "provider-use",
      "embedEntities"
     ],
@@ -31437,10 +31445,6 @@
     [
      "diagnostic",
      "getLogger"
-    ],
-    [
-     "unresolved-call",
-     "import"
     ],
     [
      "unresolved-call",
@@ -31763,6 +31767,14 @@
      "log.warn"
     ],
     [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
      "storage-call",
      "lookupRepoId"
     ],
@@ -31777,10 +31789,6 @@
     [
      "storage-call",
      "markFullIndexUnfinished"
-    ],
-    [
-     "provider-backend",
-     "Ollama"
     ],
     [
      "storage-call",
@@ -31809,6 +31817,14 @@
     [
      "storage-call",
      "restoreCarriedDocSummaries"
+    ],
+    [
+     "storage-call",
+     "setEmbeddingAvailable"
+    ],
+    [
+     "storage-call",
+     "setEmbeddingAvailable"
     ],
     [
      "storage-call",
@@ -31876,13 +31892,12 @@
     ]
    ],
    "siteCount": 132,
-   "sitesDigest": "44236387f951f92197d97d52a7a1d3f32e6f407fd922c1addb2a0c79b8104ce4",
-   "sourceDigest": "5b6c1d61425e4b95cfcc541cfe5151c4a3dfb4e52a3f96eeef9637390d09b997",
+   "sitesDigest": "85fbd54eb2efd25f0aae3e00f952178c158149a3eacdae40b3d5f30c50ddac89",
+   "sourceDigest": "7f68c4e5d5729bf7f75fb6acf28ec817cf98e85d705fab772f00bcf81d39029d",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
     "provider-adapter",
-    "provider-backend",
     "provider-use",
     "serialization",
     "storage-call",

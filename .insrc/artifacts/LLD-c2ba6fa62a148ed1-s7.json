@@ -213,6 +213,13 @@
         "choice": "A. Confirm narrow: evidence only on find*/neighbour reads",
         "rationale": "User decision 2026-11-02: keep the reading. Walks (closure, unreachable, SCC, the repository closure) return entity sets with no single relationship per result; multi-hop callers already carry evidence per hop through findCallers. A best-chain rule for reachability can be added later as its own change on the stored data.",
         "resolvedAt": "2026-11-01T18:59:34.757Z"
+      },
+      "q93e30dab": {
+        "question": "NOTE (s8 cd3 partial): no new error type is introduced; an invalid evidence value is stored empty (reads 'unknown') and logged, never refused, following s1's never-drop rule.",
+        "status": "resolved",
+        "choice": "Store-empty + log (as noted, complete the partial)",
+        "rationale": "The approved LLD's behaviour: an invalid evidence value is stored empty (reads 'unknown') and logged at warn, never refused (s1's never-drop rule); no new error type. Default stated to the user 2026-11-02.",
+        "resolvedAt": "2026-11-01T19:00:21.905Z"
       }
     }
   },

@@ -413,6 +413,8 @@ A new LMDB sub-database edge_evidence keyed like out_edge holds the byte; the tw
 
 - `q7d661945` — NOTE (s8 sbdry3 interpretation): the HLD's 'carrying of evidence through the store's traversal reads' is read as the reads that return relationships (the single-kind find* reads and the opt-in neighbour form with evidence); closure/BFS/SCC traversals return entity sets and stay id-only. Confirm or widen before the plan.
   - **resolved**: A. Confirm narrow: evidence only on find*/neighbour reads — User decision 2026-11-02: keep the reading. Walks (closure, unreachable, SCC, the repository closure) return entity sets with no single relationship per result; multi-hop callers already carry evidence per hop through findCallers. A best-chain rule for reachability can be added later as its own change on the stored data. _(2026-11-01T18:59:34.757Z)_
+- `q93e30dab` — NOTE (s8 cd3 partial): no new error type is introduced; an invalid evidence value is stored empty (reads 'unknown') and logged, never refused, following s1's never-drop rule.
+  - **resolved**: Store-empty + log (as noted, complete the partial) — The approved LLD's behaviour: an invalid evidence value is stored empty (reads 'unknown') and logged at warn, never refused (s1's never-drop rule); no new error type. Default stated to the user 2026-11-02. _(2026-11-01T19:00:21.905Z)_
 
 ## Citations
 

@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "db6f3cdab400f12de2f11def849a69ef3669e36f193cc7efabce666435d427a6",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:22:25.452Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "64703b708590bd68",
+      "slug": "EPIC-64703b708590bd68"
+    }
   },
   "body": {
     "title": "Reject file-modifying daemon calls that do not name their repo",

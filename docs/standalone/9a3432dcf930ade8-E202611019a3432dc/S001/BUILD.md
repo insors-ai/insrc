@@ -4,7 +4,7 @@
 
 **Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-01T18:58:40.353Z  ·  **Updated:** 2026-11-01T19:04:04.716Z
 
-**Commit:** c0daf832a
+**Commit:** 371cb871a
 
 ## Scope
 
@@ -28,21 +28,24 @@ Restored after-only review selections and embedded exact pinned selected code in
 
 ## Changes
 
-- `docs/task-review-execution.md` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/daemon/task-review-rpc.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/__tests__/contracts.test.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/__tests__/history-fixture.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/__tests__/history.test.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/__tests__/policy.test.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/__tests__/publication-fixture.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/__tests__/selected-code.test.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/admission.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/assessment.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/contracts.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/packet.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/policy.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/publication.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/record.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/results.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
-- `src/workflow/code-review/task-review/sources.ts` — **insrc-build** (2026-11-01T19:04:04.716Z)
+- `docs/task-review-execution.md` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/daemon/task-review-rpc.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/__tests__/contracts.test.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/__tests__/history-fixture.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/__tests__/history.test.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/__tests__/policy.test.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/__tests__/publication-fixture.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/__tests__/selected-code.test.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/admission.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/assessment.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/contracts.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/packet.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/policy.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/publication.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/record.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/results.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `src/workflow/code-review/task-review/sources.ts` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `.insrc/artifacts/ISSUE-51a31651908c5c71.json` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `.insrc/artifacts/ISSUE-51a31651908c5c71.log.jsonl` — **insrc-build** (2026-11-01T19:12:16.166Z)
+- `docs/standalone/supply-selected-reviewed-version-code-blocks-E2026110151a31651/ISSUE.md` — **insrc-build** (2026-11-01T19:12:16.166Z)

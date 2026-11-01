@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s2",
+    "createdAt": "2026-11-01T13:16:17.185Z",
+    "updatedAt": "2026-11-01T13:16:17.185Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b264851a5",
+        "ranAt": "2026-11-01T13:16:17.185Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-in-txn.test.ts",
+                "title": "both in-transaction bodies write inside the caller's transaction and report what they did, by the same rule as the async writers",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-in-txn.test.ts",
+                "title": "a caller's transaction that throws after both bodies ran keeps none of their writes (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+                "title": "each input of a resolved write ends as an edge, one pending row awaiting the target, or a counted unwritable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1437,
+            "titles": [
+              {
+                "title": "each input of a resolved write ends as an edge, one pending row awaiting the target, or a counted unwritable",
+                "result": "pass"
+              },
+              {
+                "title": "writing the same relationship twice while its target is absent leaves one row and an awaiting count of 1",
+                "result": "pass"
+              },
+              {
+                "title": "a boundary relation with an absent target is kept as external-endpoint and does not count against graphComplete",
+                "result": "pass"
+              },
+              {
+                "title": "promotions: an edge removes the row and advances the generation; an absent target re-keys the row to await it; a missing source removes and counts it; the batch reports each",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/relations-in-txn.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 752,
+            "titles": [
+              {
+                "title": "both in-transaction bodies write inside the caller's transaction and report what they did, by the same rule as the async writers",
+                "result": "pass"
+              },
+              {
+                "title": "a caller's transaction that throws after both bodies ran keeps none of their writes (read after a reopen)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

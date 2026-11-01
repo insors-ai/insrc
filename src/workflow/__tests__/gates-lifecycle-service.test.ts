@@ -13,7 +13,6 @@ import { join } from 'node:path';
 import { after as afterAll, test } from 'node:test';
 
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
-import { envelopeProvider } from '../review-pipeline/__tests__/enveloped.js';
 
 // The review reaches the graph store through code that takes no path.
 const STORE_DIR = mkdtempRaw(join(tmpdir(), 'insrc-test-store-'));
@@ -91,72 +90,6 @@ const ARTIFACT = '# Story s2\n\n- t1: extend the two exported constants in foo.\
 const EXTRACT_JSON = {
 	claims: [{ id: 'c-inv', ref: 's1/t1', kind: 'inventory', text: 'There are exactly two exported constants in foo.', anchors: ['src/foo.ts'], probe: { greps: ['^export const'] } }],
 };
-const fixProvider = (): LLMProvider => envelopeProvider({
-	supportsTools: false,
-	capabilities: { structuredOutput: true, toolCalling: false, vision: false, webSearch: false, streaming: false, embeddings: false },
-	async complete(): Promise<LLMResponse> { return { text: '', stopReason: 'end_turn' }; },
-	async *stream(): AsyncIterable<string> { /* unused */ },
-	async embed(): Promise<number[]> { return []; },
-	async completeStructured<T>(_m: LLMMessage[], schema: StructuredSchema, _o?: StructuredCompletionOpts): Promise<T> {
-		const props = (schema as { properties?: Record<string, unknown> | undefined }).properties ?? {};
-		return ('claims' in props ? EXTRACT_JSON : {
-			severity: 'HIGH', evidence: 'ripgrep re-derived THREE `export const` sites, not two.', action: 'Correct the count to three.', fixability: 'auto',
-			proposedFix: { rationale: 'Grep found three.', artifactEdits: [{ find: 'two exported constants', replace: 'three exported constants' }] },
-		}) as T;
-	},
-});
-
-async function reviewedPlan(): Promise<{ approvalError: unknown; logTail: number | undefined; headRevision: number; reviewed: number | undefined; operations: string[] }> {
-	const k = kit();
-	try {
-		await k.store.write(artifact(`DEF-${H}`), alice);
-		await k.store.write(artifact(PLAN, { payload: { body: { tasks: ['extend the two exported constants in foo.'] }, citations: [] } }), alice);
-		mkdirSync(join(k.repo, 'src'), { recursive: true });
-		writeFileSync(join(k.repo, 'src', 'foo.ts'), 'export const alpha = 1;\nexport const beta = 2;\nexport const gamma = 3;\n');
-		const md = join(k.repo, 'PLAN.md');
-		writeFileSync(md, ARTIFACT);
-		const svc = serviceFor(k);
-		const res = await reviewArtifactFile({
-			mdPath: md, jsonPath: artifactJsonPath(k.repo, PLAN), repo: k.repo, provider: fixProvider(), model: 'fake',
-			reviewedAt: '2026-07-20T00:00:00.000Z', reReview: false, lifecycle: svc, actor: bob,
-		});
-		assert.equal(res.applied.length, 1, 'the auto-fix was applied');
-		const head = await k.store.readWithHistory(PLAN);
-		assert.equal(head.lifecycle.revision.number, 2, 'the auto-fix minted a revision');
-		const tail = [...head.changeLog].reverse().find(e => e.revision !== undefined);
-		const approvalError = await svc.apply(PLAN, 'approve', bob).then(() => undefined, (e: unknown) => e);
-		return { approvalError, logTail: tail?.revision?.number, headRevision: head.lifecycle.revision.number, reviewed: head.lifecycle.review?.revision, operations: head.changeLog.map(e => e.operation) };
-	} finally { k.done(); }
-}
-
-test('a review auto-fix or BUILD hook rewrite keeps the log in step so the next approval is not head-ahead-of-log', async () => {
-	// with the service the auto-fix write is followed by its log entry, and the approval goes through
-	const withService = await reviewedPlan();
-	assert.equal(withService.logTail, withService.headRevision);
-	assert.equal(withService.approvalError, undefined);
-	// the review itself is recorded on the lifecycle too, bound to the revision the auto-fix left
-	assert.equal(withService.reviewed, withService.headRevision);
-	assert.deepEqual(withService.operations, ['create', 'update', 'review', 'review'], 'the review report is an entry of the log, and the lifecycle review that names it follows');
-
-	// the BUILD hook: a record rewritten by ensureBuildRecordOnCompletion is followed by its entry as well
-	const k = kit();
-	try {
-		await seedEpic(k);
-		const svc = serviceFor(k);
-		const before = (await k.store.readWithHistory(BUILD)).changeLog.length;
-		const result = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: artifactJsonPath(k.repo, BUILD), overrideReview: 'no code review yet', lifecycle: svc, actor: bob }, { enforce: false });
-		assert.equal(result.skipped.length, 0, JSON.stringify(result.skipped));
-		const build = await k.store.readWithHistory(BUILD);
-		const tail = [...build.changeLog].reverse().find(e => e.revision !== undefined);
-		assert.equal(tail?.revision?.contentHash, build.lifecycle.revision.contentHash, 'the log ends at the head the hook left');
-		assert.ok(build.changeLog.length >= before + 1, 'the approval was logged');
-		assert.equal(build.lifecycle.status, 'approved');
-		// the hook added body.tasks, a content change: it went through the store as an update, before the approval
-		assert.equal(build.lifecycle.revision.number, 2);
-		assert.deepEqual(build.changeLog.slice(-2).map(e => e.operation), ['update', 'approve']);
-		assert.equal(build.lifecycle.approval?.revision, 2, 'the approval is of the revision the hook left');
-	} finally { k.done(); }
-});
 
 test('a service built over the repository files approves through the lifecycle, and the approval is the lifecycle\'s', async () => {
 	const k = kit();

@@ -1,4 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { reviewUnavailable } from '../../review-unavailable.js';
 import { Type } from '@sinclair/typebox';
 import { isDeepStrictEqual } from 'node:util';
 import { decodeReview, PacketSchema, requireReview, TaskResultSchema, TaskOriginSchema } from './contracts.js';
@@ -49,9 +50,9 @@ export function mergeTaskSummary(current: unknown, summaryInput: CompletedReview
  if (current !== undefined) {
   requireReview(current && typeof current === 'object', 'CR', 'Unreadable prior CR body');
   const prior = current as Record<string, unknown>;
-  // A first v2 publication replaces the v1 projection; its original remains in canonical history.
+  // Removed review formats cannot be migrated through current task publication.
   if (prior['format'] === 'task-based') reviews = validateTaskBody(prior).reviews;
-  else requireReview(prior['kind'] === 'code-review' && prior['format'] === undefined, 'CR', 'Unsupported prior CR format');
+  else reviewUnavailable();
  }
  const existing = reviews.find(review => review.reviewId === summary.reviewId && review.attempt === summary.attempt);
  if (existing) requireReview(isDeepStrictEqual(existing, summary), 'attempt', 'Conflicting publication for an already saved attempt');

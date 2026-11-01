@@ -52,7 +52,7 @@ test("read-only-tool-loop.test.ts: the read-only tool loop still returns the too
 });
 
 test('review-only admission rechecks accumulated tools and history before every model turn', async () => {
-	const { createReviewBudgetPolicy, admitReviewBudget, ReviewBudgetError } = await import('../../workflow/review-pipeline/budget.js');
+	const { createReviewBudgetPolicy, admitReviewBudget, ReviewBudgetError } = await import('../providers/budget/accounting.js');
 	const { reviewToolsJson } = await import('../providers/review-budget.js');
 	const { toOllamaMessages } = await import('../providers/ollama-wire.js');
 	const { emitStructuredAnswer } = await import('../read-only-tool-loop.js');

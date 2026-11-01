@@ -118,18 +118,6 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		{ path: 'analyzer.dataSourceListingTimeoutMs', type: 'number', default: 120000, desc: 'max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined', group: 'Analysis & memory' },
 		{ path: 'classifier.confirmIntent', type: 'boolean', default: false,        desc: 'prompt to confirm the classified intent each turn', group: 'Workflow & review' },
 		{ path: 'memory.implicitCapture.enabled', type: 'boolean', default: false,  desc: 'implicit memory capture during retrieval (backstop)', group: 'Analysis & memory' },
-		{ path: 'codeReview.enforce',    type: 'boolean', default: false,           desc: 'enforce a blocking code-review verdict at Story completion (off ⇒ advisory)', group: 'Workflow & review' },
-		{ path: 'codeReview.freshnessTimeoutMs', type: 'number', default: 120000,   desc: 'max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting', group: 'Workflow & review' },
-		{ path: 'codeReview.daemonReviewCeilingMs', type: 'number', default: 14400000, desc: 'max ms insrc_code_review_step waits in total for a daemon code review, progress or not', group: 'Workflow & review' },
-		{ path: 'codeReview.daemonReviewIdleMs', type: 'number', default: 1200000,  desc: 'max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)', group: 'Workflow & review' },
-		// Design-review template (src/workflow/review/template.ts). Provisional defaults —
-		// no design review may exceed 30 minutes whatever these say (HARD_REVIEW_DEADLINE_MS).
-		{ path: 'review.chunkTokens',               type: 'number', default: 128000, desc: 'estimated total tokens per review request, including serialized prompts, schemas, tools and explicit native/output/inspection reserves; source capacity is lower than total tokens times 3 characters; larger reviews are divided into coherent chunks', group: 'Workflow & review' },
-		{ path: 'designReview.premises.issue',      type: 'number', default: 8,      desc: 'most premises a design review examines when the design answers an ISSUE', group: 'Workflow & review' },
-		{ path: 'designReview.premises.spec',       type: 'number', default: 16,     desc: 'most premises a design review examines when the design answers a SPEC', group: 'Workflow & review' },
-		{ path: 'designReview.timeLimitMs.issue',   type: 'number', default: 720000, desc: 'time limit (ms) for each review attempt of a design that answers an ISSUE; capped at 30 minutes', group: 'Workflow & review' },
-		{ path: 'designReview.timeLimitMs.feature', type: 'number', default: 1080000, desc: 'time limit (ms) for each review attempt of a standalone feature design; capped at 30 minutes', group: 'Workflow & review' },
-		{ path: 'designReview.timeLimitMs.epic',    type: 'number', default: 1440000, desc: 'time limit (ms) for each review attempt of a design under an Epic; capped at 30 minutes', group: 'Workflow & review' },
 
 		// ── model tiers — THE single model-spec surface (src/config/analyze.ts → models.tiers) ──
 		// A (runner, model) pair is named ONLY here. The shaper + summariser providers

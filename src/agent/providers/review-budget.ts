@@ -5,8 +5,8 @@
 
 import type { ReviewBudgetBreakdown, ReviewExecutionBudget, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import type { StructuredSchema, ToolDefinition } from '../../shared/types.js';
-import { admitReviewBudget, createReviewBudgetPolicy, freezeReviewBudgetProfile, ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
-import { promptChars } from '../../workflow/review-pipeline/envelope.js';
+import { admitReviewBudget, createReviewBudgetPolicy, freezeReviewBudgetProfile, ReviewBudgetError } from './budget/accounting.js';
+import { promptChars } from './budget/prompt-size.js';
 import { toOllamaMessages, toOllamaTools } from './ollama-wire.js';
 import { codexStrictSchema } from './structured-output.js';
 

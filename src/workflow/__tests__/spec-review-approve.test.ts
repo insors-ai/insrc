@@ -55,7 +55,6 @@ import {
 import { specArtifactPaths, writeAtomic } from '../storage.js';
 import type { ReviewReport } from '../review/types.js';
 import type { LLMProvider } from '../../shared/types.js';
-import { envelopeProvider } from '../review-pipeline/__tests__/enveloped.js';
 import { createRepoLifecycle } from '../artifact-core/repo-lifecycle.js';
 
 const SPEC_HASH = 'abcd1234ef567890';
@@ -120,37 +119,6 @@ function withRepo(fn: (repo: string) => void | Promise<void>): void | Promise<vo
 	try { out = fn(repo); } catch (e) { cleanup(); throw e; }
 	return out instanceof Promise ? out.finally(cleanup) : (cleanup(), out);
 }
-
-/** A minimal LLMProvider whose structured call yields ZERO claims, so the
- *  review pipeline runs end-to-end offline (no probes, no LLM verify) and the
- *  only thing under test is that a brainstorm artifact is reviewed generically. */
-function zeroClaimsProvider(): LLMProvider {
-	return envelopeProvider({
-		complete: async () => { throw new Error('not used'); },
-		stream:   async function* () { /* not used */ },
-		embed:    async () => [],
-		supportsTools: false,
-		completeStructured: async <T>() => ({ claims: [] } as unknown as T),
-	} as unknown as LLMProvider);
-}
-
-// ---------------------------------------------------------------------------
-// ac1 — the review runs over a SPEC md without a per-type branch
-// ---------------------------------------------------------------------------
-
-test('ac1: reviewArtifactFile reviews a SPEC md generically (stage = meta.workflow = brainstorm)', async () => {
-	await withRepo(async repo => {
-		const paths = writeSpec(repo, specArtifact());
-		const result = await reviewArtifactFile({
-			repo, lifecycle: createRepoLifecycle(repo).service, jsonPath: paths.json, mdPath: paths.md,
-			provider: zeroClaimsProvider(), model: 'test',
-		});
-		// The review ran (no per-type rejection) and derived its stage from
-		// meta.workflow — proving a SPEC is a first-class review subject (ac1).
-		assert.equal(result.report.stage, 'brainstorm');
-		assert.equal(result.report.verdict, 'pass');
-	});
-});
 
 // ---------------------------------------------------------------------------
 // ac2 — approve refuses a block-verdict SPEC without an override

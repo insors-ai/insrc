@@ -930,7 +930,6 @@ const APPROVED_OR_BEYOND: readonly string[] = ['approved', 'in-signoff', 'change
  *  or NoPendingArtifactsError (empty epic sweep). */
 export async function approveWorkflowTarget(
 	req: WorkflowApproveRequest,
-	opts?: { readonly enforce?: boolean },
 ): Promise<WorkflowApproveResult> {
 	const approveOpts = req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : undefined;
 	const approved:   { path: string; result: ApprovalResult }[] = [];
@@ -990,7 +989,6 @@ export async function approveWorkflowTarget(
 			const gate = enforceCodeReviewGate(req.repoPath, meta.epicHash, meta.storyId, {
 				checkBuildFreshness: reviewRequiredFor(jsonPath) === 'code',
 				...(req.overrideReview !== undefined ? { overrideReview: req.overrideReview } : {}),
-				...(opts?.enforce !== undefined ? { enforce: opts.enforce } : {}),
 			});
 			codeReview.push(projectGateOutcome(jsonPath, meta.storyId, gate));
 			if (gate.status === 'blocked') {

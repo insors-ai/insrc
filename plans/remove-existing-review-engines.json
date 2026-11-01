@@ -1,0 +1,24 @@
+{
+  "id": "WORK-remove-existing-review-engines",
+  "status": "built",
+  "requestedBy": "user",
+  "createdAt": "2026-11-01T10:17:20.224572+00:00",
+  "scope": "Completely remove existing design/chunk/dimension review execution; preserve epic e6ddcdcb task-review implementation and its provider/lifecycle dependencies",
+  "disabledMessage": "PENDING REVIEW RE-IMPLEMENTATION",
+  "flagsOrFallback": false,
+  "validation": {
+    "build": "npm run build passed, including tool typecheck and required scanners",
+    "taskAndBoundarySuite": "56 tests passed; /tmp/review-clobber-final-tests.log",
+    "providerSuite": "33 passed; /tmp/review-clobber-provider-tests.log",
+    "graphAndBoundarySuite": "14 passed; /tmp/review-clobber-boundary-tests.log",
+    "registeredMcpTools": "Both real registered MCP handlers return exact unavailable error via in-memory transport; /tmp/review-clobber-mcp-check.log",
+    "retiredOutput": "No retired engine modules remain in clean compiled output",
+    "modelsCalled": false,
+    "fullRepositorySweep": false
+  },
+  "pausedWork": [
+    "timeout policy LLD-99a7f5dc933a8456-s1",
+    "progress story STORY-e6ddcdcb3d9cf330-s4"
+  ],
+  "deployment": "Working tree only; installed daemon not updated/restarted"
+}

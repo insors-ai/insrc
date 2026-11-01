@@ -1,3 +1,4 @@
+import { reviewUnavailable } from '../../workflow/review-unavailable.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -117,38 +118,12 @@ export function createInDaemonClient(
 		}
 	};
 
-	/** The in-process transport: the daemon's own stream handler, called with a
-	 *  send that hands its frames to the shared request, and a signal that a
-	 *  failed request (wait limit, abort) aborts so the inner run ends. */
-	const streamRequest = <T>(method: string, params: Record<string, unknown>, opts: ReviewStreamOpts): Promise<T> =>
-		runReviewStream<T>(method, opts, (sink) => {
-			const inner = new AbortController();
-			const handler = stream[method];
-			if (handler === undefined) {
-				sink.fail('unknown-method', `${method}: this daemon does not support the request (unknown method: ${method}).`);
-				return { end: () => {}, cancel: () => inner.abort() };
-			}
-			const send = (msg: IpcStreamMessage): void => { sink.frame({ stream: msg.stream, data: msg.data }); };
-			// Called through a resolved promise so a handler that throws synchronously
-			// settles the request too, and its timer and abort listener are released.
-			Promise.resolve().then(() => handler(params, send, inner.signal)).then(
-				// Over the socket a handler that ends without a final frame leaves the
-				// client waiting; in-process there is nothing left to wait for.
-				() => sink.fail('closed', `${method}: the request ended before completion`),
-				// The request server sends a handler's throw as an 'error' frame.
-				(err: unknown) => sink.fail('daemon-error', failureMessage(err, method)),
-			);
-			return { end: () => {}, cancel: () => inner.abort() };
-		}, deps);
-
 	return {
 		request: <T>(method: string, params: unknown) => call<T>(method, params),
-		reviewArtifactStream: (params, opts) => streamRequest<WorkflowReviewDone>('workflow.review', { ...reviewArtifactRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts),
-		codeReviewStream:     (params, opts) => streamRequest<CodeReviewStreamResult>('codeReview.run', { ...codeReviewRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts),
-		fetchCodeReviewGrounding: (params) =>
-			call<Parameters<typeof groundingFromReply>[0]>('codeReview.grounding', params).then(groundingFromReply, unavailableFromError),
-		fetchCodeReviewFreshness: (params) =>
-			call<Parameters<typeof freshnessFromReply>[0]>('codeReview.freshness', params).then(freshnessFromReply, unavailableFromError),
+		reviewArtifactStream: async () => reviewUnavailable(),
+		codeReviewStream: async () => reviewUnavailable(),
+		fetchCodeReviewGrounding: async () => reviewUnavailable(),
+		fetchCodeReviewFreshness: async () => reviewUnavailable(),
 		resolveRepoForCwd: (cwd) =>
 			call<{ path?: string | null; error?: string }>('repo.resolveForCwd', { cwd }).then(r => {
 				if (r.error !== undefined) throw new Error(r.error);

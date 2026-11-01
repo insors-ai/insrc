@@ -16,8 +16,6 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-
-import { assembleDiffCodeReviewGrounding, realDiffGroundingDeps } from '../../../code-review/grounding.js';
 import { NoBuildChangesError, changedFiles } from '../changed-files.js';
 import { newestStoryCommit, storyChangeSet, storyLines } from '../story-commits.js';
 import { getLogger } from '../../../../shared/logger.js';
@@ -163,26 +161,6 @@ test("with a storyKey and no commit carrying it, a commit carrying another Story
 		assert.deepEqual(mixed.units.map(u => u.ref), [a]);
 		assert.deepEqual(mixed.paths, ['src/a.ts', 'src/shared.ts']);
 		assert.deepEqual(mixed.sharedWithExcluded, ['src/shared.ts'], "the other Story's commit also changed shared.ts");
-	} finally { cleanup(); }
-});
-
-test("a file one Story changed and another Story reverted stays in the first Story's subject and diff", async () => {
-	const { repo: r, base, cleanup } = repo();
-	try {
-		commit(r, { 'src/keep.ts': '1\n', 'src/flip.ts': 'mine\n' }, 'feat(build): s1/t1 mine', STORY);
-		git(r, 'rm', '-q', 'src/flip.ts');
-		git(r, 'commit', '-q', '-m', 'feat(build): s3/t1 reverts flip.ts\n\nInsrc-Story: c2ba6fa6aaaaaaaa/s3\n');
-
-		assert.deepEqual([...await changedFiles(r, { base })].sort(), ['src/keep.ts'], 'the net range no longer shows flip.ts');
-		let attribution: string | undefined;
-		const files = await changedFiles(r, { base, storyKey: STORY, onAttribution: a => { attribution = a.attribution; } });
-		assert.deepEqual([...files].sort(), ['src/flip.ts', 'src/keep.ts']);
-		assert.equal(attribution, 'story-trailer');
-
-		// The diff review shows the Story's own hunk for flip.ts too (t5).
-		const diff = await assembleDiffCodeReviewGrounding(r, realDiffGroundingDeps(), { base, storyKey: STORY });
-		assert.deepEqual([...diff.changedFiles].sort(), ['src/flip.ts', 'src/keep.ts']);
-		assert.match(diff.grounding.symbols.find(s => s.file === 'src/flip.ts')?.signature ?? '', /^\+mine$/m);
 	} finally { cleanup(); }
 });
 

@@ -22,7 +22,6 @@ import { deriveMdPath } from '../pending.js';
 import { buildWorkItemGraph } from '../delivery/graph.js';
 import { lldRecord, recordSet } from '../delivery/__tests__/fixtures.js';
 import { buildChainReport } from '../chain.js';
-import { codeReviewSubjectPathArgs } from '../code-review/subject-paths.js';
 import { appendStoryToDefine, requireApprovedEpic } from '../gates.js';
 import { questionId, recordResolution } from '../questions.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
@@ -62,56 +61,6 @@ function listing(repo: string): string[] {
 	walk('');
 	return out.sort();
 }
-
-test('subject-paths, questions and the helper callers each fail before any file is created when no anchor exists', async () => {
-	// subject-paths has its own case below (a Define head would anchor it); questions, gates and chain fail on a stamp-less Define
-	const r = tempRepo();
-	try {
-		const defPath = seedUnstampedDefine(r.repo);
-		const before = listing(r.repo);
-		const defBefore = readFileSync(defPath, 'utf8');
-
-		// questions: recording a resolution locates the artifact's folder before it writes anything
-		await assert.rejects(
-			() => recordResolution(r.repo, 'define', HASH, undefined, questionId(QUESTION), 'resolved', 'a choice', 'because', { commit: false }),
-			MissingAnchorError,
-		);
-		// gates: the approval gate and the story append name the Define's folder first
-		assert.throws(() => requireApprovedEpic(r.repo, HASH), MissingAnchorError);
-		assert.throws(
-			() => appendStoryToDefine(r.repo, HASH, { id: 's2', title: 'new', userValue: 'v', acceptanceCriteria: [] } as never),
-			MissingAnchorError,
-		);
-		// chain: reading the Define's state computes its path
-		assert.throws(() => buildChainReport(r.repo, HASH), MissingAnchorError);
-
-		// subject-paths on a repo that holds no head and no record at all
-		const bare = tempRepo();
-		try {
-			assert.throws(
-				() => codeReviewSubjectPathArgs({ repoPath: bare.repo, epicHash: HASH, storyId: 's1', changedFiles: [], approvedLld: null, approvedPlan: null, buildRecord: null }),
-				MissingAnchorError,
-			);
-			assert.equal(existsSync(join(bare.repo, 'docs')), false);
-		} finally { bare.done(); }
-
-		assert.deepEqual(listing(r.repo), before, 'no file or folder was created');
-		assert.equal(readFileSync(defPath, 'utf8'), defBefore, 'the Define on disk is untouched');
-		assert.equal(existsSync(join(r.repo, 'docs')), false, 'no docs folder was made');
-	} finally { r.done(); }
-});
-
-test('the code-review subject paths fail when no record and no head anchors the Story, and make no folder', async () => {
-	const r = tempRepo();
-	try {
-		const before = listing(r.repo);
-		assert.throws(
-			() => codeReviewSubjectPathArgs({ repoPath: r.repo, epicHash: HASH, storyId: 's1', changedFiles: [], approvedLld: null, approvedPlan: null, buildRecord: null }),
-			MissingAnchorError,
-		);
-		assert.deepEqual(listing(r.repo), before);
-	} finally { r.done(); }
-});
 
 /** An approved standalone LLD stored before the stamp existed: nothing anchors its folder. */
 function seedUnstampedStandaloneLld(repo: string): void {

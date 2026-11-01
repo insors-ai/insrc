@@ -31,7 +31,8 @@ import { typescriptParser } from '../parser/typescript.js';
 import { resolveRelations } from '../resolver.js';
 import { runCrossFileResolver } from '../cross-file-resolver.js';
 import { detectSourceRoots } from '../source-roots.js';
-import { assembleCodeReviewGrounding, realGroundingDeps } from '../../workflow/code-review/grounding.js';
+import { listEntitiesForRepo } from '../../db/entities.js';
+import { findCallers } from '../../db/search.js';
 
 useTemporaryLance();
 
@@ -90,27 +91,26 @@ test.afterEach(async () => {
 });
 
 const callersIn = async (file: string): Promise<Record<string, readonly string[]>> => {
-	const g = await assembleCodeReviewGrounding(repo, [file], await realGroundingDeps());
-	return Object.fromEntries(g.symbols.map(s => [s.name, s.callers]));
+ const entities = (await listEntitiesForRepo(null, repo)).filter(e => e.file === file || e.file === join(repo, file));
+ const entries: [string, readonly string[]][] = [];
+ for (const entity of entities) entries.push([entity.name, (await findCallers(null, entity.id)).map(c => c.name)]);
+ return Object.fromEntries(entries);
 };
 
-test("a call to a method of an exported class in an imported file is an edge from the caller", async () => {
-	const callers = await callersIn('src/queue.ts');
-	assert.deepEqual(callers['enqueue'], ['run']);
+test('an imported exported-class method retains its caller edge', async () => {
+ assert.deepEqual((await callersIn('src/queue.ts'))['enqueue'], ['run']);
 });
-
-test('a private method, a #name method and a method of a class the file does not export are not resolved across files', async () => {
-	const callers = await callersIn('src/queue.ts');
-	assert.deepEqual(callers['secret'], [], 'private');
-	assert.deepEqual(callers['reveal'], [], 'class not exported');
-	assert.deepEqual(callers['#log'], ['enqueue'], 'a #name method keeps its same-file caller only');
+test('private and unexported methods are not resolved across files', async () => {
+ const callers = await callersIn('src/queue.ts');
+ assert.deepEqual(callers['secret'], []);
+ assert.deepEqual(callers['reveal'], []);
+ assert.deepEqual(callers['#log'], ['enqueue']);
 });
-
-test('a method name that two imported classes share is recorded ambiguous with both candidates, not guessed', async () => {
-	assert.deepEqual((await callersIn('src/queue.ts'))['start'], []);
-	assert.deepEqual((await callersIn('src/worker.ts'))['start'], []);
-	const pending = await listUnresolvedRelations(null, repo, join(repo, 'src', 'main.ts'));
-	const start = pending.find(r => r.kind === 'CALLS' && r.rawTo === 'start');
-	assert.ok(start, 'the call stays pending');
-	assert.equal((start.meta?.['candidates'] as unknown[] | undefined)?.length, 2, JSON.stringify(start.meta));
+test('ambiguous imported methods retain both candidates without a guessed edge', async () => {
+ assert.deepEqual((await callersIn('src/queue.ts'))['start'], []);
+ assert.deepEqual((await callersIn('src/worker.ts'))['start'], []);
+ const pending = await listUnresolvedRelations(null, repo, join(repo, 'src', 'main.ts'));
+ const start = pending.find(r => r.kind === 'CALLS' && r.rawTo === 'start');
+ assert.ok(start);
+ assert.equal((start.meta?.['candidates'] as unknown[] | undefined)?.length, 2);
 });

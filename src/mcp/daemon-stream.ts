@@ -1,3 +1,4 @@
+import { reviewUnavailable } from '../workflow/review-unavailable.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -486,15 +487,11 @@ export function reviewArtifactStream(
 	params: ReviewArtifactStreamParams,
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
-): Promise<WorkflowReviewDone> {
-	return reviewStreamRequest<WorkflowReviewDone>('workflow.review', { ...reviewArtifactRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts, deps);
-}
+): Promise<WorkflowReviewDone> { return reviewUnavailable(); }
 
 /** Ask the daemon to review a Story's code (`codeReview.run`). */
 export function codeReviewStream(
 	params: CodeReviewStreamParams,
 	opts:   ReviewStreamOpts,
 	deps:   ReviewStreamDeps = {},
-): Promise<CodeReviewStreamResult> {
-	return reviewStreamRequest<CodeReviewStreamResult>('codeReview.run', { ...codeReviewRequestParams(params), executionCeilingMs: opts.timeoutMs }, opts, deps);
-}
+): Promise<CodeReviewStreamResult> { return reviewUnavailable(); }

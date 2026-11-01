@@ -29,7 +29,6 @@
  *   - `ordering`           — "depends on" / sequencing claims
  */
 
-import type { PipelineCalls } from '../review-pipeline/types.js';
 
 export type ClaimKind =
 	| 'inventory'
@@ -176,7 +175,6 @@ export interface ReviewReport {
 	readonly reviewedBy?: 'controller' | 'daemon' | undefined;
 	/** Calls the review pipeline made per role when the review was divided (Epic
 	 *  8315a11f). Absent on a single-chunk review. */
-	readonly pipelineCalls?: PipelineCalls | undefined;
 	/** Present only when the repository's source roots could not be derived
 	 *  from the index and the whole repository root was searched in their
 	 *  place: the reason. The evidence of such a review is broader and slower

@@ -1,3 +1,4 @@
+import { reviewUnavailable } from '../workflow/review-unavailable.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -85,30 +86,14 @@ export type CodeReviewFreshnessResult =
 	| { ok: false; reason: string };
 
 /** The `codeReview.grounding` reply as a result. */
-export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }): CodeReviewGroundingResult {
-	if (res.ok === true && res.grounding !== undefined) return { ok: true, grounding: res.grounding };
-	return { ok: false, reason: res.reason ?? res.error ?? 'code-review grounding unavailable' };
-}
+export function groundingFromReply(res: { ok?: boolean; grounding?: CodeReviewGrounding; reason?: string; error?: string }): CodeReviewGroundingResult { return reviewUnavailable(); }
 
 /** The `codeReview.freshness` reply as a result. A reply from an older daemon
  *  (no inFlight / pendingCodeIndexJobs) reads as inFlight = isProcessing and 0. */
-export function freshnessFromReply(res: { isProcessing?: boolean | undefined; inFlight?: boolean | undefined; pendingCodeIndexJobs?: number | undefined; staleFiles?: readonly string[] | undefined; error?: string | undefined }): CodeReviewFreshnessResult {
-	if (res.error === undefined && typeof res.isProcessing === 'boolean') {
-		return {
-			ok: true,
-			isProcessing: res.isProcessing,
-			inFlight: typeof res.inFlight === 'boolean' ? res.inFlight : res.isProcessing,
-			pendingCodeIndexJobs: typeof res.pendingCodeIndexJobs === 'number' ? res.pendingCodeIndexJobs : 0,
-			staleFiles: res.staleFiles ?? [],
-		};
-	}
-	return { ok: false, reason: res.error ?? 'code-review freshness unavailable' };
-}
+export function freshnessFromReply(res: { isProcessing?: boolean | undefined; inFlight?: boolean | undefined; pendingCodeIndexJobs?: number | undefined; staleFiles?: readonly string[] | undefined; error?: string | undefined }): CodeReviewFreshnessResult { return reviewUnavailable(); }
 
 /** A rejected grounding or freshness request as a result. */
-export function unavailableFromError(err: unknown): { ok: false; reason: string } {
-	return { ok: false, reason: err instanceof Error ? err.message : String(err) };
-}
+export function unavailableFromError(err: unknown): { ok: false; reason: string } { return reviewUnavailable(); }
 
 // ---------------------------------------------------------------------------
 // The review request itself, shared by the socket client (src/mcp/daemon-stream.ts)
@@ -120,24 +105,10 @@ export function unavailableFromError(err: unknown): { ok: false; reason: string 
 // ---------------------------------------------------------------------------
 
 /** The parameters `workflow.review` is sent. */
-export function reviewArtifactRequestParams(params: ReviewArtifactStreamParams): Record<string, unknown> {
-	return {
-		artifactPath: params.artifactPath,
-		...(params.repo !== undefined ? { repo: params.repo } : {}),
-	};
-}
+export function reviewArtifactRequestParams(params: ReviewArtifactStreamParams): Record<string, unknown> { return reviewUnavailable(); }
 
 /** The parameters `codeReview.run` is sent. */
-export function codeReviewRequestParams(params: CodeReviewStreamParams): Record<string, unknown> {
-	return {
-		epicHash: params.epicHash,
-		storyId:  params.storyId,
-		...(params.repo          !== undefined ? { repo:          params.repo }          : {}),
-		...(params.client        !== undefined ? { client:        params.client }        : {}),
-		...(params.groundingMode !== undefined ? { groundingMode: params.groundingMode } : {}),
-		...(params.fallbackReason !== undefined ? { fallbackReason: params.fallbackReason } : {}),
-	};
-}
+export function codeReviewRequestParams(params: CodeReviewStreamParams): Record<string, unknown> { return reviewUnavailable(); }
 
 /** A wait limit in words, never more than the limit: whole minutes when it is
  *  a whole number of minutes, otherwise seconds. */
@@ -198,72 +169,4 @@ export function runReviewStream<T>(
 	opts:      ReviewStreamOpts,
 	transport: ReviewStreamTransport,
 	timers:    ReviewStreamTimers = {},
-): Promise<T> {
-	return new Promise<T>((resolve, reject) => {
-		const setTimer   = timers.setTimer   ?? ((fn: () => void, ms: number) => setTimeout(fn, ms));
-		const clearTimer = timers.clearTimer ?? ((h: unknown) => clearTimeout(h as NodeJS.Timeout));
-		let settled = false;
-		let timer: unknown;
-		let idleTimer: unknown;
-		let handle: ReviewStreamHandle | undefined;
-		let pending: 'end' | 'cancel' | undefined;   // settled while the transport was still starting
-
-		const release = (how: 'end' | 'cancel'): void => {
-			if (handle === undefined) { pending = how; return; }
-			if (how === 'end') handle.end(); else handle.cancel();
-		};
-		const finish = (how: 'end' | 'cancel', action: () => void): void => {
-			if (settled) return;
-			settled = true;
-			if (timer !== undefined) clearTimer(timer);
-			if (idleTimer !== undefined) clearTimer(idleTimer);
-			opts.signal?.removeEventListener('abort', onAbort);
-			release(how);
-			action();
-		};
-		const failWith = (failure: ReviewStreamFailure, message: string, reason?: string): void =>
-			finish('cancel', () => reject(new ReviewStreamError(failure, message, reason)));
-
-		function onAbort(): void { failWith('aborted', `${method}: aborted by client`); }
-		if (opts.signal?.aborted) { onAbort(); return; }
-		opts.signal?.addEventListener('abort', onAbort);
-		timer = setTimer(
-			() => failWith('timeout', `${method}: no result from the daemon within ${waitText(opts.timeoutMs)}`, CEILING_TIMEOUT),
-			opts.timeoutMs,
-		);
-		const idleMs = opts.idleMs !== undefined && opts.idleMs > 0 && opts.idleMs < opts.timeoutMs ? opts.idleMs : undefined;
-		const armIdle = (): void => {
-			if (idleMs === undefined) return;
-			if (idleTimer !== undefined) clearTimer(idleTimer);
-			idleTimer = setTimer(() => failWith('timeout', `${method}: no progress from the daemon for ${waitText(idleMs)}`, IDLE_TIMEOUT), idleMs);
-		};
-		armIdle();
-
-		const sink: ReviewStreamSink = {
-			frame: (f) => {
-				if (settled) return;
-				if (f.stream === 'progress' || f.stream === 'delta') {
-					armIdle();
-					opts.onFrame?.(f.stream, f.data);
-				} else if (f.stream === 'done') {
-					finish('end', () => resolve(f.data as T));
-				} else if (f.stream === 'error') {
-					const data = f.data as { error?: string; reason?: string } | undefined;
-					finish('end', () => reject(new ReviewStreamError('daemon-error', data?.error ?? `${method}: daemon error`, data?.reason)));
-				}
-				// Any other kind: ignored (forward-compatible).
-			},
-			fail: (failure, message, reason) => { if (!settled) failWith(failure, message, reason); },
-		};
-		// A transport that throws while opening (a connection refused before any
-		// event) settles here like any other failure, so the wait timer and the
-		// abort listener are released rather than left armed.
-		try {
-			handle = transport(sink);
-		} catch (err) {
-			failWith('unreachable', `${method}: cannot reach the daemon (${err instanceof Error ? err.message : String(err)})`);
-			return;
-		}
-		if (pending !== undefined) release(pending);
-	});
-}
+): Promise<T> { return reviewUnavailable(); }

@@ -28,7 +28,7 @@
  * `JSON.parse(rawText)` to `provider.completeStructured(messages, Schema)`.
  */
 
-import { ReviewBudgetError } from '../../workflow/review-pipeline/budget.js';
+import { ReviewBudgetError } from './budget/accounting.js';
 import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
 import ajvFormats from 'ajv-formats';

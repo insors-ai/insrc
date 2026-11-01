@@ -56,9 +56,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/tracker/unit-head.ts', class: 'content', via: 'writeArtifact', note: 'makes the EPIC or STORY head of a unit that has none (a draft with an empty body, a lifecycle at revision 1 and its create entry); it never rewrites a head that exists' },
 	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', via: 'both', note: 'the BUILD record is regenerated on each persist' },
 	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
-	{ file: 'src/daemon/steps/code-review-step/handler.ts', class: 'content', via: 'injected', note: 'injects the runner\'s revision-minting writer (writeRecordFile) into the runner; it has no raw writer of its own' },
 	{ file: 'src/workflow/code-review/task-review/publication.ts', class: 'render', via: 'raw', note: 'task-based CR JSON is merged and journalled through the canonical artifact store queue; writeAtomic refreshes only its markdown projection' },
-	{ file: 'src/workflow/code-review/runner.ts', class: 'content', via: 'both', note: 'the code-review record is signoff-covered: its default writer (writeRecordFile) writes the json as content; the step handler uses the same writer' },
 
 	// --- meta-only: stamps, review stamps, tracker patches, resolutions -------------
 	{ file: 'src/workflow/questions.ts', class: 'meta-only', via: 'both', note: 'meta.questionResolutions only' },
@@ -78,7 +76,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 		],
 		note: 'the extend path changes body.stories; approve stamps meta.rangeBase after the lifecycle approves (reject and ack-stale write no head)',
 	},
-	{ file: 'src/workflow/review/resolve.ts', class: 'mixed', via: 'both', sites: [{ fn: 'resolveReviewFinding', kind: 'content' }], note: 'apply changes the body; accept, override and defer append a resolution entry to the log (report-file.ts, through the sidecar store) and write no head' },
 
 	// --- store: the artifact store itself ------------------------------------------
 	{ file: 'src/workflow/artifact-core/lifecycle-service.ts', class: 'meta-only', via: 'injected', note: 'applies lifecycle operations through ArtifactStore.update: the content is never changed, so no revision is minted, and the store logs each operation' },
@@ -95,7 +92,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/convert/apply.ts', class: 'migration', via: 'raw', note: 'keeps the progress file (the before-snapshot) of an apply under .insrc' },
 
 	// --- render: markdown only ----------------------------------------------------
-	{ file: 'src/workflow/review/persist-review.ts', class: 'render', via: 'raw', note: 'writes the markdown of a reviewed artifact; the fix and the review record go through LifecycleService and the history' },
 	{ file: 'src/workflow/tracker/link.ts', class: 'render', via: 'raw', note: 'writes the markdown of a document with its tracker link' },
 	{ file: 'src/workflow/tracker-auto.ts', class: 'render', via: 'raw', note: 'the re-render of a document after its issue exists' },
 	{ file: 'src/workflow/artifacts/companion/render.ts', class: 'render', via: 'raw', note: 'writes the companion diagram files' },
@@ -104,7 +100,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/daemon/steps/workflow-step/resume.ts', class: 'migration', via: 'raw', note: 'a resume puts a parker\'s draft files back byte for byte, meta.revision included: it restores, it does not author, so it mints no revision' },
 
 	// --- non-artifact: caches, configuration, logs, locks, the primitives themselves ---
-	{ file: 'src/workflow/code-review/run-events.ts', class: 'non-artifact', via: 'raw', note: 'append-only review-run diagnostics; these logs are not canonical CR heads or approval evidence' },
 	{ file: 'src/workflow/storage.ts', class: 'non-artifact', via: 'both', note: 'defines writeAtomic and writeArtifact; appendRunLog and appendProgressLog append to the jsonl run traces' },
 	{ file: 'src/workflow/artifact-core/sidecar.ts', class: 'non-artifact', via: 'raw', note: 'appendSidecarLine, the one function that appends a history record as a JSON line to the path it is given; the lines are history, not an artifact head' },
 	{ file: 'src/workflow/artifact-core/repo-schema.ts', class: 'non-artifact', via: 'raw', note: 'writeRepoSchema replaces .insrc/schema.json (the version marker) atomically; only the conversion calls it' },
@@ -119,7 +114,6 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/daemon/steps/analyze-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
 	{ file: 'src/daemon/steps/build-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
 	{ file: 'src/daemon/steps/workflow-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
-	{ file: 'src/daemon/steps/review-step/handler.ts', class: 'non-artifact', via: 'raw', note: 'appends the input and output of each step call to its trace file' },
 	{ file: 'src/config/feedback.ts', class: 'non-artifact', via: 'raw', note: 'appends feedback entries to the configuration feedback file' },
 	{ file: 'src/agent/providers/cli-provider.ts', class: 'non-artifact', via: 'raw', note: 'temporary prompt and schema files for the CLI subprocess' },
 	{ file: 'src/analyze/context/cache.ts', class: 'non-artifact', via: 'raw', note: 'analyze context cache' },

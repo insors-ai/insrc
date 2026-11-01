@@ -14,18 +14,15 @@ import { TaskReviewCoordinator } from '../coordinator.js';
 
 import { fixture, hash } from './publication-fixture.js';
 
-test('task-based CR: version-2 validation/rendering and version-1 compatibility without fabricated dimensions',async()=>{
+test('task-based CR: version-2 validation/rendering and no retired-format fallback',async()=>{
  const f=await fixture();try{
   const id=codeReviewArtifactId(hash,'s1');
-  await f.deps.through.store!.write({id,description:'',references:[],attachments:[],lifecycle:emptyLifecycle(0),payload:{body:{kind:'code-review',verdict:'pass',counts:{high:0,med:0,low:0},dimensions:[]},citations:[]}},f.deps.through.actor);
-  assert.equal(enforceCodeReviewGate(f.repo,hash,'s1',{checkBuildFreshness:false}).status,'pass');
   const published=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),record=f.readRecord(published.jsonPath);
   assert.equal(record.meta.schemaVersion,2);assert.equal(record.meta.reviewedBy,'daemon');assert.equal(record.meta.epicSlug,'review-fixture');
   assert.ok(!('dimensions' in record.body));assert.equal(validateTaskBody(record.body).reviews.length,1);
   const rendered=readFileSync(published.path,'utf8');assert.match(rendered,/task t1/);assert.match(rendered,/Optional clarity improvement/);assert.match(rendered,/source.js/);
   assert.equal(renderTaskReview(record.body).includes('dimension'),false);
   const history=await f.deps.through.store!.history.log(id);
-  assert.ok(history.length>=2,'v1 is retained in canonical history when v2 replaces its projection');
  }finally{f.cleanup();}
 });
 
@@ -62,9 +59,9 @@ test('CR readers: partial task scope, incomplete/failed results and unknown vers
    if(status==='changes_requested')result.findings=[{severity:'HIGH',location:'source.js:1',message:'Wrong condition',rationale:'Contradicts requirement',evidenceReferences:[result.inspectedReferences[0]!]}];
    await saveCheckpoint(checkpointPath(f.repo,'publication'),cp);
    const published=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps);
-   assert.equal(enforceCodeReviewGate(f.repo,hash,'s1',{enforce:false}).status,'blocked',status);
+   assert.equal(enforceCodeReviewGate(f.repo,hash,'s1',{}).status,'blocked',status);
    const record=f.readRecord(published.jsonPath);record.meta.schemaVersion=99;writeFileSync(published.jsonPath,JSON.stringify(record));
-   assert.equal(enforceCodeReviewGate(f.repo,hash,'s1',{enforce:false}).status,'blocked','unknown versions never become no-review');
+   assert.equal(enforceCodeReviewGate(f.repo,hash,'s1',{}).status,'blocked','unknown versions never become no-review');
    assert.equal(enforceCodeReviewGate(f.repo,hash,'s1',{overrideReview:'Explicit test override'}).status,'overridden');
   }finally{f.cleanup();}
  }

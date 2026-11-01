@@ -17,6 +17,7 @@
  *     request itself was malformed.
  */
 
+import { reviewUnavailable } from '../../workflow/review-unavailable.js';
 import { registerLocalReviewOwner } from '../review-request-owner.js';
 import { createReviewOwnerContext } from '../../shared/review-owner-context.js';
 import type { StreamHandler } from '../server.js';
@@ -28,10 +29,6 @@ import { familyForClient } from '../model-registry.js';
 import { runWithClientProviderContext } from '../../analyze/context/shaper-provider.js';
 import { handleAnalyzeStep } from './analyze-step/handler.js';
 import { handleBuildStep } from './build-step/handler.js';
-import { DEFAULT_DEPS as CODE_REVIEW_DEFAULT_DEPS, handleCodeReviewStep, withStepClient } from './code-review-step/handler.js';
-import type { CodeReviewStepDeps } from './code-review-step/handler.js';
-import { handleReviewStep } from './review-step/handler.js';
-import type { ReviewStepDeps } from './review-step/types.js';
 import { handleTriageStep } from './triage-step/handler.js';
 import { handleWorkflowStep } from './workflow-step/handler.js';
 import { registerParkOffer } from './workflow-step/park-offer.js';
@@ -57,9 +54,7 @@ export interface StepHostOptions {
 	/** Test seam: replace or add tool runners. */
 	readonly tools?: Partial<Record<string, StepToolRunner>> | undefined;
 	/** Test seam: the code-review deps the client and signal are added to. */
-	readonly codeReviewDeps?: CodeReviewStepDeps | undefined;
 	/** Test seam: the review deps the signal and progress are added to. */
-	readonly reviewDeps?: ReviewStepDeps | undefined;
 }
 
 /** The table of the seven tools. Only the review and code-review waits take
@@ -74,14 +69,13 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 	registerParkOffer();
 	// The team gate waits for signoff the policy requires: it registers the completion hook and records through this daemon's lifecycle registry.
 	registerSignoff();
-	const codeReviewBase = opts.codeReviewDeps ?? CODE_REVIEW_DEFAULT_DEPS;
 	const table: Record<StepToolName, StepToolRunner> = {
 		insrc_analyze:          (args, _signal, _progress, execution) => runAnalyzeOneShot(args, {}, execution),
 		insrc_analyze_step:     (args, _signal, _progress, execution) => handleAnalyzeStep(args, execution),
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),
-		insrc_review_step:      (args, signal, progress) => handleReviewStep(args, { ...opts.reviewDeps, signal, ...(progress !== undefined ? { progress } : {}) }),
-		insrc_code_review_step: (args, signal, progress) => handleCodeReviewStep(args, { ...withStepClient(codeReviewBase), signal, ...(progress !== undefined ? { progress } : {}) }),
+		insrc_review_step:      async () => reviewUnavailable(),
+		insrc_code_review_step: async () => reviewUnavailable(),
 		insrc_triage:           (args) => handleTriageStep(args),
 	};
 	return { ...table, ...opts.tools } as Record<string, StepToolRunner>;

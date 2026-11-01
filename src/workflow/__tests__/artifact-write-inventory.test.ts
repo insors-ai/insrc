@@ -59,21 +59,15 @@ test('every writer file is inventoried, annotated and classified as the design s
 	for (const f of ['src/daemon/steps/review-step/phases/findings.ts', 'src/daemon/steps/review-step/phases/verdicts.ts', 'src/workflow/review/run-artifact.ts']) assert.equal(byFile.has(f), false, `${f} needs no entry`);
 	for (const f of [
 		'src/daemon/steps/workflow-step/phases/synthesize.ts', 'src/daemon/workflow-rpc.ts', 'src/workflow/resolve-comment.ts',
-		'src/workflow/runners/build/standalone-record.ts', 'src/workflow/code-review/runner.ts', 'src/workflow/runners/build/test-record.ts', 'src/daemon/steps/code-review-step/handler.ts',
+		'src/workflow/runners/build/standalone-record.ts', 'src/workflow/runners/build/test-record.ts',
 	]) assert.equal(classOf(f), 'content', f);
-	for (const f of ['src/workflow/gates.ts', 'src/workflow/review/resolve.ts']) assert.equal(classOf(f), 'mixed', f);
+	for (const f of ['src/workflow/gates.ts']) assert.equal(classOf(f), 'mixed', f);
 	// an amendment is a head written through the lifecycle service, so its store has no writer of its own
 	assert.equal(byFile.has('src/workflow/amendments/store.ts'), false, 'the amendment store needs no entry');
 	assert.equal(classOf('src/daemon/steps/workflow-step/resume.ts'), 'migration');
 	// feedback is a sidecar line of the FeedbackService: no body writer is left to inventory
 	assert.equal(byFile.has('src/workflow/artifacts/provenance/writer.ts'), false, 'the body writer is gone');
 
-	// the code-review step handler injects the runner's revision-minting writer and holds no raw writer
-	const handler = read('src/daemon/steps/code-review-step/handler.ts');
-	assert.match(handler, /write:\s+writeRecordFile/);
-	assert.equal(scanWriters(handler).rawCalls.length, 0, 'the handler has no raw writer of its own');
-	assert.equal(classOf('src/daemon/steps/code-review-step/handler.ts'), 'content');
-	assert.match(read('src/workflow/code-review/runner.ts'), /write:\s+writeRecordFile/);
 });
 
 test('the detector flags raw, aliased and injected writers and accepts the positive controls', async () => {
@@ -175,7 +169,7 @@ test('the detector reports appendFileSync in every form, an unlisted appendSidec
 	// every file that now holds an appendFileSync has an entry
 	for (const f of [
 		'src/daemon/fatal.ts', 'src/daemon/shutdown.ts', 'src/daemon/steps/analyze-step/handler.ts', 'src/daemon/steps/build-step/handler.ts',
-		'src/daemon/steps/workflow-step/handler.ts', 'src/daemon/steps/review-step/handler.ts', 'src/config/feedback.ts', 'src/workflow/storage.ts',
+		'src/daemon/steps/workflow-step/handler.ts', 'src/config/feedback.ts', 'src/workflow/storage.ts',
 	]) {
 		assert.ok(byFile.has(f), `${f} has an inventory entry`);
 		assert.ok(scanWriters(read(f)).calls.some(c => c.name === 'appendFileSync'), `${f} calls appendFileSync`);
@@ -200,7 +194,7 @@ test('the sidecar files, the journal folder and the changed round writers are cl
 	// the durable history and journal writers are not artifact heads
 	for (const f of ['src/workflow/artifact-core/sidecar.ts', 'src/workflow/artifact-core/sidecar-store.ts', 'src/workflow/artifact-core/journal.ts']) assert.equal(classOf(f), 'non-artifact', f);
 	// the round writers that now store through the service are still content writers (the raw refresh of their json is content)
-	for (const f of ['src/workflow/runners/build/standalone-record.ts', 'src/workflow/runners/build/test-record.ts', 'src/workflow/code-review/runner.ts']) assert.equal(classOf(f), 'content', f);
+	for (const f of ['src/workflow/runners/build/standalone-record.ts', 'src/workflow/runners/build/test-record.ts']) assert.equal(classOf(f), 'content', f);
 	// appendSidecarLine is the one function that appends a history record: the store goes through it and appends only repository configuration itself
 	const sidecar = scanWriters(read('src/workflow/artifact-core/sidecar.ts'), 'src/workflow/artifact-core/sidecar.ts');
 	assert.equal(sidecar.rawCalls.filter(c => c.name === 'appendFileSync').length, 1, 'one raw append in sidecar.ts');

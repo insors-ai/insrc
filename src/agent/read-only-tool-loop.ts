@@ -16,8 +16,8 @@
  */
 
 import { preflightProviderReviewBudget, resolveReviewBudgetPolicy, reviewPromptChars, reviewToolsJson, reviewWireSchemaJson } from './providers/review-budget.js';
-import { measureReviewBudget, ReviewBudgetError } from '../workflow/review-pipeline/budget.js';
-import { safeReviewId } from '../workflow/review-pipeline/call-events.js';
+import { measureReviewBudget, ReviewBudgetError } from './providers/budget/accounting.js';
+import { safeReviewId } from './providers/budget/identity.js';
 import type { ReviewExecutionBudget } from '../shared/review-budget.js';
 import { assertExplicitConnectionExecution, ConnectionExecutionError } from '../shared/step-context.js';
 import type { ConnectionExecutionContext } from '../shared/step-context.js';

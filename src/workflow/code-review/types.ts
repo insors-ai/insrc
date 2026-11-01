@@ -26,7 +26,6 @@ import type { LldArtifact } from '../artifacts/lld.js';
 import type { PlanArtifact } from '../artifacts/plan.js';
 import type { BuildRecord } from '../runners/build/standalone-record.js';
 import type { TestRecord } from '../runners/build/test-record.js';
-import type { PipelineCalls, ReviewMaterialSnapshot } from '../review-pipeline/types.js';
 
 // ---------------------------------------------------------------------------
 // sc3 — the per-dimension finding vocabulary (owned here, emitted by s2-s5)
@@ -94,7 +93,6 @@ export interface DimensionResult {
 	readonly parts?: { readonly map: number; readonly reduce: number; readonly compare: number } | undefined;
 	/** Calls the review pipeline made per role when the dimension was divided (Epic
 	 *  8315a11f). Absent on a single-chunk review; `parts` is no longer written. */
-	readonly pipelineCalls?: PipelineCalls | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -132,11 +130,9 @@ export interface JudgeContext {
 	/** 'degraded' when the grounding is the diff, not the graph. */
 	readonly groundingMode: 'full' | 'degraded';
 	/** The review's snapshot, taken once by runCodeReview (Epic 8315a11f); absent: the judge takes it. */
-	readonly snapshot?: ReviewMaterialSnapshot | undefined;
 	/** Cancels the review, including a call in flight. */
 	readonly signal?: AbortSignal | undefined;
 	/** Told as each review pipeline call of the judge starts (ISSUE-1973e125). */
-	readonly onCallEvent?: ((event: import('../review-pipeline/call-events.js').ReviewCallEvent) => void) | undefined;
 	readonly onCall?: ((call: { readonly stage: string; readonly role: string }) => void) | undefined;
 }
 
@@ -220,7 +216,6 @@ export type CodeReviewSubjectResult =
  *  second interpretation is needed. */
 export interface CodeReviewBody {
 	readonly kind:       'code-review';
- readonly callEvents?: readonly import('../review-pipeline/call-events.js').ReviewCallEvent[] | undefined;
 	readonly epicHash:   string;
 	readonly storyId:    string;
 	/** How the review was grounded: `'full'` = the graph-grounded path (the four

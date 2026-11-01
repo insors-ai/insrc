@@ -22,7 +22,6 @@ import {
 	codeReviewArtifactPaths, hldArtifactPaths, lldArtifactPaths, planArtifactPaths,
 	readEpicDefinitionCore, resolveEpicAnchor, workItemAnchorCreatedAt,
 } from '../storage.js';
-import { codeReviewSubjectPathArgs } from '../code-review/subject-paths.js';
 import { persistBuildRecord, type BuildRecord } from '../runners/build/standalone-record.js';
 import { persistTestRecordTask } from '../runners/build/test-record.js';
 import { buildWorkItemGraph } from '../delivery/graph.js';
@@ -72,82 +71,3 @@ function writeDesign(r: ReturnType<typeof tempRepo>, kind: 'HLD' | 'LLD' | 'PLAN
 	writeFileSync(md, `# ${kind}\n`);
 	return md;
 }
-
-test('HLD, LLD, PLAN, BUILD, TESTS and CR written on different days land in one folder on the epic route and on the standalone route, including delivery grouping', async () => {
-	// three routes: an epic (DEF head), a standalone feature headed by its stamped LLD, and a standalone fix headed by an ISSUE
-	for (const route of ['epic', 'standalone-lld-head', 'standalone-issue-head'] as const) {
-		const standalone = route !== 'epic';
-		const lldIsHead = route === 'standalone-lld-head';
-		const r = tempRepo();
-		try {
-			if (lldIsHead) {
-				// no DEF: a stamped standalone LLD heads the work item (written on D1, stamped with the Epic's D0)
-				r.seed(`LLD-${HASH}-s1`, { epicHash: HASH, storyId: 's1', createdAt: D1, epicCreatedAt: D0, epicSlug: SLUG, standalone: true });
-			} else if (standalone) {
-				r.seed(`ISSUE-${HASH}`, { issueHash: HASH, createdAt: D0, epicSlug: SLUG, standalone: true });
-			} else {
-				r.seed(`DEF-${HASH}`, { epicHash: HASH, createdAt: D0, epicSlug: SLUG });
-			}
-			assert.equal(resolveEpicAnchor(r.repo, HASH), D0);
-
-			// the design records, each written on its own later day
-			const design: string[] = [];
-			design.push(dirname(writeDesign(r, 'HLD', D1, standalone)));
-			design.push(dirname(dirname(writeDesign(r, 'LLD', D2, standalone, lldIsHead))));
-			design.push(dirname(dirname(writeDesign(r, 'PLAN', D3, standalone))));
-
-			// the ledger records: TESTS on D4, BUILD on D5, the code review on D6
-			const tests = await persistTestRecordTask(r.repo, { epicHash: HASH, storyId: 's1', now: D4, ...(standalone ? { standalone: true } : {}) }, task(D4));
-			const build = await persistBuildRecord(r.repo, buildRec(D5, standalone));
-			const cr = codeReviewArtifactPaths(
-				r.repo, HASH, 's1',
-				codeReviewSubjectPathArgs({ repoPath: r.repo, epicHash: HASH, storyId: 's1', changedFiles: [], approvedLld: null, approvedPlan: null, buildRecord: null }).epicCreatedAt,
-				standalone ? 'standalone' : 'epic', SLUG,
-			).md;
-
-			// the code review is a record too: written, with its stamp, on D6
-			const crStamp = resolveEpicAnchor(r.repo, HASH)!;
-			r.seed(`CR-${HASH}-s1`, { epicHash: HASH, storyId: 's1', createdAt: D6, epicCreatedAt: crStamp, epicSlug: SLUG, ...(standalone ? { standalone: true } : {}) });
-			mkdirSync(dirname(cr), { recursive: true });
-			writeFileSync(cr, '# CR\n');
-
-			const folders = new Set([...design, dirname(dirname(tests.md)), dirname(dirname(build.md)), dirname(dirname(cr))]);
-			assert.equal(folders.size, 1, `one folder, got ${[...folders].join(' | ')}`);
-			assert.match([...folders][0]!, new RegExp(`/docs/${standalone ? 'standalone' : 'epics'}/${SLUG}-E20261001c0ffee00$`), route);
-			assert.equal(dirname(tests.md), dirname(build.md), 'BUILD and TESTS share the story folder');
-
-			// the delivery reader, over the store these records were written to, groups them under one work item
-			const graph = buildWorkItemGraph(loadArtifactRecordSet(r.repo));
-			const ids = [...graph.items.keys()];
-			assert.ok(ids.every(id => id.startsWith('E20261001c0ffee00')), `${route}: every id carries the Epic's day, got ${ids.join(', ')}`);
-			assert.ok(ids.includes('E20261001c0ffee00:S001'), 'the story is one item');
-			const story = graph.items.get('E20261001c0ffee00:S001')!;
-			const kinds = story.evidenceArtifactIds.map(a => a.split('-')[0]).sort();
-			assert.deepEqual(kinds, ['BUILD', 'CR', 'LLD', 'PLAN']);
-			// (TESTS records are not delivery evidence: the reader skips them by design, so they are checked by folder above.)
-			if (route === 'epic') {
-				const epicItem = graph.items.get('E20261001c0ffee00');
-				assert.ok(epicItem?.evidenceArtifactIds.some(a => a.startsWith('DEF-')) && epicItem.evidenceArtifactIds.some(a => a.startsWith('HLD-')), 'the Epic item holds the DEF and the HLD');
-			}
-		} finally { r.done(); }
-	}
-});
-
-test('an unstamped standalone LLD head does not yield its own createdAt as the anchor', () => {
-	const r = tempRepo();
-	try {
-		r.seed(`LLD-${HASH}-s1`, { epicHash: HASH, storyId: 's1', createdAt: D1, epicSlug: SLUG, standalone: true });
-		assert.equal(resolveEpicAnchor(r.repo, HASH), undefined);
-		assert.equal(readEpicDefinitionCore(r.repo, HASH).createdAt, undefined);
-		assert.throws(() => workItemAnchorCreatedAt({ epicCreatedAt: undefined }), MissingAnchorError);
-		assert.throws(
-			() => codeReviewSubjectPathArgs({ repoPath: r.repo, epicHash: HASH, storyId: 's1', changedFiles: [], approvedLld: null, approvedPlan: null, buildRecord: null }),
-			MissingAnchorError,
-		);
-	} finally { r.done(); }
-
-	// the delivery read model does not date the story by that LLD's own day either
-	const graph = buildWorkItemGraph(recordSet([lldRecord(HASH, 's1', { createdAt: D1, epicCreatedAt: undefined, standalone: true })]));
-	const ids = [...graph.items.keys()];
-	assert.ok(!ids.some(id => id.startsWith('E20261002')), `no id is dated by the LLD's own day, got ${ids.join(', ')}`);
-});

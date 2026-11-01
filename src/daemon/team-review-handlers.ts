@@ -1,3 +1,4 @@
+import { reviewUnavailable } from '../workflow/review-unavailable.js';
 /**
  * The team and review operations at the daemon (Story s10): team.refresh, team.claim, team.release, workflow.reviewArtifact and
  * workflow.resolveFinding. Each returns what the terminal's service returned and reaches the tracker and git only through the registry
@@ -80,37 +81,7 @@ export interface ReviewArtifactDeps {
  * `workflow.reviewArtifact` {repoPath, artifactPath}: review the artifact (its .md path) with the provider the role router resolves for the
  * `review` role, in the daemon. The resulting `block` verdict is what an approval then enforces.
  */
-export async function handleReviewArtifact(params: unknown, deps: ReviewArtifactDeps = {}): Promise<ReviewArtifactResult> {
-	const p = (params ?? {}) as { repoPath?: unknown; artifactPath?: unknown };
-	const repoPath = repoOf('workflow.reviewArtifact', p);
-	if (typeof p.artifactPath !== 'string' || p.artifactPath.length === 0) throw new Error('workflow.reviewArtifact: `artifactPath` is required');
-	const artifactPath = p.artifactPath;
-	const router = createRoleRouter({});
-	return await runWithRoutingContext({ router, repoPath }, async () => {
-		const { provider, resolution } = router.resolveProviderForRole('review', loadAnalyzeConfig(), repoPath);
-		return await (deps.review ?? reviewArtifactFile)({
-			mdPath:     artifactPath,
-			jsonPath:   jsonPathForMd(artifactPath),
-			repo:       repoPath,
-			lifecycle:  lifecycleFor(repoPath).service,
-			provider,
-			model:      `${resolution.runner}:${resolution.model}`,
-			reviewedAt: new Date().toISOString(),
-		});
-	});
-}
+export async function handleReviewArtifact(params: unknown, deps: ReviewArtifactDeps = {}): Promise<ReviewArtifactResult> { return reviewUnavailable(); }
 
 /** `workflow.resolveFinding` {artifactPath, findingId, action, note?}: resolve one review finding (apply | accept | override | defer). */
-export async function handleResolveFinding(params: unknown): Promise<ResolveReviewResult | { error: string; refusal: { kind: 'team-refused'; text: string } }> {
-	const p = (params ?? {}) as { artifactPath?: unknown; findingId?: unknown; action?: unknown; note?: unknown };
-	if (typeof p.artifactPath !== 'string' || p.artifactPath.length === 0) throw new Error('workflow.resolveFinding: `artifactPath` is required');
-	if (typeof p.findingId !== 'string' || p.findingId.length === 0) throw new Error('workflow.resolveFinding: `findingId` is required');
-	if (p.action !== 'apply' && p.action !== 'accept' && p.action !== 'override' && p.action !== 'defer') throw new Error('workflow.resolveFinding: `action` must be apply, accept, override or defer');
-	try {
-		return await resolveReviewFinding(p.artifactPath, jsonPathForMd(p.artifactPath), p.findingId, p.action as ReviewAction, typeof p.note === 'string' ? p.note : undefined);
-	} catch (err) {
-		// applying a finding changes the stage: a team repo refuses it for anyone but the holder, and the terminal prints that in its own words
-		if (err instanceof TeamGateRefusedError) return { error: err.message, refusal: { kind: 'team-refused', text: err.reason } };
-		throw err;
-	}
-}
+export async function handleResolveFinding(params: unknown): Promise<ResolveReviewResult | { error: string; refusal: { kind: 'team-refused'; text: string } }> { return reviewUnavailable(); }

@@ -21,8 +21,6 @@ import type { CodeReviewEvidence, CompletionEvidence } from './lifecycle.js';
 export interface CompletionEvidenceOptions {
 	/** The override reason the approval carries; it wins over one stored on the records. */
 	readonly overrideReview?: string | undefined;
-	/** Overrides the `codeReview.enforce` flag, as for the gate itself. */
-	readonly enforce?: boolean | undefined;
 	/** Where a Task's build rounds are read from; the repository's own history files by default. */
 	readonly history?: Pick<History, 'log'> | undefined;
 }
@@ -63,7 +61,6 @@ export function createCompletionEvidence(repoPath: string, options: CompletionEv
 			const reason = explicit ?? stored;
 			const result = enforceCodeReviewGate(repoPath, epicHash, storyId, {
 				...(reason !== undefined ? { overrideReview: reason } : {}),
-				...(options.enforce !== undefined ? { enforce: options.enforce } : {}),
 			});
 			switch (result.status) {
 				case 'no-review': return { kind: 'missing' };

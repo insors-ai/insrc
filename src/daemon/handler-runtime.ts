@@ -610,19 +610,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'codeReview.task.assignment': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'assignment'),
 		'codeReview.task.scope': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'scope'),
 		'codeReview.task.result': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'result'),
-		'codeReview.grounding': async (params) => {
-			const p = (params ?? {}) as { repo?: string; epicHash?: string; storyId?: string };
-			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';
-			if (repoPath.length === 0) { return { error: 'codeReview.grounding: `repo` is required' }; }
-			if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) { return { error: 'codeReview.grounding: `epicHash` is required' }; }
-			if (typeof p.storyId !== 'string' || p.storyId.length === 0) { return { error: 'codeReview.grounding: `storyId` is required' }; }
-			const { resolveCodeReviewSubject } = await import('../workflow/code-review/subject.js');
-			const subject = await resolveCodeReviewSubject(repoPath, p.epicHash, p.storyId);
-			if (!subject.ok) { return { ok: false as const, reason: subject.reason }; }
-			const { assembleCodeReviewGrounding, realGroundingDeps } = await import('../workflow/code-review/grounding.js');
-			const grounding = await assembleCodeReviewGrounding(repoPath, subject.subject.changedFiles, await realGroundingDeps());
-			return { ok: true as const, grounding };
-		},
+		'codeReview.grounding': async () => { throw new Error('PENDING REVIEW RE-IMPLEMENTATION'); },
 
 		// Code-review s9 — the indexing-readiness freshness check. Read-only:
 		// returns { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles, unindexedFiles } for the
@@ -631,38 +619,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// index holds, once per mtime (no reindex of the repo, no store write). The controller-side gate (insrc_code_review_step) polls
 		// this before assembling grounding so a stale graph cannot yield a hollow
 		// PASS. Additive sibling of codeReview.grounding.
-		'codeReview.freshness': async (params) => {
-			const p = (params ?? {}) as { repo?: string; epicHash?: string; storyId?: string; changedFiles?: unknown };
-			const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO']) ?? '';
-			if (repoPath.length === 0) { return { error: 'codeReview.freshness: `repo` is required' }; }
-			if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) { return { error: 'codeReview.freshness: `epicHash` is required' }; }
-			if (typeof p.storyId !== 'string' || p.storyId.length === 0) { return { error: 'codeReview.freshness: `storyId` is required' }; }
-			const changedFiles = Array.isArray(p.changedFiles) ? p.changedFiles.filter((f): f is string => typeof f === 'string') : [];
-			const { computeCodeReviewFreshness, realFreshnessGraphDeps } = await import('../workflow/code-review/freshness.js');
-			const graphDeps = await realFreshnessGraphDeps();
-			const repos = await listRepos(db);
-			const repoRow = repos.find(r => r.path === repoPath);
-			const computed = await computeCodeReviewFreshness(repoPath, changedFiles, {
-				codeIndexWork: (r: string) => queue.codeIndexWorkFor(r),
-				repoLastIndexed: async () => {
-					const li = repoRow?.lastIndexed;
-					if (li === undefined) return 0;
-					const ms = typeof li === 'number' ? li : Date.parse(String(li));
-					return Number.isFinite(ms) ? ms : 0;
-				},
-				requestedAt: (r: string, f: string) => freshnessRequests.get(isAbsolute(f) ? f : join(r, f)),
-				...graphDeps,
-			});
-			// The reply: the FreshnessResult, after the unindexed files were queued and the queue state re-read.
-			if (computed.unindexedFiles.length === 0) return computed;
-			for (const file of computed.unindexedFiles) {
-				const filePath = isAbsolute(file) ? file : join(repoPath, file);
-				queue.enqueue({ kind: 'file', filePath, event: 'update' });
-				freshnessRequests.set(filePath, Date.now());
-			}
-			const work = await queue.codeIndexWorkFor(repoPath);
-			return { ...computed, isProcessing: work.inFlight || work.pending > 0, inFlight: work.inFlight, pendingCodeIndexJobs: work.pending };
-		},
+		'codeReview.freshness': async () => { throw new Error('PENDING REVIEW RE-IMPLEMENTATION'); },
 
 		'repo.reindex': async (params) => {
 			const { path: repoPath } = params as { path: string };
@@ -1721,7 +1678,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'workflow.review': async (params, send, signal) => {
 			const mod = await import('./workflow-review-rpc.js');
 			const { lifecycleFor } = await import('./lifecycle-registry.js');
-			return mod.workflowReviewStart(params, send, signal, { lifecycleFor: repoPath => lifecycleFor(repoPath).service });
+			return mod.workflowReviewStart(params, send, signal, { lifecycleFor: (repoPath: string) => lifecycleFor(repoPath).service });
 		},
 		// The step host (Epic c2ba6fa6, Story s11): runs one of the seven step
 		// tools for an MCP forwarder, in the caller's context, with this

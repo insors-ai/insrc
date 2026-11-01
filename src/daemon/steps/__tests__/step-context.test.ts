@@ -25,8 +25,6 @@ import {
 import { familyForClient } from '../../model-registry.js';
 import type { StepCallContext } from '../../../shared/step-context.js';
 import { runAnalyzeOneShot } from '../analyze-oneshot.js';
-import { DEFAULT_DEPS, handleCodeReviewStep, withStepClient } from '../code-review-step/handler.js';
-import type { CodeReviewStepDeps } from '../code-review-step/handler.js';
 import { resolveRepoPath } from '../resolve-repo.js';
 
 const CALLER_CWD  = '/caller/workspace';
@@ -67,30 +65,6 @@ test("resolveRepoPath inside a step call uses the context's cwd and envRepo, not
 	});
 });
 
-test("the code-review handler's repo fallback reads the context's INSRC_REPO inside a step call and the process's outside one", async () => {
-	await withProcessEnvRepo(PROCESS_REPO, async () => {
-		const subjectsFor: string[] = [];
-		const deps: CodeReviewStepDeps = {
-			...DEFAULT_DEPS,
-			resolveSubject: async (repo) => { subjectsFor.push(repo); return { ok: false, reason: 'stop here' }; },
-		};
-		const start = { phase: 'start', epicHash: 'e1', storyId: 's1' };
-
-		await runInStepContext({ cwd: CALLER_CWD, envRepo: CALLER_REPO }, () => handleCodeReviewStep(start, deps));
-		assert.deepEqual(subjectsFor, [CALLER_REPO]);
-
-		// A caller with no INSRC_REPO: no-repo, even though this process has one.
-		const none = await runInStepContext({ cwd: CALLER_CWD }, () => handleCodeReviewStep(start, deps));
-		const parsed = JSON.parse(none.content[0]!.text) as { next: string; error?: { code: string } };
-		assert.equal(parsed.next, 'error');
-		assert.equal(parsed.error?.code, 'no-repo');
-		assert.deepEqual(subjectsFor, [CALLER_REPO]);
-
-		await handleCodeReviewStep(start, deps);
-		assert.deepEqual(subjectsFor, [CALLER_REPO, PROCESS_REPO]);
-	});
-});
-
 test("scope directoryOf: a bare file name inside a step call resolves against the context's cwd, and outside one against process.cwd()", async () => {
 	const deps: ScopeDeps = {
 		listRepos:           async () => [],
@@ -105,32 +79,6 @@ test("scope directoryOf: a bare file name inside a step call resolves against th
 	// A path with a directory is unaffected by the context.
 	const nested = await runInStepContext({ cwd: CALLER_CWD }, () => resolveScope({ kind: 'file', value: join('docs', 'notes.md') }, deps));
 	assert.equal(nested.lookupPath, 'docs');
-});
-
-test("client identity: the context holds 'claude' / 'codex'; the code-review deps receive it as is and the one-shot analyze runs in the family it implies ('cli-claude' / 'cli-codex')", async () => {
-	assert.equal(familyForClient(undefined), undefined);
-	for (const [client, kind] of [['claude', 'cli-claude'], ['codex', 'cli-codex']] as const) {
-		assert.equal(familyForClient(client), kind);
-		const ctx: StepCallContext = { cwd: CALLER_CWD, client };
-
-		// Code review: as it is.
-		const deps = await runInStepContext(ctx, async () => withStepClient(DEFAULT_DEPS));
-		assert.equal(deps.client, client);
-
-		// One-shot analyze: the run is inside runWithClientProviderContext of the converted kind.
-		let seen: string | undefined = 'not called';
-		const fakeBuildRun = (async () => { seen = currentClientProviderKind(); throw new Error('stop after the run starts'); }) as unknown as NonNullable<Parameters<typeof runAnalyzeOneShot>[1]>['buildRun'];
-		await assert.rejects(runInStepContext(ctx, () => runAnalyzeOneShot({ repo: '/explicit', focus: 'q' }, { buildRun: fakeBuildRun })), /stop after the run starts/);
-		assert.equal(seen, kind);
-	}
-
-	// Outside a step call: no client, deps unchanged, and no client provider context around the run.
-	assert.equal(stepClient(), undefined);
-	assert.equal(withStepClient(DEFAULT_DEPS), DEFAULT_DEPS);
-	let seen: string | undefined = 'not called';
-	const fakeBuildRun = (async () => { seen = currentClientProviderKind(); throw new Error('stop'); }) as unknown as NonNullable<Parameters<typeof runAnalyzeOneShot>[1]>['buildRun'];
-	await assert.rejects(runAnalyzeOneShot({ repo: '/explicit', focus: 'q' }, { buildRun: fakeBuildRun }), /stop/);
-	assert.equal(seen, undefined);
 });
 
 test('step context isolation: two concurrent contexts each see their own cwd and client', async () => {

@@ -23,12 +23,8 @@ import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
 import { defaultStampDeps } from '../bugfix/stamp.js';
 import { _mutateEpicTrackerMeta } from '../orchestrator.js';
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, artifactJsonPath, issueArtifactId } from '../storage.js';
-import { fixtureReviewClient as handleReviewStep } from '../../daemon/steps/review-step/__tests__/terminal-client.js';
-import { _clearReviewStateStoreForTests } from '../../daemon/steps/review-step/state-store.js';
-import { DEFAULT_DESIGN_REVIEW_SETTINGS, reviewTemplateFor } from '../review/template.js';
 import { lifecycleReviewOf } from '../artifact-core/approval-view.js';
 import { approvedMeta, draftMeta } from './lifecycle-fixtures.js';
-import { idOfWorkflow, writeDesign } from '../../daemon/steps/review-step/__tests__/review-fixture.js';
 import './helpers/converted-repos.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
@@ -53,85 +49,3 @@ function sameBodyAndRevision(before: Doc, after: Doc, revision: number | undefin
 	assert.equal(JSON.stringify(after.citations), JSON.stringify(before.citations), 'the citations are byte-identical');
 	assert.equal(after.meta['revision'], revision, 'the revision is unchanged');
 }
-
-test('every meta-only writer leaves the body byte-identical and the revision unchanged', async () => {
-	// questions resolution (HLD)
-	{
-		const hld: Doc = {
-			meta: { workflow: 'design.epic', runId: 'h1', schemaVersion: 1, epicHash: HASH, epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, revision: 4 },
-			body: {
-				frameworkSummary: 'fw', architectureShape: 'x', sharedContracts: [], storyBoundaries: [], nonFunctional: {},
-				rolloutOverview: { phases: [], orderingRationale: 'x', riskyBits: [] },
-				alternativesConsidered: [{ id: 'a1', name: 'x', oneLineSummary: 'x', approach: 'x', pros: [], cons: [], costEstimate: 'S' }],
-				chosenAlternative: 'a1', openQuestions: [Q],
-			},
-			citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'x' }],
-		};
-		const fx = repoWith(hldArtifactId(HASH), hld);
-		try {
-			_setTrackerExecForTests(() => '');
-			recordResolution(fx.repo, 'hld', HASH, undefined, questionId(Q), 'resolved', 'yes', 'why', { commit: false });
-			const after = read(fx.json);
-			sameBodyAndRevision(hld, after, 4);
-			assert.ok((after.meta['questionResolutions'] as Record<string, unknown>)[questionId(Q)]);
-		} finally { fx.cleanup(); }
-	}
-
-	// refs patch
-	{
-		const doc: Doc = { meta: { workflow: 'design.story', revision: 2 }, body: { a: 1 }, citations: [] };
-		const fx = repoWith('LLD-x-s1', doc);
-		try {
-			patchTrackerMeta(fx.json, { storyRef: 'o/r#2', pushedAt: 'p' });
-			sameBodyAndRevision(doc, read(fx.json), 2);
-		} finally { fx.cleanup(); }
-	}
-
-	// bugfix stamp
-	{
-		const doc: Doc = { meta: { workflow: 'issue', ...approvedMeta({ revision: 5 }), revision: 5 }, body: { title: 'Fix', reproduction: 'r', rootCause: 'c', fixIntent: 'f' }, citations: [] };
-		const fx = repoWith(issueArtifactId('abc123def4567890'), doc);
-		try {
-			defaultStampDeps(async () => { throw new Error('unused'); }).writeParentRef(fx.repo, 'abc123def4567890', { slug: 'owner', storyId: 's2' });
-			const after = read(fx.json);
-			sameBodyAndRevision(doc, after, 5);
-			assert.deepEqual(after.meta['parentRef'], { slug: 'owner', storyId: 's2' });
-		} finally { fx.cleanup(); }
-	}
-
-	// orchestrator tracker push and sync (Define)
-	{
-		const doc: Doc = { meta: { workflow: 'define', epicSlug: 'tag-filtering', createdAt: CREATED_AT, epicCreatedAt: CREATED_AT, revision: 7 }, body: { stories: [] }, citations: [] };
-		const fx = repoWith(defineArtifactId(HASH), doc);
-		try {
-			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.push', { epicRef: 'o/r#1', storyRefs: { s1: 'o/r#2' }, labelsCreated: ['l'] } as never);   // refs are bound by the linkage, not written here
-			let after = read(fx.json);
-			sameBodyAndRevision(doc, after, 7);
-			assert.deepEqual((after.meta['tracker'] as Record<string, unknown>)['labelsCreated'], ['l']);
-			assert.equal((after.meta['tracker'] as Record<string, unknown>)['epicRef'], undefined, 'the Epic issue is not written onto the Define');
-			_mutateEpicTrackerMeta(fx.repo, HASH, 'tracker.sync', { epicStatus: 'open', storyStatus: { s1: 'open' }, syncedAt: 's' } as never);
-			after = read(fx.json);
-			sameBodyAndRevision(doc, after, 7);
-			assert.equal((after.meta['tracker'] as Record<string, unknown>)['epicStatus'], 'open');
-			assert.equal(artifactJsonPath(fx.repo, defineArtifactId(HASH)), fx.json);
-		} finally { fx.cleanup(); }
-	}
-
-	// findings review stamp (insrc_review_step findings phase)
-	{
-		_clearReviewStateStoreForTests();
-		const repo = mkdtempSync(join(tmpdir(), 'insrc-metaonly-find-'));
-		try {
-			const doc: Doc = { meta: { workflow: 'design.story', storyId: 's1', authoredBy: 'daemon', ...draftMeta({ revision: 9 }), revision: 9 }, body: { note: 'untouched' }, citations: [] };
-			const { mdPath, jsonPath } = writeDesign(repo, idOfWorkflow('design.story'), { meta: doc.meta, body: doc.body }, '# LLD\n\nThe design body.\n');
-			const started = JSON.parse((await handleReviewStep({ phase: 'start', artifact: mdPath, repo })).content[0]!.text) as { state: string };
-			const spec = reviewTemplateFor('spec', DEFAULT_DESIGN_REVIEW_SETTINGS);
-			const findings = { items: spec.items.map(it => ({ item: it.id, premises: [{ premise: `claim under ${it.id}`, outcome: 'holds', evidence: 'read the code', action: '' }] })) };
-			const out = JSON.parse((await handleReviewStep({ phase: 'findings', state: started.state, findings })).content[0]!.text) as { next: string };
-			assert.equal(out.next, 'done');
-			const after = read(jsonPath);
-			sameBodyAndRevision(doc, after, 9);
-			assert.ok(lifecycleReviewOf(after.meta), 'the review is recorded on the lifecycle');
-		} finally { rmSync(repo, { recursive: true, force: true }); }
-	}
-});

@@ -31,7 +31,8 @@ import { typescriptParser } from '../parser/typescript.js';
 import { resolveRelations } from '../resolver.js';
 import { runCrossFileResolver } from '../cross-file-resolver.js';
 import { detectSourceRoots } from '../source-roots.js';
-import { assembleCodeReviewGrounding, realGroundingDeps } from '../../workflow/code-review/grounding.js';
+import { listEntitiesForRepo } from '../../db/entities.js';
+import { findCallers } from '../../db/search.js';
 
 useTemporaryLance();
 
@@ -70,18 +71,14 @@ async function indexFile(file: string): Promise<void> {
 	await upsertRelations(null, resolveRelations(result.relations, file, repo, result.entities));
 }
 
-test('a test file whose test callback calls an imported function is listed in that function\'s testsReaching', async () => {
-	const lib = join(repo, 'src', 'lib.ts');
-	const testFile = join(repo, 'src', '__tests__', 'lib.test.ts');
-	await indexFile(lib);
-	await indexFile(testFile);
-	const cf = await runCrossFileResolver({ db: null, repoRoot: repo, sourceRoots: detectSourceRoots(repo) });
-	assert.ok(cf.resolved >= 1, `the cross-file resolver resolved the call: ${JSON.stringify(cf)}`);
-
-	// The store and the review's changed files both name a file repo-relative.
-	const grounding = await assembleCodeReviewGrounding(repo, ['src/lib.ts'], await realGroundingDeps());
-	const add = grounding.symbols.find(s => s.name === 'add');
-	assert.ok(add, `add is a changed symbol: ${JSON.stringify(grounding.symbols.map(s => s.name))}`);
-	assert.deepEqual(add.callers, [testFile], 'the test file entity is add\'s caller');
-	assert.deepEqual(add.testsReaching, [`src/__tests__/lib.test.ts#${testFile}`]);
+test('a test callback calling an imported function retains its graph caller', async () => {
+ const lib = join(repo, 'src', 'lib.ts');
+ const testFile = join(repo, 'src', '__tests__', 'lib.test.ts');
+ await indexFile(lib);
+ await indexFile(testFile);
+ const result = await runCrossFileResolver({ db: null, repoRoot: repo, sourceRoots: detectSourceRoots(repo) });
+ assert.ok(result.resolved >= 1);
+ const add = (await listEntitiesForRepo(null, repo)).find(e => e.name === 'add');
+ assert.ok(add);
+ assert.deepEqual((await findCallers(null, add.id)).map(c => c.name), [testFile]);
 });

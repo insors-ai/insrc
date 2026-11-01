@@ -432,7 +432,7 @@ test('cancelling an Ollama reviewer session mid tool loop aborts the in-flight t
 });
 
 test('explicit managed profile and unsupported native-hard qualification refusal', async () => {
-	const { createReviewBudgetPolicy, admitReviewBudget, ReviewBudgetError } = await import('../../../workflow/review-pipeline/budget.js');
+	const { createReviewBudgetPolicy, admitReviewBudget, ReviewBudgetError } = await import('../budget/accounting.js');
 	const { reviewWireSchemaJson } = await import('../review-budget.js');
 	const fixture = await fakeOllama(() => [{ message: { role: 'assistant', content: '{"ok":true}' }, done: true }], 262144);
 	try {
@@ -473,17 +473,14 @@ test('explicit managed profile and unsupported native-hard qualification refusal
 			return complete(turns, opts);
 		};
 		const { serialiseMessages } = await import('../cli-wire.js');
-		const { requestBudget } = await import('../../../workflow/review-pipeline/measurement.js');
 		const sessionMessages: LLMMessage[] = [{ role: 'system', content: 'Review the code.' }, { role: 'user', content: 'review' }];
-		const planned = requestBudget(sessionPolicy, sessionMessages, schema, 'dispatch');
 		assert.deepEqual(await fixture.provider.runReviewSession(serialiseMessages(sessionMessages), schema, { cwd: '/tmp', deadlineMs: 5000, reviewBudget: sessionBudget, internalRetry: false }), { ok: true });
-		assert.equal(planned.promptChars, JSON.stringify((fixture.bodies[1] as unknown as { messages: unknown }).messages).length, 'planning accounts the exact flattened single-user native session prompt');
 		assert.equal(fixture.bodies.length, 3, 'one budgeted inspection turn and one budgeted final answer');
 	} finally { await fixture.close(); }
 });
 
 test('inspection growth and final structured answer cannot bypass the inclusive budget or truncate evidence', async () => {
-	const { createReviewBudgetPolicy, admitReviewBudget, measureReviewBudget, ReviewBudgetError } = await import('../../../workflow/review-pipeline/budget.js');
+	const { createReviewBudgetPolicy, admitReviewBudget, measureReviewBudget, ReviewBudgetError } = await import('../budget/accounting.js');
 	const { reviewWireSchemaJson } = await import('../review-budget.js');
 	const { toOllamaMessages } = await import('../ollama-wire.js');
 	const { readFileSync } = await import('node:fs');

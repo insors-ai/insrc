@@ -20,8 +20,8 @@ import {
 	REVIEW_SESSION_READ_TOOLS, ReviewSessionTimeoutError, CliStallError, CODEX_FIRST_OUTPUT_MS, InputTooLargeError,
 } from '../cli-provider.js';
 
-import { admitReviewBudget, createReviewBudgetPolicy, ReviewBudgetError } from '../../../workflow/review-pipeline/budget.js';
-import { envelopeSchema } from '../../../workflow/review-pipeline/envelope.js';
+import { admitReviewBudget, createReviewBudgetPolicy, ReviewBudgetError } from '../budget/accounting.js';
+
 import { reviewWireSchemaJson } from '../review-budget.js';
 import type { ReviewExecutionBudget } from '../../../shared/review-budget.js';
 
@@ -459,7 +459,7 @@ test("without effort every argv is byte-identical to today's", async () => {
 
 
 test('provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes', async () => {
-	const schema = envelopeSchema('budget-call', SCHEMA);
+	const schema = { type: 'object', required: ['callId', 'answer'], additionalProperties: false, properties: { callId: { type: 'string', const: 'budget-call' }, answer: SCHEMA } };
 	const originalSchema = JSON.stringify(schema);
 	const answer = { callId: 'budget-call', answer: { ok: true } };
 	for (const kind of ['claude', 'codex'] as const) {
@@ -503,84 +503,6 @@ test('provider profile and normalized enveloped wire schema agree before plannin
 				assert.equal(JSON.stringify(schema), originalSchema, 'strict conversion never mutates the caller schema');
 			} finally { f.cleanup(); }
 		}
-	}
-});
-
-test('review-scoped provider and driver logs redact sentinel content on all failure paths', async () => {
-	const { getLogger } = await import('../../../shared/logger.js');
-	const { createReviewJob } = await import('../../../workflow/review-pipeline/job.js');
-	const { runReviewJob } = await import('../../../workflow/review-pipeline/driver.js');
-	const { toyAdapter, toySnapshot, atom } = await import('../../../workflow/review-pipeline/__tests__/toy-adapter.js');
-	const sentinel = 'PRIVATE_SOURCE_SCHEMA_CREDENTIAL_UNKNOWN_ID';
-	const cases = [
-		{ kind: 'codex' as const, mode: 'structured' as const, step: { fail: `API Error: overloaded ${sentinel.repeat(100)}` } },
-		{ kind: 'codex' as const, mode: 'structured' as const, step: { out: JSON.stringify({ type: 'turn.failed', error: { message: sentinel.repeat(100) } }) + '\n' } },
-		{ kind: 'codex' as const, mode: 'structured' as const, step: { out: codexOk(sentinel.repeat(100)) } },
-		{ kind: 'codex' as const, mode: 'reviewer-session' as const, step: { pre: JSON.stringify({ type: 'thread.started', thread_id: sentinel }) + '\n', sleepMs: 400, out: codexOk('{}') } },
-		{ kind: 'claude' as const, mode: 'structured' as const, step: { out: JSON.stringify({ is_error: true, result: sentinel.repeat(100), modelUsage: { [sentinel]: {} } }) } },
-		{ kind: 'claude' as const, mode: 'reviewer-session' as const, step: { out: JSON.stringify({ is_error: true, result: sentinel.repeat(100) }) } },
-	];
-	const captured: unknown[] = [];
-	const restore: (() => void)[] = [];
-	for (const name of ['cli-provider', 'review-pipeline:driver', 'review-pipeline:job', 'providers:structured-output']) {
-		const logger = getLogger(name) as unknown as Record<string, (...args: unknown[]) => void>;
-		for (const level of ['info', 'warn', 'debug']) {
-			const original = logger[level]!;
-			logger[level] = (...args) => { captured.push(args); };
-			restore.push(() => { logger[level] = original; });
-		}
-	}
-	const oldTmp = process.env['TMPDIR'];
-	try {
-		for (const c of cases) {
-			if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
-			const f = fakeCli([c.step]);
-			try {
-				process.env['TMPDIR'] = f.dir;
-				const provider = new CliProvider({ kind: c.kind, binPath: f.bin, model: 'fixture' });
-				const policy = createReviewBudgetPolicy(provider.getReviewBudgetProfile(c.mode), c.mode);
-				const source = { ...atom(1), text: sentinel.repeat(10) };
-				const snapshot = toySnapshot([source]);
-				const adapter = toyAdapter(snapshot, { execution: c.mode === 'reviewer-session'
-					? { mode: 'reviewer-session', cwd: f.dir, deadlineMs: 5000, stallMs: 100, tools: 'read-only' }
-					: { mode: 'structured', cwd: f.dir } });
-				const job = createReviewJob(adapter, 'daemon', snapshot, 384000, { budgetPolicy: policy });
-				await assert.rejects(() => runReviewJob(job, adapter, provider), e => {
-					assert.ok(e instanceof Error); assert.ok(!e.message.includes(sentinel)); return true;
-				});
-				assert.ok(f.calls().length >= 1);
-				assert.ok(!existsSync(join(f.dir, 'insrc-cli-failures')), 'review output is not persisted in raw CLI failure files');
-			} finally { f.cleanup(); }
-		}
-
-  for (const mode of ['cancel', 'refuse'] as const) {
-   if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
-   const f = fakeCli([{sleepMs:1000,out:codexOk('{}')}]);
-   try {
-    const provider = new CliProvider({kind:'codex',binPath:f.bin,model:'fixture'});
-    const policy=createReviewBudgetPolicy(provider.getReviewBudgetProfile('structured'),'structured');
-    const snapshot=toySnapshot([{...atom(1),text:sentinel}]);
-    const adapter=toyAdapter(snapshot);
-    const job=createReviewJob(adapter,'daemon',snapshot,384000,{budgetPolicy:policy});
-    const controller=new AbortController();
-    const input=mode==='refuse'?{...job,pending:job.pending.map(call=>({...call,messages:[{role:'user' as const,content:sentinel.repeat(20000)}]}))}:job;
-    await assert.rejects(()=>runReviewJob(input,adapter,provider,{signal:controller.signal,onCall:()=>{if(mode==='cancel')controller.abort();}}));
-   } finally {f.cleanup();}
-  }
-		assert.ok(captured.length > 0);
-		assert.ok(!JSON.stringify(captured).includes(sentinel), 'provider/driver/structured retry logs contain no source, output, credentials or native session IDs');
-		// Non-review error reporting keeps its established full-output behavior.
-		if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
-		const f = fakeCli([{ fail: sentinel.repeat(100) }]);
-		try {
-			process.env['TMPDIR'] = f.dir;
-			const provider = new CliProvider({ kind: 'codex', binPath: f.bin });
-			await assert.rejects(() => provider.completeStructured([{ role: 'user', content: 'normal call' }], SCHEMA, { internalRetry: false }));
-			assert.ok(existsSync(join(f.dir, 'insrc-cli-failures')));
-		} finally { f.cleanup(); }
-	} finally {
-		if (oldTmp === undefined) delete process.env['TMPDIR']; else process.env['TMPDIR'] = oldTmp;
-		for (const reset of restore.reverse()) reset();
 	}
 });
 

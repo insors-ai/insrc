@@ -22,7 +22,6 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import type { LLMProvider } from '../../shared/types.js';
-import { runCodeReview, DEFAULT_DEPS, type JudgeSlot } from '../code-review/runner.js';
 import type { CodeReviewSubject, ReviewDimension } from '../code-review/types.js';
 import { deriveMdPath } from '../pending.js';
 import type { ArtifactKind } from '../path-scheme.js';
@@ -70,30 +69,5 @@ test('764b88ed — a TESTS record stores the label, anchor and kind it was filed
 		});
 		assert.equal(md, join(repo, FOLDER, 'TESTS.md'));
 		assert.equal(derivedFrom(json, 'TESTS', repo), md);
-	});
-});
-
-test('764b88ed — a code-review record stores the label, anchor and kind it was filed under', async () => {
-	await withItem(async (repo) => {
-		const subject: CodeReviewSubject = {
-			repoPath: repo, epicHash: HASH, storyId: 's1', changedFiles: ['src/a.ts'],
-			approvedLld:  { meta: { epicHash: HASH, storyId: 's1', epicSlug: LABEL, createdAt: ANCHOR, epicCreatedAt: ANCHOR, standalone: true }, body: {} } as unknown as CodeReviewSubject['approvedLld'],
-			approvedPlan: null as unknown as CodeReviewSubject['approvedPlan'],
-			buildRecord:  null,
-		};
-		const judges: JudgeSlot[] = (['adherence', 'conventions', 'coverage', 'quality'] as ReviewDimension[])
-			.map(dimension => ({ dimension, judge: async () => ({ dimension, findings: [] }) }));
-		const written: string[] = [];
-		const out = await runCodeReview(subject, {} as unknown as LLMProvider, { runId: 'r1', modelLabel: 'test' }, {
-			...DEFAULT_DEPS,
-			judges,
-			assembleGrounding: async () => ({ symbols: [] }),
-			write: (path, content) => { written.push(path); DEFAULT_DEPS.write(path, content); },
-		});
-		assert.equal(out.ok, true);
-		const json = written.find(p => p.endsWith('.json'))!;
-		const md = written.find(p => p.endsWith('.md'))!;
-		assert.equal(md, join(repo, FOLDER, 'CR.md'));
-		assert.equal(derivedFrom(json, 'CR', repo), md);
 	});
 });

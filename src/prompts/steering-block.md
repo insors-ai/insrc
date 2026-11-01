@@ -305,7 +305,7 @@ artifact with `insrc_workflow_approve` on the BUILD md/path. BUILD approval is
 the code-review-gated completion act. A Story with NO code review, or one
 reviewed by the party that wrote the code, is always withheld into `skipped[]`.
 A code review whose verdict is `block` withholds completion under
-`codeReview.enforce` (config, off / advisory by default). Either is passed only
+the current task-review completion gate (no advisory/enforcement flag). Either is passed only
 with an explicit `overrideReview`.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
@@ -313,117 +313,21 @@ require an ERD for isolated class edits. Builders keep affected artifacts aligne
 <!-- insrc:guide:build:end -->
 
 <!-- insrc:guide:review:start -->
-## review — design-artifact review by the other party (`insrc_review_step`)
+## review — unavailable (`insrc_review_step`)
 
-Run this on a written artifact (DEF / HLD / LLD) BEFORE approving it — two sets
-of eyes. The rule runs in BOTH directions: **the party that did not author the
-work reviews it.** There are two parties: the controller (you, this session)
-and the daemon. An artifact you authored through `insrc_workflow_step` is
-reviewed by the daemon; an artifact the daemon authored is reviewed by you. The
-same model on both sides is fine: what matters is that the reviewer is the
-other party, working from its own reading of the code. A subagent you spawn is
-still you, so it is not a second party.
+The previous design-review engine has been removed. Calls throw
+`PENDING REVIEW RE-IMPLEMENTATION`. Do not retry through another transport.
+Design-review redesign is a separate future epic. Approval gates still require
+an explicit user-authorized override when no usable independent review exists.
 
-You do not choose the reviewer. Call `insrc_review_step` with `phase:'start'`
-and the tool routes by who authored the artifact:
+## code-review — current task engine only
 
-- **You authored it (or the author is not recorded):** the tool asks the daemon
-  to review, waits, and returns `done` with the daemon's verdict in the same
-  call. This can take several minutes (a DEF has measured about 13; the tool
-  uses its configured outer execution ceiling). If the daemon is not running, is too old
-  to know the request, fails, or passes the wait limit, the tool returns an
-  error naming the cause. It does NOT fall back to a review by you: fix the
-  cause and call again, or tell the user, who can approve with an override
-  reason.
-- **The daemon authored it:** you review it, through the loop below.
+The previous chunk/dimension engine and its `insrc_code_review_step` route have
+been removed. Calls throw `PENDING REVIEW RE-IMPLEMENTATION`.
+The explicit `codeReview.task.*` engine from epic e6ddcdcb3d9cf330 remains;
+normal MCP integration is pending that epic's S3. Never fall back to the removed
+engine, infer scope from HEAD, or silently substitute a self-review.
 
-For a daemon-authored artifact, supply `reviewBudget` on start and every
-continuation: `{ version: 1, profile, hostContextReserveTokens }`. Look up the
-registered profile fields with `insrc_schema`; use an explicit
-`controller-reserved` profile and refresh the estimate of the host conversation
-every turn. The server owns and pins its cap/profile. These are estimates and
-reserves, not measured host context or a verified hard native ceiling.
-
-The tool returns one admitted assigned request, its versioned reply schema,
-call metadata, timing and opaque state. Execute the complete request and send
-`reply: { version: 1, generation, callId, answer }`, `state`, and a fresh
-`reviewBudget`, using the indicated outer phase: `claims` after `emit_claims`,
-`verdicts` after `emit_verdicts`, or `findings` after `emit_findings`. Continue
-the same run until `done`. Extraction finishes before deterministic probes;
-each verification call owns exactly its assigned claims and all their evidence.
-An HLD/LLD uses its fixed template checklist. Every required claim/item must
-validate before a review is persisted. The server measures the complete
-response, never appends unmeasured whole grounding, and refuses unsupported
-indivisible requests rather than truncating required material. Old raw final
-arrays and stale tokens refuse; a final replay returns `already_completed`.
-
-Either way the review is recorded on the lifecycle, and **approval requires it**: a
-DEF, HLD or LLD with no review, or with a review done by the party that
-authored it, is withheld, and so is one whose verdict is `block` (unresolved
-HIGH/MED findings). Resolve the blocking findings (apply / accept-with-note /
-override), THEN declare the document with `insrc_present`, present-ask-approve
-with `insrc_workflow_approve({ artifactPath })`. A withheld artifact comes back from
-approve in `skipped[]` with a reason (relay it); pass `overrideReview` only with
-the user's explicit override reason. An ISSUE, SPEC or PLAN needs no review,
-only the user's approval: do not review one unless the user asks.
-
-**At most three review rounds per cycle.** A round is one review call
-(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
-the third round on the same artifact or code, STOP: show the user the latest
-review's findings and what the earlier rounds changed, and ASK whether to run
-another cycle of up to three rounds, approve with an override reason, or change
-course. Do not start a fourth review until the user says so.
-Apply the front-door **Relevant design artifacts** rule: assess relevance
-independently, document relationship changes even when simple, and do not
-require an ERD for isolated class edits. Reviewers inspect actual generated files/links/rendering and qualify unavailable evidence.
-<!-- insrc:guide:review:end -->
-
-<!-- insrc:guide:code-review:start -->
-## code-review — post-build code review by the other party (`insrc_code_review_step`)
-
-Run this over the changed code AFTER the build produces its changes. DISTINCT
-from `insrc_review_step` (which reviews the design artifact). The same rule
-applies: **the party that did not write the code reviews it**, and the tool
-routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
-
-- **You wrote the code (a build you drove with `insrc_build_step`), or the
-  author is not recorded:** the tool asks the daemon to review and returns
-  `done` with its verdict. If the index is stale it first returns
-  `confirm_wait`: ask the user, then call `start` again with that `state` and
-  `proceed` (true = wait for a fresh index, false = review the diff instead). A
-  review of the diff is recorded as `degraded` and can be `warn` at best. If the
-  daemon review does not complete the tool returns an error naming the cause;
-  it does NOT fall back to a review by you.
-- **The daemon wrote the code:** declare a versioned `controller-reserved`
-  profile and a fresh `hostContextReserveTokens` as `reviewBudget`. Each
-  `emit_judgements` assigns one complete request and its answer schema. Execute
-  only that request; resume with `reply={version:1,generation,callId,answer}`,
-  the opaque state and a fresh declaration until `done`. Preserve all evidence;
-  never submit an aggregate legacy answer or reuse an older generation. Host
-  context is declared/reserved; external execution is not measured by the daemon.
-
-Either way it writes a code-review record across four dimensions — **adherence /
-conventions / coverage / quality** → block / warn / pass.
-
-When you are the reviewer and the graph grounding comes back hollow on
-just-created files (no symbol/test edges), judge coverage by RUNNING the suite
-and flag the caveat honestly — never fabricate a HIGH from empty grounding.
-PRESENT the verdict, then COMPLETE the Story by approving its **BUILD** artifact
-(see the `build` guide — BUILD approval is the code-review-gated completion act,
-and a Story with no code review is always withheld).
-
-**At most three review rounds per cycle.** A round is one review call
-(`insrc_review_step` or `insrc_code_review_step`), whatever its verdict. After
-the third round on the same artifact or code, STOP: show the user the latest
-review's findings and what the earlier rounds changed, and ASK whether to run
-another cycle of up to three rounds, approve with an override reason, or change
-course. Do not start a fourth review until the user says so.
-Apply the front-door **Relevant design artifacts** rule: assess relevance
-independently, document relationship changes even when simple, and do not
-require an ERD for isolated class edits. Reviewers inspect actual generated files/links/rendering and qualify unavailable evidence.
-<!-- insrc:guide:code-review:end -->
-
-<!-- insrc:guide:tracker:start -->
 ## tracker — sync the Epic to GitHub (`workflow: 'tracker.push' / '.sync' / '.post'`)
 
 Push an Epic to GitHub, sync tracker status, or post an update. YOU invoke `gh`

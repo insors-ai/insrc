@@ -1,3 +1,4 @@
+import { reviewUnavailable } from '../workflow/review-unavailable.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -21,7 +22,6 @@
  * is configured.
  */
 
-import { reviewBudgetDeclarationSchema, reviewReplySchema } from './review-budget-schema.js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { resolveRepoPath } from './resolve-repo.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -78,18 +78,6 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 		dynamicNote:
 			'Multi-turn: the per-phase payload the run hands back is authoritative — ' +
 			'this is the fixed OUTER call envelope.',
-	},
-	insrc_review_step: {
-		phases: ['start', 'claims', 'verdicts', 'findings'],
-		dynamicNote:
-			'Multi-turn: the claims / verdicts / findings bodies are schemas the run hands back — ' +
-			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
-	},
-	insrc_code_review_step: {
-		phases: ['start', 'judgements'],
-		dynamicNote:
-			'Multi-turn: the judgements body is a schema the run hands back — ' +
-			'this is the fixed OUTER call envelope; read the inner `schema` from the run\'s latest response.',
 	},
 	insrc_triage: {
 		phases: ['start', 'classify'],
@@ -631,77 +619,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 	// to the daemon (`workflow.review`) and its verdict returned. The same
 	// model on both sides is acceptable; the party is what must differ.
 	// -------------------------------------------------------------------
-	registerAndRecord(
-		'insrc_review_step',
-		{
-			title: 'insrc review (by the other party, multi-turn)',
-			description:
-				'Review of a persisted workflow artifact by the party that did NOT author it. ' +
-				'The rule runs in both directions: an artifact the daemon authored is reviewed ' +
-				'by YOU (the controller); an artifact YOU authored (through insrc_workflow_step), ' +
-				'or whose author is not recorded, is reviewed by the daemon. The same model on ' +
-				'both sides is fine; the reviewer must be the other party. You do not choose: ' +
-				'call phase=\'start\' and the tool routes it.\n\n' +
-				'When the daemon is the reviewer, phase=\'start\' itself asks the daemon, waits ' +
-				'(up to about 31 minutes for an HLD or LLD; up to 90 for a DEF, whose review ' +
-				'has measured about 13) and returns { next: \'done\', verdict, counts, report, ' +
-				'applied, pending, reviewedBy: \'daemon\' } — there is no further turn. If the ' +
-				'daemon is not running, is too old to know the request, fails, or passes the ' +
-				'wait limit, it returns next:\'error\' naming the cause and stamps nothing. It ' +
-				'never falls back to a review by you; fix the cause and call again, or let the ' +
-				'user approve with an override reason.\n\n' +
-				'When YOU are the reviewer (a daemon-authored artifact), the server does the ' +
-				'DETERMINISTIC parts (read the artifact, gather evidence by re-running probes ' +
-				'against real source, assemble + persist the report) and YOU emit the claims + ' +
-				'the verdicts. Either way the review is recorded on the lifecycle, and approval ' +
-				'REQUIRES it: a DEF, HLD or LLD with no review, or one reviewed by the party ' +
-				'that authored it, is withheld, as is one whose verdict blocks.\n\n' +
-				'Controller review: supply reviewBudget={version:1,profile,hostContextReserveTokens} with an explicit ' +
-				'controller-reserved profile on start and every continuation. Host context is declared/reserved, never measured. ' +
-				'The server returns one complete admitted prompt and its versioned schema, call metadata, timing and state. ' +
-				'Execute only that request and submit reply={version:1,generation,callId,answer} with a fresh reviewBudget and state. ' +
-				'Use phase=\'claims\' after emit_claims, phase=\'verdicts\' after emit_verdicts, or phase=\'findings\' after emit_findings. ' +
-				'Extraction must finish before deterministic evidence gathering; each verification request owns exactly its assigned claims. ' +
-				'Repeat returned continuations until done. All claims/template items must validate before persistence. ' +
-				'Whole grounding is not appended, required evidence is never truncated, and an indivisible oversized request refuses explicitly. ' +
-				'Legacy raw arrays and stale tokens cannot bypass the new contract; completed final-call replay returns already_completed. ' +
-				'The returned prompt, schema and guidance are authoritative.',
-
-			annotations: {
-				readOnlyHint:   false,   // writes the amended artifact + records the review on its lifecycle
-				idempotentHint: false,
-				openWorldHint:  false,
-			},
-			inputSchema: {
-				phase: z.enum(['start', 'claims', 'verdicts', 'findings'])
-					.describe('Which turn of the loop this call carries. `findings` answers a design-review template (after next=emit_findings).'),
-				artifact: z.string()
-					.describe('Only for phase=start. The artifact `.md` / `.html` / `.json` path to review.')
-					.optional(),
-				repo: z.string()
-					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
-					.optional(),
-				reviewBudget: reviewBudgetDeclarationSchema.optional().describe('Required before controller review prompts or continuations: explicit profile and refreshed host-context reserve.'),
-				reply: reviewReplySchema.optional().describe('Versioned answer for the one assigned pending call.'),
-				claims: z.object({ claims: z.array(z.record(z.string(), z.unknown())).optional() })
-					.passthrough()
-					.describe('Only for phase=claims. The extracted-claims JSON your LLM emitted (matches the emit_claims schema).')
-					.optional(),
-				verdicts: z.object({ verdicts: z.array(z.record(z.string(), z.unknown())).optional() })
-					.passthrough()
-					.describe('Only for phase=verdicts. The per-claim verdicts JSON your LLM emitted (matches the emit_verdicts schema).')
-					.optional(),
-				findings: z.object({ items: z.array(z.record(z.string(), z.unknown())).optional() })
-					.passthrough()
-					.describe('Only for phase=findings. The answer to the design-review template (matches the emit_findings schema).')
-					.optional(),
-				state: z.string()
-					.describe('Opaque continuation token from the prior response. Required after phase=start.')
-					.optional(),
-			},
-		},
-		async (rawArgs, extra) => forward('insrc_review_step', rawArgs, extra),
-	);
+	registerAndRecord('insrc_review_step', { title: 'Review unavailable', description: 'PENDING REVIEW RE-IMPLEMENTATION', inputSchema: {} }, async () => reviewUnavailable());
 
 	// -------------------------------------------------------------------
 	// insrc_code_review_step — multi-turn CODE review by the other party
@@ -714,78 +632,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 	// controller supplies each dimension's judgement. Code the controller wrote
 	// (or of unknown author) is sent to the daemon's `codeReview.run`.
 	// -------------------------------------------------------------------
-	registerAndRecord(
-		'insrc_code_review_step',
-		{
-			title: 'insrc code review (by the other party, multi-turn)',
-			description:
-				'CODE review of a Story\'s built code across four dimensions (adherence / ' +
-				'conventions / coverage / quality), by the party that did NOT write the code. ' +
-				'The rule runs in both directions: code the daemon wrote is reviewed by YOU ' +
-				'(the controller); code YOU wrote (a build you drove with insrc_build_step), ' +
-				'or whose author is not recorded, is reviewed by the daemon. The same model on ' +
-				'both sides is fine; the reviewer must be the other party. You do not choose: ' +
-				'call phase=\'start\' and the tool routes it by the Story\'s BUILD record. ' +
-				'Either way the result is a block/warn/pass CodeReviewArtifact at ' +
-				'CR-<epic>-<story>, and completing the Story (approving its BUILD record) ' +
-				'REQUIRES one, done by the other party.\n\n' +
-				'When the daemon is the reviewer, phase=\'start\' asks the daemon, waits (up to ' +
-				'the configured outer wait) and returns { next: \'done\', verdict, counts, path, jsonPath, ' +
-				'reviewedBy: \'daemon\', groundingMode }. A stale index first returns ' +
-				'{ next: \'confirm_wait\', staleFiles, state }: ask the user, then call ' +
-				'phase=\'start\' again with that state and `proceed` (true = wait for a fresh ' +
-				'index, false = review the diff). A diff review is recorded `degraded` and is ' +
-				'`warn` at best. If the daemon review does not complete, it returns ' +
-				'next:\'error\' naming the cause and stamps nothing; it never falls back to a ' +
-				'review by you.\n\n' +
-				'Controller loop (daemon-written code): supply reviewBudget={version:1,profile,hostContextReserveTokens} ' +
-				'with an explicit controller-reserved profile and a fresh host-context estimate on every turn. ' +
-				'The server pins its own cap/profile, budgets the complete response, and returns one assigned request in prompts, ' +
-				'its versioned reply schema, call metadata, timing and state. Do not append whole grounding. ' +
-				'Execute that request and submit phase=\'judgements\' with reply={version:1,generation,callId,answer}, state and reviewBudget. ' +
-				'Repeat until done; all dimension/chunk/obligation calls must finish before persistence. ' +
-				'A controller confirm_wait resumes phase=\'start\' with the same versioned reply and answer={proceed:true|false}. ' +
-				'Old raw judgement arrays and old controller tokens refuse explicitly. A completed final-call replay returns already_completed. ' +
-				'Host context is declared/reserved, never measured or a verified hard native ceiling. ' +
-				'Scope-dropped findings remain on the record and are excluded from verdict/counts.',
-
-			annotations: {
-				readOnlyHint:   false,   // writes the CR record
-				idempotentHint: false,
-				openWorldHint:  false,
-			},
-			inputSchema: {
-				phase: z.enum(['start', 'judgements'])
-					.describe('Which turn of the loop this call carries.'),
-				epicHash: z.string()
-					.describe('Only for phase=start. The Epic hash keying the Story.')
-					.optional(),
-				storyId: z.string()
-					.describe('Only for phase=start. The Story id keying the review.')
-					.optional(),
-				repo: z.string()
-					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
-					.optional(),
-				reviewBudget: reviewBudgetDeclarationSchema.optional().describe('Required for controller review: refreshed host-context estimate and explicit controller-reserved profile.'),
-				reply: reviewReplySchema.optional().describe('Versioned reply for the single pending call; required for controller continuations.'),
-				judgements: z.object({ judgements: z.array(z.record(z.string(), z.unknown())).optional() })
-					.passthrough()
-					.describe('Only for phase=judgements. The four DimensionResult judgements your LLM emitted (matches the emit_judgements schema).')
-					.optional(),
-				state: z.string()
-					.describe('Opaque continuation token from the prior response. Required after phase=start.')
-					.optional(),
-				proceed: z.boolean()
-					.describe('Only when resuming a phase=start `confirm_wait` (the index was stale). ' +
-						'true = wait for a fresh index (block-and-poll); false = abort the review (no verdict). ' +
-						'Pass together with the `state` from the confirm_wait turn.')
-					.optional(),
-			},
-		},
-		// The invoking client rides along (in the forwarded context) so a daemon
-		// review of code this session wrote can fall back to that CLI.
-		async (rawArgs, extra) => forward('insrc_code_review_step', rawArgs, extra),
-	);
+	registerAndRecord('insrc_code_review_step', { title: 'Review unavailable', description: 'PENDING REVIEW RE-IMPLEMENTATION', inputSchema: {} }, async () => reviewUnavailable());
 
 	// -------------------------------------------------------------------
 	// insrc_triage — controller-driven size classifier + workflow-entry router.

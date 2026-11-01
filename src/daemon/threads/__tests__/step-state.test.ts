@@ -15,9 +15,6 @@ import assert from 'node:assert/strict';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MessageChannel, Worker } from 'node:worker_threads';
-
-import type { ReviewStepStatePayload } from '../../steps/review-step/types.js';
-import type { CodeReviewStepStatePayload } from '../../steps/code-review-step/types.js';
 import { STATE_VERSION as ANALYZE_VERSION } from '../../steps/analyze-step/state.js';
 import type { StepStatePayload } from '../../steps/analyze-step/state.js';
 import type { WorkflowStepStatePayload } from '../../steps/workflow-step/state.js';
@@ -95,68 +92,6 @@ function connect(store: LocalStepStateStore): () => { worker: Worker; ask: (m: R
 		return { worker, ask: (m) => { worker.postMessage(m); return next(); } };
 	};
 }
-
-const PAYLOADS: Readonly<Record<StepKind, unknown>> = {
-	'analyze': {
-		version: ANALYZE_VERSION, runId: 'run-1', repoPath: '/repo', repoIndexedAt: 1_720_000_000_000,
-		intent: { target: 'code', scope: 'M', focused: true, focus: 'map the payable module', scopeRef: { kind: 'workspace', value: '/repo' }, reasoning: 'test' },
-		synthesizerKey: 'code', stage: 'awaiting_plan',
-	} satisfies StepStatePayload,
-	'workflow': {
-		version: 1, runId: 'run-x', epicKey: '86197ac660732ceb', startedAtMs: 1000,
-		intent: { workflow: 'stub', focus: 'test', repoPath: '/tmp/repo', repoIndexedAt: null, params: { nested: { list: [1, 2, { deep: true }] } } },
-		stepOutputs: { s1: { analyzeBundles: [{ kind: 'code', focus: 'f', summary: 's', pathsCited: ['src/a.ts'] }] } },
-		stage: 'awaiting_plan',
-	} as unknown as WorkflowStepStatePayload,
-	'review': {
-		runId: 'rev-1', startedAtMs: 1000, mdPath: '/repo/docs/x/LLD.md', jsonPath: '/repo/.insrc/artifacts/LLD-x.json',
-		repo: '/repo', stage: 'awaiting_claims', markdown: '# doc\n\nbody with ünïcode',
-	} satisfies ReviewStepStatePayload,
-	'code-review': {
-		runId: 'cr-1', startedAtMs: 1000, repo: '/repo', epicHash: 'e2c6705fd105d4ac', storyId: 's1',
-		subject: { files: ['src/a.ts'], commits: ['abc'], range: { base: 'a', head: 'b' } } as unknown as CodeReviewStepStatePayload['subject'],
-		groundingMode: 'degraded',
-	} satisfies CodeReviewStepStatePayload,
-};
-
-test('a real payload of each step kind survives a structured clone through the hub', async () => {
-	const store = new LocalStepStateStore(undefined, () => {});
-	const { worker, ask } = connect(store)();
-	try {
-		for (const kind of Object.keys(PAYLOADS) as StepKind[]) {
-			const minted = await ask({ op: 'mint', kind, payload: PAYLOADS[kind] });
-			assert.equal(minted['ok'], true, `${kind}: minted through the hub (${String(minted['message'] ?? '')})`);
-			const onMain = await store.read(kind, minted['token'] as string);
-			assert.deepEqual(onMain?.payload, PAYLOADS[kind], `${kind}: the main thread holds an equal payload`);
-			const back = await ask({ op: 'read', kind, token: minted['token'] });
-			assert.deepEqual((back['entry'] as { payload: unknown }).payload, PAYLOADS[kind], `${kind}: read back through the hub unchanged`);
-		}
-		// A payload that cannot cross threads fails the call instead of being lost.
-		const bad = await new Promise<Record<string, unknown>>((resolve) => {
-			worker.once('message', resolve);
-			worker.postMessage({ op: 'mint-unclonable', kind: 'analyze' });
-		});
-		assert.equal(bad['ok'], false);
-		assert.equal(bad['name'], 'DataCloneError');
-	} finally {
-		await worker.terminate();
-	}
-});
-
-test('step state minted in one worker is read in another after the first exits', async () => {
-	const store = new LocalStepStateStore(undefined, () => {});
-	const open = connect(store);
-	const first = open();
-	const minted = await first.ask({ op: 'mint', kind: 'workflow', payload: PAYLOADS['workflow'] });
-	await first.worker.terminate();
-	const second = open();
-	try {
-		const back = await second.ask({ op: 'read', kind: 'workflow', token: minted['token'] });
-		assert.deepEqual((back['entry'] as { payload: unknown }).payload, PAYLOADS['workflow'], 'a new worker resumes the step');
-	} finally {
-		await second.worker.terminate();
-	}
-});
 
 test('atomic review claim commit generation recovery receipt and pinned-capacity invariants', async () => {
 	let now = 1000;

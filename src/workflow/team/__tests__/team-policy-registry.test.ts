@@ -14,14 +14,17 @@ import { _resetToolHooksForTests, registerToolHook } from '../../../daemon/tools
 import { _resetRegistryForTests } from '../../../daemon/tools/registry.js';
 import { runPolicyScenarios } from './helpers/policy-scenarios.js';
 import { newApi } from './helpers/new-policy-api.js';
+import { newSignoffApi } from './helpers/new-signoff-api.js';
+import { runSignoffScenarios } from './helpers/signoff-scenarios.js';
 
+const SIGNOFF_TOOLS = ['git_rev_parse', 'git_rev_list', 'git_ls_remote'];
 const GIT_TOOLS = ['git_rev_parse', 'git_remote', 'git_symbolic_ref', 'git_cat_file', 'git_ls_tree', 'git_for_each_ref', 'git_path_history'];
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const calls: Array<{ tool: string; caller: string | undefined }> = [];
 beforeEach(() => {
 	_resetRegistryForTests(); _resetToolHooksForTests(); calls.length = 0;
-	for (const tool of GIT_TOOLS) registerToolHook({ id: `spy-${tool}`, toolId: tool, async run(ctx) { calls.push({ tool: ctx.toolId, caller: ctx.caller }); } });
+	for (const tool of new Set([...GIT_TOOLS, ...SIGNOFF_TOOLS, 'git_stage', 'git_commit', 'git_push', 'git_status', 'git_diff', 'git_log'])) registerToolHook({ id: `spy-${tool}`, toolId: tool, async run(ctx) { calls.push({ tool: ctx.toolId, caller: ctx.caller }); } });
 });
 afterEach(() => { _resetToolHooksForTests(); });
 
@@ -49,6 +52,26 @@ test('team-policy-registry.test.ts: policyReader and findAnchor run through the 
 
 test('team-policy-registry.test.ts: no runGit call remains in policy-reader.ts, anchor-finder.ts and sighting-store.ts', () => {
 	for (const file of ['policy-reader.ts', 'anchor-finder.ts', 'sighting-store.ts']) {
+		const text = readFileSync(join(SRC, file), 'utf8');
+		assert.ok(!/\brunGit(Async)?\(/.test(text), `${file} calls no runGit`);
+		assert.ok(!/execFileSync|execFile\(/.test(text), `${file} spawns nothing itself`);
+	}
+});
+
+test('team-policy-registry.test.ts: the signoff branch checks run through the registry and equal the old results', async () => {
+	const out = await runSignoffScenarios(newSignoffApi) as Record<string, any>;
+	const used = new Set(calls.map(c => c.tool));
+	for (const tool of SIGNOFF_TOOLS) assert.ok(used.has(tool), `${tool} was called`);
+	assert.ok(calls.every(c => c.caller === 'workflow'), "the caller of every call is 'workflow'");
+	assert.deepEqual(out['the branch of a checkout'], { onMain: 'main', onFeature: 'feature/x' }, 'a detached HEAD has no branch');
+	assert.deepEqual(out['publish from a feature branch with an upstream'], { ok: true, value: 'feature/sign' });
+	assert.match(out['publish from the default branch'].reason, /needs a branch other than the default branch \('main'\)/);
+	assert.equal(out['default branch resolution'].named.branch, 'main');
+	assert.equal(out['default branch resolution'].unreachable.ok, false);
+});
+
+test('team-policy-registry.test.ts: no runGit call remains in signoff.ts and branch-resolution.ts', () => {
+	for (const file of ['signoff.ts', 'branch-resolution.ts']) {
 		const text = readFileSync(join(SRC, file), 'utf8');
 		assert.ok(!/\brunGit(Async)?\(/.test(text), `${file} calls no runGit`);
 		assert.ok(!/execFileSync|execFile\(/.test(text), `${file} spawns nothing itself`);

@@ -28,7 +28,9 @@ import { commitAndPush } from '../tracker/commit-and-push-registry.js';
 import type { Capability, IssueRef, PortResult, SignoffRequestRef, TrackerPort } from '../tracker/port.js';
 import { resolveUnitIssueLocal } from '../tracker/unit-issue.js';
 import { registerCompletionHook, TeamGateRefusedError, type GateOutcome, type GuardedAction } from './gate.js';
-import { runGit } from './git.js';
+import { GitCallFailed, LOCAL_GIT_TIMEOUT_MS, orFallback, revParse } from '../git-calls.js';
+import { gitCall } from '../git-calls.js';
+import { gitRevListTool } from '../../daemon/tools/builtins/git/rev-list.js';
 import { pickRemote, policyReader, remoteHeadBranch } from './policy-reader.js';
 import type { PolicyReader, PolicyResult, SignoffStage, TeamPolicy } from './types.js';
 
@@ -216,7 +218,7 @@ export interface SignoffDeps {
 	/** Commit and push the artifact files and answer the branch that holds them. */
 	readonly publishBranch?: ((repo: string, paths: readonly string[], message: string) => PortResult<string> | Promise<PortResult<string>>) | undefined;
 	/** The branch the checkout is on, undefined when it cannot be read; a resubmission checks it before anything is committed. */
-	readonly currentBranch?: ((repo: string) => string | undefined) | undefined;
+	readonly currentBranch?: ((repo: string) => string | undefined | Promise<string | undefined>) | undefined;
 	/** A Story's code-review record: its verdict and the party that ran it; undefined when there is none. */
 	readonly readCodeReview?: ((repo: string, epicHash: string, storyId: string) => CodeReviewRecord | undefined) | undefined;
 }
@@ -385,16 +387,20 @@ export async function publishArtifactsBranch(repo: string, paths: readonly strin
 	const pushed = await commitAndPush(repo, paths, message);   // a denied call is thrown, not a rejected result
 	if (pushed.committed && !pushed.pushed) return rejected(pushed.reason ?? 'the artifacts were committed but not pushed');
 	if (!pushed.committed && !/nothing to commit/.test(pushed.reason ?? '')) return rejected(`the artifacts could not be committed: ${pushed.reason ?? 'unknown reason'}`);
-	const head = runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']);
-	if (!head.ok) return rejected(`the current branch cannot be read: ${head.stderr}`);
-	const branch = head.stdout.trim();
+	let branch: string;
+	try {
+		branch = (await revParse(repo, 'HEAD', { abbrevRef: true }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS })).trim();
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return rejected(`the current branch cannot be read: ${err.message}`);
+	}
 	if (branch === 'HEAD' || branch.length === 0) return rejected('a signoff request needs a branch: this checkout has a detached HEAD');
 	const remote = await pickRemote(repo);
 	const defaultBranch = remote === undefined ? undefined : await remoteHeadBranch(repo, remote);
 	if (defaultBranch !== undefined && branch === defaultBranch) return rejected(`a signoff request needs a branch other than the default branch ('${branch}'): commit the artifacts on a feature branch`);
-	const ahead = runGit(repo, ['rev-list', '--count', '@{u}..HEAD']);
-	if (!ahead.ok) return rejected(`the branch '${branch}' has no upstream: push it first`);
-	if (ahead.stdout.trim() !== '0') return rejected(`the branch '${branch}' has ${ahead.stdout.trim()} unpushed commit(s): push it first`);
+	const ahead = await orFallback(gitCall(gitRevListTool, { rev: '@{u}..HEAD', count: true }, repo, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), undefined);
+	if (ahead === undefined || !('count' in ahead)) return rejected(`the branch '${branch}' has no upstream: push it first`);
+	if (ahead.count !== 0) return rejected(`the branch '${branch}' has ${ahead.count} unpushed commit(s): push it first`);
 	return { ok: true, value: branch };
 }
 
@@ -565,9 +571,9 @@ async function openRequest(repo: string, unit: UnitRef, artifacts: readonly Subm
 }
 
 /** The branch the checkout is on, or undefined when it cannot be read or HEAD is detached. */
-function currentBranchOf(repo: string): string | undefined {
-	const head = runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']);
-	const branch = head.ok ? head.stdout.trim() : '';
+export async function currentBranchOf(repo: string): Promise<string | undefined> {
+	const head = await orFallback(revParse(repo, 'HEAD', { abbrevRef: true }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), undefined);
+	const branch = head?.trim() ?? '';
 	return branch.length === 0 || branch === 'HEAD' ? undefined : branch;
 }
 
@@ -575,7 +581,7 @@ function currentBranchOf(repo: string): string | undefined {
 async function resubmit(repo: string, unit: UnitRef, artifacts: readonly Submission[], earlier: EarlierRequest, d: SignoffDeps): Promise<PortResult<SignoffRequestRef>> {
 	const mismatch = (branch: string): PortResult<SignoffRequestRef> => rejected(`the request ${earlier.request.ref} is open from the branch '${earlier.branch}' but this checkout is on '${branch}': switch to '${earlier.branch}' to resubmit`);
 	// checked before the files are committed, so a wrong branch is left as it was
-	const on = (d.currentBranch ?? currentBranchOf)(repo);
+	const on = await (d.currentBranch ?? currentBranchOf)(repo);
 	if (on === undefined) return rejected(`the current branch cannot be read (a detached HEAD?): switch to '${earlier.branch}', the branch of the request ${earlier.request.ref}, to resubmit`);
 	if (on !== earlier.branch) return mismatch(on);
 	const stages = [...new Set(artifacts.map(a => a.stage))].join(', ');

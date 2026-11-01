@@ -1,0 +1,54 @@
+{
+ "default branch resolution": {
+  "dangling": {
+   "ok": false,
+   "reason": "remote 'origin' names no default branch and none is recorded; run 'team refresh --branch <default-branch-name>' to name the default branch of remote 'origin'"
+  },
+  "missing": {
+   "ok": false,
+   "reason": "branch 'nope' does not exist on remote 'origin'; nothing was recorded"
+  },
+  "named": {
+   "branch": "main",
+   "ok": true,
+   "source": "remote"
+  },
+  "pinned": {
+   "branch": "main",
+   "ok": true,
+   "source": "user"
+  },
+  "unreachable": {
+   "ok": false,
+   "reason": "remote 'origin' could not be reached (fatal: '<tmp>/no-such-remote.git' does not appear to be a git repository\nfatal: Could not read from remote repository.\n\nPlease make sure you have the correct access rights\nand the repository exists.); nothing was recorded"
+  },
+  "unsafe": {
+   "ok": false,
+   "reason": "'--upload-pack=x' is not a usable branch name"
+  }
+ },
+ "not a repository, and a repository with no commit": {},
+ "publish from a branch with no upstream": {
+  "kind": "rejected",
+  "ok": false,
+  "reason": "committed locally; push failed: fatal: The current branch feature/lonely has no upstream branch.\nTo push the current branch and set the remote as upstream, use\n\n    git push --set-upstream origin feature/lonely\n\nTo have this happen automatically for branches without a tracking\nupstream, see 'push.autoSetupRemote' in 'git help config'."
+ },
+ "publish from a detached HEAD": {
+  "kind": "rejected",
+  "ok": false,
+  "reason": "the artifacts could not be committed: git commit failed: refusing to commit on detached HEAD -- rerun with allowDetached:true to override"
+ },
+ "publish from a feature branch with an upstream": {
+  "ok": true,
+  "value": "feature/sign"
+ },
+ "publish from the default branch": {
+  "kind": "rejected",
+  "ok": false,
+  "reason": "a signoff request needs a branch other than the default branch ('main'): commit the artifacts on a feature branch"
+ },
+ "the branch of a checkout": {
+  "onFeature": "feature/x",
+  "onMain": "main"
+ }
+}

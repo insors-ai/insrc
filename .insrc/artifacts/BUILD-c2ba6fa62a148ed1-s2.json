@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T15:31:58.489Z",
+    "updatedAt": "2026-11-01T16:45:29.028Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -54,9 +54,13 @@
       {
         "id": "t11",
         "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
       }
     ],
-    "summary": "Two-point upsert-vs-add measurement on a copy of this repository's vector table; the write is ~fixed-cost per call, so the backfill now upserts each 256-entity round in one call (writeBackfillVectors) instead of per entity.",
+    "summary": "Full sweep once (2 Story-caused failures fixed, the rest pre-existing at the pre-s2 base), installed daemon updated to 8efcb2cb, and the installed-daemon smoke passed: no empty or partial read across 27,781 polls during 15 rewrites, a delete gone in one step, unembedded 0 and complete at start.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
     },
@@ -66,205 +70,219 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-types.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-vectors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/indexer/embedder.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/graph/index-state-rows.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/cross-file-modes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/full-index-rebuild.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/lance/entity-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/delete-entities-by-id.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/db/index-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/file-refresh.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/queue-lanes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/daemon/status.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/indexing-port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/backfill.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
       },
       {
         "target": {
           "file": "scripts/measure-entity-vec-write.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:31:58.489Z"
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/embedder-lazy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/smoke-t12.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
       }
     ],
-    "commit": "bdb97bc03"
+    "commit": "dcd91a244"
   }
 }

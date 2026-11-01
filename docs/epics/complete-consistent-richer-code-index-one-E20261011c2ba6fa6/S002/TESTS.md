@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -225,3 +225,13 @@ the gate ran no test: every named test of this Task was reported by the builder
 **smoke: upsert vs add on this repository's vector table (two-point)**
 
 Reported by the builder, not run by the gate: **pass**. Evidence: scripts/measure-entity-vec-write.ts run 2026-11-01 15:29Z on a copy of ~/.insrc/lance/entity_vec.lance (80,043 rows, 79,920 distinct ids, 1024 dims), medians of 5: refresh-sized batch (16) upsert 29 ms / add 11 ms; backfill-sized batch (256) upsert 49 ms / add 31 ms; one-row upsert 25 ms. Batch size set from it: BACKFILL_BATCH = 256 with one upsert per round (src/indexer/index.ts BACKFILL_BATCH comment; commit bdb97bc03); per-round single upsert pinned by src/indexer/__tests__/backfill.test.ts 't11: the backfill writes each round's vectors with one upsert, never one write per entity (a Lance write is ~25 ms whatever its size)'.
+
+## t12
+
+Run at 2026-11-01T16:45:29.028Z on commit `dcd91a244`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: refresh under polling, delete, backfill at start**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/smoke-t12.jsonl (2026-11-01 16:44Z, installed daemon at 8efcb2cb, pid 94063, driven by /tmp/s2-smoke.mjs over the daemon socket). Refresh under polling: src/s2-smoke-probe.ts (6 functions per version) rewritten 15 times 400 ms apart while search.by_file was polled back-to-back: 27,781 polls, 0 empty, 0 mixed/partial sets, 6 distinct versions seen, last version seen. Delete: file removed; 1,071 polls showed the complete last set, then empty within 206 ms; 0 partial. Backfill at start: repo.stats right after boot read unembedded 0, complete true, reasons []; the daemon log shows the start-time backfill queued for all 6 registered repositories and finding no entity without a vector. LIMITATION: nothing was outstanding at start (every entity already had its vector), so the start-time backfill did no writes on the installed daemon; the non-empty path (failed vector write -> backfill at start writes vectors, sets markers, repository reads complete) is covered by src/indexer/__tests__/backfill.test.ts against a real temporary vector table. Full sweep (once): 7202 tests, 7033 pass, 31 fail; the 2 Story-caused failures were fixed in 8efcb2cb; every other failing file also fails at the pre-s2 base e49726260 (rerun per file, /tmp/s2-rerun.txt).

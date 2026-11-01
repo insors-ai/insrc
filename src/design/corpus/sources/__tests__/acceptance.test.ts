@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { getEventListeners } from 'node:events';
-import { runGitBinary } from '../git-reader.js';
+import { toolGitRunner } from '../git-reader.js';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { hashBytes } from '../../canonical.js';
@@ -54,7 +54,7 @@ test('candidate-roundtrip admits only eligible material and exports complete not
       run: async (args, input, options) => {
         observed = options.signal;
         if (Buffer.from(input).toString().trim() === f.request.revision && ++commits === 2) return new Promise(() => {});
-        return runGitBinary(args, input, options);
+        return toolGitRunner(args, input, options);
       } });
     assert.equal(!batch.ok && batch.issues[0]!.message, 'Source staging deadline exceeded.');
     assert.equal(commits, 2);

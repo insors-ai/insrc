@@ -21,7 +21,7 @@ import { join } from 'node:path';
 import { buildChainReport } from '../chain.js';
 import { artifactJsonPath, defineArtifactId, lldArtifactId, planArtifactId, writeArtifact } from '../storage.js';
 import { _setAutoPushDepsForTests, autoPushTasksOnPlan } from '../tracker-auto.js';
-import { type TrackerExec } from '../tracker/github.js';
+import type { TrackerExec } from './helpers/exec-stand-in.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { _setApprovalGateForTests } from '../../daemon/tools/executor.js';
 import { approveEveryToolCall } from './approve-fallback-kit.js';

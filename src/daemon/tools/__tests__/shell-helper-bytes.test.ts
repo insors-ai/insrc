@@ -11,7 +11,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
 
-import { GIT_READ_ARGS as READER_ARGS, gitEnvironment as readerEnvironment } from '../../../design/corpus/sources/git-reader.js';
 import { GIT_READ_ARGS, gitEnvironment } from '../git-isolation.js';
 import { runShell, runShellBytes } from '../shell-helper.js';
 
@@ -65,10 +64,6 @@ test('runShellBytes returns stdout bytes unchanged, delivers stdin and applies t
 		process.env['PATH'] = savedPath;
 		rmSync(bin, { recursive: true, force: true });
 	}
-
-	// one copy: the corpus reader's own definitions stay equal to the shared module until s7 moves it
-	assert.deepEqual(gitEnvironment(), readerEnvironment());
-	assert.deepEqual([...GIT_READ_ARGS], [...READER_ARGS]);
 });
 
 test('runShellBytes reports a stdin write error and a cancellation and leaves runShell unchanged', async () => {

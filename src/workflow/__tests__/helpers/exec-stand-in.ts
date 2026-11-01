@@ -16,6 +16,9 @@ import { join } from 'node:path';
 
 export type ExecFake = (cmd: string, args: readonly string[], opts?: { readonly cwd?: string | undefined }) => Buffer | string | Promise<Buffer | string>;
 
+/** What the older tests called the fake: a program, its arguments and the cwd. */
+export type TrackerExec = ExecFake;
+
 const CLIENT = `
 const net = require('node:net');
 const [, , sock, program, ...args] = process.argv;

@@ -186,15 +186,8 @@ function parseRequestRef(request: SignoffRequestRef): { owner: string; repo: str
 // The table
 // ---------------------------------------------------------------------------
 
-let tableFactoryForTests: ((deps: ToolDeps) => RegistryTable) | undefined;
-
-/** Test seam: make createRegistryTable answer with `factory(deps)`; no argument restores the registry-backed table. */
-export function _setRegistryTableFactoryForTests(factory?: (deps: ToolDeps) => RegistryTable): void {
-	tableFactoryForTests = factory;
-}
-
 export function createRegistryTable(deps: ToolDeps): RegistryTable {
-	return tableFactoryForTests?.(deps) ?? buildRegistryTable(deps);
+	return buildRegistryTable(deps);
 }
 
 function buildRegistryTable(deps: ToolDeps) {

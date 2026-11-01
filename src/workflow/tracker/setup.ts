@@ -20,9 +20,8 @@
  *  - The Projects VIEWS step is UI-only and therefore ALWAYS manual — it
  *    ships the click-list in `detail`. It is only emitted when a Project
  *    is in scope (`includeProject`).
- *  - ALL gh/git calls route through `./github.js`, whose `_exec` seam is
- *    swappable via `_setTrackerExecForTests`, so this whole engine unit-
- *    tests against a fake `gh`.
+ *  - ALL gh/git calls route through the registry table (`./registry-table.js`),
+ *    so this whole engine unit-tests against a stand-in `gh` binary.
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';

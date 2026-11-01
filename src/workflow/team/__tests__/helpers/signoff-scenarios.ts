@@ -9,7 +9,7 @@ import { join } from 'node:path';
 
 import { VALID_POLICY, cloneOf, commitFile, git, makeFixture, makeOrigin } from '../git-fixture.js';
 import type { Fixture } from '../git-fixture.js';
-import { POLICY_PATH } from '../../git.js';
+import { POLICY_PATH } from '../../types.js';
 import { normalise } from './policy-scenarios.js';
 
 type Value<T> = T | Promise<T>;

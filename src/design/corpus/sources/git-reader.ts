@@ -1,6 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 /** I/O entry. Never export this module from either pure corpus barrel. */
-import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { isAbsolute } from 'node:path';
 import { gitCatFileTool } from '../../../daemon/tools/builtins/git/cat-file.js';
@@ -23,61 +22,6 @@ export interface BinaryGitOptions {
   readonly signal?: AbortSignal | undefined;
 }
 export type BinaryGitRunner = (args: readonly string[], input: Uint8Array, options: BinaryGitOptions) => Promise<Uint8Array>;
-export function gitEnvironment(): NodeJS.ProcessEnv {
-  // Do not inherit GIT_CONFIG_*, alternate object stores, replacement refs or command overrides.
-  return { PATH: process.env['PATH'], ...(process.env['SystemRoot'] ? { SystemRoot: process.env['SystemRoot'] } : {}),
-    LC_ALL: 'C', LANG: 'C', GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null',
-    GIT_NO_REPLACE_OBJECTS: '1', GIT_NO_LAZY_FETCH: '1', GIT_TERMINAL_PROMPT: '0', GIT_OPTIONAL_LOCKS: '0' };
-}
-export const GIT_READ_ARGS = ['--no-replace-objects', '--literal-pathspecs', '-c', 'protocol.allow=never',
-  '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null', '-c', 'core.attributesFile=/dev/null'] as const;
-export const createGitRunner = (spawnProcess: typeof spawn = spawn): BinaryGitRunner => (args, input, options) => new Promise((resolve, reject) => {
-  if (![options.stdoutLimit, options.stderrLimit, options.timeoutMs].every(v => Number.isSafeInteger(v) && v > 0)
-    || options.stdoutLimit > CORPUS_LIMITS.packageBytes + 192 || options.stderrLimit > 65536 || options.timeoutMs > 30000) {
-    reject(new SourceReaderError('limit.exceeded', 'Invalid Git process bounds.')); return;
-  }
-  if (options.signal?.aborted) { reject(new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.')); return; }
-  const child = spawnProcess('git', [...GIT_READ_ARGS, ...args], { cwd: options.cwd, env: gitEnvironment(), shell: false,
-    stdio: ['pipe', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
-  const chunks: Buffer[] = []; let stdoutBytes = 0, stderrBytes = 0, settled = false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const abort = () => stop(new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.'));
-  const settle = (error?: SourceReaderError) => {
-    if (settled) return;
-    settled = true; if (timer) clearTimeout(timer); options.signal?.removeEventListener('abort', abort);
-    if (error) reject(error); else resolve(new Uint8Array(Buffer.concat(chunks, stdoutBytes)));
-    chunks.length = 0;
-  };
-  const stop = (error: SourceReaderError) => {
-    if (settled) return;
-    // Settle even when spawn failed before a PID or when no close event can arrive.
-    settle(error);
-    try { if (process.platform !== 'win32' && child.pid) process.kill(-child.pid, 'SIGKILL'); else child.kill('SIGKILL'); }
-    catch { try { child.kill('SIGKILL'); } catch { /* No process was created. */ } }
-    child.stdin.destroy(); child.stdout.destroy(); child.stderr.destroy();
-  };
-  child.stdout.on('data', (chunk: Buffer) => {
-    if (settled) return;
-    stdoutBytes += chunk.length;
-    if (stdoutBytes > options.stdoutLimit) stop(new SourceReaderError('limit.exceeded', 'Git output exceeds byte limit.'));
-    else chunks.push(Buffer.from(chunk));
-  });
-  child.stderr.on('data', (chunk: Buffer) => {
-    if (settled) return;
-    stderrBytes += chunk.length;
-    if (stderrBytes > options.stderrLimit) stop(new SourceReaderError('limit.exceeded', 'Git diagnostics exceed byte limit.'));
-  });
-  child.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Cannot acquire local Git objects.')));
-  child.stdout.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git output stream failed.')));
-  child.stderr.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git diagnostics stream failed.')));
-  child.stdin.on('error', () => stop(new SourceReaderError('inventory.invalid', 'Git input stream failed.')));
-  child.on('close', code => settle(code === 0 ? undefined : new SourceReaderError('reference.missing', 'Local Git object is unavailable.')));
-  timer = setTimeout(() => stop(new SourceReaderError('limit.exceeded', 'Source acquisition timed out.')), options.timeoutMs);
-  options.signal?.addEventListener('abort', abort, { once: true });
-  if (options.signal?.aborted) { abort(); return; }
-  child.stdin.end(input);
-});
-export const runGitBinary = createGitRunner();
 /**
  * The default runner of the reader (Story s9): the one object a `cat-file --batch` request names, read through the git_cat_file tool and
  * given back in the bytes `git cat-file --batch` prints (header, content, line break), so the framing and identity checks of

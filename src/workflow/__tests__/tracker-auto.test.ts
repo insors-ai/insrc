@@ -24,7 +24,7 @@ import { basename, dirname, join } from 'node:path';
 import { blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { artifactJsonPath, planArtifactPaths } from '../storage.js';
-import { type TrackerExec } from '../tracker/github.js';
+import type { TrackerExec } from './helpers/exec-stand-in.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { approveEveryToolCall } from './approve-fallback-kit.js';
 import { seedTaskHeads } from './helpers/task-heads.js';

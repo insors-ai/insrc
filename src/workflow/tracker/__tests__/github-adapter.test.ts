@@ -14,7 +14,7 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import { GH_TIMEOUT_MS, GhCommandError, ghAttachMilestone, ghCloseIssue, ghComment, ghCreateIssueTyped, ghCreateLabel, ghEditIssueBody, ghEnsureMilestone, ghGetIssueBody, ghGetIssueId, ghLinkSubIssue, runGh } from '../github.js';
+import { GhCommandError } from '../github.js';
 import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
 import type { IssueSpec } from '../port.js';
@@ -38,73 +38,6 @@ function failWith(err: Error): void {
 const flagValue = (call: readonly string[] | undefined, flag: string): string | undefined => { const i = call?.indexOf(flag) ?? -1; return i < 0 ? undefined : call?.[i + 1]; };
 /** The minimal issue row the issue tools require. */
 const issueRow = (extra: object = {}): object => ({ number: 5, title: 'an issue', state: 'OPEN', ...extra });
-
-function kindOf(fn: () => unknown): GhCommandError {
-	try { fn(); } catch (e) {
-		assert.ok(e instanceof GhCommandError, `expected GhCommandError, got ${String(e)}`);
-		return e;
-	}
-	assert.fail('expected runGh to throw');
-}
-
-// ---------------------------------------------------------------------------
-// runGh
-// ---------------------------------------------------------------------------
-
-// wrapper-only: exercises the sync runGh that s9/t21 deletes; skipped until then
-test.skip('runGh classifies ENOENT, authentication failure, timeout and other failures', async () => {
-	failWith(execError({ code: 'ENOENT' }, 'spawnSync gh ENOENT'));
-	const missingTool = kindOf(() => runGh(['api', 'user']));
-	assert.equal(missingTool.kind, 'missing-tool');
-	assert.match(missingTool.reason, /gh CLI is not installed/);
-
-	failWith(execError({ stderr: 'You are not logged in to any GitHub hosts. Run gh auth login to authenticate.' }));
-	const signin = kindOf(() => runGh(['api', 'user']));
-	assert.equal(signin.kind, 'missing-signin');
-	assert.match(signin.reason, /gh auth login/);
-
-	failWith(execError({ code: 'ETIMEDOUT' }));
-	assert.equal(kindOf(() => runGh(['api', 'user'])).kind, 'unreachable');
-
-	failWith(execError({ killed: true, signal: 'SIGTERM' }));
-	const killed = kindOf(() => runGh(['api', 'user']));
-	assert.equal(killed.kind, 'unreachable');
-	assert.match(killed.reason, /timed out after 10 s/);
-
-	// Only a timeout is 'unreachable'; any other failure (a network error included)
-	// is 'rejected' and carries gh's own message.
-	failWith(execError({ stderr: 'dial tcp: lookup api.github.com: could not resolve host' }));
-	const network = kindOf(() => runGh(['api', 'user']));
-	assert.equal(network.kind, 'rejected');
-	assert.match(network.reason, /could not resolve host/);
-
-	failWith(execError({ stderr: 'HTTP 422: Validation Failed' }));
-	const other = kindOf(() => runGh(['api', 'user']));
-	assert.equal(other.kind, 'rejected');
-	assert.equal(other.reason, 'HTTP 422: Validation Failed');
-	assert.equal(other.message, other.reason);
-});
-
-// wrapper-only: exercises the sync runGh that s9/t21 deletes; skipped until then
-test.skip('runGh passes the 10 s timeout option to the exec seam', async () => {
-	const seen: Array<{ cmd: string; args: readonly string[]; opts: Record<string, unknown> | undefined }> = [];
-	installExecStandIn((cmd, args, opts) => {
-		seen.push({ cmd, args, opts: opts as Record<string, unknown> | undefined });
-		return ' octo \n';
-	});
-
-	assert.equal(GH_TIMEOUT_MS, 10_000);
-	assert.equal(runGh(['api', 'user', '-q', '.login']), 'octo');
-	assert.equal(runGh(['issue', 'close', '1'], { discardOutput: true }), '');
-
-	assert.equal(seen.length, 2);
-	assert.equal(seen[0]?.cmd, 'gh');
-	assert.deepEqual(seen[0]?.args, ['api', 'user', '-q', '.login']);
-	assert.equal(seen[0]?.opts?.['timeout'], 10_000);
-	assert.equal(seen[0]?.opts?.['encoding'], 'utf8');
-	assert.equal(seen[1]?.opts?.['timeout'], 10_000);
-	assert.deepEqual(seen[1]?.opts?.['stdio'], ['ignore', 'ignore', 'pipe']);
-});
 
 // ---------------------------------------------------------------------------
 // Migrated wrappers (compatibility exceptions 1 and 2)
@@ -150,14 +83,6 @@ test('a typed create rejected as an unknown issue type is retried once untyped a
 			assert.equal(r.value.id, 700);
 		}
 	}
-});
-
-// wrapper-only: exercises the sync runGh that s9/t21 deletes; skipped until then
-test.skip('compatibility exception 2, a migrated operation passes the 10 s timeout and a timeout is reported as unreachable', async () => {
-	let opts: Record<string, unknown> | undefined;
-	installExecStandIn((_cmd, _args, o) => { opts = o as Record<string, unknown> | undefined; throw execError({ code: 'ETIMEDOUT' }); });
-	assert.equal(kindOf(() => ghGetIssueBody('o', 'r', 'o/r#1')).kind, 'unreachable');
-	assert.equal(opts?.['timeout'], GH_TIMEOUT_MS);
 });
 
 // ---------------------------------------------------------------------------

@@ -22,7 +22,7 @@ import { getLogger } from '../../shared/logger.js';
 import { isToolDenied } from '../tracker/tool-denied.js';
 import { findAnchor } from './anchor-finder.js';
 import { resolveDefaultBranch } from './branch-resolution.js';
-import { POLICY_PATH } from './git.js';
+import { POLICY_PATH } from './types.js';
 import { refreshGit, refreshLocal } from './refresh-git.js';
 import type { RefreshGit, RefreshLocal } from './refresh-git.js';
 import { parsePolicyFile } from './policy-parser.js';

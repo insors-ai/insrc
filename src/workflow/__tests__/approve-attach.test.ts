@@ -14,7 +14,7 @@ import { dirname, join } from 'node:path';
 import { approveThroughPipeline as approve } from './helpers/approve-pipeline.js';
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
 import { hldArtifactPaths, lldArtifactPaths, planArtifactPaths } from '../storage.js';
-import { type TrackerExec } from '../tracker/github.js';
+import type { TrackerExec } from './helpers/exec-stand-in.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { handleTrackerAttach } from '../../daemon/tracker-attach.js';
 import { readAttachments } from '../tracker/binding.js';

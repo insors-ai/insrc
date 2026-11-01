@@ -1,5 +1,5 @@
 /**
- * commitAndPushArtifactsViaRegistry (Story s10), against real temporary repositories and the old function as the reference.
+ * commitAndPushArtifactsViaRegistry (Story s10), against real temporary repositories.
  * Run: npx tsx --test-force-exit src/workflow/tracker/__tests__/commit-and-push-registry.test.ts
  */
 
@@ -15,7 +15,6 @@ import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
 import { _resetRegistryForTests } from '../../../daemon/tools/registry.js';
 import type { ApprovalGate } from '../../../daemon/tools/types.js';
 import { commitAndPushArtifactsViaRegistry } from '../commit-and-push-registry.js';
-import { commitAndPushArtifacts } from '../github.js';
 import { workflowToolDeps } from '../registry-table.js';
 import { ToolDenied } from '../tool-denied.js';
 
@@ -44,29 +43,25 @@ const write = (work: string, name: string, text = `${name}\n`): string => { cons
 const subject = (cwd: string): string => git(cwd, 'log', '-1', '--format=%s');
 const refs = (bare: string): string => git(bare, 'for-each-ref', '--format=%(refname)');
 
-describe('commit-and-push-registry.test.ts: same results and reasons as the old function for each case; denial at each phase throws ToolDenied; denied commit leaves the paths staged; mixed and all-missing paths; three push configurations', () => {
-	it('commits and pushes: the same result as the old function, and the commit reaches the remote', async () => {
-		const a = fixture(); const b = fixture();
-		const old = commitAndPushArtifacts(a.work, [write(a.work, 'x.md')], 'add x');
+describe('commit-and-push-registry.test.ts: fixed results and reasons for each case; denial at each phase throws ToolDenied; denied commit leaves the paths staged; mixed and all-missing paths; three push configurations', () => {
+	it('commits and pushes: the result is committed and pushed, and the commit reaches the remote', async () => {
+		const b = fixture();
 		const got = await commitAndPushArtifactsViaRegistry(b.work, [write(b.work, 'x.md')], 'add x', deps(b.work));
-		assert.deepEqual(got, old);
 		assert.deepEqual(got, { committed: true, pushed: true });
 		assert.equal(subject(b.work), 'add x');
 		assert.equal(git(b.origin, 'log', '-1', '--format=%s', 'main'), 'add x');
 	});
 
-	it('not a work tree: the same result and reason', async () => {
+	it('not a work tree: not committed, with the reason', async () => {
 		const d = mk();
-		const old = commitAndPushArtifacts(d, [write(d, 'x.md')], 'm');
-		assert.deepEqual(await commitAndPushArtifactsViaRegistry(d, [join(d, 'x.md')], 'm', deps(d)), old);
-		assert.equal(old.reason, 'not a git work tree');
+		write(d, 'x.md');
+		assert.deepEqual(await commitAndPushArtifactsViaRegistry(d, [join(d, 'x.md')], 'm', deps(d)), { committed: false, pushed: false, reason: 'not a git work tree' });
 	});
 
 	it('all-missing paths: no files on disk, and git_stage is never called; mixed paths stage and commit only the existing ones', async () => {
-		const a = fixture(); const b = fixture();
+		const b = fixture();
 		const missing = [join(b.work, 'nope.md'), join(b.work, 'nada.md')];
 		assert.deepEqual(await commitAndPushArtifactsViaRegistry(b.work, missing, 'm', deps(b.work)), { committed: false, pushed: false, reason: 'no artifact files on disk' });
-		assert.deepEqual(commitAndPushArtifacts(a.work, [join(a.work, 'nope.md')], 'm'), { committed: false, pushed: false, reason: 'no artifact files on disk' });
 		// a gate that declines git_stage proves it is not asked: the all-missing result comes back, not a denial
 		_setApprovalGateForTests(() => declining('git_stage'));
 		assert.equal((await commitAndPushArtifactsViaRegistry(b.work, missing, 'm', deps(b.work))).reason, 'no artifact files on disk');
@@ -78,23 +73,19 @@ describe('commit-and-push-registry.test.ts: same results and reasons as the old 
 	});
 
 	it('nothing staged: nothing to commit (already up to date), no commit and no push', async () => {
-		const a = fixture(); const b = fixture();
-		const old = commitAndPushArtifacts(a.work, [join(a.work, 'seed.txt')], 'again');
+		const b = fixture();
 		const got = await commitAndPushArtifactsViaRegistry(b.work, [join(b.work, 'seed.txt')], 'again', deps(b.work));
-		assert.deepEqual(got, old);
 		assert.deepEqual(got, { committed: false, pushed: false, reason: 'nothing to commit (already up to date)' });
 		assert.equal(subject(b.work), 'seed');
 	});
 
-	it('a git add failure (an ignored path) and a commit failure (a failing pre-commit hook) are reported with the old reason prefixes', async () => {
+	it('a git add failure (an ignored path) and a commit failure (a failing pre-commit hook) are reported with their reason prefixes', async () => {
 		const b = fixture();
 		writeFileSync(join(b.work, '.gitignore'), 'ignored.md\n');
 		const ig = write(b.work, 'ignored.md');
 		const addFail = await commitAndPushArtifactsViaRegistry(b.work, [ig], 'm', deps(b.work));
 		assert.equal(addFail.committed, false); assert.equal(addFail.pushed, false);
 		assert.match(addFail.reason ?? '', /^git add failed: /);
-		const oldAdd = commitAndPushArtifacts(fixture().work, [(() => { const f = fixture(); writeFileSync(join(f.work, '.gitignore'), 'ignored.md\n'); return write(f.work, 'ignored.md'); })()], 'm');
-		assert.match(oldAdd.reason ?? '', /^git add failed: /);
 		// a pre-commit hook that fails
 		const c = fixture();
 		mkdirSync(join(c.work, '.git', 'hooks'), { recursive: true });
@@ -103,10 +94,10 @@ describe('commit-and-push-registry.test.ts: same results and reasons as the old 
 		assert.equal(commitFail.committed, false);
 		assert.match(commitFail.reason ?? '', /^git commit failed: /);
 		assert.equal(subject(c.work), 'seed', 'nothing was committed');
-		assert.equal(git(c.work, 'diff', '--cached', '--name-only'), 'y.md', 'the add stays staged, as with the old function');
+		assert.equal(git(c.work, 'diff', '--cached', '--name-only'), 'y.md', 'the add stays staged');
 	});
 
-	it('three push configurations behave as the old helper: an alternate push remote, a differently named upstream, and a missing upstream', async () => {
+	it('three push configurations: an alternate push remote, a differently named upstream, and a missing upstream', async () => {
 		// an alternate push remote
 		let b = fixture(); const other = mk(); execFileSync('git', ['init', '-q', '--bare', other]);
 		git(b.work, 'remote', 'add', 'other', other); git(b.work, 'config', 'remote.pushDefault', 'other');
@@ -118,14 +109,12 @@ describe('commit-and-push-registry.test.ts: same results and reasons as the old 
 		git(b.work, 'config', 'branch.main.merge', 'refs/heads/upstream-name'); git(b.work, 'config', 'push.default', 'upstream');
 		assert.deepEqual(await commitAndPushArtifactsViaRegistry(b.work, [write(b.work, 'a.md')], 'named', deps(b.work)), { committed: true, pushed: true });
 		assert.equal(git(b.origin, 'log', '-1', '--format=%s', 'upstream-name'), 'named');
-		// a missing upstream: committed locally, the push failure is reported (the old helper's result)
-		const f = fixture(); const g = fixture();
-		git(f.work, 'checkout', '-q', '-b', 'feature'); git(g.work, 'checkout', '-q', '-b', 'feature');
-		const old = commitAndPushArtifacts(f.work, [write(f.work, 'a.md')], 'noup');
+		// a missing upstream: committed locally, the push failure is reported
+		const g = fixture();
+		git(g.work, 'checkout', '-q', '-b', 'feature');
 		const got = await commitAndPushArtifactsViaRegistry(g.work, [write(g.work, 'a.md')], 'noup', deps(g.work));
 		assert.equal(got.committed, true); assert.equal(got.pushed, false);
 		assert.match(got.reason ?? '', /^committed locally; push failed: /);
-		assert.deepEqual({ ...got, reason: undefined }, { ...old, reason: undefined });
 		// a repository with no remote at all
 		const n = fixture({ origin: false });
 		const noRemote = await commitAndPushArtifactsViaRegistry(n.work, [write(n.work, 'a.md')], 'm', deps(n.work));

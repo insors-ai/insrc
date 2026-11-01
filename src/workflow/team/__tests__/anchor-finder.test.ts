@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { findAnchor, parseAnchorLog } from '../anchor-finder.js';
-import { POLICY_PATH } from '../git.js';
+import { POLICY_PATH } from '../types.js';
 import { VALID_POLICY, cloneOf, commitFile, git, makeFixture, makeOrigin, removeAndCommit } from './git-fixture.js';
 
 const SHA_A = 'a'.repeat(40);

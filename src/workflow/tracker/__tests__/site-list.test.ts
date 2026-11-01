@@ -1,6 +1,6 @@
 /**
- * The site list of the tracker move (Story s10): the 31 wrapper rows of the replacement table equal the gh exports of github.ts, every row
- * has a registry test, no production file outside github.ts still calls a wrapper, and the migration record lists every row, site and daemon method.
+ * The site list of the tracker move (Story s10, finished by s9): the 31 wrapper rows of the replacement table each have a registry test, no production file
+ * imports a deleted wrapper from github.ts, the forbidden-spawn scan finds nothing, and the migration record lists every row, site and daemon method.
  * Run: npx tsx --test-force-exit src/workflow/tracker/__tests__/site-list.test.ts
  */
 
@@ -10,7 +10,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import * as github from '../github.js';
+import { spawnSync } from 'node:child_process';
 import { createRegistryTable, workflowToolDeps } from '../registry-table.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -40,11 +40,8 @@ function sources(dir: string): string[] {
 	return out;
 }
 
-test('site-list.test.ts: the 31 gh wrapper names in the table equal the github.ts gh exports; every site has a table row and a registry test; the migration record lists the rows', () => {
-	// the wrappers github.ts exports are exactly the 31 names
-	const exported = Object.entries(github).filter(([n, v]) => typeof v === 'function' && /^(gh[A-Z]|queryTasks$|listMyOpenTasks$|gitOriginOwnerRepo$)/.test(n)).map(([n]) => n).sort();
+test('site-list.test.ts: every site of the replacement table is a row with a tool and a registry test, and the scan finds none outside the exemptions', () => {
 	assert.equal(WRAPPERS.length, 31);
-	assert.deepEqual(exported, [...WRAPPERS].sort());
 
 	// the table has a row for each of them and for each adapter row, and no other row
 	const rows = Object.keys(createRegistryTable(workflowToolDeps('/tmp'))).sort();
@@ -62,6 +59,10 @@ test('site-list.test.ts: the 31 gh wrapper names in the table equal the github.t
 		assert.ok(handlers.includes(`'${method}'`), `${method} is not registered in the handler runtime`);
 	}
 	assert.ok(RECORD.includes('maintenance.ts'));
+
+	// the scan, in failing mode, finds no site outside the three exemptions
+	const scan = spawnSync(process.execPath, [join(ROOT, 'scripts', 'forbidden-spawn-scan.mjs'), '--fail'], { encoding: 'utf8' });
+	assert.equal(scan.status, 0, scan.stdout + scan.stderr);
 });
 
 test('site-list.test.ts: every site named in the migration record exists, and no production file outside github.ts calls a wrapper', () => {
@@ -71,7 +72,6 @@ test('site-list.test.ts: every site named in the migration record exists, and no
 	const offenders: string[] = [];
 	for (const file of sources(SRC)) {
 		const rel = relative(SRC, file);
-		if (rel === join('workflow', 'tracker', 'github.ts')) continue;
 		for (const m of read(file).matchAll(/^import\s+(type\s+)?\{([^}]*)\}\s+from\s+'([^']*(?:tracker\/github|\.\/github))\.js';/gms)) {
 			if (m[1] !== undefined) continue;
 			if (!/(^|\/)tracker\/github$|^\.\/github$/.test(m[3]!) || (rel.startsWith(join('workflow', 'config') + '/') && m[3] === './github')) continue;

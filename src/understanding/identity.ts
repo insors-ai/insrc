@@ -50,6 +50,8 @@ function authority(value: string): string {
   }
   return url.origin;
 }
+/** The source label of an identity read from git's configured email (a label, not a command). */
+const GIT_EMAIL_SOURCE: LearnerIdentity['source'] = 'git';
 function identity(source: LearnerIdentity['source'], host: string, subject: string): LearnerIdentity {
   const normalized = text(subject);
   return { key: digest(['learner-v1', source, host, normalized]), source, authority: host, subject: normalized,
@@ -97,7 +99,7 @@ export async function resolveLearner(repo: string, deps: IdentityDeps): Promise<
   }
   try {
     const email = await deps.gitEmail(repo);
-    if (email?.trim()) return { learner: identity('git', 'git-email', email), ownerPrincipal, diagnostics };
+    if (email?.trim()) return { learner: identity(GIT_EMAIL_SOURCE, 'git-email', email), ownerPrincipal, diagnostics };
     diagnostics.push({ source: 'git', status: 'disconnected' });
   } catch { diagnostics.push({ source: 'git', status: 'unavailable' }); }
   return { learner: identity('os', host, os), ownerPrincipal, diagnostics };

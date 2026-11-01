@@ -24,7 +24,7 @@ import { dirname, join, resolve } from 'node:path';
 import { getLogger } from '../../shared/logger.js';
 import { findAnchor } from './anchor-finder.js';
 import { catFileExists, catFileText, forEachRef, GitCallFailed, LOCAL_GIT_TIMEOUT_MS, lsTreeNames, remoteNames, revParse, revParseValues, symbolicRef } from '../git-calls.js';
-import { POLICY_PATH } from './git.js';
+import { POLICY_PATH } from './types.js';
 import { parsePolicyFile, buildTeamPolicy } from './policy-parser.js';
 import { acquireLock, isSafeRefName, mergeAnchor, publishSightingIfAbsent, readSighting } from './sighting-store.js';
 import type { Sighting } from './sighting-store.js';

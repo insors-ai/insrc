@@ -14,7 +14,7 @@ import { cleanup, tmp } from '../../../daemon/tools/__tests__/_proc.js';
 import { ToolDenied } from '../../tracker/tool-denied.js';
 import { refreshPolicy } from '../policy-refresh.js';
 import { readSighting } from '../sighting-store.js';
-import { POLICY_PATH } from '../git.js';
+import { POLICY_PATH } from '../types.js';
 import { VALID_POLICY, cloneOf, commitFile, git, makeFixture, makeOrigin } from './git-fixture.js';
 
 const dirs: string[] = [];

@@ -49,6 +49,9 @@ export interface TeamPolicy extends PolicyFile {
 	};
 }
 
+/** Where the team policy lives in a repository. */
+export const POLICY_PATH = '.insrc/policy.json';
+
 /**
  * What a reader may be given. No production caller passes a signal yet (the audit of Story s9 task t5), so it stays optional;
  * a reader that has none ignores it.

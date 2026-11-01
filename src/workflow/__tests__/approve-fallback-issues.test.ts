@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
-import { type TrackerExec } from '../tracker/github.js';
+import type { TrackerExec } from './helpers/exec-stand-in.js';
 import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../tracker/port.js';
 import { ensureUnitIssueDetailed } from '../tracker/unit-issue.js';

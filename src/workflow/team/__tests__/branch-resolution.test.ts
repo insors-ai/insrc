@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { createDeadline } from '../git-async.js';
+import { createDeadline } from '../sighting-store.js';
 import type { RefreshGit } from '../refresh-git.js';
 import { parseSymrefHead, resolveDefaultBranch } from '../branch-resolution.js';
 import { readSighting, writeSighting } from '../sighting-store.js';

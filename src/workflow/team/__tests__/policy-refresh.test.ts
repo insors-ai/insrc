@@ -15,7 +15,7 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { POLICY_PATH } from '../git.js';
+import { POLICY_PATH } from '../types.js';
 import { readPolicy } from '../policy-reader.js';
 import { refreshPolicy } from '../policy-refresh.js';
 import { refreshLocal } from '../refresh-git.js';

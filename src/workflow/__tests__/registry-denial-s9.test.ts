@@ -52,7 +52,7 @@ import { readPolicy } from '../team/policy-reader.js';
 import { refreshPolicy } from '../team/policy-refresh.js';
 import { trackedFiles, trivialCheckPlan } from '../../daemon/steps/build-step/validation-checks.js';
 import { VALID_POLICY, cloneOf, commitFile, git, makeFixture, makeOrigin } from '../team/__tests__/git-fixture.js';
-import { POLICY_PATH } from '../team/git.js';
+import { POLICY_PATH } from '../team/types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const GIT_TOOLS = [gitCatFileTool, gitConfigTool, gitDiffTool, gitForEachRefTool, gitLogTool, gitLsFilesTool, gitLsRemoteTool, gitLsTreeTool, gitPathHistoryTool,

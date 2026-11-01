@@ -6,14 +6,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createDeadline as viaGitAsync } from '../git-async.js';
 import { createDeadline, REFRESH_DEADLINE_MS } from '../sighting-store.js';
 
 const sleep = (ms: number): Promise<void> => new Promise(r => setTimeout(r, ms));
 
 test('deadline.test.ts: createDeadline aborts its signal at the budget and dispose clears the timer', async () => {
-	assert.equal(viaGitAsync, createDeadline, 'git-async re-exports the one createDeadline');
-
 	// the default budget is the 10 second refresh budget, and remainingMs counts down to 0
 	const dflt = createDeadline();
 	assert.ok(dflt.remainingMs() <= REFRESH_DEADLINE_MS && dflt.remainingMs() > REFRESH_DEADLINE_MS - 1_000);

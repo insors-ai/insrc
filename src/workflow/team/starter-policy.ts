@@ -15,7 +15,7 @@ import { statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { publishCreateOnly } from './create-only.js';
-import { POLICY_PATH } from './git.js';
+import { POLICY_PATH } from './types.js';
 import type { PolicyFile, PolicyResult } from './types.js';
 
 /** Signoff for definition, high-level design, low-level design and build completion; claims enforced. */

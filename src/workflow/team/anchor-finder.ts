@@ -17,7 +17,7 @@
  */
 
 import { LOCAL_GIT_TIMEOUT_MS, orFallback, pathHistory, revParseValues } from '../git-calls.js';
-import { POLICY_PATH } from './git.js';
+import { POLICY_PATH } from './types.js';
 import type { PolicyAnchor } from './types.js';
 
 const UNKNOWN: PolicyAnchor = { known: false, firstCommit: '', firstCommitTime: '' };

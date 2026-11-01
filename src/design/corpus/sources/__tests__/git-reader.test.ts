@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { readPinnedSources, runGitBinary, gitEnvironment } from '../git-reader.js';
+import { readPinnedSources, toolGitRunner } from '../git-reader.js';
 import type { BinaryGitRunner } from '../git-reader.js';
 import { isLfsPointer } from '../eligibility.js';
 import { gitFixture } from './git-fixtures.js';
@@ -26,7 +26,7 @@ test('pinned-reader rejects missing commits paths and corrupt object framing', a
     for (const request of [{ ...f.request, revision: 'f'.repeat(40) }, { ...f.request, paths: ['absent'] },
       { ...f.request, revision: f.git('rev-parse', 'HEAD:binary.bin') }]) assert.equal((await readPinnedSources(f.dir, request)).ok, false);
     for (const corrupt of [(b: Uint8Array) => b.subarray(0, b.length - 1), (b: Uint8Array) => { const copy = new Uint8Array(b); copy[copy.length - 2] = 0; return copy; }]) {
-      const run: BinaryGitRunner = async (...args) => corrupt(await runGitBinary(...args));
+      const run: BinaryGitRunner = async (...args) => corrupt(await toolGitRunner(...args));
       assert.equal((await readPinnedSources(f.dir, f.request, { run })).ok, false);
     }
   } finally { f.dispose(); }
@@ -60,14 +60,13 @@ test('reader-safety prevents replacement filters lazy fetch and config-driven co
     f.git('config', 'filter.evil.smudge', 'touch SHOULD_NOT_RUN');
     writeFileSync(join(f.dir, '.gitattributes'), '*.bin filter=evil');
     const calls: string[][] = [];
-    const run: BinaryGitRunner = async (args, bytes, opts) => { calls.push([...args]); return runGitBinary(args, bytes, opts); };
+    const run: BinaryGitRunner = async (args, bytes, opts) => { calls.push([...args]); return toolGitRunner(args, bytes, opts); };
     const result = await readPinnedSources(f.dir, f.request, { run }); assert.equal(result.ok, true);
     if (result.ok) assert.deepEqual(result.value[0]!.bytes, f.binary);
     assert.equal(existsSync(join(f.dir, 'SHOULD_NOT_RUN')), false);
     assert.ok(calls.every(args => args.join(' ') === 'cat-file --batch'));
-    assert.equal(gitEnvironment()['GIT_NO_LAZY_FETCH'], '1');
     const previous = process.env['GIT_CONFIG_COUNT']; process.env['GIT_CONFIG_COUNT'] = '100';
-    try { assert.equal(gitEnvironment()['GIT_CONFIG_COUNT'], undefined); assert.equal((await readPinnedSources(f.dir, f.request)).ok, true); }
+    try { assert.equal((await readPinnedSources(f.dir, f.request)).ok, true); }
     finally { if (previous === undefined) delete process.env['GIT_CONFIG_COUNT']; else process.env['GIT_CONFIG_COUNT'] = previous; }
     // A promised but absent object must never be fetched. The transport command leaves a marker if invoked.
     const missing = createHash('sha1').update('blob 0\0').digest('hex');

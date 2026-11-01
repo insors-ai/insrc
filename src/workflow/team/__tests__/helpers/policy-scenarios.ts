@@ -7,7 +7,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { POLICY_PATH } from '../../git.js';
+import { POLICY_PATH } from '../../types.js';
 import { VALID_POLICY, cloneOf, commitFile, git, makeFixture, makeOrigin } from '../git-fixture.js';
 import type { Fixture } from '../git-fixture.js';
 import type { PolicyAnchor, PolicyResult, TeamPolicy } from '../../types.js';

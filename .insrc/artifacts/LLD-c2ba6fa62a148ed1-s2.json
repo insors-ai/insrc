@@ -255,6 +255,13 @@
         "choice": "Two-point smoke (as proposed)",
         "rationale": "User decision 2026-11-01: time writeEntityEmbeddings (upsert) vs addEntityEmbeddings on this repository's vector table at a refresh-sized and a backfill-sized batch, record both as a smoke result in the Story's test record, and choose the backfill batch size from them.",
         "resolvedAt": "2026-11-01T13:08:10.475Z"
+      },
+      "qcde04c7f": {
+        "question": "NOTE (s8 alt2 partial): alternatives a3 and a4 were not scored against Epic constraints k2 and k4; both lose on acceptance criteria already, so the choice of a1 does not depend on it.",
+        "status": "resolved",
+        "choice": "Accept gap, proceed with a1",
+        "rationale": "Default stated to the user 2026-11-01 (no objection): a3 and a4 already lose on acceptance criteria, so their k2/k4 scores cannot change the choice; the note stays in the LLD.",
+        "resolvedAt": "2026-11-01T13:08:34.333Z"
       }
     }
   },

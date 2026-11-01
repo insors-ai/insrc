@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 38 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -204,3 +204,23 @@ Run at 2026-11-01T10:40:49.186Z on commit `198583e88`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.5 s |  |
 | `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.1 s |  |
+
+## t10
+
+Run at 2026-11-01T10:45:59.718Z on commit `e52dd8f0f`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/watcher.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac5: an ignore-file edit that drops one rule and adds another, in one batch with edits to the files it moves, is judged by the new rules -- the newly covered file leaves, the uncovered one enters, once each | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+| pass | ac5: a file the removed rule covered enters the index even when the batch carries no event for it | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+| pass | a change to the clone's exclude file, which no event names, is found by its content and applied before the batch is judged | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+| pass | the real watcher applies an ignore-file edit and an edit to a file it newly covers consistently in one pass | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+| pass | a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 6 | 1.5 s |  |

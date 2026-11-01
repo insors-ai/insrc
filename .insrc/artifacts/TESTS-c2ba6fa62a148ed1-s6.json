@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s6",
     "createdAt": "2026-11-01T08:48:41.494Z",
-    "updatedAt": "2026-11-01T10:40:49.186Z",
+    "updatedAt": "2026-11-01T10:45:59.718Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1131,6 +1131,82 @@
               },
               {
                 "title": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "e52dd8f0f",
+        "ranAt": "2026-11-01T10:45:59.718Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/indexer/watcher.ts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "ac5: an ignore-file edit that drops one rule and adds another, in one batch with edits to the files it moves, is judged by the new rules -- the newly covered file leaves, the uncovered one enters, once each",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "ac5: a file the removed rule covered enters the index even when the batch carries no event for it",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "a change to the clone's exclude file, which no event names, is found by its content and applied before the batch is judged",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "the real watcher applies an ignore-file edit and an edit to a file it newly covers consistently in one pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1469,
+            "titles": [
+              {
+                "title": "a watcher-emitted event for a FileFilter-excluded file never reaches a registered handler, while one for an included file does",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: an ignore-file edit that drops one rule and adds another, in one batch with edits to the files it moves, is judged by the new rules -- the newly covered file leaves, the uncovered one enters, once each",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a file the removed rule covered enters the index even when the batch carries no event for it",
+                "result": "pass"
+              },
+              {
+                "title": "a change to the clone's exclude file, which no event names, is found by its content and applied before the batch is judged",
+                "result": "pass"
+              },
+              {
+                "title": "the real watcher applies an ignore-file edit and an edit to a file it newly covers consistently in one pass",
+                "result": "pass"
+              },
+              {
+                "title": "a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one",
                 "result": "pass"
               }
             ],

@@ -14,7 +14,7 @@ import { dirname, isAbsolute, join, normalize, relative, resolve } from 'node:pa
 
 import { RPC_AUDIT, STEP_PHASE_AUDIT } from './repo-call-audit.js';
 
-export type RepoRefusalCode = 'repo-missing' | 'repo-not-absolute' | 'repo-not-directory' | 'repo-not-registered' | 'path-outside-repo';
+export type RepoRefusalCode = 'repo-missing' | 'repo-not-absolute' | 'repo-not-directory' | 'repo-not-registered' | 'path-outside-repo' | 'repo-mismatch';
 
 /** One row of {@link FILE_MODIFYING_METHODS}. */
 export interface RepoCallRule {
@@ -81,6 +81,10 @@ export function requireRepoForCall(method: string, params: unknown, registered: 
 	const repoRaw = typeof named === 'string' && named.length > 0 ? named : fromToken;
 	if (typeof repoRaw !== 'string' || repoRaw.length === 0) {
 		return refuse('repo-missing', `${method}: \`${rule.repoParam}\` (an absolute path of a registered repository) is required; the daemon does not fall back to INSRC_REPO, the session workspace or its working directory`);
+	}
+	// a later phase of a run belongs to the repository the run started on: a different repo in the call is a redirect, refused
+	if (rule.repoFromRunToken === true && opts.runTokenRepo !== undefined && typeof named === 'string' && named.length > 0 && canonical(named) !== canonical(opts.runTokenRepo)) {
+		return refuse('repo-mismatch', `${method}: \`${rule.repoParam}\` '${named}' is not the repository this run started on (${opts.runTokenRepo})`);
 	}
 	if (!isAbsolute(repoRaw)) return refuse('repo-not-absolute', `${method}: \`${rule.repoParam}\` must be an absolute path, got '${repoRaw}'`);
 	if (!existsSync(repoRaw) || !statSync(repoRaw).isDirectory()) return refuse('repo-not-directory', `${method}: \`${rule.repoParam}\` '${repoRaw}' is not a directory`);

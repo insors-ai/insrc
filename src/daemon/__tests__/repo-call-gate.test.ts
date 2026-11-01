@@ -92,7 +92,9 @@ test("repo-call-gate.test.ts: the gate never reads the daemon's INSRC_REPO or wo
 	const unreg = requireRepoForCall('workflow-step.plan', { state: 'tok' }, registered, { runTokenRepo: other });
 	assert.equal(unreg.ok === false && unreg.code, 'repo-not-registered');
 	// a call whose own repo differs from the token's is checked on its own repo
-	assert.equal(requireRepoForCall('workflow-step.plan', { state: 'tok', repo: other }, registered, { runTokenRepo: repo }).ok, false);
+	const redirect = requireRepoForCall('workflow-step.plan', { state: 'tok', repo: other }, registered, { runTokenRepo: repo });
+	assert.equal(redirect.ok === false && redirect.code, 'repo-mismatch');
+	assert.equal(requireRepoForCall('workflow-step.plan', { state: 'tok', repo }, registered, { runTokenRepo: repo }).ok, true, 'the same repo as the token is fine');
 	// a registry that cannot be read refuses the call
 	const failed = await gateRepoCall('workflow.approve', { repo }, async () => { throw new Error('registry offline'); });
 	assert.equal(failed.ok === false && failed.code, 'repo-not-registered');

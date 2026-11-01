@@ -34,6 +34,8 @@ import { handleWorkflowStep } from './workflow-step/handler.js';
 import { registerParkOffer } from './workflow-step/park-offer.js';
 import { registerSignoff } from './workflow-step/signoff-registration.js';
 import { registerWorkflowRunners } from '../../workflow/index.js';
+import { gateRepoCall, isFileModifying } from '../repo-call-gate.js';
+import { decodeState } from './workflow-step/state.js';
 
 const log = getLogger('daemon:step-host');
 
@@ -97,8 +99,46 @@ function contextOf(raw: unknown): StepCallContext | string {
 	};
 }
 
+/** The step tools whose phases are in the repo gate's table, and the name their table rows carry. */
+const GATED_STEP_TOOLS: Readonly<Record<string, string>> = { insrc_workflow_step: 'workflow-step', insrc_build_step: 'build-step' };
+
+/** What the step host needs beyond the tool table. */
+export interface StepCallHandlerOptions {
+	/**
+	 * The registered repositories' paths. When given, a phase the repo gate lists as modifying is refused unless the call names an
+	 * absolute registered repo (or, for a later phase of a run, the run's token records one). The daemon always gives it; a test of the
+	 * tool table alone may leave it out.
+	 */
+	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;
+}
+
+/** The refusal in the step tools' own envelope shape. */
+function repoRefusalEnvelope(code: string, message: string): StepEnvelope {
+	return { content: [{ type: 'text', text: JSON.stringify({ next: 'error', error: { code, name: 'RepoGateError', message, retryable: false } }, null, 2) }], isError: true };
+}
+
+/**
+ * The repo gate for one step call: the arguments with the repo checked and the paths made absolute, or the refusal envelope.
+ * A later phase of a workflow run carries only its state token; the repo the token recorded when the run started is the one used.
+ */
+async function gateStepArgs(tool: string, args: unknown, registered: () => Promise<ReadonlySet<string>>): Promise<{ readonly args: unknown } | { readonly refusal: StepEnvelope }> {
+	const prefix = GATED_STEP_TOOLS[tool];
+	const phase = typeof args === 'object' && args !== null ? (args as { phase?: unknown }).phase : undefined;
+	if (prefix === undefined || typeof phase !== 'string') return { args };
+	const key = `${prefix}.${phase}`;
+	if (!isFileModifying(key)) return { args };
+	let runTokenRepo: string | undefined;
+	const token = (args as { state?: unknown }).state;
+	if (typeof token === 'string' && token.length > 0) {
+		// a token that cannot be read is left to the step itself, which reports it and writes nothing
+		try { runTokenRepo = (await decodeState(token)).intent.repoPath; } catch { return { args }; }
+	}
+	const checked = await gateRepoCall(key, args, registered, { runTokenRepo });
+	return checked.ok ? { args: checked.params } : { refusal: repoRefusalEnvelope(checked.code, checked.message) };
+}
+
 /** The `step.call` stream handler over `table`. */
-export function createStepCallHandler(table: Record<string, StepToolRunner> = stepToolTable()): StreamHandler {
+export function createStepCallHandler(table: Record<string, StepToolRunner> = stepToolTable(), opts: StepCallHandlerOptions = {}): StreamHandler {
 	return async (params, send, signal, trusted) => {
         const execution = trusted?.connectionExecution;
         const bound = trusted?.connectionSession !== undefined || execution?.mode === 'session-memory';
@@ -142,7 +182,13 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 			const localOwner = review && trusted?.reviewOwnerNonce === undefined ? registerLocalReviewOwner(signal, trusted?.assertRequestActive) : undefined;
 			const nonce = trusted?.reviewOwnerNonce ?? localOwner?.nonce;
 			const ownedContext = review && nonce ? { ...ctx, reviewOwner: createReviewOwnerContext(nonce, signal, trusted?.assertRequestActive) } : ctx;
-			const call = (): Promise<StepEnvelope> => run(p.args, signal, progress, execution);
+			let stepArgs = p.args;
+			if (opts.registeredRepos !== undefined) {
+				const gated = await gateStepArgs(p.tool, p.args, opts.registeredRepos);
+				if ('refusal' in gated) { answered = true; send({ id: 0, stream: 'done', data: gated.refusal }); return; }
+				stepArgs = gated.args;
+			}
+			const call = (): Promise<StepEnvelope> => run(stepArgs, signal, progress, execution);
 			try { envelope = await runInStepContext(ownedContext, () => family !== undefined ? runWithClientProviderContext(family, call) : call()); }
 			finally { localOwner?.close(); }
 		} catch (err) {

@@ -91,11 +91,6 @@ import { toolsCall } from './tools/call-handler.js';
 
 const log = getLogger('daemon');
 
-/** The step.call handler, built once on first use (the step modules load lazily). */
-let _stepCallHandler: StreamHandler | undefined;
-function getStepCallHandler(mod: typeof import('./steps/host.js')): StreamHandler {
-	return _stepCallHandler ??= mod.createStepCallHandler();
-}
 
 const BACKEND_OFFLINE_REASON =
 	'backend offline: this RPC was removed during the cleanup. The next backend (Ollama + CLI subprocess) will reinstate the surface.';
@@ -314,6 +309,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	const repoSettingsHandlers = createRepoSettingsHandlers({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) });
 	/** The registered repositories' paths, read for each file-modifying call (the repo gate refuses a call whose registry cannot be read). */
 	const registeredRepos = deps.registeredRepos ?? (async (): Promise<ReadonlySet<string>> => new Set((await listRepos(db)).map(r => r.path)));
+	let stepCallHandler: StreamHandler | undefined;
 	const rpcHandlers: RpcHandlers = {
 		...handoffRpcHandlers(),
 		'repo.add': async (params) => {
@@ -1700,7 +1696,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// stream's signal; the 'done' frame carries the tool's reply unchanged.
 		'step.call': async (params, send, signal, trusted) => {
 			const mod = await import('./steps/host.js');
-			return (deps.stepCallHandler ?? getStepCallHandler(mod))(params, send, signal, trusted);
+			// built once per runtime on first use (the step modules load lazily), with the repo gate's registry
+			stepCallHandler ??= deps.stepCallHandler ?? mod.createStepCallHandler(undefined, { registeredRepos });
+			return stepCallHandler(params, send, signal, trusted);
 		},
 		'ollama.pull': async (params, send, signal) => {
 			const { model } = params as { model: string };

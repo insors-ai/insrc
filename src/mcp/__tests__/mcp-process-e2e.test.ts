@@ -28,7 +28,7 @@ import { handleAnalyzeStep } from '../../daemon/steps/analyze-step/handler.js';
 import { handleWorkflowStep } from '../../daemon/steps/workflow-step/handler.js';
 import { STEP_TOOL_NAMES } from '../../shared/step-context.js';
 import { registerWorkflowRunners } from '../../workflow/index.js';
-import { alive, body, openPaths, sockOf, startDaemon, startMcp, storePaths } from './helpers/mcp-e2e.js';
+import { alive, body, openPaths, rpc, sockOf, startDaemon, startMcp, storePaths } from './helpers/mcp-e2e.js';
 import type { RunningDaemon } from './helpers/mcp-e2e.js';
 
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-e2e-home-'));
@@ -44,6 +44,8 @@ before(async () => {
 	writeFileSync(join(dir, 's1.md'), '# Doc\n\nThe body.\n');
 	writeFileSync(join(dir, 's1.json'), JSON.stringify({ meta: { workflow: 'design.story', epicHash: 'abcd', storyId: 'S001', authoredBy: 'daemon' }, body: {} }));
 	daemon = await startDaemon(HOME);
+	// a modifying step phase is refused unless it names a repository the daemon has registered
+	await rpc(sockOf(HOME), 'repo.add', { path: REPO });
 });
 after(async () => {
 	await daemon?.stop();
@@ -180,8 +182,11 @@ test('ac5 pass-through: emit_plan and emit_step prompts, schemas and state are b
 						assert.equal(String(viaMcp[key]).length, String(inProc[key]).length, `${label}: a token of the same form`);
 						continue;
 					}
-					const got = JSON.stringify(viaMcp[key]);
-					const want = JSON.stringify(inProc[key]);
+					// the analyzer sizes the question by the repository's registry entry (the daemon's is registered and indexing, the in-process
+					// store has none), so the size letter is not part of the byte comparison
+					const sizeless = (v: unknown): string => JSON.stringify(v).replace(/\\"scope\\": \\"[A-Z]+\\"/g, '\\"scope\\": \\"_\\"');
+					const got = sizeless(viaMcp[key]);
+					const want = sizeless(inProc[key]);
 					if (got !== want) {
 						let i = 0;
 						while (i < got.length && got[i] === want[i]) i += 1;

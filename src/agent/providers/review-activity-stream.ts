@@ -4,6 +4,7 @@ import type { ActivityReviewSessionOpts, StructuredSchema } from '../../shared/t
 import type { ReviewActivityEvent } from '../../shared/review-activity.js';
 import { validateAgainstSchema } from './structured-output.js';
 
+const RECENT_EVENT_IDS = 4096;
 const FRAME_BYTES = 8 * 1024 * 1024, CANDIDATE_BYTES = 4 * 1024 * 1024;
 const record = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 /** Native metadata only escapes this decoder; raw content is never a progress message. */
@@ -43,7 +44,10 @@ export class ReviewActivityStream<T> {
     if (typeof frame.uuid === 'string') {
      if (frame.uuid.length > 256) throw new Error('Review native event identity exceeds limit');
      if (this.seen.has(frame.uuid)) { if(newline<0)break; continue; }
-     if (this.seen.size>=4096) throw new Error('Review native event identity limit exceeded');
+     // This is a duplicate-detection window, not a lifetime event quota.
+     // Replays older than the retained window may be processed again. Active
+     // tools and accepted/final feedback have their own state below.
+     if (this.seen.size>=RECENT_EVENT_IDS) this.seen.delete(this.seen.values().next().value!);
      this.seen.add(frame.uuid);
     }
     if (this.kind==='claude') await this.claude(frame); else await this.codex(frame);

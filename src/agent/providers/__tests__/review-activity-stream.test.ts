@@ -71,3 +71,61 @@ test('a non-JSON final Codex message cannot promote earlier JSON and terminal fa
  await claude.parser.feed(Buffer.from(json({type:'result',is_error:true})+json({type:'assistant',message:{content:[{type:'tool_use',id:'late',name:'StructuredOutput',input:{ok:true}}]}})));
  assert.deepEqual(claude.candidates,[]);
 });
+
+test('long Claude and Codex streams keep bounded recent-ID deduplication and accept final feedback',async()=>{
+ for(const kind of ['claude','codex'] as const){
+  const h=harness(kind);await h.parser.start();
+  const frame=(uuid:string)=>kind==='claude'
+   ? {type:'stream_event',uuid,event:{type:'content_block_delta',delta:{type:'thinking_delta',thinking:'private reasoning'}}}
+   : {type:'item.completed',uuid,item:{type:'agent_message',text:'still reviewing'}};
+  for(let i=0;i<13000;i++){
+   const bytes=Buffer.from(json(frame(`event-${i}`)));
+   await h.parser.feed(bytes);
+   const count=h.events.length;
+   await h.parser.feed(bytes);
+   assert.equal(h.events.length,count,'recent duplicates do not renew activity');
+  }
+  // Check the memory invariant directly rather than depending on GC/heap timing.
+  assert.equal((h.parser as unknown as {seen:Set<string>}).seen.size,4096);
+  assert.equal(h.candidates.length,0);
+  assert.equal(h.events.filter(e=>e.kind==='model_output').length,13000);
+  if(kind==='claude')await h.parser.feed(Buffer.from(json({type:'assistant',uuid:'final',message:{content:[{type:'tool_use',id:'out',name:'StructuredOutput',input:{ok:true}}]}})));
+  else{
+   await h.parser.feed(Buffer.from(json({type:'item.completed',uuid:'final-message',item:{type:'agent_message',text:'{"ok":true}'}})));
+   assert.equal(h.candidates.length,0,'Codex still requires successful turn finality');
+   await h.parser.feed(Buffer.from(json({type:'turn.completed',uuid:'final-turn'})));
+  }
+  assert.deepEqual(h.candidates,[{ok:true}]);assert.deepEqual(h.parser.result(),{accepted:true,value:{ok:true}});
+  assert.equal(h.stopped(),true);assert.ok(!JSON.stringify(h.events).includes('private reasoning'));
+ }
+});
+
+test('tool state survives event-ID window turnover and duplicate completions remain harmless',async()=>{
+ for(const kind of ['claude','codex'] as const){
+  const h=harness(kind);await h.parser.start();
+  const tool=(start:boolean,uuid:string)=>kind==='claude'
+   ? start ? {type:'assistant',uuid,message:{content:[{type:'tool_use',id:'long-tool',name:'Read'}]}}
+     : {type:'user',uuid,message:{content:[{type:'tool_result',tool_use_id:'long-tool',content:'private file'}]}}
+   : {type:start?'item.started':'item.completed',uuid,item:{id:'long-tool',type:'command_execution'}};
+  await h.parser.feed(Buffer.from(json(tool(true,'start'))));
+  for(let i=0;i<9000;i++)await h.parser.feed(Buffer.from(json({type:'system',uuid:`filler-${i}`})));
+  await h.parser.feed(Buffer.from(json(tool(true,'new-start-envelope'))));
+  assert.equal(h.events.filter(e=>e.kind==='tool_started').length,1,'active tools are tracked separately from event UUIDs');
+  await h.parser.feed(Buffer.from(json(tool(false,'done'))));
+  const count=h.events.length;
+  await h.parser.feed(Buffer.from(json(tool(false,'done'))));
+  await h.parser.feed(Buffer.from(json(tool(false,'new-done-envelope'))));
+  assert.equal(h.events.length,count);assert.equal(h.events.filter(e=>e.kind==='tool_completed').length,1);
+ }
+});
+
+test('event-window rollover retains malformed-event and UUID-length errors',async()=>{
+ for(const kind of ['claude','codex'] as const){
+  for(const invalid of ['not json\n',json([]),json({type:'system',uuid:'x'.repeat(257)})]){
+   const h=harness(kind);await h.parser.start();
+   for(let i=0;i<4200;i++)await h.parser.feed(Buffer.from(json({type:'system',uuid:String(i)})));
+   await assert.rejects(h.parser.feed(Buffer.from(invalid)),/Invalid review native|identity exceeds limit/);
+   assert.deepEqual(h.candidates,[]);
+  }
+ }
+});

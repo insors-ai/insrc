@@ -179,3 +179,14 @@ and feedback, with the complete immutable checkpoint available through read
 tools, rather than repeating historical submitted packets. Existing stored
 before/after attempts remain readable and resumable without rewriting their
 input or feedback. They cannot be submitted as a new attempt.
+
+## Native event duplicate window
+
+The native stream decoder remembers the last 4,096 distinct accepted event IDs.
+New IDs evict the oldest retained ID instead of ending an active review. A
+duplicate still in the window is ignored without renewing activity. Events
+older than this bounded window can be processed again; this is not a session
+event quota. Active tools and accepted feedback have separate state, so window
+turnover neither completes a tool nor discards an accepted assessment. UUID
+length, frame/candidate byte limits, finality and malformed-input checks remain
+in force. This applies to both Claude and Codex native review streams.

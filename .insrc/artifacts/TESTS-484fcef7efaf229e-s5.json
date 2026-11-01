@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-10-31T14:12:30.209Z",
+    "updatedAt": "2026-11-01T05:49:41.967Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "e4b30504f",
-        "ranAt": "2026-10-29T14:41:37.350Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:35:03.382Z",
         "testsPassed": true,
         "tests": [
           {
@@ -40,7 +40,7 @@
             "file": "src/shared/__tests__/connection-manager-corpus.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10164,
+            "durationMs": 12527,
             "titles": [
               {
                 "title": "CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index",
@@ -57,8 +57,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "3af052d7d",
-        "ranAt": "2026-10-29T14:54:33.596Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:36:58.747Z",
         "testsPassed": true,
         "tests": [
           {
@@ -85,6 +85,11 @@
                 "file": "src/shared/__tests__/connection-manager-wire.test.ts",
                 "title": "CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy",
                 "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries",
+                "result": "pass"
               }
             ],
             "files": []
@@ -95,8 +100,12 @@
             "file": "src/shared/__tests__/connection-manager-wire.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1261,
+            "durationMs": 1867,
             "titles": [
+              {
+                "title": "CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries",
+                "result": "pass"
+              },
               {
                 "title": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal",
                 "result": "pass"
@@ -120,8 +129,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "acea568cf",
-        "ranAt": "2026-10-29T15:05:48.808Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:38:38.026Z",
         "testsPassed": true,
         "tests": [
           {
@@ -143,7 +152,7 @@
             "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4503,
+            "durationMs": 16881,
             "titles": [
               {
                 "title": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
@@ -444,8 +453,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "79cb1e42f",
-        "ranAt": "2026-10-29T16:30:27.553Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:40:32.974Z",
         "testsPassed": true,
         "tests": [
           {
@@ -453,6 +462,11 @@
             "level": "unit",
             "source": "mapping",
             "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-draft.test.ts",
+                "title": "CM-S5-FORM-TS: repeated driver rendering reuses validators without a global compiler cache",
+                "result": "pass"
+              },
               {
                 "file": "src/shared/__tests__/connection-manager-draft.test.ts",
                 "title": "CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel",
@@ -472,8 +486,12 @@
             "file": "src/shared/__tests__/connection-manager-draft.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 603,
+            "durationMs": 851,
             "titles": [
+              {
+                "title": "CM-S5-FORM-TS: repeated driver rendering reuses validators without a global compiler cache",
+                "result": "pass"
+              },
               {
                 "title": "CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel",
                 "result": "pass"
@@ -534,8 +552,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "be26a144e",
-        "ranAt": "2026-10-30T04:26:43.355Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:42:28.488Z",
         "testsPassed": true,
         "tests": [
           {
@@ -577,6 +595,11 @@
                 "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
                 "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
                 "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay",
+                "result": "pass"
               }
             ],
             "files": []
@@ -587,8 +610,12 @@
             "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2958,
+            "durationMs": 4562,
             "titles": [
+              {
+                "title": "CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay",
+                "result": "pass"
+              },
               {
                 "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
                 "result": "pass"
@@ -624,8 +651,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "be26a144e",
-        "ranAt": "2026-10-30T04:28:27.227Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:44:25.280Z",
         "testsPassed": true,
         "tests": [
           {
@@ -647,7 +674,7 @@
             "file": "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 26209,
+            "durationMs": 27952,
             "titles": [
               {
                 "title": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
@@ -709,8 +736,8 @@
       },
       {
         "taskId": "t15",
-        "commit": "be1ff5aed",
-        "ranAt": "2026-10-29T17:49:55.782Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:47:13.567Z",
         "testsPassed": true,
         "tests": [
           {
@@ -732,7 +759,7 @@
             "file": "src/shared/__tests__/connection-manager-kotlin-test.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4448,
+            "durationMs": 32267,
             "titles": [
               {
                 "title": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
@@ -835,8 +862,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "b09162a00",
-        "ranAt": "2026-10-31T14:12:30.209Z",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:49:41.967Z",
         "testsPassed": true,
         "tests": [
           {
@@ -863,7 +890,7 @@
             "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 17150,
+            "durationMs": 2815,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: product icons cover every driver and the icon picker supports selection and keyboard navigation",
@@ -884,7 +911,7 @@
             "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 12407,
+            "durationMs": 3491,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",

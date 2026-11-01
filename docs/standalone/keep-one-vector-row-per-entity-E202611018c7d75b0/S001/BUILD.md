@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-01T17:38:12.992Z  ·  **Updated:** 2026-11-01T17:42:43.894Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-01T17:38:12.992Z  ·  **Updated:** 2026-11-01T18:37:30.933Z
 
-**Commit:** f67899d07
+**Commit:** a881ec755
 
 ## Scope
 
@@ -26,6 +26,21 @@ The entity vector table keeps one row per id: the plain add deletes any existing
 
 ## Changes
 
-- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-11-01T17:42:43.894Z)
-- `src/db/__tests__/vector-one-row-per-id.test.ts` — **insrc-build** (2026-11-01T17:42:43.894Z)
-- `src/db/entities.ts` — **insrc-build** (2026-11-01T17:42:43.894Z)
+- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/db/__tests__/vector-one-row-per-id.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/db/entities.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/__tests__/daemon-status-lanes.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/__tests__/queue-lanes.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/handler-runtime.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/queue.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/status.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/threads/__tests__/fixtures/module-state-inventory.json` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/threads/__tests__/indexing-port-lanes.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/threads/__tests__/indexing-port.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/daemon/threads/indexing-port.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/db/__tests__/file-commit.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/indexer/__tests__/backfill.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/indexer/__tests__/file-refresh.test.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/indexer/index.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/shared/types.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)
+- `src/db/lance/entity-vec.ts` — **insrc-build** (2026-11-01T18:37:30.933Z)

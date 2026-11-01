@@ -10,12 +10,17 @@
     "triageRationale": "bugfix (small): one module (src/db/entities.ts, src/db/lance/entity-vec.ts), clear approach, no new contract.",
     "epicCreatedAt": "2026-11-01T16:44:08.935Z",
     "epicSlug": "keep-one-vector-row-per-entity",
-    "updatedAt": "2026-11-01T17:42:43.894Z"
+    "updatedAt": "2026-11-01T18:37:30.933Z",
+    "approvedAt": "2026-11-01T18:37:31.161Z",
+    "reviewOverride": {
+      "reason": "Manual code review (interim rule 2026-10-29, independent reviewer agent): ISSUE-8c7d75b0 round 1 warn fixed in b9c08fdd5, round 2 warn fixed in a881ec755; round 3 pass. Approved by the user in chat 2026-11-02.",
+      "at": "2026-11-01T18:37:31.161Z"
+    }
   },
   "body": {
     "focus": "Implement ISSUE-8c7d75b08e02a7a8 (keep one vector row per entity id): (a) before the plain add of first-allocated entities' vectors in writeVectorsThenMarkers, delete any rows stored for those ids (a failure leaves markers empty for the backfill); (b) reconcileEntityVectors also finds ids with more than one vector row, deletes all their rows and clears the marker so the backfill writes one, reporting duplicateIdsRepaired; (c) writeBackfillVectors deletes a vector it wrote for an entity no longer stored; (d) commitFile logs, not throws, a failed removal-vector delete after the graph commit.",
     "producesLld": false,
-    "commit": "f67899d07",
+    "commit": "a881ec755",
     "tasks": [
       {
         "id": "S001",
@@ -29,24 +34,147 @@
     "changeLog": [
       {
         "target": {
-          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+          "version": "a881ec755"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T17:42:43.894Z"
+        "timestamp": "2026-11-01T18:37:30.933Z"
       },
       {
         "target": {
-          "file": "src/db/__tests__/vector-one-row-per-id.test.ts"
+          "file": "src/db/__tests__/vector-one-row-per-id.test.ts",
+          "version": "a881ec755"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T17:42:43.894Z"
+        "timestamp": "2026-11-01T18:37:30.933Z"
       },
       {
         "target": {
-          "file": "src/db/entities.ts"
+          "file": "src/db/entities.ts",
+          "version": "a881ec755"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T17:42:43.894Z"
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/status.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-port-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/indexing-port.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/backfill.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/file-refresh.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/entity-vec.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.933Z"
       }
     ]
   }

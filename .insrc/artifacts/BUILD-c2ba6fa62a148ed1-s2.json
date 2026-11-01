@@ -4,10 +4,15 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T16:45:29.028Z",
+    "updatedAt": "2026-11-01T18:37:30.030Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
-    "epicSlug": "complete-consistent-richer-code-index-one"
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-01T18:37:30.905Z",
+    "reviewOverride": {
+      "reason": "Manual code review (interim rule 2026-10-29, independent reviewer agent): s2 round 1 block (2 HIGH) fixed in b9c08fdd5; round 2 pass. Approved by the user in chat 2026-11-02.",
+      "at": "2026-11-01T18:37:30.905Z"
+    }
   },
   "body": {
     "tasks": [
@@ -67,13 +72,6 @@
     "changeLog": [
       {
         "target": {
-          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
@@ -96,34 +94,6 @@
       {
         "target": {
           "file": "src/db/file-commit.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/shared/types.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/db/__tests__/file-commit.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/db/entities.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-01T16:45:29.028Z"
@@ -172,20 +142,6 @@
       },
       {
         "target": {
-          "file": "src/db/lance/entity-vec.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/index.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
           "file": "src/db/__tests__/delete-entities-by-id.test.ts"
         },
         "author": "insrc-build",
@@ -194,13 +150,6 @@
       {
         "target": {
           "file": "src/db/index-state.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/__tests__/file-refresh.test.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-01T16:45:29.028Z"
@@ -221,42 +170,7 @@
       },
       {
         "target": {
-          "file": "src/daemon/__tests__/queue-lanes.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/queue.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/status.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/threads/indexing-port.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
           "file": "src/daemon/threads/status-board.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-01T16:45:29.028Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/__tests__/backfill.test.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-01T16:45:29.028Z"
@@ -281,8 +195,152 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/entity-vec.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/file-refresh.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/status.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/indexing-port.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/backfill.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-port-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/vector-one-row-per-id.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
       }
     ],
-    "commit": "dcd91a244"
+    "commit": "a881ec755"
   }
 }

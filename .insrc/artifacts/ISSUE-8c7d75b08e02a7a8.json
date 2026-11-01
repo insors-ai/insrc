@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793551385504-sx5624",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T16:44:08.935Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 63430,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "8c7d75b08e02a7a8",
+    "epicSlug": "keep-one-vector-row-per-entity",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-01T17:37:57.813Z",
+    "parentRef": {
+      "slug": "keep-one-vector-row-per-entity"
+    }
+  },
+  "body": {
+    "title": "Keep one vector row per entity id in the entity vector table",
+    "reproduction": "Observed: a copy of the live entity vector table (~/.insrc/lance/entity_vec.lance) taken on 2026-11-01 at 21:29 held 80,043 rows for 79,920 distinct entity ids, i.e. 123 ids with more than one vector row (found while measuring the vector upsert for Epic c2ba6fa6 Story s2, task t11). A semantic search over the table can then return the same entity twice, and an upsert of such an id rewrites every copy. A later copy (22:10, after the daemon restarted twice and those entities' files were rewritten) held 79,970 rows for 79,970 ids, so the earlier copies cannot be traced to their origin; whether some of the 123 came from copying a table that was being written is not established. Expected: exactly one vector row per stored entity id, at all times.\n\nTo reproduce deterministically (what the fix's tests will do): (1) commit a file whose entity X is first allocated, with a vector; (2) remove the file with the post-commit vector delete refused, then commit the file again in the same process -- X is first allocated again and its vector is written with a plain add next to the surviving row: two rows for X. (3) Alternatively, run the backfill's write for X after X's file was removed (the backfill runs in its own queue lane beside the index lane): the upsert leaves a vector with no entity, and the next first allocation of X adds a second row.",
+    "rootCause": "The only write that can put a second row for an id into the table is the plain add (addEntityEmbeddings, src/db/lance/entity-vec.ts:131-142), which bypasses the id dedupe of mergeInsert for speed and requires the caller to guarantee the id has no row. writeVectorsThenMarkers (src/db/entities.ts:321-363) uses it for every write whose entity was first allocated in the same transaction (isNew), from both commitFile (src/db/entities.ts:428-587) and upsertEntities (src/db/entities.ts:202-293), on the assumption that a newly allocated id cannot have a vector. Three paths break that assumption: (1) a removal's vector delete runs after the graph commit (src/db/entities.ts:570-574); if it fails, the vector outlives its entity, and the only clean-up of such vectors is the start-time reconcileEntityVectors (src/db/entities.ts:598-622), so a re-creation of the same id before the next start adds a second row (the failure also escapes commitFile after its graph commit stood); (2) since Story s2 the backfill (writeBackfillVectors, src/db/entities.ts:374-377, called by IndexerService.reembed in src/indexer/index.ts) runs in its own queue lane and upserts vectors for entities the index lane may have removed in the meantime -- its marker transaction skips the missing entity but the vector is already written, leaving an orphan that path (1)'s re-creation turns into a duplicate; (3) rows written before Story s2 by the old per-entity re-embed, which used a plain add whenever the marker was empty even if a vector existed, stay duplicated until something rewrites the id. reconcileEntityVectors compares id SETS, so it never notices an id with two rows.",
+    "fixIntent": "Make 'one row per entity id' hold by construction and repair any table that violates it. (a) A first-allocated entity's vector write no longer relies on the id having no row: any rows already stored for those ids are removed before the add (a failure leaves the markers empty, as any failed vector write does, so the backfill rewrites them later and no duplicate is formed). Measured on a copy of this repository's table (79,970 rows): deleting a file-sized batch of 16 ids costs ~15 ms whether or not they exist, so the add path stays well under the upsert's cost. (b) The start-time reconciliation also finds ids stored more than once, removes all their rows and clears the entity's marker, so the backfill writes exactly one row and the repository reads not-complete until it has; it reports how many duplicate ids it repaired. (c) The backfill removes a vector it wrote for an entity that is no longer stored, so it leaves no orphan. (d) A failed removal-vector delete after a committed graph change is logged, not thrown: the graph commit stands, and (a) plus the start-time reconciliation keep the orphan from becoming a duplicate. Out of scope: switching every write to an upsert (the plain add exists for full-index throughput), and any change to search result handling."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/db/lance/entity-vec.ts:131-142",
+      "quotedText": "Bulk pure insert. Caller's responsibility to ensure no id collisions; Lance does not enforce uniqueness."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/db/entities.ts:321-363",
+      "quotedText": "const adds = writes.filter(w => w.isNew).map(w => rowOf(w.entity)); ... if (adds.length > 0) await lance.addEntityEmbeddings(adds);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/db/entities.ts:570-574",
+      "quotedText": "// After LMDB commits, drop Lance rows for the removed entities."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/entities.ts:598-622",
+      "quotedText": "const vectorIds = new Set(await lance.listEntityVecIds());"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/db/entities.ts:374-377",
+      "quotedText": "export async function writeBackfillVectors(entities: readonly Entity[]): Promise<number>"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze 2026-11-01: callers of reconcileEntityVectors (IndexerService.start, src/indexer/index.ts:216-322), writeVectorsThenMarkers (upsertEntities, writeBackfillVectors, commitFile), writeBackfillVectors (IndexerService.reembed, src/indexer/index.ts:1095-1123)"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "scripts/measure-entity-vec-write.ts run 2026-11-01 21:29 on a copy of the live table: rows 80043, distinctIds 79920, duplicateIds 123; inspection 22:10: rows 79970, ids 79970, dupIds 0; delete 16 ids 15-16 ms, add 16 ms 10 ms"
+    }
+  ]
+}

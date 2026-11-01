@@ -208,3 +208,33 @@ export async function good(): Promise<unknown> { await headFullSha('/r'); void m
 		assert.equal(dropped.length, 2, dropped.join('\n'));
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+/** The git-calls helpers and the s9 functions that became asynchronous with them. */
+export const GIT_CALL_FUNCTIONS = new Set([
+	'gitCall', 'orFallback', 'revParseValues', 'revParse', 'catFileExists', 'catFileText', 'lsFiles', 'pathHistory', 'configGet', 'lsRemote', 'fetchRefs',
+	'forEachRef', 'remoteUrl', 'statusPaths', 'rootCommits', 'remoteNames', 'symbolicRef', 'lsTreeNames',
+	'unitDraftFiles', 'draftParkOffer', 'inferStageWorkflow', 'repositoryIdOf', 'currentBranchOf', 'blockedBySignoff', 'signoffHoldsCompletion', 'signoffRecordsOf',
+	'resolveReviewer', 'resolveCompanionHeader', 'assertCleanTree', 'resolveRepoIdentity', 'readSighting', 'writeSighting', 'publishSightingIfAbsent',
+	'removeSighting', 'acquireLock', 'refreshPolicy', 'noteBuildStart', 'collectDiff',
+]);
+
+test('no-floating-promises.test.ts: the git-calls helpers and the moved functions are awaited', () => {
+	const configPath = join(ROOT, 'tsconfig.json');
+	const cfg = ts.getParsedCommandLineOfConfigFile(configPath, {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: d => { throw new Error(ts.flattenDiagnosticMessageText(d.messageText, '\n')); } })!;
+	const program = ts.createProgram(cfg.fileNames.filter(f => !/__tests__|\.test\./.test(f)), cfg.options);
+	const found = floatingNamedCalls(program, f => f.startsWith(join(ROOT, 'src')) && !/__tests__|\.test\./.test(f), GIT_CALL_FUNCTIONS);
+	assert.deepEqual(found.map(f => relative(ROOT, f)), []);
+
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-floating-gitcalls-'));
+	try {
+		const file = join(dir, 'sample.ts');
+		writeFileSync(file, `
+declare function catFileText(cwd: string): Promise<string | undefined>;
+declare function lsFiles(cwd: string): Promise<string[]>;
+export async function bad(): Promise<void> { catFileText('/r'); lsFiles('/r'); }
+export async function good(): Promise<unknown> { await catFileText('/r'); void lsFiles('/r'); return lsFiles('/r'); }
+`);
+		const sample = ts.createProgram([file], { strict: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, noEmit: true });
+		assert.equal(floatingNamedCalls(sample, f => f === file, GIT_CALL_FUNCTIONS).length, 2);
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});

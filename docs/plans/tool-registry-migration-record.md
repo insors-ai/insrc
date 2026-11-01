@@ -4,9 +4,9 @@ The sites of the tracker and the terminal client that moved onto the tool regist
 daemon method) it uses, the tool and op the row calls, and the test that runs it through the registry. The table is
 `src/workflow/tracker/registry-table.ts`; `src/workflow/tracker/__tests__/site-list.test.ts` checks this file against the code.
 
-Not moved by s10, left for s9: the old wrappers in `src/workflow/tracker/github.ts`, `runGit`, `runGitAsync`, `runGh`,
-`commitAndPushArtifacts`, `createGitRunner` and `_setTrackerExecForTests` stay exported and unchanged, and
-`scripts/forbidden-spawn-scan.mjs` stays in report mode (s9 deletes them and switches the scan to `--fail`).
+Finished by Story s9: the old wrappers in `src/workflow/tracker/github.ts` (that file now holds `GhCommandError`, `parseGithubRemoteUrl` and the
+result types), `runGit`, `runGitAsync`, `runGh`, `commitAndPushArtifacts`, `createGitRunner`, `runGitBinary` and `_setTrackerExecForTests` are
+deleted, and `scripts/forbidden-spawn-scan.mjs --fail` runs in the build. Section 6 lists the sites s9 moved with the test that runs each one.
 
 ## 1. The 31 wrapper rows
 
@@ -181,3 +181,35 @@ This list is final. A gap found later is a plan amendment, not part of t2.
 
 Not gaps: the `signal` that `git_log`, `git_diff`, `git_status`, `git_rev_list`, `git_for_each_ref`, `git_ls_files` and `git_path_history` do not pass to
 their process. The refresh uses only `git_ls_remote` and `git_fetch_refs`, which do; the other sites have no abort requirement.
+
+## 6. The sites s9 moved, each with its test
+
+One row per file of the Story's replacement table. The tool and op of each call are in section 5; the test is the file that runs the site through
+the registry (a stand-in `git` or `gh` binary or an injected tool hook), and `src/workflow/tracker/__tests__/migration-record.test.ts` checks that the
+file exists. The scan finds no site outside the three exemptions: `src/cli/services/maintenance.ts` (the daemon self-update), `src/daemon/installed-commit.ts`
+(read before the registry exists) and `src/indexer/index.ts` (the indexer's own file walk).
+
+| Site | Tool family | Test |
+| :--- | :--- | :--- |
+| `src/workflow/team/policy-reader.ts` | `git_rev_parse`, `git_remote`, `git_symbolic_ref`, `git_ls_tree`, `git_cat_file`, `git_for_each_ref` | `src/workflow/team/__tests__/team-policy-registry.test.ts` |
+| `src/workflow/team/anchor-finder.ts` | `git_rev_parse`, `git_path_history` | `src/workflow/team/__tests__/team-policy-registry.test.ts` |
+| `src/workflow/team/sighting-store.ts` | `git_rev_parse` | `src/workflow/team/__tests__/refresh-deadline.test.ts` |
+| `src/workflow/team/policy-refresh.ts` | `git_fetch_refs` | `src/workflow/team/__tests__/refresh-abort.test.ts` |
+| `src/workflow/team/branch-resolution.ts` | `git_ls_remote` | `src/workflow/team/__tests__/team-policy-registry.test.ts` |
+| `src/workflow/team/signoff.ts` | `git_rev_parse`, `git_rev_list` | `src/workflow/team/__tests__/team-policy-registry.test.ts` |
+| `src/workflow/team/handoff.ts` | `git_status`, `git_cat_file`, `git_rev_parse`, `git_rev_list`, `git_ls_remote`, `git_fetch_refs`, `git_worktree`, `git_stage`, `git_commit`, `git_push`, `git_remote` | `src/workflow/team/__tests__/team-policy-registry.test.ts` |
+| `src/workflow/convert/plan.ts` | `git_rev_parse`, `git_status` | `src/workflow/__tests__/ignore-filter-header-plan-registry.test.ts` |
+| `src/workflow/gates.ts` | `git_rev_parse` | `src/workflow/runners/build/__tests__/build-runners-registry.test.ts` |
+| `src/workflow/runners/build/range-base.ts` | `git_cat_file`, `git_rev_parse`, `git_path_history` | `src/workflow/runners/build/__tests__/build-runners-registry.test.ts` |
+| `src/workflow/runners/build/standalone-record.ts` | `git_rev_parse`, `git_cat_file` | `src/workflow/runners/build/__tests__/build-runners-registry.test.ts` |
+| `src/workflow/runners/build/story-commits.ts` | `git_log`, `git_rev_list`, `git_rev_parse`, `git_hash_object`, `git_diff_tree`, `git_diff`, `git_merge_tree` | `src/workflow/runners/build/__tests__/build-runners-registry.test.ts` |
+| `src/workflow/runners/build/changed-files.ts` | `git_diff` | `src/workflow/runners/build/__tests__/build-runners-registry.test.ts` |
+| `src/daemon/steps/build-step/validation-checks.ts` | `git_ls_files`, `git_diff`, `git_show` | `src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts` |
+| `src/analyze/context/repo-ignore-filter.ts` | `git_ls_files` | `src/workflow/__tests__/ignore-filter-header-plan-registry.test.ts` |
+| `src/workflow/artifacts/companion/header.ts` | `git_config` | `src/workflow/__tests__/ignore-filter-header-plan-registry.test.ts` |
+| `src/design/corpus/sources/git-reader.ts` | `git_cat_file` | `src/design/corpus/sources/__tests__/corpus-reader-registry.test.ts` |
+| `src/understanding/identity.ts` | `gh_auth`, `gh_tracker`, `git_config` | `src/understanding/__tests__/identity-registry.test.ts` |
+
+Denial: every site above throws `ToolDenied` when its call is declined, cancelled, given no client or hook-denied, and a destructive call is never made
+without asking (`src/workflow/__tests__/registry-denial-s9.test.ts`). The shared helpers are in `src/workflow/git-calls.ts`
+(`src/workflow/__tests__/git-calls.test.ts`).

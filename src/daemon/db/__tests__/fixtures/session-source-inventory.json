@@ -1935,7 +1935,7 @@
       ],
       "siteCount": 22,
       "sitesDigest": "0d1e0929ff15f9e9d5fd7c7d53cfa2198847e84f353b809c164e422049a04f50",
-      "sourceDigest": "8f32b90870e713108ef5986ca006c33f1edb0a1d3068aab81b15a03b9e632479"
+      "sourceDigest": "aef73e95ae373a748466b1ae8aa2160209e045d71c10985da84f460ba9e84bb4"
     },
     "src/analyze/classifier/driver.ts": {
       "classification": "session-invocation",
@@ -31502,11 +31502,15 @@
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "843f6f218b1607fb41304219cf304d164b54aacc9d1df6d9b78459c9e282734b",
-      "sourceDigest": "528d7b72f3f9a2ba71c8c7213a360905613f6f111fc764ed0556640fc82dd91f"
+      "siteCount": 7,
+      "sitesDigest": "76bc4ce181f36fc1e22f2bf5122e5610cc0d25b178096e1f3b3f625e1f63ed8d",
+      "sourceDigest": "d77af5fc4c7259bf6f3175927a196452abe6829469e99d910bb2d9b04f4d205b"
     },
     "src/workflow/code-review/task-review/checkpoint.ts": {
       "classification": "forbidden-session-service",

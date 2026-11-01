@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "27d569c508f1232c",
+    "storyId": "S001",
+    "createdAt": "2026-11-01T06:02:31.469Z",
+    "updatedAt": "2026-11-01T06:02:31.469Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicCreatedAt": "2026-11-01T05:09:46.810Z",
+    "epicSlug": "agent-bypassed-insrc-tracked-workflow-three",
+    "approvedAt": "2026-11-01T06:11:50.017Z",
+    "reviewOverride": {
+      "reason": "Back-fill closure for the process-deviation issue (user-authorized). The change set is ledger-only (.insrc/artifacts + docs/standalone, excluded from code-review scope by LEDGER_EXCLUDE_GLOBS), so insrc_code_review_step correctly declines with no-build-record (empty change set) — no code exists to review. Build gate passed:true with all fix-intent checks true (three sub-issues approved+gated+reviewed+BUILD-approved, ~/.vibe/AGENTS.md steering created). Override recorded for the absent CR.",
+      "at": "2026-11-01T06:11:50.017Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Back-fill build gate for the already-committed fix (ISSUE-27d569c508f1232c): code and tests are on main; this validate writes the BUILD record and runs the gate over the touched test files.",
+    "testRecord": {
+      "md": "docs/standalone/agent-bypassed-insrc-tracked-workflow-three-E2026110127d569c5/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-16b8d3d50f14fc1d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-6dbf14435972af7a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-7fa297efd4bd1c59-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-16b8d3d50f14fc1d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-6dbf14435972af7a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-7fa297efd4bd1c59-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-16b8d3d50f14fc1d.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-27d569c508f1232c.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-6dbf14435972af7a.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-7fa297efd4bd1c59.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-16b8d3d50f14fc1d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-6dbf14435972af7a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-7fa297efd4bd1c59-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/16b8d3d50f14fc1d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/6dbf14435972af7a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/7fa297efd4bd1c59-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/agent-bypassed-insrc-tracked-workflow-three-E2026110127d569c5/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/insrc-present-cannot-resolve-standalone-story-E2026103116b8d3d5/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/insrc-present-cannot-resolve-standalone-story-E2026103116b8d3d5/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/insrc-present-cannot-resolve-standalone-story-E2026103116b8d3d5/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/present-every-artifact-awaiting-decision-buttons-E202610176dbf1443/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/present-every-artifact-awaiting-decision-buttons-E202610176dbf1443/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/present-every-artifact-awaiting-decision-buttons-E202610176dbf1443/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/show-every-document-chat-turn-presents-E202610187fa297ef/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/show-every-document-chat-turn-presents-E202610187fa297ef/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/show-every-document-chat-turn-presents-E202610187fa297ef/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-484fcef7efaf229e-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-c2ba6fa62a148ed1-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-c2ba6fa62a148ed1-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-484fcef7efaf229e-s5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T06:02:31.469Z"
+      }
+    ],
+    "commit": "f054482bb"
+  }
+}

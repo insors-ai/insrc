@@ -1,0 +1,652 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s3",
+    "createdAt": "2026-11-01T06:05:36.818Z",
+    "updatedAt": "2026-11-01T06:10:56.954Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f054482bb",
+        "ranAt": "2026-11-01T06:05:36.818Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "encodeEntityByFileKey/decodeEntityByFileKey round-trip a (repoId, filePath) pair, including an empty filePath, byte-identical to the input",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entities-lmdb.test.ts",
+                "title": "t1: encodeEntityByFileKey/decodeEntityByFileKey round-trip (repoId, filePath), including an empty filePath",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/entities-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12749,
+            "titles": [
+              {
+                "title": "upsertEntities + getEntity round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities preserves all flag fields",
+                "result": "pass"
+              },
+              {
+                "title": "getEntity on unknown id returns null",
+                "result": "pass"
+              },
+              {
+                "title": "getEntitiesByIds returns matched subset (unmatched omitted)",
+                "result": "pass"
+              },
+              {
+                "title": "getEntitiesByIds on empty array returns []",
+                "result": "pass"
+              },
+              {
+                "title": "upsert overwrites a non-module entity",
+                "result": "pass"
+              },
+              {
+                "title": "module-stub upsert is ensure-exists (does not overwrite)",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities dedupes intra-batch duplicates (last-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo returns only the requested repo",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo on unknown repo returns []",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByFile filters by absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName matches names + kind filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects repo filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects multi-repo `repos` filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: empty `repos` array returns []",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: `repos` with unknown paths drops them silently",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: passing both `repo` and `repos` throws",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects limit",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName on empty input returns []",
+                "result": "pass"
+              },
+              {
+                "title": "listUnembeddedEntities filters on empty embeddingModel",
+                "result": "pass"
+              },
+              {
+                "title": "updateEmbedding sets the model name (vector goes to Lance in 3.2)",
+                "result": "pass"
+              },
+              {
+                "title": "updateEmbedding on unknown id is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile removes only that file's entities",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile cascades to out_edge and in_edge",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForRepo removes all entities for that repo only",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForRepo on unknown repo is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "entities survive close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "absolute file path -> repo-relative on write, back to absolute on read",
+                "result": "pass"
+              },
+              {
+                "title": "repo IDs are auto-allocated on first sighting",
+                "result": "pass"
+              },
+              {
+                "title": "t1: encodeEntityByFileKey/decodeEntityByFileKey round-trip (repoId, filePath), including an empty filePath",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the put/remove wrapper keeps entity, nameIndex and entityByFile consistent across create, replace and delete",
+                "result": "pass"
+              },
+              {
+                "title": "t4 guard: every entity.put/entity.remove/nameIndex.put/nameIndex.remove/entityByFile.put/entityByFile.remove call in entities.ts and migrations.ts is inside the wrapper (or the one documented, entity-row-free exemption)",
+                "result": "pass"
+              },
+              {
+                "title": "ac1: findEntitiesByFile on one file of the smaller of two indexed repos returns the same entities as a full-scan baseline, touching only that file's rows",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: write, replace, then delete a file's entities in sequence; findEntitiesByFile after each step matches a full-scan-equivalent baseline every time",
+                "result": "pass"
+              },
+              {
+                "title": "an entity with an empty filePath (external endpoint) is excluded from findEntitiesByFile but included in listEntitiesForRepo",
+                "result": "pass"
+              },
+              {
+                "title": "two repos sharing the same relative file path never cross-contaminate a file-scoped read",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an absolute file path under a repo root nested inside another repo root resolves to the more specific (nested) root",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an absolute path matching no registered repo root resolves to no repo, not a false match",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo returns [] for a repository with zero stored entities, identical to today's full-scan behavior",
+                "result": "pass"
+              },
+              {
+                "title": "t7/ac4: repoHasAnyEntity answers yes for a repo with stored entities and no for one with none, without building the entity list",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f054482bb",
+        "ranAt": "2026-11-01T06:08:08.442Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the wrapper's put path writes the entity row, nameIndex entry, and entityByFile entry atomically in one transaction; create/replace/delete through the wrapper keeps all three tables consistent at every step",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entities-lmdb.test.ts",
+                "title": "t2: the put/remove wrapper keeps entity, nameIndex and entityByFile consistent across create, replace and delete",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/entities-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 36897,
+            "titles": [
+              {
+                "title": "upsertEntities + getEntity round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities preserves all flag fields",
+                "result": "pass"
+              },
+              {
+                "title": "getEntity on unknown id returns null",
+                "result": "pass"
+              },
+              {
+                "title": "getEntitiesByIds returns matched subset (unmatched omitted)",
+                "result": "pass"
+              },
+              {
+                "title": "getEntitiesByIds on empty array returns []",
+                "result": "pass"
+              },
+              {
+                "title": "upsert overwrites a non-module entity",
+                "result": "pass"
+              },
+              {
+                "title": "module-stub upsert is ensure-exists (does not overwrite)",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities dedupes intra-batch duplicates (last-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo returns only the requested repo",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo on unknown repo returns []",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByFile filters by absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName matches names + kind filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects repo filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects multi-repo `repos` filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: empty `repos` array returns []",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: `repos` with unknown paths drops them silently",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: passing both `repo` and `repos` throws",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects limit",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName on empty input returns []",
+                "result": "pass"
+              },
+              {
+                "title": "listUnembeddedEntities filters on empty embeddingModel",
+                "result": "pass"
+              },
+              {
+                "title": "updateEmbedding sets the model name (vector goes to Lance in 3.2)",
+                "result": "pass"
+              },
+              {
+                "title": "updateEmbedding on unknown id is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile removes only that file's entities",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile cascades to out_edge and in_edge",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForRepo removes all entities for that repo only",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForRepo on unknown repo is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "entities survive close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "absolute file path -> repo-relative on write, back to absolute on read",
+                "result": "pass"
+              },
+              {
+                "title": "repo IDs are auto-allocated on first sighting",
+                "result": "pass"
+              },
+              {
+                "title": "t1: encodeEntityByFileKey/decodeEntityByFileKey round-trip (repoId, filePath), including an empty filePath",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the put/remove wrapper keeps entity, nameIndex and entityByFile consistent across create, replace and delete",
+                "result": "pass"
+              },
+              {
+                "title": "t4 guard: every entity.put/entity.remove/nameIndex.put/nameIndex.remove/entityByFile.put/entityByFile.remove call in entities.ts and migrations.ts is inside the wrapper (or the one documented, entity-row-free exemption)",
+                "result": "pass"
+              },
+              {
+                "title": "ac1: findEntitiesByFile on one file of the smaller of two indexed repos returns the same entities as a full-scan baseline, touching only that file's rows",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: write, replace, then delete a file's entities in sequence; findEntitiesByFile after each step matches a full-scan-equivalent baseline every time",
+                "result": "pass"
+              },
+              {
+                "title": "an entity with an empty filePath (external endpoint) is excluded from findEntitiesByFile but included in listEntitiesForRepo",
+                "result": "pass"
+              },
+              {
+                "title": "two repos sharing the same relative file path never cross-contaminate a file-scoped read",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an absolute file path under a repo root nested inside another repo root resolves to the more specific (nested) root",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an absolute path matching no registered repo root resolves to no repo, not a false match",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo returns [] for a repository with zero stored entities, identical to today's full-scan behavior",
+                "result": "pass"
+              },
+              {
+                "title": "t7/ac4: repoHasAnyEntity answers yes for a repo with stored entities and no for one with none, without building the entity list",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f054482bb",
+        "ranAt": "2026-11-01T06:10:56.954Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "every one of the 7 pre-existing call-site behaviors (create, replace, delete, migration rewrite, migration delete) is unchanged after routing through the wrapper -- existing entities.ts/migrations.ts test suites pass unmodified",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/entities-lmdb.test.ts",
+                "title": "upsertEntities + getEntity round-trip",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entities-lmdb.test.ts",
+                "title": "upsert overwrites a non-module entity",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/entities-lmdb.test.ts",
+                "title": "deleteEntitiesForFile removes only that file's entities",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v2-to-v3.test.ts",
+                "title": "v2->v3 migration rewires module entities to their shared-modules repoId",
+                "result": "not found"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/entities-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32747,
+            "titles": [
+              {
+                "title": "upsertEntities + getEntity round-trip",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities preserves all flag fields",
+                "result": "pass"
+              },
+              {
+                "title": "getEntity on unknown id returns null",
+                "result": "pass"
+              },
+              {
+                "title": "getEntitiesByIds returns matched subset (unmatched omitted)",
+                "result": "pass"
+              },
+              {
+                "title": "getEntitiesByIds on empty array returns []",
+                "result": "pass"
+              },
+              {
+                "title": "upsert overwrites a non-module entity",
+                "result": "pass"
+              },
+              {
+                "title": "module-stub upsert is ensure-exists (does not overwrite)",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities dedupes intra-batch duplicates (last-wins)",
+                "result": "pass"
+              },
+              {
+                "title": "upsertEntities on empty array is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo returns only the requested repo",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo on unknown repo returns []",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByFile filters by absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName matches names + kind filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects repo filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects multi-repo `repos` filter",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: empty `repos` array returns []",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: `repos` with unknown paths drops them silently",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName: passing both `repo` and `repos` throws",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName respects limit",
+                "result": "pass"
+              },
+              {
+                "title": "findEntitiesByName on empty input returns []",
+                "result": "pass"
+              },
+              {
+                "title": "listUnembeddedEntities filters on empty embeddingModel",
+                "result": "pass"
+              },
+              {
+                "title": "updateEmbedding sets the model name (vector goes to Lance in 3.2)",
+                "result": "pass"
+              },
+              {
+                "title": "updateEmbedding on unknown id is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile removes only that file's entities",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForFile cascades to out_edge and in_edge",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForRepo removes all entities for that repo only",
+                "result": "pass"
+              },
+              {
+                "title": "deleteEntitiesForRepo on unknown repo is a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "entities survive close + reopen",
+                "result": "pass"
+              },
+              {
+                "title": "absolute file path -> repo-relative on write, back to absolute on read",
+                "result": "pass"
+              },
+              {
+                "title": "repo IDs are auto-allocated on first sighting",
+                "result": "pass"
+              },
+              {
+                "title": "t1: encodeEntityByFileKey/decodeEntityByFileKey round-trip (repoId, filePath), including an empty filePath",
+                "result": "pass"
+              },
+              {
+                "title": "t2: the put/remove wrapper keeps entity, nameIndex and entityByFile consistent across create, replace and delete",
+                "result": "pass"
+              },
+              {
+                "title": "t4 guard: every entity.put/entity.remove/nameIndex.put/nameIndex.remove/entityByFile.put/entityByFile.remove call in entities.ts and migrations.ts is inside the wrapper (or the one documented, entity-row-free exemption)",
+                "result": "pass"
+              },
+              {
+                "title": "ac1: findEntitiesByFile on one file of the smaller of two indexed repos returns the same entities as a full-scan baseline, touching only that file's rows",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: write, replace, then delete a file's entities in sequence; findEntitiesByFile after each step matches a full-scan-equivalent baseline every time",
+                "result": "pass"
+              },
+              {
+                "title": "an entity with an empty filePath (external endpoint) is excluded from findEntitiesByFile but included in listEntitiesForRepo",
+                "result": "pass"
+              },
+              {
+                "title": "two repos sharing the same relative file path never cross-contaminate a file-scoped read",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an absolute file path under a repo root nested inside another repo root resolves to the more specific (nested) root",
+                "result": "pass"
+              },
+              {
+                "title": "t5: an absolute path matching no registered repo root resolves to no repo, not a false match",
+                "result": "pass"
+              },
+              {
+                "title": "listEntitiesForRepo returns [] for a repository with zero stored entities, identical to today's full-scan behavior",
+                "result": "pass"
+              },
+              {
+                "title": "t7/ac4: repoHasAnyEntity answers yes for a repo with stored entities and no for one with none, without building the entity list",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/migration-v2-to-v3.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3973,
+            "titles": [
+              {
+                "title": "v2->v3: provisions all 4 reserved shared-modules rows",
+                "result": "pass"
+              },
+              {
+                "title": "v2->v3: rewires Java module entity to jvm namespace + recomputes string ID",
+                "result": "pass"
+              },
+              {
+                "title": "v2->v3: rewires Python module entity to python namespace (separate from jvm)",
+                "result": "pass"
+              },
+              {
+                "title": "v2->v3: drops the phantom workspace row + its entities (cascade)",
+                "result": "pass"
+              },
+              {
+                "title": "v2->v3: idempotent on re-run from v3",
+                "result": "pass"
+              },
+              {
+                "title": "v2->v3: workspace row with valid path is preserved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named test cases that did not pass: not found: 'v2->v3 migration rewires module entities to their shared-modules repoId' in src/db/graph/__tests__/migration-v2-to-v3.test.ts"
+      }
+    ]
+  }
+}

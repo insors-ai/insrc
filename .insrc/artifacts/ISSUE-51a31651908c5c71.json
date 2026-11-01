@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793559282996-p3wguk",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T18:55:23.407Z",
+    "epicCreatedAt": "2026-11-01T18:55:23.407Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 40411,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "51a31651908c5c71",
+    "epicSlug": "supply-selected-reviewed-version-code-blocks",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cad3544ee2e701832ddaeb406408d722d969e167ce5d0fb4c57ba755a403c27b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T18:58:23.631Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "51a31651908c5c71",
+      "slug": "EPIC-51a31651908c5c71"
+    }
+  },
+  "body": {
+    "title": "Supply selected reviewed-version code blocks to reviewers",
+    "reproduction": "Start a multi-task review with selected source changes. attributionPrompt sends commit/path/segment descriptors without code. taskReviewPrompt also removes loaded before/after blobs. Submitted segments may contain before-only or paired before/after ranges, contrary to the agreed reviewed-version-only scope. Reviewer must fetch even the selected code before it can attribute or assess it.",
+    "rootCause": "The packet contract in src/workflow/code-review/task-review/contracts.ts accepts both before and after ranges. src/workflow/code-review/task-review/packet.ts loads both versions and validates both selections. src/workflow/code-review/task-review/assessment.ts serializes only change descriptors, while src/workflow/code-review/task-review/policy.ts strips the loaded source blobs from task input. Consequently neither prompt embeds selected reviewed-version code.",
+    "fixIntent": "Restore the agreed contract for new submissions: only reviewed-version selected blocks, with actual selected code content delivered consistently to attribution and assessment. Resolve and verify content against pinned Git sources, include explicit file/line identity, and fetch old code only when needed. Represent deletions explicitly without inventing after content or supplying removed blocks. Keep commit pointers, strict scope and attribution coverage checks; preserve immutable historical attempts. Add focused regressions covering additions, modifications, deletions, source fidelity, both reviewer routes and recovery. This does not weaken coverage validation or automatically start a costly live review."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/contracts.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/policy.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "stakeholder",
+      "ref": "User instruction: fix code content along with before/after packet drift."
+    }
+  ]
+}

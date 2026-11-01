@@ -1,0 +1,182 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "b547ed4c1674057f6b8051bb8668405b8df2e4cd84e97fb129ccaa26046d87c0",
+        "at": "2026-11-01T19:06:16.917Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-d209820f-7c65-484d-b83d-42a769faf99e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T18:58:40.353Z",
+    "epicCreatedAt": "2026-11-01T18:58:40.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9a3432dcf930ade8",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "updatedAt": "2026-11-01T19:04:04.716Z"
+  },
+  "body": {
+    "focus": "Supply selected reviewed-version code blocks to reviewers\n\nStart a multi-task review with selected source changes. attributionPrompt sends commit/path/segment descriptors without code. taskReviewPrompt also removes loaded before/after blobs. Submitted segments may contain before-only or paired before/after ranges, contrary to the agreed reviewed-version-only scope. Reviewer must fetch even the selected code before it can attribute or assess it.\n\nThe packet contract in src/workflow/code-review/task-review/contracts.ts accepts both before and after ranges. src/workflow/code-review/task-review/packet.ts loads both versions and validates both selections. src/workflow/code-review/task-review/assessment.ts serializes only change descriptors, while src/workflow/code-review/task-review/policy.ts strips the loaded source blobs from task input. Consequently neither prompt embeds selected reviewed-version code.\n\nRestore the agreed contract for new submissions: only reviewed-version selected blocks, with actual selected code content delivered consistently to attribution and assessment. Resolve and verify content against pinned Git sources, include explicit file/line identity, and fetch old code only when needed. Represent deletions explicitly without inventing after content or supplying removed blocks. Keep commit pointers, strict scope and attribution coverage checks; preserve immutable historical attempts. Add focused regressions covering additions, modifications, deletions, source fidelity, both reviewer routes and recovery. This does not weaken coverage validation or automatically start a costly live review.",
+    "producesLld": false,
+    "commit": "c0daf832a",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Restored after-only review selections and embedded exact pinned selected code in attribution and assessment. Added verified deletion markers, explicit attribution indices, and immutable historical replay. Passed 78 focused task-review regressions plus 14 final scope/compatibility checks; typecheck/build and author self-review completed. No hosted S2 re-review started.",
+    "testRecord": {
+      "md": "docs/standalone/9a3432dcf930ade8-E202611019a3432dc/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/task-review-execution.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/history-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/history.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/admission.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/packet.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/sources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:04:04.716Z"
+      }
+    ]
+  },
+  "citations": []
+}

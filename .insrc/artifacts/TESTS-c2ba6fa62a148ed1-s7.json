@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:52:06.282Z",
+    "updatedAt": "2026-11-01T20:10:12.199Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -504,6 +504,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "6024a6b89",
+        "ranAt": "2026-11-01T20:10:12.199Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: evidence after re-index; untouched relationship 'unknown'",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S007/smoke-t8.jsonl (2026-11-01 20:09Z, installed daemon updated to ea991490 and restarted, driven by /tmp/s7-smoke.mjs over the daemon socket). Probe src/s7-smoke-probe/a.ts (s7SmokeMain calls s7SmokeLocal in the same file and s7SmokeHelper from ./b) indexed and linked within 5 s: search.callers(s7SmokeLocal) = ['s7SmokeMain: extracted'], search.callers(s7SmokeHelper) = ['s7SmokeMain: inferred']. Untouched relationships: search.callers(getLogger in src/shared/logger.ts) returned 254 callers, all 'unknown' (none of those files rewritten since the update). Probe files removed and gone from the index afterwards. Full sweep (once, /tmp/s7-sweep.log): 7247 tests, 7076 pass, 33 fail. Against the s2 baseline five failing files were new: resolver-file-target.test.ts (this Story: the Pass 1 rewire test compared the whole relation, now carrying 'inferred'; expectation updated in ea991490c), admin-worker.test.ts (s2's backfill-lane publishing: the threaded daemon.status omitted the lane until first published; fixed in eb481e7b6), check-model-definitions.test.ts (the other session's build-script change 2dfbf68f5, not this Story), and connection-manager-kotlin-entry / connection-manager-privacy (pass when rerun alone). Every other failing file also failed at the pre-s2 base."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

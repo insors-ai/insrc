@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -176,3 +176,13 @@ Run at 2026-11-01T19:52:06.282Z on commit `14cf172cc`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/explore/__tests__/evidence-lookups.test.ts` | 0 | 3 | 1.3 s |  |
+
+## t8
+
+Run at 2026-11-01T20:10:12.199Z on commit `6024a6b89`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: evidence after re-index; untouched relationship 'unknown'**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S007/smoke-t8.jsonl (2026-11-01 20:09Z, installed daemon updated to ea991490 and restarted, driven by /tmp/s7-smoke.mjs over the daemon socket). Probe src/s7-smoke-probe/a.ts (s7SmokeMain calls s7SmokeLocal in the same file and s7SmokeHelper from ./b) indexed and linked within 5 s: search.callers(s7SmokeLocal) = ['s7SmokeMain: extracted'], search.callers(s7SmokeHelper) = ['s7SmokeMain: inferred']. Untouched relationships: search.callers(getLogger in src/shared/logger.ts) returned 254 callers, all 'unknown' (none of those files rewritten since the update). Probe files removed and gone from the index afterwards. Full sweep (once, /tmp/s7-sweep.log): 7247 tests, 7076 pass, 33 fail. Against the s2 baseline five failing files were new: resolver-file-target.test.ts (this Story: the Pass 1 rewire test compared the whole relation, now carrying 'inferred'; expectation updated in ea991490c), admin-worker.test.ts (s2's backfill-lane publishing: the threaded daemon.status omitted the lane until first published; fixed in eb481e7b6), check-model-definitions.test.ts (the other session's build-script change 2dfbf68f5, not this Story), and connection-manager-kotlin-entry / connection-manager-privacy (pass when rerun alone). Every other failing file also failed at the pre-s2 base.

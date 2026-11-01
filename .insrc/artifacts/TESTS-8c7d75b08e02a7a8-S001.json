@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "8c7d75b08e02a7a8",
+    "storyId": "S001",
+    "createdAt": "2026-11-01T17:42:43.894Z",
+    "updatedAt": "2026-11-01T17:42:43.894Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-01T16:44:08.935Z",
+    "epicSlug": "keep-one-vector-row-per-entity"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "f67899d07",
+        "ranAt": "2026-11-01T17:42:43.894Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/db/__tests__/vector-one-row-per-id.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/db/__tests__/vector-one-row-per-id.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/vector-one-row-per-id.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1312,
+            "titles": [
+              {
+                "title": "a removal whose vector delete is refused does not fail the commit, and re-creating the id leaves one vector row",
+                "result": "pass"
+              },
+              {
+                "title": "a backfill write for an entity removed meanwhile leaves no vector behind, so its re-creation leaves one row",
+                "result": "pass"
+              },
+              {
+                "title": "the start-time reconciliation repairs an id stored twice: every row deleted, the marker cleared, and the backfill writes one row",
+                "result": "pass"
+              },
+              {
+                "title": "a refused delete before the add writes no vector and leaves the marker empty, so the backfill writes the one row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

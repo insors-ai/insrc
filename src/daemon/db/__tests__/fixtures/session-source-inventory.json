@@ -2130,21 +2130,13 @@
      "captureAnalysisDiagnostics(log).emit"
     ],
     [
-     "serialization",
-     "captureAnalysisDiagnostics(log).emit"
-    ],
-    [
-     "serialization",
-     "captureAnalysisDiagnostics(log).emit"
-    ],
-    [
      "diagnostic",
      "getLogger"
     ]
    ],
-   "siteCount": 4,
-   "sitesDigest": "c0a142ec4708770387b7d2608a98ebb3594eb0a76944f4b3a5cb6424115dedbb",
-   "sourceDigest": "79c7d8f1bf2ce406ec6fdbc3a42f6a1cc2635360a7e9233d151c4761f78800e9",
+   "siteCount": 2,
+   "sitesDigest": "2633e9eb55ea52a85d992120a57bae0a60515534d5b356067edbe82103cdd263",
+   "sourceDigest": "ffb2e1a43f39d974a21b814fd11405c30073e958ca1aba8473143fa22792105f",
    "boundaries": [
     "diagnostic",
     "serialization"

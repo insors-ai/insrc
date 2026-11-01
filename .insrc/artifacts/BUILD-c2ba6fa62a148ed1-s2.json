@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T14:50:54.848Z",
+    "updatedAt": "2026-11-01T14:59:32.825Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -30,9 +30,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "Rows are committed with an empty embedding marker when a vector write follows; writeVectorsThenMarkers writes the vectors (add only for an entity first allocated in that commit, upsert otherwise) and sets the markers to the active (configured) embedding model in a second transaction; failures leave markers empty and are reported as vectorsOutstanding; updateEmbedding writes vector (upsert) then marker; embedEntities no longer sets entity.embeddingModel (931502767). db, indexer and related daemon suites pass.",
+    "summary": "IndexState.unembedded kept live in the single entity-row put/remove path (a row counts when its body is non-empty and its marker empty) and recounted on open. Three no-embedder tests that assert a complete repository now record embeddingAvailable false, as the backfill (t10) will. db, indexer, analyze and daemon-steps suites pass.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
     },
@@ -42,79 +46,107 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-types.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-vectors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
       },
       {
         "target": {
           "file": "src/indexer/embedder.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T14:50:54.848Z"
+        "timestamp": "2026-11-01T14:59:32.825Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T14:59:32.825Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/index-state-rows.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T14:59:32.825Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/cross-file-modes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T14:59:32.825Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/full-index-rebuild.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T14:59:32.825Z"
       }
     ],
-    "commit": "931502767"
+    "commit": "9ee41aac7"
   }
 }

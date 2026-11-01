@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T14:50:54.848Z",
+    "updatedAt": "2026-11-01T14:59:32.825Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -411,6 +411,76 @@
               },
               {
                 "title": "t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "9ee41aac7",
+        "ranAt": "2026-11-01T14:59:32.825Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t6: the recount when the store opens corrects a wrong stored count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit-vectors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2026,
+            "titles": [
+              {
+                "title": "t5: a successful vector write sets each changed entity's marker to the active embedding model; nothing is outstanding",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a failed vector write leaves the changed entities' markers empty and reports them as outstanding, and the graph rows are still committed",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a first-allocated entity is added and a changed one upserted: one vector row per id after both",
+                "result": "pass"
+              },
+              {
+                "title": "t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it",
+                "result": "pass"
+              },
+              {
+                "title": "t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero",
+                "result": "pass"
+              },
+              {
+                "title": "t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the recount when the store opens corrects a wrong stored count",
                 "result": "pass"
               }
             ],

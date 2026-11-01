@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -111,3 +111,21 @@ Run at 2026-11-01T14:50:54.848Z on commit `931502767`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/file-commit-vectors.test.ts` | 0 | 4 | 1.3 s |  |
+
+## t6
+
+Run at 2026-11-01T14:59:32.825Z on commit `9ee41aac7`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: commitFile**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero | `src/db/__tests__/file-commit-vectors.test.ts` |
+| pass | t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted | `src/db/__tests__/file-commit-vectors.test.ts` |
+| pass | t6: the recount when the store opens corrects a wrong stored count | `src/db/__tests__/file-commit-vectors.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/file-commit-vectors.test.ts` | 0 | 7 | 2 s |  |

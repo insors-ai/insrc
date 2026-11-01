@@ -21833,6 +21833,10 @@
     ],
     [
      "serialization",
+     "assertNoSessionPersistence"
+    ],
+    [
+     "serialization",
      "b.writeUInt32BE"
     ],
     [
@@ -23376,6 +23380,14 @@
      "writeVectorsThenMarkers"
     ],
     [
+     "serialization",
+     "writeVectorsThenMarkers"
+    ],
+    [
+     "storage-call",
+     "writeVectorsThenMarkers"
+    ],
+    [
      "storage-call",
      "writeVectorsThenMarkers"
     ],
@@ -23384,9 +23396,9 @@
      "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 399,
-   "sitesDigest": "9e64c4113e39e391c7b936d5b1f605af66161356dcbe34508dbcb95f1049620e",
-   "sourceDigest": "f90c8f6df3986b5fbf5f9a35dd0f6a79e2d1781fdb1257ff814abcb498bfcdcc",
+   "siteCount": 402,
+   "sitesDigest": "f8a92f5ba59194b3f5b5909ec94051fb218400872ba01e420c61462e0fd7bd49",
+   "sourceDigest": "b8e5f64f268d13f5eb8c91d20aae02d5efe3a3765ae45334c15078bd51a40453",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -31400,14 +31412,6 @@
     ],
     [
      "provider-adapter",
-     "embeddingModel"
-    ],
-    [
-     "provider-use",
-     "embeddingModel"
-    ],
-    [
-     "provider-adapter",
      "embedEntities"
     ],
     [
@@ -31445,10 +31449,6 @@
     [
      "diagnostic",
      "getLogger"
-    ],
-    [
-     "unresolved-call",
-     "import"
     ],
     [
      "unresolved-call",
@@ -31771,10 +31771,6 @@
      "log.warn"
     ],
     [
-     "diagnostic",
-     "log.warn"
-    ],
-    [
      "storage-call",
      "lookupRepoId"
     ],
@@ -31868,10 +31864,6 @@
     ],
     [
      "storage-call",
-     "updateEmbedding"
-    ],
-    [
-     "storage-call",
      "updateRepoStatus"
     ],
     [
@@ -31889,11 +31881,19 @@
     [
      "storage-call",
      "upsertRelations"
+    ],
+    [
+     "serialization",
+     "writeBackfillVectors"
+    ],
+    [
+     "storage-call",
+     "writeBackfillVectors"
     ]
    ],
-   "siteCount": 132,
-   "sitesDigest": "85fbd54eb2efd25f0aae3e00f952178c158149a3eacdae40b3d5f30c50ddac89",
-   "sourceDigest": "7f68c4e5d5729bf7f75fb6acf28ec817cf98e85d705fab772f00bcf81d39029d",
+   "siteCount": 129,
+   "sitesDigest": "24a6ee87f72e74609dcb51f624f64c6782e9322673e2a1bda54507d2a4d8811d",
+   "sourceDigest": "5cc3479903d38cd5f483d0bb39151a011d5f12517ff18d9b2601453a1fe94a2b",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

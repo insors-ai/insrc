@@ -74,8 +74,16 @@ const NO_MODEL: CheapTierModel = {
   complete: () => Promise.reject(new Error('no cheap-tier model configured')),
 };
 
-/** Entities the backfill embeds and writes per round (Epic c2ba6fa6 s2). */
-const BACKFILL_BATCH = 64;
+/**
+ * Entities the backfill embeds and writes per round (Epic c2ba6fa6 s2), set
+ * from t11's measurement on this repository's vector table (80,043 rows, 1024
+ * dims; medians of 5): an upsert of 1 row took 25 ms, of 16 rows 29 ms, of 256
+ * rows 49 ms (a plain add: 11 ms and 31 ms). The write is nearly a fixed cost
+ * per call, so 256 per round keeps the backfill's write time to ~0.2 ms per
+ * entity while a round's embedding (16 Ollama batches) still finishes in
+ * seconds, which bounds the work redone after a crash mid-round.
+ */
+const BACKFILL_BATCH = 256;
 
 function contentHash(source: string): string {
   return createHash('sha256').update(source).digest('hex').slice(0, 16);
@@ -1080,14 +1088,13 @@ export class IndexerService {
    * entity of the repository the embed step selects whose marker is empty --
    * a vector write that failed, a crash between a commit and its vectors, a
    * vector store reset -- is embedded in batches and written vector first,
-   * marker second (updateEmbedding, an upsert). A batch the backend returns no
+   * marker second (writeBackfillVectors: one upsert per batch). A batch the backend returns no
    * vectors for means it cannot be reached: the repository records
    * embeddingAvailable false and the job stops; a successful run records true.
    */
   private async reembed(repoPath: string): Promise<void> {
     // Loaded lazily to avoid a circular import with db/entities
-    const { listUnembeddedEntities, updateEmbedding } = await import('../db/entities.js');
-    const { embeddingModel }                           = await import('./embedder.js');
+    const { listUnembeddedEntities, writeBackfillVectors } = await import('../db/entities.js');
 
     const entities = await listUnembeddedEntities(this.db, repoPath);
     if (entities.length === 0) {
@@ -1107,14 +1114,8 @@ export class IndexerService {
         log.warn({ repo: repoPath, remaining: entities.length - written }, 'backfill: the embedding backend returned no vectors; recorded as unavailable');
         return;
       }
-      for (const e of ready) {
-        try {
-          await updateEmbedding(this.db, e.id, e.embedding, embeddingModel());
-          written++;
-        } catch (err) {
-          log.warn({ repo: repoPath, entity: e.id, err: err instanceof Error ? err.message : String(err) }, 'backfill: vector write failed; the entity stays unembedded');
-        }
-      }
+      // One upsert per batch, then the batch's markers (writeBackfillVectors logs a failure).
+      written += ready.length - await writeBackfillVectors(ready);
     }
     await setEmbeddingAvailable(repoPath, true);
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);

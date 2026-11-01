@@ -363,6 +363,19 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 }
 
 /** The model a stored marker names: the configured embedding model. */
+/**
+ * The backfill's write (Epic c2ba6fa6 s2): one batch's vectors in ONE upsert
+ * (an entity with an empty marker may still have a vector from an interrupted
+ * write, so never a plain add), then their markers in one transaction. A Lance
+ * write costs ~25 ms whatever its size up to a few hundred rows (t11, measured
+ * on this repository's table), so a per-entity write would dominate the job.
+ * Returns how many entities were left without a marker (0 on success).
+ */
+export async function writeBackfillVectors(entities: readonly Entity[]): Promise<number> {
+	assertNoSessionPersistence();
+	return writeVectorsThenMarkers(entities.filter(e => e.embedding.length > 0).map(entity => ({ entity, isNew: false })), 'backfill');
+}
+
 function activeEmbeddingModel(): string {
 	return loadLocalProviderConfig().embeddingModel;
 }

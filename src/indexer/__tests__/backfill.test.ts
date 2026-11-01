@@ -5,7 +5,7 @@
  * vectors, sets the markers and the repository reads complete (ac3); a backend
  * that returns no vectors records embeddingAvailable false without failing the
  * job; listUnembeddedEntities never selects an empty-body entity, an embedded
- * one, or another repository's.
+ * one, or another repository's; each backfill round is one upsert (t11).
  *
  * Run: npx tsx --test src/indexer/__tests__/backfill.test.ts
  */
@@ -22,6 +22,7 @@ import { updateIndexStateRowInTxn } from '../../db/graph/index-state-rows.js';
 import { _setVectorWriterForTest, commitFile, findEntitiesByFile, listUnembeddedEntities } from '../../db/entities.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import { addRepo, lookupRepoId } from '../../db/repos.js';
+import * as entityVec from '../../db/lance/entity-vec.js';
 import type { DbClient } from '../../db/client.js';
 import type { Entity, IndexJob, RegisteredRepo } from '../../shared/types.js';
 import { IndexQueue } from '../../daemon/queue.js';
@@ -141,6 +142,22 @@ test('t10: the backfill is queued after a full index and after a clean-up', asyn
 	svc.queued.length = 0;
 	await svc.processJob({ kind: 'reconcile', repoPath: repo });
 	assert.ok(svc.queued.some(j => j.kind === 'reembed' && j.repoPath === repo), `after the clean-up: ${JSON.stringify(svc.queued)}`);
+});
+
+test('t11: the backfill writes each round\'s vectors with one upsert, never one write per entity (a Lance write is ~25 ms whatever its size)', async () => {
+	await indexedWithoutVectors();
+	const pending = (await readIndexState(repo))?.unembedded ?? 0;
+	assert.ok(pending >= 2, 'more than one entity to write');
+	const calls = { upsert: [] as number[], single: 0, add: 0 };
+	_setVectorWriterForTest({
+		writeEntityEmbeddings: async rows => { calls.upsert.push(rows.length); await entityVec.writeEntityEmbeddings(rows); },
+		writeEntityEmbedding: async row => { calls.single++; await entityVec.writeEntityEmbedding(row); },
+		addEntityEmbeddings: async rows => { calls.add++; await entityVec.addEntityEmbeddings(rows); },
+	});
+	await new BackfillProbe().processJob({ kind: 'reembed', repoPath: repo });
+
+	assert.deepEqual(calls, { upsert: [pending], single: 0, add: 0 });
+	assert.equal((await readIndexState(repo))?.unembedded, 0);
 });
 
 function entity(path: string, name: string, body: string, owner = repo): Entity {

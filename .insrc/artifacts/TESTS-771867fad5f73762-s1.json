@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "a4603ef70c9986c201b0a7d25f1752c5bf34c1db918f30dfd345d6616aebb066",
+        "at": "2026-11-01T17:02:50.017Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "771867fad5f73762",
+    "storyId": "s1",
+    "createdAt": "2026-11-01T17:02:49.913Z",
+    "updatedAt": "2026-11-01T17:02:49.913Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-01T16:52:20.097Z",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "986fce0f5",
+        "ranAt": "2026-11-01T17:02:49.913Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1329,
+            "titles": [
+              {
+                "title": "single-task attribution prompt and native schema select t4 only on initial and subsequent attempts",
+                "result": "pass"
+              },
+              {
+                "title": "whole-story attribution retains every Plan task and strict host uniqueness and coverage checks",
+                "result": "pass"
+              },
+              {
+                "title": "single-task re-review uses the same constrained attribution on daemon and controller routes and preserves prior attempts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

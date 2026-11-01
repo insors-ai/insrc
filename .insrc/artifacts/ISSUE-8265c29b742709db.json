@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793551241484-8vo27d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T16:44:34.435Z",
+    "epicCreatedAt": "2026-11-01T16:44:34.435Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 232951,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "8265c29b742709db",
+    "epicSlug": "align-attribution-selected-review-task-scope",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "42963eaf0b323154c202f1efb205548207dd82554cf36f7620f1bd15179ffea9",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T16:46:53.758Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "8265c29b742709db",
+      "slug": "EPIC-8265c29b742709db"
+    }
+  },
+  "body": {
+    "title": "Align attribution with the selected review task scope",
+    "reproduction": "Review review-e6ddcdcb-s4-t4-live-20261101 attempt2 targeted only task t4 from a five-task Plan, but failed before assessment with 'attribution: Every applicable task needs exactly one derived scope'. A model-free reproduction confirms the generic reassessment schema accepts rows for all five Plan tasks while host selection accepts only t4. The exact native returned task IDs were not retained, so those IDs are not asserted. [[c1]] [[c2]] [[c3]]",
+    "rootCause": "attributionPrompt requests every Plan task even for a task-scoped packet. attributionSchema selects only initial versus reassessment format and does not bind task IDs or row count to the selected scope. deriveTaskAssignments correctly filters by packet.taskId and rejects mismatching scope sets. Daemon and controller consume the same inconsistent prompt/schema contract. [[c1]] [[c2]]",
+    "fixIntent": "Make attribution instructions and native output constraints agree with the exact applicable task selection on initial and subsequent attempts: only the selected task for task reviews, all applicable tasks for story reviews. Retain strict host rejection of missing, extra, foreign or duplicate scopes and omitted change/test attribution. Preserve historical attempts, reassess/reuse policy and reviewer independence. Add focused deterministic single-task re-review, whole-story and route-parity regressions; do not start another live review or change stored result shapes. [[c1]] [[c2]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "User requested fixing the scope mismatch before rerunning the review."
+    }
+  ]
+}

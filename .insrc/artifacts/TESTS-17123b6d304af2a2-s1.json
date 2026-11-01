@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T19:18:50.331Z",
+    "updatedAt": "2026-11-01T19:36:53.272Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -269,6 +269,112 @@
               },
               {
                 "title": "queued-cancellation-never-invokes-provider",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "37054280a",
+        "ranAt": "2026-11-01T19:27:09.511Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "idempotent-drain-close-and-provider-ownership",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "foundation-data-methods-return-not-ready",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "foundation-data-methods-return-not-ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 877,
+            "titles": [
+              {
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "foundation-data-methods-return-not-ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "c2a922a5d",
+        "ranAt": "2026-11-01T19:36:53.272Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "same-process-package-copy-thread-process-contention",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contention.test.ts",
+                "title": "same-process-package-copy-thread-process-contention",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "killed-owner-release-stopped-owner-exclusion-and-aliases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contention.test.ts",
+                "title": "killed-owner-release-stopped-owner-exclusion-and-aliases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/contention.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1406,
+            "titles": [
+              {
+                "title": "same-process-package-copy-thread-process-contention",
+                "result": "pass"
+              },
+              {
+                "title": "killed-owner-release-stopped-owner-exclusion-and-aliases",
                 "result": "pass"
               }
             ],

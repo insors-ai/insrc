@@ -1,5 +1,7 @@
 import { MemoryFactory } from '@insrc/project-memory';
-import type { Scope, MemoryOptions, MemoryService, MemoryCommand, ModelPort } from '@insrc/project-memory';
+import type { MemoryFactory as FactoryContract, Scope, MemoryOptions, MemoryService, MemoryCommand, ModelPort } from '@insrc/project-memory';
+const factory: FactoryContract = MemoryFactory;
+void factory;
 const scope: Scope = { projectId: 'project', sessionId: undefined };
 const model: ModelPort = { embeddingModel: 'local', embeddingDimension: 1, async complete() { return null; }, async embed() { return [1]; } };
 const options: MemoryOptions = { dataDirectory: '/explicit', models: model, policy: { async bind(projectId) { return { projectId, root: '/project', scopeEpoch: 'v1' }; }, async admit(_binding, event) { return event; } }, logger: { write() {} }, limits: { maxEventBytes: 1024, segmentBytes: 4096, maxPendingBytes: 8192, modelTimeoutMs: 1000 } };

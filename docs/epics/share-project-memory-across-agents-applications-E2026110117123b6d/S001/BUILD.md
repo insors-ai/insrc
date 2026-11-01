@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s1
 
-**Standalone:** no  ·  **Created:** 2026-11-01T18:52:29.474Z  ·  **Updated:** 2026-11-01T19:18:50.331Z
+**Standalone:** no  ·  **Created:** 2026-11-01T18:52:29.474Z  ·  **Updated:** 2026-11-01T19:36:53.272Z
 
-**Commit:** 43a7b4586
+**Commit:** c2a922a5d
 
 ## Summary
 
@@ -17,33 +17,39 @@ Added an independent strict ESM memory workspace, public sc1/sc2 contracts, pure
 - ✓ `t3`
 - ✓ `t4`
 - ✓ `t5`
+- ✓ `t6`
+- ✓ `t7`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `.insrc/artifacts/PLAN-17123b6d304af2a2-s1.json` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `package-lock.json` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `package.json` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/.gitignore` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/LICENSE` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/README.md` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/package.json` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/contracts.test.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/fixtures/public-consumer.mts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/errors.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/host-node.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/index.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/types.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/tsconfig.json` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/t2/qualification.json` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/native.test.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/native.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/fixtures/node22.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/configuration.test.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/fixtures/options.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/configuration.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/ownership.test.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/ownership.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/__tests__/model-dispatcher.test.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
-- `packages/project-memory/src/model-dispatcher.ts` — **insrc-build** (2026-11-01T19:18:50.331Z)
+- `.insrc/artifacts/PLAN-17123b6d304af2a2-s1.json` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `package-lock.json` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `package.json` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/.gitignore` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/LICENSE` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/README.md` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/package.json` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/contracts.test.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/fixtures/public-consumer.mts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/errors.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/host-node.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/index.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/types.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/tsconfig.json` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/t2/qualification.json` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/native.test.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/native.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/fixtures/node22.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/configuration.test.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/fixtures/options.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/configuration.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/ownership.test.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/ownership.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/model-dispatcher.test.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/model-dispatcher.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/runtime.test.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/runtime.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/contention.test.ts` — **insrc-build** (2026-11-01T19:36:53.272Z)
+- `packages/project-memory/src/__tests__/fixtures/owner-peer.mjs` — **insrc-build** (2026-11-01T19:36:53.272Z)

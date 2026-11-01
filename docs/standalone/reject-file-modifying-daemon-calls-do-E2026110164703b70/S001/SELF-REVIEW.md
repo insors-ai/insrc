@@ -20,3 +20,39 @@ Date: 2026-11-02. Method: each claim checked against the tree (`src/daemon/handl
 ## Verdict
 
 warn. No HIGH finding. The design meets the four requirements of the issue; MED-1 and MED-2 are sequencing and completeness points for the plan.
+
+---
+
+# Self-review of the Story code (BUILD), by the controller
+
+**Not a review by the other party.** The controller wrote this code through `insrc_build_step`; `insrc_code_review_step` throws `PENDING REVIEW RE-IMPLEMENTATION` and the user decided on 2026-11-01 that the controller reviews code itself until it works. Completing the BUILD needs `overrideReview` naming this file and the user's explicit yes, an ABSOLUTE `artifactPath` and `repo`.
+
+Date: 2026-11-02. Subject: tasks t1 to t8 on `v2` (commits `91846d958` to `832d2c690`). Method: the daemon's gate of each task (typecheck, the named tests it ran, a read-only verdict session), one findings round on t5, the full sweep compared by test name with the tree before the fix (`docs/plans/repo-gate-outcome.md`), and my reading of the failures it found.
+
+## Adherence
+
+- Every requirement of the issue holds in the tests: a file-modifying call with no repo is refused before any handler runs (RPC, stream and step tools); the daemon never reads its `INSRC_REPO` or working directory for such a call; the repo must be absolute, a directory and registered; paths are joined to it and must stay inside it, symlinks included; a table built from the audit lists the calls, and a test fails when a registered method is in neither the table nor the reviewed list.
+- The 2026-11-01 case has its own test on real stores (`approve-repo-gate.test.ts`).
+- Deviations (all in the outcome document): a sixth code `repo-mismatch`, `artifact.feedback.append` takes a `repo`, the forwarder makes the repo explicit for the workflow and build step tools only, `mcp-process-e2e` registers the repo and compares the analyzer prompt without the size letter.
+
+## Conventions
+
+- ESM `.js` imports, `import type`, strict options: `tsc --noEmit` clean at every gate. No `console.log`. The gate returns results and does not throw, apart from the stream wrapper, which throws on purpose to produce the server's error frame.
+
+## Coverage
+
+- Unit and integration tests for the gate, the table, the approval family, every table method called without a repo, the step host, the clients and the documentation. The full sweep found no new failure and no new skip against the tree before the fix.
+- Gap: the audit classified the read-only and daemon-store groups by reading each registration and its delegate, not with the analyzer's call closure for every handler (stated in the audit). A handler found writing under a repository would be misclassified until the table is fixed.
+- Gap: no test runs a real MCP session against a real daemon for a refused call (the mcp-process-e2e test covers an accepted call with a registered repo).
+
+## Quality
+
+- **MED-1 (critical to act on).** The installed daemon at `~/.insrc/daemon` runs the old code until it is updated and restarted; the 2026-11-01 misrouting remains possible through it until then.
+- **MED-2.** Clients outside this repository that call a gated method without `repo` (an editor plugin calling `artifact.feedback.append`; any script that relied on the daemon's `INSRC_REPO`) are refused now. This is the requested behaviour but breaks them.
+- **LOW-1.** The registry is read once per gated call (a `listRepos` over the graph store); fine for these call rates, a short-lived cache is a later option.
+- **LOW-2.** A step call whose state token cannot be decoded is passed to the step, which reports it and writes nothing; the gate does not refuse it.
+- **LOW-3.** `insrc_present`, `insrc_docgen`, analyze and triage tool descriptions still say `repo` falls back to the session workspace or `INSRC_REPO`; correct for them (read-only), but a reader may be confused.
+
+## Verdict
+
+warn. No HIGH finding. MED-1 and MED-2 are about rollout, not the code.

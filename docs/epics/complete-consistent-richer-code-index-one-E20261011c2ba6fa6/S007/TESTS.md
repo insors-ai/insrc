@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -51,3 +51,27 @@ Run at 2026-11-01T19:11:49.297Z on commit `3537ca63c`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/relations-evidence.test.ts` | 0 | 4 | 1.6 s |  |
+
+## t3
+
+Run at 2026-11-01T19:16:43.355Z on commit `45155b01d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: resolveRelations evidence 'extracted' through the file commit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t3: a call to a function of the same file, indexed through the file commit, is stored extracted | `src/indexer/__tests__/evidence-extracted.test.ts` |
+| pass | s7 t3: a relative import of a file not stored yet waits with its evidence, and is stored extracted when the file arrives (Pass 0) | `src/indexer/__tests__/evidence-extracted.test.ts` |
+| pass | s7 t3: every relation resolveRelations returns as resolved carries evidence extracted; the ones it leaves pending carry none | `src/indexer/__tests__/evidence-extracted.test.ts` |
+
+**integration: manifest DEPENDS_ON evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t3: the repository's DEPENDS_ON edges from its manifest are stored extracted | `src/indexer/__tests__/evidence-extracted.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/evidence-extracted.test.ts` | 0 | 4 | 1.4 s |  |

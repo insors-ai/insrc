@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:11:49.297Z",
+    "updatedAt": "2026-11-01T19:16:43.355Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -127,6 +127,77 @@
               },
               {
                 "title": "s7 t2: an edge returned to pending when its target is removed keeps its evidence, and is promoted again with it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "45155b01d",
+        "ranAt": "2026-11-01T19:16:43.355Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "resolveRelations evidence 'extracted' through the file commit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: a call to a function of the same file, indexed through the file commit, is stored extracted",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: a relative import of a file not stored yet waits with its evidence, and is stored extracted when the file arrives (Pass 0)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: every relation resolveRelations returns as resolved carries evidence extracted; the ones it leaves pending carry none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manifest DEPENDS_ON evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: the repository's DEPENDS_ON edges from its manifest are stored extracted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1366,
+            "titles": [
+              {
+                "title": "s7 t3: a call to a function of the same file, indexed through the file commit, is stored extracted",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t3: a relative import of a file not stored yet waits with its evidence, and is stored extracted when the file arrives (Pass 0)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t3: every relation resolveRelations returns as resolved carries evidence extracted; the ones it leaves pending carry none",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t3: the repository's DEPENDS_ON edges from its manifest are stored extracted",
                 "result": "pass"
               }
             ],

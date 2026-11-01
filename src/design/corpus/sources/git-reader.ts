@@ -3,6 +3,9 @@
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { isAbsolute } from 'node:path';
+import { gitCatFileTool } from '../../../daemon/tools/builtins/git/cat-file.js';
+import { gitCall, GitCallFailed } from '../../../workflow/git-calls.js';
+import { isToolDenied, ToolDenied } from '../../../workflow/tracker/tool-denied.js';
 import { CORPUS_LIMITS } from '../canonical.js';
 import type { ValidationIssue, ValidationResult } from '../contracts.js';
 import { decodeSourceRequest } from './eligibility.js';
@@ -75,6 +78,34 @@ export const createGitRunner = (spawnProcess: typeof spawn = spawn): BinaryGitRu
   child.stdin.end(input);
 });
 export const runGitBinary = createGitRunner();
+/**
+ * The default runner of the reader (Story s9): the one object a `cat-file --batch` request names, read through the git_cat_file tool and
+ * given back in the bytes `git cat-file --batch` prints (header, content, line break), so the framing and identity checks of
+ * {@link decodeObject} run on the bytes git itself produced. The tool runs git isolated from the environment, as the reader's own runner did.
+ */
+export const toolGitRunner: BinaryGitRunner = async (args, input, options) => {
+  if (args.length !== 2 || args[0] !== 'cat-file' || args[1] !== '--batch') throw new SourceReaderError('inventory.invalid', 'Unsupported Git request.');
+  if (options.signal?.aborted) throw new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.');
+  const rev = Buffer.from(input).toString('ascii').trim();
+  let data: Awaited<ReturnType<typeof gitCall<typeof gitCatFileTool>>>;
+  try {
+    data = await gitCall(gitCatFileTool, { rev, encoding: 'base64', isolated: true, maxBytes: options.stdoutLimit, stdoutLimit: options.stdoutLimit, stderrLimit: options.stderrLimit, timeoutMs: options.timeoutMs }, options.cwd,
+      { signal: options.signal, timeoutMs: options.timeoutMs });
+  } catch (err) {
+    if (err instanceof ToolDenied && err.reason === 'cancelled' && options.signal?.aborted === true) throw new SourceReaderError('inventory.invalid', 'Source acquisition cancelled.');
+    if (err instanceof GitCallFailed) {
+      if (err.kind === 'timed-out') throw new SourceReaderError('limit.exceeded', 'Source acquisition timed out.');
+      if (/byte limit|exceeds|over maxBytes/.test(err.message)) throw new SourceReaderError('limit.exceeded', 'Git output exceeds byte limit.');
+      throw new SourceReaderError('reference.missing', 'Local Git object is unavailable.');
+    }
+    throw err;   // a denied call ends the acquisition
+  }
+  const object = 'objects' in data ? data.objects[0] : undefined;
+  if (object === undefined) throw new SourceReaderError('inventory.invalid', 'Malformed Git object header.');
+  if (!object.exists) return new Uint8Array(Buffer.from(`${rev} missing\n`));
+  const bytes = Buffer.from(object.contentBase64 ?? '', 'base64');
+  return new Uint8Array(Buffer.concat([Buffer.from(`${object.sha} ${object.type} ${object.size}\n`), bytes, Buffer.from('\n')]));
+};
 export interface ReaderLimits { files: number; bytes: number; metadataBytes: number; timeoutMs: number; stderrBytes: number; requestTimeoutMs: number; }
 export const READER_LIMITS: Readonly<ReaderLimits> = Object.freeze({ files: CORPUS_LIMITS.files, bytes: CORPUS_LIMITS.packageBytes,
   metadataBytes: CORPUS_LIMITS.packageBytes, timeoutMs: 30000, stderrBytes: 65536, requestTimeoutMs: 300000 });
@@ -120,7 +151,7 @@ function treeEntry(tree: Uint8Array, name: string, oidBytes: number): { mode: st
 export async function readPinnedSources(localRepository: string, requestInput: unknown, options: ReaderOptions = {}): Promise<ValidationResult<AcquiredBlob[]>> {
   const decoded = decodeSourceRequest(requestInput); if (!decoded.ok) return decoded;
   if (typeof localRepository !== 'string' || !isAbsolute(localRepository)) return failure([problem('path.invalid', '/localRepository', 'Expected absolute local repository path.')]);
-  const request = decoded.value, run = options.run ?? runGitBinary;
+  const request = decoded.value, run = options.run ?? toolGitRunner;
   const limits = { ...READER_LIMITS, ...options.limits };
   for (const key of Object.keys(READER_LIMITS) as (keyof typeof READER_LIMITS)[]) {
     if (!Number.isSafeInteger(limits[key]) || limits[key] < 1 || limits[key] > READER_LIMITS[key]) {
@@ -179,6 +210,7 @@ export async function readPinnedSources(localRepository: string, requestInput: u
     }
     return { ok: true, value: blobs };
   } catch (error) {
+    if (isToolDenied(error)) throw error;   // a denied call ends the acquisition; it is not a source problem
     const reason: unknown = signal.aborted ? signal.reason : error;
     return failure([reason instanceof SourceReaderError ? problem(reason.code, '/acquisition', reason.message)
       : problem('inventory.invalid', '/acquisition', 'Local source acquisition failed.')]);

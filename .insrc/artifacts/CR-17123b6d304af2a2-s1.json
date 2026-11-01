@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1793564081723-6sm7q6",
+    "runId": "cr-1793564577215-c37otb",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-01T20:14:35.824Z",
+    "createdAt": "2026-11-01T20:22:51.345Z",
     "model": "claude:claude-sonnet-5",
-    "elapsedMs": 257829,
+    "elapsedMs": 219511,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "17123b6d304af2a2",
@@ -17,11 +17,11 @@
       "epicHash": "17123b6d304af2a2",
       "storyId": "s1",
       "author": "controller",
-      "sourceDigest": "d33fb9bba839f046275d8b23fd7c05f54a891bcb98352e7290962baec66a2ba3",
+      "sourceDigest": "c506ca893081be2bd4daf29d87e71fa2b52d2b54b0fd1c9dd25fcb08de67cd5a",
       "contractDigest": "48835960b6ce54069c92a0c2f16120135503b016262bfb2dacb9eb24401a338d",
       "buildDigest": "132b7c699a1f083ed0fc695125c64f174a25a546aa14dc1a62ca8070315c312f",
       "testsDigest": "c3960bc54867e4df8eb79c6fe1f5ce9fd25b7dd1c59180e254c1536c571f9732",
-      "digest": "a3596a1833bbac71373ebddce64d275167b969edae9530471d82cb67dd73ea07"
+      "digest": "89b8ac579f73deeb9e48582e38f0900aa2ad4b5dff8be69d99067988f2bc4c95"
     },
     "reviewInputSchemaVersion": 1,
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
@@ -88,9 +88,15 @@
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "packages/project-memory/src/configuration.ts:prepareRoot",
-            "message": "prepareRoot calls validateFilesystem directly and also calls checkFilesystem, which itself calls validateFilesystem internally — the filesystem-type validation appears to run twice on (possibly) the same path. This is either redundant work/a TOCTOU-prone double stat, or prepareRoot is validating a type value it doesn't actually have fresh, either way worth confirming it isn't validating stale/wrong data or duplicating the check checkFilesystem already performs.",
-            "counterpartRef": "checkFilesystem",
+            "location": "packages/project-memory/src/ownership.ts:1001",
+            "message": "acquireOwnership fans out to 7 distinct callees (loadNative, errno, classifyLayout, assertFile, checkIdentity, initializeLayout, closeDescriptor) — far more than any other function in the changed set. It mixes native-lock acquisition, layout branching (new vs existing), two different validation paths, and fd cleanup in one routine, making it hard to reason about which cleanup/error path runs for each branch. Consider splitting the new-layout and existing-layout branches into separate helpers so each path's error handling is locally verifiable.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/host-node.ts:1",
+            "message": "host-node.ts calls prepareRoot(options) and then acquireOwnership(root, ...) as two separate top-level steps, but both independently call classifyLayout on the same root. Between the two calls another process could initialize the layout (classifyLayout is also reached from ownership.test.ts's initializeLayout/acquireOwnership paths), so the 'new' vs 'existing' decision prepareRoot's caller relies on can disagree with the one acquireOwnership re-derives moments later, and the redundant stat/metadata read is also wasted work on the happy path.",
             "confidence": "observation"
           }
         ]
@@ -103,7 +109,7 @@
     "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 1,
+      "med": 2,
       "low": 0
     }
   }

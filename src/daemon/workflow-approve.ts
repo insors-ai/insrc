@@ -13,7 +13,7 @@ import { approveWorkflowTarget, jsonPathForMd } from '../workflow/gates.js';
 import type { WorkflowApproveResult } from '../workflow/gates.js';
 import type { LifecycleService } from '../workflow/artifact-core/lifecycle-service.js';
 import { approvalActorOf } from '../workflow/artifact-core/approval-actor.js';
-import { lifecycleFor, repoOfArtifactPath } from './lifecycle-registry.js';
+import { lifecycleFor } from './lifecycle-registry.js';
 
 export interface WorkflowApproveDeps {
 	/** The repository's service. The daemon's registry by default. */
@@ -25,19 +25,14 @@ export interface WorkflowApproveDeps {
 
 export async function handleWorkflowApprove(
 	params: unknown,
-	repoEnv: string | undefined,
 	deps: WorkflowApproveDeps = {},
 ): Promise<WorkflowApproveResult | { error: string }> {
 	const p = (params ?? {}) as { repo?: string; artifactPath?: string; epicHash?: string; overrideReview?: string; actor?: unknown; skipKinds?: boolean };
-	const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv) ?? '';
-	// repo is only needed to locate the epic's artifacts dir for a batch; a single artifactPath names its own repository.
-	if (p.epicHash !== undefined && repoPath.length === 0) {
-		return { error: 'workflow.approve: `repo` is required for an epicHash batch' };
-	}
-// The repository whose store holds the artifact: for a single artifact, the one its path sits in (the request's or the
-	// environment's repo may name another); for an epic batch, the request's repo.
-	const ofPath = p.artifactPath !== undefined ? repoOfArtifactPath(p.artifactPath) : undefined;
-	const repoForStore = ofPath ?? repoPath;
+	// The repository whose store is written is the one the call names (the daemon's dispatcher has checked it is absolute and registered
+	// and that artifactPath is inside it). It is never the daemon's INSRC_REPO and never found by walking up from the path.
+	const repoPath = p.repo ?? '';
+	if (repoPath.length === 0) return { error: 'workflow.approve: `repo` is required' };
+	const repoForStore = repoPath;
 	let lifecycle: LifecycleService;
 	let actor;
 	try {
@@ -47,7 +42,7 @@ export async function handleWorkflowApprove(
 		return { error: `workflow.approve: ${(err as Error).message}` };
 	}
 	const result = await (deps.approve ?? approveWorkflowTarget)({
-		repoPath: repoForStore.length > 0 ? repoForStore : repoPath,
+		repoPath: repoForStore,
 		...(p.artifactPath !== undefined ? { artifactPath: p.artifactPath } : {}),
 		...(p.epicHash !== undefined ? { epicHash: p.epicHash } : {}),
 		...(p.overrideReview !== undefined ? { overrideReview: p.overrideReview } : {}),
@@ -58,7 +53,7 @@ export async function handleWorkflowApprove(
 	// Post-approval bugfix seam: approveWorkflowTarget is awaited (its completion hook writes the BUILD ledger); the async
 	// advance/close run here over the artifacts it actually completed. A seam throw is captured as an `ok:false` followOn by
 	// the seam itself, never failing the approval. Skipped when there is nothing completed or no repo to resolve inference.
-	if (result.approved.length === 0 || repoForStore.length === 0 || deps.followOn === undefined) return result;
+	if (result.approved.length === 0 || deps.followOn === undefined) return result;
 	const followOn = await deps.followOn(result.approved, repoForStore);
 	return followOn !== undefined && followOn.length > 0 ? { ...result, followOn } : result;
 }
@@ -70,7 +65,6 @@ export async function handleWorkflowApprove(
  */
 export async function handleApprovePipeline(
 	params: unknown,
-	repoEnv: string | undefined,
 	followOnFor: (withTracker: boolean) => NonNullable<WorkflowApproveDeps['followOn']>,
 	deps: Omit<WorkflowApproveDeps, 'followOn'> = {},
 ): Promise<{ readonly approval: WorkflowApproveResult['approved'][number]['result']; readonly followOn: NonNullable<WorkflowApproveResult['followOn']>; readonly codeReview: WorkflowApproveResult['codeReview'] } | { error: string; refusal?: { kind: 'review-blocked' | 'team-refused'; text: string } }> {
@@ -79,7 +73,7 @@ export async function handleApprovePipeline(
 	if (p.withTracker !== undefined && typeof p.withTracker !== 'boolean') return { error: 'workflow.approvePipeline: `withTracker` must be a boolean' };
 	const withTracker = p.withTracker !== false;
 	// the terminal names the artifact by its .md or its .json path; the approval is made on the json
-	const r = await handleWorkflowApprove({ ...(params as object), artifactPath: jsonPathForMd(p.artifactPath), epicHash: undefined, skipKinds: true }, repoEnv, { ...deps, followOn: followOnFor(withTracker) });
+	const r = await handleWorkflowApprove({ ...(params as object), artifactPath: jsonPathForMd(p.artifactPath), epicHash: undefined, skipKinds: true }, { ...deps, followOn: followOnFor(withTracker) });
 	if ('error' in r) return r;
 	const first = r.approved[0];
 	if (first === undefined) {

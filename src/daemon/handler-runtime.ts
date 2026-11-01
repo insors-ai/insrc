@@ -22,6 +22,7 @@ import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import { getDb } from '../db/client.js';
+import { gateRepoCall } from './repo-call-gate.js';
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
 import { deleteUnresolvedForRepo } from '../db/relations.js';
@@ -306,6 +307,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	// socket, and the step handlers call the same functions in-process through
 	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
 	const repoSettingsHandlers = createRepoSettingsHandlers({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) });
+	/** The registered repositories' paths, read for each file-modifying call (the repo gate refuses a call whose registry cannot be read). */
+	const registeredRepos = async (): Promise<ReadonlySet<string>> => new Set((await listRepos(db)).map(r => r.path));
 	const rpcHandlers: RpcHandlers = {
 		...handoffRpcHandlers(),
 		'repo.add': async (params) => {
@@ -445,15 +448,20 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Non-lossy — review-blocked artifacts come back in `skipped[]`.
 		'workflow.approve': async (params) => {
 			const { handleWorkflowApprove } = await import('./workflow-approve.js');
+			// the repo gate first: the call names an absolute registered repo, and artifactPath is inside it (a relative path is joined to it)
+			const checked = await gateRepoCall('workflow.approve', params, registeredRepos);
+			if (!checked.ok) return { error: checked.message, code: checked.code };
 			// delegates to the pipeline's seam with the tracker on: an approval publishes, checks in and attaches, as the terminal's approve does
-			return handleWorkflowApprove(params, process.env['INSRC_REPO'], { followOn: approveFollowOn(db, true) });
+			return handleWorkflowApprove(checked.params, { followOn: approveFollowOn(db, true) });
 		},
 
 		// The terminal's approve (Story s10): one artifact approved and carried through the pipeline in the daemon. `withTracker` false stops after
 		// the approval and the Task reconciliation. Answers the approval and every follow-on entry, or { error } (a refusal, a review block).
 		'workflow.approvePipeline': async (params) => {
 			const { handleApprovePipeline } = await import('./workflow-approve.js');
-			return handleApprovePipeline(params, process.env['INSRC_REPO'], (withTracker) => approveFollowOn(db, withTracker));
+			const checked = await gateRepoCall('workflow.approvePipeline', params, registeredRepos);
+			if (!checked.ok) return { error: checked.message, code: checked.code };
+			return handleApprovePipeline(checked.params, (withTracker) => approveFollowOn(db, withTracker));
 		},
 
 		// Story s10: the terminal's team and review operations, run here so the tracker and git are reached through the registry only.

@@ -500,7 +500,9 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 	// 'workflow.approve' delegates to its own function (s4 moved the body to workflow-approve.ts so it can be tested), which runs
 	// the same approval and the same bugfix follow-on.
 	const approve = handlerSource(src, 'workflow.approve');
-	assert.match(approve, /return handleWorkflowApprove\(params, process\.env\['INSRC_REPO'\]/);
+	assert.match(approve, /gateRepoCall\('workflow\.approve', params, registeredRepos\)/);
+	assert.match(approve, /return handleWorkflowApprove\(checked\.params, \{/);
+	assert.ok(!/INSRC_REPO/.test(approve), 'the approval does not read the daemon\'s INSRC_REPO');
 	assert.match(approve, /followOn: approveFollowOn\(db, true\)/);
 	const approveSrc = readFileSync(join(import.meta.dirname, '..', '..', 'daemon', 'workflow-approve.ts'), 'utf8');
 	assert.match(approveSrc, /await \(deps\.approve \?\? approveWorkflowTarget\)\(\{/);

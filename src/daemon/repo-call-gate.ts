@@ -114,6 +114,9 @@ export function requireRepoForCall(method: string, params: unknown, registered: 
  * The gate with the registry read through `load`: a registry that cannot be read refuses the call, it never lets it through.
  */
 export async function gateRepoCall(method: string, params: unknown, load: () => Promise<ReadonlySet<string>>, opts: RepoCallOptions = {}): Promise<RepoCallCheck> {
+	// a call with no usable repo is refused before the registry is read: only 'not registered' needs it
+	const early = requireRepoForCall(method, params, new Set(), opts);
+	if (!early.ok && early.code !== 'repo-not-registered') return early;
 	let registered: ReadonlySet<string>;
 	try { registered = await load(); } catch (err) {
 		return refuse('repo-not-registered', `${method}: the repository registry could not be read (${err instanceof Error ? err.message : String(err)}), so the call is refused`);

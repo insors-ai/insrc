@@ -112,7 +112,9 @@ test('workflow.approvePipeline, tracker.sync and tracker.setup are registered an
 		});
 		const h = runtime.rpcHandlers;
 		// a bad request is a structured error, never a throw
-		assert.deepEqual(await h['workflow.approvePipeline']!({}), { error: 'workflow.approvePipeline: `artifactPath` is required' });
+		const noRepo = await h['workflow.approvePipeline']!({}) as { error: string; code: string };
+		assert.equal(noRepo.code, 'repo-missing');   // the repo gate answers first, before any registry read
+		assert.match(noRepo.error, /workflow\.approvePipeline: `repo` .* is required/);
 		assert.deepEqual(await h['tracker.sync']!({}), { error: 'tracker.sync: `repoPath` is required' });
 		assert.deepEqual(await h['tracker.setup']!({}), { error: 'tracker.setup: `repoPath` is required' });
 		// an Epic that was never pushed is skipped, as the terminal's sync reported it

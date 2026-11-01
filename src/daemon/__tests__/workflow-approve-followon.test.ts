@@ -61,12 +61,12 @@ describe('workflow-approve-followon.test.ts: the additive follow-on kinds carry 
 		try {
 			const seen: boolean[] = [];
 			const followOnFor = (withTracker: boolean) => async () => { seen.push(withTracker); return []; };
-			const ok = await handleApprovePipeline({ artifactPath: fx.plan, withTracker: false }, undefined, followOnFor);
+			const ok = await handleApprovePipeline({ repo: fx.repo, artifactPath: fx.plan, withTracker: false }, followOnFor);
 			assert.ok(!('error' in ok), JSON.stringify(ok));
 			assert.equal((ok as { approval: { workflow: string } }).approval.workflow, 'plan');
 			assert.deepEqual(seen, [false]);
-			assert.ok('error' in await handleApprovePipeline({}, undefined, followOnFor));
-			assert.ok('error' in await handleApprovePipeline({ artifactPath: fx.plan, withTracker: 'yes' }, undefined, followOnFor));
+			assert.ok('error' in await handleApprovePipeline({}, followOnFor));
+			assert.ok('error' in await handleApprovePipeline({ repo: fx.repo, artifactPath: fx.plan, withTracker: 'yes' }, followOnFor));
 		} finally { fx.cleanup(); }
 	});
 });

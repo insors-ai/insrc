@@ -63,7 +63,7 @@ async function seeded(): Promise<string> {
 }
 
 const approving = (repo: string, id: string, actor?: unknown) =>
-	handleWorkflowApprove({ repo, artifactPath: artifactJsonPath(repo, id), ...(actor !== undefined ? { actor } : {}) }, undefined) as Promise<WorkflowApproveResult>;
+	handleWorkflowApprove({ repo, artifactPath: artifactJsonPath(repo, id), ...(actor !== undefined ? { actor } : {}) }) as Promise<WorkflowApproveResult>;
 
 test('the daemon approve handler, the review-decision step and workflowReviewStart use the repository\'s durable LifecycleService, refuse a head ahead of its log, use the request\'s person actor or insrc:approval, and a repository whose registry entry cannot be created is refused', async () => {
 	const repo = await seeded();
@@ -93,10 +93,10 @@ test('the daemon approve handler, the review-decision step and workflowReviewSta
 	assert.match(refused.skipped[0]?.reason ?? '', /log-ahead-of-head/);
 
 	// An actor that is not a namespaced id is refused rather than replaced; a repository with no registry entry is refused and nothing is approved.
-	assert.match(String(((await handleWorkflowApprove({ repo, artifactPath: artifactJsonPath(repo, PLAN_C), actor: { id: 'Alice' } }, undefined)) as { error: string }).error), /actor/);
+	assert.match(String(((await handleWorkflowApprove({ repo, artifactPath: artifactJsonPath(repo, PLAN_C), actor: { id: 'Alice' } })) as { error: string }).error), /actor/);
 	let approveCalls = 0;
 	const missing = join(tmpdir(), 'lifecycle-wiring-no-such-repo');
-	const noEntry = await handleWorkflowApprove({ repo: missing, artifactPath: join(missing, '.insrc', 'artifacts', `${PLAN_A}.json`) }, undefined, { approve: () => { approveCalls++; return approveTarget({ repoPath: missing }); } });
+	const noEntry = await handleWorkflowApprove({ repo: missing, artifactPath: join(missing, '.insrc', 'artifacts', `${PLAN_A}.json`) }, { approve: () => { approveCalls++; return approveTarget({ repoPath: missing }); } });
 	assert.match((noEntry as { error: string }).error, /no lifecycle store/);
 	assert.equal(approveCalls, 0);
 
@@ -140,8 +140,10 @@ test('one registry entry per repository however its path is written, and a singl
 	assert.equal(lifecycleFor(repo), lifecycleFor(join(repo, '.', 'docs', '..')));
 	const other = mkdtempSync(join(tmpdir(), 'lifecycle-wiring-other-'));
 	repos.push(other);
-	// the environment names another repository: the approval still runs through the artifact's own store
-	const result = await handleWorkflowApprove({ artifactPath: artifactJsonPath(repo, PLAN_A) }, other) as WorkflowApproveResult;
+	// the call names the repository: the approval runs through that repository's own store, and a call that names none is refused
+	const refused = await handleWorkflowApprove({ artifactPath: artifactJsonPath(repo, PLAN_A) }) as { error: string };
+	assert.match(refused.error, /`repo` is required/);
+	const result = await handleWorkflowApprove({ repo, artifactPath: artifactJsonPath(repo, PLAN_A) }) as WorkflowApproveResult;
 	assert.equal(result.approved.length, 1, JSON.stringify(result.skipped));
 	assert.equal((await lifecycleFor(repo).store.read(PLAN_A)).lifecycle.status, 'approved');
 });

@@ -22,7 +22,9 @@ import { buildChainReport } from '../chain.js';
 import { artifactJsonPath, defineArtifactId, lldArtifactId, planArtifactId, writeArtifact } from '../storage.js';
 import { _setAutoPushDepsForTests, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { type TrackerExec } from '../tracker/github.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
+import { _setApprovalGateForTests } from '../../daemon/tools/executor.js';
+import { approveEveryToolCall } from './approve-fallback-kit.js';
 import { syncTracker } from '../tracker/sync.js';
 import { readBinding } from '../tracker/binding.js';
 import { seedBoundUnits, seedTaskHeads } from './helpers/task-heads.js';
@@ -77,12 +79,15 @@ test('a re-draft keeps the bound Epic and Story issues and the tracker block for
 		let n = 10;
 		const exec: TrackerExec = (cmd, args) => {
 			calls.push([cmd, ...args]);
-			if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
+			if (cmd === 'git' && args[0] === 'remote') return 'origin\tgit@github.com:acme/demo.git (fetch)\norigin\tgit@github.com:acme/demo.git (push)\n';
+			if (cmd === 'git') return '';
+			if (args[0] === 'api' && args[1] === 'user') return JSON.stringify({ login: 'me' });
 			if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/issues')) { n += 1; return JSON.stringify({ number: n, id: 1000 + n }); }
-			if (args[0] === 'issue' && args[1] === 'view') return args.includes('body') ? 'body' : JSON.stringify({ state: 'OPEN', labels: [] });
+			if (args[0] === 'issue' && args[1] === 'view') return JSON.stringify({ number: Number(args[2]), title: 't', state: 'OPEN', author: { login: 'me' }, assignees: [], labels: [], url: 'https://github.com/acme/demo/issues/' + args[2], createdAt: CREATED, updatedAt: CREATED, body: 'body', comments: [] });
 			return '';
 		};
-		_setTrackerExecForTests(exec);
+		approveEveryToolCall();
+		installExecStandIn(exec);
 
 		// tracker sync does not skip: it finds the Epic and the Story refs
 		const sync = await syncTracker(repo, HASH);
@@ -101,7 +106,7 @@ test('a re-draft keeps the bound Epic and Story issues and the tracker block for
 		assert.ok(calls.some(c => c.join(' ').includes('repos/acme/demo/issues/2/sub_issues')), 'the Task is linked under the Story issue #2');
 	} finally {
 		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
-		_setTrackerExecForTests(); _setAutoPushDepsForTests();
+		installExecStandIn(); _setApprovalGateForTests(undefined); _setAutoPushDepsForTests();
 		rmSync(repo, { recursive: true, force: true });
 	}
 });

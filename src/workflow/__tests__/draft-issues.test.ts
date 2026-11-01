@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { ensureDraftIssues, readinessFields, type DraftHookDeps } from '../draft-issues.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId, writeArtifact } from '../storage.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
 import type { ResolvedGithubConfig } from '../config/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortFailureKind, type PortResult, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
@@ -168,7 +168,7 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 		const findsBefore = h.seen.finds;
 		const lost = { ...h.deps(), loadTracker: () => { throw new Error('gh is signed out'); } };
 		const ghCalls: string[][] = [];
-		_setTrackerExecForTests((cmd, args) => { ghCalls.push([cmd, ...args]); throw new Error('gh is signed out'); });
+		installExecStandIn((cmd, args) => { ghCalls.push([cmd, ...args]); throw new Error('gh is signed out'); });
 		for (const path of [fx.define, fx.hld, fx.lld, fx.plan]) {
 			// a real re-draft: the file is replaced by a fresh draft that carries no tracker block of its own
 			const fresh = JSON.parse(readFileSync(path, 'utf8')) as { meta: Record<string, unknown> };
@@ -182,8 +182,8 @@ test('Define, LLD and plan drafts create one issue per unit, a second write crea
 		assert.equal(h.seen.loads, loadsBefore);
 		assert.equal(h.seen.finds, findsBefore, 'no tracker call at all');
 		assert.deepEqual(ghCalls, [], 'no gh command ran for the second writes (sign-in lost)');
-		_setTrackerExecForTests();
-	} finally { _setTrackerExecForTests(); fx.cleanup(); }
+		installExecStandIn();
+	} finally { installExecStandIn(); fx.cleanup(); }
 
 	// a failure on the Story's create keeps the Epic, stops, and reports the Story as unconfirmed; no Task is attempted
 	const fy = seed();

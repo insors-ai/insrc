@@ -6,7 +6,7 @@
 /**
  * Integration tests for `autoPushTasksOnPlan` — the plan-approve → Task
  * issue push (native issue type `Task`, sub-issues of the Story). Driven
- * against a FAKE `gh` (injected via _setTrackerExecForTests): the Task
+ * against a FAKE `gh` (injected via installExecStandIn): the Task
  * issues are created via `gh api POST .../issues` (returning {number,id})
  * and linked via `gh api POST .../issues/{n}/sub_issues`.
  *
@@ -25,7 +25,8 @@ import { dirname, join } from 'node:path';
 
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { type TrackerExec } from '../tracker/github.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
+import { approveEveryToolCall } from './approve-fallback-kit.js';
 import { planArtifactPaths } from '../storage.js';
 import { readBinding } from '../tracker/binding.js';
 import { seedTaskHeads } from './helpers/task-heads.js';
@@ -39,6 +40,11 @@ const CREATED = '2026-07-17T07:42:28.275Z';
 // (JSON {number,id}) + sub_issues.
 // ---------------------------------------------------------------------------
 
+approveEveryToolCall();   // a forced label create asks for approval and no client answers in a test
+
+/** What the tools parse: `git remote -v` lines. */
+const REMOTE_V = 'origin\tgit@github.com:acme/demo.git (fetch)\norigin\tgit@github.com:acme/demo.git (push)\n';
+
 interface FakeOpts { readonly failOnType?: boolean }
 
 function makeFakeGh(opts: FakeOpts = {}) {
@@ -46,18 +52,20 @@ function makeFakeGh(opts: FakeOpts = {}) {
 	const calls: string[][] = [];
 	const fn: TrackerExec = (cmd, args) => {
 		calls.push([cmd, ...args]);
-		if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
+		if (cmd === 'git') return args[0] === 'remote' ? REMOTE_V : '';
 		const [sub0, sub1] = args;
-		if (sub0 === 'auth' || sub0 === 'label') return '';
+		if (sub0 === 'label') return '';
+		if (sub0 === 'api' && args[1] === 'user') return JSON.stringify({ login: 'me' });
 		if (sub0 === 'issue') {
 			if (sub1 === 'create') { counter += 1; return `https://github.com/acme/demo/issues/${counter}\n`; }
-			if (sub1 === 'list') return '';
-			if (sub1 === 'view') return args.includes('body') ? '' : JSON.stringify({ state: 'OPEN', labels: [] });
+			if (sub1 === 'list') return '[]';
+			if (sub1 === 'view') return JSON.stringify({ number: Number(args[2]), title: 't', state: 'OPEN', author: { login: 'me' }, assignees: [], labels: [], url: `https://github.com/acme/demo/issues/${args[2]}`, createdAt: CREATED, updatedAt: CREATED, body: '', comments: [] });
 			return '';
 		}
 		if (sub0 === 'api') {
 			const path = args.find(a => a.startsWith('repos/')) ?? '';
 			if (path.endsWith('/sub_issues')) return '';               // sub-issue link ok
+			if (path.endsWith('/comments')) return JSON.stringify({ id: 4242 });
 			if (path.endsWith('/issues')) {                             // issue create via api
 				const hasType = args.some(a => a.startsWith('type='));
 				if (hasType && opts.failOnType === true) throw new Error('422 issue type not enabled');
@@ -121,7 +129,7 @@ function setup(pushTasks: boolean): { repo: string; hldJson: string; lldJson: st
 	// the Task artifacts the approval of the plan makes: a Task's issue is recorded on its Task artifact
 	seedTaskHeads(repo, HASH, 's1', ['t1', 't2'], CREATED);
 
-	return { repo, hldJson, lldJson, planJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; _setTrackerExecForTests(); rmSync(repo, { recursive: true, force: true }); } };
+	return { repo, hldJson, lldJson, planJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; installExecStandIn(); rmSync(repo, { recursive: true, force: true }); } };
 }
 
 function trackerOf(jsonPath: string): Record<string, unknown> {
@@ -150,7 +158,7 @@ async function pushEpicAndStory(hldJson: string, lldJson: string): void {
 
 test('task push is opt-out by default (pushTasks unset) → skipped, no issues', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup(/* pushTasks */ false);
 	try {
 		await pushEpicAndStory(s.hldJson, s.lldJson);
@@ -164,7 +172,7 @@ test('task push is opt-out by default (pushTasks unset) → skipped, no issues',
 
 test('pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup(/* pushTasks */ true);
 	try {
 		await pushEpicAndStory(s.hldJson, s.lldJson);       // epic #1, story #2
@@ -190,7 +198,7 @@ test('pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue'
 
 test('pushTasks: falls back to an untyped issue when the org lacks the issue type', async () => {
 	const gh = makeFakeGh({ failOnType: true });
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup(true);
 	try {
 		await pushEpicAndStory(s.hldJson, s.lldJson);
@@ -206,7 +214,7 @@ test('pushTasks: falls back to an untyped issue when the org lacks the issue typ
 
 test('pushTasks: re-push is idempotent (adopts the bound Task issues, no new issues)', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup(true);
 	try {
 		await pushEpicAndStory(s.hldJson, s.lldJson);
@@ -220,7 +228,7 @@ test('pushTasks: re-push is idempotent (adopts the bound Task issues, no new iss
 
 test('pushTasks: makes the Epic and Story issues first when they do not exist yet, then the Tasks', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup(true);
 	try {
 		// No epic/story push yet: the plan push ensures both, then creates the Tasks under the Story.

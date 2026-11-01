@@ -15,7 +15,7 @@ import { approveThroughPipeline as approve } from './helpers/approve-pipeline.js
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
 import { hldArtifactPaths, lldArtifactPaths, planArtifactPaths } from '../storage.js';
 import { type TrackerExec } from '../tracker/github.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { handleTrackerAttach } from '../../daemon/tracker-attach.js';
 import { readAttachments } from '../tracker/binding.js';
 import { stampOtherPartyReview } from './helpers/other-party-review.js';
@@ -24,12 +24,15 @@ import type { TrackerPort } from '../tracker/port.js';
 import { HASH, CREATED, SLUG, fakeTracker, seed, teamPolicy } from './approve-fallback-kit.js';
 import './helpers/converted-repos.js';
 
-const git = (repo: string, ...args: string[]): string => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim();
+/** The real git, found before any stand-in is on PATH (the stand-in answers `git` by name, so the fake must call this one by path). */
+const REAL_GIT = execFileSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).trim();
+
+const git = (repo: string, ...args: string[]): string => execFileSync(REAL_GIT, ['-C', repo, ...args], { encoding: 'utf8' }).trim();
 
 /** git runs for real, `push` is a no-op, and nothing else (gh) is reached: the fake tracker answers for it. */
 const realGitExec: TrackerExec = ((cmd: string, args: readonly string[], opts?: object) => {
 	if (cmd === 'git' && args.includes('push')) return '';
-	if (cmd === 'git') return execFileSync(cmd, [...args], { encoding: 'utf8', ...(opts as object) }) as string;
+	if (cmd === 'git') return execFileSync(REAL_GIT, [...args], { encoding: 'utf8', ...(opts as object) }) as string;
 	return '';
 }) as TrackerExec;
 
@@ -59,7 +62,7 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 		const t = fakeTracker();
 		const attachCalls: string[] = [];
 		(t.port as unknown as { attach: TrackerPort['attach'] }).attach = ((_issue: string, _ref: unknown, link: string) => { attachCalls.push(link); return { ok: true, value: { externalId: String(900 + attachCalls.length) } }; }) as TrackerPort['attach'];
-		_setTrackerExecForTests(realGitExec);
+		installExecStandIn(realGitExec);
 		_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port });
 
 		// the fixtures' bodies are too thin to render; the rendered files are written as the renderer would leave them
@@ -121,7 +124,7 @@ test('approve() attaches the approved HLD, LLD and plan documents after its comm
 		const cfgPath = process.env['INSRC_GITHUB_CONFIG'] as string;
 		writeFileSync(cfgPath, JSON.stringify({ repos: { [off.repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: false, commitArtifacts: false } } }));
 		const t = fakeTracker();
-		_setTrackerExecForTests(realGitExec);
+		installExecStandIn(realGitExec);
 		_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port });
 		stampOtherPartyReview(off.hld);
 		const out = await approve(off.hld);

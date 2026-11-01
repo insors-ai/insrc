@@ -19,7 +19,7 @@ import { trackerSetup } from '../services/workflow.js';
 import { makeServices } from '../services/index.js';
 import { IpcServer, directDispatch } from '../../daemon/server.js';
 import { createRepoSettingsHandlers } from '../../daemon/repo-settings.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from '../../workflow/__tests__/helpers/exec-stand-in.js';
 import { githubConfigPath } from '../../workflow/config/github.js';
 import { handleTrackerSetup } from '../../daemon/tracker-setup-handlers.js';
 import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
@@ -32,6 +32,7 @@ interface Env {
 	readonly repo: string;
 	readonly cfg: string;
 	ensureCalls: number;
+	readonly realGit: string;
 	cleanup(): void;
 }
 
@@ -45,15 +46,16 @@ function setup(): Env {
 	const cfg = join(dir, 'github.json');
 	const prev = process.env['INSRC_GITHUB_CONFIG'];
 	process.env['INSRC_GITHUB_CONFIG'] = cfg;
-	_setTrackerExecForTests((cmd, args, opts) => {
-		if (cmd === 'git') return execFileSync(cmd, [...args], { ...opts, encoding: 'utf8' }) as string;
+	const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();   // resolved before the stand-ins shadow it on PATH
+	installExecStandIn((cmd, args, opts) => {
+		if (cmd === 'git') return execFileSync(realGit, [...args], { ...opts, encoding: 'utf8' }) as string;
 		if (args.join(' ') === 'auth status') throw new Error('gh not authenticated');
 		return '';
 	});
 	const env: Env = {
-		dir, repo, cfg, ensureCalls: 0,
+		dir, repo, cfg, realGit, ensureCalls: 0,
 		cleanup: () => {
-			_setTrackerExecForTests();
+			installExecStandIn();
 			if (prev === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prev;
 			rmSync(dir, { recursive: true, force: true });
 		},
@@ -173,7 +175,7 @@ test('malformed github.json fails the config step with no write requested', asyn
 		rmSync(env.cfg);
 		const bare = join(env.dir, 'bare');
 		mkdirSync(bare);
-		execFileSync('git', ['init', '-q', bare]);
+		execFileSync(env.realGit, ['init', '-q', bare]);
 		const noOrigin = await trackerSetup(bare, {}, { connect: d.connect });
 		assert.equal(stepOf(noOrigin, 'config')?.status, 'failed');
 		assert.match(stepOf(noOrigin, 'config')?.detail ?? '', /could not determine owner\/repo/);

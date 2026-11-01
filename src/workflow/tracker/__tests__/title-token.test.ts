@@ -14,10 +14,10 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn } from '../../__tests__/helpers/exec-stand-in.js';
 import { titleMatchesToken, type IssueRef, type PortResult } from '../port.js';
 
-afterEach(() => _setTrackerExecForTests());
+afterEach(() => installExecStandIn());
 
 const H = '2f27754d4ad00b8e';
 const ISSUES: ReadonlyArray<{ readonly number: number; readonly title: string }> = [
@@ -54,7 +54,7 @@ test('the exact-token matcher accepts the token and the token followed by an em 
 
 test('findIssuesByTitleToken in the GitHub adapter over a stubbed gh boundary and in the fake agree and a failed call is a failed result', async () => {
 	// gh api returns every issue, newest first, one JSON object per line (what the -q filter prints)
-	_setTrackerExecForTests((_cmd, args) => {
+	installExecStandIn((_cmd, args) => {
 		assert.ok(args.includes('--paginate'), 'the listing covers every page');
 		return ISSUES.map(i => JSON.stringify(i)).join('\n') + '\n';
 	});
@@ -68,12 +68,12 @@ test('findIssuesByTitleToken in the GitHub adapter over a stubbed gh boundary an
 	assert.deepEqual((await tracker.findIssuesByTitleToken(`STORY-${H}-s2`)), { ok: true, value: [] });
 
 	// a failed call is a failed result, never an empty list
-	_setTrackerExecForTests(() => { throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502: Bad Gateway' }); });
+	installExecStandIn(() => { throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502: Bad Gateway' }); });
 	const failed = (await tracker.findIssuesByTitleToken(`STORY-${H}-s1`));
 	assert.equal(failed.ok, false);
 	if (!failed.ok) assert.match(failed.reason, /502/);
 
 	// an answer the adapter cannot read is a failure too
-	_setTrackerExecForTests(() => 'not json\n');
+	installExecStandIn(() => 'not json\n');
 	assert.equal((await tracker.findIssuesByTitleToken(`STORY-${H}-s1`)).ok, false);
 });

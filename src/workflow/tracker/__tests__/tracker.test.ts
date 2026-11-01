@@ -9,21 +9,28 @@
  * Run: npx tsx --test src/workflow/tracker/__tests__/tracker.test.ts
  */
 
-import { test } from 'node:test';
+import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { mkdirSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseGithubRemoteUrl, commitAndPushArtifacts, ghAuthOk, ghGetIssueState, ghCloseIssue, ghComment, ghCreateLabel, ghEnsureMilestone } from '../github.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { parseGithubRemoteUrl } from '../github.js';
+import { commitAndPush as commitAndPushArtifacts } from '../commit-and-push-registry.js';
+import { createRegistryTable, workflowToolDeps } from '../registry-table.js';
+import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
+import { installExecStandIn } from '../../__tests__/helpers/exec-stand-in.js';
 import { parseIssueRef, buildRef, issueUrl, trackerRefLine } from '../refs.js';
 import { renderEpicBody, renderStoryBody, updateEpicTaskList, mapIssueStatus } from '../conventions.js';
 import { resolveWorkflowRef } from '../resolve.js';
 import { ARTIFACTS_DIR } from '../../storage.js';
 import type { DefineArtifact, DefineStory } from '../../artifacts/define.js';
 import { approvedMeta, draftMeta } from '../../__tests__/lifecycle-fixtures.js';
+
+afterEach(() => { installExecStandIn(); _setApprovalGateForTests(undefined); });
+/** Every approval the tools ask for is answered yes: the commit, push and forced label create are asked for in a real run. */
+const approveAll = (): void => _setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' }; } }));
 
 const SLUG = 'demo-feature';
 const HASH = 'a1b2c3d4e5f60718';
@@ -122,68 +129,74 @@ test('render*Body emit clickable blob links with a repo ref, bare paths without'
 // commitAndPushArtifacts — the commit-on-approve helper
 // ---------------------------------------------------------------------------
 
-/** A fake exec: records git argv, and treats `diff --cached --quiet` as
- *  "there ARE staged changes" by throwing (its non-zero-exit signal), unless
- *  `nothingStaged`; optionally makes `push` throw. */
+/** A fake git: records argv; the staged diff has one changed file unless `nothingStaged`; optionally makes `push` fail. */
 function fakeGit(opts: { nothingStaged?: boolean; pushFails?: boolean } = {}) {
 	const calls: string[][] = [];
 	const fn = ((cmd: string, args: readonly string[]) => {
 		calls.push([cmd, ...args]);
 		const a = args.join(' ');
-		if (a.includes('diff --cached --quiet') && !opts.nothingStaged) throw new Error('exit 1: staged changes');
-		if (a.includes('push') && opts.pushFails) throw new Error('no upstream');
+		if (a === 'rev-parse --is-inside-work-tree') return 'true\n';
+		if (a === 'symbolic-ref --short HEAD') return 'main\n';
+		if (args[0] === 'diff' && args.includes('--name-only')) return opts.nothingStaged ? '' : 'a.json\n';
+		if (args[0] === 'diff' && args.includes('--numstat')) return opts.nothingStaged ? '' : '1\t0\ta.json\0';
+		if (args[0] === 'diff') return opts.nothingStaged ? '' : 'diff --git a/a.json b/a.json\n--- a/a.json\n+++ b/a.json\n@@ -1 +1 @@\n-x\n+y\n';
+		if (args[0] === 'push' && opts.pushFails) throw new Error('no upstream');
 		return '';
-	}) as unknown as Parameters<typeof _setTrackerExecForTests>[0];
+	}) as unknown as Parameters<typeof installExecStandIn>[0];
 	return { fn, calls };
 }
 
-test('commitAndPushArtifacts stages, commits, and pushes present files', () => {
+test('commitAndPushArtifacts stages, commits, and pushes present files', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-commit-'));
 	const f = join(dir, 'a.json'); writeFileSync(f, '{}');
 	const { fn, calls } = fakeGit();
-	_setTrackerExecForTests(fn);
+	installExecStandIn(fn);
+	approveAll();
 	try {
-		const r = commitAndPushArtifacts(dir, [f], 'msg');
+		const r = await commitAndPushArtifacts(dir, [f], 'msg');
 		assert.deepEqual({ committed: r.committed, pushed: r.pushed }, { committed: true, pushed: true });
 		assert.ok(calls.some(c => c.includes('add')), 'staged');
 		assert.ok(calls.some(c => c.includes('commit')), 'committed');
 		assert.ok(calls.some(c => c.includes('push')), 'pushed');
-	} finally { _setTrackerExecForTests(); rmSync(dir, { recursive: true, force: true }); }
+	} finally { installExecStandIn(); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('commitAndPushArtifacts reports committed-not-pushed on push failure', () => {
+test('commitAndPushArtifacts reports committed-not-pushed on push failure', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-commit-'));
 	const f = join(dir, 'a.json'); writeFileSync(f, '{}');
-	_setTrackerExecForTests(fakeGit({ pushFails: true }).fn);
+	installExecStandIn(fakeGit({ pushFails: true }).fn);
+	approveAll();
 	try {
-		const r = commitAndPushArtifacts(dir, [f], 'msg');
+		const r = await commitAndPushArtifacts(dir, [f], 'msg');
 		assert.equal(r.committed, true);
 		assert.equal(r.pushed, false);
 		assert.match(r.reason ?? '', /push failed/);
-	} finally { _setTrackerExecForTests(); rmSync(dir, { recursive: true, force: true }); }
+	} finally { installExecStandIn(); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('commitAndPushArtifacts is a no-op when nothing is staged', () => {
+test('commitAndPushArtifacts is a no-op when nothing is staged', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-commit-'));
 	const f = join(dir, 'a.json'); writeFileSync(f, '{}');
 	const { fn, calls } = fakeGit({ nothingStaged: true });
-	_setTrackerExecForTests(fn);
+	installExecStandIn(fn);
+	approveAll();
 	try {
-		const r = commitAndPushArtifacts(dir, [f], 'msg');
+		const r = await commitAndPushArtifacts(dir, [f], 'msg');
 		assert.equal(r.committed, false);
 		assert.match(r.reason ?? '', /nothing to commit/);
 		assert.ok(!calls.some(c => c.includes('commit')), 'never committed');
-	} finally { _setTrackerExecForTests(); rmSync(dir, { recursive: true, force: true }); }
+	} finally { installExecStandIn(); rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('commitAndPushArtifacts no-ops when no file is present', () => {
+test('commitAndPushArtifacts no-ops when no file is present', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-commit-'));
-	_setTrackerExecForTests(fakeGit().fn);
+	installExecStandIn(fakeGit().fn);
+	approveAll();
 	try {
-		const r = commitAndPushArtifacts(dir, [join(dir, 'missing.json')], 'msg');
+		const r = await commitAndPushArtifacts(dir, [join(dir, 'missing.json')], 'msg');
 		assert.equal(r.committed, false);
 		assert.match(r.reason ?? '', /no artifact files/);
-	} finally { _setTrackerExecForTests(); rmSync(dir, { recursive: true, force: true }); }
+	} finally { installExecStandIn(); rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('renderStoryBody back-refs the Epic + links the slug LLD', () => {
@@ -374,39 +387,36 @@ test('resolveWorkflowRef: issue# and hierarchical-id forms resolve identically w
 });
 
 // ---------------------------------------------------------------------------
-// out() / silent() stay on their original options (no timeout) for the
-// retained wrappers — only the migrated operations use the timed runner.
+// The table's reads and writes through the registry tools: their results and their argv, and
+// the failure results the retained operations keep (best-effort ones return, the rest throw).
 // ---------------------------------------------------------------------------
 
-test('out and silent keep their current options', () => {
-	const seen: Array<Record<string, unknown> | undefined> = [];
-	_setTrackerExecForTests((_cmd, _args, opts) => {
-		seen.push(opts as Record<string, unknown> | undefined);
-		return JSON.stringify({ state: 'OPEN', labels: [] });
-	});
+const table = () => createRegistryTable(workflowToolDeps('/tmp', { approvalMode: 'auto' }));
+
+test('out and silent keep their current results', async () => {
+	installExecStandIn((_cmd, args) => (args.join(' ') === 'api user' ? JSON.stringify({ login: 'octo' }) : JSON.stringify({ number: 1, title: 't', state: 'OPEN', labels: [] })));
 	try {
-		assert.deepEqual(ghAuthOk(), { ok: true });          // silent()
-		ghGetIssueState('o', 'r', 'o/r#1');                  // out()
+		assert.deepEqual(await table().ghAuthOk(), { ok: true });                          // the sign-in check
+		assert.deepEqual(await table().ghGetIssueState('o', 'r', 'o/r#1'), { state: 'open', labels: [] });   // a read
 	} finally {
-		_setTrackerExecForTests();
+		installExecStandIn();
 	}
-	assert.deepEqual(seen[0], { stdio: 'ignore' });
-	assert.deepEqual(seen[1], { encoding: 'utf8' });
 });
 
-test('migrated wrappers run the same argv and keep their failure results', () => {
+test('migrated wrappers run the same argv and keep their failure results', async () => {
 	const calls: string[][] = [];
-	_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return ''; });
+	installExecStandIn((_cmd, args) => { calls.push([...args]); return ''; });
+	approveAll();
 	try {
-		ghCloseIssue('o', 'r', 'o/r#4');
-		ghComment('o', 'r', 'o/r#4', 'hi');
-		assert.deepEqual(calls[0], ['issue', 'close', '4', '--repo', 'o/r']);
-		assert.deepEqual(calls[1], ['issue', 'comment', '4', '--repo', 'o/r', '--body', 'hi']);
-		_setTrackerExecForTests(() => { throw new Error('boom'); });
-		assert.equal(ghCreateLabel('o', 'r', 'x'), false);            // boolean, not a throw
-		assert.doesNotThrow(() => ghEnsureMilestone('o', 'r', 'm'));  // swallowed
-		assert.throws(() => ghCloseIssue('o', 'r', 'o/r#4'), /boom/); // throws
+		await table().ghCloseIssue('o', 'r', 'o/r#4');
+		await table().ghComment('o', 'r', 'o/r#4', 'hi');
+		assert.deepEqual(calls[0], ['issue', 'close', '4', '-R', 'o/r']);
+		assert.deepEqual(calls[1], ['issue', 'comment', '4', '-b', 'hi', '-R', 'o/r']);
+		installExecStandIn(() => { throw new Error('boom'); });
+		assert.equal(await table().ghCreateLabel('o', 'r', 'x'), false);                // boolean, not a throw
+		await assert.doesNotReject(table().ghEnsureMilestone('o', 'r', 'm'));           // swallowed
+		await assert.rejects(table().ghCloseIssue('o', 'r', 'o/r#4'), /boom/);          // throws
 	} finally {
-		_setTrackerExecForTests();
+		installExecStandIn();
 	}
 });

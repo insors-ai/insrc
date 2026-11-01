@@ -15,7 +15,7 @@ import { createRepoLifecycle } from '../../workflow/artifact-core/repo-lifecycle
 import { _setAutoPushDepsForTests } from '../../workflow/tracker-auto.js';
 import { ARTIFACTS_DIR, planArtifactId } from '../../workflow/storage.js';
 import { readBinding } from '../../workflow/tracker/binding.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from '../../workflow/__tests__/helpers/exec-stand-in.js';
 import { TaskSyncDenied, ToolDenied } from '../../workflow/tracker/tool-denied.js';
 import type { TrackerPort } from '../../workflow/tracker/port.js';
 import { CREATED, HASH, fakeTracker, seed, teamPolicy } from '../../workflow/__tests__/approve-fallback-kit.js';
@@ -49,7 +49,7 @@ describe('sync-plan-tasks-denial.test.ts: through the real syncPlanTasks a denie
 			const closes: string[] = [];
 			ops['close'] = (issue: unknown) => { closes.push(String(issue)); return { ok: true, value: undefined }; };
 			_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port as TrackerPort });
-			_setTrackerExecForTests(() => '');
+			installExecStandIn(() => '');
 
 			// plan revision 1 is approved and its Task set made, each Task with an issue
 			const first = await approveJson(fx.plan);
@@ -90,7 +90,7 @@ describe('sync-plan-tasks-denial.test.ts: through the real syncPlanTasks a denie
 			const none = closes.length;
 			await syncPlanTasks(second.path);
 			assert.equal(closes.length, none, 'a closed issue is not closed again');
-		} finally { _setAutoPushDepsForTests(); _setTrackerExecForTests(); fx.cleanup(); }
+		} finally { _setAutoPushDepsForTests(); installExecStandIn(); fx.cleanup(); }
 	});
 
 	it('a plan that cannot become Tasks is still the {error} result, never a denial', async () => {

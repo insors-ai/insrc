@@ -22,9 +22,9 @@ import ts from 'typescript';
 import { missingCapabilities, type Capability, type CreatedIssue, type IssueOps, type IssueRef, type PortResult, type TrackerPort } from '../port.js';
 import { resolveStrictTrackerTarget } from '../../config/github.js';
 import { loadTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 
-afterEach(() => { _setTrackerExecForTests(); delete process.env['INSRC_GITHUB_CONFIG']; });
+afterEach(() => { installExecStandIn(); delete process.env['INSRC_GITHUB_CONFIG']; });
 
 const set = (...c: Capability[]): ReadonlySet<Capability> => new Set(c);
 
@@ -166,7 +166,7 @@ async function withLoader<T>(exec: (args: readonly string[]) => string, fn: (cal
 	return await withConfigAsync({ repos: { '/r': { owner: 'acme', repo: 'demo' } } }, async configPath => {
 		process.env['INSRC_GITHUB_CONFIG'] = configPath;
 		const calls: string[][] = [];
-		_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return exec(args); });
+		installExecStandIn((_cmd, args) => { calls.push([...args]); return exec(args); });
 		return fn(calls);
 	});
 }
@@ -176,14 +176,14 @@ function execError(props: Record<string, unknown>): Error {
 }
 
 test('loadTracker succeeds when every needed capability is declared', async () => {
-	await withLoader(() => 'subhagho\n', async calls => {
+	await withLoader(() => '{"login":"subhagho"}', async calls => {
 		const r = await loadTracker('/r', set('claim', 'issue-create'));
 		assert.equal(r.ok, true);
 		if (r.ok) {
 			assert.equal(r.value.kind, 'github');
 			assert.deepEqual([...r.value.capabilities].sort(), ['claim', 'issue-create', 'signoff-request']);
 		}
-		assert.deepEqual(calls[0], ['api', 'user', '-q', '.login']);
+		assert.deepEqual(calls[0], ['api', 'user']);
 	});
 });
 
@@ -195,11 +195,11 @@ test('loadTracker with an empty needed set validates configuration and sign-in',
 		assert.equal(r.ok, false);
 		if (!r.ok) assert.equal(r.kind, 'missing-signin');
 	});
-	await withLoader(() => 'subhagho', async () => assert.equal((await loadTracker('/r', set())).ok, true));
+	await withLoader(() => '{"login":"subhagho"}', async () => assert.equal((await loadTracker('/r', set())).ok, true));
 });
 
 test('loadTracker refuses a needed completion capability naming it, and accepts signoff-request', async () => {
-	await withLoader(() => 'subhagho', async calls => {
+	await withLoader(() => '{"login":"subhagho"}', async calls => {
 		const reason = refusal(await loadTracker('/r', set('claim', 'signoff-request', 'completion')));
 		assert.match(reason, /capability: completion/);
 		assert.doesNotMatch(reason, /signoff-request/);
@@ -208,12 +208,13 @@ test('loadTracker refuses a needed completion capability naming it, and accepts 
 });
 
 test('loadTracker names gh as the missing tool', async () => {
-	await withLoader(() => { throw execError({ code: 'ENOENT' }); }, async () => {
+	await withLoader(() => '', async () => {
+		installNoPrograms();   // gh is absent from PATH
 		const r = await loadTracker('/r', set('claim'));
 		assert.equal(r.ok, false);
 		if (!r.ok) {
 			assert.equal(r.kind, 'missing-tool');
-			assert.match(r.reason, /gh CLI is not installed/);
+			assert.match(r.reason, /gh CLI not on PATH/);
 		}
 	});
 });

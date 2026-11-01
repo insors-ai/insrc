@@ -17,10 +17,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { createGithubTracker, loadTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 import type { Capability, PortResult, SignoffRequestSpec } from '../port.js';
 
-afterEach(() => { _setTrackerExecForTests(); delete process.env['INSRC_GITHUB_CONFIG']; });
+afterEach(() => { installExecStandIn(); delete process.env['INSRC_GITHUB_CONFIG']; });
 
 const set = (...c: Capability[]): ReadonlySet<Capability> => new Set(c);
 
@@ -31,6 +31,10 @@ const SPEC: SignoffRequestSpec = {
 	branch: 'insrc/signoff/s7', issue: 'acme/demo#40',
 };
 
+/** The value following `flag` in an argv (undefined when absent). */
+const flagValue = (call: readonly string[] | undefined, flag: string): string | undefined => { const i = call?.indexOf(flag) ?? -1; return i < 0 ? undefined : call?.[i + 1]; };
+const prRow = (extra: object = {}): object => ({ number: 12, title: 'Signoff', state: 'OPEN', ...extra });
+
 function execError(props: Record<string, unknown>): Error {
 	return Object.assign(new Error('Command failed'), props);
 }
@@ -38,7 +42,7 @@ function execError(props: Record<string, unknown>): Error {
 /** A fake gh that answers by the command it is given. */
 function fakeGh(answer: (args: readonly string[]) => string): string[][] {
 	const calls: string[][] = [];
-	_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return answer(args); });
+	installExecStandIn((_cmd, args) => { calls.push([...args]); return answer(args); });
 	return calls;
 }
 
@@ -55,10 +59,10 @@ test('loadTracker accepts signoff-request once declared; openSignoffRequest open
 		const config = join(dir, 'github.json');
 		writeFileSync(config, JSON.stringify({ repos: { '/r': { owner: 'acme', repo: 'demo' } } }));
 		process.env['INSRC_GITHUB_CONFIG'] = config;
-		const calls = fakeGh(() => 'octo');
+		const calls = fakeGh(() => '{"login":"octo"}');
 		const loaded = await loadTracker('/r', set('claim', 'signoff-request'));
 		assert.equal(loaded.ok, true, 'signoff-request is accepted');
-		assert.deepEqual(calls[0], ['api', 'user', '-q', '.login']);
+		assert.deepEqual(calls[0], ['api', 'user']);
 		const refused = await loadTracker('/r', set('completion'));
 		assert.equal(refused.ok, false, 'a capability the adapter does not declare is still refused');
 		assert.match(failureOf(refused).reason, /completion/);
@@ -70,13 +74,17 @@ test('loadTracker accepts signoff-request once declared; openSignoffRequest open
 	// openSignoffRequest: a pull request from the branch, then one comment on the issue that links it
 	const calls = fakeGh(args => {
 		if (args[0] === 'pr' && args[1] === 'create') return 'Creating pull request for insrc/signoff/s7 into main in acme/demo\n\nhttps://github.com/acme/demo/pull/12\n';
-		if (args[0] === 'api') return '987654';
+		if (args[0] === 'pr' && args[1] === 'list') return '[]';
+		if (args[0] === 'api') return '{"id":987654}';
 		return '';
 	});
 	const opened = (await tracker.openSignoffRequest(SPEC));
 	assert.deepEqual(opened, { ok: true, value: { ref: 'acme/demo#12', url: 'https://github.com/acme/demo/pull/12' } });
-	assert.deepEqual(calls[0], ['pr', 'list', '--repo', 'acme/demo', '--head', 'insrc/signoff/s7', '--state', 'open', '--json', 'url'], 'an open pull request from the branch is looked for first');
-	assert.deepEqual(calls[1], ['pr', 'create', '--repo', 'acme/demo', '--head', 'insrc/signoff/s7', '--title', 'Signoff: LLD s7', '--body', 'Please review the LLD.']);
+	assert.deepEqual(calls[0]?.slice(0, 2), ['pr', 'list'], 'an open pull request from the branch is looked for first');
+	assert.equal(flagValue(calls[0], '-R'), 'acme/demo');
+	assert.equal(flagValue(calls[0], '-H'), 'insrc/signoff/s7');
+	assert.equal(flagValue(calls[0], '-s'), 'open');
+	assert.deepEqual(calls[1], ['pr', 'create', '-t', 'Signoff: LLD s7', '-b', 'Please review the LLD.', '-H', 'insrc/signoff/s7', '-R', 'acme/demo']);
 	assert.equal(calls[2]?.[0], 'api');
 	assert.match(calls[2]?.join(' ') ?? '', /repos\/acme\/demo\/issues\/40\/comments/);
 	assert.match(calls[2]?.join(' ') ?? '', /Signoff requested: https:\/\/github.com\/acme\/demo\/pull\/12/);
@@ -84,9 +92,9 @@ test('loadTracker accepts signoff-request once declared; openSignoffRequest open
 
 	// a repeat after a failed recording: the branch already has an open pull request, so it is reused and no second one is created
 	const repeat = fakeGh(args => {
-		if (args[1] === 'list') return JSON.stringify([{ url: 'https://github.com/acme/demo/pull/12' }]);
+		if (args[1] === 'list') return JSON.stringify([prRow({ url: 'https://github.com/acme/demo/pull/12' })]);
 		if (args[1] === 'create') throw execError({ stderr: 'a pull request for branch already exists' });
-		return '987654';
+		return '{"id":987654}';
 	});
 	assert.deepEqual((await tracker.openSignoffRequest(SPEC)), { ok: true, value: { ref: 'acme/demo#12', url: 'https://github.com/acme/demo/pull/12' } });
 	assert.equal(repeat.some(c => c[1] === 'create'), false, 'no second pull request is created');
@@ -109,9 +117,12 @@ test('loadTracker accepts signoff-request once declared; openSignoffRequest open
 
 	// readSignoffState: merged is completed; closed without a merge or changes requested is changes-requested; anything else is open
 	const state = async (json: object): Promise<PortResult<'open' | 'changes-requested' | 'completed'>> => {
-		const seen = fakeGh(() => JSON.stringify(json));
+		const seen = fakeGh(() => JSON.stringify(prRow(json)));
 		const r = (await tracker.readSignoffState({ ref: 'acme/demo#12' }));
-		assert.deepEqual(seen[0], ['pr', 'view', '12', '--repo', 'acme/demo', '--json', 'state,mergedAt,reviewDecision']);
+		assert.deepEqual(seen[0]?.slice(0, 3), ['pr', 'view', '12']);
+		assert.equal(flagValue(seen[0], '-R'), 'acme/demo');
+		assert.match(flagValue(seen[0], '--json') ?? '', /(^|,)state,.*mergedAt|mergedAt/);
+		assert.match(flagValue(seen[0], '--json') ?? '', /reviewDecision/);
 		return r;
 	};
 	assert.deepEqual(await state({ state: 'MERGED', mergedAt: '2026-10-22T10:00:00Z', reviewDecision: 'APPROVED' }), { ok: true, value: 'completed' });
@@ -124,17 +135,17 @@ test('loadTracker accepts signoff-request once declared; openSignoffRequest open
 	// a malformed ref and unreadable output are rejected without or after one command
 	assert.match(failureOf((await tracker.readSignoffState({ ref: 'nope' }))).reason, /malformed signoff request reference/);
 	fakeGh(() => 'not json');
-	assert.match(failureOf((await tracker.readSignoffState({ ref: 'acme/demo#12' }))).reason, /unexpected pull request JSON/);
+	assert.match(failureOf((await tracker.readSignoffState({ ref: 'acme/demo#12' }))).reason, /could not parse gh JSON/);
 
 	// failure kinds map to the port's kinds, for both methods
 	const kinds: Array<[Error, string]> = [
 		[execError({ code: 'ENOENT' }), 'missing-tool'],
 		[execError({ stderr: 'gh auth login required' }), 'missing-signin'],
-		[execError({ code: 'ETIMEDOUT' }), 'unreachable'],
+		[execError({ stderr: 'dial tcp: i/o timeout' }), 'unreachable'],
 		[execError({ stderr: 'HTTP 422: Validation Failed' }), 'rejected'],
 	];
 	for (const [err, kind] of kinds) {
-		_setTrackerExecForTests(() => { throw err; });
+		if (kind === 'missing-tool') installNoPrograms(); else installExecStandIn(() => { throw err; });
 		assert.equal(failureOf((await tracker.openSignoffRequest(SPEC))).kind, kind, `open: ${kind}`);
 		assert.equal(failureOf((await tracker.readSignoffState({ ref: 'acme/demo#12' }))).kind, kind, `read: ${kind}`);
 	}

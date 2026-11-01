@@ -5,23 +5,26 @@
 
 /**
  * Unit tests for the tracker-setup engine — driven entirely against a
- * fake `gh`/`git` via `_setTrackerExecForTests`, with the github config
+ * fake `gh`/`git` via `installExecStandIn`, with the github config
  * redirected off the real `~/.insrc/github.json` through
  * `INSRC_GITHUB_CONFIG`.
  *
  * Run: npx tsx --test src/workflow/tracker/__tests__/setup.test.ts
  */
 
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn } from '../../__tests__/helpers/exec-stand-in.js';
 import { runTrackerSetup } from '../setup.js';
+import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
+import { _setWorkflowToolDepsForTests } from '../registry-table.js';
 
-const REPO = '/fake/repo/path';
+const REPO = mkdtempSync(join(tmpdir(), 'insrc-setup-repo-'));   // a real directory: the git stand-in runs with it as cwd
+after(() => rmSync(REPO, { recursive: true, force: true }));
 const SCOPE_REFRESH = 'gh auth refresh -h github.com -s admin:org,project,read:project';
 
 // ---------------------------------------------------------------------------
@@ -44,11 +47,11 @@ function fakeGh(o: FakeOpts = {}) {
 		calls.push([cmd, ...args]);
 		const a = args.join(' ');
 		if (cmd === 'git') {
-			if (a.includes('remote get-url origin')) return 'git@github.com:acme/demo.git';
+			if (a === 'remote -v') return 'origin\tgit@github.com:acme/demo.git (fetch)\norigin\tgit@github.com:acme/demo.git (push)\n';
 			return '';
 		}
 		// cmd === 'gh'
-		if (a === 'auth status') { if (!authOk) throw new Error('gh not authenticated'); return ''; }
+		if (a === 'api user') { if (!authOk) throw new Error('gh not authenticated'); return '{"login":"acme"}'; }
 		if (a === 'api -i /user') {
 			if (o.scopesFail === true) throw new Error('api failed');
 			return `HTTP/2.0 200 OK\r\nX-Oauth-Scopes: ${scopes.join(', ')}\r\nContent-Type: application/json\r\n\r\n{"login":"acme"}`;
@@ -60,10 +63,11 @@ function fakeGh(o: FakeOpts = {}) {
 		if (a.includes('/orgs/acme/issue-types')) return '';
 		if (a.startsWith('project create')) return JSON.stringify({ number: 7, url: 'https://github.com/orgs/acme/projects/7' });
 		if (a.startsWith('project field-create')) return '';
-		if (a.startsWith('issue list')) return 'https://github.com/acme/demo/issues/1\nhttps://github.com/acme/demo/issues/2';
+		if (a.startsWith('issue list')) return JSON.stringify([{ number: 1, url: 'https://github.com/acme/demo/issues/1' }, { number: 2, url: 'https://github.com/acme/demo/issues/2' }]);
+		if (a.startsWith('project list')) return JSON.stringify({ projects: [] });
 		if (a.startsWith('project item-add')) return '';
 		return '';
-	}) as unknown as Parameters<typeof _setTrackerExecForTests>[0];
+	}) as unknown as Parameters<typeof installExecStandIn>[0];
 	return { fn, calls };
 }
 
@@ -73,12 +77,16 @@ function withCfg(seed?: unknown): { cfgPath: string; dir: string } {
 	const cfgPath = join(dir, 'github.json');
 	if (seed !== undefined) writeFileSync(cfgPath, JSON.stringify(seed, null, 2));
 	process.env['INSRC_GITHUB_CONFIG'] = cfgPath;
+	_setWorkflowToolDepsForTests({ approvalMode: 'auto' });   // issue-type and project writes are common-class calls
+	_setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' }; } }));   // the forced label create is destructive-class: it always asks
 	return { cfgPath, dir };
 }
 
 function cleanup(dir: string): void {
 	delete process.env['INSRC_GITHUB_CONFIG'];
-	_setTrackerExecForTests();
+	installExecStandIn();
+	_setWorkflowToolDepsForTests();
+	_setApprovalGateForTests(undefined);
 	rmSync(dir, { recursive: true, force: true });
 }
 
@@ -91,7 +99,7 @@ const stepFor = (report: { steps: readonly { key: string }[] }, key: string) =>
 
 test('all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0', async () => {
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
-	_setTrackerExecForTests(fakeGh().fn);
+	installExecStandIn(fakeGh().fn);
 	try {
 		const report = await runTrackerSetup(REPO);   // includeProject defaults false
 		for (const s of report.steps) {
@@ -116,7 +124,7 @@ test('all-green: auth ok, scopes present, config exists, labels/types already, p
 
 test('missing scopes: issue-types + project are manual carrying the refresh command', async () => {
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
-	_setTrackerExecForTests(fakeGh({ scopes: ['repo'] }).fn);   // no admin:org, no project
+	installExecStandIn(fakeGh({ scopes: ['repo'] }).fn);   // no admin:org, no project
 	try {
 		const report = await runTrackerSetup(REPO, { includeProject: true });
 
@@ -143,7 +151,7 @@ test('missing scopes: issue-types + project are manual carrying the refresh comm
 
 test('missing config: the config step writes github.json and reports done', async () => {
 	const { cfgPath, dir } = withCfg();   // no seed → file absent
-	_setTrackerExecForTests(fakeGh().fn);
+	installExecStandIn(fakeGh().fn);
 	try {
 		assert.equal(existsSync(cfgPath), false);
 		const report = await runTrackerSetup(REPO);
@@ -162,7 +170,7 @@ test('missing config: the config step writes github.json and reports done', asyn
 
 test('project views step is always manual with the UI click-list', async () => {
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
-	_setTrackerExecForTests(fakeGh().fn);   // all scopes present
+	installExecStandIn(fakeGh().fn);   // all scopes present
 	try {
 		const report = await runTrackerSetup(REPO, { includeProject: true });
 		const views = stepFor(report, 'project-views');
@@ -182,23 +190,21 @@ test('ensureLabels with a timing-out label create records the label as failed an
 	const { dir } = withCfg({ repos: { [REPO]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true } } });
 	const base = fakeGh();
 	const labelCalls: string[] = [];
-	let optsSeen: Record<string, unknown> | undefined;
-	_setTrackerExecForTests(((cmd: string, args: readonly string[], opts?: Record<string, unknown>) => {
+	installExecStandIn(((cmd: string, args: readonly string[]) => {
 		if (cmd === 'gh' && args[0] === 'label' && args[1] === 'create') {
 			labelCalls.push(String(args[2]));
-			optsSeen = opts;
 			if (args[2] === 'insrc:story') throw Object.assign(new Error('spawnSync gh ETIMEDOUT'), { code: 'ETIMEDOUT' });
 		}
 		return (base.fn as unknown as (c: string, a: readonly string[]) => string)(cmd, args);
-	}) as unknown as Parameters<typeof _setTrackerExecForTests>[0]);
+	}) as unknown as Parameters<typeof installExecStandIn>[0]);
 	try {
 		const report = await runTrackerSetup(REPO);
 		const labels = stepFor(report, 'labels') as { status: string; detail: string } | undefined;
 		assert.equal(labels?.status, 'failed');
 		assert.match(labels?.detail ?? '', /failed to create: insrc:story$/);
-		// Every label was still attempted after the one that timed out, each bounded by the 10 s timeout.
+		// Every label was still attempted after the one that timed out.
 		assert.ok(labelCalls.length >= 4, `expected all labels attempted, got ${labelCalls.join(', ')}`);
 		assert.ok(labelCalls.indexOf('insrc:task') > labelCalls.indexOf('insrc:story'), 'continued past the timed-out label');
-		assert.equal(optsSeen?.['timeout'], 10_000);
+		// (the 10 s bound is the tool's own limit now, not an option the fake can observe)
 	} finally { cleanup(dir); }
 });

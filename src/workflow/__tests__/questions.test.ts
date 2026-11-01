@@ -32,7 +32,7 @@ import {
 } from '../questions.js';
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, lldArtifactId } from '../storage.js';
 import type { QuestionResolution } from '../types.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { getLogger } from '../../shared/logger.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { seedBoundUnits } from './helpers/task-heads.js';
@@ -202,7 +202,7 @@ test('listDeferred enumerates deferred questions across DEF + HLD + LLDs', async
 // The tracker comment goes through the GitHub adapter (s1/t9)
 // ---------------------------------------------------------------------------
 
-afterEach(() => { _setTrackerExecForTests(); delete process.env['INSRC_GITHUB_CONFIG']; });
+afterEach(() => { installExecStandIn(); delete process.env['INSRC_GITHUB_CONFIG']; });
 
 /** A repo whose Epic head is bound to an issue and whose github.json targets acme/demo for it. */
 function seedTrackedHld(repo: string): void {
@@ -218,13 +218,13 @@ test('the comment goes through the adapter with the same argv and a failure is l
 	try {
 		seedTrackedHld(repo);
 		const calls: string[][] = [];
-		_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return ''; });
+		installExecStandIn((_cmd, args) => { calls.push([...args]); return ''; });
 		const res = await recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-insensitive', 'matches expectation');
 		const comments = calls.filter(c => c[0] === 'issue' && c[1] === 'comment');
 		assert.equal(comments.length, 1);
-		assert.deepEqual(comments[0]!.slice(0, 5), ['issue', 'comment', '5', '--repo', 'acme/demo']);
-		assert.equal(comments[0]![5], '--body');
-		assert.match(comments[0]![6]!, /HLD open question `sc1`.*resolved: Case-insensitive/);
+		assert.deepEqual(comments[0]!.slice(0, 4), ['issue', 'comment', '5', '-b']);
+		assert.match(comments[0]![4]!, /HLD open question `sc1`.*resolved: Case-insensitive/);
+		assert.deepEqual(comments[0]!.slice(5), ['-R', 'acme/demo']);
 
 		// A failing comment is swallowed by the existing catch: the resolution is still recorded.
 		// getLogger caches one child per module, so wrapping warn here sees the module's own log calls.
@@ -233,7 +233,7 @@ test('the comment goes through the adapter with the same argv and a failure is l
 		const warned: Array<{ err?: string; msg: string }> = [];
 		(log as { warn: unknown }).warn = (obj: { err?: string }, msg: string) => { warned.push({ ...(obj.err !== undefined ? { err: obj.err } : {}), msg }); };
 		const failing: string[][] = [];
-		_setTrackerExecForTests((_cmd, args) => { failing.push([...args]); if (args[0] === 'issue' && args[1] === 'comment') throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502' }); return ''; });
+		installExecStandIn((_cmd, args) => { failing.push([...args]); if (args[0] === 'issue' && args[1] === 'comment') throw Object.assign(new Error('Command failed'), { stderr: 'HTTP 502' }); return ''; });
 		let again: ReturnType<typeof recordResolution>;
 		try {
 			again = await recordResolution(repo, 'hld', HASH, undefined, 'sc1', 'resolved', 'Case-sensitive', 'changed my mind');

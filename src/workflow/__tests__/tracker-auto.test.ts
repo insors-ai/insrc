@@ -5,7 +5,7 @@
 
 /**
  * Integration tests for the deterministic approve-time tracker push,
- * driven against a FAKE `gh`/`git` (injected via _setTrackerExecForTests)
+ * driven against a FAKE `gh`/`git` (injected via installExecStandIn)
  * so no network/real repo is needed.
  *
  * Covers: Epic + Story creation, nested `meta.tracker` writes, doc→issue
@@ -25,7 +25,8 @@ import { blockedMeta, recordReviewSync } from './lifecycle-fixtures.js';
 import { autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { artifactJsonPath, planArtifactPaths } from '../storage.js';
 import { type TrackerExec } from '../tracker/github.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
+import { approveEveryToolCall } from './approve-fallback-kit.js';
 import { seedTaskHeads } from './helpers/task-heads.js';
 import { readBinding } from '../tracker/binding.js';
 
@@ -39,6 +40,16 @@ const EPIC_FOLDER = `docs/epics/${SLUG}-${EPIC_SEGMENT}`;
 // Fake gh/git
 // ---------------------------------------------------------------------------
 
+approveEveryToolCall();   // a forced label create asks for approval and no client answers in a test
+
+/** What the tools parse: `git remote -v` lines, the `gh api user` object, an issue view object. */
+const REMOTE_V = 'origin\tgit@github.com:acme/demo.git (fetch)\norigin\tgit@github.com:acme/demo.git (push)\n';
+const issueView = (num: string, body: string): string => JSON.stringify({
+	number: Number(num), title: 't', state: 'OPEN', author: { login: 'me' }, assignees: [], labels: [], url: `https://github.com/acme/demo/issues/${num}`, createdAt: CREATED, updatedAt: CREATED, body, comments: [],
+});
+/** The argument after `-b`/`--body` of an `issue edit`. */
+const bodyOf = (args: readonly string[]): string | undefined => { const bi = args.findIndex(a => a === '-b' || a === '--body'); return bi >= 0 ? String(args[bi + 1]) : undefined; };
+
 function makeFakeGh() {
 	let counter = 0;
 	let findResult = '';                          // dup-guard: '' = none, '<n>' = adopt
@@ -46,13 +57,16 @@ function makeFakeGh() {
 	const calls: string[][] = [];
 	const fn: TrackerExec = (cmd, args) => {
 		calls.push([cmd, ...args]);
-		if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
+		if (cmd === 'git') return args[0] === 'remote' ? REMOTE_V : '';
 		const [sub0, sub1] = args;
-		if (sub0 === 'auth' || sub0 === 'label') return '';
+		if (sub0 === 'label') return '';
+		if (sub0 === 'api' && args[1] === 'user') return JSON.stringify({ login: 'me' });
+		if (sub0 === 'api' && args[1] === '--paginate' && args.some(a => a.includes('labels='))) return findResult;   // the duplicate guard's listing: numbers, one per line
 		if (sub0 === 'api') {
 			const pi = args.indexOf('POST');
 			const path = pi >= 0 ? String(args[pi + 1] ?? '') : '';
 			if (path.endsWith('/sub_issues')) return '';                 // native sub-issue link — ok
+			if (path.endsWith('/comments')) return JSON.stringify({ id: 4242 });
 			if (path.endsWith('/issues')) {                              // issue create via REST (story now)
 				counter += 1;
 				const bodyArg = args.find(a => String(a).startsWith('body='));
@@ -68,9 +82,9 @@ function makeFakeGh() {
 				bodies.set(String(counter), bi >= 0 ? String(args[bi + 1]) : '');
 				return `https://github.com/acme/demo/issues/${counter}\n`;
 			}
-			if (sub1 === 'list') return findResult;
-			if (sub1 === 'view') return args.includes('body') ? (bodies.get(String(args[2])) ?? '') : JSON.stringify({ state: 'OPEN', labels: [] });
-			if (sub1 === 'edit') { const bi = args.indexOf('--body'); if (bi >= 0) bodies.set(String(args[2]), String(args[bi + 1])); return ''; }
+			if (sub1 === 'list') return '[]';
+			if (sub1 === 'view') return issueView(String(args[2]), bodies.get(String(args[2])) ?? '');
+			if (sub1 === 'edit') { const b = bodyOf(args); if (b !== undefined) bodies.set(String(args[2]), b); return ''; }
 			if (sub1 === 'comment') return '';
 		}
 		return '';
@@ -115,7 +129,7 @@ function setup(): { repo: string; hldJson: string; lldJson: string; defineJson: 
 	const lldJson = join(repo, '.insrc/artifacts', `LLD-${HASH}-s1.json`);
 	writeJson(lldJson, { meta: { workflow: 'design.story', runId: 'l1', repoPath: repo, epicHash: HASH, epicSlug: SLUG, storyId: 's1', hldBaseRunId: 'h1', hldEffectiveHash: 'deadbeefcafe', hldAmendmentsApplied: [], schemaVersion: 1 }, body: {} });
 
-	return { repo, hldJson, lldJson, defineJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; _setTrackerExecForTests(); rmSync(repo, { recursive: true, force: true }); } };
+	return { repo, hldJson, lldJson, defineJson, cleanup: () => { delete process.env['INSRC_GITHUB_CONFIG']; installExecStandIn(); rmSync(repo, { recursive: true, force: true }); } };
 }
 
 function trackerOf(jsonPath: string): Record<string, unknown> {
@@ -128,7 +142,7 @@ function trackerOf(jsonPath: string): Record<string, unknown> {
 
 test('HLD approve creates the Epic issue, binds it on the Epic head and links docs', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup();
 	try {
 		const r = await autoPushEpicOnHld(s.hldJson);
@@ -153,7 +167,7 @@ test('HLD approve creates the Epic issue, binds it on the Epic head and links do
 
 test('LLD approve creates the Story issue and binds it on the Story head; links the LLD doc', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup();
 	try {
 		await autoPushEpicOnHld(s.hldJson);           // epic first (LLD needs the epicRef)
@@ -169,7 +183,7 @@ test('LLD approve creates the Story issue and binds it on the Story head; links 
 
 test('re-approving the HLD is idempotent (no second issue)', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup();
 	try {
 		await autoPushEpicOnHld(s.hldJson);
@@ -183,7 +197,7 @@ test('re-approving the HLD is idempotent (no second issue)', async () => {
 test('duplicate guard adopts an existing Epic issue instead of creating one', async () => {
 	const gh = makeFakeGh();
 	gh.setFind('9');                             // an epic issue already exists
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup();
 	try {
 		const r = await autoPushEpicOnHld(s.hldJson);
@@ -196,7 +210,7 @@ test('duplicate guard adopts an existing Epic issue instead of creating one', as
 
 test('tracker disabled (no config) skips cleanly', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup();
 	// Point at a path that does not exist → the loader returns {} → type: none.
 	// (Deleting the env var would fall back to the user's real ~/.insrc/github.json,
@@ -210,7 +224,7 @@ test('tracker disabled (no config) skips cleanly', async () => {
 
 test('missing required meta fields skip', async () => {
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setup();
 	try {
 		writeJson(s.hldJson, { meta: { workflow: 'design.epic', runId: 'h1', repoPath: s.repo }, body: {} });
@@ -223,7 +237,7 @@ test('missing required meta fields skip', async () => {
 test('R4: posts the review report as an issue comment when the artifact carries a lifecycle review', async () => {
 	const s = setup();
 	const gh = makeFakeGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	try {
 		// the review is the lifecycle's; its report is the entry of the HLD's log
 		const hld = JSON.parse(readFileSync(s.hldJson, 'utf8')) as { meta: Record<string, unknown> };
@@ -239,7 +253,7 @@ test('R4: posts the review report as an issue comment when the artifact carries 
 			.filter(c => c[1] === 'issue' && c[2] === 'comment')
 			.find(c => c.some(a => typeof a === 'string' && a.includes('insrc:review')));
 		assert.ok(reviewComment, 'a review comment carrying the insrc:review marker was posted on the Epic issue');
-	} finally { s.cleanup(); _setTrackerExecForTests(); }
+	} finally { s.cleanup(); installExecStandIn(); }
 });
 
 // ---------------------------------------------------------------------------
@@ -253,13 +267,16 @@ function makeFailableGh(failOn: (args: readonly string[]) => boolean = () => fal
 	const calls: string[][] = [];
 	const fn: TrackerExec = (cmd, args) => {
 		calls.push([cmd, ...args]);
-		if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
+		if (cmd === 'git') return args[0] === 'remote' ? REMOTE_V : '';
 		if (failOn(args)) throw new Error('boom');
+		if (args[0] === 'api' && args[1] === 'user') return JSON.stringify({ login: 'me' });
+		if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/comments')) return JSON.stringify({ id: 4242 });
 		if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/issues')) {
 			n += 1;
 			return JSON.stringify({ number: n, id: 1000 + n });
 		}
-		if (args[0] === 'issue' && args[1] === 'view') return args.includes('body') ? 'epic body' : '{}';
+		if (args[0] === 'issue' && args[1] === 'view') return issueView(String(args[2]), 'epic body');
+		if (args[0] === 'issue' && args[1] === 'list') return '[]';
 		return '';
 	};
 	return { fn, calls };
@@ -308,7 +325,7 @@ const TYPED = (labels: string[], type: string): string => `${API_ISSUES} -f titl
 test('the three push functions run one path through the adapter: the issues, the sub-issue links, the milestones, the persisted refs and the binding, with failing side effects reported and not thrown', async () => {
 	// Plain run: results, the creates (typed, labelled, linked) and the persisted meta.
 	const gh = makeFailableGh();
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setupWithPlan();
 	try {
 		const [epic, story, tasks] = await runAll(s);
@@ -335,14 +352,14 @@ test('the three push functions run one path through the adapter: the issues, the
 
 	// Milestones switched on: the Epic and the Story are attached to the Epic's milestone.
 	const ms = makeFailableGh();
-	_setTrackerExecForTests(ms.fn);
+	installExecStandIn(ms.fn);
 	const m = setupWithPlan(true);
 	try {
 		await runAll(m);
 		const shapes = ms.calls.filter(c => c[0] === 'gh').map(shapeOf);
 		assert.ok(shapes.includes('api -X POST repos/acme/demo/milestones -f title=…'));
-		assert.ok(shapes.includes('issue edit 1 --repo acme/demo --milestone demo-feature'));
-		assert.ok(shapes.includes('issue edit 2 --repo acme/demo --milestone demo-feature'));
+		assert.ok(shapes.includes('issue edit 1 -m demo-feature -R acme/demo'));
+		assert.ok(shapes.includes('issue edit 2 -m demo-feature -R acme/demo'));
 	} finally { m.cleanup(); }
 
 	// Side effects that fail are reported and never fail a push: links stay pending, the comments and the task list are extrasFailed.
@@ -352,7 +369,7 @@ test('the three push functions run one path through the adapter: the issues, the
 		['body edit', (a: readonly string[]) => a[0] === 'issue' && (a[1] === 'view' || a[1] === 'edit')],
 	] as const) {
 		const f = makeFailableGh(failOn);
-		_setTrackerExecForTests(f.fn);
+		installExecStandIn(f.fn);
 		const x = setupWithPlan(true);
 		try {
 			const results = await runAll(x);
@@ -363,7 +380,7 @@ test('the three push functions run one path through the adapter: the issues, the
 
 	// A label that cannot be made fails the push before any issue is created: the issue could not be found again without it.
 	const lf = makeFailableGh(a => a[0] === 'label');
-	_setTrackerExecForTests(lf.fn);
+	installExecStandIn(lf.fn);
 	const l = setupWithPlan();
 	try {
 		const r = await autoPushEpicOnHld(l.hldJson);
@@ -374,18 +391,18 @@ test('the three push functions run one path through the adapter: the issues, the
 
 	// Fail-open when gh is unavailable: every push is skipped and no tracker call is made.
 	const down = makeFailableGh(() => true);
-	_setTrackerExecForTests(down.fn);
+	installExecStandIn(down.fn);
 	const d = setupWithPlan();
 	try {
 		assert.deepEqual((await runAll(d)).map(r => r.status), ['skipped', 'skipped', 'skipped']);
-		assert.equal(down.calls.filter(c => c[0] === 'gh').every(c => c[1] === 'auth'), true);
+		assert.equal(down.calls.filter(c => c[0] === 'gh').every(c => c[1] === 'api' && c[2] === 'user'), true);
 		assert.equal((JSON.parse(readFileSync(d.defineJson, 'utf8')) as { meta: { envelope?: unknown } }).meta.envelope, undefined, 'no tracker, no binding');
 	} finally { d.cleanup(); }
 });
 
 test('a failing lookup in front of the create is a failed result, never a throw, and creates nothing', async () => {
 	const gh = makeFailableGh(a => a[0] === 'issue' && a[1] === 'list');
-	_setTrackerExecForTests(gh.fn);
+	installExecStandIn(gh.fn);
 	const s = setupWithPlan();
 	try {
 		const r = await autoPushEpicOnHld(s.hldJson);
@@ -401,7 +418,7 @@ test('a failing lookup in front of the create is a failed result, never a throw,
 test('a failing create is reported as a failed result, not thrown', async () => {
 	const failCreate = (label: string) => (a: readonly string[]) => a[0] === 'api' && a.some(x => x === `labels[]=${label}`);
 	const epic = makeFailableGh(failCreate('insrc:epic'));
-	_setTrackerExecForTests(epic.fn);
+	installExecStandIn(epic.fn);
 	const s = setupWithPlan();
 	try {
 		const r = await autoPushEpicOnHld(s.hldJson);
@@ -412,7 +429,7 @@ test('a failing create is reported as a failed result, not thrown', async () => 
 
 	// Story and Task creates fail the same way, as a result and not a throw.
 	const story = makeFailableGh(failCreate('insrc:story'));
-	_setTrackerExecForTests(story.fn);
+	installExecStandIn(story.fn);
 	const t = setupWithPlan();
 	try {
 		await autoPushEpicOnHld(t.hldJson);
@@ -422,7 +439,7 @@ test('a failing create is reported as a failed result, not thrown', async () => 
 	} finally { t.cleanup(); }
 
 	const task = makeFailableGh(failCreate('insrc:task'));
-	_setTrackerExecForTests(task.fn);
+	installExecStandIn(task.fn);
 	const u = setupWithPlan();
 	try {
 		await autoPushEpicOnHld(u.hldJson);

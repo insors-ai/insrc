@@ -15,7 +15,7 @@ import { createRepoLifecycle } from '../../workflow/artifact-core/repo-lifecycle
 import { _setAutoPushDepsForTests } from '../../workflow/tracker-auto.js';
 import { ARTIFACTS_DIR, planArtifactId } from '../../workflow/storage.js';
 import { readBinding } from '../../workflow/tracker/binding.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from '../../workflow/__tests__/helpers/exec-stand-in.js';
 import type { TrackerPort } from '../../workflow/tracker/port.js';
 import { CREATED, HASH, fakeTracker, seed, teamPolicy } from '../../workflow/__tests__/approve-fallback-kit.js';
 
@@ -54,7 +54,7 @@ describe('tasks-sync-async.test.ts: a withdrawn-Task close through an async Clos
 					return asyncPort ? new Promise(r => setImmediate(() => r(answer))) : answer;
 				};
 				_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port as TrackerPort });
-				_setTrackerExecForTests(() => '');
+				installExecStandIn(() => '');
 
 				const first = await approveJson(fx.plan);
 				await followOnTasksSync([{ path: first.path, result: first }], fx.repo);
@@ -77,7 +77,7 @@ describe('tasks-sync-async.test.ts: a withdrawn-Task close through an async Clos
 				assert.deepEqual(closes, [t2Issue]);
 				await syncPlanTasks(second.path);
 				assert.deepEqual(closes, [t2Issue], 'a closed issue is not closed again');
-			} finally { _setAutoPushDepsForTests(); _setTrackerExecForTests(); fx.cleanup(); }
+			} finally { _setAutoPushDepsForTests(); installExecStandIn(); fx.cleanup(); }
 		});
 	}
 });

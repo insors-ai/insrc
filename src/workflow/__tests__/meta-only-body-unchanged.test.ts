@@ -19,7 +19,7 @@ import { join } from 'node:path';
 
 import { recordResolution, questionId } from '../questions.js';
 import { patchTrackerMeta } from '../tracker/refs.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { defaultStampDeps } from '../bugfix/stamp.js';
 import { _mutateEpicTrackerMeta } from '../orchestrator.js';
 import { ARTIFACTS_DIR, defineArtifactId, hldArtifactId, artifactJsonPath, issueArtifactId } from '../storage.js';
@@ -31,7 +31,7 @@ const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED_AT = '2026-07-19T00:00:00.000Z';
 const Q = '[sc1 / missed] Case-insensitive tags?';
 
-afterEach(() => { _setTrackerExecForTests(); });
+afterEach(() => { installExecStandIn(); });
 
 type Doc = { meta: Record<string, unknown>; body: unknown; citations?: unknown };
 const read = (p: string): Doc => JSON.parse(readFileSync(p, 'utf8')) as Doc;

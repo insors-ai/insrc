@@ -9,7 +9,7 @@
  * Units (no network, no DB): createBugfixTrackerIssue (config-gated create +
  * link + k4 body, standalone/unpushed/link-throw unlinked, none/GithubConfigError/
  * authOk skip, reused idempotent), closeBugfixTrackerIssue (close/skip/deleted-
- * propagates), the ghCloseIssue argv wrapper (via _setTrackerExecForTests), and
+ * propagates), the ghCloseIssue argv wrapper (via installExecStandIn), and
  * the prompt-on-lost-ref branches (recordRef-throw on create; no-ref on close).
  * Integration: a create -> record -> close round-trip over a fake `gh` + stubbed
  * config, plus the unconfigured no-op.
@@ -35,8 +35,10 @@ import {
 	type PromptOnLostRef,
 } from '../bugfix/tracker.js';
 import { renderIssueMarkdown, type IssueArtifact } from '../artifacts/issue.js';
-import { ghCloseIssue, type CreatedIssue } from '../tracker/github.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import type { CreatedIssue } from '../tracker/github.js';
+import { createRegistryTable, workflowToolDeps } from '../tracker/registry-table.js';
+import { approveEveryToolCall } from './approve-fallback-kit.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { GithubConfigError, type ResolvedGithubConfig } from '../config/github.js';
 import { approvedMeta } from './lifecycle-fixtures.js';
 import { artifactJsonPath, issueArtifactId } from '../storage.js';
@@ -237,17 +239,19 @@ test('closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates',
 
 // --- ghCloseIssue argv (the ONE new gh-verb) -------------------------------
 
+approveEveryToolCall();   // a close asks for approval and no client answers in a test
+
 test('ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec', async () => {
 	const seen: Array<{ cmd: string; args: readonly string[] }> = [];
-	_setTrackerExecForTests((cmd, args) => { seen.push({ cmd, args }); return ''; });
+	installExecStandIn((cmd, args) => { seen.push({ cmd, args }); return ''; });
 	try {
-		ghCloseIssue('acme', 'widget', 'acme/widget#42');
+		await createRegistryTable(workflowToolDeps('/tmp')).ghCloseIssue('acme', 'widget', 'acme/widget#42');
 	} finally {
-		_setTrackerExecForTests();
+		installExecStandIn();
 	}
 	assert.equal(seen.length, 1);
 	assert.equal(seen[0]!.cmd, 'gh', 'uses gh, not a shell');
-	assert.deepEqual([...seen[0]!.args], ['issue', 'close', '42', '--repo', 'acme/widget']);
+	assert.deepEqual([...seen[0]!.args], ['issue', 'close', '42', '-R', 'acme/widget']);
 });
 
 // --- prompt-on-lost-ref (resolved open-question) ---------------------------
@@ -356,7 +360,7 @@ test('integration: configured repo -> create records the ref, close reads it bac
 
 		// Fake gh: `api POST .../issues` returns a created issue JSON; `issue close` is a no-op.
 		const cmds: string[][] = [];
-		_setTrackerExecForTests((cmd, args) => {
+		installExecStandIn((cmd, args) => {
 			cmds.push([cmd, ...args]);
 			const a = args.join(' ');
 			if (cmd === 'gh' && a.includes('api') && a.includes('POST') && /repos\/[^ ]+\/issues$/.test(String(args[3] ?? ''))) {
@@ -384,7 +388,7 @@ test('integration: configured repo -> create records the ref, close reads it bac
 		assert.equal(closed.ref, 'acme/widget#42');
 		assert.ok(cmds.some(c => c[0] === 'gh' && c[1] === 'issue' && c[2] === 'close'), 'a `gh issue close` was shelled');
 	} finally {
-		_setTrackerExecForTests();
+		installExecStandIn();
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
@@ -399,7 +403,7 @@ test('integration: unconfigured repo -> no create/close commands, local issue un
 		writeFileSync(json, original);
 
 		const cmds: string[][] = [];
-		_setTrackerExecForTests((cmd, args) => { cmds.push([cmd, ...args]); return ''; });
+		installExecStandIn((cmd, args) => { cmds.push([cmd, ...args]); return ''; });
 
 		const cd: TrackerCreateDeps = { ...defaultTrackerCreateDeps(), resolveConfig: () => NONE };
 		const created = await createBugfixTrackerIssue({ repoPath: dir, issueHash: 'abcd1234abcd1234' }, cd);
@@ -412,7 +416,7 @@ test('integration: unconfigured repo -> no create/close commands, local issue un
 		assert.equal(cmds.filter(c => c[0] === 'gh').length, 0, 'no gh command was run for an unconfigured repo');
 		assert.equal(readFileSync(json, 'utf8'), original, 'the local IssueArtifact is byte-unchanged');
 	} finally {
-		_setTrackerExecForTests();
+		installExecStandIn();
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
@@ -422,11 +426,11 @@ test('integration: unconfigured repo -> no create/close commands, local issue un
 /** A fake gh recording argv. REST creates answer { number: 42, id: 9001 }; `issue list` answers `listOut`. */
 function adapterGh(opts: { listOut?: string; failOn?: (args: readonly string[]) => boolean } = {}) {
 	const calls: string[][] = [];
-	_setTrackerExecForTests((_cmd, args) => {
+	installExecStandIn((_cmd, args) => {
 		calls.push([...args]);
 		if (opts.failOn?.(args) === true) throw new Error('boom');
 		if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/issues')) return JSON.stringify({ number: 42, id: 9001 });
-		if (args[0] === 'issue' && args[1] === 'list') return opts.listOut ?? '';
+		if (args[0] === 'issue' && args[1] === 'list') return opts.listOut ?? '[]';
 		return '';
 	});
 	return calls;
@@ -459,7 +463,7 @@ test('bugfix create keeps CreatedIssue, readonly labels and the parent link thro
 			assert.deepEqual(recorded, ['acme/widget#42']);
 			assert.deepEqual(calls[1], ['api', '-X', 'POST', 'repos/acme/widget/issues/7/sub_issues', '-F', 'sub_issue_id=9001']);
 		} finally { rmSync(dir, { recursive: true, force: true }); }
-	} finally { _setTrackerExecForTests(); }
+	} finally { installExecStandIn(); }
 });
 
 test('a failed link makes linkToParent return false and a failed close propagates instead of reporting closed', async () => {
@@ -476,11 +480,11 @@ test('a failed link makes linkToParent return false and a failed close propagate
 		adapterGh({ failOn: a => a[0] === 'issue' && a[1] === 'close' });
 		const closeDeps: TrackerCloseDeps = { ...defaultTrackerCloseDeps(), resolveConfig: () => GH, authOk: () => ({ ok: true }), readRecordedRef: () => 'acme/widget#42' };
 		await assert.rejects(() => closeBugfixTrackerIssue(IN, closeDeps), /boom/);
-	} finally { _setTrackerExecForTests(); }
+	} finally { installExecStandIn(); }
 });
 
 test('relink-by-label match is recorded, closed and returned as closed', async () => {
-	const calls = adapterGh({ listOut: '99\n' });
+	const calls = adapterGh({ listOut: JSON.stringify([{ number: 99, title: 't', state: 'OPEN', url: 'https://github.com/acme/widget/issues/99', labels: [], assignees: [] }]) });
 	try {
 		const recorded: string[] = [];
 		const deps: TrackerCloseDeps = {
@@ -490,8 +494,8 @@ test('relink-by-label match is recorded, closed and returned as closed', async (
 		const r = await closeBugfixTrackerIssue(IN, deps);
 		assert.deepEqual({ status: r.status, ref: r.ref }, { status: 'closed', ref: 'acme/widget#99' });
 		assert.deepEqual(recorded, ['acme/widget#99']);
-		assert.deepEqual(calls.map(c => c.slice(0, 3).join(' ')), ['issue list --repo', 'issue close 99']);
-	} finally { _setTrackerExecForTests(); }
+		assert.deepEqual(calls.map(c => c.slice(0, 3).join(' ')), ['issue list --json', 'issue close 99']);
+	} finally { installExecStandIn(); }
 });
 
 test('relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue', async () => {
@@ -519,7 +523,7 @@ test('relink-by-label with no labels, no match and a failed lookup returns skipp
 		const failed = await run(['issue:x'], { failOn: a => a[0] === 'issue' && a[1] === 'list' });
 		assert.equal(failed.r.status, 'skipped');
 		assert.equal(failed.r.reason, 'relink-by-label found no matching issue');
-	} finally { _setTrackerExecForTests(); }
+	} finally { installExecStandIn(); }
 });
 
 test('both default deps factories keep their optional opts', async () => {

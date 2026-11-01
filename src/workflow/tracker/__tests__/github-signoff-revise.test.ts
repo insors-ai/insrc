@@ -9,17 +9,27 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 import type { PortResult } from '../port.js';
 
-afterEach(() => { _setTrackerExecForTests(); });
+afterEach(() => { installExecStandIn(); });
 
 const tracker = createGithubTracker('acme', 'demo');
 const REF = { ref: 'acme/demo#12' };
 
+const flagValue = (call: readonly string[] | undefined, flag: string): string | undefined => { const i = call?.indexOf(flag) ?? -1; return i < 0 ? undefined : call?.[i + 1]; };
+const prRow = (extra: object = {}): object => ({ number: 12, title: 'Signoff', state: 'OPEN', ...extra });
+/** The gh pr view argv is for pull request 12 of acme/demo and asks for (at least) these json fields. */
+function assertView(call: readonly string[] | undefined, fields: readonly string[]): void {
+	assert.deepEqual(call?.slice(0, 3), ['pr', 'view', '12']);
+	assert.equal(flagValue(call, '-R'), 'acme/demo');
+	const asked = (flagValue(call, '--json') ?? '').split(',');
+	for (const f of fields) assert.ok(asked.includes(f), `asks for ${f}`);
+}
+
 function fakeGh(answer: (args: readonly string[]) => string): string[][] {
 	const calls: string[][] = [];
-	_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return answer(args); });
+	installExecStandIn((_cmd, args) => { calls.push([...args]); return answer(args); });
 	return calls;
 }
 
@@ -30,11 +40,11 @@ const failureOf = <T>(r: PortResult<T>): { kind: string; reason: string } => {
 };
 
 async function readRequest(json: object) {
-	const seen = fakeGh(() => JSON.stringify(json));
+	const seen = fakeGh(() => JSON.stringify(prRow(json)));
 	const read = tracker.readSignoffRequest;
 	assert.ok(read !== undefined, 'the github tracker reads a request');
 	const r = await read(REF);
-	assert.deepEqual(seen[0], ['pr', 'view', '12', '--repo', 'acme/demo', '--json', 'headRefName,state']);
+	assertView(seen[0], ['headRefName', 'state']);
 	return r;
 }
 
@@ -48,16 +58,16 @@ test('readSignoffRequest maps headRefName and OPEN, MERGED and CLOSED to a branc
 	assert.ok(read !== undefined);
 	assert.match(failureOf(await read({ ref: 'nope' })).reason, /malformed signoff request reference/);
 	fakeGh(() => 'not json');
-	assert.match(failureOf(await read(REF)).reason, /unexpected pull request JSON/);
+	assert.match(failureOf(await read(REF)).reason, /could not parse gh JSON/);
 
 	const kinds: Array<[Error, string]> = [
 		[Object.assign(new Error('x'), { code: 'ENOENT' }), 'missing-tool'],
 		[Object.assign(new Error('x'), { stderr: 'gh auth login required' }), 'missing-signin'],
-		[Object.assign(new Error('x'), { code: 'ETIMEDOUT' }), 'unreachable'],
+		[Object.assign(new Error('x'), { stderr: 'dial tcp: i/o timeout' }), 'unreachable'],
 		[Object.assign(new Error('x'), { stderr: 'HTTP 422: Validation Failed' }), 'rejected'],
 	];
 	for (const [err, kind] of kinds) {
-		_setTrackerExecForTests(() => { throw err; });
+		if (kind === 'missing-tool') installNoPrograms(); else installExecStandIn(() => { throw err; });
 		assert.equal(failureOf(await read(REF)).kind, kind, kind);
 	}
 });
@@ -66,9 +76,9 @@ const SINCE = '2026-10-23T10:00:00Z';
 const review = (login: string, state: string, submittedAt: string) => ({ author: { login }, state, submittedAt });
 
 async function stateSince(reviews: object[], extra: object = {}, since: string | undefined = SINCE) {
-	const seen = fakeGh(() => JSON.stringify({ state: 'OPEN', mergedAt: null, reviews, ...extra }));
+	const seen = fakeGh(() => JSON.stringify(prRow({ mergedAt: null, reviews, ...extra })));
 	const r = (await tracker.readSignoffState(REF, since));
-	assert.deepEqual(seen[0], ['pr', 'view', '12', '--repo', 'acme/demo', '--json', 'state,mergedAt,reviews']);
+	assertView(seen[0], ['state', 'mergedAt', 'reviews']);
 	return r;
 }
 
@@ -95,7 +105,7 @@ test("readSignoffState with since uses each reviewer's latest decisive review an
 	assert.deepEqual(await stateSince([review('bob', 'APPROVED', '2026-10-23T12:00:00Z')], { state: 'CLOSED' }), { ok: true, value: 'changes-requested' });
 
 	// without since the answer is the review decision, as in s7
-	const seen = fakeGh(() => JSON.stringify({ state: 'OPEN', mergedAt: null, reviewDecision: 'CHANGES_REQUESTED' }));
+	const seen = fakeGh(() => JSON.stringify(prRow({ mergedAt: null, reviewDecision: 'CHANGES_REQUESTED' })));
 	assert.deepEqual((await tracker.readSignoffState(REF)), { ok: true, value: 'changes-requested' });
-	assert.deepEqual(seen[0], ['pr', 'view', '12', '--repo', 'acme/demo', '--json', 'state,mergedAt,reviewDecision']);
+	assertView(seen[0], ['state', 'mergedAt', 'reviewDecision']);
 });

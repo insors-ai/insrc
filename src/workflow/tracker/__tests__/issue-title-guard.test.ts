@@ -20,7 +20,7 @@ import { join } from 'node:path';
 
 import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../../storage.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn } from '../../__tests__/helpers/exec-stand-in.js';
 import { parseIdMarker } from '../conventions.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../port.js';
 import { unitLabel } from '../unit-issue.js';
@@ -40,7 +40,7 @@ const TASK_ID = `TASK-${HASH}-s1-t1`;
 const teamPolicy: PolicyReader = () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
 const individualPolicy: PolicyReader = () => ({ ok: true, value: 'none' });
 
-afterEach(() => { _setAutoPushDepsForTests(); _setTrackerExecForTests(); });
+afterEach(() => { _setAutoPushDepsForTests(); installExecStandIn(); });
 
 interface Issue { ref: IssueRef; spec: IssueSpec }
 
@@ -110,7 +110,7 @@ const task = (repo: string): UnitRef => ({ unit: 'task', repoPath: repo, epicHas
 
 /** Runs the three pushes of the given mode against the tracker. */
 async function pushAll(fx: ReturnType<typeof seed>, t: ReturnType<typeof fakeTracker>, mode: 'team' | 'individual') {
-	_setTrackerExecForTests(() => '');   // gh sign-in check for the push path
+	installExecStandIn(() => '');   // gh sign-in check for the push path
 	_setAutoPushDepsForTests(mode === 'team'
 		? { policy: teamPolicy, port: t.port }
 		: { policy: individualPolicy, port: t.port });

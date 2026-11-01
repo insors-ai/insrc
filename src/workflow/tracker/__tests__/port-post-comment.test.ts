@@ -2,16 +2,16 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn } from '../../__tests__/helpers/exec-stand-in.js';
 import type { Reference } from '../../artifact-core/types.js';
 
-afterEach(() => _setTrackerExecForTests());
+afterEach(() => installExecStandIn());
 
 const artifact: Reference = { entityId: 'TASK-0123456789abcdef-s1-t2', type: 'TASK', relation: 'documents' };
 
 test("the GitHub adapter's postComment answers the comment id and attach posts its marker", async () => {
 	const calls: string[][] = [];
-	_setTrackerExecForTests((_cmd, args) => { calls.push([...args]); return '4242\n'; });
+	installExecStandIn((_cmd, args) => { calls.push([...args]); return '{"id":4242}'; });
 	const port = createGithubTracker('o', 'r');
 
 	// one comment, its body as given, and its id answered
@@ -28,16 +28,16 @@ test("the GitHub adapter's postComment answers the comment id and attach posts i
 	assert.equal(body, 'body=<!-- insrc:attach:TASK-0123456789abcdef-s1-t2 -->\nAttached TASK `TASK-0123456789abcdef-s1-t2`: https://github.com/o/r/blob/abc/docs/TASK.md');
 
 	// a post that fails, or that answers no id, is a failure and never a made-up id
-	_setTrackerExecForTests(() => { throw Object.assign(new Error('boom'), { stderr: 'You are not logged in. Run gh auth login' }); });
+	installExecStandIn(() => { throw Object.assign(new Error('boom'), { stderr: 'You are not logged in. Run gh auth login' }); });
 	const down = (await createGithubTracker('o', 'r').postComment('o/r#9', 'x'));
 	assert.equal(down.ok, false);
 	assert.equal(!down.ok && down.kind, 'missing-signin');
-	_setTrackerExecForTests(() => '');
+	installExecStandIn(() => '');
 	assert.equal((await createGithubTracker('o', 'r').postComment('o/r#9', 'x')).ok, false);
 
 	// the older comment call is unchanged: it posts and answers nothing
 	const seen: string[][] = [];
-	_setTrackerExecForTests((_cmd, args) => { seen.push([...args]); return ''; });
+	installExecStandIn((_cmd, args) => { seen.push([...args]); return ''; });
 	const plain = (await createGithubTracker('o', 'r').issueOps.comment('o/r#9', 'plain'));
 	assert.equal(plain.ok, true);
 	assert.ok(seen[0]!.includes('comment') || seen[0]!.some(a => a.includes('comments')));

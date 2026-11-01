@@ -2,19 +2,19 @@ import { afterEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { createGithubTracker } from '../github-adapter.js';
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 import type { Reference } from '../../artifact-core/types.js';
 
-afterEach(() => _setTrackerExecForTests());
+afterEach(() => installExecStandIn());
 
 const row = (id: number, at: string, text: string, author = 'alice') => JSON.stringify({ id, author, text, at, url: `https://github.com/o/r/issues/7#issuecomment-${id}` });
 const artifact: Reference = { entityId: 'LLD-0123456789abcdef-s6', type: 'LLD', relation: 'documents' };
 
 test("the GitHub adapter's listComments pages comments in time order and passes since, attach posts one comment holding the link and returns its id, and a failing gh gives a classified failure and never an empty list", async () => {
 	const calls: string[][] = [];
-	_setTrackerExecForTests((_cmd, args) => {
+	installExecStandIn((_cmd, args) => {
 		calls.push([...args]);
-		if (args.includes('POST')) return '987654321\n';
+		if (args.includes('POST')) return '{"id":987654321}';
 		// --paginate prints each page's rows one after the other: here the pages arrive out of order and with a tie
 		return [row(12, '2026-10-21T10:00:00Z', 'second page, later'), row(5, '2026-10-21T09:00:00Z', 'first page'), row(3, '2026-10-21T09:00:00Z', 'same instant, lower id')].join('\n');
 	});
@@ -39,21 +39,21 @@ test("the GitHub adapter's listComments pages comments in time order and passes 
 	assert.match(body, /^body=<!-- insrc:attach:LLD-0123456789abcdef-s6 -->\nAttached LLD `LLD-0123456789abcdef-s6`: https:\/\/github\.com\/o\/r\/blob\/abc123\/docs\/LLD\.md$/);
 
 	// a failing gh is a classified failure, never an empty list
-	_setTrackerExecForTests(() => { throw Object.assign(new Error('boom'), { stderr: 'You are not logged in. Run gh auth login' }); });
+	installExecStandIn(() => { throw Object.assign(new Error('boom'), { stderr: 'You are not logged in. Run gh auth login' }); });
 	const down = (await createGithubTracker('o', 'r').listComments('o/r#7'));
 	assert.equal(down.ok, false);
 	assert.equal(!down.ok && down.kind, 'missing-signin');
-	_setTrackerExecForTests(() => { throw Object.assign(new Error('x'), { code: 'ENOENT' }); });
+	installNoPrograms();
 	const gone = (await createGithubTracker('o', 'r').attach('o/r#7', artifact, 'https://x'));
 	assert.equal(!gone.ok && gone.kind, 'missing-tool');
 
 	// an answer that is not comment rows is a failure too, as is a post that returns no id
-	_setTrackerExecForTests(() => 'not json');
+	installExecStandIn(() => 'not json');
 	const odd = (await createGithubTracker('o', 'r').listComments('o/r#7'));
 	assert.equal(odd.ok, false);
-	_setTrackerExecForTests(() => '');
+	installExecStandIn(() => '');
 	assert.equal((await createGithubTracker('o', 'r').attach('o/r#7', artifact, 'https://x')).ok, false);
 	// an empty listing is a real empty list
-	_setTrackerExecForTests(() => '');
+	installExecStandIn(() => '');
 	assert.deepEqual((await createGithubTracker('o', 'r').listComments('o/r#7')), { ok: true, value: [] });
 });

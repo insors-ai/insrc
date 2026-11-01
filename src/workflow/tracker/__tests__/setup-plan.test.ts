@@ -2,33 +2,35 @@
  * Story E20261016315d510c:S003 / t6 — planTrackerConfig and the configOutcome seam
  * of runTrackerSetup. Everything runs against temp files and a fake git/gh.
  */
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { _setTrackerExecForTests } from './_legacy-table.js';
+import { installExecStandIn } from '../../__tests__/helpers/exec-stand-in.js';
 import { configAlreadyDetail, configWrittenDetail, planTrackerConfig, runTrackerSetup } from '../setup.js';
 
-const REPO = '/fake/repo/path';
+const REPO = mkdtempSync(join(tmpdir(), 'insrc-setup-plan-repo-'));   // a real directory: the git stand-in runs with it as cwd
+after(() => rmSync(REPO, { recursive: true, force: true }));
+const REPO_RE = REPO.replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&');
 
 /** git reports an acme/demo origin (or none); gh is not authenticated, so the gh-based steps are skipped. */
 function fakeExec(origin: boolean): void {
-	_setTrackerExecForTests((cmd, args) => {
+	installExecStandIn((cmd, args) => {
 		const a = args.join(' ');
-		if (cmd === 'git' && a.includes('remote get-url origin')) {
-			if (!origin) throw new Error("error: No such remote 'origin'");
-			return 'git@github.com:acme/demo.git';
+		if (cmd === 'git' && a === 'remote -v') {
+			if (!origin) return '';   // a work tree without an origin lists no remote
+			return 'origin\tgit@github.com:acme/demo.git (fetch)\norigin\tgit@github.com:acme/demo.git (push)\n';
 		}
-		if (cmd === 'gh' && a === 'auth status') throw new Error('gh not authenticated');
+		if (cmd === 'gh' && a === 'api user') throw new Error('gh not authenticated');
 		return '';
 	});
 }
 
 async function withDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-setup-plan-'));
-	try { return await fn(dir); } finally { _setTrackerExecForTests(); rmSync(dir, { recursive: true, force: true }); }
+	try { return await fn(dir); } finally { installExecStandIn(); rmSync(dir, { recursive: true, force: true }); }
 }
 
 const COMPLETE = { type: 'github', owner: 'acme', repo: 'demo', pushTasks: true, commitArtifacts: true };
@@ -81,7 +83,7 @@ test('planTrackerConfig fails on malformed files without throwing, calling the d
 	fakeExec(true);
 	const path = join(dir, 'github.json');
 	const bad: Array<[string, string, RegExp]> = [
-		['null own entry with a complete default', JSON.stringify({ default: COMPLETE, repos: { [REPO]: null } }), /repos\["\/fake\/repo\/path"\]/],
+		['null own entry with a complete default', JSON.stringify({ default: COMPLETE, repos: { [REPO]: null } }), new RegExp(`repos\\["${REPO_RE}"\\]`)],
 		['null default', '{"default":null}', /"default"/],
 		['array default', '{"default":[]}', /"default"/],
 		['null repos', '{"repos":null}', /"repos"/],

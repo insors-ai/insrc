@@ -20,12 +20,12 @@ import { join } from 'node:path';
 import { _setAutoPushDepsForTests, autoPushEpicOnHld, autoPushStoryOnLld, autoPushTasksOnPlan } from '../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
 import { type TrackerExec } from '../tracker/github.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerPort } from '../tracker/port.js';
 import { ensureUnitIssueDetailed } from '../tracker/unit-issue.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
 
-import { HASH, SLUG, CREATED, OK, TEAM, teamPolicy, offPolicy, nonePolicy, brokenPolicy, fakeTracker, seed, trackerOf, via, type Fx } from './approve-fallback-kit.js';
+import { HASH, SLUG, CREATED, OK, TEAM, teamPolicy, offPolicy, nonePolicy, brokenPolicy, fakeTracker, seed, approveEveryToolCall, trackerOf, via, type Fx } from './approve-fallback-kit.js';
 
 // ---------------------------------------------------------------------------
 
@@ -117,15 +117,17 @@ test('with no policy, or teamMode off, the three pushes run the individual-mode 
 			calls.push([cmd, ...args]);
 			if (cmd === 'git') return 'git@github.com:acme/demo.git\n';
 			if (args[0] === 'api' && args.includes('POST') && (args.find(a => a.startsWith('repos/')) ?? '').endsWith('/issues')) { n += 1; return JSON.stringify({ number: n, id: 1000 + n }); }
-			if (args[0] === 'issue' && args[1] === 'view') return args.includes('body') ? 'epic body' : '{}';
+			if (args[0] === 'api' && args[1] === 'user') return JSON.stringify({ login: 'me' });
+			if (args[0] === 'issue' && args[1] === 'view') return JSON.stringify({ body: 'epic body' });
 			return '';
 		};
-		_setTrackerExecForTests(exec);
+		installExecStandIn(exec);
+		approveEveryToolCall();   // the forced label create asks for approval; cleanup() takes the gate away
 		const fx = seed({ pushTasks: false });
 		try {
 			_setAutoPushDepsForTests(policy === undefined ? {} : { policy });
 			const results = [await autoPushEpicOnHld(fx.hld), await autoPushStoryOnLld(fx.lld), await autoPushTasksOnPlan(fx.plan)];
-			const masked = calls.map(c => c.map(a => a.replace(fx.repo, '<repo>')).join(' '));
+			const masked = calls.filter(c => c[0] === 'gh').map(c => c.map(a => a.replace(fx.repo, '<repo>')).join(' '));
 			return { results, masked, hld: trackerOf(fx.hld), lld: trackerOf(fx.lld) };
 		} finally { fx.cleanup(); }
 	};

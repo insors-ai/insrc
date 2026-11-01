@@ -16,7 +16,7 @@ import { createRepoSettingsHandlers, mapSignin } from '../repo-settings.js';
 import type { RepoSettingsDeps, RepoSettingsPayload, SettingsResult } from '../repo-settings.js';
 import { IpcServer, directDispatch } from '../server.js';
 import { rpc } from '../../shared/ipc-client.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from '../../workflow/__tests__/helpers/exec-stand-in.js';
 import type { PortResult } from '../../workflow/tracker/port.js';
 import type { PolicyResult, TeamPolicy } from '../../workflow/team/types.js';
 
@@ -234,9 +234,9 @@ test('only the signed-in-user read runs through s1\'s adapter', async () => {
 	const ran: string[] = [];
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-repo-gh-'));
 	const path = join(dir, 'github.json');
-	_setTrackerExecForTests((cmd, args) => {
+	installExecStandIn((cmd, args) => {
 		ran.push([cmd, ...args].join(' '));
-		return cmd === 'gh' ? 'octocat\n' : '';
+		return cmd === 'gh' ? '{"login":"octocat"}' : '';
 	});
 	try {
 		const handlers = createRepoSettingsHandlers({
@@ -263,7 +263,7 @@ test('only the signed-in-user read runs through s1\'s adapter', async () => {
 		const afterSet = ran.filter(c => c.startsWith('gh '));
 		assert.equal(afterSet.length, 1);
 		assert.match(afterSet[0]!, /^gh api user/);
-	} finally { _setTrackerExecForTests(); rmSync(dir, { recursive: true, force: true }); }
+	} finally { installExecStandIn(); rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('malformed files return github-json-unreadable and keep their bytes', async () => {

@@ -14,11 +14,11 @@ import { handleApprovePipeline } from '../workflow-approve.js';
 import { approveJson } from '../../workflow/__tests__/helpers/approve.js';
 import { _setAutoPushDepsForTests } from '../../workflow/tracker-auto.js';
 import { ARTIFACTS_DIR } from '../../workflow/storage.js';
-import { _setTrackerExecForTests } from '../../workflow/tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from '../../workflow/__tests__/helpers/exec-stand-in.js';
 import type { TrackerPort } from '../../workflow/tracker/port.js';
 import { CREATED, fakeTracker, seed, teamPolicy } from '../../workflow/__tests__/approve-fallback-kit.js';
 
-afterEach(() => { _setAutoPushDepsForTests(); _setTrackerExecForTests(); });
+afterEach(() => { _setAutoPushDepsForTests(); installExecStandIn(); });
 
 function prepare() {
 	const fx = seed({ pushTasks: true, taskHeads: false });
@@ -32,7 +32,7 @@ function prepare() {
 	}
 	const t = fakeTracker();
 	_setAutoPushDepsForTests({ policy: teamPolicy, port: t.port as TrackerPort });
-	_setTrackerExecForTests(() => '');
+	installExecStandIn(() => '');
 	return { fx, t };
 }
 

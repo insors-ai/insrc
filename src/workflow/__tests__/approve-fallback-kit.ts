@@ -5,7 +5,8 @@ import { join } from 'node:path';
 
 import { _setAutoPushDepsForTests } from '../tracker-auto.js';
 import { artifactJsonPath, defineArtifactId, hldArtifactId, lldArtifactId, planArtifactId } from '../storage.js';
-import { _setTrackerExecForTests } from '../tracker/__tests__/_legacy-table.js';
+import { installExecStandIn } from './helpers/exec-stand-in.js';
+import { _setApprovalGateForTests } from '../../daemon/tools/executor.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortResult, type TrackerComment, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
 import { recordReviewSync, reviewedMeta } from './lifecycle-fixtures.js';
@@ -74,6 +75,11 @@ export function fakeTracker(over: { failFind?: boolean; failComment?: string } =
 
 export interface Fx { repo: string; hld: string; lld: string; plan: string; cleanup: () => void }
 
+/** A gh write such as a forced label create asks for approval and no client answers in a test: answer yes to every request. Undo with `_setApprovalGateForTests(undefined)`. */
+export function approveEveryToolCall(): void {
+	_setApprovalGateForTests(() => ({ ask: async req => ({ requestId: req.requestId, decision: 'approve' as const }) }));
+}
+
 export function seed(opts: { pushTasks?: boolean; taskHeads?: boolean } = {}): Fx {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-approve-fallback-'));
 	mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
@@ -114,7 +120,7 @@ export function seed(opts: { pushTasks?: boolean; taskHeads?: boolean } = {}): F
 	if (opts.taskHeads !== false) seedTaskHeads(repo, HASH, 's1', ['t1', 't2'], CREATED);
 	return {
 		repo, hld, lld, plan,
-		cleanup: () => { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; _setTrackerExecForTests(); _setAutoPushDepsForTests(); rmSync(repo, { recursive: true, force: true }); },
+		cleanup: () => { if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior; installExecStandIn(); _setApprovalGateForTests(undefined); _setAutoPushDepsForTests(); rmSync(repo, { recursive: true, force: true }); },
 	};
 }
 

@@ -469,7 +469,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Only for phase=start. Natural-language framing of the ask.')
 					.optional(),
 				repo: z.string()
-					.describe('For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env.')
+					.describe('For phase=start / park / resume. Absolute path of a registered repo; for the first phase it defaults to the registered repo that contains the session workspace and is sent to the daemon explicitly. The daemon refuses a phase that writes files when the repo is missing or not registered; a later phase takes the repo of its run.')
 					.optional(),
 				epicHash: z.string()
 					.describe('Only for phase=park / resume. The Epic\'s hash.')
@@ -561,7 +561,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'(TESTS.md beside BUILD.md), and fails the Task when a case fails, is ' +
 				'skipped or is not found. A wrong mapping returns the error ' +
 				'`invalid-test-mapping` and nothing is run.\n\n' +
-				'`repo` falls back to INSRC_REPO. The repo must be registered + indexed.',
+				'`repo` is the absolute path of a registered repo (default: the registered repo that contains the session workspace, sent explicitly). The daemon refuses implement and validate when the repo is missing or not registered.',
 			annotations: {
 				readOnlyHint:   false,   // validate runs an agentic session against the repo
 				idempotentHint: false,
@@ -573,7 +573,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				target: z.string().min(1)
 					.describe('Task identifier: `#N`, `owner/repo#N`, a canonical/slug hierarchical id, or `s1/t3`. Ignored for a standalone (no-plan) build.'),
 				repo: z.string()
-					.describe('Absolute repo path; falls back to INSRC_REPO env.')
+					.describe('Absolute path of a registered repo; defaults to the registered repo that contains the session workspace. The daemon refuses the call when it is missing or not registered.')
 					.optional(),
 				epicHash: z.string()
 					.describe('Optional epic scope for a structural `target` (`s1/t3`) when the repo holds more than one epic — a full or prefix DEF hash naming the epic. Ignored for issue# / hierarchical ids and single-epic dirs.')
@@ -730,7 +730,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'(returns { aborted:true, runId }); the daemon run is really aborted.\n\n' +
 				'Use this for a hands-off run you watch by polling. Use insrc_workflow_step ' +
 				'instead when YOU want to drive each turn.\n\n' +
-				'`repo` falls back to INSRC_REPO. The repo must be registered + indexed.',
+				'`repo` is the absolute path of a registered repo (default: the registered repo that contains the session workspace, sent explicitly); the daemon refuses a run without one.',
 			annotations: {
 				readOnlyHint:   false,   // the daemon writes an artifact to disk
 				idempotentHint: false,
@@ -747,7 +747,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('START only. Workflow-specific params (epicSlug, storyId, …).')
 					.optional(),
 				repo: z.string()
-					.describe('START only. Absolute repo path; falls back to INSRC_REPO env.')
+					.describe('START only. Absolute path of a registered repo; defaults to the registered repo that contains the session workspace. The daemon refuses a run whose repo is missing or not registered.')
 					.optional(),
 				poll: z.string()
 					.describe('POLL. A runId returned by a prior start call; fetches new progress + status.')

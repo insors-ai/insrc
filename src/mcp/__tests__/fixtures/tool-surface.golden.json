@@ -183,7 +183,7 @@
 	{
 		"name": "insrc_build_step",
 		"title": "insrc build (controller-driven)",
-		"description": "Lean, controller-driven build surface for implementing ONE approved plan Task. The daemon resolves + gates + templatizes; YOU (the controller) do the editing. Stateless — each call is self-contained given `target` (a task id: `#N`, a hierarchical id, or `s1/t3`).\n\nPhases:\n\n  - `implement` — { target }. The daemon runs the admission gate (plan present + approved + fresh) and returns one of:\n      { next: \"refused\", refusal }            — plan missing/unapproved/stale;\n      { next: \"implement\", taskId, workflowId, issueRef, prompt } — EXECUTE the returned prompt: edit code, run tests, commit. The daemon did NOT edit. The prompt surfaces any design decisions resolved at plan-start (from the Story LLD's meta.questionResolutions). Open questions are resolved at stage STARTS via insrc_workflow_step, not here.\n\n  - `validate` — { target, tests? }. The DAEMON runs the typecheck and the Task's tests itself, then a read-only verdict session against the repo, and returns { next: \"done\", verdict, passed }. `passed` is the daemon's judgment, never a self-report. Pass `tests` to say which test cases (a file and a test title) carry each test the Task names: the daemon runs those files, records a result per case in the Story's test record (TESTS.md beside BUILD.md), and fails the Task when a case fails, is skipped or is not found. A wrong mapping returns the error `invalid-test-mapping` and nothing is run.\n\n`repo` falls back to INSRC_REPO. The repo must be registered + indexed.",
+		"description": "Lean, controller-driven build surface for implementing ONE approved plan Task. The daemon resolves + gates + templatizes; YOU (the controller) do the editing. Stateless — each call is self-contained given `target` (a task id: `#N`, a hierarchical id, or `s1/t3`).\n\nPhases:\n\n  - `implement` — { target }. The daemon runs the admission gate (plan present + approved + fresh) and returns one of:\n      { next: \"refused\", refusal }            — plan missing/unapproved/stale;\n      { next: \"implement\", taskId, workflowId, issueRef, prompt } — EXECUTE the returned prompt: edit code, run tests, commit. The daemon did NOT edit. The prompt surfaces any design decisions resolved at plan-start (from the Story LLD's meta.questionResolutions). Open questions are resolved at stage STARTS via insrc_workflow_step, not here.\n\n  - `validate` — { target, tests? }. The DAEMON runs the typecheck and the Task's tests itself, then a read-only verdict session against the repo, and returns { next: \"done\", verdict, passed }. `passed` is the daemon's judgment, never a self-report. Pass `tests` to say which test cases (a file and a test title) carry each test the Task names: the daemon runs those files, records a result per case in the Story's test record (TESTS.md beside BUILD.md), and fails the Task when a case fails, is skipped or is not found. A wrong mapping returns the error `invalid-test-mapping` and nothing is run.\n\n`repo` is the absolute path of a registered repo (default: the registered repo that contains the session workspace, sent explicitly). The daemon refuses implement and validate when the repo is missing or not registered.",
 		"inputSchema": {
 			"type": "object",
 			"properties": {
@@ -202,7 +202,7 @@
 				},
 				"repo": {
 					"type": "string",
-					"description": "Absolute repo path; falls back to INSRC_REPO env."
+					"description": "Absolute path of a registered repo; defaults to the registered repo that contains the session workspace. The daemon refuses the call when it is missing or not registered."
 				},
 				"epicHash": {
 					"type": "string",
@@ -521,7 +521,7 @@
 	{
 		"name": "insrc_workflow_run",
 		"title": "insrc workflow (async start/poll, daemon-driven)",
-		"description": "Run a full workflow SERVER-SIDE in the daemon, ASYNC. The daemon drives every phase (decompose → steps → synthesize → review) via its configured LLM provider; a long run no longer blocks this call.\n\nLoop: START → POLL* → done.\n\n  1. START — call with { workflow, focus, params?, repo? } (no poll/abort). Returns { runId, next:'poll', guidance } IMMEDIATELY; the run is now executing detached.\n  2. POLL — call with { poll: <runId>, cursor: <n> } repeatedly (start cursor at 0). Each returns { status, progress:[short lines], cursor:<next> }. RELAY each `progress` batch to the user, then poll again with the returned cursor to get only NEW frames. Space polls a few seconds apart.\n  3. DONE — when status is 'done' the response also carries { artifact, runId, model, review? }; when 'error' it carries { error }; 'aborted' ends the loop. Stop polling on any terminal status.\n\nABORT — call with { abort: <runId> } to cancel a run mid-flight (returns { aborted:true, runId }); the daemon run is really aborted.\n\nUse this for a hands-off run you watch by polling. Use insrc_workflow_step instead when YOU want to drive each turn.\n\n`repo` falls back to INSRC_REPO. The repo must be registered + indexed.",
+		"description": "Run a full workflow SERVER-SIDE in the daemon, ASYNC. The daemon drives every phase (decompose → steps → synthesize → review) via its configured LLM provider; a long run no longer blocks this call.\n\nLoop: START → POLL* → done.\n\n  1. START — call with { workflow, focus, params?, repo? } (no poll/abort). Returns { runId, next:'poll', guidance } IMMEDIATELY; the run is now executing detached.\n  2. POLL — call with { poll: <runId>, cursor: <n> } repeatedly (start cursor at 0). Each returns { status, progress:[short lines], cursor:<next> }. RELAY each `progress` batch to the user, then poll again with the returned cursor to get only NEW frames. Space polls a few seconds apart.\n  3. DONE — when status is 'done' the response also carries { artifact, runId, model, review? }; when 'error' it carries { error }; 'aborted' ends the loop. Stop polling on any terminal status.\n\nABORT — call with { abort: <runId> } to cancel a run mid-flight (returns { aborted:true, runId }); the daemon run is really aborted.\n\nUse this for a hands-off run you watch by polling. Use insrc_workflow_step instead when YOU want to drive each turn.\n\n`repo` is the absolute path of a registered repo (default: the registered repo that contains the session workspace, sent explicitly); the daemon refuses a run without one.",
 		"inputSchema": {
 			"type": "object",
 			"properties": {
@@ -557,7 +557,7 @@
 				},
 				"repo": {
 					"type": "string",
-					"description": "START only. Absolute repo path; falls back to INSRC_REPO env."
+					"description": "START only. Absolute path of a registered repo; defaults to the registered repo that contains the session workspace. The daemon refuses a run whose repo is missing or not registered."
 				},
 				"poll": {
 					"type": "string",
@@ -622,7 +622,7 @@
 				},
 				"repo": {
 					"type": "string",
-					"description": "For phase=start / park / resume. Absolute repo path; falls back to INSRC_REPO env."
+					"description": "For phase=start / park / resume. Absolute path of a registered repo; for the first phase it defaults to the registered repo that contains the session workspace and is sent to the daemon explicitly. The daemon refuses a phase that writes files when the repo is missing or not registered; a later phase takes the repo of its run."
 				},
 				"epicHash": {
 					"type": "string",

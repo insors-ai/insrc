@@ -43,9 +43,10 @@ The daemon does **not**:
 12. [What a plan-tree run does about scope, failed tasks and runs that died](#what-a-plan-tree-run-does-about-scope-failed-tasks-and-runs-that-died)
 13. [What a build records about its tests](#what-a-build-records-about-its-tests)
 14. [The git tools](#the-git-tools)
-15. [CLI reference](#cli-reference)
-16. [Troubleshooting](#troubleshooting)
-17. [Uninstall](#uninstall)
+15. [Calls that modify files name their repository](#calls-that-modify-files-name-their-repository)
+16. [CLI reference](#cli-reference)
+17. [Troubleshooting](#troubleshooting)
+18. [Uninstall](#uninstall)
 
 ---
 
@@ -1676,6 +1677,64 @@ and a test keeps this copy equal to it.
 | upload-pack |  | excluded | server or transport role |
 | web--browse |  | excluded | needs a person at a terminal or a GUI |
 <!-- git-coverage:end -->
+
+## Calls that modify files name their repository
+
+A daemon call that writes files in a user repository must name that repository: an **absolute path of a registered repository**. The daemon
+refuses the call before any handler runs when the repo is missing, empty, relative, not a directory or not registered, and it never falls
+back to its own `INSRC_REPO`, to the session workspace or to its own working directory. Every file or artifact path in the call is
+resolved against the named repo (a relative path is joined to it) and must stay inside it, symlinks included. The MCP server and the
+terminal client resolve the session workspace on their side and always send the absolute repo and absolute paths. Read-only calls keep their
+session-aware resolution. The methods and step phases that write only the daemon's own stores under `~/.insrc` (`config.*`, `keys.*`,
+`session.*`, `todos.*`, `db.*` and the like) are outside this rule: see `docs/plans/repo-call-audit.md` for the audit of every method.
+
+A refusal answers `{ error, code }` (a stream call throws; a step tool answers its error envelope) with one of these codes:
+`repo-missing`, `repo-not-absolute`, `repo-not-directory`, `repo-not-registered`, `path-outside-repo` and, for a later phase of a run
+whose `repo` differs from the repo its state token recorded, `repo-mismatch`.
+
+The calls the rule covers (`src/daemon/repo-call-gate.ts` builds this table from `src/daemon/repo-call-audit.ts`; a test keeps this list in step with it):
+
+| Method or step phase | Repo param | Path params | Repo for a later phase |
+| :--- | :--- | :--- | :--- |
+| `artifact.feedback.add` | `repo` | — |  |
+| `artifact.feedback.append` | `repo` | `artifactPath` |  |
+| `codeReview.run` | `repo` | — |  |
+| `codeReview.task.activity` | `repo` | — |  |
+| `codeReview.task.assignment` | `repo` | — |  |
+| `codeReview.task.publish` | `repo` | — |  |
+| `codeReview.task.result` | `repo` | — |  |
+| `codeReview.task.scope` | `repo` | — |  |
+| `codeReview.task.start` | `repo` | — |  |
+| `repo.convert` | `repo` | — |  |
+| `team.claim` | `repoPath` | — |  |
+| `team.refresh` | `repoPath` | — |  |
+| `team.release` | `repoPath` | — |  |
+| `tracker.attach` | `repo` | — |  |
+| `tracker.setup` | `repoPath` | — |  |
+| `tracker.sync` | `repoPath` | — |  |
+| `tracker.syncComments` | `repo` | — |  |
+| `workflow.approve` | `repo` | `artifactPath` |  |
+| `workflow.approvePipeline` | `repo` | `artifactPath` |  |
+| `workflow.resolveComment` | `repo` | — |  |
+| `workflow.resolveFinding` | `repoPath` | — |  |
+| `workflow.review` | `repo` | `artifactPath` |  |
+| `workflow.reviewArtifact` | `repoPath` | `artifactPath` |  |
+| `workflow.reviewDecision` | `repo` | `mdPath` |  |
+| `workflow.run` | `repo` | — |  |
+| `workflow.run.start` | `repo` | — |  |
+| `workflow-step.start` | `repo` | — |  |
+| `workflow-step.plan` | `repo` | — | the run's state token |
+| `workflow-step.step` | `repo` | — | the run's state token |
+| `workflow-step.synthesize` | `repo` | — | the run's state token |
+| `workflow-step.resolve_question` | `repo` | — |  |
+| `workflow-step.park` | `repo` | — |  |
+| `workflow-step.resume` | `repo` | — |  |
+| `workflow-step.settle` | `repo` | — |  |
+| `build-step.implement` | `repo` | — |  |
+| `build-step.validate` | `repo` | — |  |
+
+A client that used to rely on the daemon's `INSRC_REPO` (a cron job, a script, an editor plugin that called `artifact.feedback.append` with
+only an artifact path) must send `repo`.
 
 ## CLI reference
 

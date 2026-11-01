@@ -1,4 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { ProgressSchema } from './progress.js';
+import type { ReviewProgress } from './progress.js';
 import { Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
@@ -72,6 +74,7 @@ export function parsePacket(input: unknown): ReviewPacket {
  return packet;
 }
 export interface ReviewAttempt {
+ progress?: ReviewProgress;
  header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; buildFingerprint?: string; reassessmentSummary?: string };
  submitted: ReviewPacket;
  'review-response': { summary: string; tasks: readonly TaskReviewResult[]; crPath?: string; crPublication: 'pending' | 'complete'; error?: string; origins?: readonly TaskResultOrigin[] };
@@ -88,6 +91,7 @@ export interface TaskBasedCodeReviewRecord {
 }
 
 export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
+ progress:Type.Optional(ProgressSchema),
  header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), buildFingerprint:Type.Optional(text), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
  submitted:PacketSchema, 'review-response':Type.Object({ summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text), origins:Type.Optional(Type.Array(TaskOriginSchema, {maxItems:10000})) },{additionalProperties:false})
  },{additionalProperties:false}),{minItems:1}) },{additionalProperties:false});

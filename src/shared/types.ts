@@ -685,15 +685,33 @@ export interface Relation {
   /** Whether 'to' is a resolved entity id or a raw import specifier */
   resolved: boolean;
   meta?: Record<string, unknown>;
+  /** How the writer established it (Epic c2ba6fa6 s7); absent = not known, stored empty ('unknown'). */
+  evidence?: RelationEvidence | undefined;
 }
 
 // ---------------------------------------------------------------------------
 // File commit (Epic c2ba6fa6 sc2) -- the one write for a file's rows
 // ---------------------------------------------------------------------------
 
-/** How a relationship is known (sc3). Story s7 adds the other values;
- *  until then every relationship is written as 'unknown'. */
-export type RelationEvidence = 'unknown';
+/**
+ * How a relationship was established (sc3, Epic c2ba6fa6 s7), stored as the
+ * one-byte value of its edge rows and returned wherever relationships are read.
+ *   'unknown'   stored before this change (an empty value), or not recorded
+ *   'extracted' read directly from the source text
+ *   'inferred'  established by resolution across files
+ *   'chosen'    one target picked among several candidates; reserved, written
+ *               only if a choosing rule is added (none is)
+ *   'model'     proposed by a model
+ */
+export type RelationEvidence = 'unknown' | 'extracted' | 'inferred' | 'chosen' | 'model';
+
+/** One stored relationship as it is read (sc3). */
+export interface RelationRead {
+  readonly from:     string;
+  readonly kind:     RelationKind;
+  readonly to:       string;
+  readonly evidence: RelationEvidence;
+}
 
 /** A name or path reference the cross-file pass resolves later: the raw
  *  target and the record the pending row keeps (its file and repository). */

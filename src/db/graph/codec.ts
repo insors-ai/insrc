@@ -33,6 +33,7 @@ import type {
 	PlanStatus as DomainPlanStatus,
 	PlanStepStatus as DomainPlanStepStatus,
 	PlanStepComplexity as DomainPlanStepComplexity,
+	RelationEvidence,
 	RepoLastRun,
 } from '../../shared/types.js';
 import type {
@@ -455,3 +456,36 @@ export interface ConfigEntryRow {
 
 export const encodeConfigEntryRow = (r: ConfigEntryRow): Buffer => encode(r);
 export const decodeConfigEntryRow = (b: Buffer): ConfigEntryRow => decode(b);
+
+// ---------------------------------------------------------------------------
+// Relationship evidence (Epic c2ba6fa6 s7): the value of an out_edge / in_edge row
+// ---------------------------------------------------------------------------
+
+const EVIDENCE_BYTE: Readonly<Record<Exclude<RelationEvidence, 'unknown'>, number>> = {
+	extracted: 0x01,
+	inferred:  0x02,
+	chosen:    0x03,
+	model:     0x04,
+};
+const EVIDENCE_OF_BYTE: ReadonlyMap<number, RelationEvidence> = new Map(
+	Object.entries(EVIDENCE_BYTE).map(([evidence, byte]) => [byte, evidence as RelationEvidence]),
+);
+const EMPTY_EDGE_VALUE = Buffer.alloc(0);
+
+/**
+ * The edge rows' value for an evidence: one byte, or empty for 'unknown' (what
+ * every row written before s7 holds). `valid` is false for a string that is not
+ * one of the five values -- it is stored empty and the caller logs it, since a
+ * relationship is never refused for its evidence.
+ */
+export function encodeEvidence(evidence: string | undefined): { value: Buffer; valid: boolean } {
+	if (evidence === undefined || evidence === 'unknown') return { value: EMPTY_EDGE_VALUE, valid: true };
+	const byte = (EVIDENCE_BYTE as Readonly<Record<string, number>>)[evidence];
+	return byte === undefined ? { value: EMPTY_EDGE_VALUE, valid: false } : { value: Buffer.from([byte]), valid: true };
+}
+
+/** An edge row's evidence: empty, 0x00 and any byte not defined read 'unknown'. */
+export function decodeEvidence(value: Buffer | Uint8Array | undefined | null): RelationEvidence {
+	if (value === undefined || value === null || value.length === 0) return 'unknown';
+	return EVIDENCE_OF_BYTE.get(value[0]!) ?? 'unknown';
+}

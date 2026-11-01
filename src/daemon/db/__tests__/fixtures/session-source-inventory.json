@@ -23766,6 +23766,14 @@
     ],
     [
      "serialization",
+     "Buffer.alloc"
+    ],
+    [
+     "serialization",
+     "Buffer.from"
+    ],
+    [
+     "serialization",
      "decode"
     ],
     [
@@ -24021,9 +24029,9 @@
      "Unpackr"
     ]
    ],
-   "siteCount": 65,
-   "sitesDigest": "bd6157938c460f8e38d7e8484ae223cd9931186992740701e8331db69c4fe1ba",
-   "sourceDigest": "38f606115c87ab4b943c79b6476466407bb88cfd9369e5da9bfeecd341e4bbf5",
+   "siteCount": 67,
+   "sitesDigest": "b7fe29222ea54c1e609e803c7d1968a792e2d261855e72e388a8222a1d167f26",
+   "sourceDigest": "a8152cc1fdbb27a77f1e33ab641ff6439462b48c1dbe83899e7373efa6291811",
    "boundaries": [
     "serialization",
     "storage-call"

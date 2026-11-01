@@ -1210,6 +1210,10 @@
 		"class": "per-thread",
 		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
 	},
+	"src/db/graph/codec.ts#EVIDENCE_OF_BYTE": {
+		"class": "per-thread",
+		"reason": "The fixed byte-to-evidence table of the edge-row codec (Epic c2ba6fa6 s7), built once from a constant and never written, so a per-thread copy is correct."
+	},
 	"src/db/entities.ts#vectorLock": {
 		"class": "per-thread",
 		"reason": "Serialises the entity vector table's changes (ISSUE-8c7d75b0): every writer of entity vectors runs in the code-indexing worker (commitFile, upsertEntities, the backfill, the reconciliation), so a lock per thread orders all of them."

@@ -61,8 +61,9 @@ export class TaskReviewCoordinator {
   return controller.assignment(owner);
  }
  async controllerAssignment(project:string,id:string,attempt:number,owner:ControllerReviewOwner):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).assignment(owner);}
- async controllerScope(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).scope(input,owner);}
- async controllerResult(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).submit(input,owner);}
+ async controllerScope(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).scope(input,owner,envelope);}
+ async controllerResult(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).submit(input,owner,envelope);}
+ async controllerActivity(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<unknown>{return(await this.controller(project,id,attempt)).activity(input,owner,envelope);}
  private async controller(project:string,id:string,attempt:number):Promise<ControllerTaskReview>{
   const path=checkpointPath(project,id);
   const saved=await loadCheckpoint(path);requireReview(saved,'checkpoint','missing-checkpoint');

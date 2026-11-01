@@ -40,7 +40,9 @@ export async function startTaskReview(raw: unknown, trusted?: TrustedRpcContext,
  const client = p['client'] as 'claude' | 'codex' | undefined;
  const coordinator = coordinatorFor(repo);
  if (buildAuthorParty(repo, epicHash, story) === 'daemon') {
-  return coordinator.startController(repo, p['reviewId'], attempt, input, controllerOwner(trusted, () => requireReview(buildAuthorParty(repo, epicHash, story) === 'daemon', 'reviewer', 'wrong-reviewer: current build is not daemon-authored')), epicHash, operation);
+  const owner=controllerOwner(trusted, () => requireReview(buildAuthorParty(repo, epicHash, story) === 'daemon', 'reviewer', 'wrong-reviewer: current build is not daemon-authored'));
+  requireReview(p['timingProtocol']==='activity-v1','timingProtocol','Controller must support activity-v1 timing protocol');
+  return coordinator.startController(repo, p['reviewId'], attempt, input, owner, epicHash, operation);
  }
  let provider: LLMProvider | undefined;
  return coordinator.start(repo, p['reviewId'], attempt, input, { epicHash, operation, provider: () => provider ??= deps.provider?.(repo, client) ?? createRoleRouter({ clientDefault: familyForClient(client), cliTimeoutMs: 900000 }).resolveProviderForRole('review', loadAnalyzeConfig(), repo).provider });
@@ -59,15 +61,17 @@ function controllerOwner(trusted: TrustedRpcContext | undefined, assertReviewer?
  requireReview(trusted?.connectionIdentity && trusted.connectionSignal instanceof AbortSignal, 'reviewer', 'Trusted controller connection lifetime is required');
  return { id: trusted.connectionIdentity, signal: trusted.connectionSignal, ...(trusted.signal ? { requestSignal: trusted.signal } : {}), ...(assertReviewer ? { assertReviewer } : {}) };
 }
-export async function exchangeControllerTaskReview(raw: unknown, trusted: TrustedRpcContext | undefined, phase: 'assignment' | 'scope' | 'result'): Promise<unknown> {
+export async function exchangeControllerTaskReview(raw: unknown, trusted: TrustedRpcContext | undefined, phase: 'assignment' | 'scope' | 'result' | 'activity'): Promise<unknown> {
  requireReview(raw && typeof raw === 'object', 'request', 'Expected controller review exchange');
  const p = raw as Record<string, unknown>;
  requireReview(typeof p['repo'] === 'string' && p['repo'].startsWith('/'), 'repo', 'Expected absolute project');
  const repo = await realpath(p['repo']);
  requireReview(typeof p['reviewId'] === 'string' && Number.isSafeInteger(p['attempt']) && Number(p['attempt']) > 0, 'request', 'Expected reviewId and attempt');
  const coordinator = coordinatorFor(repo), owner = controllerOwner(trusted), attempt = Number(p['attempt']);
- if (phase === 'scope') return coordinator.controllerScope(repo, p['reviewId'], attempt, p['scope'], owner);
- if (phase === 'result') return coordinator.controllerResult(repo, p['reviewId'], attempt, p['result'], owner);
+ const envelope={taskId:p['taskId'],executionId:p['executionId'],sequence:p['sequence']};
+ if (phase === 'activity') return coordinator.controllerActivity(repo,p['reviewId'],attempt,p['event'],owner,envelope);
+ if (phase === 'scope') return coordinator.controllerScope(repo, p['reviewId'], attempt, p['scope'], owner,envelope);
+ if (phase === 'result') return coordinator.controllerResult(repo, p['reviewId'], attempt, p['result'], owner,envelope);
  return coordinator.controllerAssignment(repo, p['reviewId'], attempt, owner);
 }
 

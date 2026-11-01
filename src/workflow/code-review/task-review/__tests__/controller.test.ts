@@ -23,7 +23,7 @@ test('controller parity: actual independent-party routing and equivalent assignm
   assert.equal(f.read(ack.path).attempts[0]!.header.reviewer,'daemon','caller party labels cannot select the reviewer');
   f.build.meta.authoredBy='daemon';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
   const frame=await client.call<ControllerFrame>('codeReview.task.start',{repo:f.repo,epicHash:hash,reviewId:'controller-route',attempt:1,packet:f.packet,reviewer:'daemon'});
-  assert.equal(frame.reviewer,'controller');assert.equal(frame.kind,'task');assert.equal(frame.taskId,'t1');assert.ok(frame.remainingMs!>0&&frame.remainingMs!<=300000);
+  assert.equal(frame.reviewer,'controller');assert.equal(frame.kind,'task');assert.equal(frame.taskId,'t1');assert.ok(frame.timing!.inactivityRemainingMs>0&&frame.timing!.inactivityRemainingMs<=1800000);
   const done=await client.call<ControllerFrame>('codeReview.task.result',{repo:f.repo,reviewId:'controller-route',attempt:1,result:f.result});
   assert.equal(done.kind,'done');assert.equal(done.crPublication,'complete');assert.equal(done.status,'incomplete');assert.equal(calls,1,'actual controller review never spawns a daemon CLI reviewer');
   const record=f.readRecord(join(f.repo,`.insrc/artifacts/CR-${hash}-s1.json`));
@@ -53,7 +53,7 @@ test('controller submissions: replay idempotency, conflicting/foreign result ref
   const after=readFileSync(start.path,'utf8'),cr=readFileSync(join(f.repo,`.insrc/artifacts/CR-${hash}-s1.json`),'utf8');
   assert.equal((await client.call<ControllerFrame>('codeReview.task.result',params)).status,done.status);
   assert.equal(readFileSync(start.path,'utf8'),after);assert.equal(readFileSync(join(f.repo,`.insrc/artifacts/CR-${hash}-s1.json`),'utf8'),cr);
-  await assert.rejects(client.call('codeReview.task.result',{...params,result:{...f.result,advice:['Conflicting feedback']}}),/Conflicting accepted submission/);
+  await assert.rejects(client.call('codeReview.task.result',{...params,result:{...f.result,advice:['Conflicting feedback']}}),/Conflicting accepted (submission|exchange)/);
   assert.equal(readFileSync(start.path,'utf8'),after);
   await assert.rejects(client.call('codeReview.task.assignment',{repo:f.repo,reviewId:'missing',attempt:1}),/missing-checkpoint/);
   assert.equal(existsSync(checkpointPath(f.repo,'missing')),false);
@@ -84,20 +84,19 @@ test('review disconnect: stop controller work and retain completed tasks while d
 });
 
 
-test('controller deadlines remain task-local and accepted replays cannot reset the next budget',async()=>{
+test('controller inactivity remains task-local and accepted replays cannot reset the next grace',async()=>{
  const f=await fixture(true,2),lifetime=new AbortController();let clock=0;const callbacks:(()=>void)[]=[];
  const owner={id:'trusted-test-channel',signal:lifetime.signal};
  const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>{throw new Error('No daemon reviewer');},now:()=>clock,timer:callback=>{callbacks.push(callback);return()=>{};},publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
  try{
   const initial=await coordinator.startController(f.repo,'controller-clock',1,f.packet,owner,hash);assert.equal(initial.kind,'scope');
-  await coordinator.controllerScope(f.repo,'controller-clock',1,{tasks:['t1','t2'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[0]}))},owner);
-  clock=1000;const next=await coordinator.controllerResult(f.repo,'controller-clock',1,f.result,owner);assert.equal(next.taskId,'t2');assert.equal(next.remainingMs,600000);
+  const scope=await coordinator.controllerScope(f.repo,'controller-clock',1,{tasks:['t1','t2'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[0]}))},owner,{taskId:initial.taskId,executionId:initial.executionId,sequence:initial.nextSequence});
+  clock=1000;const next=await coordinator.controllerResult(f.repo,'controller-clock',1,f.result,owner,{taskId:scope.taskId,executionId:scope.executionId,sequence:scope.nextSequence});assert.equal(next.taskId,'t2');assert.equal(next.timing!.inactivityRemainingMs,1800000);
   callbacks[0]!(); // Simulate an already queued first-task timer after cancellation.
   const pending=await coordinator.controllerAssignment(f.repo,'controller-clock',1,owner);
   assert.equal(pending.kind,'task');assert.equal(pending.taskId,'t2');assert.equal(f.read(pending.path).attempts[0]!['review-response'].tasks.length,1);
-  clock=2000;const replay=await coordinator.controllerResult(f.repo,'controller-clock',1,f.result,owner);assert.equal(replay.remainingMs,599000);
-  clock=601001;await assert.rejects(coordinator.controllerResult(f.repo,'controller-clock',1,{...f.result,taskId:'t2'},owner),/deadline expired/);
-  callbacks[1]!();const done=await coordinator.controllerAssignment(f.repo,'controller-clock',1,owner);
+  clock=2000;const replay=await coordinator.controllerResult(f.repo,'controller-clock',1,f.result,owner,{taskId:scope.taskId,executionId:scope.executionId,sequence:scope.nextSequence});assert.equal(replay.timing!.inactivityRemainingMs,1800000);
+  clock=1801001;callbacks.at(-1)!();await new Promise<void>(resolve=>setImmediate(resolve));const done=await coordinator.controllerAssignment(f.repo,'controller-clock',1,owner);
   assert.equal(done.kind,'done');assert.deepEqual(f.read(done.path).attempts[0]!['review-response'].tasks.map(result=>result.status),['passed','incomplete']);
  }finally{lifetime.abort();await coordinator.settled(f.repo,'controller-clock');f.cleanup();}
 });

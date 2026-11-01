@@ -79,7 +79,7 @@ test('review policy parity: common prompt/result classification across supported
    const ack=await coordinator.start(f.repo,'policy-daemon',1,f.packet);await coordinator.settled(f.repo,'policy-daemon');
    const frame=await coordinator.startController(f.repo,'policy-controller',1,f.packet,owner);
    assert.equal(frame.kind,'task');assert.equal(frame.prompt,nativePrompt,'actual adapters receive the same policy/input');
-   const done=await coordinator.controllerResult(f.repo,'policy-controller',1,assessment,owner);assert.equal(done.status,'incomplete',JSON.stringify(f.read(frame.path)));
+   const done=await coordinator.controllerResult(f.repo,'policy-controller',1,assessment,owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});assert.equal(done.status,'incomplete',JSON.stringify(f.read(frame.path)));
    const daemon=f.read(ack.path).attempts[0]!['review-response'].tasks;
    assert.deepEqual(daemon,f.read(frame.path).attempts[0]!['review-response'].tasks);
    assert.equal(daemon[0]!.status,'incomplete');assert.deepEqual(daemon[0]!.findings,[]);

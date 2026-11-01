@@ -607,6 +607,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// raw file text (ac3, k6).
 		'codeReview.task.publish': async params => (await import('./task-review-rpc.js')).publishStoredTaskReview(params),
 		'codeReview.task.start': async (params, context) => (await import('./task-review-rpc.js')).startTaskReview(params, context),
+		'codeReview.task.activity': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'activity'),
 		'codeReview.task.assignment': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'assignment'),
 		'codeReview.task.scope': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'scope'),
 		'codeReview.task.result': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'result'),

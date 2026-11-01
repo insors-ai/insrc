@@ -106,8 +106,8 @@ test('controller recovery preserves every terminal outcome and selects missing t
    entry['review-response'].tasks=[prior,{...structuredClone(f.result),taskId:'t3'}];await saveCheckpoint(checkpointPath(f.repo,'sparse'),state);
    const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>{throw new Error('Actual controller must not spawn provider');},publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
    const frame=await coordinator.startController(f.repo,'sparse',1,undefined,owner,hash,'resume');assert.equal(frame.kind,'scope');
-   const task=await coordinator.controllerScope(f.repo,'sparse',1,scope(3),owner);assert.equal(task.taskId,'t2');
-   const done=await coordinator.controllerResult(f.repo,'sparse',1,{...f.result,taskId:'t2'},owner);assert.equal(done.kind,'done');assert.equal(done.status,status);
+   const task=await coordinator.controllerScope(f.repo,'sparse',1,scope(3),owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});assert.equal(task.taskId,'t2');
+   const done=await coordinator.controllerResult(f.repo,'sparse',1,{...f.result,taskId:'t2'},owner,{taskId:task.taskId,executionId:task.executionId,sequence:task.nextSequence});assert.equal(done.kind,'done');assert.equal(done.status,status);
    assert.deepEqual(f.read(frame.path).attempts[0]!['review-response'].tasks.slice(0,2),entry['review-response'].tasks);
   }finally{f.cleanup();}
  }

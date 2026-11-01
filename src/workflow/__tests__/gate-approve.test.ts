@@ -30,8 +30,8 @@ import { approveTarget } from './helpers/approve.js';
 afterEach(() => _setGateDepsForTests());
 
 const HASH = 'a3f4b8c9d1e2f3a4';
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
-const none: PolicyReader = () => ({ ok: true, value: 'none' });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+const none: PolicyReader = async () => ({ ok: true, value: 'none' });
 
 /** One issue per unit; `holders` maps a unit key to its assignee (absent = unassigned). */
 function inject(holders: Record<string, string>, readPolicy: PolicyReader = team): { reads: string[] } {

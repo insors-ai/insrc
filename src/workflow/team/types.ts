@@ -55,8 +55,8 @@ export interface TeamPolicy extends PolicyFile {
  */
 export interface PolicyReadOptions { readonly signal?: AbortSignal | undefined }
 
-/** A value or a Promise: the production reader answers asynchronously (Story s9), a test fake may answer at once. */
-export type PolicyReader = (repo: string, opts?: PolicyReadOptions) => PolicyResult<TeamPolicy | 'none'> | Promise<PolicyResult<TeamPolicy | 'none'>>;
+/** The reader answers asynchronously (Story s9): it reads the policy over the tool registry. */
+export type PolicyReader = (repo: string, opts?: PolicyReadOptions) => Promise<PolicyResult<TeamPolicy | 'none'>>;
 
 /** What a successful refresh found on the default branch. */
 export type PolicyRefreshOutcome =

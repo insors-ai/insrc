@@ -31,7 +31,7 @@ const port = {
 } as unknown as TrackerPort;
 
 function injectGate(): void {
-	_setGateDepsForTests({ readPolicy: () => ({ ok: true, value: policy }), loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#7', now: () => '2026-10-18T00:00:00.000Z' });
+	_setGateDepsForTests({ readPolicy: async () => ({ ok: true, value: policy }), loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#7', now: () => '2026-10-18T00:00:00.000Z' });
 }
 
 test('consultHook passes the action and the authoring workflow to the hook and an older three-argument hook still works', async () => {
@@ -53,7 +53,7 @@ test('consultHook passes the action and the authoring workflow to the hook and a
 	// the registered signoff hook is judged by the stage the attempt follows, through the real gate
 	registerSignoffHook();
 	_setSignoffDepsForTests({
-		readPolicy: () => ({ ok: true, value: policy }),
+		readPolicy: async () => ({ ok: true, value: policy }),
 		readHead: (_repo, id) => id === 'LLD-a3f4b8c9d1e2f3a4-s1'
 			? { lifecycle: { status: 'in-signoff', revision: { number: 1 }, approval: { revision: 1, at: '2026-07-01T00:00:00Z' }, signoffs: [{ revision: 1, request: { entityId: 'acme/demo#2', type: 'signoff-request', relation: 'tracked-by' }, state: 'open', actors: [], at: '2026-07-01T00:00:00Z' }] } }
 			: undefined,
@@ -116,7 +116,7 @@ async function probeRegistration(): Promise<SignoffGateProbe> {
 	const ask = async (): Promise<string> => {
 		injectGate();
 		_setSignoffDepsForTests({
-			readPolicy: () => ({ ok: true, value: policy }),
+			readPolicy: async () => ({ ok: true, value: policy }),
 			readHead: (_repo, id) => id === 'LLD-a3f4b8c9d1e2f3a4-s1'
 				? { lifecycle: { status: 'in-signoff', revision: { number: 1 }, approval: { revision: 1, at: '2026-07-01T00:00:00Z' }, signoffs: [{ revision: 1, request: { entityId: 'acme/demo#2', type: 'signoff-request', relation: 'tracked-by' }, state: 'open', actors: [], at: 'x' }] } }
 				: undefined,

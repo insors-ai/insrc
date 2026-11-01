@@ -25,7 +25,7 @@ const ISSUE = 'acme/demo#7';
 const dirs: string[] = [];
 afterEach(() => { _setGateDepsForTests(); registerCompletionHook(undefined); for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
 
-const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
+const policy: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 const UNIT: UnitRef = { unit: 'story', repoPath: '/repo', epicHash: HASH, storyId: 's1' };
 const denied = (tool = 'gh_issue_edit') => new ToolDenied(tool, 'declined');
 const isDenied = (e: unknown): boolean => e instanceof ToolDenied && e.reason === 'declined';
@@ -67,7 +67,7 @@ describe('team-gates-denial.test.ts: a denial stops the stage as ToolDenied and 
 				inject(port(failing, denied(), asyncMode));
 				await assert.rejects(claim('/repo', UNIT), isDenied, `claim ${failing}`);
 			}
-			inject(port('setAssignee', denied(), asyncMode), { readPolicy: () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['alice'] } as unknown as TeamPolicy }) });
+			inject(port('setAssignee', denied(), asyncMode), { readPolicy: async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['alice'] } as unknown as TeamPolicy }) });
 			await assert.rejects(release('/repo', UNIT), isDenied, 'release setAssignee');
 		});
 

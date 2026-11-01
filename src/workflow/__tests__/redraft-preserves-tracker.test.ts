@@ -100,7 +100,7 @@ test('a re-draft keeps the bound Epic and Story issues and the tracker block for
 		assert.equal(chain.tracker.epicRef, 'acme/demo#1');
 
 		// the Task approval still finds the Story ref (legacy mode) and creates the Task issue under it
-		_setAutoPushDepsForTests({ policy: () => ({ ok: true, value: 'none' }) });
+		_setAutoPushDepsForTests({ policy: async () => ({ ok: true, value: 'none' }) });
 		const tasks = await autoPushTasksOnPlan(planJson);
 		assert.equal(tasks.status, 'created');
 		assert.ok(calls.some(c => c.join(' ').includes('repos/acme/demo/issues/2/sub_issues')), 'the Task is linked under the Story issue #2');

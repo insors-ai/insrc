@@ -15,7 +15,7 @@ import { IdentityService } from '../identity-service.js';
 afterEach(() => _setGateDepsForTests());
 
 const UNIT: UnitRef = { unit: 'story', repoPath: '/repo', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' };
-const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
+const policy: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 
 /** A tracker where `me` is signed in and `holder` holds the stage. */
 function inject(me: string, holder: string): void {

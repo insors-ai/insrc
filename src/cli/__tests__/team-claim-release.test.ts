@@ -21,7 +21,7 @@ import type { PortResult, TrackerPort } from '../../workflow/tracker/port.js';
 import type { UnitRef } from '../../workflow/tracker/refs.js';
 
 const HASH = '315d510cb28100e2';
-const policy = (admins: string[] = []): PolicyReader => () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: admins } as unknown as TeamPolicy });
+const policy = (admins: string[] = []): PolicyReader => async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: admins } as unknown as TeamPolicy });
 
 /** The terminal's team services call the daemon; here the daemon's own handlers stand in for it, so the whole path from the command to the gate is run. */
 const team = {
@@ -85,7 +85,7 @@ test('team claim and team release resolve the unit, call the gate functions, pri
 	assert.equal(admin.cleared, 1);
 
 	// a repo that does not enforce claims says so rather than pretending
-	_setGateDepsForTests({ readPolicy: () => ({ ok: true, value: 'none' }) });
+	_setGateDepsForTests({ readPolicy: async () => ({ ok: true, value: 'none' }) });
 	assert.match((await runCommand(`team claim ${HASH}`, ctx()))[0] ?? '', /^✗ not claimed — this repository does not enforce claims/);
 
 	// bad or missing arguments: the usage line, and nothing is asked of the gate

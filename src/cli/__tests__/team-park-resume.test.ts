@@ -86,7 +86,7 @@ test('team park and team resume parse the unit and --workflow, print the offer, 
 	assert.deepEqual(idle.calls, [], 'nothing was called');
 
 	// the refusal line for a held stage carries the park command when an offer exists, and not otherwise
-	const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+	const policy: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
 	const port = {
 		whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }),
 		readAssignee: (): PortResult<string | null> => ({ ok: true, value: 'bob' }),

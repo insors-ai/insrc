@@ -26,10 +26,10 @@ afterEach(() => { _setGateDepsForTests(); registerCompletionHook(undefined); });
 const UNIT: UnitRef = { unit: 'story', repoPath: '/repo', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' };
 const ISSUE = 'acme/demo#7';
 
-const policy = (over: Partial<TeamPolicy> = {}): PolicyReader => () => ({
+const policy = (over: Partial<TeamPolicy> = {}): PolicyReader => async () => ({
 	ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'], ...over } as unknown as TeamPolicy,
 });
-const none: PolicyReader = () => ({ ok: true, value: 'none' });
+const none: PolicyReader = async () => ({ ok: true, value: 'none' });
 
 interface Fake { port: TrackerPort; assignees: string[]; calls: string[] }
 
@@ -172,15 +172,15 @@ test('teamGate returns held-by-other naming the holder for author, build, approv
 	inject(fakePort([]), policy(), { issue: null, ensure: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }), artifact: true });
 	assert.equal((await teamGate('/repo', UNIT, 'author')).kind, 'no-issue');
 	// a throwing policy reader never escapes
-	_setGateDepsForTests({ readPolicy: () => { throw new Error('boom'); } });
+	_setGateDepsForTests({ readPolicy: async () => { throw new Error('boom'); } });
 	assert.match(String((await teamGate('/repo', UNIT, 'author') as { reason?: string }).reason), /team gate failed: boom/);
 	// anything thrown, not only an Error, is a refusal and the gate itself does not throw
 	for (const thrown of [null, undefined, 'a string', 42, { code: 'x' }]) {
-		_setGateDepsForTests({ readPolicy: () => { throw thrown; } });
+		_setGateDepsForTests({ readPolicy: async () => { throw thrown; } });
 		const o = await teamGate('/repo', UNIT, 'author');
 		assert.equal(o.kind, 'refused', String(thrown));
 	}
-	_setGateDepsForTests({ readPolicy: () => { throw 'a string'; } });
+	_setGateDepsForTests({ readPolicy: async () => { throw 'a string'; } });
 	assert.match(String(((await teamGate('/repo', UNIT, 'author')) as { reason?: string }).reason), /team gate failed: a string/);
 });
 

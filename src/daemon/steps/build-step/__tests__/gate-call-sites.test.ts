@@ -98,8 +98,8 @@ function out(env: { content: { type: 'text'; text: string }[] }): Record<string,
 }
 
 
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
-const none: PolicyReader = () => ({ ok: true, value: 'none' });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+const none: PolicyReader = async () => ({ ok: true, value: 'none' });
 
 interface Seen { loads: number; reads: number; judged: number; checked: number }
 

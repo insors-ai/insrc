@@ -46,7 +46,7 @@ test('signoffRecordsOf derives sc5 records from lifecycle facts, groups by the r
 		'BUILD-a3f4b8c9d1e2f3a4-s1': head('signed-off', { signoffs: [signoff(1, 'acme/demo#9', 'completed', '2026-07-03T00:00:00Z')] }),
 	};
 	const read = (_repo: string, id: string): unknown => (heads as Record<string, unknown>)[id];
-	const readPolicy: PolicyReader = () => ({ ok: true, value: policy() });
+	const readPolicy: PolicyReader = async () => ({ ok: true, value: policy() });
 
 	const records = (await signoffRecordsOf('/repo', STORY, { readPolicy, readHead: read }));
 	assert.equal(records.length, 1, 'one request covers both artifacts');
@@ -71,7 +71,7 @@ test('signoffRecordsOf derives sc5 records from lifecycle facts, groups by the r
 	assert.deepEqual(signoffRecordsFromHeads(policy({ anchorKnown: false }), [old]), []);
 
 	// no policy, or no team mode: no records
-	assert.deepEqual((await signoffRecordsOf('/repo', STORY, { readPolicy: () => ({ ok: true, value: 'none' }), readHead: read })), []);
+	assert.deepEqual((await signoffRecordsOf('/repo', STORY, { readPolicy: async () => ({ ok: true, value: 'none' }), readHead: read })), []);
 });
 
 test('the request Reference round trip keeps the ref and never changes the Reference type', () => {
@@ -136,7 +136,7 @@ function submit(heads: Record<string, unknown>, over: Partial<Submit['state']> =
 		},
 	} as unknown as LifecycleService;
 	s.deps = {
-		readPolicy: () => ({ ok: true, value: { ...policy({}), signoffStages: s.state.stages } as TeamPolicy }),
+		readPolicy: async () => ({ ok: true, value: { ...policy({}), signoffStages: s.state.stages } as TeamPolicy }),
 		readHead: (_repo, id) => s.heads[id],
 		loadTracker: () => ({ ok: true, value: port }),
 		resolveIssue: unit => { s.resolved.push(unit); return unit.unit === 'epic' ? 'acme/demo#1' : 'acme/demo#2'; },
@@ -296,7 +296,7 @@ function settleWorld(heads: Record<string, unknown>, over: Partial<Settle['fail'
 		completeIfRolledUp: async (id: string) => { s.completed.push(id); return { completed: [] }; },
 	} as unknown as LifecycleService;
 	s.deps = {
-		readPolicy: () => ({ ok: true, value: { ...policy({}), signoffStages: stages } as TeamPolicy }),
+		readPolicy: async () => ({ ok: true, value: { ...policy({}), signoffStages: stages } as TeamPolicy }),
 		readHead: (_repo, id) => s.heads[id],
 		loadTracker: () => { s.loads += 1; return s.fail.load ? { ok: false, kind: 'missing-tool', reason: 'no gh' } : { ok: true, value: port }; },
 		resolveIssue: unit => (unit.unit === 'epic' ? 'acme/demo#1' : 'acme/demo#2'),
@@ -362,7 +362,7 @@ test('settleSignoff records signed-off on all artifacts of a completed request, 
 	await settleSignoff('/repo', EPIC_UNIT, s.deps);
 	assert.deepEqual([s.loads, s.applied.length], [0, 0]);
 	s = settleWorld({ [DEF]: inSignoff('acme/demo#9') });
-	await settleSignoff('/repo', EPIC_UNIT, { ...s.deps, readPolicy: () => ({ ok: true, value: 'none' }) });
+	await settleSignoff('/repo', EPIC_UNIT, { ...s.deps, readPolicy: async () => ({ ok: true, value: 'none' }) });
 	assert.deepEqual([s.loads, s.applied.length, s.completed.length], [0, 0, 0]);
 
 	// a story unit settles the LLD and the BUILD and releases the Story's issue

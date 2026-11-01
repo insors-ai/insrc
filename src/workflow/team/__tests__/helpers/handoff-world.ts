@@ -27,7 +27,7 @@ import type { PolicyReader, TeamPolicy } from '../../types.js';
 export const HASH = 'a3f4b8c9d1e2f3a4';
 export const CREATED = '2026-07-18T00:00:00.000Z';
 export const HLD_RUN = 'hld-run-1';
-export const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+export const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
 
 export const git = (cwd: string, ...a: string[]): string => execFileSync('git', a, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 

@@ -25,7 +25,7 @@ const ISSUE = 'acme/demo#7';
 const dirs: string[] = [];
 afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
 
-const policy = (admins: string[] = ['root']): PolicyReader => () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: admins } as unknown as TeamPolicy });
+const policy = (admins: string[] = ['root']): PolicyReader => async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: admins } as unknown as TeamPolicy });
 
 /** An in-memory port over one assignee list; every method answers at once (sync) or after a tick (async). */
 function port(assignees: string[], me: string, asyncMode: boolean): { port: TrackerPort; list: string[]; calls: string[] } {
@@ -108,7 +108,7 @@ describe('team-gates-async.test.ts: the gate functions return the same outcomes 
 			assert.equal(await reviewFixDecision('/repo', unit), 'apply-auto-fixes');
 			p = port(['bob'], 'alice', asyncMode); inject(p.port, asyncMode);
 			assert.equal(await reviewFixDecision('/repo', unit), 'report-only');
-			inject(p.port, asyncMode, { readPolicy: () => ({ ok: true, value: 'none' }) });
+			inject(p.port, asyncMode, { readPolicy: async () => ({ ok: true, value: 'none' }) });
 			assert.equal(await actingUser('/repo'), undefined, 'no policy: nobody is asked');
 		});
 

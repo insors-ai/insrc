@@ -21,7 +21,7 @@ import type { PolicyReader, TeamPolicy } from '../types.js';
 afterEach(() => _setGateDepsForTests());
 
 const UNIT: UnitRef = { unit: 'story', repoPath: '/repo', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' };
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
 
 function inject(holder: string | null | 'fail', readPolicy: PolicyReader = team): { addCalls: number } {
 	const seen = { addCalls: 0 };
@@ -46,6 +46,6 @@ test('reviewFixDecision returns apply-auto-fixes for the holder or when no gate 
 	assert.equal(await reviewFixDecision('/repo', UNIT), 'report-only', 'a failed read');
 	inject('bob', () => ({ ok: true, value: 'none' }));
 	assert.equal(await reviewFixDecision('/repo', UNIT), 'apply-auto-fixes', 'no team policy: no gate applies');
-	_setGateDepsForTests({ readPolicy: () => { throw new Error('boom'); } });
+	_setGateDepsForTests({ readPolicy: async () => { throw new Error('boom'); } });
 	assert.equal(await reviewFixDecision('/repo', UNIT), 'report-only', 'a throwing dependency never escapes');
 });

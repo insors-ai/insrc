@@ -20,7 +20,7 @@ import type { Finding, ReviewReport } from '../../workflow/review/types.js';
 afterEach(() => _setGateDepsForTests());
 
 const HASH = 'a3f4b8c9d1e2f3a4';
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
 
 function hold(holder: string | null): void {
 	const port = {

@@ -26,8 +26,8 @@ import { parkPlan, validateCheckpoint, type ParkDeps } from '../handoff.js';
 import type { PolicyReader, TeamPolicy } from '../types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
-const none: PolicyReader = () => ({ ok: true, value: 'none' });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+const none: PolicyReader = async () => ({ ok: true, value: 'none' });
 const UPSTREAM = [{ artifactId: `DEF-${HASH}`, revision: 3 }, { artifactId: `HLD-${HASH}@x`, revision: 5 }];
 
 afterEach(() => { _setGateDepsForTests(); _clearWorkflowStateStoreForTests(); });

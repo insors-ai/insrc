@@ -18,10 +18,10 @@ export const CREATED = '2026-07-17T07:42:28.275Z';
 export const OK: PortResult<void> = { ok: true, value: undefined };
 
 export const TEAM = { teamMode: true } as unknown as TeamPolicy;
-export const teamPolicy: PolicyReader = () => ({ ok: true, value: TEAM });
-export const offPolicy: PolicyReader = () => ({ ok: true, value: { teamMode: false } as unknown as TeamPolicy });
-export const nonePolicy: PolicyReader = () => ({ ok: true, value: 'none' });
-export const brokenPolicy: PolicyReader = () => ({ ok: false, reason: 'the default branch cannot be read' });
+export const teamPolicy: PolicyReader = async () => ({ ok: true, value: TEAM });
+export const offPolicy: PolicyReader = async () => ({ ok: true, value: { teamMode: false } as unknown as TeamPolicy });
+export const nonePolicy: PolicyReader = async () => ({ ok: true, value: 'none' });
+export const brokenPolicy: PolicyReader = async () => ({ ok: false, reason: 'the default branch cannot be read' });
 
 // ---------------------------------------------------------------------------
 // An in-memory tracker that records what is posted

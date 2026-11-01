@@ -62,7 +62,7 @@ describe('identity-draft-denial.test.ts: a denial inside idOf, resolveLearner an
 			type: 'github', owner: 'acme', repo: 'demo', epicLabel: 'epic', storyLabel: 'story', taskLabel: 'task',
 			useMilestones: false, pushTasks: false, commitArtifacts: false, taskIssueType: 'Task', epicIssueType: 'Epic', storyIssueType: 'Story', source: 'per-repo-config',
 		};
-		const team: PolicyReader = () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
+		const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
 		function seed(): { repo: string; define: string; cleanup: () => void } {
 			const repo = mkdtempSync(join(tmpdir(), 'insrc-draft-den-'));
 			mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });

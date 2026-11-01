@@ -13,7 +13,7 @@ import { CFG, HASH, MEMBERSHIP, bound, deps, epic, fakeTracker, ref, seed, story
 
 afterEach(() => _setGateDepsForTests());
 
-const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
+const policy: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 const planJson = (fx: ReturnType<typeof seed>) => fx.read(planArtifactId(HASH, 's1'));
 
 test('ensureUnitIssueDetailed binds an issue a person created first and an issue the framework created, a repository with no tracker gets no binding, and a Task unit is bound on its Task artifact with no record on the Plan', async () => {

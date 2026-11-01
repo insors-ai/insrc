@@ -9,7 +9,7 @@ import { HASH, seed, story } from './unit-issue-kit.js';
 
 afterEach(() => _setGateDepsForTests());
 
-const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
+const policy: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 
 test("the team gate resolves a bound unit's issue synchronously from the binding with no tracker call", async () => {
 	const fx = seed();

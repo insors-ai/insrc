@@ -100,7 +100,7 @@ test('snapshotUpstream lists the artifacts each workflow reads, including the De
 test('actingUser and runMetaFor read the tracker only for a repo that enforces claims', async () => {
 	let loads = 0;
 	const port = { whoAmI: (): PortResult<string> => ({ ok: true, value: 'alice' }) } as unknown as TrackerPort;
-	const reader = (enforced: boolean): PolicyReader => () => ({ ok: true, value: enforced ? ({ teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy) : 'none' });
+	const reader = (enforced: boolean): PolicyReader => async () => ({ ok: true, value: enforced ? ({ teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy) : 'none' });
 	const deps = (enforced: boolean) => _setGateDepsForTests({ readPolicy: reader(enforced), loadTracker: () => { loads += 1; return { ok: true, value: port }; } });
 
 	deps(false);

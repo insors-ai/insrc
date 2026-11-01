@@ -76,7 +76,7 @@ function submit(heads: Record<string, unknown>, earlier?: Submit['earlier']): Su
 		},
 	} as unknown as LifecycleService;
 	s.deps = {
-		readPolicy: () => ({ ok: true, value: policy() }),
+		readPolicy: async () => ({ ok: true, value: policy() }),
 		readHead: (_repo, id) => s.heads[id],
 		loadTracker: () => ({ ok: true, value: port }),
 		resolveIssue: () => 'acme/demo#2',
@@ -239,7 +239,7 @@ test("settleSignoff passes the last entry's at as since and records signoff-chan
 			completeIfRolledUp: async () => ({ completed: [] }),
 		} as unknown as LifecycleService;
 		w.deps = {
-			readPolicy: () => ({ ok: true, value: policy() }),
+			readPolicy: async () => ({ ok: true, value: policy() }),
 			readHead: (_repo, id) => w.heads[id],
 			loadTracker: () => ({ ok: true, value: port }),
 			resolveIssue: () => 'acme/demo#1',

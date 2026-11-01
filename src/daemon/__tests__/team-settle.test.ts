@@ -69,7 +69,7 @@ test('the team.settle operation runs settleSignoff for the unit, so a BUILD\'s c
 			setAssignee: (): PortResult<void> => ({ ok: true, value: undefined }),
 		} as unknown as TrackerPort;
 		_setSignoffDepsForTests({
-			readPolicy: () => ({ ok: true, value: policy() }),
+			readPolicy: async () => ({ ok: true, value: policy() }),
 			loadTracker: () => ({ ok: true, value: port }),
 			resolveIssue: () => 'acme/demo#2',
 			lifecycleFor: () => svc,

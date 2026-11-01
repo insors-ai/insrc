@@ -28,7 +28,7 @@ import type { PolicyReader, TeamPolicy } from '../types.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const BRANCH = `insrc/handoff/story-${HASH}-s1`;
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
 
 afterEach(() => { _setGateDepsForTests(); _clearWorkflowStateStoreForTests(); });
 

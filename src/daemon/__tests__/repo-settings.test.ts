@@ -46,7 +46,7 @@ function fixture(over: Partial<RepoSettingsDeps> & { repos?: string[]; file?: st
 	const handlers = createRepoSettingsHandlers({
 		registeredRepos: async () => over.repos ?? [REPO],
 		configPath: () => path,
-		readPolicy: over.readPolicy ?? ((): PolicyResult<TeamPolicy | 'none'> => ({ ok: true, value: 'none' })),
+		readPolicy: over.readPolicy ?? (async (): Promise<PolicyResult<TeamPolicy | 'none'>> => ({ ok: true, value: 'none' })),
 		makeTracker: over.makeTracker ?? ((owner, repo) => ({
 			whoAmI: () => { whoCalls.push(`${owner}/${repo}`); return (over.who ?? (() => ({ ok: true, value: 'octocat' })))(); },
 		})),
@@ -65,7 +65,7 @@ const ENTRY = (extra: Record<string, unknown> = {}): string =>
 const payloadOf = (r: SettingsResult): RepoSettingsPayload => { assert.ok(r.ok, JSON.stringify(r)); return r.payload; };
 
 test('buildRepoSettings values, resolved target and policy rows', async () => {
-	const f = fixture({ file: ENTRY({ ghHost: 'ghe.example' }), readPolicy: () => ({ ok: true, value: POLICY }) });
+	const f = fixture({ file: ENTRY({ ghHost: 'ghe.example' }), readPolicy: async () => ({ ok: true, value: POLICY }) });
 	try {
 		const p = payloadOf(await f.call('repo.settings.get', { repo: REPO }));
 		assert.equal(p.repo, REPO);
@@ -83,14 +83,14 @@ test('buildRepoSettings values, resolved target and policy rows', async () => {
 		});
 	} finally { f.cleanup(); }
 
-	const none = fixture({ file: ENTRY(), readPolicy: () => ({ ok: true, value: 'none' }) });
+	const none = fixture({ file: ENTRY(), readPolicy: async () => ({ ok: true, value: 'none' }) });
 	try { assert.deepEqual(payloadOf(await none.call('repo.settings.get', { repo: REPO })).policy, { ok: true, mode: 'none' }); } finally { none.cleanup(); }
 
-	const bad = fixture({ file: ENTRY(), readPolicy: () => ({ ok: false, reason: 'no default branch known' }) });
+	const bad = fixture({ file: ENTRY(), readPolicy: async () => ({ ok: false, reason: 'no default branch known' }) });
 	try { assert.deepEqual(payloadOf(await bad.call('repo.settings.get', { repo: REPO })).policy, { ok: false, reason: 'no default branch known' }); } finally { bad.cleanup(); }
 
 	// A policy that cannot be read, even by throwing, does not fail the call.
-	const boom = fixture({ file: ENTRY(), readPolicy: () => { throw new Error('git exploded'); } });
+	const boom = fixture({ file: ENTRY(), readPolicy: async () => { throw new Error('git exploded'); } });
 	try {
 		const p = payloadOf(await boom.call('repo.settings.get', { repo: REPO }));
 		assert.deepEqual(p.policy, { ok: false, reason: 'git exploded' });
@@ -125,7 +125,7 @@ test('repo identity uses the exact registered path', async () => {
 		const cfg = join(base, 'github.json');
 		const make = (repos: string[]) => createRepoSettingsHandlers({
 			registeredRepos: async () => repos, configPath: () => cfg,
-			readPolicy: () => ({ ok: true, value: 'none' }), makeTracker: () => ({ whoAmI: () => ({ ok: true, value: 'u' }) }),
+			readPolicy: async () => ({ ok: true, value: 'none' }), makeTracker: () => ({ whoAmI: () => ({ ok: true, value: 'u' }) }),
 		});
 
 		// The symlink path is not itself registered: refused on get, set and ensure, and nothing is written.
@@ -240,7 +240,7 @@ test('only the signed-in-user read runs through s1\'s adapter', async () => {
 	});
 	try {
 		const handlers = createRepoSettingsHandlers({
-			registeredRepos: async () => [REPO], configPath: () => path, readPolicy: () => ({ ok: true, value: 'none' }),
+			registeredRepos: async () => [REPO], configPath: () => path, readPolicy: async () => ({ ok: true, value: 'none' }),
 		});
 		writeFileSync(path, ENTRY());
 		const p = payloadOf(await handlers['repo.settings.get']!({ repo: REPO }) as SettingsResult);
@@ -367,7 +367,7 @@ test('ensure writes the five keys once and concurrent sets both land', async () 
 		const { writeRepoEntryKeys } = await import('../../workflow/config/github-store.js');
 		const handlers = createRepoSettingsHandlers({
 			registeredRepos: async () => [REPO], configPath: () => path,
-			readPolicy: () => ({ ok: true, value: 'none' }),
+			readPolicy: async () => ({ ok: true, value: 'none' }),
 			makeTracker: () => ({ whoAmI: () => ({ ok: true, value: 'u' }) }),
 			writeKeys: async (r, patch, cfg) => { writes++; return await writeRepoEntryKeys(r, patch, cfg); },
 		});

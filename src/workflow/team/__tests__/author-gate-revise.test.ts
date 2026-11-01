@@ -44,12 +44,12 @@ function world(heads: Record<string, unknown>, holder: string | null, me = 'alic
 		addAssignee: (_issue: string, who: string): PortResult<string[]> => { w.claimed.push(who); return { ok: true, value: [who] }; },
 	} as unknown as TrackerPort;
 	_setGateDepsForTests({
-		readPolicy: () => ({ ok: true, value: noPolicy ? 'none' : policy() }),
+		readPolicy: async () => ({ ok: true, value: noPolicy ? 'none' : policy() }),
 		loadTracker: () => { w.loads += 1; return { ok: true, value: port }; },
 		resolveIssue: () => 'acme/demo#2',
 		artifactExists: () => true,
 	});
-	_setSignoffDepsForTests({ readHead: (_repo, id) => w.heads[id], readPolicy: () => ({ ok: true, value: noPolicy ? 'none' : policy() }) });
+	_setSignoffDepsForTests({ readHead: (_repo, id) => w.heads[id], readPolicy: async () => ({ ok: true, value: noPolicy ? 'none' : policy() }) });
 	registerCompletionHook((_repo, _unit, _port, action) => { w.actions.push(action); return 'continue'; });
 	return w;
 }
@@ -110,7 +110,7 @@ test('a design.story run on an LLD in changes-requested whose HLD is no longer s
 		readSignoffState: (_r: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> => ({ ok: true, value: 'open' }),
 	} as unknown as TrackerPort;
 	_setSignoffDepsForTests({
-		readHead: (_repo, id) => w.heads[id], readPolicy: () => ({ ok: true, value: policy() }),
+		readHead: (_repo, id) => w.heads[id], readPolicy: async () => ({ ok: true, value: policy() }),
 		loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#2',
 		lifecycleFor: () => ({ completeIfRolledUp: async () => ({ completed: [] }) }) as unknown as LifecycleService,
 	});

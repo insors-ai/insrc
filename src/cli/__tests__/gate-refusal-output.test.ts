@@ -69,7 +69,7 @@ test('the terminal approve and resolve commands print the refusal naming the hol
 		setAssignee: () => ({ ok: true, value: [] }),
 	};
 	gate._setGateDepsForTests({
-		readPolicy: () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as never }),
+		readPolicy: async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as never }),
 		loadTracker: () => ({ ok: true, value: port as never }),
 		resolveIssue: () => 'acme/demo#7',
 		ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }),

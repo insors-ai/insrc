@@ -75,7 +75,7 @@ test('completeThroughService leaves a Story approved-not-completed while its lis
 	const control = kit();
 	try {
 		const svc = await readyStory(control);
-		_setSignoffDepsForTests({ readPolicy: () => ({ ok: true, value: 'none' }) });
+		_setSignoffDepsForTests({ readPolicy: async () => ({ ok: true, value: 'none' }) });
 		const result = await approveBuild(control, svc);
 		assert.equal(result.skipped.length, 0, JSON.stringify(result.skipped));
 		assert.equal((await control.store.read(STORY)).lifecycle.status, 'completed');
@@ -86,7 +86,7 @@ test('completeThroughService leaves a Story approved-not-completed while its lis
 	const k = kit();
 	try {
 		const svc = await readyStory(k);
-		_setSignoffDepsForTests({ readPolicy: () => ({ ok: true, value: policy(['BUILD']) }) });
+		_setSignoffDepsForTests({ readPolicy: async () => ({ ok: true, value: policy(['BUILD']) }) });
 		const result = await approveBuild(k, svc);
 		assert.equal(result.skipped.length, 0, JSON.stringify(result.skipped));
 		assert.equal(result.approved.length, 1);
@@ -107,7 +107,7 @@ test('settleSignoff completes the Story and its Epic once signed-off is recorded
 			setAssignee: (_issue: string, who: string | null): PortResult<void> => { released.push(who); return { ok: true, value: undefined }; },
 		} as unknown as TrackerPort;
 		const deps = {
-			readPolicy: () => ({ ok: true as const, value: policy(['BUILD']) }),
+			readPolicy: async () => ({ ok: true as const, value: policy(['BUILD']) }),
 			loadTracker: () => ({ ok: true as const, value: port }),
 			resolveIssue: () => 'acme/demo#2',
 			lifecycleFor: () => svc,
@@ -141,7 +141,7 @@ test('settleSignoff completes a Story whose BUILD was approved over a blocking c
 			readSignoffState: (_r: SignoffRequestRef): PortResult<'open' | 'changes-requested' | 'completed'> => ({ ok: true, value: 'completed' }),
 			setAssignee: (): PortResult<void> => ({ ok: true, value: undefined }),
 		} as unknown as TrackerPort;
-		_setSignoffDepsForTests({ readPolicy: () => ({ ok: true, value: policy(['BUILD']) }), loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#2', lifecycleFor: () => svc });
+		_setSignoffDepsForTests({ readPolicy: async () => ({ ok: true, value: policy(['BUILD']) }), loadTracker: () => ({ ok: true, value: port }), resolveIssue: () => 'acme/demo#2', lifecycleFor: () => svc });
 
 		await approveBuild(k, svc);
 		await svc.apply(BUILD, 'open-signoff', bob, { request: signoffReferenceOf({ ref: 'acme/demo#9' }) });

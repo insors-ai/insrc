@@ -79,7 +79,7 @@ interface World { policy?: TeamPolicy | 'none'; heads: Record<string, unknown>; 
 
 function world(w: World): World {
 	_setSignoffDepsForTests({
-		readPolicy: () => ({ ok: true, value: w.policy ?? policy({ anchorKnown: true }) }),
+		readPolicy: async () => ({ ok: true, value: w.policy ?? policy({ anchorKnown: true }) }),
 		readHead: (_repo, id) => { w.reads.push(id); return w.heads[id]; },
 	});
 	return w;
@@ -161,7 +161,7 @@ test('settleForAttempt refuses a first design.story turn on a story whose issue 
 		completeIfRolledUp: async () => ({ completed: [] }),
 	} as unknown as LifecycleService;
 	const deps = {
-		readPolicy: () => ({ ok: true as const, value: policy({ anchorKnown: true }) }),
+		readPolicy: async () => ({ ok: true as const, value: policy({ anchorKnown: true }) }),
 		readHead: (_repo: string, id: string) => heads[id],
 		loadTracker: () => ({ ok: true as const, value: port }),
 		resolveIssue: () => null,

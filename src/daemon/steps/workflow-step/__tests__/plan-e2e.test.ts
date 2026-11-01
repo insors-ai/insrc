@@ -274,7 +274,7 @@ test('plan: synthesize asks the team gate again after finalizing, so a claim tha
 			addAssignee: () => ({ ok: true, value: ['alice'] }),
 		};
 		_setGateDepsForTests({
-			readPolicy: () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy }),
+			readPolicy: async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy }),
 			loadTracker: () => ({ ok: true, value: port as never }),
 			resolveIssue: () => 'acme/demo#7',
 			ensureIssue: () => ({ ok: false, kind: 'unreachable', reason: 'gh timed out' }),

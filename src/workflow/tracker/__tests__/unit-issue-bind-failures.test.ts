@@ -18,7 +18,7 @@ import { HASH, bound, deps, epic, fakeTracker, ref, seed, story , epicHead, stor
 
 afterEach(() => _setGateDepsForTests());
 
-const policy: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
+const policy: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: ['root'] } as unknown as TeamPolicy });
 
 test('two racing creates for one unit bind the lowest-numbered issue once, close the other as a duplicate, and keep the created issue when the duplicate check cannot list', async () => {
 	// another daemon's issue is created just before ours, so it has the lower number: it is the one bound, and ours is closed

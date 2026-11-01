@@ -34,8 +34,8 @@ import type { PolicyReader, TeamPolicy } from '../types.js';
 import '../../__tests__/helpers/converted-repos.js';
 
 const UNIT: UnitRef = { unit: 'story', repoPath: '/repo', epicHash: 'a3f4b8c9d1e2f3a4', storyId: 's1' };
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
-const none: PolicyReader = () => ({ ok: true, value: 'none' });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true, claimsEnforced: true, administrators: [] } as unknown as TeamPolicy });
+const none: PolicyReader = async () => ({ ok: true, value: 'none' });
 
 interface Seen { loads: number }
 

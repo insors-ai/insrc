@@ -80,7 +80,7 @@ function spyTracker(): { port: TrackerPort; creates: IssueSpec[] } {
 	return { port, creates };
 }
 
-const teamPolicy: PolicyReader = () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
+const teamPolicy: PolicyReader = async () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
 
 test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize each fail before any file is created when no anchor exists', async () => {
 	// requireEpicAnchor itself
@@ -190,7 +190,7 @@ test('the finalizers, tracker-auto, tracker/link, workflow-rpc and synthesize ea
 			const spy = spyTracker();
 			_setAutoPushDepsForTests(mode === 'team'
 				? { policy: teamPolicy, port: spy.port }
-				: { policy: () => ({ ok: true, value: 'none' }) as ReturnType<PolicyReader> });
+				: { policy: async () => ({ ok: true, value: 'none' }) as ReturnType<PolicyReader> });
 			const before = listing(r.repo);
 			const hldBefore = readFileSync(hldJson, 'utf8');
 			const epic = await autoPushEpicOnHld(hldJson);

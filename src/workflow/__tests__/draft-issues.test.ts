@@ -33,9 +33,9 @@ const CFG: ResolvedGithubConfig = {
 	useMilestones: false, pushTasks: false, commitArtifacts: false, taskIssueType: 'Task', epicIssueType: 'Epic', storyIssueType: 'Story', source: 'per-repo-config',
 };
 
-const team: PolicyReader = () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
-const none: PolicyReader = () => ({ ok: true, value: 'none' });
-const teamOff: PolicyReader = () => ({ ok: true, value: { teamMode: false } as unknown as TeamPolicy });
+const team: PolicyReader = async () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
+const none: PolicyReader = async () => ({ ok: true, value: 'none' });
+const teamOff: PolicyReader = async () => ({ ok: true, value: { teamMode: false } as unknown as TeamPolicy });
 
 // ---------------------------------------------------------------------------
 // An in-memory tracker and a loader that counts how often it is used

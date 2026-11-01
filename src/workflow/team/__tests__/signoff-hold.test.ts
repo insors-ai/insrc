@@ -34,7 +34,7 @@ const policy = (over: Partial<TeamPolicy> & { anchorKnown?: boolean } = {}): Tea
 const head = (status: string, approvedAt = '2026-07-01T00:00:00Z'): unknown => ({ lifecycle: { status, revision: { number: 1 }, approval: { revision: 1, at: approvedAt }, signoffs: [] } });
 
 function inject(p: TeamPolicy | 'none', heads: Record<string, unknown>): void {
-	_setSignoffDepsForTests({ readPolicy: () => ({ ok: true, value: p }), readHead: (_repo, id) => heads[id] });
+	_setSignoffDepsForTests({ readPolicy: async () => ({ ok: true, value: p }), readHead: (_repo, id) => heads[id] });
 }
 
 test('signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed', async () => {

@@ -37,8 +37,8 @@ const EPIC_ID = `EPIC-${HASH}`;
 const STORY_ID = `STORY-${HASH}-s1`;
 const TASK_ID = `TASK-${HASH}-s1-t1`;
 
-const teamPolicy: PolicyReader = () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
-const individualPolicy: PolicyReader = () => ({ ok: true, value: 'none' });
+const teamPolicy: PolicyReader = async () => ({ ok: true, value: { teamMode: true } as unknown as TeamPolicy });
+const individualPolicy: PolicyReader = async () => ({ ok: true, value: 'none' });
 
 afterEach(() => { _setAutoPushDepsForTests(); installExecStandIn(); });
 

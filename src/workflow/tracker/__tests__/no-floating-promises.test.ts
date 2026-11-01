@@ -136,7 +136,7 @@ test('no-floating-promises.test.ts: the PolicyReader readers await the widened r
 		const file = join(dir, 'sample.ts');
 		writeFileSync(file, `
 type PolicyResult<T> = { ok: true; value: T } | { ok: false; reason: string };
-type PolicyReader = (repo: string, opts?: { signal?: AbortSignal }) => PolicyResult<string> | Promise<PolicyResult<string>>;
+type PolicyReader = (repo: string, opts?: { signal?: AbortSignal }) => Promise<PolicyResult<string>>;
 declare const policyReader: PolicyReader; declare const injected: PolicyReader | undefined;
 export async function bad(): Promise<void> {
 	policyReader('/r');

@@ -13,8 +13,8 @@
  * recomputes the plan and compares it with the one it was given (`plansEqual`).
  */
 
-import { execFileSync } from 'node:child_process';
 
+import { catFileExists, GitCallFailed, revParseValues, statusPaths } from '../git-calls.js';
 import { FileSidecarStore } from '../artifact-core/sidecar-store.js';
 import { History } from '../artifact-core/history.js';
 import { RepoSchemaGate } from '../artifact-core/repo-schema.js';
@@ -63,18 +63,22 @@ export interface PlanOptions {
 
 const PROTECTED_PATHS = ['.insrc/artifacts', 'docs/epics'] as const;
 
-function git(repo: string, args: readonly string[]): { ok: boolean; out: string } {
-	try { return { ok: true, out: execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }) }; }
-	catch (err) { return { ok: false, out: String((err as { stderr?: unknown }).stderr ?? (err as Error).message) }; }
-}
-
 /** Refuses a repository that is mid-merge or has uncommitted changes under the artifacts and the epics' documents. */
-export function assertCleanTree(repo: string): void {
-	if (!git(repo, ['rev-parse', '--git-dir']).ok) throw new ConversionRefused(`${repo} is not a git repository, so the conversion cannot be reverted with one commit`);
-	if (git(repo, ['rev-parse', '-q', '--verify', 'MERGE_HEAD']).ok) throw new ConversionRefused('a merge is in progress: commit or abort it before converting');
-	const status = git(repo, ['status', '--porcelain', '--untracked-files=all', '--', ...PROTECTED_PATHS]);
-	if (!status.ok) throw new ConversionRefused(`git status failed: ${status.out.trim()}`);
-	const dirty = status.out.split('\n').filter(l => l.trim().length > 0).map(l => l.slice(3));
+export async function assertCleanTree(repo: string): Promise<void> {
+	const opts = { timeoutMs: 30_000 };
+	const failure = (err: unknown): string => String((err as Error).message).trim();
+	try { await revParseValues(repo, { gitDir: true }, opts); }
+	catch (err) { if (!(err instanceof GitCallFailed)) throw err; throw new ConversionRefused(`${repo} is not a git repository, so the conversion cannot be reverted with one commit`); }
+	try { if (await catFileExists(repo, 'MERGE_HEAD', opts)) throw new ConversionRefused('a merge is in progress: commit or abort it before converting'); }
+	catch (err) { if (!(err instanceof GitCallFailed)) throw err; /* not readable: not a merge in progress, as before */ }
+	let dirty: string[];
+	try {
+		const status = await statusPaths(repo, { paths: PROTECTED_PATHS, untrackedFiles: 'all' }, opts);
+		dirty = [...new Set([...status.staged, ...status.unstaged, ...status.conflicts].map(e => e.path).concat(status.untracked))].sort();
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		throw new ConversionRefused(`git status failed: ${failure(err)}`);
+	}
 	if (dirty.length > 0) throw new ConversionRefused(`uncommitted changes under ${PROTECTED_PATHS.join(' and ')}: commit or stash them first (${dirty.slice(0, 5).join(', ')}${dirty.length > 5 ? `, and ${dirty.length - 5} more` : ''})`, dirty);
 }
 
@@ -119,7 +123,7 @@ export async function planConversion(repo: string, options: PlanOptions = {}): P
 	try { version = RepoSchemaGate.read(repo).version; }
 	catch (err) { throw new ConversionRefused(`the repository marker cannot be read: ${(err as Error).message}`); }
 	if (version >= 2) return EMPTY_PLAN;
-	if (options.resume !== true) assertCleanTree(repo);
+	if (options.resume !== true) await assertCleanTree(repo);
 
 	const read = readRawHeads(repo);
 	const ctx: PlanContext = { repo, heads: read.heads, tracker: options.tracker };

@@ -94,7 +94,7 @@ describe('convert-preview', () => {
 			writeFileSync(join(f.repo, '.git', 'MERGE_HEAD'), execFileSync('git', ['-C', f.repo, 'rev-parse', 'HEAD'], { encoding: 'utf8' }));
 			await assert.rejects(planConversion(f.repo), /merge is in progress/);
 			rmSync(join(f.repo, '.git', 'MERGE_HEAD'));
-			assert.doesNotThrow(() => assertCleanTree(f.repo));
+			assert.doesNotThrow(async () => (await assertCleanTree(f.repo)));
 
 			// a converted tree (the marker at version 2) gives an empty plan
 			writeFileSync(join(f.repo, '.insrc', 'schema.json'), JSON.stringify({ version: 2, convertedAt: '2026-10-23T00:00:00.000Z' }));

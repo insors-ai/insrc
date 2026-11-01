@@ -50,11 +50,11 @@
  * complexity for a single-digit-ms subprocess call).
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
+import { GitCallFailed, lsFiles } from '../../workflow/git-calls.js';
 
 const log = getLogger('analyze:repo-ignore-filter');
 
@@ -94,7 +94,7 @@ export interface RepoIgnoreFilter {
  * tracked / uncommitted-but-not-ignored. One subprocess call; the
  * filter caches the result for the lifetime of the returned object.
  */
-export function createRepoIgnoreFilter(repoPath: string): RepoIgnoreFilter {
+export async function createRepoIgnoreFilter(repoPath: string): Promise<RepoIgnoreFilter> {
 	const absRepo = resolve(repoPath);
 	if (!existsSync(join(absRepo, '.git'))) {
 		log.debug({ repo: absRepo }, 'not a git repo; using permissive filter');
@@ -108,13 +108,9 @@ export function createRepoIgnoreFilter(repoPath: string): RepoIgnoreFilter {
 		// standard: honour .gitignore + .git/info/exclude + global
 		// gitignore. -z: NUL-separated to survive filenames with
 		// newlines (rare but not impossible).
-		const stdout = execFileSync(
-			'git',
-			['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
-			{ cwd: absRepo, maxBuffer: 50 * 1024 * 1024, encoding: 'utf8' },
-		);
-		files = stdout.split('\0').filter(Boolean);
+		files = (await lsFiles(absRepo, { cached: true, others: true, maxBytes: 50 * 1024 * 1024 }, { timeoutMs: 60_000 })).filter(Boolean);
 	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;   // a denied call ends the analysis; every other failure degrades
 		log.warn(
 			{ repo: absRepo, err: String(err) },
 			'git ls-files failed; degrading to permissive filter',

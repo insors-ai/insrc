@@ -23,11 +23,11 @@
  * not be the reason a finalize fails.
  */
 
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { userInfo } from 'node:os';
 import { basename } from 'node:path';
 
+import { configGet, GitCallFailed } from '../../git-calls.js';
 import { repoConfigPath } from '../../../indexer/repo-ignore-config.js';
 import { ArtifactIds } from '../../artifact-ids.js';
 import type { CompanionHeader } from './types.js';
@@ -143,10 +143,11 @@ export function formatDate(d: Date): string {
 	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function defaultGitUserName(repoPath: string): string | undefined {
+async function defaultGitUserName(repoPath: string): Promise<string | undefined> {
 	try {
-		return execFileSync('git', ['config', 'user.name'], { cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 5000 });
-	} catch {
+		return await configGet(repoPath, 'user.name', { timeoutMs: 5000 });
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;   // a denied call ends the lookup; every other failure falls back to the OS user
 		return undefined;
 	}
 }

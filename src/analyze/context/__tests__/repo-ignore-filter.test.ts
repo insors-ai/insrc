@@ -43,7 +43,7 @@ function commit(repo: string, msg: string): void {
 // Gitignored dirs
 // ---------------------------------------------------------------------------
 
-test('excludes directories matching a root .gitignore rule', () => {
+test('excludes directories matching a root .gitignore rule', async () => {
 	const repo = makeGitRepo('repo-ignore-out');
 	try {
 		writeFileSync(join(repo, '.gitignore'), '/out/\n', 'utf8');
@@ -53,7 +53,7 @@ test('excludes directories matching a root .gitignore rule', () => {
 		writeFileSync(join(repo, 'out/a.js'), '// compiled\n', 'utf8');
 		commit(repo, 'init');
 
-		const f = createRepoIgnoreFilter(repo);
+		const f = (await createRepoIgnoreFilter(repo));
 		assert.equal(f.gitBacked, true);
 		// tracked source
 		assert.equal(f.isIncluded(join(repo, 'src/a.ts')), true);
@@ -66,7 +66,7 @@ test('excludes directories matching a root .gitignore rule', () => {
 	}
 });
 
-test('every ancestor of a tracked file is considered included', () => {
+test('every ancestor of a tracked file is considered included', async () => {
 	const repo = makeGitRepo('repo-ignore-ancestors');
 	try {
 		writeFileSync(join(repo, '.gitignore'), '', 'utf8');
@@ -74,7 +74,7 @@ test('every ancestor of a tracked file is considered included', () => {
 		writeFileSync(join(repo, 'a/b/c/deep.ts'), 'export const y = 2;\n', 'utf8');
 		commit(repo, 'init');
 
-		const f = createRepoIgnoreFilter(repo);
+		const f = (await createRepoIgnoreFilter(repo));
 		assert.equal(f.isIncluded(join(repo, 'a')),        true);
 		assert.equal(f.isIncluded(join(repo, 'a/b')),      true);
 		assert.equal(f.isIncluded(join(repo, 'a/b/c')),    true);
@@ -86,7 +86,7 @@ test('every ancestor of a tracked file is considered included', () => {
 	}
 });
 
-test('respects a subdirectory .gitignore', () => {
+test('respects a subdirectory .gitignore', async () => {
 	const repo = makeGitRepo('repo-ignore-nested');
 	try {
 		writeFileSync(join(repo, '.gitignore'), '', 'utf8');
@@ -98,7 +98,7 @@ test('respects a subdirectory .gitignore', () => {
 		writeFileSync(join(repo, 'pkg/build/z.js'), '// compiled\n', 'utf8');
 		commit(repo, 'init');
 
-		const f = createRepoIgnoreFilter(repo);
+		const f = (await createRepoIgnoreFilter(repo));
 		assert.equal(f.isIncluded(join(repo, 'pkg/keep.ts'))  , true);
 		assert.equal(f.isIncluded(join(repo, 'pkg/build'))    , false);
 		assert.equal(f.isIncluded(join(repo, 'pkg/build/z.js')), false);
@@ -111,7 +111,7 @@ test('respects a subdirectory .gitignore', () => {
 // Non-git fallback
 // ---------------------------------------------------------------------------
 
-test('non-git repo returns a permissive filter that includes everything', () => {
+test('non-git repo returns a permissive filter that includes everything', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'repo-ignore-nogit-'));
 	try {
 		mkdirSync(join(dir, 'src'));
@@ -119,7 +119,7 @@ test('non-git repo returns a permissive filter that includes everything', () => 
 		mkdirSync(join(dir, 'out'));
 		writeFileSync(join(dir, 'out/a.js'), '// junk\n', 'utf8');
 
-		const f = createRepoIgnoreFilter(dir);
+		const f = (await createRepoIgnoreFilter(dir));
 		assert.equal(f.gitBacked, false);
 		assert.equal(f.isIncluded(join(dir, 'src/a.ts')), true);
 		// Permissive fallback -- filter cannot know what's gitignored,
@@ -145,7 +145,7 @@ test('permissiveIgnoreFilter is always-include', () => {
 // include() sugar over isIncluded
 // ---------------------------------------------------------------------------
 
-test('include() returns only tracked items', () => {
+test('include() returns only tracked items', async () => {
 	const repo = makeGitRepo('repo-ignore-include');
 	try {
 		writeFileSync(join(repo, '.gitignore'), '/out/\n', 'utf8');
@@ -155,7 +155,7 @@ test('include() returns only tracked items', () => {
 		writeFileSync(join(repo, 'out/a.js'), 'x', 'utf8');
 		commit(repo, 'init');
 
-		const f = createRepoIgnoreFilter(repo);
+		const f = (await createRepoIgnoreFilter(repo));
 		const items = [
 			{ path: join(repo, 'src/a.ts'), n: 1 },
 			{ path: join(repo, 'out/a.js'), n: 2 },

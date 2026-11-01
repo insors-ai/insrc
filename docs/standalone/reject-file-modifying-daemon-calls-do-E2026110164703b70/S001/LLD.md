@@ -276,3 +276,16 @@ The daemon launcher unsets INSRC_REPO and starts the process in a directory that
 
 - Which RPC methods and step phases modify files was taken from the registry listing in handler-runtime.ts and not checked method by method (sbdry4, partial); the plan stage completes and verifies the table.
 - The Story has no acceptance criteria of its own; ac1 to ac4 in the test mapping stand for the four requirements of ISSUE-64703b708590bd68 (ts1, partial).
+
+## Resolved questions
+
+- `q533ba41e` — Which RPC methods and step phases modify files was taken from the registry listing in handler-runtime.ts and not checked method by method (sbdry4, partial); the plan stage completes and verifies the table.
+  - **resolved**: Analyzer-grounded call-graph trace — Accuracy first: which methods modify files is a relationship question; the first plan task builds the table from the analyzer's call closure and a static read of each handler. _(2026-11-01T19:32:06.373Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `s1: how a repo is chosen for a daemon RPC today (src/daemon/handler-runtime.ts:424-425; src/daemon/handler-runtime.ts:446-456; src/daemon/handler-runtime.ts:479-493; src/daemon/repo-convert.ts:37; src/daemon/tracker-attach.ts:34; src/daemon/tracker-sync-comments.ts:35; src/daemon/workflow-rpc.ts:418-420)`
+- **[[c2]]** `analyze-bundle` `s1: how workflow.approve turns an artifact path into a repository (src/daemon/workflow-approve.ts:28-62; src/daemon/lifecycle-registry.ts:60-68)`
+- **[[c3]]** `analyze-bundle` `s1: what the MCP server sends for an approval (src/mcp/server.ts:773-860; src/mcp/server.ts:985-1014; src/mcp/resolve-repo.ts; src/mcp/daemon-stream.ts:306-313)`
+- **[[c4]]** `analyze-bundle` `s1: the existing shared guards (src/daemon/repo-schema-guard.ts:28-47; src/daemon/steps/resolve-repo.ts; src/shared/resolve-repo-core.ts)`
+- **[[c5]]** `doc` `docs/standalone/reject-file-modifying-daemon-calls-do-E2026110164703b70/ISSUE.md`

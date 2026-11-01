@@ -59,7 +59,16 @@
         }
       }
     },
-    "rangeBase": "60aa6faacabe7044d19b65b9d66e0b298f4e7976"
+    "rangeBase": "60aa6faacabe7044d19b65b9d66e0b298f4e7976",
+    "questionResolutions": {
+      "q533ba41e": {
+        "question": "Which RPC methods and step phases modify files was taken from the registry listing in handler-runtime.ts and not checked method by method (sbdry4, partial); the plan stage completes and verifies the table.",
+        "status": "resolved",
+        "choice": "Analyzer-grounded call-graph trace",
+        "rationale": "Accuracy first: which methods modify files is a relationship question; the first plan task builds the table from the analyzer's call closure and a static read of each handler.",
+        "resolvedAt": "2026-11-01T19:32:06.373Z"
+      }
+    }
   },
   "body": {
     "summary": {

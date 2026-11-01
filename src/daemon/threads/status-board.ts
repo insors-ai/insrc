@@ -34,6 +34,8 @@ export interface SummarySweepProgress { readonly repoPath: string; readonly done
 export interface IndexingStatus {
 	readonly index: LaneStatus;
 	readonly summary: LaneStatus;
+	/** The vector backfill's lane (Epic c2ba6fa6 s2); absent until first published. */
+	readonly backfill?: LaneStatus | undefined;
 	readonly sweep?: SummarySweepProgress | undefined;
 	readonly idle: boolean;
 }
@@ -109,12 +111,14 @@ export class StatusBoard {
 	 * delivered by s2): the board keeps both, the summary lane's publisher also
 	 * sets the sweep (absent clears it), and idle is both lanes empty and idle.
 	 */
-	publishLane(lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress): void {
+	publishLane(lane: 'index' | 'summary' | 'backfill', status: LaneStatus, sweep?: SummarySweepProgress): void {
 		const index = lane === 'index' ? status : this.indexing.index;
 		const summary = lane === 'summary' ? status : this.indexing.summary;
+		const backfill = lane === 'backfill' ? status : this.indexing.backfill;
 		const kept = lane === 'summary' ? sweep : this.indexing.sweep;
-		const idle = index.depth === 0 && !index.processing && summary.depth === 0 && !summary.processing;
-		this.setIndexing({ index, summary, idle, ...(kept !== undefined ? { sweep: kept } : {}) });
+		const idle = index.depth === 0 && !index.processing && summary.depth === 0 && !summary.processing
+			&& (backfill === undefined || (backfill.depth === 0 && !backfill.processing));
+		this.setIndexing({ index, summary, idle, ...(backfill !== undefined ? { backfill } : {}), ...(kept !== undefined ? { sweep: kept } : {}) });
 	}
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.clients = clients; }
 	publishStore(store: StoreStatusSnapshot): void { this.store = store; }
@@ -193,7 +197,7 @@ export function statusBoardHubHandlers(board: StatusBoard): HubHandlers {
 	return {
 		[OPS.publish]:         a => board.publish(a as ThreadStatus),
 		[OPS.publishIndexing]: a => board.publishIndexing(a as IndexingStatus),
-		[OPS.publishLane]:     a => { const { lane, status, sweep } = a as { lane: 'index' | 'summary'; status: LaneStatus; sweep?: SummarySweepProgress }; board.publishLane(lane, status, sweep); },
+		[OPS.publishLane]:     a => { const { lane, status, sweep } = a as { lane: 'index' | 'summary' | 'backfill'; status: LaneStatus; sweep?: SummarySweepProgress }; board.publishLane(lane, status, sweep); },
 		[OPS.publishClients]:  a => board.publishClients(a as readonly AttachedClientSnapshot[]),
 		[OPS.publishRun]:      a => board.publishRun(a as RunRecord),
 		[OPS.forgetRun]:       a => board.forgetRun(a as string),
@@ -209,7 +213,7 @@ export class StatusBoardClient {
 	constructor(private readonly hub: HubClient) {}
 	publish(status: ThreadStatus): void { this.hub.send(OPS.publish, status); }
 	publishIndexing(status: IndexingStatus): void { this.hub.send(OPS.publishIndexing, status); }
-	publishLane(lane: 'index' | 'summary', status: LaneStatus, sweep?: SummarySweepProgress): void {
+	publishLane(lane: 'index' | 'summary' | 'backfill', status: LaneStatus, sweep?: SummarySweepProgress): void {
 		this.hub.send(OPS.publishLane, { lane, status, ...(sweep !== undefined ? { sweep } : {}) });
 	}
 	publishClients(clients: readonly AttachedClientSnapshot[]): void { this.hub.send(OPS.publishClients, clients); }

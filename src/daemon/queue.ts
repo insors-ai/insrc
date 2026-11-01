@@ -10,7 +10,7 @@ const log = getLogger('queue');
 type JobProcessor = (job: IndexJob) => Promise<void>;
 
 /** The two lanes: document summaries, and everything else. */
-type LaneName = 'index' | 'summary';
+type LaneName = 'index' | 'summary' | 'backfill';
 
 /** How a queue on the code-indexing worker reports its state to other threads (Epic 86197ac6 s2). */
 export interface IndexQueueOptions {
@@ -34,6 +34,12 @@ interface Lane {
 const isSummaryJob = (job: IndexJob): boolean =>
   job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';
 
+/** The vector backfill (reembed) runs in a lane of its own beside the index lane
+ *  (Epic c2ba6fa6 s2, user decision 2026-11-01): file, full and clean-up jobs are
+ *  never queued behind it. Unlike the summary lane it does not wait for the index
+ *  lane to be idle; the two may reach the local embedding model together. */
+const isBackfillJob = (job: IndexJob): boolean => job.kind === 'reembed';
+
 /**
  * In-memory queue for IndexJob items, in two lanes that run at the same time
  * (Story b94cf2c9 S001): the summary lane holds the document-summary jobs and
@@ -52,8 +58,9 @@ const isSummaryJob = (job: IndexJob): boolean =>
  */
 export class IndexQueue {
   private readonly lanes: Record<LaneName, Lane> = {
-    index:   { jobs: [], inFlight: null, resolve: null },
-    summary: { jobs: [], inFlight: null, resolve: null },
+    index:    { jobs: [], inFlight: null, resolve: null },
+    summary:  { jobs: [], inFlight: null, resolve: null },
+    backfill: { jobs: [], inFlight: null, resolve: null },
   };
   private stopped = false;
   /** Waiters of waitForIndexIdle, released when the index lane goes idle or on stop(). */
@@ -84,19 +91,21 @@ export class IndexQueue {
     const lane = this.lanes[name];
     const status: LaneStatus = { depth: lane.jobs.length, processing: lane.inFlight !== null };
     if (name === 'summary') this.publish('summary', status, this.sweepProgress?.());
-    else this.publish('index', status);
+    else this.publish(name, status);
   }
 
   /** Republish the summary lane, e.g. when the sweep's progress moved. */
   lanesChanged(): void { this.changed('summary'); }
 
-  private laneFor(job: IndexJob): Lane { return this.lanes[isSummaryJob(job) ? 'summary' : 'index']; }
+  private laneFor(job: IndexJob): Lane { return this.lanes[isSummaryJob(job) ? 'summary' : isBackfillJob(job) ? 'backfill' : 'index']; }
 
-  /** Every queued job, both lanes. */
-  private get queued(): IndexJob[] { return [...this.lanes.index.jobs, ...this.lanes.summary.jobs]; }
+  private nameOf(lane: Lane): LaneName { return lane === this.lanes.index ? 'index' : lane === this.lanes.summary ? 'summary' : 'backfill'; }
 
-  /** Current number of pending jobs, both lanes. */
-  get depth(): number { return this.lanes.index.jobs.length + this.lanes.summary.jobs.length; }
+  /** Every queued job, all lanes. */
+  private get queued(): IndexJob[] { return [...this.lanes.index.jobs, ...this.lanes.summary.jobs, ...this.lanes.backfill.jobs]; }
+
+  /** Current number of pending jobs, all lanes. */
+  get depth(): number { return this.lanes.index.jobs.length + this.lanes.summary.jobs.length + this.lanes.backfill.jobs.length; }
 
   /**
    * Pending jobs attributable to one repo (Story repo-stats / S001). Counts a
@@ -270,7 +279,7 @@ export class IndexQueue {
     } else {
       queue.push(job);
     }
-    this.changed(lane === this.lanes.index ? 'index' : 'summary');
+    this.changed(this.nameOf(lane));
     lane.resolve?.(); // wake up this lane's drain loop if it's waiting
   }
 
@@ -288,9 +297,9 @@ export class IndexQueue {
   }
 
   /** Each lane's queued count and whether its worker is running a job. */
-  laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } } {
+  laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean }; backfill: { depth: number; running: boolean } } {
     const of = (l: Lane) => ({ depth: l.jobs.length, running: l.inFlight !== null });
-    return { index: of(this.lanes.index), summary: of(this.lanes.summary) };
+    return { index: of(this.lanes.index), summary: of(this.lanes.summary), backfill: of(this.lanes.backfill) };
   }
 
   /**
@@ -301,10 +310,12 @@ export class IndexQueue {
   async start(processor: JobProcessor): Promise<void> {
     this.stopped = false;
     // Two independent loops, each serial (drain never rejects: it catches every job's error).
-    const index   = this.drain(this.lanes.index, processor);
-    const summary = this.drain(this.lanes.summary, processor);
+    const index    = this.drain(this.lanes.index, processor);
+    const summary  = this.drain(this.lanes.summary, processor);
+    const backfill = this.drain(this.lanes.backfill, processor);
     await index;
     await summary;
+    await backfill;
   }
 
   private async drain(lane: Lane, processor: JobProcessor): Promise<void> {
@@ -333,7 +344,7 @@ export class IndexQueue {
       }
 
       lane.inFlight = job;
-      this.changed(lane === this.lanes.index ? 'index' : 'summary');
+      this.changed(this.nameOf(lane));
       try {
         await processor(job);
       } catch (err) {
@@ -349,7 +360,7 @@ export class IndexQueue {
         }
       } finally {
         lane.inFlight = null;
-        this.changed(lane === this.lanes.index ? 'index' : 'summary');
+        this.changed(this.nameOf(lane));
         if (lane === this.lanes.index && lane.jobs.length === 0) this.releaseIndexIdleWaiters();
         // A pause() waiting for quiet resolves once nothing is in flight, even if resume() came first.
         if (!this.isProcessing) this.releaseQuietWaiters();
@@ -412,6 +423,7 @@ export class IndexQueue {
     // unblock both if waiting
     this.lanes.index.resolve?.();
     this.lanes.summary.resolve?.();
+    this.lanes.backfill.resolve?.();
     this.releaseIndexIdleWaiters();
   }
 
@@ -419,5 +431,5 @@ export class IndexQueue {
   get isStopping(): boolean { return this.stopped; }
 
   /** True while either lane is running a job. */
-  get isProcessing(): boolean { return this.lanes.index.inFlight !== null || this.lanes.summary.inFlight !== null; }
+  get isProcessing(): boolean { return this.lanes.index.inFlight !== null || this.lanes.summary.inFlight !== null || this.lanes.backfill.inFlight !== null; }
 }

@@ -59,7 +59,7 @@ export function composeQueueLanes(
  */
 export function queueStatusFromBoard(indexing: IndexingStatus): { queueDepth: number; queueLanes: QueueLanes } {
 	return {
-		queueDepth: indexing.index.depth + indexing.summary.depth,
+		queueDepth: indexing.index.depth + indexing.summary.depth + (indexing.backfill?.depth ?? 0),
 		queueLanes: composeQueueLanes(
 			{ index: { depth: indexing.index.depth, running: indexing.index.processing }, summary: { depth: indexing.summary.depth, running: indexing.summary.processing } },
 			indexing.sweep,

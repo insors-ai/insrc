@@ -28,9 +28,9 @@ Mandatory code/module/requirements and test-coverage inspection remain blocking 
 
 ## Changes
 
-- `docs/task-review-execution.md` — **insrc-build** (2026-11-01T15:47:53.870Z)
-- `src/workflow/code-review/task-review/__tests__/review-scope-policy.test.ts` — **insrc-build** (2026-11-01T15:47:53.870Z)
-- `src/workflow/code-review/task-review/contracts.ts` — **insrc-build** (2026-11-01T15:47:53.870Z)
-- `src/workflow/code-review/task-review/policy.ts` — **insrc-build** (2026-11-01T15:47:53.870Z)
-- `src/workflow/code-review/task-review/record.ts` — **insrc-build** (2026-11-01T15:47:53.870Z)
-- `src/workflow/code-review/task-review/results.ts` — **insrc-build** (2026-11-01T15:47:53.870Z)
+- `docs/task-review-execution.md` — **insrc-build** (2026-11-01T15:53:36.211Z)
+- `src/workflow/code-review/task-review/__tests__/review-scope-policy.test.ts` — **insrc-build** (2026-11-01T15:53:36.211Z)
+- `src/workflow/code-review/task-review/contracts.ts` — **insrc-build** (2026-11-01T15:53:36.211Z)
+- `src/workflow/code-review/task-review/policy.ts` — **insrc-build** (2026-11-01T15:53:36.211Z)
+- `src/workflow/code-review/task-review/record.ts` — **insrc-build** (2026-11-01T15:53:36.211Z)
+- `src/workflow/code-review/task-review/results.ts` — **insrc-build** (2026-11-01T15:53:36.211Z)

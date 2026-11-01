@@ -76,7 +76,7 @@ function tracker(): { port: TrackerPort; assignees: Record<string, string[]>; st
 
 /** The gate, the signoff module and the lifecycle wired to one tracker, one policy and one store. */
 function wire(k: ReturnType<typeof kit>, t: ReturnType<typeof tracker>, signoffStages: TeamPolicy['signoffStages'], svc: LifecycleService): void {
-	const readPolicy = () => ({ ok: true as const, value: policy(signoffStages) });
+	const readPolicy = async () => ({ ok: true as const, value: policy(signoffStages) });
 	const resolveIssue = (unit: UnitRef) => (unit.unit === 'epic' ? EPIC_ISSUE : STORY_ISSUE);
 	_setGateDepsForTests({ readPolicy, loadTracker: () => ({ ok: true, value: t.port }), resolveIssue, now: () => '2026-10-22T00:00:00.000Z' });
 	_setSignoffDepsForTests({ readPolicy, loadTracker: () => ({ ok: true, value: t.port }), resolveIssue, lifecycleFor: () => svc, publishBranch: () => ({ ok: true, value: 'feature/signoff' }) });

@@ -106,7 +106,7 @@ test('changes requested on a two-artifact request, both re-authored through writ
 		const t = tracker();
 		const epic: UnitRef = { unit: 'epic', repoPath: k.repo, epicHash: H };
 		const story: UnitRef = { unit: 'story', repoPath: k.repo, epicHash: H, storyId: 's1' };
-		const readPolicy = () => ({ ok: true as const, value: policy() });
+		const readPolicy = async () => ({ ok: true as const, value: policy() });
 		const resolveIssue = (unit: UnitRef) => (unit.unit === 'epic' ? EPIC_ISSUE : STORY_ISSUE);
 		_setGateDepsForTests({ readPolicy, loadTracker: () => ({ ok: true, value: t.port }), resolveIssue, now: () => '2026-10-22T00:00:00.000Z' });
 		_setSignoffDepsForTests({ readPolicy, loadTracker: () => ({ ok: true, value: t.port }), resolveIssue, lifecycleFor: () => svc, publishBranch: () => ({ ok: true, value: 'feature/signoff' }), currentBranch: () => 'feature/signoff' });

@@ -75,6 +75,13 @@
         "choice": "Build-in-s9 (full ownership)",
         "rationale": "User approved the LLD on 2026-11-01 with this route recommended; follows the s7 precedent and keeps the cutover off s8's long tail.",
         "resolvedAt": "2026-11-01T11:29:18.716Z"
+      },
+      "q733bd0c7": {
+        "question": "Which exact tool ops lack an input a site needs (git_status path filter, git_log or git_path_history options for story-commits, git_config scope)? Task t1 of the plan checks every row against the tool input schemas and adds any missing optional input as an additive extension flagged for the tool's owner.",
+        "status": "resolved",
+        "choice": "Full independent audit",
+        "rationale": "Accuracy first: derive the gap list from every row against the live tool schemas.",
+        "resolvedAt": "2026-11-01T11:30:40.599Z"
       }
     }
   },

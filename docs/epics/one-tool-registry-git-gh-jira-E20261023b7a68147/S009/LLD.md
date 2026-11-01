@@ -434,6 +434,8 @@ Add a policy snapshot store in the daemon (per repo: the resolved policy or 'non
 
 - `q660011fb` — Decision needed: the git commands src/workflow/runners/build/story-commits.ts runs (diff-tree --root -z, merge-tree --write-tree, hash-object -t tree /dev/null, and rev-parse --git-path SQUASH_MSG in mergeInProgress) have no tool or op: diff-tree and merge-tree are assigned to s8 in the coverage table (src/daemon/tools/builtins/git/coverage.ts) and not built, git_hash_object takes a path only and git_rev_parse has no git-path input. This Story builds them, as s7 did for git_config, git_ls_remote, git_update_ref and git_rm: new read-only tools git_diff_tree and git_merge_tree, an optional type input on git_hash_object and an optional gitPath input on git_rev_parse, each with its own tests, and the s8 coverage table marks the two tools built by s9. The alternative is to build s8 first (its long-tail tools) and let this Story depend on it; the recommended route is the first, so the cutover is not held up by the 93-command long tail.
   - **resolved**: Build-in-s9 (full ownership) — User approved the LLD on 2026-11-01 with this route recommended; follows the s7 precedent and keeps the cutover off s8's long tail. _(2026-11-01T11:29:18.716Z)_
+- `q733bd0c7` — Which exact tool ops lack an input a site needs (git_status path filter, git_log or git_path_history options for story-commits, git_config scope)? Task t1 of the plan checks every row against the tool input schemas and adds any missing optional input as an additive extension flagged for the tool's owner.
+  - **resolved**: Full independent audit — Accuracy first: derive the gap list from every row against the live tool schemas. _(2026-11-01T11:30:40.599Z)_
 
 ## Citations
 

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -87,3 +87,27 @@ Run at 2026-11-01T13:32:16.352Z on commit `c7a2d5762`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/file-commit.test.ts` | 0 | 7 | 1.7 s |  |
+
+## t5
+
+Run at 2026-11-01T14:50:54.848Z on commit `931502767`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: commitFile**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t5: a successful vector write sets each changed entity's marker to the active embedding model; nothing is outstanding | `src/db/__tests__/file-commit-vectors.test.ts` |
+| pass | t5: a failed vector write leaves the changed entities' markers empty and reports them as outstanding, and the graph rows are still committed | `src/db/__tests__/file-commit-vectors.test.ts` |
+| pass | t5: a first-allocated entity is added and a changed one upserted: one vector row per id after both | `src/db/__tests__/file-commit-vectors.test.ts` |
+
+**integration: updateEmbedding**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it | `src/db/__tests__/file-commit-vectors.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/file-commit-vectors.test.ts` | 0 | 4 | 1.3 s |  |

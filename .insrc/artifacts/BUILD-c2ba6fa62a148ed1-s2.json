@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T13:32:16.352Z",
+    "updatedAt": "2026-11-01T14:50:54.848Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -26,9 +26,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "commitFile now replaces the file's relationships in the same transaction as its entities: outgoing edges of every previous entity and the file's pending rows removed, incoming relationships of removed entities returned to pending, new relationships written by s1's rule through t1's in-transaction writers. src/db + src/indexer suites: 944/944 pass.",
+    "summary": "Rows are committed with an empty embedding marker when a vector write follows; writeVectorsThenMarkers writes the vectors (add only for an entity first allocated in that commit, upsert otherwise) and sets the markers to the active (configured) embedding model in a second transaction; failures leave markers empty and are reported as vectorsOutstanding; updateEmbedding writes vector (upsert) then marker; embedEntities no longer sets entity.embeddingModel (931502767). db, indexer and related daemon suites pass.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
     },
@@ -38,58 +42,79 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-types.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:32:16.352Z"
+        "timestamp": "2026-11-01T14:50:54.848Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T14:50:54.848Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit-vectors.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T14:50:54.848Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/embedder.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T14:50:54.848Z"
       }
     ],
-    "commit": "c7a2d5762"
+    "commit": "931502767"
   }
 }

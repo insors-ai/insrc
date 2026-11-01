@@ -1,3 +1,4 @@
+import { requireBoundedReview } from '../../shared/review-activity.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -453,6 +454,9 @@ export class CliProvider implements LLMProvider {
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    // Preserve the bounded caller's expired-deadline error without starting a process.
+    if ((opts.mode === undefined || opts.mode === 'bounded') && Number.isFinite(opts.deadlineMs) && opts.deadlineMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
+    requireBoundedReview(opts);
 		const startedAt = Date.now();
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
 		const maxAttempts = opts.reviewBudget || opts.internalRetry === false ? 1 : 2;

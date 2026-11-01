@@ -1,3 +1,4 @@
+import { requireBoundedReview } from '../../shared/review-activity.js';
 import type { OllamaMessage, OllamaTool } from './ollama-wire.js';
 import { toOllamaMessages, toOllamaNativeMessages, toOllamaTools } from './ollama-wire.js';
 import { randomUUID } from 'node:crypto';
@@ -710,6 +711,7 @@ export class OllamaProvider implements LLMProvider {
    * `opts.signal` cancels it with AbortError.
    */
   async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    requireBoundedReview(opts);
     const closingInstruction = 'Now give your final answer: ONLY a JSON object matching this JSON Schema -- no prose, no fenced block.\n\n' + JSON.stringify(schema);
     if (opts.reviewBudget) {
       const profile = this.getReviewBudgetProfile('reviewer-session');

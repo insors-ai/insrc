@@ -5,6 +5,8 @@ import { Worker } from 'node:worker_threads';
 import { EventEmitter } from 'node:events';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { MemoryFactory } from '../index.js';
 import type { MemoryFactory as FactoryContract, MemoryService } from '../types.js';
@@ -46,7 +48,7 @@ nativeTest(import.meta.url, 'same-process-package-copy-thread-process-contention
     const copy = join(dir, 'copy');
     await cp(fileURLToPath(new URL('../../dist', import.meta.url)), join(copy, 'dist'), { recursive: true });
     await cp(fileURLToPath(new URL('../../package.json', import.meta.url)), join(copy, 'package.json'));
-    await symlink(fileURLToPath(new URL('../../../../node_modules', import.meta.url)), join(copy, 'node_modules'), 'dir');
+    await symlink(dirname(dirname(createRequire(import.meta.url).resolve('fs-ext/package.json'))), join(copy, 'node_modules'), 'dir');
     const independent = (await import(pathToFileURL(join(copy, 'dist/index.js')).href)).MemoryFactory as FactoryContract;
     assert.notEqual(independent, MemoryFactory);
     await assert.rejects(independent.open(options(root)), (e: unknown) => e instanceof Error && 'code' in e && e.code === 'OWNERSHIP_CONFLICT');

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -9,9 +10,9 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 test('public-v1-types-and-emitted-boundary', () => {
   const output = mkdtempSync(join(tmpdir(), 'memory-contract-'));
   try {
-  execFileSync(process.execPath, [fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url)), '-p', root + 'tsconfig.json', '--outDir', output], { stdio: 'pipe' });
+  execFileSync(process.execPath, [createRequire(import.meta.url).resolve('typescript/bin/tsc'), '-p', root + 'tsconfig.json', '--outDir', output], { stdio: 'pipe' });
   writeFileSync(join(output, 'consumer.mts'), readFileSync(root + 'src/__tests__/fixtures/public-consumer.mts', 'utf8').replaceAll('@insrc/project-memory', './index.js'));
-  execFileSync(process.execPath, [fileURLToPath(new URL('../../../../node_modules/typescript/bin/tsc', import.meta.url)), '--noEmit', '--strict', '--exactOptionalPropertyTypes', '--module', 'nodenext', '--target', 'es2022', '--skipLibCheck', join(output, 'consumer.mts')], { stdio: 'pipe' });
+  execFileSync(process.execPath, [createRequire(import.meta.url).resolve('typescript/bin/tsc'), '--noEmit', '--strict', '--exactOptionalPropertyTypes', '--module', 'nodenext', '--target', 'es2022', '--skipLibCheck', join(output, 'consumer.mts')], { stdio: 'pipe' });
   for (const name of readdirSync(output).filter(n => n.endsWith('.js') || n.endsWith('.d.ts'))) {
     const source = readFileSync(output + '/' + name, 'utf8');
     assert.doesNotMatch(source, /(?:from|import\()\s*['"](?:@insrc\/backend|\.\.\/)/);

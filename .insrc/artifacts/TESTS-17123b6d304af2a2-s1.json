@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T19:36:53.272Z",
+    "updatedAt": "2026-11-01T19:42:27.065Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -375,6 +375,76 @@
               },
               {
                 "title": "killed-owner-release-stopped-owner-exclusion-and-aliases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "7172957d9",
+        "ranAt": "2026-11-01T19:42:27.065Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "packed-isolated-node22-consumer",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "packed-native-missing-import-versus-open",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tarball-public-dependency-and-asset-allowlist",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13092,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
                 "result": "pass"
               }
             ],

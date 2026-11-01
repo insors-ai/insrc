@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T18:58:56.941Z",
+    "updatedAt": "2026-11-01T19:03:05.834Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -17,7 +17,7 @@
       },
       {
         "id": "t2",
-        "passed": false
+        "passed": true
       }
     ],
     "summary": "Added an independent strict ESM memory workspace, public sc1/sc2 contracts, pure lazy factory entry and preserved package-first backend build. Foundation open/data functionality remains unavailable pending later approved tasks.",
@@ -30,121 +30,128 @@
           "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/.gitignore"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/LICENSE"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/README.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/contracts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/fixtures/public-consumer.mts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/errors.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/host-node.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/tsconfig.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/t2/qualification.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/native.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/native.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T18:58:56.941Z"
+        "timestamp": "2026-11-01T19:03:05.834Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/node22.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:03:05.834Z"
       }
     ],
-    "commit": "c3efb780e"
+    "commit": "cf587b0f5"
   }
 }

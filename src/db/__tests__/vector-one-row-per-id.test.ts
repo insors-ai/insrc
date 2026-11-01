@@ -24,7 +24,7 @@ import { createHash } from 'node:crypto';
 
 import { closeGraphStore, setGraphStorePath } from '../graph/store.js';
 import { readIndexState } from '../index-state.js';
-import { _setVectorWriterForTest, commitFile, deleteEntitiesById, getEntity, reconcileEntityVectors, writeBackfillVectors } from '../entities.js';
+import { _setVectorWriterForTest, commitFile, compactEntityVectors, deleteEntitiesById, deleteEntitiesForRepo, getEntity, reconcileEntityVectors, writeBackfillVectors } from '../entities.js';
 import * as entityVec from '../lance/entity-vec.js';
 import { addEntityEmbeddings, searchEntityVecs } from '../lance/entity-vec.js';
 import { addRepo } from '../repos.js';
@@ -286,6 +286,42 @@ test('a removal through deleteEntitiesById whose vector delete fails is logged, 
 	await commit('h1', [x]);
 	_setVectorWriterForTest({ deleteEntityVecsByIds: refuse });
 	await deleteEntitiesById(null, [x.id]);
+	_setVectorWriterForTest(undefined);
+	assert.equal(await getEntity(null, x.id), null);
+});
+
+// ---------------------------------------------------------------------------
+// Review round 2: compaction and the repository delete under the lock
+// ---------------------------------------------------------------------------
+
+test('the full index\'s compaction waits for a backfill write in flight, which then stands with one row', async () => {
+	const x = entity('x');
+	await commit('h1', [x]);
+	const g = gate();
+	let held = true;
+	_setVectorWriterForTest({ addEntityEmbeddings: async rows => {
+		if (held) { held = false; g.arrive(); await g.opened; }
+		await entityVec.addEntityEmbeddings(rows);
+	} });
+	const backfill = writeBackfillVectors([{ ...x, embedding: vec(15) }]);
+	await g.entered;
+	let compacted = false;
+	const compaction = compactEntityVectors().then(r => { compacted = true; return r; });
+	await settle();
+	assert.equal(compacted, false, 'the compaction did not run while the backfill was writing');
+	g.open();
+	await Promise.all([backfill, compaction]);
+
+	assert.equal(compacted, true);
+	assert.equal(await rows(x.id, vec(15)), 1);
+	assert.equal(await marker(x.id), MODEL);
+});
+
+test('a repository removal whose repository-wide vector delete fails is logged, not thrown: the graph removal stands', async () => {
+	const x = entity('x', vec(16));
+	await commit('h1', [x]);
+	_setVectorWriterForTest({ deleteEntityVecsForRepo: refuse });
+	await deleteEntitiesForRepo(null, REPO);
 	_setVectorWriterForTest(undefined);
 	assert.equal(await getEntity(null, x.id), null);
 });

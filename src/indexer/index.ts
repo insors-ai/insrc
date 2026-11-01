@@ -744,8 +744,9 @@ export class IndexerService {
         // error.
         if (total % 500 === 0) {
           try {
-            const { compactEntityVecTable } = await import('../db/lance/entity-vec.js');
-            const r = await compactEntityVecTable();
+            // Under the vector lock: the backfill lane may be writing (ISSUE-8c7d75b0 review).
+            const { compactEntityVectors } = await import('../db/entities.js');
+            const r = await compactEntityVectors();
             log.info({ repo: repoPath, progress: total, ...r }, 'lance entity_vec compacted');
           } catch (err) {
             log.warn({ repo: repoPath, progress: total, err: err instanceof Error ? err.message : String(err) }, 'lance compact failed (non-fatal)');
@@ -821,8 +822,8 @@ export class IndexerService {
       // build above it. Search latency drops from brute-force scan
       // (~860 ms p99 at 1M rows) to ~10-50 ms p99 once this lands.
       try {
-        const { optimizeEntityVecIndex } = await import('../db/lance/entity-vec.js');
-        const r = await optimizeEntityVecIndex();
+        const { optimizeEntityVectorIndex } = await import('../db/entities.js');
+        const r = await optimizeEntityVectorIndex();
         if (r.built) {
           log.info({ repo: repoPath, rowCount: r.rowCount, elapsedMs: r.elapsedMs }, 'entity_vec HNSW index built');
         } else {

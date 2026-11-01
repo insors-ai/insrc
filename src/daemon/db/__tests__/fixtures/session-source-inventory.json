@@ -21805,10 +21805,22 @@
    "sites": [
     [
      "storage-call",
+     "(await import('./lance/entity-vec.js')).compactEntityVecTable"
+    ],
+    [
+     "storage-call",
      "(await import('./lance/entity-vec.js')).listEntityVecIds"
     ],
     [
      "storage-call",
+     "(await import('./lance/entity-vec.js')).optimizeEntityVecIndex"
+    ],
+    [
+     "storage-call",
+     "(await vectorWriter()).deleteEntityVecsForRepo"
+    ],
+    [
+     "storage-call",
      "activeEmbeddingModel"
     ],
     [
@@ -21822,6 +21834,14 @@
     [
      "storage-call",
      "allocateEntityIdInTxn"
+    ],
+    [
+     "serialization",
+     "assertNoSessionPersistence"
+    ],
+    [
+     "serialization",
+     "assertNoSessionPersistence"
     ],
     [
      "serialization",
@@ -22134,10 +22154,6 @@
     [
      "storage-call",
      "deleteDocSummaryInTxn"
-    ],
-    [
-     "storage-call",
-     "deleteEntityVecsForRepo"
     ],
     [
      "storage-call",
@@ -22608,6 +22624,10 @@
      "import"
     ],
     [
+     "unresolved-call",
+     "import"
+    ],
+    [
      "storage-call",
      "incomingEdgesInTxn"
     ],
@@ -22670,6 +22690,10 @@
     [
      "diagnostic",
      "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
     ],
     [
      "diagnostic",
@@ -23413,11 +23437,27 @@
     ],
     [
      "storage-call",
+     "vectorWriter"
+    ],
+    [
+     "storage-call",
      "withReadTxn"
     ],
     [
      "storage-call",
      "withReadTxn"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
     ],
     [
      "storage-call",
@@ -23500,9 +23540,9 @@
      "writeVectorsThenMarkersLocked"
     ]
    ],
-   "siteCount": 424,
-   "sitesDigest": "00fb9a0ce9d08473f713bc7c786cb44e96a6cbbfb0ee54af5c56f554e28d9f89",
-   "sourceDigest": "afdb6cf92d0cdeef12c193c633d86cdbebdcf9bdc67840cdfed871c5ec44b37e",
+   "siteCount": 434,
+   "sitesDigest": "169565aa0e70c4bf72bea3dd98c65eb0c8de642711a89c9958f0b726dad8ada7",
+   "sourceDigest": "e619030aa1496f376ae765a4cf5f40bcff8bfba8fe059111c4191f86404788ce",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -27238,7 +27278,7 @@
    ],
    "siteCount": 52,
    "sitesDigest": "036d32f1f550f97f57c1aa6ccfa87c0c47aaddede93198893ba3bf6c36dd5c3f",
-   "sourceDigest": "ecc6f5232819163cab08cfed9fb69a1868b9c843f7af9d00b4b62db4b72bcd52",
+   "sourceDigest": "3b34c90afdf26c119574efa8a62611d3aef459cdd95c686f5f29e03a224f48f5",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -31504,7 +31544,7 @@
     ],
     [
      "storage-call",
-     "compactEntityVecTable"
+     "compactEntityVectors"
     ],
     [
      "storage-call",
@@ -31896,7 +31936,7 @@
     ],
     [
      "storage-call",
-     "optimizeEntityVecIndex"
+     "optimizeEntityVectorIndex"
     ],
     [
      "filesystem-read",
@@ -32000,8 +32040,8 @@
     ]
    ],
    "siteCount": 130,
-   "sitesDigest": "d41df134493e86b80467c9f9c75b3c06a9258a8937eba91d1cc709cff1da7995",
-   "sourceDigest": "c2f2f2ca5adc591643b75f0d99cc26962171b5274edaf63d14c6d21058da35b9",
+   "sitesDigest": "4c634075f70682bfd57d718bb2f088330576cc786c64006365eda8dcb7ed61b2",
+   "sourceDigest": "dec2b1ef8055b82399eb4c7fb47e74846896aad0b56584fc671b7e2bfc23d86c",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

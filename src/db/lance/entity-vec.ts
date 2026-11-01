@@ -200,9 +200,10 @@ export async function writeEntityEmbeddings(rows: readonly EntityVecRow[]): Prom
  * even files newer than 7 days." Lance's default keeps 7 days of
  * version history because in-progress transactions can reference
  * recent files; we override because the daemon's indexer is the
- * only writer + drives this call from the per-file loop where no
- * concurrent Lance writes are in-flight (each indexFile() awaits
- * its full upsertEntities() round-trip before the next iteration).
+ * only writer, and every caller goes through compactEntityVectors
+ * (db/entities.ts), which holds the vector lock: no other change to
+ * this table is in flight meanwhile, including the backfill lane's
+ * (ISSUE-8c7d75b0 review). Never call this directly.
  *
  * Indexer's full-index loop calls this every 500 files. Errors are
  * non-fatal -- compaction is housekeeping, not load-bearing.

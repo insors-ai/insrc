@@ -303,7 +303,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 }
 
 /** The vector writes this module makes; a test puts a failing one in front of the real table. */
-type VectorWriter = Pick<typeof import('./lance/entity-vec.js'), 'addEntityEmbeddings' | 'writeEntityEmbeddings' | 'writeEntityEmbedding' | 'deleteEntityVecsByIds'>;
+type VectorWriter = Pick<typeof import('./lance/entity-vec.js'), 'addEntityEmbeddings' | 'writeEntityEmbeddings' | 'writeEntityEmbedding' | 'deleteEntityVecsByIds' | 'deleteEntityVecsForRepo'>;
 let vectorWriterForTest: Partial<VectorWriter> | undefined;
 /** Test seam: the vector writes and deletes commitFile, upsertEntities, updateEmbedding and the reconciliation use; the methods given replace the real table's (undefined: the real table). */
 export function _setVectorWriterForTest(writer: Partial<VectorWriter> | undefined): void { vectorWriterForTest = writer; }
@@ -318,12 +318,18 @@ async function deleteVectorsInChunks(lance: VectorWriter, ids: readonly string[]
 }
 
 /**
- * Every sequence that changes the vector table (a write and its markers, a
- * removal's delete, the start-time reconciliation) runs under this one lock
- * (ISSUE-8c7d75b0 review): the backfill lane and the index lane run side by
- * side in the indexing worker, and without it a backfill write can land
- * between the index lane's delete and add of the same id, or delete a row the
- * index lane has just written. Every vector writer runs in that one thread.
+ * Every change to the entity vector table from this module -- a write and its
+ * markers, a removal's delete, a repository's delete, the start-time
+ * reconciliation, the full index's compaction and index build -- runs under
+ * this one lock (ISSUE-8c7d75b0 review): the backfill lane and the index lane
+ * run side by side in the code-indexing worker, and without it a backfill
+ * write can land between the index lane's delete and add of the same id,
+ * delete a row the index lane has just written, or be cut by a compaction that
+ * deletes unverified files. The lock is per thread: the queue's lanes, and the
+ * repository removal routed to that worker, share it. A removal running on
+ * another thread is still safe for the one-row rule: the backfill's check
+ * before its write and its delete of an entity gone by its marker transaction
+ * cover it.
  */
 let vectorLock: Promise<void> = Promise.resolve();
 function withVectorLock<T>(fn: () => Promise<T>): Promise<T> {
@@ -454,6 +460,22 @@ async function writeVectorsThenMarkersLocked(all: readonly VectorWrite[], who: s
 export async function writeBackfillVectors(entities: readonly Entity[]): Promise<number> {
 	assertNoSessionPersistence();
 	return writeVectorsThenMarkers(entities.filter(e => e.embedding.length > 0).map(entity => ({ entity, replace: true })), 'backfill');
+}
+
+/**
+ * The full index's compaction of the entity vector table, under the vector
+ * lock: it deletes unverified files, which would corrupt a write in flight
+ * from the backfill lane (ISSUE-8c7d75b0 review, Lance optimize docs).
+ */
+export function compactEntityVectors(): ReturnType<typeof import('./lance/entity-vec.js').compactEntityVecTable> {
+	assertNoSessionPersistence();
+	return withVectorLock(async () => (await import('./lance/entity-vec.js')).compactEntityVecTable());
+}
+
+/** The full index's build of the entity vector index, under the vector lock. */
+export function optimizeEntityVectorIndex(): ReturnType<typeof import('./lance/entity-vec.js').optimizeEntityVecIndex> {
+	assertNoSessionPersistence();
+	return withVectorLock(async () => (await import('./lance/entity-vec.js')).optimizeEntityVecIndex());
 }
 
 /** The model a stored marker names: the configured embedding model. */
@@ -808,8 +830,15 @@ export async function deleteEntitiesForRepo(
 	// per-id cleanup detachDeleteEntities does. Catches any rows whose
 	// LMDB string-id mapping was already missing (e.g. corruption-
 	// recovery paths).
-	const { deleteEntityVecsForRepo } = await import('./lance/entity-vec.js');
-	await deleteEntityVecsForRepo(repo);
+	// Under the vector lock, and logged rather than thrown (ISSUE-8c7d75b0
+	// review): the graph removal stands, and the start-time reconciliation
+	// deletes any vector left behind.
+	try {
+		await withVectorLock(async () => (await vectorWriter()).deleteEntityVecsForRepo(repo));
+	} catch (err) {
+		log.warn({ repo, err: err instanceof Error ? err.message : String(err) },
+			'deleteEntitiesForRepo: vector delete failed after the graph removal -- left for the start-time reconciliation');
+	}
 	// Doc-summary repo cascade: repo-scoped drop of every summary row +
 	// secondary-index entry. Belt-and-suspenders alongside the per-id
 	// cascade `detachDeleteEntitiesInTxn` fires -- catches summary rows

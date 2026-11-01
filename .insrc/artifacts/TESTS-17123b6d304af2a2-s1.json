@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T20:40:55.125Z",
+    "updatedAt": "2026-11-01T20:53:40.807Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -163,8 +163,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "0521cc933",
-        "ranAt": "2026-11-01T20:40:55.125Z",
+        "commit": "0ac3f8ba5",
+        "ranAt": "2026-11-01T20:53:40.807Z",
         "testsPassed": true,
         "tests": [
           {
@@ -204,7 +204,7 @@
             "file": "packages/project-memory/src/__tests__/ownership.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 535,
+            "durationMs": 523,
             "titles": [
               {
                 "title": "exclusive-descriptor-and-owned-bootstrap",

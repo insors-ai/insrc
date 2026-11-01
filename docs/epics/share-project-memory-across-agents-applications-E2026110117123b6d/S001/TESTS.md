@@ -69,7 +69,7 @@ Run at 2026-11-01T19:08:08.085Z on commit `a9ef96ecd`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-01T20:40:55.125Z on commit `0521cc933`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T20:53:40.807Z on commit `0ac3f8ba5`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: exclusive-descriptor-and-owned-bootstrap**
 

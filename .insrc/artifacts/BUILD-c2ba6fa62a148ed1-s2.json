@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T13:16:17.185Z",
+    "updatedAt": "2026-11-01T13:19:10.308Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "upsertResolvedRelations / upsertUnresolvedRelations split into synchronous *InTxn bodies returning RelationWriteCounts; the async writers call them inside their own withWriteTxn and log as before. The existing relations and cross-file suites (88 tests) pass unchanged.",
+    "summary": "FileCommit, FileCommitResult, RelationWrite, UnresolvedRef and RelationEvidence ('unknown' until s7) added to src/shared/types.ts per the HLD sc2 sketch; relationOfWrite in src/db/file-commit.ts maps a RelationWrite onto the existing Relation shape.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
     },
@@ -26,23 +30,44 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:16:17.185Z"
+        "timestamp": "2026-11-01T13:19:10.308Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:16:17.185Z"
+        "timestamp": "2026-11-01T13:19:10.308Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:16:17.185Z"
+        "timestamp": "2026-11-01T13:19:10.308Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit-types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:19:10.308Z"
+      },
+      {
+        "target": {
+          "file": "src/db/file-commit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:19:10.308Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:19:10.308Z"
       }
     ],
-    "commit": "b264851a5"
+    "commit": "2d50d4479"
   }
 }

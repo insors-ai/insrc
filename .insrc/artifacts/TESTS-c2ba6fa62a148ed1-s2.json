@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T13:16:17.185Z",
+    "updatedAt": "2026-11-01T13:19:10.308Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -78,6 +78,42 @@
               },
               {
                 "title": "a caller's transaction that throws after both bodies ran keeps none of their writes (read after a reopen)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "2d50d4479",
+        "ranAt": "2026-11-01T13:19:10.308Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-types.test.ts",
+                "title": "a RelationWrite with a stored target maps to a resolved Relation, and one with a pending target to an unresolved Relation with the same meta",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit-types.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 579,
+            "titles": [
+              {
+                "title": "a RelationWrite with a stored target maps to a resolved Relation, and one with a pending target to an unresolved Relation with the same meta",
                 "result": "pass"
               }
             ],

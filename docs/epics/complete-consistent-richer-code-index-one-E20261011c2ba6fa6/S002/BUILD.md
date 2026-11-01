@@ -2,22 +2,26 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-11-01T13:16:17.185Z  ·  **Updated:** 2026-11-01T13:16:17.185Z
+**Standalone:** no  ·  **Created:** 2026-11-01T13:16:17.185Z  ·  **Updated:** 2026-11-01T13:19:10.308Z
 
-**Commit:** b264851a5
+**Commit:** 2d50d4479
 
 ## Summary
 
-upsertResolvedRelations / upsertUnresolvedRelations split into synchronous *InTxn bodies returning RelationWriteCounts; the async writers call them inside their own withWriteTxn and log as before. The existing relations and cross-file suites (88 tests) pass unchanged.
+FileCommit, FileCommitResult, RelationWrite, UnresolvedRef and RelationEvidence ('unknown' until s7) added to src/shared/types.ts per the HLD sc2 sketch; relationOfWrite in src/db/file-commit.ts maps a RelationWrite onto the existing Relation shape.
 
 ## Tasks validated
 
 - ✓ `t1`
+- ✓ `t2`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-11-01T13:16:17.185Z)
-- `src/db/__tests__/relations-in-txn.test.ts` — **insrc-build** (2026-11-01T13:16:17.185Z)
-- `src/db/relations.ts` — **insrc-build** (2026-11-01T13:16:17.185Z)
+- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-11-01T13:19:10.308Z)
+- `src/db/__tests__/relations-in-txn.test.ts` — **insrc-build** (2026-11-01T13:19:10.308Z)
+- `src/db/relations.ts` — **insrc-build** (2026-11-01T13:19:10.308Z)
+- `src/db/__tests__/file-commit-types.test.ts` — **insrc-build** (2026-11-01T13:19:10.308Z)
+- `src/db/file-commit.ts` — **insrc-build** (2026-11-01T13:19:10.308Z)
+- `src/shared/types.ts` — **insrc-build** (2026-11-01T13:19:10.308Z)

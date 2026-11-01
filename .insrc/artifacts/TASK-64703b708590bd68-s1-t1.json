@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e9e78a7c-2f7c-4fad-9a79-67f8d6a002a0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:40:52.214Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Audit which RPC methods and step phases modify files",
+      "parent": {
+        "entityId": "STORY-64703b708590bd68-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-64703b708590bd68-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ad421f825e8f8fbb55416be1456df36708f27d8fd5cdd1be5205b8c9d6a8f6c6",
+        "at": "2026-11-01T19:40:52.215Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:40:52.216Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Audit which RPC methods and step phases modify files",
+    "summary": "For every method in the handler registry (src/daemon/handler-runtime.ts) and every phase of the workflow, build, review, code-review, analyze and triage steps, trace the handler with the analyzer's call closure and a read of its body, and record whether it writes under a user repository, which param holds the repo and which params hold paths. The output is a machine-readable module (the table rows and the reviewed read-only list, one entry per method or phase with its evidence) that t2 imports, plus a short document in docs/plans stating the scope decision for the daemon-store writers (config.*, keys.*, session.*, todos.*, db.*): outside the rule, as they write under ~/.insrc and not a user repository.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "every method of the registry and every step phase has an entry marked modifying, read-only or daemon-store, each with evidence",
+      "each modifying entry names its repo param and its path params",
+      "the entries are importable by code and the scope decision for the daemon-store writers is written down for the user"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

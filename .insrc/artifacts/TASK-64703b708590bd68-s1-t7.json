@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4ecc3c31-b1d6-49c3-9b45-c113778f1bb6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:40:52.224Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Update the documentation and verify the installed daemon checkout",
+      "parent": {
+        "entityId": "STORY-64703b708590bd68-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-64703b708590bd68-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-64703b708590bd68-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "84cf00f104b86103c47722c721ad74f0d8601104231ec771bb478805bca60456",
+        "at": "2026-11-01T19:40:52.224Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:40:52.225Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Update the documentation and verify the installed daemon checkout",
+    "summary": "Update docs/daemon.md and the MCP tool descriptions to say that file-modifying calls require an absolute registered repo, with the table of methods checked against the code by a test, and record in the plan outcome that the installed daemon checkout at ~/.insrc/daemon holds no uncommitted artifact files.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "docs/daemon.md lists the methods of the table and the refusal codes",
+      "a test checks the documented list against the table"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "daemon-doc-repo-table.test.ts: docs/daemon.md lists the methods of the table and the refusal codes"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2dd742d7-0747-49bc-a3b7-004d292e03e7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:40:52.220Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Gate the approval family and close the 2026-11-01 case",
+      "parent": {
+        "entityId": "STORY-64703b708590bd68-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-64703b708590bd68-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-64703b708590bd68-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-64703b708590bd68-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "52fa2163fb7320e52c7b2c5d3092493432b334a26ec3a8fbc83cc562e596fac4",
+        "at": "2026-11-01T19:40:52.220Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:40:52.221Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gate the approval family and close the 2026-11-01 case",
+    "summary": "Call the gate in the dispatcher for workflow.approve and workflow.approvePipeline, hand the handlers the checked repo and rewritten params, remove process.env['INSRC_REPO'] from them, and make handleWorkflowApprove write the store of the named repo instead of the repository found from the path (src/daemon/handler-runtime.ts, src/daemon/workflow-approve.ts, src/daemon/lifecycle-registry.ts use). Update the tests that pin the fallback and add the integration test for the 2026-11-01 case: a daemon whose cwd and INSRC_REPO are a registered repo refuses a relative path with no repo and writes nothing in either repository.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "workflow.approve and workflow.approvePipeline called with no repo are refused and the file system is unchanged",
+      "workflow.approve with an absolute registered repo and a relative path approves in that repo only",
+      "no use of the daemon's INSRC_REPO remains in the approval family"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "approve-repo-gate.test.ts: a daemon started with INSRC_REPO set and its working directory inside a registered repo refuses workflow.approve with a relative artifactPath and no repo and writes nothing in either repository"
+      },
+      {
+        "level": "integration",
+        "name": "approve-repo-gate.test.ts: workflow.approve with an absolute registered repo and a relative path approves the artifact in that repo's store only"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

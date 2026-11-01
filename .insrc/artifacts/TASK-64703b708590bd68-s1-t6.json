@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-171a82e1-f6d3-481c-9907-1e6ff782dc78",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:40:52.222Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Apply the gate to the modifying step phases",
+      "parent": {
+        "entityId": "STORY-64703b708590bd68-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-64703b708590bd68-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-64703b708590bd68-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9ff0ab1de71e9db44a5ec2df138e8e9d78d66abcc525e7834edb364b4a806905",
+        "at": "2026-11-01T19:40:52.222Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:40:52.223Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Apply the gate to the modifying step phases",
+    "summary": "Apply the gate to the phases of the workflow, build, review and code-review steps that t1 marked modifying: the first phase names its repo, a later phase takes the repo its run token recorded and the gate checks it is registered, and a token with no repo is refused. Update the tests of the step handlers.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "a modifying step phase with no repo and no token is refused",
+      "a later phase cannot be redirected to another repository by a repo param that differs from the token's",
+      "read-only step phases keep the session-aware resolution"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "step-repo-gate.test.ts: a modifying step phase with no repo and no token is refused, and a later phase cannot be redirected to another repository by a different repo"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

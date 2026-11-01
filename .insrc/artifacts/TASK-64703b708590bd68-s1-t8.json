@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-323d2e99-fab3-4585-8899-e98abd519524",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:40:52.226Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the full sweep once and write the outcome",
+      "parent": {
+        "entityId": "STORY-64703b708590bd68-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-64703b708590bd68-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-64703b708590bd68-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8790dfe9d98186e8c6b2247ff66a218dc735e0fdfca79fa94063deb5dcc805f5",
+        "at": "2026-11-01T19:40:52.226Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:40:52.226Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the full sweep once and write the outcome",
+    "summary": "Run the full test sweep once in foreground chunks and compare by test name with the tree before the fix; write the outcome section (deviations, scope decision, open items) in docs/plans.",
+    "size": "S",
+    "order": 8,
+    "acceptanceChecks": [
+      "no new failure and no new skipped test against the tree before the fix, with the pre-existing failures listed",
+      "the outcome section is written"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "repo-gate-sweep-record.test.ts: the full sweep compared by test name with the tree before the fix shows no new failure and no new skipped test, and the outcome section is written"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-068c3f0c-4570-4118-b946-48e240b74c84",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:40:52.221Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Gate the remaining file-modifying RPC methods",
+      "parent": {
+        "entityId": "STORY-64703b708590bd68-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-64703b708590bd68-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-64703b708590bd68-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c5d31268cb8c55032801d331f516084ed6a09268aa98c023917753a5491dce55",
+        "at": "2026-11-01T19:40:52.221Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:40:52.222Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gate the remaining file-modifying RPC methods",
+    "summary": "Call the gate for every other modifying method of the table (workflow.resolveComment, workflow.reviewDecision, workflow.reviewArtifact, workflow.resolveFinding, tracker.sync, tracker.setup, tracker.attach, tracker.syncComments, repo.convert, team.refresh, team.claim, team.release, artifact.feedback.append, artifact.feedback.add and any other t1 marked), and remove process.env['INSRC_REPO'] and their own no-repo checks (repo-convert.ts, tracker-attach.ts, tracker-sync-comments.ts, workflow-rpc.ts, feedback, resolve-comment and review-decision handlers). Update the tests that pin the fallback.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "each table method called with no repo is refused and the file system is unchanged",
+      "no remaining use of the daemon's INSRC_REPO for a table method",
+      "the tests of the changed handlers pass with an absolute registered repo"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "repo-gate-dispatch.test.ts: each method in the table called with no repo is refused and leaves the file system unchanged"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

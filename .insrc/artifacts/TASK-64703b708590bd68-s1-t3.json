@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ec998afd-7288-4da1-9ebd-6708791ced29",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:40:52.218Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make the MCP server and the terminal client send an absolute repo and paths",
+      "parent": {
+        "entityId": "STORY-64703b708590bd68-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-64703b708590bd68-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-64703b708590bd68-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "164817bc687d72c99190100a1153b0d9ac3a5de4326c2e6aaa1308de8b52a3d7",
+        "at": "2026-11-01T19:40:52.219Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:40:52.219Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make the MCP server and the terminal client send an absolute repo and paths",
+    "summary": "For every method in the table, the MCP handlers and forwards (src/mcp/server.ts, daemon-stream.ts, forward-step.ts) and the terminal client services (src/cli/services) resolve the session workspace as today, then send an absolute repo and absolute artifact paths, and refuse before calling when they cannot resolve an absolute repo. Update the MCP tool descriptions that say repo falls back to the session workspace or INSRC_REPO.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "insrc_workflow_approve with a relative artifactPath sends an absolute path inside the resolved repo",
+      "the handler refuses when no absolute repo can be resolved",
+      "each terminal client call of a table method sends repo"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "approve-absolute-repo.test.ts: insrc_workflow_approve sends an absolute repo and an absolute artifactPath, and refuses when it cannot resolve an absolute repo"
+      },
+      {
+        "level": "integration",
+        "name": "cli-sends-repo.test.ts: the terminal client's approve, tracker sync and attach calls send repo"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

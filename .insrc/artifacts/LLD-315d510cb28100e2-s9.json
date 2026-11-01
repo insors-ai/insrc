@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1792738062809-196rpd",
+    "runId": "wf-1793558479253-eca4tv",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-10-23T06:51:34.491Z",
+    "createdAt": "2026-11-01T18:45:35.012Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 228502,
+    "elapsedMs": 254221,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-10-16T14:46:39.254Z",
@@ -38,52 +38,14 @@
     ],
     "authoredBy": "controller",
     "envelope": {
-      "description": "",
-      "references": [],
       "attachments": []
     },
-    "revision": 3,
-    "lifecycle": {
-      "status": "draft",
-      "revision": {
-        "number": 3,
-        "contentHash": "c78bd376183210f93d33d9db12a9a27f2d6197b5785a7385080cb6cdf617a12e",
-        "at": "",
-        "by": {
-          "id": "insrc:system",
-          "kind": "system",
-          "properties": {}
-        }
-      },
-      "signoffs": [],
-      "review": {
-        "revision": 3,
-        "reviewer": {
-          "id": "insrc:daemon",
-          "kind": "agent",
-          "properties": {}
-        },
-        "party": "daemon",
-        "verdict": "block",
-        "counts": {
-          "high": 0,
-          "med": 5,
-          "low": 10
-        },
-        "at": "2026-10-23T06:55:16.546Z",
-        "report": {
-          "entityId": "LLD-315d510cb28100e2-s9",
-          "type": "change-log-entry",
-          "relation": "reviews",
-          "fragment": "review-75980ce8f7af3a6bc637dc4447c3d04e"
-        }
-      }
-    }
+    "revision": 4
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Issues are created when a draft is first written in any repo whose tracker setting is on, not only in team repos, through the one existing path (ensureDraftIssues, which reuses the unit-issue code and the lenient tracker port the terminal approve also uses, so a manual approve creates only what is missing). Tracker status is refreshed into the artifact's tracker record by one deadline-bound function that reads issue state through the tracker port with the classified gh runner, so any adapter that declares the new status-read capability gets the same steps as GitHub. The daemon's git_pull and git_push tools run that refresh after a git command that integrated or pushed and report a failure as a warning without failing the git operation; the existing explicit sync runs the same refresh. The chain report's tracker record carries the Epic's issue key, the artifact id and the artifact's revision. Every tracker command now has a 120-second timeout."
+      "prose": "Issues are created when a draft is first written in any repo whose tracker setting is on, not only in team repos. Tracker status is refreshed into the artifact's tracker record by one deadline-bound function that reads issue state through the tracker port, so any adapter that declares the new status-read capability gets the same steps as GitHub. Two post-success tool hooks on git_pull and git_push run that refresh and report a failure on the tool result without failing the git operation; the tracker.sync daemon method runs the same function. The chain report shows the issue key, artifact id and revision of the Epic and of each Story that has an issue."
     },
     "hldContextSlice": {
       "frameworkSummary": "A daemon-side team gate over a synchronous, capability-declaring tracker port (alternative a1). The port (sc1) is the only way the workflow library talks to a tracker; GitHub is its first adapter, made by extracting the existing GitHub code (src/workflow/tracker, the issue calls in tracker-auto.ts, and the create and close calls in src/workflow/bugfix/tracker.ts) behind it. sc1 is the one tracker abstraction: the unbuilt tracker-tool design (LLD-38436e90625a83a2-s1) is not built as a second abstraction and is superseded or amended by s1's LLD. The policy (sc2) is read from the remote default branch and says which stages need signoff, whether claims are enforced, the claim units and the administrators. The artifact's tracker record keeps every existing meta.tracker field exactly as it is and gains additive per-unit data, plus an optional meta.revision (sc3). The team gate (sc4) takes a guarded action and returns an outcome. Signoff is a separate record (sc5) that never changes meta.review or approvedAt. Syncing tracker status on git pull and push, and the issue-status read it needs, are deferred with the later-tracker work to a define extend and are not part of this HLD.",
@@ -188,7 +150,7 @@
       "api": [
         {
           "name": "ensureDraftIssues",
-          "signature": "ensureDraftIssues(jsonPath: string, deps?: DraftHookDeps): IssueReadiness",
+          "signature": "ensureDraftIssues(jsonPath: string, deps?: DraftHookDeps): Promise<IssueReadiness>",
           "parameters": [
             {
               "name": "jsonPath",
@@ -204,59 +166,31 @@
             }
           ],
           "returns": {
-            "type": "IssueReadiness",
+            "type": "Promise<IssueReadiness>",
             "meaning": "not-applicable when the repo has no team policy and its tracker setting is none; ready or not-ready otherwise, as today"
           },
           "errors": [
             {
-              "type": "none thrown",
-              "condition": "every failure becomes not-ready; the draft is never undone; a GithubConfigError from resolveGithubConfig (malformed github.json) becomes not-ready with its reason, never not-applicable"
+              "type": "ToolDenied",
+              "condition": "a registry call was declined, timed out, had no client or was cancelled: rethrown to the stage as today, never made not-ready"
+            },
+            {
+              "type": "none thrown otherwise",
+              "condition": "every other failure becomes not-ready; a GithubConfigError from resolveGithubConfig becomes not-ready with its reason, never not-applicable"
             }
           ],
           "preconditions": [
             "the draft is written"
           ],
           "postconditions": [
-            "a repo with no team policy and a tracker setting that is on gets its Epic and Story issues: the on/off check is resolveGithubConfig and the port is createGithubTracker, the same pair the terminal approve uses, so the two paths cannot disagree (ac2)",
-            "a repo with no team policy and tracker type none makes no tracker call and returns not-applicable (ac3)",
-            "a team repo keeps loadTracker and behaves as today (ac1)"
-          ]
-        },
-        {
-          "name": "createGithubTracker",
-          "signature": "createGithubTracker(owner: string, repo: string): TrackerPort",
-          "parameters": [
-            {
-              "name": "owner",
-              "type": "string",
-              "purpose": "the GitHub owner",
-              "optional": false
-            },
-            {
-              "name": "repo",
-              "type": "string",
-              "purpose": "the GitHub repository",
-              "optional": false
-            }
-          ],
-          "returns": {
-            "type": "TrackerPort",
-            "meaning": "the GitHub adapter, which now also declares status-read and implements readIssueStatus"
-          },
-          "errors": [
-            {
-              "type": "none thrown",
-              "condition": "construction does not call gh"
-            }
-          ],
-          "preconditions": [],
-          "postconditions": [
-            "its declared capabilities include status-read"
+            "a repo with no team policy and a tracker setting that is on gets its Epic and Story issues: the on/off check is resolveGithubConfig and the port is createGithubTracker, the pair the terminal approve uses",
+            "a repo with no team policy and tracker type none makes no tracker call and returns not-applicable",
+            "a team repo keeps loadTracker and behaves as today"
           ]
         },
         {
           "name": "TrackerPort.readIssueStatus",
-          "signature": "readIssueStatus?(issue: IssueRef): PortResult<{ state: 'open' | 'closed'; labels: string[] }>",
+          "signature": "readIssueStatus?(issue: IssueRef): Promise<PortResult<{ state: 'open' | 'closed'; labels: string[] }>>",
           "parameters": [
             {
               "name": "issue",
@@ -266,13 +200,17 @@
             }
           ],
           "returns": {
-            "type": "PortResult<{ state: 'open' | 'closed'; labels: string[] }>",
+            "type": "Promise<PortResult<{ state: 'open' | 'closed'; labels: string[] }>>",
             "meaning": "the issue's state and labels, or a failure with a port kind"
           },
           "errors": [
             {
               "type": "PortFailure",
-              "condition": "missing-tool, missing-signin, unreachable (the 120-second runGh timeout) or rejected, as classifyGhFailure sorts them"
+              "condition": "missing-tool, missing-signin, unreachable or rejected, as the GitHub adapter already sorts a GhCommandError"
+            },
+            {
+              "type": "ToolDenied",
+              "condition": "rethrown, not made a port failure"
             }
           ],
           "preconditions": [
@@ -280,12 +218,12 @@
           ],
           "postconditions": [
             "read-only: nothing is changed in the tracker",
-            "the GitHub adapter runs gh through runGh with --json state,labels, not through ghGetIssueState"
+            "the GitHub adapter implements it with the registry table's ghGetIssueState"
           ]
         },
         {
           "name": "syncTracker",
-          "signature": "syncTracker(repoPath: string, epicHash: string, deps?: SyncDeps): SyncResult",
+          "signature": "syncTracker(repoPath: string, epicHash: string, table?: RegistryTable): Promise<SyncResult>",
           "parameters": [
             {
               "name": "repoPath",
@@ -300,32 +238,39 @@
               "optional": false
             },
             {
-              "name": "deps",
-              "type": "SyncDeps",
-              "purpose": "the port builder, a clock and a deadline, for tests",
+              "name": "table",
+              "type": "RegistryTable",
+              "purpose": "replaced by an options object carrying the port builder and a Deadline; the table argument stays for existing callers",
               "optional": true
             }
           ],
           "returns": {
-            "type": "SyncResult",
+            "type": "Promise<SyncResult>",
             "meaning": "synced with the mapped statuses, skipped with a reason (no issue yet, tracker disabled, time limit reached), or failed with the port failure"
           },
           "errors": [
             {
-              "type": "none thrown",
+              "type": "ToolDenied",
+              "condition": "rethrown, as today"
+            },
+            {
+              "type": "none thrown otherwise",
               "condition": "a tracker without the status-read capability is returned as failed, naming the capability (k8)"
             }
           ],
-          "preconditions": [],
+          "preconditions": [
+            "the Epic head is bound to an issue, otherwise the result is skipped"
+          ],
           "postconditions": [
-            "on success epicStatus, storyStatus and lastSyncedAt are written into the Define's meta.tracker through patchTrackerMeta, and nothing else on the head changes",
-            "the status mapping (mapIssueStatus) is the one GitHub used",
-            "the deadline is checked before every issue read; a Story not read before it is reached is left out of storyStatus and the result says the time limit was reached"
+            "on success epicStatus, storyStatus and lastSyncedAt are written into the Define's meta.tracker through patchTrackerMeta and nothing else on the head changes",
+            "the status mapping is mapIssueStatus, the one GitHub used",
+            "the Deadline is checked before every issue read; a Story not read before it is reached is left out of storyStatus and the result says the time limit was reached",
+            "the Deadline's signal is passed to the registry calls through the tool deps, so a call in flight is cancelled when the deadline passes"
           ]
         },
         {
           "name": "refreshTrackerStatus",
-          "signature": "refreshTrackerStatus(repoPath: string, epicHash?: string, deps?: SyncDeps): TrackerRefreshReport",
+          "signature": "refreshTrackerStatus(repoPath: string, opts?: { epicHash?: string; deadline?: Deadline }): Promise<TrackerRefreshReport>",
           "parameters": [
             {
               "name": "repoPath",
@@ -334,120 +279,115 @@
               "optional": false
             },
             {
-              "name": "epicHash",
-              "type": "string",
-              "purpose": "one Epic; omitted, every Epic that has a bound issue",
-              "optional": true
-            },
-            {
-              "name": "deps",
-              "type": "SyncDeps",
-              "purpose": "test seams, the clock and the deadline",
+              "name": "opts",
+              "type": "{ epicHash?: string; deadline?: Deadline }",
+              "purpose": "one Epic (omitted: every Epic that has a bound issue) and a Deadline for tests",
               "optional": true
             }
           ],
           "returns": {
-            "type": "TrackerRefreshReport",
-            "meaning": "one SyncResult per Epic and a single line of warning text for each skipped or failed one"
+            "type": "Promise<TrackerRefreshReport>",
+            "meaning": "one SyncResult per Epic and one line of warning text for each skipped or failed one"
           },
           "errors": [
             {
-              "type": "none thrown",
-              "condition": "every failure, including the deadline, is a skipped or failed result inside the report"
+              "type": "ToolDenied",
+              "condition": "rethrown to the caller (the tool hook reports it)"
+            },
+            {
+              "type": "none thrown otherwise",
+              "condition": "every other failure, including the deadline, is a skipped or failed result inside the report"
             }
           ],
           "preconditions": [],
           "postconditions": [
             "a repo whose tracker setting is none makes no tracker call and reports nothing to refresh",
-            "one deadline of 120 seconds (TRACKER_REFRESH_DEADLINE_MS) covers the whole call and is checked before each tracker call, serially; a started gh call is bounded by its own 120-second runGh timeout, so the call returns within 240 seconds at the latest; the sign-in check counts inside the deadline",
+            "one Deadline of TRACKER_REFRESH_DEADLINE_MS (120 seconds, the user's decision of 2026-10-23, kept as the whole-refresh budget) covers the call and is checked before each read; each gh read also has its own registry limit (30 s), so the call returns within 150 s at the latest",
             "Epics not reached before the deadline are reported skipped with 'time limit reached'",
-            "the calls are synchronous, so the daemon event loop is blocked while they run; this is accepted until the daemon is multi-threaded"
-          ]
-        },
-        {
-          "name": "sync",
-          "signature": "sync(repoPath: string, epicHash: string): SyncResult",
-          "parameters": [
-            {
-              "name": "repoPath",
-              "type": "string",
-              "purpose": "the repository",
-              "optional": false
-            },
-            {
-              "name": "epicHash",
-              "type": "string",
-              "purpose": "the Epic to refresh",
-              "optional": false
-            }
-          ],
-          "returns": {
-            "type": "SyncResult",
-            "meaning": "the result of the refresh for that Epic"
-          },
-          "errors": [
-            {
-              "type": "none thrown",
-              "condition": "as refreshTrackerStatus"
-            }
-          ],
-          "preconditions": [],
-          "postconditions": [
-            "the existing explicit refresh in src/cli/services/workflow.ts now runs through refreshTrackerStatus, and a daemon IPC method tracker.refresh runs the same function for clients that cannot call the terminal service (ac5)"
+            "the calls are asynchronous registry calls: the daemon event loop is not blocked"
           ]
         },
         {
           "name": "gitPullTool",
-          "signature": "gitPullTool.execute(input: ToolInput): Promise<ToolResult>",
+          "signature": "registerToolHook({ id: 'tracker-refresh-after-pull', toolId: 'git_pull', run(ctx) }): void",
           "parameters": [
             {
-              "name": "input",
-              "type": "ToolInput",
-              "purpose": "cwd, remote, branch, mode, dryRun",
+              "name": "ctx",
+              "type": "ToolHookContext",
+              "purpose": "the tool id, input, result and caller; input.cwd names the repository",
               "optional": false
             }
           ],
           "returns": {
-            "type": "ToolResult",
-            "meaning": "the git result; after an integrating pull it also carries the tracker refresh warning, if any"
+            "type": "void",
+            "meaning": "a rule that runs after a successful git_pull"
           },
           "errors": [
             {
-              "type": "unchanged",
-              "condition": "a failed git command is returned as before; the refresh does not run"
+              "type": "Error thrown by the rule",
+              "condition": "the refresh was skipped or failed, or a ToolDenied was thrown: the executor keeps the tool a success and adds hookFailures and one line to output"
             }
           ],
-          "preconditions": [],
+          "preconditions": [
+            "registered once at daemon start-up"
+          ],
           "postconditions": [
-            "after a successful pull that is not a dry run, refreshTrackerStatus runs and its failure is added as a warning to the result, never turning success into failure (ac6)",
+            "after a successful pull that is not a dry run, refreshTrackerStatus runs; its warning lines become the thrown message",
             "a dry-run pull runs no refresh"
           ]
         },
         {
           "name": "gitPushTool",
-          "signature": "gitPushTool.execute(input: ToolInput): Promise<ToolResult>",
+          "signature": "registerToolHook({ id: 'tracker-refresh-after-push', toolId: 'git_push', run(ctx) }): void",
           "parameters": [
             {
-              "name": "input",
-              "type": "ToolInput",
-              "purpose": "cwd, remote, ref, dryRun",
+              "name": "ctx",
+              "type": "ToolHookContext",
+              "purpose": "as above",
               "optional": false
             }
           ],
           "returns": {
-            "type": "ToolResult",
-            "meaning": "the git result; after a push that pushed it also carries the tracker refresh warning, if any"
+            "type": "void",
+            "meaning": "a rule that runs after a successful git_push"
           },
           "errors": [
             {
-              "type": "unchanged",
-              "condition": "a failed git command is returned as before; the refresh does not run"
+              "type": "Error thrown by the rule",
+              "condition": "as for the pull rule"
+            }
+          ],
+          "preconditions": [
+            "registered once at daemon start-up"
+          ],
+          "postconditions": [
+            "the refresh runs only when the result's data.pushed is true; a dry-run push returns success with pushed false and runs no refresh"
+          ]
+        },
+        {
+          "name": "handleTrackerSync",
+          "signature": "handleTrackerSync(params: unknown): Promise<SyncResult | { error: string }>",
+          "parameters": [
+            {
+              "name": "params",
+              "type": "unknown",
+              "purpose": "{ repoPath, epicHash }",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<SyncResult | { error: string }>",
+            "meaning": "the result of the refresh for that Epic"
+          },
+          "errors": [
+            {
+              "type": "ToolDenied",
+              "condition": "not caught here: it reaches the client as the error of the call"
             }
           ],
           "preconditions": [],
           "postconditions": [
-            "the refresh runs only when the result's data.pushed is true; a dry-run push, which returns success with pushed false, runs no refresh",
-            "a refresh failure is added as a warning (ac6)"
+            "the daemon method tracker.sync, which the terminal client's sync() calls, runs through refreshTrackerStatus for the one Epic and returns that Epic's SyncResult (ac5 explicit refresh)"
           ]
         },
         {
@@ -481,16 +421,12 @@
       "hld": {
         "amendmentProposal": {
           "amendment": {
-            "type": "sharedContract.methodAdd",
-            "contractId": "sc1",
-            "method": {
-              "name": "TrackerPort.readIssueStatus",
-              "signature": "readIssueStatus?(issue: IssueRef): PortResult<{ state: 'open' | 'closed'; labels: string[] }>",
-              "optional": true
-            },
-            "capability": "status-read"
+            "type": "nonFunctional.retarget",
+            "property": "performance",
+            "oldTarget": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 10-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call.",
+            "newTarget": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker call is a registry tool call with its own limit, after which the action is refused with the reason; the status refresh after a git pull or push has a 120-second budget. A repo without a policy makes no tracker call."
           },
-          "rationale": "The HLD defers the issue-status read to this extend. syncTracker calls the GitHub CLI through an unclassified, untimed call, so a non-GitHub tracker cannot be synced; one optional read and a status-read capability, listed in ALL_CAPABILITIES, let one refresh serve every adapter. A tracker that lacks the capability is rejected when a refresh needs it (k8), never silently skipped.",
+          "rationale": "The registry tools carry their own limits since the tool-registry epic and the port is asynchronous; the 10-second line and the earlier 120-second GH_TIMEOUT_MS decision no longer describe the code.",
           "citations": []
         }
       }
@@ -503,31 +439,23 @@
         "callSites": [
           "src/workflow/tracker/port.ts:21",
           "src/workflow/tracker/port.ts:127-131",
-          "src/workflow/tracker/github-adapter.ts:57"
+          "src/workflow/tracker/github-adapter.ts"
         ]
       },
       {
         "entity": "TrackerPort",
         "change": "field-add",
-        "details": "Optional readIssueStatus(issue) as above; the GitHub adapter implements it with runGh.",
+        "details": "Optional async readIssueStatus(issue) as above; the GitHub adapter implements it over the registry table's ghGetIssueState.",
         "callSites": [
-          "src/workflow/tracker/port.ts:90-114",
-          "src/workflow/tracker/github.ts:86-97"
-        ]
-      },
-      {
-        "entity": "GH_TIMEOUT_MS",
-        "change": "field-modify",
-        "details": "The per-command timeout of every tracker gh call goes from 10_000 to 120_000 ms by the user's decision of 2026-10-23. It changes the bound of every gh command, not only the new read, and the HLD's non-functional line ('every tracker command has a 10-second timeout') is retargeted by an amendment. The constant also builds the 'gh timed out after N s' message, which then says 120 s.",
-        "callSites": [
-          "src/workflow/tracker/github.ts:49",
-          "src/workflow/tracker/github.ts:86-97"
+          "src/workflow/tracker/port.ts",
+          "src/workflow/tracker/github-adapter.ts",
+          "src/workflow/tracker/registry-table.ts"
         ]
       },
       {
         "entity": "ChainReport.tracker",
         "change": "field-add",
-        "details": "The shown tracker record gains read-only artifactId (the Define's artifact id) and revision (its meta.revision, 0 when absent), built by readTrackerMeta and printed by the tracker section of the chain report, next to epicRef and lastSyncedAt. No stored field is added: the stored TrackerMeta is unchanged, so patchTrackerMeta cannot persist them and there is no second revision counter; schemaVersion is untouched.",
+        "details": "The shown tracker record gains read-only artifactId (the Define's artifact id) and revision (its meta.revision, 0 when absent), and a stories list with issue, artifactId and revision for each Story head that has an issue. No stored field is added: the stored TrackerMeta is unchanged, so patchTrackerMeta cannot persist them and there is no second revision counter; schemaVersion is untouched.",
         "callSites": [
           "src/workflow/chain.ts:67-71",
           "src/workflow/chain.ts:228-235",
@@ -537,10 +465,19 @@
       {
         "entity": "IssueReadiness",
         "change": "invariant-change",
-        "details": "not-applicable with reason no-team-policy used to mean only 'no team policy'. It now means no team policy AND a tracker setting of none; a repo with no team policy and a tracker that is on is processed as a team repo is. This overrides epic constraint k4 for that one behaviour, by the user's decision of 2026-10-23: the terminal-only creation was a bug this Story replaces, and the tracker type is the switch, with no new setting.",
+        "details": "not-applicable with reason no-team-policy used to mean only 'no team policy'. It now means no team policy AND a tracker setting of none; a repo with no team policy and a tracker that is on is processed as a team repo is. This overrides epic constraint k4 for that one behaviour, by the user's decision of 2026-10-23.",
         "callSites": [
-          "src/workflow/draft-issues.ts:94-145",
-          "src/workflow/tracker-auto.ts:85-103"
+          "src/workflow/draft-issues.ts:95-145",
+          "src/workflow/tracker-auto.ts"
+        ]
+      },
+      {
+        "entity": "TRACKER_REFRESH_DEADLINE_MS",
+        "change": "new",
+        "details": "A constant of 120_000 ms in the refresh module: the whole-refresh budget. It replaces the retired GH_TIMEOUT_MS decision of 2026-10-23 ('every tracker command gets 120 seconds'): each gh call keeps the registry tool's own limit and the refresh as a whole is bounded by this deadline. The HLD's non-functional line ('every tracker command has a 10-second timeout') is retargeted by an amendment to 'every registry tool call has its own limit and the status refresh has a 120-second budget'.",
+        "callSites": [
+          "src/workflow/tracker/sync.ts",
+          "src/workflow/team/sighting-store.ts"
         ]
       }
     ],
@@ -557,23 +494,10 @@
       }
     ],
     "errorPaths": {
-      "hld": {
-        "amendmentProposal": {
-          "amendment": {
-            "type": "nonFunctional.retarget",
-            "property": "performance",
-            "oldTarget": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 10-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call.",
-            "newTarget": "Each guarded action makes at most two live reads through the port (the signed-in user and the assignee); every tracker command has a 120-second timeout, after which the action is refused with the reason. A repo without a policy makes no tracker call, except that a repo whose tracker setting is on creates its issues at first draft and refreshes their status after a daemon git pull or push.",
-            "rationale": "The user decided on 2026-10-23 that 10 seconds is too low for a tracker command and that every one gets 120 seconds. The refresh and the draft hook for a repo with no team policy also make tracker calls that the old sentence ruled out."
-          },
-          "rationale": "10 seconds is too low for gh against a loaded tracker; every tracker command (GH_TIMEOUT_MS) gets 120 seconds, and the sentence about a repo without a policy is corrected for issue creation and the status refresh.",
-          "citations": []
-        }
-      },
       "errorCases": [
         {
-          "scenario": "The tracker is slow or down while a draft is first written in a repo with no team policy",
-          "detection": "the port from createGithubTracker or the unit-issue ensure returns a PortFailure (unreachable after the 120-second runGh timeout, missing-signin, missing-tool)",
+          "scenario": "The tracker is down or not signed in while a draft is first written in a repo with no team policy",
+          "detection": "the port from createGithubTracker or the unit-issue ensure returns a PortFailure (unreachable, missing-signin, missing-tool, rejected)",
           "response": "ensureDraftIssues returns not-ready with the failure kind and a message; the draft stays; the next draft write or the terminal approve retries",
           "userImpact": "A notice says the issue was not created; the author is never blocked, because a repo with no team policy has no claim to wait for",
           "recoverable": true
@@ -586,10 +510,17 @@
           "recoverable": true
         },
         {
+          "scenario": "A registry call of the draft hook or the refresh is declined, times out, has no client or is cancelled",
+          "detection": "the table call throws ToolDenied (isToolDenied)",
+          "response": "ensureDraftIssues and refreshTrackerStatus rethrow it; the stage stops as for any denied call; in the git tool hook it is thrown as the rule's error so the executor reports it as a hook failure",
+          "userImpact": "The user sees that the call was denied and by whom; the git operation is still a success",
+          "recoverable": true
+        },
+        {
           "scenario": "The tracker is slow or fails during the refresh after git_pull or git_push",
-          "detection": "syncTracker returns failed or skipped, or the 120-second deadline is reached before the next tracker call",
-          "response": "refreshTrackerStatus returns the failed or skipped result in its report; the tool result stays success true and gains a one-line warning",
-          "userImpact": "The pull or push completes, later than usual because the synchronous refresh blocks the daemon, and the user is told that the tracker status was not refreshed and why (ac6)",
+          "detection": "syncTracker returns failed or skipped, or the Deadline is passed before the next read",
+          "response": "refreshTrackerStatus returns the failed or skipped result in its report; the hook throws a one-line message; the executor keeps the tool a success and adds hookFailures and a line of output",
+          "userImpact": "The pull or push completes and the user is told that the tracker status was not refreshed and why (ac6)",
           "recoverable": true
         },
         {
@@ -611,6 +542,13 @@
           "detection": "unitIssueOf returns nothing, or readDefineArtifact throws while listing Stories",
           "response": "skipped with the reason for no issue; an unreadable Story list yields no Story statuses, as today",
           "userImpact": "A skipped line in the report, no failure",
+          "recoverable": true
+        },
+        {
+          "scenario": "A tool hook rule never settles",
+          "detection": "the hook stage has no cancellation bound (src/daemon/tools/hooks.ts), so only the refresh's own Deadline ends it",
+          "response": "the Deadline signal is passed to every registry call of the refresh, so a call in flight is cancelled at the budget and the rule returns",
+          "userImpact": "A slow tracker delays the return of git_pull or git_push by at most the 120-second budget plus one cancelled call",
           "recoverable": true
         }
       ],
@@ -637,19 +575,27 @@
         },
         {
           "input": "A push that git rejects",
-          "expected": "the failed git result is returned as before and no refresh runs"
+          "expected": "the rule does not run, because hooks run only after a tool succeeds"
         },
         {
           "input": "Several Epics in the repo and a slow tracker",
-          "expected": "each Epic with a bound issue is read in turn, serially; those not reached before the 120-second deadline are reported skipped with 'time limit reached'"
+          "expected": "each Epic with a bound issue is read in turn, serially; those not reached before the 120-second budget are reported skipped with 'time limit reached'"
         },
         {
           "input": "A team repo",
-          "expected": "the hook and the refresh behave as before; the team gate and claims are unaffected"
+          "expected": "the draft hook and the refresh behave as before; the team gate and claims are unaffected"
         },
         {
           "input": "An artifact with no meta.revision",
           "expected": "the chain report's tracker record reads revision 0, the sc3 rule"
+        },
+        {
+          "input": "A Story with an issue whose head cannot be read",
+          "expected": "the chain report leaves that Story out of the stories list and shows the Epic record"
+        },
+        {
+          "input": "The chain report's sync-tracker next action",
+          "expected": "it names the explicit refresh (the tracker.sync daemon method through the terminal client's sync), not the GitHub-only tracker.sync workflow, which is left unchanged and is outside the acceptance criteria"
         }
       ],
       "invariantsToPreserve": [
@@ -659,57 +605,61 @@
         },
         {
           "text": "The existing meta.tracker fields keep their names and meaning; the refresh writes only epicStatus, storyStatus and lastSyncedAt",
-          "source": "c3"
-        },
-        {
-          "text": "The terminal approve path stays as the manual fallback and creates only missing issues",
           "source": "c2"
         },
         {
+          "text": "The terminal approve path stays as the manual fallback and creates only missing issues",
+          "source": "c1"
+        },
+        {
           "text": "A tracker failure never fails a git operation or undoes a draft",
+          "source": "c3"
+        },
+        {
+          "text": "A denied registry call is never turned into a tracker failure or a not-ready draft",
           "source": "c3"
         }
       ]
     },
     "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test), tests co-located in __tests__; gh and git stand-in binaries from src/workflow/__tests__/helpers/exec-stand-in.ts for registry-backed tests",
       "testLevels": [
         {
           "level": "unit",
           "purpose": "The draft hook for team repos, repos with no team policy and a tracker that is on, and repos with tracker type none or a malformed config; the refresh and the sync over a fake port, including the deadline; the chain report record",
           "subjects": [
-            "ensureDraftIssues: a team repo; a repo with no team policy and a tracker that is on (creates the Epic and Story issues through the lenient port); a repo with no team policy and tracker type none (no tracker call, not-applicable); a repo with no team policy and a malformed github.json (not-ready with the reason); a repo with no team policy whose entry has no type, where the lenient check and the lenient port agree",
-            "syncTracker and refreshTrackerStatus over a fake port: success writes epicStatus, storyStatus and lastSyncedAt only; a port without status-read fails naming the capability; a read that fails is a failed result; no bound issue is skipped; a fake port that is slow on every read hits the 120-second deadline with an injected clock and the unread Epics and Stories are reported skipped with 'time limit reached'",
-            "missingCapabilities reports status-read for a declared set without it",
-            "readTrackerMeta and the chain report carry the artifact id and revision (0 when absent) next to epicRef and lastSyncedAt, and the stored TrackerMeta gains no field",
-            "sync() in cli/services/workflow.ts runs through refreshTrackerStatus"
+            "ensureDraftIssues: a team repo; a repo with no team policy and a tracker that is on (creates the Epic and Story issues through the lenient port); a repo with no team policy and tracker type none (no tracker call, not-applicable); a repo with no team policy and a malformed github.json (not-ready with the reason); a repo with no team policy whose entry has no type, where the lenient check and the lenient port agree; a declined registry call is rethrown, not made not-ready",
+            "syncTracker and refreshTrackerStatus over a fake port: success writes epicStatus, storyStatus and lastSyncedAt only; a port without status-read fails naming the capability; a read that fails is a failed result; no bound issue is skipped; a fake port that is slow on every read hits the 120-second budget with an injected Deadline and the unread Epics and Stories are reported skipped with 'time limit reached'; a ToolDenied is rethrown",
+            "missingCapabilities reports status-read for a declared set without it; the existing capability-set assertions in src/workflow/tracker/__tests__/port.test.ts and github-adapter.test.ts are updated to include status-read",
+            "readTrackerMeta and the chain report carry the artifact id and revision (0 when absent) for the Epic and for each Story that has an issue, and the stored TrackerMeta gains no field; the sync-tracker next action names the explicit refresh"
           ],
           "fixturesNeeded": [
             "a fake TrackerPort with readIssueStatus",
-            "an injected clock",
+            "an injected Deadline",
             "temp repo with a Define head and unit issue records"
           ]
         },
         {
           "level": "contract",
-          "purpose": "The GitHub adapter's status read, run by the classified gh runner with the new timeout",
+          "purpose": "The GitHub adapter's status read over the registry table and the gh stand-in",
           "subjects": [
-            "readIssueStatus maps gh issue view --json state,labels to { state, labels }; the exec seam sees the 120000 ms timeout; a timeout maps to unreachable with the message 'gh timed out after 120 s', a missing gh to missing-tool and a signed-out gh to missing-signin; the adapter declares status-read; loadTracker rejects a tracker lacking it"
+            "readIssueStatus maps the gh issue view output to { state, labels } through ghGetIssueState; a stand-in gh that never answers is cancelled by the Deadline signal and a gh timeout maps to unreachable, a missing gh to missing-tool and a signed-out gh to missing-signin; the adapter declares status-read; loadTracker rejects a tracker lacking it when status-read is needed"
           ],
           "fixturesNeeded": [
-            "the fake gh through the exec seam, which also records the timeout option"
+            "the gh stand-in binary (installExecStandIn / installNoPrograms)"
           ]
         },
         {
           "level": "integration",
-          "purpose": "The git tools, the daemon method and the terminal approve with the refresh and the hook wired",
+          "purpose": "The git tools with the registered hooks, the daemon method and the terminal approve",
           "subjects": [
-            "git_pull and git_push: a successful run is followed by a refresh; a failing tracker leaves success true and adds a warning; a dry-run pull, a dry-run push (success with pushed false) and a failed git command run no refresh",
-            "the daemon method tracker.refresh runs the same function and returns its report",
+            "git_pull and git_push through callTool with the two hooks registered: a successful run is followed by a refresh; a failing tracker leaves success true and adds hookFailures and a line of output; a ToolDenied from the refresh is reported the same way; a dry-run pull, a dry-run push (success with pushed false) and a failed git command run no refresh",
+            "the daemon method tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult",
             "terminal approve after the daemon already created the issues: creates nothing and no duplicate"
           ],
           "fixturesNeeded": [
             "temp git repo with a bare remote",
-            "fake tracker"
+            "the gh stand-in binary"
           ]
         },
         {
@@ -749,7 +699,7 @@
         {
           "criterionId": "ac5",
           "provingTests": [
-            "git_pull and git_push refresh the tracker status into meta.tracker after success, and tracker.refresh and sync() run the same refresh (integration)",
+            "git_pull and git_push through the registered hooks refresh the tracker status into meta.tracker after success, and tracker.sync runs the same refresh (integration)",
             "refreshTrackerStatus writes epicStatus, storyStatus and lastSyncedAt (unit)",
             "A git pull through the daemon tool refreshes the status of a real issue (smoke)"
           ]
@@ -757,15 +707,15 @@
         {
           "criterionId": "ac6",
           "provingTests": [
-            "a failing or slow tracker leaves git_pull and git_push successful and adds a warning, and a dry-run push runs no refresh (integration)",
-            "refreshTrackerStatus turns the deadline into skipped results and never throws (unit)",
-            "readIssueStatus sees the 120-second timeout and maps a gh timeout to unreachable (contract)"
+            "a failing, denied or slow tracker leaves git_pull and git_push successful and adds hookFailures, and a dry-run push runs no refresh (integration)",
+            "refreshTrackerStatus turns the deadline into skipped results and rethrows only a ToolDenied (unit)",
+            "readIssueStatus is cancelled by the Deadline signal and maps a gh timeout to unreachable (contract)"
           ]
         },
         {
           "criterionId": "ac7",
           "provingTests": [
-            "the chain report's tracker record carries the artifact id and the revision, 0 when absent, and the stored TrackerMeta gains no field (unit)"
+            "the chain report's tracker record carries the artifact id and the revision for the Epic and each Story with an issue, 0 when absent, and the stored TrackerMeta gains no field (unit)"
           ]
         },
         {
@@ -775,89 +725,88 @@
             "the GitHub adapter's readIssueStatus and status-read capability (contract)"
           ]
         }
-      ],
-      "testFramework": "node:test with tsx (npx tsx --test), tests co-located in __tests__"
+      ]
     },
     "alternativesConsidered": [
       {
         "id": "a1",
-        "name": "Widen the existing hook, port-based status read, daemon git hook",
-        "oneLineSummary": "ensureDraftIssues also runs for a repo with no team policy whose tracker setting is on; syncTracker moves onto the port through an optional status read run by the classified gh runner; the daemon's git_pull and git_push tools call one deadline-bound refresh after they succeed; the existing explicit sync calls the same function.",
-        "approach": "Five changes inside the existing seams: the draft hook uses the lenient on/off check and port of the terminal approve for repos with no team policy and keeps loadTracker for team repos; the port gains an optional readIssueStatus and a status-read capability implemented with runGh; the gh timeout becomes 120 seconds by the user's decision; refreshTrackerStatus wraps syncTracker with a 120-second deadline checked before each tracker call; git_pull and git_push call it after a git command that integrated or pushed and add a failure as a warning, and the explicit sync and a daemon method use the same function. ac7's fields go on ChainReport.tracker.",
+        "name": "Port-based status read, post-success tool hooks, one bounded refresh",
+        "oneLineSummary": "Widen the draft hook to solo repos; add an optional status read to the tracker port; run one deadline-bound refresh from post-success hooks on git_pull and git_push and from the tracker.sync daemon method.",
+        "approach": "ensureDraftIssues also runs for a repo with no team policy whose tracker setting is on (the lenient on/off check and port the terminal approve uses), and keeps loadTracker for team repos. TrackerPort gains an optional async readIssueStatus(issue) and a 'status-read' capability (added to the union, ALL_CAPABILITIES and the GitHub adapter's declared set); the GitHub adapter implements it with the registry table's ghGetIssueState. syncTracker is rebuilt as a function over the port that takes a Deadline (createDeadline from src/workflow/team/sighting-store.ts) and checks it before every read, and refreshTrackerStatus wraps it for one or all Epics. Two post-success tool hooks (registerToolHook, the first production rules) on git_pull and git_push call refreshTrackerStatus after an integrating pull or a push with data.pushed true; a failure is thrown from the hook, so the executor reports it as hookFailures and a line of output while the tool stays a success. The tracker.sync daemon method and the tracker.sync workflow both call the same function. ChainReport.tracker gains read-only artifactId and revision for the Epic and one entry per Story that has an issue.",
         "pros": [
-          "Reuses ensureDraftIssues, unit-issue, createGithubTracker and syncTracker; no new subsystem",
-          "One create path for team and solo repos and one status path for every adapter",
-          "A tracker without the status-read capability is a stated failure, never a silent skip",
-          "The refresh is deadline-bound and a tracker failure never fails a git operation"
+          "Meets ac1 to ac8 with the existing seams: tool hooks already carry a failure without changing success, and tracker.sync is already a daemon method",
+          "ac8: any adapter that declares status-read gets the same steps; the check fails with the capability name otherwise",
+          "A ToolDenied from a table call is rethrown by the refresh and shown as the hook failure, never turned into a tracker failure",
+          "One function behind the hook, the daemon method and the workflow"
         ],
         "cons": [
-          "Only git run through the daemon's tools triggers the refresh; git typed in a terminal does not",
-          "The synchronous gh call blocks the daemon event loop during a refresh until the multi-threading work lands",
-          "Needs two HLD amendments (the status read, and the 120-second timeout)",
-          "Changes the draft hook's meaning for repos with no team policy, which the Story and the user ask for"
+          "Registers the first production tool hook in the daemon",
+          "Rebuilding syncTracker over the port touches the code s10 of the tool-registry epic just moved",
+          "A new optional port method and capability change the sc1 contract owned by s1 (a methodAdd amendment)"
         ],
         "costEstimate": "M"
       },
       {
         "id": "a2",
-        "name": "Git hooks installed in the repository",
-        "oneLineSummary": "Install git hook scripts that call the daemon to refresh, so every git pull and push, from any client, triggers the refresh.",
-        "approach": "Same hook widening and port read as a1, but the trigger is a set of git hook scripts written into the repository's hooks directory by a setup command; each hook sends one IPC request to the daemon and exits zero whatever the answer.",
+        "name": "Keep the GitHub-only sync, add the hooks and the explicit refresh",
+        "oneLineSummary": "Leave syncTracker over the registry table as it is, bound it with a deadline, and trigger it from the git tool hooks.",
+        "approach": "The draft hook is widened as in a1 and the chain report gains the artifact id and revision. syncTracker keeps calling the table rows ghAuthOk and ghGetIssueState; refreshTrackerStatus adds only a Deadline and the skip report. The same two post-success hooks and the tracker.sync method call it. No port method, no capability.",
         "pros": [
-          "Covers git run anywhere, including a terminal and an IDE",
-          "The daemon still owns all tracker access"
+          "Smallest change to sc1: no port change and no amendment",
+          "Meets ac1 to ac7 and the explicit and hook halves of ac5 and ac6",
+          "Reuses the tested table path"
         ],
         "cons": [
-          "git has no post-push hook; reference-transaction runs before the push finishes",
-          "Hooks are per clone and not versioned, so each member must run the setup",
-          "Writing into .git/hooks is invasive and collides with existing hooks",
-          "A failure can only be reported later, through a log"
+          "Violates ac8: a tracker other than GitHub cannot be synced",
+          "Leaves the tracker.sync workflow and the daemon method on two different GitHub paths"
         ],
-        "costEstimate": "L",
-        "reasonRejected": "Scores partial on ac5 and ac6 because git has no post-push hook and a hook can only report later; larger and less reliable for the same ac5."
+        "costEstimate": "S",
+        "reasonRejected": "Smallest, but ac8 is violated because the sync stays on GitHub-only table rows."
       },
       {
         "id": "a3",
-        "name": "Smallest: widen the draft hook and add only the explicit refresh",
-        "oneLineSummary": "Widen the draft hook for repos with no team policy and move the explicit sync onto a bounded refresh; leave git pull and push alone.",
-        "approach": "Only ac2, ac3, ac4, ac7 and the explicit half of ac5: the hook runs for any repo whose tracker setting is on, the explicit sync is bounded, and the shown record gains artifactId and revision. No port change, no git integration.",
+        "name": "Git hook scripts installed in the repository",
+        "oneLineSummary": "Install git hook scripts that ask the daemon to refresh after any git pull or push, from any client.",
+        "approach": "The draft hook widening and the port read are as in a1, but the trigger is a set of git hook scripts written into .git/hooks by a setup command; each sends one request to the daemon and exits zero whatever the answer.",
         "pros": [
-          "Smallest change",
-          "No new port surface"
+          "Also fires for git typed in a terminal or an IDE"
         ],
         "cons": [
-          "Does not meet ac5's automatic refresh, ac6 or ac8",
-          "A non-GitHub tracker still cannot be synced"
+          "Git has no post-push hook, so a push can only be refreshed later",
+          "Writes executable files into the user's repository and needs its own install, upgrade and removal",
+          "Larger and less reliable for the same ac5"
         ],
-        "costEstimate": "S",
-        "reasonRejected": "Smallest, but violates ac6 and ac8 and meets ac5 only by an explicit refresh."
+        "costEstimate": "L",
+        "reasonRejected": "Git has no post-push hook, and writing scripts into the user's repository is the largest change for the same ac5."
       }
     ],
     "chosenAlternative": "a1",
     "openQuestions": [
-      "Only git_pull and git_push run through the daemon's tools can trigger the automatic refresh; git typed in a terminal or an IDE cannot. The LLD assumes the explicit refresh plus the daemon tools are enough for ac5 and that a git-hook installer would be its own later Story; the user has not yet confirmed this."
+      "Only git_pull and git_push run through the daemon's tools can trigger the automatic refresh; git typed in a terminal or an IDE cannot. The LLD assumes the explicit refresh plus the daemon tools are enough for ac5 and that a git-hook installer would be its own later Story; the user has not yet confirmed this.",
+      "int1 (ambiguous): the HLD context slice lists no shared contracts, so sc1 and sc3 cannot be checked against a list; they are the contracts the adjacent Stories s1 and s4 own.",
+      "Does the registry table pass a signal from workflowToolDeps to the gh tool call, so the refresh Deadline can cancel a call in flight? Not verified in this design; the plan checks it first and, if it does not, bounds a call only by the registry tool's own limit (30 s)."
     ]
   },
   "citations": [
     {
       "id": "c1",
       "kind": "analyze-bundle",
-      "ref": "s1: the draft-issue hook (src/workflow/draft-issues.ts:94-145; src/daemon/steps/workflow-step/phases/synthesize.ts:90-93)"
+      "ref": "s1: the draft hook (src/workflow/draft-issues.ts:95-145; src/daemon/steps/workflow-step/phases/synthesize.ts:92; src/daemon/workflow-rpc.ts:350; src/workflow/tracker-auto.ts)"
     },
     {
       "id": "c2",
       "kind": "analyze-bundle",
-      "ref": "s1: the tracker config readers and the terminal approve (src/workflow/config/github.ts:349-373; src/workflow/tracker-auto.ts:85-103; src/workflow/tracker-auto.ts:142-156; src/cli/services/workflow.ts:158-171)"
+      "ref": "s1: the status sync, the daemon method and the tracker port (src/workflow/tracker/sync.ts; src/daemon/tracker-setup-handlers.ts; src/cli/services/workflow.ts:308; src/workflow/tracker/port.ts:21; src/workflow/tracker/port.ts:127-131)"
     },
     {
       "id": "c3",
       "kind": "analyze-bundle",
-      "ref": "s1: the status refresh, the explicit sync, the gh runner and the port's capability list (src/workflow/tracker/sync.ts:27-65; src/workflow/tracker/github.ts:86-97; src/workflow/tracker/port.ts:127-131; src/cli/services/workflow.ts:410-411)"
+      "ref": "s1: gh limits, ToolDenied and tool hooks (src/daemon/tools/builtins/gh/helpers.ts:54-69; src/workflow/tracker/registry-table.ts; src/workflow/tracker/tool-denied.ts; src/daemon/tools/hooks.ts; src/daemon/tools/executor.ts:65-73; src/daemon/tools/builtins/git/push.ts:155)"
     },
     {
       "id": "c4",
       "kind": "analyze-bundle",
-      "ref": "s1: the shown tracker record and the daemon's git tools (src/workflow/chain.ts:67-71; src/daemon/tools/builtins/git/pull.ts; src/daemon/tools/builtins/git/push.ts:110-135)"
+      "ref": "s1: the shown tracker record and the second sync path (src/workflow/chain.ts:67-71; src/workflow/chain.ts:228-235; src/workflow/chain.ts:327; src/workflow/runners/tracker/context.ts:111-139)"
     },
     {
       "id": "c5",

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -103,16 +103,49 @@ Run at 2026-11-01T10:05:42.218Z on commit `0fa779e65`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-01T10:12:43.488Z on commit `688056149`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T10:19:27.313Z on commit `66e0566c0`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/index.ts (full walk, single file event, clean-up pass, registration)**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | ac6: adding a repo with no root ignore file results in one existing before the first index runs | `src/indexer/__tests__/reconcile.test.ts` |
+| pass | ac6: a repo added with no root ignore file gets the cheap-tier model's proposal, resolved at call time | `src/indexer/__tests__/ignore-proposal-model.test.ts` |
+| pass | ac7: a cheap tier that cannot be resolved still leaves a fallback root ignore file | `src/indexer/__tests__/ignore-proposal-model.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.2 s |  |
+| `src/indexer/__tests__/ignore-proposal-model.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.4 s |  |
+
+## t7
+
+Run at 2026-11-01T10:20:34.811Z on commit `684b25450`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/watcher.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | a watcher-emitted event for a FileFilter-excluded file never reaches a registered handler, while one for an included file does | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+
+**integration: src/indexer/cross-file-resolver.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | after a full index, rows awaiting a file are classed by the selection rule: not code is no-candidate, an ignored source file and a source file not stored stay awaiting with their reason | `src/indexer/__tests__/cross-file-modes.test.ts` |
+
+**integration: src/indexer/source-roots.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | walks into a 'target' directory FileFilter includes and finds the package under it | `src/indexer/__tests__/source-roots.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/cross-file-modes.test.ts` | 0 | 4 | 1.5 s |  |
+| `src/indexer/__tests__/source-roots.test.ts` | 0 | 25 | 0.6 s |  |
+| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 1 | 0.6 s |  |

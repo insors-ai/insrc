@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s6",
     "createdAt": "2026-11-01T08:48:41.494Z",
-    "updatedAt": "2026-11-01T10:12:43.488Z",
+    "updatedAt": "2026-11-01T10:19:27.313Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -45,51 +45,136 @@
           "file": "package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T10:12:43.488Z"
+        "timestamp": "2026-11-01T10:19:27.313Z"
       },
       {
         "target": {
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T10:12:43.488Z"
+        "timestamp": "2026-11-01T10:19:27.313Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/file-filter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T10:12:43.488Z"
+        "timestamp": "2026-11-01T10:19:27.313Z"
       },
       {
         "target": {
           "file": "src/indexer/file-filter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T10:12:43.488Z"
+        "timestamp": "2026-11-01T10:19:27.313Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T10:12:43.488Z"
+        "timestamp": "2026-11-01T10:19:27.313Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T10:12:43.488Z"
+        "timestamp": "2026-11-01T10:19:27.313Z"
       },
       {
         "target": {
           "file": "src/indexer/watcher.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T10:12:43.488Z"
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/indexing-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/ignore-proposal-model.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/ignore-proposal-model.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/cross-file-modes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/ignore-dirs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/repo-ignore-config.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/source-roots.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/watcher-file-filter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/cross-file-resolver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/repo-ignore-config.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/source-roots.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T10:19:27.313Z"
       }
     ],
-    "commit": "688056149"
+    "commit": "684b25450",
+    "summary": "addRepo() calls proposeIgnoreFile before building the repo's FileFilter, so a repo added with no root ignore file has one before the first full index runs (688056149). Follow-up 66e0566c0 wires a real cheap-tier model (cheapTierIgnoreModel, built like the summariser's provider, resolved per call) into both daemon IndexerService construction sites; before it, production always wrote the fallback file."
   }
 }

@@ -1,4 +1,5 @@
 /** Consumer-only v2 reply boundary. No daemon, driver, storage or provider runtime imports. */
+import { isPublicEndpoint } from './endpoint.js';
 import type { CommittedOutcome, ConnectionKey, DraftTestResult, DriverDescriptor, ManagementCapabilities, ManagementErrorCode, MutationOutcome, OperationStatus, OperationTicket, RemovalState, SafeConnection } from '../connection-management.js';
 import { managementHandshake, parseConnectionKey, parseDraftTestResult, parseOperationTicket } from '../connection-management-wire.js';
 
@@ -103,22 +104,6 @@ export const PUBLIC_CONNECTION_FIELDS = Object.freeze(['kind','label','endpoint'
 /** Portable public-field safety grammar, shared with ConnectionProtocol.kt and
  * the endpointCases corpus. Driver-specific URL validity remains a daemon gate.
  * Never normalize the returned value or use platform URL parser side effects. */
-function safeEndpoint(value:string):void {
- if(/[\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)||value.includes('\\'))fail();
- const scheme=/^([A-Za-z][A-Za-z0-9+.-]*):/.exec(value)??fail();
- const rest=value.slice(scheme[0].length);if(!rest)fail();
- // Producer uri()/address() expose hierarchical forms only. Never guess the
- // credential syntax of an opaque or nested SDK-specific connection string.
- if(!rest.startsWith('//'))fail();
- let authority=rest.slice(2).split(/[/?#]/,1)[0]!;
- if(scheme[1]!.toLowerCase()!=='file'&&!authority)fail();
- for(let n=0;n<8;n++){
-  if(/[\u0000-\u0020\u007f-\u009f\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff@/\\?#<>"{}|^`]/u.test(authority))fail();
-  let next:string;try{next=decodeURIComponent(authority.replace(/%(?![0-9a-f]{2})/gi,'%25'));}catch{return fail();}
-  if(next===authority)return;authority=next;
- }
- fail();
-}
 function safePublicFields(value: unknown): void {
  const config=object(value);
  if(Object.keys(config).some(k=>!PUBLIC_CONNECTION_FIELDS.includes(k)))fail();
@@ -135,7 +120,7 @@ function safePublicFields(value: unknown): void {
   if(Array.isArray(v)){v.forEach(walk);return;}
   if(v&&typeof v==='object')for(const [k,child]of Object.entries(v)){
    if(['secretRef','password','credentials','capability','sessionHandle','runtimeAuth'].includes(k))fail();
-   if(k==='endpoint'){if(typeof child==='string')safeEndpoint(child);else fail();}
+   if(k==='endpoint'){if(!isPublicEndpoint(child))fail();}
    walk(child);
   }
  };

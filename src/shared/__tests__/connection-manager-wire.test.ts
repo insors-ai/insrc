@@ -5,7 +5,7 @@ import { ConnectionReplyError, CONNECTION_REPLY_LIMITS, connectionReplyData, dec
 import type { ConnectionKey, OperationTicket } from '../connection-management.js';
 import type { ConnectionConfig } from '../db-driver.js';
 import '../../daemon/db/drivers/index.js';
-import { driverDescriptors, safeConnection as projectSafeConnection } from '../../daemon/db/driver-profiles.js';
+import { driverDescriptors, safeConnection as projectSafeConnection, materializeDraft, ProfileError } from '../../daemon/db/driver-profiles.js';
 
 const corpus=loadConnectionCorpus();
 const key=corpus.identity.key as ConnectionKey;
@@ -25,6 +25,24 @@ test('CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned read
   assert.equal(decodeSafeConnection(row).readOnly,true);assert.equal(JSON.stringify(row).includes('user/pw'),false);assert.equal(JSON.stringify(row).includes('user:pw'),false);
   assert.deepEqual(config,before,'the producer retains the original SDK-specific config server-side');
  }
+});
+test('CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection',async()=>{
+ const bad=['postgres://host/db\\x','postgres://host/db'+String.fromCharCode(127),'postgres://host/db'+String.fromCharCode(0x85),'postgres://host/db'+String.fromCharCode(0xd800),'mysql://host/a%ff','postgres://h/db?application_name=%E9'];
+ const configs:ConnectionConfig[]=bad.map((url,i)=>({id:'unsafe-'+i,kind:url.startsWith('mysql:')?'mysql':'postgres',url}));
+ configs.push({id:'unsafe-dynamo',kind:'dynamodb',options:{region:'test',endpoint:'http://localhost:8000/a\\b'}});
+ const rows=configs.map(config=>{const before=structuredClone(config);const row=projectSafeConnection(config,{...key,id:config.id},corpus.identity.revision);assert.equal(row.readOnly,true);assert.equal(Object.hasOwn(row.publicConfig,'endpoint'),false);assert.equal(Object.hasOwn((row.publicConfig['options']??{}) as object,'endpoint'),false);assert.deepEqual(config,before);return row;});
+ assert.equal(decodeSafeConnectionList(rows,key.repoRoot).length,rows.length);
+ for(const kind of ['postgres','cockroachdb','mysql','mariadb','mssql','oracle','clickhouse','redis','valkey','keydb','mongodb']){
+  const scheme=kind==='cockroachdb'?'postgres':kind==='clickhouse'?'https':['valkey','keydb'].includes(kind)?'redis':kind;
+  const config:ConnectionConfig={id:'valid-'+kind,kind,url:scheme+'://user:pw@host/db'};const before=structuredClone(config);
+  const row=projectSafeConnection(config,{...key,id:config.id},corpus.identity.revision);assert.equal(row.readOnly,false,kind);assert.equal(decodeSafeConnection(row).readOnly,false,kind);assert.deepEqual(config,before);
+ }
+ for(const publicPatch of [
+  {kind:'postgres',endpoint:'jdbc://postgresql://u:p@h/db'},
+  {kind:'mssql',endpoint:'sqlserver://host;password=x;user=y/db'},
+  {kind:'nats',options:{servers:['nats://u:p@host:4222'],bucket:'fixture'}},
+  {kind:'etcd',options:{hosts:['http://u:p@host:2379']}},
+ ])await assert.rejects(materializeDraft({key,mode:'create',publicPatch,readSecret:async()=>null}),ProfileError);
 });
 const decoders:Record<string,(v:unknown)=>unknown>={capabilities:decodeManagementCapabilities,list:v=>decodeSafeConnectionList(v,key.repoRoot),read:decodeSafeConnection,ticket:decodeOperationTicket,outcome:decodeMutationOutcome,status:decodeOperationStatus,test:decodeDraftTestResult,removal:decodeRemovalState};
 type MutableFixture = Record<string,unknown> & {publicConfig:Record<string,unknown>;value:Record<string,unknown>};

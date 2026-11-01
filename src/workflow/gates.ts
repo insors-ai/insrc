@@ -17,9 +17,9 @@
  * artifact's own meta.
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { LOCAL_GIT_TIMEOUT_MS, orFallback, revParse } from './git-calls.js';
 import { basename, join } from 'node:path';
 
 import { approvalStateOf, lifecycleReviewOf } from './artifact-core/approval-view.js';
@@ -585,23 +585,16 @@ function stampsRangeBase(meta: ApprovableArtifactMeta): boolean {
 /**
  * HEAD as a FULL 40-hex sha, or `undefined` when it cannot be read.
  *
- * Uses the synchronous `execFileSync` idiom already present in this directory
- * (tracker/github.ts) because the approval path is
- * synchronous. Deliberately NOT `revParse` from the git builtins: that helper
- * hard-codes `--short`, and an abbreviated sha in a PERSISTED range base can
+ * Reads HEAD through the git tools (the approval path awaits it). Deliberately
+ * NOT the git builtins' `--short` form: an abbreviated sha in a PERSISTED range base can
  * collide as history grows — a base that silently resolves to the wrong commit is
  * the exact class of defect this stamp exists to remove. The 40-hex check means a
  * short sha could never be stored even if the command changed under us.
  */
-function headFullSha(cwd: string): string | undefined {
-	try {
-		const out = execFileSync('git', ['rev-parse', 'HEAD'], {
-			cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
-		}).trim();
-		return /^[0-9a-f]{40}$/.test(out) ? out : undefined;
-	} catch {
-		return undefined;   // not a git repo, no commits yet, or git unavailable
-	}
+export async function headFullSha(cwd: string): Promise<string | undefined> {
+	// not a git repo, no commits yet or git unavailable: absent (a denied git call is thrown)
+	const out = (await orFallback(revParse(cwd, 'HEAD', {}, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), undefined))?.trim();
+	return out !== undefined && /^[0-9a-f]{40}$/.test(out) ? out : undefined;
 }
 
 /** What the approval needs besides the path: the repository's lifecycle service, who approves, and an override reason. */

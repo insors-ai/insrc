@@ -1043,7 +1043,7 @@ test('t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and s
 		seedDef(repo);                      // DEF only — no PLAN, no LLD to anchor on
 		git('add', '-A'); git('commit', '-qm', 'artifacts');   // keep the tree CLEAN
 		assert.equal(git('diff', '--name-only'), '', 'precondition: clean tree');
-		assert.equal(resolveStoryRangeBase(repo, HASH, 's1'), undefined, 'precondition: no base resolves');
+		assert.equal((await resolveStoryRangeBase(repo, HASH, 's1')), undefined, 'precondition: no base resolves');
 
 		const rec = await validateOnce(repo);
 		assert.deepEqual(rec.body['changeLog'], [],
@@ -1069,7 +1069,7 @@ test('t6: BOTH writers resolve the SAME base for the same Story — one resolver
 		assert.ok(viaCompletionFiles.includes('shipped.ts'),
 			'the completion writer resolved the same base and saw the same committed range');
 		// And the resolver itself agrees with what both of them used.
-		assert.equal(resolveStoryRangeBase(repo, HASH, 's1'), base);
+		assert.equal((await resolveStoryRangeBase(repo, HASH, 's1')), base);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

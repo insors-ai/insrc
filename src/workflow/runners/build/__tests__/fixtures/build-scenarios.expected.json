@@ -1,0 +1,39 @@
+{
+ "HEAD as the gate and the record read it": {
+  "fullIsHead": true,
+  "shortIsPrefix": true
+ },
+ "a BUILD record keeps its recorded commit": {
+  "exists": true,
+  "firstIsHead": true,
+  "kept": true
+ },
+ "no repository and no commit": {
+  "plain": {
+   "stamp": "not-written"
+  },
+  "unborn": {
+   "stamp": "not-written"
+  }
+ },
+ "the build-start stamp": {
+  "absent": {
+   "kind": "absent"
+  },
+  "again": "kept",
+  "baseIsStamp": true,
+  "first": "stamped",
+  "invalid": {
+   "kind": "invalid",
+   "reason": "rangeBase names a commit this repository does not have"
+  },
+  "stampIsHead": true
+ },
+ "the end of a pre-trailer Story": {
+  "shortIsHead": true
+ },
+ "the range base from an upstream artifact": {
+  "byCommitIsIntroducing": true,
+  "stampedBase": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+ }
+}

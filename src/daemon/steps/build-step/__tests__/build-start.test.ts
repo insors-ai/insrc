@@ -172,8 +172,8 @@ function commitRecords(fx: Fx, msg: string): void {
 }
 
 const stampFile = (fx: Fx, storyId: string): string => join(fx.repo, buildStartRelPath(HASH, storyId));
-const stampedBase = (fx: Fx, storyId: string): string => {
-	const r = readBuildStart(fx.repo, HASH, storyId);
+const stampedBase = async (fx: Fx, storyId: string): Promise<string | undefined> => {
+	const r = (await readBuildStart(fx.repo, HASH, storyId));
 	assert.equal(r.kind, 'valid', `expected a valid build-start file for ${storyId}, got ${JSON.stringify(r)}`);
 	return (r as { stamp: { rangeBase: string } }).stamp.rangeBase;
 };
@@ -190,7 +190,7 @@ test('T30/T31: two Stories approved in ONE sweep, built in turn — each change 
 
 		assert.equal((await implement(fx, 's1/t1'))['next'], 'implement');
 		const s1Start = fx.git('rev-parse', 'HEAD');
-		assert.equal(stampedBase(fx, 's1'), s1Start, 's1 is stamped at the commit its build started from');
+		assert.equal((await stampedBase(fx, 's1')), s1Start, 's1 is stamped at the commit its build started from');
 		work(fx, 'story-one.ts', 'everything');   // the build-start file rides along (T31)
 		assert.ok(fx.git('ls-files').split('\n').includes(buildStartRelPath(HASH, 's1')), 'fixture precondition: s1\'s build-start file is committed inside its range');
 		await validate(fx, 's1/t1', 't1');
@@ -200,8 +200,8 @@ test('T30/T31: two Stories approved in ONE sweep, built in turn — each change 
 		assert.equal((await implement(fx, 's2/t1'))['next'], 'implement');
 		const s2Start = fx.git('rev-parse', 'HEAD');
 		assert.notEqual(s2Start, sharedBase, 'fixture precondition: HEAD has moved past the shared approval-time base');
-		assert.equal(stampedBase(fx, 's2'), s2Start, 's2 is stamped AFTER s1\'s work, not at the shared base');
-		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's2'), s2Start);
+		assert.equal((await stampedBase(fx, 's2')), s2Start, 's2 is stamped AFTER s1\'s work, not at the shared base');
+		assert.equal((await resolveStoryRangeBase(fx.repo, HASH, 's2')), s2Start);
 		work(fx, 'story-two.ts', 'everything');
 		await validate(fx, 's2/t1', 't1');
 
@@ -229,7 +229,7 @@ test('T32 (tracked and modified): a build-start file that is the ONLY dirty trac
 		seedEpic(fx, { s1: ['t1'] });
 		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
-		const base = stampedBase(fx, 's1');
+		const base = (await stampedBase(fx, 's1'));
 		work(fx, 'story-one.ts', 'everything');           // the file is now TRACKED
 		// Rewrite it in place (same base, new stampedAt), as a hand correction would.
 		writeFileSync(stampFile(fx, 's1'), JSON.stringify({ epicHash: HASH, storyId: 's1', rangeBase: base, stampedAt: '2026-10-04T12:00:00.000Z' }, null, 2) + '\n');
@@ -250,7 +250,7 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 		await approvePlansInOneSweep(fx, ['s1']);
 
 		await implement(fx, 's1/t1');
-		const start = stampedBase(fx, 's1');
+		const start = (await stampedBase(fx, 's1'));
 		work(fx, 'task-one.ts', 'everything', 's1');
 		await validate(fx, 's1/t1', 't1');
 		// Completing a Story requires a code review by the other party; this one has it.
@@ -264,7 +264,7 @@ test('T33: approval arrives MID-BUILD (two-task Story, BUILD approved after task
 		commitRecords(fx, 'the approval rewrite');
 
 		await implement(fx, 's1/t2');
-		assert.equal(stampedBase(fx, 's1'), start, 'the stamp must not move: the plan\'s second task is not built yet');
+		assert.equal((await stampedBase(fx, 's1')), start, 'the stamp must not move: the plan\'s second task is not built yet');
 		work(fx, 'task-two.ts', 'everything', 's1');
 		await validate(fx, 's1/t2', 't2');
 
@@ -290,7 +290,7 @@ test('T34: the same mid-build approval with the build-start file DELETED before 
 
 		await implement(fx, 's1/t2');
 		assert.equal(existsSync(stampFile(fx, 's1')), false, 'an approved but half-built record must not be stamped at HEAD');
-		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's1'), approvalBase, 'the base is what the resolver gave before this change: the plan\'s approval-time stamp');
+		assert.equal((await resolveStoryRangeBase(fx.repo, HASH, 's1')), approvalBase, 'the base is what the resolver gave before this change: the plan\'s approval-time stamp');
 
 		work(fx, 'task-two.ts', 'source-only', 's1');
 		await validate(fx, 's1/t2', 't2');
@@ -309,7 +309,7 @@ test('T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild\'s 
 		seedEpic(fx, { s1: ['t1'] });
 		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
-		const firstStart = stampedBase(fx, 's1');
+		const firstStart = (await stampedBase(fx, 's1'));
 		work(fx, 'first-build.ts', 'everything');
 		await validate(fx, 's1/t1', 't1');
 		assert.deepEqual(changeLog(fx, 's1'), ['first-build.ts']);
@@ -321,7 +321,7 @@ test('T35: a REBUILD of a finished, approved Story lists EXACTLY the rebuild\'s 
 		await implement(fx, 's1/t1');
 		const rebuildStart = fx.git('rev-parse', 'HEAD');
 		assert.notEqual(rebuildStart, firstStart);
-		assert.equal(stampedBase(fx, 's1'), rebuildStart, 'a finished, approved build re-stamps at the rebuild\'s start');
+		assert.equal((await stampedBase(fx, 's1')), rebuildStart, 'a finished, approved build re-stamps at the rebuild\'s start');
 		work(fx, 'rebuild.ts', 'everything');             // the re-stamped (tracked, modified) file rides along
 		await validate(fx, 's1/t1', 't1');
 		assert.deepEqual(changeLog(fx, 's1'), ['rebuild.ts']);
@@ -338,7 +338,7 @@ test('T36 (plan-driven): implement writes NO BUILD record, and a batch approval 
 		seedEpic(fx, { s1: ['t1'] });
 		await approvePlansInOneSweep(fx, ['s1']);
 		await implement(fx, 's1/t1');
-		assert.equal(readBuildStart(fx.repo, HASH, 's1').kind, 'valid', 'the build did start');
+		assert.equal((await readBuildStart(fx.repo, HASH, 's1')).kind, 'valid', 'the build did start');
 		assert.equal(existsSync(artifact(fx, buildArtifactId(HASH, 's1'))), false, 'no BUILD record until validate');
 		// Everything under the epic is already approved, and the build-start file
 		// is not an artifact, so the sweep finds NOTHING pending. (T33 shows the
@@ -373,7 +373,7 @@ test('T36 (Small route): implement stamps and writes NO BUILD record; a batch ap
 		seedStandaloneLld(fx);
 		const res = out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone: SMALL }));
 		assert.equal(res['next'], 'implement');
-		assert.equal(stampedBase(fx, 's1'), fx.git('rev-parse', 'HEAD'));
+		assert.equal((await stampedBase(fx, 's1')), fx.git('rev-parse', 'HEAD'));
 		assert.equal(existsSync(artifact(fx, buildArtifactId(HASH, 's1'))), false);
 		await assert.rejects(
 			() => approveTarget({ repoPath: fx.repo, epicHash: HASH }),
@@ -392,7 +392,7 @@ test('Trivial route: the first implement stamps HEAD and writes its task-less re
 		const first = out(await handleBuildStep({ phase: 'implement', target: 's1', repo: fx.repo, standalone: TRIVIAL }));
 		assert.equal(first['next'], 'implement');
 		const start = fx.git('rev-parse', 'HEAD');
-		assert.equal(stampedBase(fx, 's1'), start);
+		assert.equal((await stampedBase(fx, 's1')), start);
 		const rec = buildRecord(fx, 's1');
 		assert.equal(rec.body['tasks'], undefined, 'the Trivial record is task-less');
 
@@ -443,10 +443,10 @@ test('fail-open: a stamp that cannot be written leaves the implement result unch
 		block(planDriven);
 		const blocked = await implement(planDriven, 's1/t1');
 		assert.equal(blocked['next'], 'implement', 'the build is not refused or failed');
-		assert.equal(readBuildStart(planDriven.repo, HASH, 's1').kind, 'absent', 'fixture precondition: nothing was stamped');
+		assert.equal((await readBuildStart(planDriven.repo, HASH, 's1')).kind, 'absent', 'fixture precondition: nothing was stamped');
 		unblock(planDriven);
 		assert.deepEqual(blocked, await implement(planDriven, 's1/t1'), 'the same result as an implement that could stamp');
-		assert.equal(readBuildStart(planDriven.repo, HASH, 's1').kind, 'valid');
+		assert.equal((await readBuildStart(planDriven.repo, HASH, 's1')).kind, 'valid');
 	} finally { planDriven.cleanup(); }
 
 	for (const standalone of [SMALL, TRIVIAL]) {
@@ -467,7 +467,7 @@ test('a REFUSED implement stamps nothing', async () => {
 	try {
 		seedEpic(fx, { s1: ['t1'] });                      // the plan is NOT approved
 		assert.equal((await implement(fx, 's1/t1'))['next'], 'refused');
-		assert.equal(readBuildStart(fx.repo, HASH, 's1').kind, 'absent', 'a build that was not admitted has not started');
+		assert.equal((await readBuildStart(fx.repo, HASH, 's1')).kind, 'absent', 'a build that was not admitted has not started');
 	} finally { fx.cleanup(); }
 });
 
@@ -494,7 +494,7 @@ test('T38: no resolvable base and a clean tree -> validate writes an EMPTY chang
 	const fx = mkGit();
 	try {
 		work(fx, 'unrelated.ts', 'everything');
-		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's1'), undefined, 'fixture precondition: no stamp, no upstream artifact');
+		assert.equal((await resolveStoryRangeBase(fx.repo, HASH, 's1')), undefined, 'fixture precondition: no stamp, no upstream artifact');
 		_setBuildValidateProviderForTests({ async runReviewSession<T>() { return judgeVerdict({ taskId: 's1', passed: true }) as T; } });
 		try { await handleBuildStep({ phase: 'validate', target: 's1', repo: fx.repo, standalone: TRIVIAL }); } finally { _setBuildValidateProviderForTests(undefined); }
 		assert.deepEqual(buildRecord(fx, 's1').body['changeLog'], [], 'empty, written so it replaces any prior one (ISSUE-b97752e9)');

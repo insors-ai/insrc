@@ -761,10 +761,10 @@ test('a git_diff result that fails its stat read makes the anchored derivation r
 // ---------------------------------------------------------------------------
 
 /** A Story repo with its build start stamped at the base, as the build does. */
-function mkStampedStoryRepo(storyId: string): ReturnType<typeof mkStoryRepo> {
+async function mkStampedStoryRepo(storyId: string): Promise<ReturnType<typeof mkStoryRepo>> {
 	const fx = mkStoryRepo();
 	execFileSync('git', ['checkout', '-q', fx.base], { cwd: fx.repo, stdio: 'ignore' });
-	assert.equal(stampBuildStart(fx.repo, STORY_KEY.split('/')[0]!, storyId), 'stamped');
+	assert.equal((await stampBuildStart(fx.repo, STORY_KEY.split('/')[0]!, storyId)), 'stamped');
 	execFileSync('git', ['checkout', '-q', 'main'], { cwd: fx.repo, stdio: 'ignore' });
 	return fx;
 }
@@ -773,7 +773,7 @@ const changeLogOf = (jsonPath: string): string[] | undefined =>
 	(JSON.parse(readFileSync(jsonPath, 'utf8')) as { body: { changeLog?: { target: { file: string } }[] } }).body.changeLog?.map(e => e.target.file);
 
 test("a BUILD record's changeLog, from the completion writer and the validate phase, holds the Story's files and none of an unrelated uncommitted change", async () => {
-	const { repo, commit, cleanup } = mkStampedStoryRepo('s1');
+	const { repo, commit, cleanup } = await mkStampedStoryRepo('s1');
 	try {
 		commit({ 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY_KEY);
 		commit({ 'src/theirs.ts': '1\n' }, 'feat(build): s1/t1 theirs', OTHER_KEY);
@@ -787,7 +787,7 @@ test("a BUILD record's changeLog, from the completion writer and the validate ph
 
 test('rewriting a BUILD record whose changeLog held unrelated files replaces it with the Story-scoped changeLog, empty included', async () => {
 	const epicHash = STORY_KEY.split('/')[0]!;
-	const { repo, commit, cleanup } = mkStampedStoryRepo('s1');
+	const { repo, commit, cleanup } = await mkStampedStoryRepo('s1');
 	try {
 		commit({ 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY_KEY);
 		// A record the old working-tree derivation wrote: unrelated files in its changeLog.

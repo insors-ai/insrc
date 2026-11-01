@@ -18,6 +18,7 @@
  * to the implementer via the prompt's "## Resolved design decisions" section.
  */
 
+import { isToolDenied } from '../../../../workflow/tracker/tool-denied.js';
 import { MissingAnchorError } from '../../../../workflow/artifact-ids.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { readLldArtifact } from '../../../../workflow/gates.js';
@@ -81,7 +82,7 @@ export async function handleImplement(
 
 	// The build is admitted, so this is where the Story's build STARTS: record
 	// HEAD as its range base (ISSUE-5f7a7cb9). Kept on a retry or a later task.
-	noteBuildStart(repoPath, ref.epicHash, ref.storyId);
+	await noteBuildStart(repoPath, ref.epicHash, ref.storyId);
 
 	// Surface the design decisions made at plan-start (recorded on the Story
 	// LLD's meta.questionResolutions) into the template's "## Resolved design
@@ -111,11 +112,12 @@ export async function handleImplement(
 /** Stamp the Story's build start, FAIL-OPEN: no outcome, and no failure, may
  *  block or alter the implement turn. `stampBuildStart` documents that it never
  *  throws; the catch is here so that promise is not something a build depends on. */
-function noteBuildStart(repoPath: string, epicHash: string, storyId: string): void {
+async function noteBuildStart(repoPath: string, epicHash: string, storyId: string): Promise<void> {
 	try {
-		const outcome = stampBuildStart(repoPath, epicHash, storyId);
+		const outcome = await stampBuildStart(repoPath, epicHash, storyId);
 		log.info({ storyId, outcome }, 'insrc_build_step[implement]: build-start stamp');
 	} catch (e) {
+		if (isToolDenied(e)) throw e;   // a denied git call ends the turn; every other failure is fail-open
 		log.warn({ storyId, err: e instanceof Error ? e.message : String(e) }, 'insrc_build_step[implement]: build-start stamp failed; continuing');
 	}
 }
@@ -171,7 +173,7 @@ async function handleStandaloneImplement(
 	// Admitted on either standalone route. Stamped BEFORE the Trivial branch
 	// below writes its task-less record, so the stamp is taken at build start
 	// whatever that record later says.
-	noteBuildStart(repoPath, epicHash, storyId);
+	await noteBuildStart(repoPath, epicHash, storyId);
 
 	if (!producesLld) {
 		// Trivial — no upstream artifact; persist the tracking record so the

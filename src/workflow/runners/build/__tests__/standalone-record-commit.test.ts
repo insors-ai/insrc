@@ -31,7 +31,7 @@ async function withRepo(fn: (repo: string, git: (...a: string[]) => string) => v
 		mkdirSync(join(repo, '.insrc', 'artifacts'), { recursive: true });
 		writeFileSync(join(repo, 'seed.ts'), 'seed\n');
 		git('add', '-A'); git('commit', '-qm', 'seed');
-		assert.equal(stampBuildStart(repo, EPIC, 's1'), 'stamped', 'the range base is the seed commit');
+		assert.equal((await stampBuildStart(repo, EPIC, 's1')), 'stamped', 'the range base is the seed commit');
 		await fn(repo, git);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 }

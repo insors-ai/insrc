@@ -878,7 +878,7 @@ test("a pre-trailer Story's BUILD record keeps its recorded commit through valid
 		const git = (...a: string[]): string => execFileSync('git', a, { cwd: repo, encoding: 'utf8' }).trim();
 		writeFileSync(join(repo, '.git', 'info', 'exclude'), '.insrc/\ndocs/builds/\n');
 		const base = git('rev-parse', 'HEAD');
-		assert.equal(stampBuildStart(repo, HASH, 's1'), 'stamped');
+		assert.equal((await stampBuildStart(repo, HASH, 's1')), 'stamped');
 		const work = (file: string, msg: string): string => { writeFileSync(join(repo, file), `${msg}\n`); git('add', file); git('commit', '-qm', msg); return git('rev-parse', '--short', 'HEAD'); };
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 

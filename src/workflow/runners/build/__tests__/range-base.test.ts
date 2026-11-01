@@ -47,14 +47,14 @@ function seedArtifact(repo: string, artifactId: string, meta: Record<string, unk
 // 1. the STAMPED base wins
 // ---------------------------------------------------------------------------
 
-test('t6: the STAMPED base on the PLAN is used, without needing the artifact committed', () => {
+test('t6: the STAMPED base on the PLAN is used, without needing the artifact committed', async () => {
 	const s = mkRepo();
 	try {
 		const stamped = 'a'.repeat(40);
 		seedArtifact(s.repo, planArtifactId(HASH, 's1'), { workflow: 'plan', rangeBase: stamped });
 		// Deliberately NOT committed — this is the state that defeats a
 		// history-based lookup, and the stamp exists precisely for it.
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), stamped);
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), stamped);
 	} finally { s.cleanup(); }
 });
 
@@ -69,25 +69,25 @@ test('range-base.test.ts: a Story\'s build range still resolves from meta.rangeB
 		assert.equal(approvalStateOf(meta), 'approved');
 		assert.equal(meta['rangeBase'], base, 'the approval stamps meta.rangeBase');
 		for (const gone of ['approvedAt', 'approvedBy', 'rejectedAt', 'reviewOverride']) assert.equal(meta[gone], undefined, `and no ${gone}`);
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), base);
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), base);
 	} finally { s.cleanup(); }
 });
 
-test('t6: a STANDALONE story resolves from its LLD stamp when there is no PLAN', () => {
+test('t6: a STANDALONE story resolves from its LLD stamp when there is no PLAN', async () => {
 	const s = mkRepo();
 	try {
 		const stamped = 'b'.repeat(40);
 		seedArtifact(s.repo, lldArtifactId(HASH, 's1'), { workflow: 'design.story', standalone: true, rangeBase: stamped });
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), stamped);
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), stamped);
 	} finally { s.cleanup(); }
 });
 
-test('t6: the PLAN stamp takes PRECEDENCE over the LLD stamp — one chain, one base', () => {
+test('t6: the PLAN stamp takes PRECEDENCE over the LLD stamp — one chain, one base', async () => {
 	const s = mkRepo();
 	try {
 		seedArtifact(s.repo, planArtifactId(HASH, 's1'), { workflow: 'plan', rangeBase: 'c'.repeat(40) });
 		seedArtifact(s.repo, lldArtifactId(HASH, 's1'), { workflow: 'design.story', rangeBase: 'd'.repeat(40) });
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), 'c'.repeat(40),
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), 'c'.repeat(40),
 			'the PLAN is the nearer upstream, so its base wins');
 	} finally { s.cleanup(); }
 });
@@ -96,7 +96,7 @@ test('t6: the PLAN stamp takes PRECEDENCE over the LLD stamp — one chain, one 
 // 2. the PLAN-INTRODUCING-COMMIT fallback (the pre-stamp records)
 // ---------------------------------------------------------------------------
 
-test('t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT — the bfe98ff7 s4 repair method', () => {
+test('t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT — the bfe98ff7 s4 repair method', async () => {
 	const s = mkRepo();
 	try {
 		// A plan with no rangeBase, COMMITTED — exactly the shape of the 648
@@ -108,7 +108,7 @@ test('t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT
 		writeFileSync(join(s.repo, 'work.ts'), 'export const w = 1;\n');
 		s.git('add', '-A'); s.git('commit', '-qm', 'the Story work');
 
-		const base = resolveStoryRangeBase(s.repo, HASH, 's1');
+		const base = (await resolveStoryRangeBase(s.repo, HASH, 's1'));
 		assert.match(String(base), SHA40);
 		assert.equal(base, planCommit,
 			'the base is the introducing commit ITSELF, not its parent: base..HEAD excludes base, and the work lands after the plan was committed');
@@ -119,13 +119,13 @@ test('t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT
 	} finally { s.cleanup(); }
 });
 
-test('t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not an error — the state this Story\'s own LLD was in', () => {
+test('t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not an error — the state this Story\'s own LLD was in', async () => {
 	const s = mkRepo();
 	try {
 		seedArtifact(s.repo, planArtifactId(HASH, 's1'), { workflow: 'plan', ...approvedMeta({ at: '2026-10-02T00:00:00.000Z' }) });
 		// Never committed, and no stamp (a pre-t5 approval).
         let out: string | undefined | 'threw';
-        try { out = resolveStoryRangeBase(s.repo, HASH, 's1'); } catch { out = 'threw'; }
+        try { out = (await resolveStoryRangeBase(s.repo, HASH, 's1')); } catch { out = 'threw'; }
 		assert.equal(out, undefined, 'no stamp + never committed → undefined, and emphatically not a throw');
 	} finally { s.cleanup(); }
 });
@@ -134,15 +134,15 @@ test('t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not a
 // 3. honest absence — the deliberate divergence from the HEAD^ chain
 // ---------------------------------------------------------------------------
 
-test('t6: NO upstream at all (the TRIVIAL route) yields undefined — the specified outcome, not a failure', () => {
+test('t6: NO upstream at all (the TRIVIAL route) yields undefined — the specified outcome, not a failure', async () => {
 	const s = mkRepo();
 	try {
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), undefined,
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), undefined,
 			'a trivial build has no plan and no LLD, so there is nothing to stamp or locate');
 	} finally { s.cleanup(); }
 });
 
-test('t6: the resolver NEVER substitutes HEAD^ or the empty-tree object — the divergence from the code-review chain', () => {
+test('t6: the resolver NEVER substitutes HEAD^ or the empty-tree object — the divergence from the code-review chain', async () => {
 	const s = mkRepo();
 	try {
 		writeFileSync(join(s.repo, 'later.ts'), 'export const l = 1;\n');
@@ -150,19 +150,19 @@ test('t6: the resolver NEVER substitutes HEAD^ or the empty-tree object — the 
 		const headParent = s.git('rev-parse', 'HEAD^');
 		const emptyTree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 
-		const base = resolveStoryRangeBase(s.repo, HASH, 's1');
+		const base = (await resolveStoryRangeBase(s.repo, HASH, 's1'));
 		assert.equal(base, undefined, 'still undefined');
 		assert.notEqual(base, headParent, 'NOT HEAD^ — that would silently describe the last commit as the Story\'s work');
 		assert.notEqual(base, emptyTree, 'NOT the empty-tree object — that would describe the whole history');
 	} finally { s.cleanup(); }
 });
 
-test('t6: git UNAVAILABLE / a non-git directory yields undefined without throwing', () => {
+test('t6: git UNAVAILABLE / a non-git directory yields undefined without throwing', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-nogit-rb-'));
 	try {
 		seedArtifact(dir, planArtifactId(HASH, 's1'), { workflow: 'plan' });   // no stamp
 		let out: string | undefined | 'threw';
-		try { out = resolveStoryRangeBase(dir, HASH, 's1'); } catch { out = 'threw'; }
+		try { out = (await resolveStoryRangeBase(dir, HASH, 's1')); } catch { out = 'threw'; }
 		assert.equal(out, undefined, 'the git lookup failing must not throw out of the resolver');
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
@@ -171,34 +171,34 @@ test('t6: git UNAVAILABLE / a non-git directory yields undefined without throwin
 // 4. malformed / empty inputs
 // ---------------------------------------------------------------------------
 
-test('t6: an EMPTY-STRING stamp is treated as absent and falls through to the commit lookup', () => {
+test('t6: an EMPTY-STRING stamp is treated as absent and falls through to the commit lookup', async () => {
 	const s = mkRepo();
 	try {
 		seedArtifact(s.repo, planArtifactId(HASH, 's1'), { workflow: 'plan', rangeBase: '' });
 		s.git('add', '-A'); s.git('commit', '-qm', 'PLAN approved');
 		const planCommit = s.git('rev-parse', 'HEAD');
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), planCommit,
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), planCommit,
 			'an empty stamp is not a base — fall through rather than persist a malformed range');
 	} finally { s.cleanup(); }
 });
 
-test('t6: a MALFORMED artifact json is treated as absent rather than throwing', () => {
+test('t6: a MALFORMED artifact json is treated as absent rather than throwing', async () => {
 	const s = mkRepo();
 	try {
 		const abs = join(s.repo, ARTIFACTS_DIR, `${planArtifactId(HASH, 's1')}.json`);
 		mkdirSync(dirname(abs), { recursive: true });
 		writeFileSync(abs, '{ not valid json');
 		let out: string | undefined | 'threw';
-		try { out = resolveStoryRangeBase(s.repo, HASH, 's1'); } catch { out = 'threw'; }
+		try { out = (await resolveStoryRangeBase(s.repo, HASH, 's1')); } catch { out = 'threw'; }
 		assert.equal(out, undefined);
 	} finally { s.cleanup(); }
 });
 
-test('t6: an empty epicHash or storyId yields undefined without touching the filesystem or git', () => {
+test('t6: an empty epicHash or storyId yields undefined without touching the filesystem or git', async () => {
 	const s = mkRepo();
 	try {
-		assert.equal(resolveStoryRangeBase(s.repo, '', 's1'), undefined);
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, ''), undefined);
+		assert.equal((await resolveStoryRangeBase(s.repo, '', 's1')), undefined);
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, '')), undefined);
 	} finally { s.cleanup(); }
 });
 
@@ -237,37 +237,37 @@ test('T18: buildStartRelPath is the one path, outside the artifact store', () =>
 	assert.ok(!buildStartRelPath(HASH, 's1').startsWith(`${ARTIFACTS_DIR}/`), 'it must not sit where the approval sweep looks');
 });
 
-test('T18: a VALID build-start file wins over a different approval-time stamp on the PLAN', () => {
+test('T18: a VALID build-start file wins over a different approval-time stamp on the PLAN', async () => {
 	const s = mkStampedRepo();
 	try {
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), PLAN_STAMP, 'fixture precondition: without the file the PLAN stamp answers');
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), PLAN_STAMP, 'fixture precondition: without the file the PLAN stamp answers');
 		seedBuildStart(s.repo, HASH, 's1', { epicHash: HASH, storyId: 's1', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' });
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), s.first);
-		assert.deepEqual(readBuildStart(s.repo, HASH, 's1'), {
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), s.first);
+		assert.deepEqual((await readBuildStart(s.repo, HASH, 's1')), {
 			kind: 'valid',
 			stamp: { epicHash: HASH, storyId: 's1', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' },
 		});
 	} finally { s.cleanup(); }
 });
 
-test('T18: a HAND-WRITTEN file with the four fields is accepted — compact json, extra keys, any key order', () => {
+test('T18: a HAND-WRITTEN file with the four fields is accepted — compact json, extra keys, any key order', async () => {
 	const s = mkStampedRepo();
 	try {
 		seedBuildStart(s.repo, HASH, 's1', `{"stampedAt":"2026-10-04T10:00:00Z","note":"set by hand","rangeBase":"${s.first}","storyId":"s1","epicHash":"${HASH}"}`);
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), s.first);
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), s.first);
 	} finally { s.cleanup(); }
 });
 
-test('T18: one Story\'s build-start file does not answer for another Story of the same epic', () => {
+test('T18: one Story\'s build-start file does not answer for another Story of the same epic', async () => {
 	const s = mkStampedRepo();
 	try {
 		seedBuildStart(s.repo, HASH, 's1', { epicHash: HASH, storyId: 's1', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' });
 		seedArtifact(s.repo, planArtifactId(HASH, 's2'), { workflow: 'plan', rangeBase: 'f'.repeat(40) });
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's2'), 'f'.repeat(40));
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's2')), 'f'.repeat(40));
 	} finally { s.cleanup(); }
 });
 
-test('T19: an invalid build-start file is IGNORED and the approval-time stamp is returned', () => {
+test('T19: an invalid build-start file is IGNORED and the approval-time stamp is returned', async () => {
 	const s = mkStampedRepo();
 	try {
 		const good = { epicHash: HASH, storyId: 's1', rangeBase: s.first, stampedAt: '2026-10-04T10:00:00.000Z' };
@@ -286,37 +286,37 @@ test('T19: an invalid build-start file is IGNORED and the approval-time stamp is
 		];
 		for (const [name, content, reason] of cases) {
 			seedBuildStart(s.repo, HASH, 's1', content);
-			const read = readBuildStart(s.repo, HASH, 's1');
+			const read = (await readBuildStart(s.repo, HASH, 's1'));
 			assert.equal(read.kind, 'invalid', `${name}: must read as invalid, got ${JSON.stringify(read)}`);
 			assert.match((read as { reason: string }).reason, reason, name);
-			assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), PLAN_STAMP, `${name}: resolution must continue to the PLAN stamp`);
+			assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), PLAN_STAMP, `${name}: resolution must continue to the PLAN stamp`);
 		}
 	} finally { s.cleanup(); }
 });
 
-test('T19: a build-start file naming a TREE or BLOB object, not a commit, is invalid', () => {
+test('T19: a build-start file naming a TREE or BLOB object, not a commit, is invalid', async () => {
 	const s = mkStampedRepo();
 	try {
 		const tree = s.git('rev-parse', 'HEAD^{tree}');
 		seedBuildStart(s.repo, HASH, 's1', { epicHash: HASH, storyId: 's1', rangeBase: tree, stampedAt: '2026-10-04T10:00:00.000Z' });
-		assert.equal(readBuildStart(s.repo, HASH, 's1').kind, 'invalid');
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), PLAN_STAMP);
+		assert.equal((await readBuildStart(s.repo, HASH, 's1')).kind, 'invalid');
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), PLAN_STAMP);
 	} finally { s.cleanup(); }
 });
 
-test('T19/T20: with an invalid file and NOTHING else to resolve from, the answer is still undefined — no substituted range', () => {
+test('T19/T20: with an invalid file and NOTHING else to resolve from, the answer is still undefined — no substituted range', async () => {
 	const s = mkRepo();
 	try {
 		seedBuildStart(s.repo, HASH, 's1', { epicHash: HASH, storyId: 's1', rangeBase: '1'.repeat(40), stampedAt: '2026-10-04T10:00:00.000Z' });
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), undefined);
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), undefined);
 	} finally { s.cleanup(); }
 });
 
-test('T20: with NO build-start file the read is `absent` and resolution is exactly the pre-existing chain', () => {
+test('T20: with NO build-start file the read is `absent` and resolution is exactly the pre-existing chain', async () => {
 	const s = mkStampedRepo();
 	try {
-		assert.deepEqual(readBuildStart(s.repo, HASH, 's1'), { kind: 'absent' });
-		assert.equal(resolveStoryRangeBase(s.repo, HASH, 's1'), PLAN_STAMP);
+		assert.deepEqual((await readBuildStart(s.repo, HASH, 's1')), { kind: 'absent' });
+		assert.equal((await resolveStoryRangeBase(s.repo, HASH, 's1')), PLAN_STAMP);
 	} finally { s.cleanup(); }
 });
 
@@ -370,29 +370,29 @@ const stampOnDisk = (fx: Fx, storyId = 's1'): { rangeBase: string; epicHash: str
 const pass = (...ids: string[]): Array<{ id: string; passed: boolean }> => ids.map(id => ({ id, passed: true }));
 
 /** Assert the outcome is `kept` and the file is byte-for-byte what was seeded. */
-function assertKept(fx: Fx, before: string, why: string): void {
-	assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'kept', why);
+async function assertKept(fx: Fx, before: string, why: string): void {
+	assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'kept', why);
 	assert.equal(readFileSync(stampPath(fx), 'utf8'), before, `${why}: the file must be untouched`);
 }
 
 /** Assert the outcome is `stamped` and the file now names HEAD, not `first`. */
-function assertRestamped(fx: Fx, why: string): void {
-	assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'stamped', why);
+async function assertRestamped(fx: Fx, why: string): void {
+	assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'stamped', why);
 	assert.equal(stampOnDisk(fx).rangeBase, fx.head, `${why}: the stamp must now be HEAD`);
 	assert.notEqual(stampOnDisk(fx).rangeBase, fx.first);
 }
 
 /** Assert the outcome is `skipped-work-exists` and no usable file was written. */
-function assertSkipped(fx: Fx, why: string): void {
-	assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'skipped-work-exists', why);
-	assert.notEqual(readBuildStart(fx.repo, HASH, 's1').kind, 'valid', `${why}: no valid stamp may exist afterwards`);
+async function assertSkipped(fx: Fx, why: string): void {
+	assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'skipped-work-exists', why);
+	assert.notEqual((await readBuildStart(fx.repo, HASH, 's1')).kind, 'valid', `${why}: no valid stamp may exist afterwards`);
 }
 
-test('T1: no stamp and no BUILD record -> stamped; the file holds HEAD\'s full sha and the Story\'s ids', () => {
+test('T1: no stamp and no BUILD record -> stamped; the file holds HEAD\'s full sha and the Story\'s ids', async () => {
 	const fx = mkStampRepo();
 	try {
 		const t0 = Date.now();
-		assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'stamped');
+		assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'stamped');
 		const onDisk = stampOnDisk(fx);
 		assert.equal(onDisk.rangeBase, fx.head);
 		assert.match(onDisk.rangeBase, SHA40);
@@ -401,7 +401,7 @@ test('T1: no stamp and no BUILD record -> stamped; the file holds HEAD\'s full s
 		assert.ok(Date.parse(onDisk.stampedAt) >= t0 - 1000 && Date.parse(onDisk.stampedAt) <= Date.now() + 1000, 'stampedAt is the time of the call');
 		assert.deepEqual(Object.keys(onDisk).sort(), ['epicHash', 'rangeBase', 'stampedAt', 'storyId']);
 		// What it wrote is what the resolver then returns.
-		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's1'), fx.head);
+		assert.equal((await resolveStoryRangeBase(fx.repo, HASH, 's1')), fx.head);
 	} finally { fx.cleanup(); }
 });
 
@@ -555,65 +555,65 @@ test('T13 (unreadable record): no stamp and a BUILD record that cannot be parsed
 	}
 });
 
-test('T14: no stamp and a FINISHED record -> stamped', () => {
+test('T14: no stamp and a FINISHED record -> stamped', async () => {
 	const fx = mkStampRepo();
 	try {
 		seedPlan(fx, ['t1', 't2']);
 		seedBuild(fx, { approvedAt: T_AFTER, tasks: pass('t1', 't2') });
-		assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'stamped');
+		assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'stamped');
 		assert.equal(stampOnDisk(fx).rangeBase, fx.head);
 	} finally { fx.cleanup(); }
 });
 
-test('T15: no stamp and a TASK-LESS record, approved or not -> stamped', () => {
+test('T15: no stamp and a TASK-LESS record, approved or not -> stamped', async () => {
 	for (const approvedAt of [undefined, T_AFTER]) {
 		const fx = mkStampRepo();
 		try {
 			seedBuild(fx, { ...(approvedAt !== undefined ? { approvedAt } : {}) });
-			assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'stamped', `approvedAt=${String(approvedAt)}`);
+			assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'stamped', `approvedAt=${String(approvedAt)}`);
 			assert.equal(stampOnDisk(fx).rangeBase, fx.head);
 		} finally { fx.cleanup(); }
 	}
 });
 
-test('T16: a repo with no commits -> not-written, no file', () => {
+test('T16: a repo with no commits -> not-written, no file', async () => {
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-nocommit-'));
 	try {
 		execFileSync('git', ['init', '-q'], { cwd: repo });
-		assert.equal(stampBuildStart(repo, HASH, 's1'), 'not-written');
+		assert.equal((await stampBuildStart(repo, HASH, 's1')), 'not-written');
 		assert.equal(existsSync(join(repo, buildStartRelPath(HASH, 's1'))), false);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('T16: a directory that is not a git repo -> not-written, without throwing', () => {
+test('T16: a directory that is not a git repo -> not-written, without throwing', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-nogit-'));
 	try {
-		assert.equal(stampBuildStart(dir, HASH, 's1'), 'not-written');
+		assert.equal((await stampBuildStart(dir, HASH, 's1')), 'not-written');
 		assert.equal(existsSync(join(dir, buildStartRelPath(HASH, 's1'))), false);
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('T16: the build-start directory cannot be created -> not-written, without throwing', () => {
+test('T16: the build-start directory cannot be created -> not-written, without throwing', async () => {
 	const fx = mkStampRepo();
 	try {
 		// A FILE where the directory must go: mkdir fails on every platform, with
 		// no reliance on permission bits (which root ignores).
 		mkdirSync(join(fx.repo, '.insrc'), { recursive: true });
 		writeFileSync(join(fx.repo, '.insrc', 'build-start'), 'in the way\n');
-		assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'not-written');
+		assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'not-written');
 	} finally { fx.cleanup(); }
 });
 
-test('T16: an empty epicHash or storyId -> not-written, nothing created', () => {
+test('T16: an empty epicHash or storyId -> not-written, nothing created', async () => {
 	const fx = mkStampRepo();
 	try {
-		assert.equal(stampBuildStart(fx.repo, '', 's1'), 'not-written');
-		assert.equal(stampBuildStart(fx.repo, HASH, ''), 'not-written');
+		assert.equal((await stampBuildStart(fx.repo, '', 's1')), 'not-written');
+		assert.equal((await stampBuildStart(fx.repo, HASH, '')), 'not-written');
 		assert.equal(existsSync(join(fx.repo, '.insrc', 'build-start')), false);
 	} finally { fx.cleanup(); }
 });
 
-test('T17: an INVALID stamp with no recorded task is replaced by a fresh one; with an unfinished record it is left alone', () => {
+test('T17: an INVALID stamp with no recorded task is replaced by a fresh one; with an unfinished record it is left alone', async () => {
 	const invalid = (fx: Fx): ReadonlyArray<readonly [string, unknown]> => [
 		['malformed',             '{ not json'],
 		['names another Story',   { epicHash: HASH, storyId: 's2', rangeBase: fx.first, stampedAt: T_STAMP }],
@@ -625,8 +625,8 @@ test('T17: an INVALID stamp with no recorded task is replaced by a fresh one; wi
 		try {
 			const [name, content] = invalid(a)[i]!;
 			seedBuildStart(a.repo, HASH, 's1', content);
-			assert.equal(stampBuildStart(a.repo, HASH, 's1'), 'stamped', `${name}, no record`);
-			assert.deepEqual(readBuildStart(a.repo, HASH, 's1').kind, 'valid');
+			assert.equal((await stampBuildStart(a.repo, HASH, 's1')), 'stamped', `${name}, no record`);
+			assert.deepEqual((await readBuildStart(a.repo, HASH, 's1')).kind, 'valid');
 			assert.equal(stampOnDisk(a).rangeBase, a.head);
 		} finally { a.cleanup(); }
 
@@ -637,25 +637,25 @@ test('T17: an INVALID stamp with no recorded task is replaced by a fresh one; wi
 			const rel = seedBuildStart(b.repo, HASH, 's1', content);
 			const before = readFileSync(join(b.repo, rel), 'utf8');
 			seedBuild(b, { approvedAt: T_AFTER, tasks: [{ id: 's1', passed: false }] });
-			assert.equal(stampBuildStart(b.repo, HASH, 's1'), 'skipped-work-exists', `${name}, unfinished record`);
+			assert.equal((await stampBuildStart(b.repo, HASH, 's1')), 'skipped-work-exists', `${name}, unfinished record`);
 			assert.equal(readFileSync(join(b.repo, rel), 'utf8'), before);
 		} finally { b.cleanup(); }
 	}
 });
 
-test('T1/T2 together: a second call after the first stamp keeps it, even after HEAD moves on', () => {
+test('T1/T2 together: a second call after the first stamp keeps it, even after HEAD moves on', async () => {
 	const fx = mkStampRepo();
 	try {
-		assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'stamped');
+		assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'stamped');
 		const before = readFileSync(stampPath(fx), 'utf8');
 		writeFileSync(join(fx.repo, 'more.ts'), 'export const m = 1;\n');
 		fx.git('add', 'more.ts'); fx.git('commit', '-qm', 'task 1 of the Story');
 		assertKept(fx, before, 'the Story\'s own commit must not pull the base forward');
-		assert.equal(resolveStoryRangeBase(fx.repo, HASH, 's1'), fx.head, 'the base is still where the build started');
+		assert.equal((await resolveStoryRangeBase(fx.repo, HASH, 's1')), fx.head, 'the base is still where the build started');
 	} finally { fx.cleanup(); }
 });
 
-test('stampBuildStart never writes or changes an artifact record', () => {
+test('stampBuildStart never writes or changes an artifact record', async () => {
 	const fx = mkStampRepo();
 	try {
 		seedPlan(fx, ['t1']);
@@ -663,7 +663,7 @@ test('stampBuildStart never writes or changes an artifact record', () => {
 		const dir = join(fx.repo, ARTIFACTS_DIR);
 		const snapshot = (): Record<string, string> => Object.fromEntries(readdirSync(dir).sort().map(f => [f, readFileSync(join(dir, f), 'utf8')]));
 		const before = snapshot();
-		assert.equal(stampBuildStart(fx.repo, HASH, 's1'), 'stamped');
+		assert.equal((await stampBuildStart(fx.repo, HASH, 's1')), 'stamped');
 		assert.deepEqual(snapshot(), before);
 	} finally { fx.cleanup(); }
 });

@@ -46,11 +46,12 @@
  * untouched, so a Story with no such file resolves exactly as before.
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
+import { catFileExists, LOCAL_GIT_TIMEOUT_MS, orFallback, pathHistory, revParse } from '../../git-calls.js';
+import { isToolDenied } from '../../tracker/tool-denied.js';
 // Type-only: shares t5's single declaration of `meta.rangeBase` without creating
 // a runtime dependency on the approval gate (erased at compile).
 import type { ApprovableArtifactMeta } from '../../gates.js';
@@ -92,13 +93,8 @@ export type BuildStartRead =
 const SHA40 = /^[0-9a-f]{40}$/;
 
 /** Whether `sha` names a commit this repository still has. Never throws. */
-function commitExists(repoPath: string, sha: string): boolean {
-	try {
-		execFileSync('git', ['cat-file', '-e', `${sha}^{commit}`], { cwd: repoPath, stdio: 'ignore' });
-		return true;
-	} catch {
-		return false;
-	}
+async function commitExists(repoPath: string, sha: string): Promise<boolean> {
+	return orFallback(catFileExists(repoPath, `${sha}^{commit}`, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), false);
 }
 
 /**
@@ -109,7 +105,7 @@ function commitExists(repoPath: string, sha: string): boolean {
  * names THIS Story, and its commit still exists. Anything else is `invalid` with
  * a reason — a stamp that cannot be trusted must not supply a range base.
  */
-export function readBuildStart(repoPath: string, epicHash: string, storyId: string): BuildStartRead {
+export async function readBuildStart(repoPath: string, epicHash: string, storyId: string): Promise<BuildStartRead> {
 	const p = join(repoPath, buildStartRelPath(epicHash, storyId));
 	if (!existsSync(p)) return { kind: 'absent' };
 	let parsed: unknown;
@@ -125,7 +121,7 @@ export function readBuildStart(repoPath: string, epicHash: string, storyId: stri
 	if (typeof rangeBase !== 'string' || !SHA40.test(rangeBase)) return { kind: 'invalid', reason: 'rangeBase is not a 40-hex sha' };
 	const stampedAt = o['stampedAt'];
 	if (typeof stampedAt !== 'string' || Number.isNaN(Date.parse(stampedAt))) return { kind: 'invalid', reason: 'stampedAt is not a time' };
-	if (!commitExists(repoPath, rangeBase)) return { kind: 'invalid', reason: 'rangeBase names a commit this repository does not have' };
+	if (!(await commitExists(repoPath, rangeBase))) return { kind: 'invalid', reason: 'rangeBase names a commit this repository does not have' };
 	return { kind: 'valid', stamp: { epicHash, storyId, rangeBase, stampedAt } };
 }
 
@@ -230,13 +226,9 @@ function isFinished(facts: BuildFacts, plan: readonly string[] | 'none' | 'unrea
 }
 
 /** HEAD's full sha, or undefined when there is no HEAD (no commits, not a repo). */
-function headFullSha(repoPath: string): string | undefined {
-	try {
-		const out = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-		return SHA40.test(out) ? out : undefined;
-	} catch {
-		return undefined;
-	}
+async function headFullSha(repoPath: string): Promise<string | undefined> {
+	const out = await orFallback(revParse(repoPath, 'HEAD', {}, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), undefined);
+	return out !== undefined && SHA40.test(out.trim()) ? out.trim() : undefined;
 }
 
 /**
@@ -254,10 +246,10 @@ function headFullSha(repoPath: string): string | undefined {
  * So no state in which the record shows unfinished work puts HEAD in the stamp.
  * A record that exists but cannot be read counts as unfinished work.
  */
-export function stampBuildStart(repoPath: string, epicHash: string, storyId: string): StampOutcome {
+export async function stampBuildStart(repoPath: string, epicHash: string, storyId: string): Promise<StampOutcome> {
 	try {
 		if (epicHash.length === 0 || storyId.length === 0) return 'not-written';
-		const read  = readBuildStart(repoPath, epicHash, storyId);
+		const read  = await readBuildStart(repoPath, epicHash, storyId);
 		const facts = readBuildFacts(repoPath, epicHash, storyId);
 		const finished = isFinished(facts, readPlanTaskIds(repoPath, epicHash, storyId), storyId);
 
@@ -270,7 +262,7 @@ export function stampBuildStart(repoPath: string, epicHash: string, storyId: str
 			if (showsWork && !finished) return 'skipped-work-exists';
 		}
 
-		const head = headFullSha(repoPath);
+		const head = await headFullSha(repoPath);
 		if (head === undefined) {
 			log.warn({ repoPath, epicHash, storyId }, 'stampBuildStart: HEAD could not be resolved; no build-start file written');
 			return 'not-written';
@@ -281,6 +273,7 @@ export function stampBuildStart(repoPath: string, epicHash: string, storyId: str
 		writeFileSync(abs, JSON.stringify(stamp, null, 2) + '\n');
 		return 'stamped';
 	} catch (err) {
+		if (isToolDenied(err)) throw err;   // a denied git call ends the stage; every other failure is fail-open
 		log.warn(
 			{ repoPath, epicHash, storyId, path: buildStartRelPath(epicHash, storyId), err: err instanceof Error ? err.message : String(err) },
 			'stampBuildStart: could not write the build-start file',
@@ -310,16 +303,10 @@ function stampedBase(repoPath: string, artifactId: string): string | undefined {
 
 /** The commit that ADDED a path, or undefined when the path was never committed
  *  (or git is unavailable). Never throws. */
-function introducingCommit(repoPath: string, relPath: string): string | undefined {
-	try {
-		const out = execFileSync(
-			'git', ['log', '--diff-filter=A', '--format=%H', '-1', '--', relPath],
-			{ cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
-		).trim();
-		return SHA40.test(out) ? out : undefined;
-	} catch {
-		return undefined;
-	}
+async function introducingCommit(repoPath: string, relPath: string): Promise<string | undefined> {
+	const added = await orFallback(pathHistory(repoPath, { path: relPath, diffFilter: 'A', limit: 1 }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), undefined);
+	const sha = added?.[0]?.sha;
+	return sha !== undefined && SHA40.test(sha) ? sha : undefined;
 }
 
 /**
@@ -335,15 +322,16 @@ function introducingCommit(repoPath: string, relPath: string): string | undefine
  * so later untrailered commits by anyone are not the Story's. Read only by
  * storyChangeSet's legacy case. Read-only; never throws.
  */
-export function resolveStoryRangeEnd(repoPath: string, epicHash: string, storyId: string): string | undefined {
+export async function resolveStoryRangeEnd(repoPath: string, epicHash: string, storyId: string): Promise<string | undefined> {
 	if (epicHash.length === 0 || storyId.length === 0) return undefined;
 	const p = join(repoPath, ARTIFACTS_DIR, `${buildArtifactId(epicHash, storyId)}.json`);
 	if (!existsSync(p)) return undefined;
 	try {
 		const commit = (JSON.parse(readFileSync(p, 'utf8')) as { body?: { commit?: unknown } }).body?.commit;
 		if (typeof commit !== 'string' || commit.length === 0) return undefined;
-		return execFileSync('git', ['rev-parse', '--verify', '--quiet', `${commit}^{commit}`], { cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || undefined;
-	} catch {
+		return (await orFallback(revParse(repoPath, `${commit}^{commit}`, { verify: true }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), undefined))?.trim() || undefined;
+	} catch (err) {
+		if (isToolDenied(err)) throw err;
 		return undefined;
 	}
 }
@@ -354,14 +342,14 @@ export function resolveStoryRangeEnd(repoPath: string, epicHash: string, storyId
  * stamp is checked to exist, so one from an upstream artifact can fail to resolve,
  * which makes the derivation that uses it fail (ISSUE-b97752e9).
  */
-export function resolveStoryRangeBase(repoPath: string, epicHash: string, storyId: string): string | undefined {
+export async function resolveStoryRangeBase(repoPath: string, epicHash: string, storyId: string): Promise<string | undefined> {
 	if (epicHash.length === 0 || storyId.length === 0) return undefined;
 	const ids = upstreamIds(epicHash, storyId);
 
 	// 0. The Story's own build-start file. An invalid one is IGNORED, not fatal:
 	//    resolution carries on with the steps below, which is what this Story
 	//    resolved to before the file existed.
-	const start = readBuildStart(repoPath, epicHash, storyId);
+	const start = await readBuildStart(repoPath, epicHash, storyId);
 	if (start.kind === 'valid') return start.stamp.rangeBase;
 	if (start.kind === 'invalid') {
 		log.warn(
@@ -381,7 +369,7 @@ export function resolveStoryRangeBase(repoPath: string, epicHash: string, storyI
 	//    ITSELF, not its parent: `base..HEAD` excludes base, and the Story's work
 	//    lands AFTER the artifact was committed.
 	for (const id of ids) {
-		const base = introducingCommit(repoPath, `${ARTIFACTS_DIR}/${id}.json`);
+		const base = await introducingCommit(repoPath, `${ARTIFACTS_DIR}/${id}.json`);
 		if (base !== undefined) return base;
 	}
 

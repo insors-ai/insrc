@@ -18,12 +18,13 @@
  * docs/plans/PLAN-build-ledger-plan-driven-builds-today-S001.md.
  */
 
+import { catFileExists, LOCAL_GIT_TIMEOUT_MS, orFallback, revParse } from '../../git-calls.js';
+import { isToolDenied } from '../../tracker/tool-denied.js';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { getLogger } from '../../../shared/logger.js';
-import { execFileSync } from 'node:child_process';
 
 import { writeArtifact, writeAtomic, artifactIdMarker, artifactJsonPath, buildArtifactId, buildArtifactPaths, buildRecordFolderArgs, folderIdentityMeta, inheritedStoryStandalone } from '../../storage.js';
 import { changeLogBodyLines } from '../../artifacts/format/bindings.js';
@@ -238,15 +239,10 @@ export function renderStandaloneBuildRecordMd(rec: StandaloneBuildRecord): strin
  * omitted, never stored as an empty string. A falsy commit would render as an
  * empty `**Commit:**` line, which is worse than no line at all.
  */
-export function headShortSha(repoPath: string): string | undefined {
-	try {
-		const out = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
-			cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
-		}).trim();
-		return out.length > 0 ? out : undefined;
-	} catch {
-		return undefined;   // not a git repo, unborn HEAD, or git unavailable
-	}
+export async function headShortSha(repoPath: string): Promise<string | undefined> {
+	// not a git repo, unborn HEAD or git unavailable: absent (a denied git call is thrown)
+	const out = (await orFallback(revParse(repoPath, 'HEAD', { short: true }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }), undefined))?.trim();
+	return out !== undefined && out.length > 0 ? out : undefined;
 }
 
 /** Paths a MERGED record occupies. The single derivation both the writer and the
@@ -289,14 +285,14 @@ export function buildRecordPathsFor(repoPath: string, rec: BuildRecord, intent: 
 
 /** The prior record's `body.commit`, when the record exists and that commit still
  *  resolves; undefined otherwise. Never throws. */
-function priorCommit(repoPath: string, jsonPath: string): string | undefined {
+async function priorCommit(repoPath: string, jsonPath: string): Promise<string | undefined> {
 	try {
 		if (!existsSync(jsonPath)) return undefined;
 		const commit = (JSON.parse(readFileSync(jsonPath, 'utf8')) as { body?: { commit?: unknown } }).body?.commit;
 		if (typeof commit !== 'string' || commit.length === 0) return undefined;
-		execFileSync('git', ['cat-file', '-e', `${commit}^{commit}`], { cwd: repoPath, stdio: 'ignore' });
-		return commit;
-	} catch {
+		return (await catFileExists(repoPath, `${commit}^{commit}`, { timeoutMs: LOCAL_GIT_TIMEOUT_MS })) ? commit : undefined;
+	} catch (err) {
+		if (isToolDenied(err)) throw err;
 		return undefined;
 	}
 }

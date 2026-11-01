@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -75,3 +75,30 @@ Run at 2026-11-01T19:16:43.355Z on commit `45155b01d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/evidence-extracted.test.ts` | 0 | 4 | 1.4 s |  |
+
+## t4
+
+Run at 2026-11-01T19:22:06.745Z on commit `d896047e2`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: cross-file passes evidence 'inferred'; Pass 0 keeps the carried value**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t4: a call resolved to a function of another file is stored inferred, beside the same-file call stored extracted (ac1) | `src/indexer/__tests__/evidence-inferred.test.ts` |
+| pass | s7 t4: Pass 0 restores an awaiting relationship with the evidence it carried, not inferred | `src/indexer/__tests__/evidence-inferred.test.ts` |
+| pass | s7 t4: an import of a module stub that Pass 1 rewires to the in-tree file is stored inferred | `src/indexer/__tests__/evidence-inferred.test.ts` |
+| pass | s7 t4: the external-service and messaging endpoint passes store their edges inferred | `src/indexer/__tests__/evidence-inferred.test.ts` |
+| pass | the stored EXPORTS edge holds the evidence inferred (Epic c2ba6fa6 s7) and export_names holds (barrel, g) -> f and the star entries | `src/indexer/__tests__/reexport-callers.test.ts` |
+
+**integration: ambiguous call stays pending; no 'chosen'**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t4: a call matching several candidates stays pending, classed ambiguous with its candidates, and no edge is written; no stored edge reads chosen (ac2) | `src/indexer/__tests__/evidence-inferred.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/evidence-inferred.test.ts` | 0 | 5 | 1.6 s |  |
+| `src/indexer/__tests__/reexport-callers.test.ts` | 0 | 3 | 1.6 s |  |

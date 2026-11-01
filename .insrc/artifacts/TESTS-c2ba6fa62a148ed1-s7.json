@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:16:43.355Z",
+    "updatedAt": "2026-11-01T19:22:06.745Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -198,6 +198,112 @@
               },
               {
                 "title": "s7 t3: the repository's DEPENDS_ON edges from its manifest are stored extracted",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "d896047e2",
+        "ranAt": "2026-11-01T19:22:06.745Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cross-file passes evidence 'inferred'; Pass 0 keeps the carried value",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: a call resolved to a function of another file is stored inferred, beside the same-file call stored extracted (ac1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: Pass 0 restores an awaiting relationship with the evidence it carried, not inferred",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: an import of a module stub that Pass 1 rewires to the in-tree file is stored inferred",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: the external-service and messaging endpoint passes store their edges inferred",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/reexport-callers.test.ts",
+                "title": "the stored EXPORTS edge holds the evidence inferred (Epic c2ba6fa6 s7) and export_names holds (barrel, g) -> f and the star entries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ambiguous call stays pending; no 'chosen'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: a call matching several candidates stays pending, classed ambiguous with its candidates, and no edge is written; no stored edge reads chosen (ac2)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1602,
+            "titles": [
+              {
+                "title": "s7 t4: a call resolved to a function of another file is stored inferred, beside the same-file call stored extracted (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: Pass 0 restores an awaiting relationship with the evidence it carried, not inferred",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: a call matching several candidates stays pending, classed ambiguous with its candidates, and no edge is written; no stored edge reads chosen (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: an import of a module stub that Pass 1 rewires to the in-tree file is stored inferred",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: the external-service and messaging endpoint passes store their edges inferred",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/reexport-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1560,
+            "titles": [
+              {
+                "title": "ac3: calls through `export { f } from`, an aliased re-export (g() is a call of f), a barrel of a barrel and `export *` resolve to f; a re-export cycle (named or `export *`) ends with the name no-candidate",
+                "result": "pass"
+              },
+              {
+                "title": "the stored EXPORTS edge holds the evidence inferred (Epic c2ba6fa6 s7) and export_names holds (barrel, g) -> f and the star entries",
+                "result": "pass"
+              },
+              {
+                "title": "an export_names entry pointing at a target that is not stored is ignored by the call matcher",
                 "result": "pass"
               }
             ],

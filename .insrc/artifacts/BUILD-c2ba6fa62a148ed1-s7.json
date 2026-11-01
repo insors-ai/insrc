@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:16:43.355Z",
+    "updatedAt": "2026-11-01T19:22:06.745Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -22,9 +22,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "Per-file resolution and the manifest step stamp 'extracted'; the file commit carries evidence to the writers; a waiting relative import is completed by Pass 0 with its carried 'extracted'.",
+    "summary": "Cross-file Pass 1/1b/2 and both endpoint passes stamp 'inferred'; Pass 0 keeps the carried evidence; ambiguous calls stay pending with candidates and nothing reads 'chosen'.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S007/TESTS.md"
     },
@@ -34,79 +38,114 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/evidence-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/evidence-extracted.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
       },
       {
         "target": {
           "file": "src/indexer/resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:16:43.355Z"
+        "timestamp": "2026-11-01T19:22:06.745Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/evidence-inferred.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:22:06.745Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/reexport-callers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:22:06.745Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/cross-file-resolver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:22:06.745Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/external-endpoints.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:22:06.745Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/messaging-endpoints.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:22:06.745Z"
       }
     ],
-    "commit": "45155b01d"
+    "commit": "d896047e2"
   }
 }

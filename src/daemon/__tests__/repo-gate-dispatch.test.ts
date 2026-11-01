@@ -19,6 +19,8 @@ const { getDb } = await import('../../db/client.js');
 const { addRepo } = await import('../../db/repos.js');
 const { buildHandlerRuntime } = await import('../handler-runtime.js');
 const { RPC_AUDIT } = await import('../repo-call-audit.js');
+const { lifecycleFor } = await import('../lifecycle-registry.js');
+const { artifact: makeArtifact, H } = await import('../../workflow/artifact-core/__tests__/store-kit.js');
 await import('../../workflow/__tests__/helpers/converted-repos.js');
 
 const repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-gate-dispatch-repo-')));
@@ -70,4 +72,19 @@ test('repo-gate-dispatch.test.ts: each method in the table called with no repo i
 	}
 	assert.deepEqual(seen, rpc, 'every modifying method was called');
 	assert.deepEqual(listing(repo), before, 'nothing was written');
+});
+
+test('repo-gate-dispatch.test.ts: artifact.feedback.append through the gated handler tables stores the entry when the call names the repo and a relative artifactPath, and refuses it without the repo', async () => {
+	const PLAN = `PLAN-${H}-s1`;
+	const { store } = lifecycleFor(repo);
+	await store.write(makeArtifact(`DEF-${H}`), { id: 'github:alice', kind: 'person', properties: {} });
+	await store.write(makeArtifact(PLAN), { id: 'github:alice', kind: 'person', properties: {} });
+	const append = runtime.rpcHandlers['artifact.feedback.append'] as (p: unknown) => Promise<{ entryId?: string; total?: number; error?: string; code?: string }>;
+	const entry = { author: 'Bob', comment: 'tighten this', target: { file: `${PLAN}.json` }, kind: 'feedback' };
+	const refused = await append({ artifactPath: `.insrc/artifacts/${PLAN}.json`, ...entry });
+	assert.equal(refused.code, 'repo-missing');
+	const stored = await append({ repo, artifactPath: `.insrc/artifacts/${PLAN}.json`, ...entry });
+	assert.equal(stored.error, undefined, JSON.stringify(stored));
+	assert.equal(stored.total, 1);
+	assert.equal((await lifecycleFor(repo).feedback.entries(PLAN)).length, 1, 'the entry is in the named repository\'s store');
 });

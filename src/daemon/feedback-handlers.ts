@@ -86,10 +86,14 @@ export async function handleFeedbackAppend(params: unknown, deps: FeedbackHandle
 	const method = 'artifact.feedback.append';
 	try {
 		const { artifactPath, entry } = coerceRequest((params ?? {}) as Record<string, unknown>);
-		const abs = resolve(artifactPath);
-		const repo = repoOfArtifactPath(abs);
+		// The repository is the one the call names (the daemon's repo gate has checked it is registered and that artifactPath is inside
+		// it); it is not found by walking up from a path that may have been resolved against the daemon's own directory.
+		const namedRepo = (params as { repo?: unknown }).repo;
+		if (typeof namedRepo !== 'string' || namedRepo.length === 0) throw new ArtifactFeedbackError('`repo` is required');
+		const repo = namedRepo;
+		const abs = resolve(repo, artifactPath);
 		const artifactId = basename(abs).replace(/\.json$/, '');
-		if (repo === undefined || ArtifactIds.parse(artifactId) === undefined) {
+		if (repoOfArtifactPath(abs) === undefined || ArtifactIds.parse(artifactId) === undefined) {
 			throw new ArtifactFeedbackError(`'${abs}' is not an artifact under a repo artifact root (.insrc/artifacts)`);
 		}
 		const author = entry.author.trim();

@@ -107,7 +107,7 @@ describe('feedback-wiring', () => {
 
 			// kind feedback becomes revision-request; the anchor maps quote, sectionSlug (as section), prefix and suffix
 			const r1 = await handleFeedbackAppend({
-				artifactPath, author: 'Reviewer One', comment: ' tighten this ', target: { file: `${PLAN}.json` }, kind: 'feedback', batchId: 'b1',
+				repo, artifactPath, author: 'Reviewer One', comment: ' tighten this ', target: { file: `${PLAN}.json` }, kind: 'feedback', batchId: 'b1',
 				anchor: { quote: 'the quote', sectionSlug: 'design', prefix: 'before', suffix: 'after' },
 			}, deps) as { artifactPath: string; entryId: string; total: number };
 			assert.deepEqual(Object.keys(r1).sort(), ['artifactPath', 'entryId', 'total']);
@@ -123,21 +123,21 @@ describe('feedback-wiring', () => {
 			assert.equal(e1?.actor.properties['name'], 'Reviewer One', 'the author text is the actor name');
 
 			// suggestion and comment stay; a decision stands in for a missing kind; an actor id is honoured
-			const r2 = await handleFeedbackAppend({ artifactPath, author: 'A', comment: 'maybe', target: { file: 'x' }, kind: 'suggestion', actor: 'github:frank' }, deps) as { entryId: string; total: number };
+			const r2 = await handleFeedbackAppend({ repo, artifactPath, author: 'A', comment: 'maybe', target: { file: 'x' }, kind: 'suggestion', actor: 'github:frank' }, deps) as { entryId: string; total: number };
 			assert.equal(r2.total, 2);
 			assert.equal((await entries()).find(e => e.id === r2.entryId)?.kind, 'suggestion');
 			assert.equal((await entries()).find(e => e.id === r2.entryId)?.actor.id, 'github:frank');
-			const r3 = await handleFeedbackAppend({ artifactPath, author: 'A', comment: 'c', target: { file: `${PLAN}.json` }, kind: 'comment' }, deps) as { entryId: string };
+			const r3 = await handleFeedbackAppend({ repo, artifactPath, author: 'A', comment: 'c', target: { file: `${PLAN}.json` }, kind: 'comment' }, deps) as { entryId: string };
 			assert.equal((await entries()).find(e => e.id === r3.entryId)?.kind, 'comment');
-			const r4 = await handleFeedbackAppend({ artifactPath, author: 'A', comment: 'd', target: { file: `${PLAN}.json` }, decision: 'feedback' }, deps) as { entryId: string };
+			const r4 = await handleFeedbackAppend({ repo, artifactPath, author: 'A', comment: 'd', target: { file: `${PLAN}.json` }, decision: 'feedback' }, deps) as { entryId: string };
 			assert.equal((await entries()).find(e => e.id === r4.entryId)?.kind, 'revision-request');
-			const r5 = await handleFeedbackAppend({ artifactPath, author: 'A', comment: 'e', target: { file: `${PLAN}.json` }, decision: 'approve' }, deps) as { entryId: string };
+			const r5 = await handleFeedbackAppend({ repo, artifactPath, author: 'A', comment: 'e', target: { file: `${PLAN}.json` }, decision: 'approve' }, deps) as { entryId: string };
 			assert.equal((await entries()).find(e => e.id === r5.entryId)?.kind, 'comment');
 
 			// a companion file stays on the parent artifact, its path in anchor.section; the segment becomes the lines
-			const r6 = await handleFeedbackAppend({ artifactPath, author: 'A', comment: 'diagram', target: { file: 'docs/diagram.svg', segment: { startLine: 3, endLine: 9 } } }, deps) as { entryId: string };
+			const r6 = await handleFeedbackAppend({ repo, artifactPath, author: 'A', comment: 'diagram', target: { file: 'docs/diagram.svg', segment: { startLine: 3, endLine: 9 } } }, deps) as { entryId: string };
 			assert.deepEqual((await entries()).find(e => e.id === r6.entryId)?.anchor, { section: 'docs/diagram.svg', lines: [3, 9] });
-			const r7 = await handleFeedbackAppend({ artifactPath, author: 'A', comment: 'diagram 2', target: { file: 'docs/diagram.svg' }, anchor: { quote: 'q', sectionSlug: 'part' } }, deps) as { entryId: string };
+			const r7 = await handleFeedbackAppend({ repo, artifactPath, author: 'A', comment: 'diagram 2', target: { file: 'docs/diagram.svg' }, anchor: { quote: 'q', sectionSlug: 'part' } }, deps) as { entryId: string };
 			assert.deepEqual((await entries()).find(e => e.id === r7.entryId)?.anchor, { quote: 'q', section: 'docs/diagram.svg#part' });
 
 			// the error shape is { error: 'artifact.feedback.append: ...' } and nothing is stored

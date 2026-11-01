@@ -2,7 +2,7 @@ import { availableParallelism, loadavg } from 'node:os';
 import { monitorEventLoopDelay, performance } from 'node:perf_hooks';
 import type { LLMProvider, ReviewSessionOpts, BoundedReviewSessionOpts } from './types.js';
 
-export const REVIEW_INACTIVITY_MS = 30 * 60_000;
+export const REVIEW_INACTIVITY_MS = 1_800_000;
 export interface ReviewActivityEvent {
  readonly sessionId: string;
  readonly sequence: number;
@@ -36,7 +36,7 @@ export function validateReviewSessionOptions(opts: ReviewSessionOpts): void {
   || 'inactivityMs' in opts || 'onActivity' in opts || 'onCandidate' in opts) throw new TypeError('Invalid bounded review execution options');
 }
 export function requireReviewActivity(provider: Pick<LLMProvider, 'capabilities' | 'runReviewSession'>): void {
- if (provider.capabilities.reviewActivity !== true || !provider.runReviewSession) throw new ReviewActivityUnsupportedError();
+ if (provider.capabilities?.reviewActivity !== true || !provider.runReviewSession) throw new ReviewActivityUnsupportedError();
 }
 /** Provider boundary until its native activity adapter is implemented. */
 export function requireBoundedReview(opts: ReviewSessionOpts): asserts opts is BoundedReviewSessionOpts {

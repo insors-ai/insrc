@@ -35,7 +35,7 @@ async function fixture(scoped = true) {
 }
 const assessment = (taskId: string): TaskReviewResult => ({ taskId, status: 'passed', summary: 'Required behavior and relevant assertions inspected.', findings: [], testCoverage: { assessment: 'verified', explanation: 'Relevant test asserts the changed behavior; submitted execution is builder-reported.', evidenceReferences: [`${commit}:test.ts`] }, limitations: [], advice: [], inspectedReferences: [`${commit}:source.ts`, `${commit}:test.ts`], executedTests: [] });
 function provider(run: (prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts) => Promise<unknown>): LLMProvider {
- return { runReviewSession: run } as unknown as LLMProvider;
+ return { capabilities:{reviewActivity:true}, runReviewSession: run } as unknown as LLMProvider;
 }
 
 test('task review admission: short acknowledgement, initial atomic JSON and same-id exclusion', async () => {
@@ -59,7 +59,7 @@ test('task review admission: short acknowledgement, initial atomic JSON and same
  } finally { await f.cleanup(); }
 });
 
-test('task execution: checkpoint before next task, one size-based deadline, failure continuation and no automatic retry', async () => {
+test('task execution: checkpoint before next task, one inactivity grace, failure continuation and no automatic retry', async () => {
  const f = await fixture(false);
  let clock = 0, expire: (() => void) | undefined, current = '', calls = 0;
  const allowances: number[] = [], saved: ReviewCheckpoint[] = [];
@@ -67,20 +67,20 @@ test('task execution: checkpoint before next task, one size-based deadline, fail
   timer: (callback, ms) => { allowances.push(ms); expire = callback; return () => {}; },
   save: async (path, record) => { await saveCheckpoint(path, record); saved.push(await f.read(path)); },
   provider: () => provider(async (prompt, _schema, opts) => {
-   calls++; assert.equal(opts.internalRetry, false); assert.equal(opts.stallMs, opts.deadlineMs);
+   calls++; assert.equal(opts.internalRetry, false); assert.equal(opts.mode,'activity'); assert.ok(!('deadlineMs' in opts));
    if (prompt.startsWith('Derive task attribution')) { clock += 25; return { tasks: ['t1', 't2', 't3'].map(taskId => ({ taskId, changeIndexes: [0], testIndexes: [0] })) }; }
    current = /"taskId":"(t\d+)"/.exec(prompt)![1]!;
    const disk = saved.at(-1)!;
    assert.equal(disk.attempts[0]!['review-response'].tasks.length, Number(current.slice(1)) - 1, 'prior result durable before next provider');
-   if (current === 't1') { assert.equal(opts.deadlineMs, 299975, 'attribution shares first task allowance'); throw new Error('Transport unavailable'); }
-   if (current === 't2') { clock += 600000; expire!(); return new Promise(() => {}); }
+   if (current === 't1') { assert.equal(opts.mode,'activity'); throw new Error('Transport unavailable'); }
+   if (current === 't2') { clock += 1800000; expire!(); return new Promise((_,reject) => opts.signal!.addEventListener('abort',()=>reject(opts.signal!.reason),{once:true})); }
    return assessment('t3');
   }) });
  try {
   const ack = await coordinator.start(f.project, 'continuation', 1, f.packet);
   await coordinator.settled(f.project, 'continuation');
   const complete = await f.read(ack.path), results = complete.attempts[0]!['review-response'].tasks;
-  assert.deepEqual(allowances, [300000, 600000, 900000]);
+  assert.deepEqual(allowances, [1800000, 1800000, 1800000]);
   assert.deepEqual(results.map(r => r.status), ['failed', 'incomplete', 'passed']);
   assert.equal(complete.attempts[0]!.header.status, 'failed'); assert.equal(calls, 4, 'one attribution and exactly one call per task');
   assert.equal(saved.every(record => record.attempts.length === 1), true);
@@ -180,13 +180,13 @@ test('shared attribution timeout remains incomplete for every remaining task wit
  const f = await fixture(false); let clock = 0, calls = 0, expire: (() => void) | undefined;
  const coordinator = new TaskReviewCoordinator({ sources: f.sources, now: () => clock,
   timer: callback => { expire = callback; return () => {}; },
-  provider: () => provider(async () => { calls++; clock += 300000; expire!(); return new Promise(() => {}); }) });
+  provider: () => provider(async (_prompt,_schema,opts) => { calls++; clock += 1800000; expire!(); return new Promise((_,reject)=>opts.signal!.addEventListener('abort',()=>reject(opts.signal!.reason),{once:true})); }) });
  try {
   const ack = await coordinator.start(f.project, 'attribution-timeout', 1, f.packet); await coordinator.settled(f.project, 'attribution-timeout');
   const complete = await f.read(ack.path);
   assert.deepEqual(complete.attempts[0]!['review-response'].tasks.map(task => task.status), ['incomplete', 'incomplete', 'incomplete']);
   assert.equal(complete.attempts[0]!.header.status, 'incomplete'); assert.equal(calls, 1);
-  assert.match(complete.attempts[0]!['review-response'].tasks[1]!.summary, /shared attribution deadline/);
+  assert.match(complete.attempts[0]!['review-response'].tasks[1]!.summary, /shared attribution.*inactivity/);
  } finally { await f.cleanup(); }
 });
 

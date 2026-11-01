@@ -77,7 +77,7 @@ test('coordinator marks an attempt terminal only after canonical CR publication 
  const f=await fixture();try{
   unlinkSync(checkpointPath(f.repo,'publication'));
   let terminalBeforeRender=false;
-  const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>({runReviewSession:async()=>f.result}) as unknown as LLMProvider,publish:(project,id)=>publishTaskCheckpoint(project,hash,id,{...f.deps,renderWrite:(path,content)=>{
+  const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>({capabilities:{reviewActivity:true},runReviewSession:async()=>f.result}) as unknown as LLMProvider,publish:(project,id)=>publishTaskCheckpoint(project,hash,id,{...f.deps,renderWrite:(path,content)=>{
    terminalBeforeRender=!['pending','running'].includes(f.read(checkpointPath(f.repo,id)).attempts[0]!.header.status);
    mkdirSync(join(path,'..'),{recursive:true});writeFileSync(path,content);
   }})});

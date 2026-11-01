@@ -74,7 +74,7 @@ test('review policy parity: common prompt/result classification across supported
   const f=await languageFixture(language),owner={id:`controller-${language.name}`,signal:new AbortController().signal};
   const assessment={...f.result,testCoverage:{...f.result.testCoverage,assessment:'partial' as const,explanation:'Unused helper plus passing file does not establish asserted execution'},limitations:['Execution revision cannot be established'],advice:['Native constructs are valid']};
   let nativePrompt='';
-  const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>({runReviewSession:async(prompt:string)=>{nativePrompt=prompt;return structuredClone(assessment);}} as unknown as LLMProvider),publish:(project,id,epicHash)=>publishTaskCheckpoint(project,epicHash,id,f.deps)});
+  const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>({capabilities:{reviewActivity:true},runReviewSession:async(prompt:string)=>{nativePrompt=prompt;return structuredClone(assessment);}} as unknown as LLMProvider),publish:(project,id,epicHash)=>publishTaskCheckpoint(project,epicHash,id,f.deps)});
   try{
    const ack=await coordinator.start(f.repo,'policy-daemon',1,f.packet);await coordinator.settled(f.repo,'policy-daemon');
    const frame=await coordinator.startController(f.repo,'policy-controller',1,f.packet,owner);

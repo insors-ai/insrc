@@ -94,3 +94,85 @@ Not moved by s10, left for s9: the old wrappers in `src/workflow/tracker/github.
 
 Named exemption: `src/cli/services/maintenance.ts`, the daemon self-update (it runs when the daemon may be down). No site: `approval.ts`,
 `connection-maintenance.ts`, `daemon.ts`, `debug.ts`, `setup.ts` (they run programs that are not git or gh).
+
+## 5. The s9 audit: every site against the tool input schemas
+
+Written by task t1 of Story s9 from the tool definitions in `src/daemon/tools/builtins/git` and `src/daemon/tools/builtins/gh`, not from memory.
+Status: `covered` (the op carries every option the site uses), `derived` (the value comes from an existing result, the reason is given) or
+`gap` (an input or tool is missing; the gap id is defined in the list below the table). `src/workflow/__tests__/audit-rows.test.ts` checks this
+section.
+
+| Site | Tool and op | Status | Missing input or derivation |
+| :--- | :--- | :--- | :--- |
+| `src/workflow/team/policy-reader.ts` `probeGitRepo` | `git_rev_parse` `gitDir` | covered | |
+| `src/workflow/team/policy-reader.ts` `probeRemote` | `git_remote` `list` | covered | |
+| `src/workflow/team/policy-reader.ts` `probeRemoteHead` | `git_symbolic_ref` `get` (quiet) | covered | |
+| `src/workflow/team/policy-reader.ts` `resolveRev` | `git_rev_parse` `verify` | covered | |
+| `src/workflow/team/policy-reader.ts` `readAt` (tree check) | `git_ls_tree` `nameOnly` | gap | g6: `fullTree` |
+| `src/workflow/team/policy-reader.ts` `readAt` (blob) | `git_cat_file` `rev`, `path` | derived | `git_show` gives a diff, not a blob; `git_cat_file` returns the bytes of `<rev>:<path>` |
+| `src/workflow/team/policy-reader.ts` `scanForPolicy` | `git_for_each_ref` `pattern`, `fields` refname, then `git_ls_tree` | gap | g6: `fullTree` |
+| `src/workflow/team/anchor-finder.ts` shallow check | `git_rev_parse` `isShallow` | covered | |
+| `src/workflow/team/anchor-finder.ts` first-parent history | `git_path_history` `firstParent`, `diffFilter` A, `reverse`, `rev`, `path` | covered | the committer time is `%cI`, the format the site read |
+| `src/workflow/team/sighting-store.ts` `resolveRepoIdentity` | `git_rev_parse` `showToplevel` | covered | |
+| `src/workflow/team/policy-refresh.ts` `refreshPolicy` | `git_fetch_refs` `noTags`, `noWriteFetchHead`, `noRecurseSubmodules`, `noPrune`, `refmap` | covered | |
+| `src/workflow/team/branch-resolution.ts` | `git_ls_remote` `symref`, `heads`, `patterns` | covered | |
+| `src/workflow/team/signoff.ts` `currentBranchOf` | `git_rev_parse` `abbrevRef` | covered | |
+| `src/workflow/team/signoff.ts` ahead count | `git_rev_list` `count` | covered | |
+| `src/workflow/team/handoff.ts` `unitDraftFiles` | `git_status` | gap | g5: `paths` and `untrackedFiles` all |
+| `src/workflow/team/handoff.ts` `committedAtHead` | `git_cat_file` `exists` (`HEAD:<path>`) | covered | |
+| `src/workflow/team/handoff.ts` `repositoryIdOf`, `resumeCheck` roots | `git_rev_parse`, `git_rev_list` `maxParents` 0 | covered | |
+| `src/workflow/team/handoff.ts` `parkPlan` remote lookup | `git_ls_remote` `heads`, `patterns` | covered | |
+| `src/workflow/team/handoff.ts` `parkPlan` fetch of the handoff branch | `git_fetch_refs` into a temporary ref, then `git_rev_parse` | derived | the tool takes explicit `src:dst` pairs, so the branch is fetched into a temporary ref (as the resume check already does) and that ref is read and deleted with `git_update_ref`; the sha is the same one `FETCH_HEAD` held |
+| `src/workflow/team/handoff.ts` `parkPlan` temporary worktree | `git_worktree` `add` | gap | g9: `startPoint` |
+| `src/workflow/team/handoff.ts` cleanup | `git_worktree` `remove`, `prune`; `git_branch` `delete` force; `git_update_ref` | covered | |
+| `src/workflow/team/handoff.ts` cleanup checks | `git_worktree` `list`, `git_branch` `list` | derived | `branch --list <name>` is the branch list filtered by name |
+| `src/workflow/team/handoff.ts` `resumeCheck` url and fetch | `git_remote` `list`, `git_fetch_refs` | derived | the fetch URL is `fetchUrl` of the listed remote |
+| `src/workflow/team/handoff.ts` `resumeCheck` reads | `git_cat_file` `rev`, `path` | derived | the bytes of `<tmpRef>:<path>` |
+| `src/workflow/team/handoff.ts` `resumeCheck` dirty check | `git_status` | gap | g5: `paths` and `untrackedFiles` all |
+| `src/workflow/convert/plan.ts` repository, merge checks | `git_rev_parse` `gitDir`, `verify` | covered | |
+| `src/workflow/convert/plan.ts` protected paths status | `git_status` | gap | g5: `paths` and `untrackedFiles` all |
+| `src/workflow/gates.ts` `headFullSha` | `git_rev_parse` `rev` HEAD | covered | the full sha, not `short` |
+| `src/workflow/runners/build/range-base.ts` `commitExists`, `headFullSha`, `resolveStoryRangeEnd` | `git_cat_file` `exists`, `git_rev_parse` | covered | |
+| `src/workflow/runners/build/range-base.ts` `introducingCommit` | `git_path_history` `diffFilter` A, `limit` 1, `path` | covered | |
+| `src/workflow/runners/build/standalone-record.ts` `headShortSha`, `priorCommit` | `git_rev_parse` `short`, `git_cat_file` `exists` | covered | |
+| `src/workflow/runners/build/story-commits.ts` commit scan | `git_log` | gap | g7: `firstParent`; the site treats a result of exactly the 500 commit cap as a failure |
+| `src/workflow/runners/build/story-commits.ts` first-parent list | `git_rev_list` | gap | g8: `parents`; `reverse` is derived by reversing the list |
+| `src/workflow/runners/build/story-commits.ts` base check | `git_rev_parse` `verify` | covered | |
+| `src/workflow/runners/build/story-commits.ts` empty tree | `git_hash_object` | gap | g3: `type` |
+| `src/workflow/runners/build/story-commits.ts` per-commit paths | `git_diff_tree` | gap | g1: new tool |
+| `src/workflow/runners/build/story-commits.ts` `diff --name-only -z` | `git_diff` `from`, `to` | derived | `files[].path` of the numstat list, which follows the same rename policy as `--name-only` |
+| `src/workflow/runners/build/story-commits.ts` merge simulation | `git_merge_tree` | gap | g2: new tool |
+| `src/workflow/runners/build/story-commits.ts` `mergeInProgress` | `git_rev_parse` `verify` (MERGE_HEAD), `gitPath` | gap | g4: `gitPath` |
+| `src/workflow/runners/build/changed-files.ts` `collectDiff` | `git_diff` through `callTool` | covered | |
+| `src/daemon/steps/build-step/validation-checks.ts` `trackedFiles` | `git_ls_files` `cached` | covered | `maxBytes` 50 MiB, the tool's cap, where the site allowed 64 MiB |
+| `src/daemon/steps/build-step/validation-checks.ts` `changedFiles` base to HEAD | `git_diff` `from`, `to` | derived | `files` whose `change` is not `deleted` (the `--diff-filter=d` leaves deleted files out) |
+| `src/daemon/steps/build-step/validation-checks.ts` `changedFiles` HEAD commit | `git_show` | derived | `files` whose `change` is not `deleted` |
+| `src/daemon/steps/build-step/validation-checks.ts` `changedFiles` working tree | `git_diff` against HEAD | gap | g10: `againstWorktree` |
+| `src/daemon/steps/build-step/validation-checks.ts` untracked | `git_ls_files` `others` | covered | |
+| `src/daemon/steps/build-step/validation-checks.ts` `trivialCheckPlan` | `git_diff`, `git_show` | derived | as `changedFiles` |
+| `src/analyze/context/repo-ignore-filter.ts` | `git_ls_files` `cached`, `others` | covered | `maxBytes` 50 MiB, the limit the site had |
+| `src/workflow/artifacts/companion/header.ts` `defaultGitUserName` | `git_config` | covered | |
+| `src/design/corpus/sources/git-reader.ts` | `git_cat_file` `revs`, `stdoutLimit`, `stderrLimit`, `timeoutMs`, isolated | covered | |
+| `src/understanding/identity.ts` sign-in hosts | `gh_auth` `hosts` | covered | |
+| `src/understanding/identity.ts` user lookup | `gh_tracker` `user_by_host` | covered | |
+| `src/understanding/identity.ts` git email | `git_config` | covered | |
+
+### The final gap list
+
+This list is final. A gap found later is a plan amendment, not part of t2.
+
+| Id | Tool | Addition | Sites |
+| :--- | :--- | :--- | :--- |
+| g1 | `git_diff_tree` | a new read-only tool | story-commits |
+| g2 | `git_merge_tree` | a new read-only tool | story-commits |
+| g3 | `git_hash_object` | an optional `type` input | story-commits |
+| g4 | `git_rev_parse` | an optional `gitPath` input | story-commits `mergeInProgress` |
+| g5 | `git_status` | optional `paths` and `untrackedFiles` ('all') inputs | handoff, convert plan |
+| g6 | `git_ls_tree` | an optional `fullTree` input | policy-reader |
+| g7 | `git_log` | an optional `firstParent` input | story-commits |
+| g8 | `git_rev_list` | an optional `parents` input | story-commits |
+| g9 | `git_worktree` | an optional `startPoint` input for `add` | handoff park |
+| g10 | `git_diff` | an optional `againstWorktree` input (`git diff <from>`) | validation-checks |
+
+Not gaps: the `signal` that `git_log`, `git_diff`, `git_status`, `git_rev_list`, `git_for_each_ref`, `git_ls_files` and `git_path_history` do not pass to
+their process. The refresh uses only `git_ls_remote` and `git_fetch_refs`, which do; the other sites have no abort requirement.

@@ -27842,6 +27842,14 @@
     ],
     [
      "storage-call",
+     "logResolvedWrite"
+    ],
+    [
+     "storage-call",
+     "logUnresolvedWrite"
+    ],
+    [
+     "storage-call",
      "lookupU64ByStringId"
     ],
     [
@@ -28114,11 +28122,19 @@
     ],
     [
      "storage-call",
+     "upsertResolvedRelationsInTxn"
+    ],
+    [
+     "storage-call",
      "upsertUnresolvedRelations"
     ],
     [
      "storage-call",
      "upsertUnresolvedRelations"
+    ],
+    [
+     "storage-call",
+     "upsertUnresolvedRelationsInTxn"
     ],
     [
      "storage-call",
@@ -28189,9 +28205,9 @@
      "writePendingRowInTxn"
     ]
    ],
-   "siteCount": 190,
-   "sitesDigest": "8f4bd418fe0483303e2873e1829961f8200b427ba92fb41abcb6f94e3ef93165",
-   "sourceDigest": "d986947dafeefec2df234c9fa3859b0b8e29d5db08cae77e8a35d4ee77b1eea1",
+   "siteCount": 194,
+   "sitesDigest": "b4795805a1a7da5b1736084ea1fe0eaf0dcf4da555b451bb1c5dcb1938eac570",
+   "sourceDigest": "53cdf6b49ca4b6e30c6f6c12772faef6ea949e3e2863d526c427e4e6fbb6b183",
    "boundaries": [
     "diagnostic",
     "serialization",

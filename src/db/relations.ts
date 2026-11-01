@@ -142,40 +142,63 @@ async function upsertResolvedRelations(relations: Relation[]): Promise<void> {
 		);
 	}
 	if (unique.length === 0) return;
+	const counts = await withWriteTxn(s => upsertResolvedRelationsInTxn(s, unique));
+	logResolvedWrite(counts, unique.length);
+}
 
-	const refused: Array<{ kind: string; from: string; to: string; reason: string }> = [];
-	let keptAwaiting = 0;
-	const now = Date.now();
-	await withWriteTxn(s => {
-		for (const r of unique) {
-			const kindByte = RELATION_KIND_BYTE[r.kind as InternalRelationKind];
-			const fromU64  = lookupU64ByStringId(s, r.from);
-			if (kindByte === undefined || fromU64 === undefined) {
-				const reason = kindByte === undefined ? 'unknown-kind' : 'source-missing';
-				countUnwritableInTxn(s, repoIdOfMetaInTxn(s, r.meta), reason);
-				refused.push({ kind: r.kind, from: r.from, to: r.to, reason });
-				continue;
-			}
-			const toU64 = lookupU64ByStringId(s, r.to);
-			if (toU64 === undefined) {
-				writePendingRowInTxn(s, awaitingRowFor(s, fromU64, r.from, r.kind, r.to, r.meta, now));
-				keptAwaiting++;
-				continue;
-			}
-			s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
-			s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
+/** What one relationship write did: edges stored, rows kept pending, and the
+ *  relationships counted unwritable with their reason. */
+export interface RelationWriteCounts {
+	stored:     number;
+	pending:    number;
+	unwritable: number;
+	refused:    Array<{ kind: string; from: string; to: string; reason: string }>;
+}
+
+/**
+ * The body of upsertResolvedRelations inside the caller's open write
+ * transaction (Epic c2ba6fa6 s2: the file commit writes a file's relationships
+ * in the same transaction as its entities). Same rule: every relationship ends
+ * as an edge, ONE pending row awaiting its target id, or a counted unwritable.
+ * `relations` are expected deduplicated; the caller logs the counts.
+ */
+export function upsertResolvedRelationsInTxn(s: GraphStore, relations: readonly Relation[], now: number = Date.now()): RelationWriteCounts {
+	const counts: RelationWriteCounts = { stored: 0, pending: 0, unwritable: 0, refused: [] };
+	for (const r of relations) {
+		const kindByte = RELATION_KIND_BYTE[r.kind as InternalRelationKind];
+		const fromU64  = lookupU64ByStringId(s, r.from);
+		if (kindByte === undefined || fromU64 === undefined) {
+			const reason = kindByte === undefined ? 'unknown-kind' : 'source-missing';
+			countUnwritableInTxn(s, repoIdOfMetaInTxn(s, r.meta), reason);
+			counts.refused.push({ kind: r.kind, from: r.from, to: r.to, reason });
+			counts.unwritable++;
+			continue;
 		}
-	});
-	if (keptAwaiting > 0) log.debug({ keptAwaiting, total: unique.length }, 'upsertResolvedRelations: kept relationships awaiting a target not stored yet');
-	if (refused.length > 0) {
+		const toU64 = lookupU64ByStringId(s, r.to);
+		if (toU64 === undefined) {
+			writePendingRowInTxn(s, awaitingRowFor(s, fromU64, r.from, r.kind, r.to, r.meta, now));
+			counts.pending++;
+			continue;
+		}
+		s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
+		s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
+		counts.stored++;
+	}
+	return counts;
+}
+
+/** The logging upsertResolvedRelations did after its commit. */
+export function logResolvedWrite(counts: RelationWriteCounts, total: number): void {
+	if (counts.pending > 0) log.debug({ keptAwaiting: counts.pending, total }, 'upsertResolvedRelations: kept relationships awaiting a target not stored yet');
+	if (counts.refused.length > 0) {
 		log.warn(
-			{ refused: refused.length, total: unique.length, first: refused.slice(0, 20) },
+			{ refused: counts.refused.length, total, first: counts.refused.slice(0, 20) },
 			'upsertResolvedRelations: relationships the store could not write (counted as unwritable)',
 		);
 	}
 }
 
-function dedupeResolvedRelations(relations: readonly Relation[]): Relation[] {
+export function dedupeResolvedRelations(relations: readonly Relation[]): Relation[] {
 	const seen = new Set<string>();
 	const out: Relation[] = [];
 	for (const r of relations) {
@@ -242,9 +265,19 @@ export async function deleteRelationsForRepo(_db: DbClient, _repo: string): Prom
  */
 async function upsertUnresolvedRelations(relations: Relation[]): Promise<void> {
 	if (relations.length === 0) return;
+	const counts = await withWriteTxn(s => upsertUnresolvedRelationsInTxn(s, relations));
+	logUnresolvedWrite(counts, relations.length);
+}
 
-	const attemptedAt = Date.now();
-	const refused: Array<{ kind: string; from: string; to: string; reason: string }> = [];
+/**
+ * The body of upsertUnresolvedRelations inside the caller's open write
+ * transaction (Epic c2ba6fa6 s2). Same rule: every row is stored and counted
+ * under its class, or counted unwritable with its reason; the batch is
+ * deduplicated last-wins by computed id. The caller logs the counts.
+ */
+export function upsertUnresolvedRelationsInTxn(s: GraphStore, relations: readonly Relation[], attemptedAt: number = Date.now()): RelationWriteCounts {
+	const counts: RelationWriteCounts = { stored: 0, pending: 0, unwritable: 0, refused: [] };
+	if (relations.length === 0) return counts;
 
 	// De-duplicate within the batch (last-wins by computed id)
 	type Tuple = { id: string; row: UnresolvedRow; repoPath: string };
@@ -265,7 +298,7 @@ async function upsertUnresolvedRelations(relations: Relation[]): Promise<void> {
 		const id = makeUnresolvedRelationId(repo, r.from, r.kind, idTo);
 		const row: UnresolvedRow = {
 			id,
-			repoId:      0, // back-filled inside the txn
+			repoId:      0, // back-filled below
 			fromEntity:  r.from,
 			fromFile,
 			kind:        r.kind,
@@ -275,30 +308,35 @@ async function upsertUnresolvedRelations(relations: Relation[]): Promise<void> {
 		};
 		tupleById.set(id, { id, row, repoPath: repo });
 	}
-	if (tupleById.size === 0 && withoutFile.length === 0) return;
 
-	await withWriteTxn(s => {
-		for (const r of withoutFile) {
-			countUnwritableInTxn(s, repoIdOfMetaInTxn(s, r.meta), 'pending-without-file');
-			refused.push({ kind: r.kind, from: r.from, to: r.to, reason: 'pending-without-file' });
+	for (const r of withoutFile) {
+		countUnwritableInTxn(s, repoIdOfMetaInTxn(s, r.meta), 'pending-without-file');
+		counts.refused.push({ kind: r.kind, from: r.from, to: r.to, reason: 'pending-without-file' });
+		counts.unwritable++;
+	}
+	const repoIdCache = new Map<string, number | undefined>();
+	for (const t of tupleById.values()) {
+		if (!repoIdCache.has(t.repoPath)) repoIdCache.set(t.repoPath, repoIdByPathInTxn(s, t.repoPath));
+		const repoId = repoIdCache.get(t.repoPath);
+		if (repoId === undefined) {
+			// No registered repo: upsertEntities is the canonical creation
+			// point, so this is a caller error; it is counted, not dropped silently.
+			countUnwritableInTxn(s, undefined, 'repository-not-registered');
+			counts.refused.push({ kind: t.row.kind, from: t.row.fromEntity, to: t.row.rawTo, reason: 'repository-not-registered' });
+			counts.unwritable++;
+			continue;
 		}
-		const repoIdCache = new Map<string, number | undefined>();
-		for (const t of tupleById.values()) {
-			if (!repoIdCache.has(t.repoPath)) repoIdCache.set(t.repoPath, repoIdByPathInTxn(s, t.repoPath));
-			const repoId = repoIdCache.get(t.repoPath);
-			if (repoId === undefined) {
-				// No registered repo: upsertEntities is the canonical creation
-				// point, so this is a caller error; it is counted, not dropped silently.
-				countUnwritableInTxn(s, undefined, 'repository-not-registered');
-				refused.push({ kind: t.row.kind, from: t.row.fromEntity, to: t.row.rawTo, reason: 'repository-not-registered' });
-				continue;
-			}
-			writePendingRowInTxn(s, { ...t.row, repoId });
-		}
-	});
-	if (refused.length > 0) {
+		writePendingRowInTxn(s, { ...t.row, repoId });
+		counts.pending++;
+	}
+	return counts;
+}
+
+/** The logging upsertUnresolvedRelations did after its commit. */
+export function logUnresolvedWrite(counts: RelationWriteCounts, total: number): void {
+	if (counts.refused.length > 0) {
 		log.warn(
-			{ refused: refused.length, total: relations.length, first: refused.slice(0, 20) },
+			{ refused: counts.refused.length, total, first: counts.refused.slice(0, 20) },
 			'upsertUnresolvedRelations: pending relationships the store could not keep (counted as unwritable)',
 		);
 	}

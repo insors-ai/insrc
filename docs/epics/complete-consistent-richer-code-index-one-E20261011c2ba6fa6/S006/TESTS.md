@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -149,3 +149,38 @@ Run at 2026-11-01T10:20:34.811Z on commit `684b25450`. Tests check: **passed**. 
 | `src/indexer/__tests__/cross-file-modes.test.ts` | 0 | 4 | 1.5 s |  |
 | `src/indexer/__tests__/source-roots.test.ts` | 0 | 25 | 0.6 s |  |
 | `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 1 | 0.6 s |  |
+
+## t8
+
+Run at 2026-11-01T10:35:33.944Z on commit `9b36bd798`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/analyze/explore/concept-resolve.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | concept.resolve enumerates only the directories FileFilter includes | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
+| pass | the fixture's include/exclude set is FileFilter's own answer | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
+
+**integration: src/analyze/explore/module-profile.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | module.profile lists only the subdirectories and files FileFilter includes | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
+
+**integration: src/analyze/runtimes/infra/_shared.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | infra walkFiles yields exactly the files FileFilter includes | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
+| pass | infra walkFiles of a directory inside the repository applies the repository's own rules | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
+| pass | infra walkFiles reports a directory it cannot read, and never descends into an ignored one | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
+| pass | the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given | `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` |
+| pass | walkFiles: a node_modules directory the repository ignores is skipped; other files visible | `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.6 s |  |
+| `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` | 0 | 24 | 4.7 s |  |
+| `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` | 0 | 1 | 0.5 s |  |

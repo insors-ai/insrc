@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s6",
     "createdAt": "2026-11-01T08:48:41.494Z",
-    "updatedAt": "2026-11-01T10:20:34.811Z",
+    "updatedAt": "2026-11-01T10:35:33.944Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -754,6 +754,231 @@
             "titles": [
               {
                 "title": "a watcher-emitted event for a FileFilter-excluded file never reaches a registered handler, while one for an included file does",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "9b36bd798",
+        "ranAt": "2026-11-01T10:35:33.944Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/explore/concept-resolve.ts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+                "title": "concept.resolve enumerates only the directories FileFilter includes",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+                "title": "the fixture's include/exclude set is FileFilter's own answer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/explore/module-profile.ts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+                "title": "module.profile lists only the subdirectories and files FileFilter includes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/analyze/runtimes/infra/_shared.ts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+                "title": "infra walkFiles yields exactly the files FileFilter includes",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+                "title": "infra walkFiles of a directory inside the repository applies the repository's own rules",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+                "title": "infra walkFiles reports a directory it cannot read, and never descends into an ignored one",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/infra/__tests__/walk-files.test.ts",
+                "title": "the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+                "title": "walkFiles: a node_modules directory the repository ignores is skipped; other files visible",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1595,
+            "titles": [
+              {
+                "title": "the fixture's include/exclude set is FileFilter's own answer",
+                "result": "pass"
+              },
+              {
+                "title": "infra walkFiles yields exactly the files FileFilter includes",
+                "result": "pass"
+              },
+              {
+                "title": "infra walkFiles of a directory inside the repository applies the repository's own rules",
+                "result": "pass"
+              },
+              {
+                "title": "infra walkFiles reports a directory it cannot read, and never descends into an ignored one",
+                "result": "pass"
+              },
+              {
+                "title": "module.profile lists only the subdirectories and files FileFilter includes",
+                "result": "pass"
+              },
+              {
+                "title": "concept.resolve enumerates only the directories FileFilter includes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4747,
+            "titles": [
+              {
+                "title": "readScopeRef: well-formed -> returns",
+                "result": "pass"
+              },
+              {
+                "title": "readScopeRef: missing -> throws INV-5",
+                "result": "pass"
+              },
+              {
+                "title": "baseName: directory-stripped",
+                "result": "pass"
+              },
+              {
+                "title": "classifyFile: terraform / dockerfile / helm chart / gha / gitlab / compose",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: minimal valid manifest -> record",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: no metadata.name -> null (dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: no apiVersion/kind -> null",
+                "result": "pass"
+              },
+              {
+                "title": "extractResource: label coercion of non-string values",
+                "result": "pass"
+              },
+              {
+                "title": "registerBuiltinRuntimes registers all infra runtimes (incl. helm/docker/ci)",
+                "result": "pass"
+              },
+              {
+                "title": "runtime templateIds match expected ids",
+                "result": "pass"
+              },
+              {
+                "title": "registration parity: INFRA_RUNTIMES and INFRA_TEMPLATES both length 8; produces-key === runtime output key",
+                "result": "pass"
+              },
+              {
+                "title": "infra.discovery.families description no longer overpromises ansible/pulumi/cloudformation",
+                "result": "pass"
+              },
+              {
+                "title": "INFRA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file",
+                "result": "pass"
+              },
+              {
+                "title": "walkFiles: a node_modules directory the repository ignores is skipped; other files visible",
+                "result": "pass"
+              },
+              {
+                "title": "an infra task accepts its three kinds and refuses a file scope with the mismatch code; the connection-listing task gives the same result for a repo scope as before",
+                "result": "pass"
+              },
+              {
+                "title": "discovery.families: classifies all expected families against the fixture",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.kubernetes: enumerates resources with kind/name/namespace/labels",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.kubernetes: Chart.yaml is skipped (helm metadata, not k8s)",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.terraform: extracts resources / data / providers / variables / outputs",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.terraform: captures indented blocks + drops invalid HCL (no throw)",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.helm: enumerates charts with metadata + deps + templateFileCount + valuesKeys",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.docker: multi-stage Dockerfile FROM/stage/EXPOSE + compose services (build-only kept)",
+                "result": "pass"
+              },
+              {
+                "title": "inventory.ci: GHA `on` map normalized + step uses; gitlab stages + jobs (reserved keys excluded); broken skipped",
+                "result": "pass"
+              },
+              {
+                "title": "inventory runtimes: empty scope yields well-formed empty inventories, no throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/infra/__tests__/walk-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 526,
+            "titles": [
+              {
+                "title": "the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given",
                 "result": "pass"
               }
             ],

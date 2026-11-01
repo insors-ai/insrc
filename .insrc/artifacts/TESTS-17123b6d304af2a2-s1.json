@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T18:52:29.474Z",
+    "updatedAt": "2026-11-01T18:58:56.941Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -62,6 +62,52 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c3efb780e",
+        "ranAt": "2026-11-01T18:58:56.941Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "node22-fs-ext-abi-and-separate-descriptor-probe",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/native.test.ts",
+                "title": "node22-fs-ext-abi-and-separate-descriptor-probe",
+                "result": "fail"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/native.test.ts",
+                "title": "native-load-failure-is-not-ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/native.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 547,
+            "titles": [
+              {
+                "title": "node22-fs-ext-abi-and-separate-descriptor-probe",
+                "result": "fail"
+              },
+              {
+                "title": "native-load-failure-is-not-ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named test cases that did not pass: fail: 'node22-fs-ext-abi-and-separate-descriptor-probe' in packages/project-memory/src/__tests__/native.test.ts"
       }
     ]
   }

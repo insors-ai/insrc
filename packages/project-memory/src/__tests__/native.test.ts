@@ -5,8 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { loadNative } from '../native.js';
 import { MemoryError } from '../errors.js';
+import { nativeTest } from './fixtures/node22.js';
 
-test('node22-fs-ext-abi-and-separate-descriptor-probe', async () => {
+nativeTest(import.meta.url, 'node22-fs-ext-abi-and-separate-descriptor-probe', async () => {
   assert.equal(process.versions.node.split('.')[0], '22', 'native qualification requires Node 22');
   assert.equal(process.versions.modules, '127');
   const native = await loadNative();

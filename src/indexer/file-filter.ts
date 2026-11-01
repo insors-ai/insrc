@@ -34,9 +34,10 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import ignore from 'ignore';
 
 import { getLogger } from '../shared/logger.js';
@@ -271,6 +272,10 @@ interface FileFilterState {
 	readonly tracked: TrackedSets;
 	files: string[];
 	dirsWithIncludedDescendant: Set<string>;
+	/** The content digest ('' when absent) of each rule file the walk does
+	 *  not visit -- the clone's exclude file and the global ignore file --
+	 *  as read when this state was built. */
+	readonly outsideRuleDigests: ReadonlyMap<string, string>;
 }
 
 const stateByFilter = new WeakMap<FileFilter, FileFilterState>();
@@ -299,7 +304,24 @@ function buildState(absRepo: string): FileFilterState {
 	if (global !== undefined) addPrefixed(ig, readRuleLines(global), '');
 
 	const { files, dirsWithIncludedDescendant } = walk(absRepo, ig, tracked);
-	return { ig, tracked, files, dirsWithIncludedDescendant };
+	return { ig, tracked, files, dirsWithIncludedDescendant, outsideRuleDigests: outsideRuleDigests(absRepo) };
+}
+
+/** The clone's exclude file and the global ignore file: rule files a
+ *  watcher event may never name (the exclude file lies under `.git`, the
+ *  global one outside the repository), so a change is found by content. */
+function outsideRuleFiles(absRepo: string): string[] {
+	const global = globalIgnoreFile(absRepo);
+	return [join(absRepo, '.git', 'info', 'exclude'), ...(global !== undefined ? [global] : [])];
+}
+
+function outsideRuleDigests(absRepo: string): Map<string, string> {
+	return new Map(outsideRuleFiles(absRepo).map(f => [f, fileDigest(f)]));
+}
+
+function fileDigest(path: string): string {
+	try { return createHash('sha256').update(readFileSync(path)).digest('hex'); }
+	catch { return ''; }
 }
 
 /**
@@ -367,6 +389,27 @@ export function excludesDirectory(filter: FileFilter, absDir: string): boolean {
 
 /** `{ left, entered }` — the files that newly left and newly entered the
  *  included set, per sc4's own `FilterChange` shape. */
+/**
+ * The ignore file whose change requires `refreshFileFilter` before a batch of
+ * file events is evaluated (Epic c2ba6fa6 s6/t10, ac5), or undefined: a
+ * `.gitignore` at any depth of the repository among `changedPaths`, else the
+ * clone's exclude file or the global ignore file when its content differs
+ * from what the filter was built from.
+ */
+export function changedIgnoreFile(filter: FileFilter, changedPaths: readonly string[]): string | undefined {
+	for (const p of changedPaths) {
+		const abs = resolve(p);
+		const rel = relative(filter.repoPath, abs);
+		if (rel === '' || rel.startsWith('..') || isGitDir(rel)) continue;
+		if (basename(abs) === '.gitignore') return abs;
+	}
+	// The paths resolved when the filter was built: no git subprocess per batch.
+	for (const [f, digest] of stateByFilter.get(filter)?.outsideRuleDigests ?? []) {
+		if (digest !== fileDigest(f)) return f;
+	}
+	return undefined;
+}
+
 export interface FilterChange {
 	readonly left: string[];
 	readonly entered: string[];

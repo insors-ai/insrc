@@ -1,11 +1,34 @@
 import * as parcelWatcher from '@parcel/watcher';
-import type { FileFilter } from './file-filter.js';
+import { changedIgnoreFile, refreshFileFilter, type FileFilter } from './file-filter.js';
 
 export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
 export type EventHandler = (events: FileEvent[]) => void;
 
 const DEBOUNCE_MS = 200;
+
+/**
+ * One batch of a repository's file events through its FileFilter (Epic
+ * c2ba6fa6 s6/t10). When the batch changes an ignore file -- or the clone's
+ * exclude file or the global ignore file changed -- the filter is refreshed
+ * FIRST, so the rest of the batch is judged by the new rules (ac5): a file
+ * the new rules leave out is dropped and one they let in passes. The files
+ * the refresh moved are then reported too, so the index follows the rules
+ * without re-adding the repository: each file that left as a 'delete', each
+ * that entered as a 'create' (unless the batch already carries an event for
+ * it).
+ */
+export function filterBatch(filter: FileFilter, events: readonly FileEvent[]): FileEvent[] {
+  const changed = changedIgnoreFile(filter, events.map(e => e.path));
+  const change = changed !== undefined ? refreshFileFilter(filter, changed) : undefined;
+  const out = events.filter(e => filter.includes(e.path));
+  if (change !== undefined) {
+    const carried = new Set(out.map(e => e.path));
+    for (const path of change.left) out.push({ type: 'delete', path });
+    for (const path of change.entered) if (!carried.has(path)) out.push({ type: 'create', path });
+  }
+  return out;
+}
 
 /**
  * Wraps @parcel/watcher to provide multi-repo, debounced file event emission.
@@ -40,13 +63,8 @@ export class Watcher {
     const sub = await parcelWatcher.subscribe(
       repoPath,
       (_err, events) => {
-        for (const e of events) {
-          if (filter !== undefined && !filter.includes(e.path)) continue;
-          this.pendingEvents.push({
-            type: e.type as FileEventType,
-            path: e.path,
-          });
-        }
+        const batch = events.map(e => ({ type: e.type as FileEventType, path: e.path }));
+        this.pendingEvents.push(...(filter === undefined ? batch : filterBatch(filter, batch)));
         this.scheduleDrain();
       },
       { ignore: [] },

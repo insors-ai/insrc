@@ -40,7 +40,7 @@ import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
 import { selectFile } from './file-selection.js';
 import { Watcher } from './watcher.js';
-import { createFileFilter, isGeneratedOrMinifiedFile, proposeIgnoreFile, type CheapTierModel, type FileFilter } from './file-filter.js';
+import { createFileFilter, isGeneratedOrMinifiedFile, proposeIgnoreFile, refreshFileFilter, type CheapTierModel, type FileFilter } from './file-filter.js';
 import { IndexQueue } from '../daemon/queue.js';
 import { getLogger } from '../shared/logger.js';
 import type { ConfigStore } from '../config/store.js';
@@ -340,10 +340,18 @@ export class IndexerService {
     return filter;
   }
 
-  /** Builds a fresh FileFilter for `repoPath`, caches it, and returns it --
-   *  used at registration and by a full index, both of which already walk
-   *  the whole repo so the extra build is not wasted work. */
+  /** The repo's FileFilter rebuilt from disk (created and cached when none
+   *  is held) -- used at registration and by a full index, both of which
+   *  already walk the whole repo so the extra build is not wasted work. */
   private refreshedFileFilter(repoPath: string): FileFilter {
+    // The held instance is refreshed in place: the watcher holds the same
+    // object and refreshes it on an ignore-file edit (s6/t10), so a new one
+    // here would leave the two judging by different rules.
+    const held = this.repoFilters.get(repoPath);
+    if (held !== undefined) {
+      refreshFileFilter(held, 'a full index or registration');
+      return held;
+    }
     const filter = createFileFilter(repoPath);
     this.repoFilters.set(repoPath, filter);
     return filter;

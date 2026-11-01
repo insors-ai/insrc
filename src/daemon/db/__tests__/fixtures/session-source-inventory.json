@@ -30929,6 +30929,10 @@
     ],
     [
      "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "filesystem-read",
      "statSync"
     ],
     [
@@ -30940,9 +30944,9 @@
      "writeFileSync"
     ]
    ],
-   "siteCount": 10,
-   "sitesDigest": "1a118420756a104e676d4b0fd85c0e516d02324b1592aead011f6c01764f7926",
-   "sourceDigest": "8e13b1e8cab30c5d037d4f0d397ca8d1c029a4a21cce2ccd8d34413484caceab",
+   "siteCount": 11,
+   "sitesDigest": "71d8c1f02692b845c680b4b727e3b16b4ac7dea2da9c79c2f9dc775c96266450",
+   "sourceDigest": "76d5ff7b775a5a08d9b47774034863cb838db01edf3ba2529936f03f288331df",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -31533,7 +31537,7 @@
    ],
    "siteCount": 135,
    "sitesDigest": "93ee7357e574fa171fe79b522e25f7a5041fecd47e050b32454a0e5abd10376e",
-   "sourceDigest": "f0379caa5fea3fe057aacce817e15e4454361b249686d1ada2e1104b96d92e23",
+   "sourceDigest": "1deb064a66ac0642198428f551552c876646214e63a179ca3d2f2dc0461f14dd",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

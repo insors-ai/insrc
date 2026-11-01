@@ -15,7 +15,8 @@ import { readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 
-import { createFileFilter, excludesDirectory } from '../../../indexer/file-filter.js';
+import { excludesDirectory } from '../../../indexer/file-filter.js';
+import { runFileFilter } from '../../context/run-file-filter.js';
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 import { buildCompleteness } from '../../completeness.js';
 import type { Completeness, ReachedLimit, SkippedItem } from '../../completeness.js';
@@ -129,7 +130,7 @@ export async function walkFiles(
 	const out: WalkedFile[] = [];
 	let truncated = false;
 	const unreadable: SkippedItem[] = [];
-	const filter = createFileFilter(enclosingRepo(root));
+	const filter = runFileFilter(enclosingRepo(root));
 
 	const visit = async (dir: string): Promise<void> => {
 		if (out.length >= cap) { truncated = true; return; }

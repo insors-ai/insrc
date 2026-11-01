@@ -29,6 +29,7 @@ import { captureAnalysisDiagnostics } from './connection-access.js';
  */
 
 import { resolve } from 'node:path';
+import { withRunFileFilters } from './context/run-file-filter.js';
 import { createConnectionResolver } from '../daemon/db/pool-cache.js';
 import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from './connection-access.js';
 import { dataSourceListingTimeoutMs } from '../config/analyze.js';
@@ -333,6 +334,16 @@ function sourceFor(kind: AnalyzeScopeRef['kind'], target: AnalyzeTarget): Reques
  * reads can fail.
  */
 export async function measureRequestScope(
+	scopeRef:  AnalyzeScopeRef,
+	target:    AnalyzeTarget,
+	sizeHint?: AnalyzeScope,
+	options?:  MeasureOptions,
+): Promise<RequestMeasure> {
+	// Its file walk shares the run's FileFilter (run-file-filter.ts).
+	return withRunFileFilters(() => measureRequestScopeInRun(scopeRef, target, sizeHint, options));
+}
+
+async function measureRequestScopeInRun(
 	scopeRef:  AnalyzeScopeRef,
 	target:    AnalyzeTarget,
 	sizeHint?: AnalyzeScope,

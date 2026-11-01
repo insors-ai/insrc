@@ -243,6 +243,7 @@ export class IndexerService {
       }
 
       this.registeredRepos.add(repo.path);
+      await this.ensureRootIgnoreFile(repo.path, 'daemon start');
       // FileFilter is the one rule (Epic c2ba6fa6 s6) -- built fresh on
       // every daemon start, not persisted.
       await this.watcher.addRepo(repo.path, this.refreshedFileFilter(repo.path));
@@ -354,11 +355,27 @@ export class IndexerService {
     const held = this.repoFilters.get(repoPath);
     if (held !== undefined) {
       refreshFileFilter(held, 'a full index or registration');
+      void this.watcher.syncIgnores?.(repoPath);
       return held;
     }
     const filter = createFileFilter(repoPath);
     this.repoFilters.set(repoPath, filter);
     return filter;
+  }
+
+  /** A registered repository with no root ignore file gets one proposed by
+   *  the cheap tier (or the plain fallback) before its FileFilter is built --
+   *  at registration (ac6), and at start-up and before a full index for a
+   *  repository registered before Story s6, which until then relied on the
+   *  retired built-in list of directory names (user decision 2026-11-01, s6
+   *  code review). An existing root ignore file is never touched (ac8), and
+   *  this never fails: proposeIgnoreFile does not throw. */
+  private async ensureRootIgnoreFile(repoPath: string, when: string): Promise<void> {
+    if (existsSync(join(repoPath, '.gitignore'))) return;
+    const proposal = await proposeIgnoreFile(repoPath, this.cheapTierModel);
+    if (proposal.written) {
+      log.info({ repo: repoPath, source: proposal.source, reason: proposal.reason }, `${when}: root ignore file created`);
+    }
   }
 
   /** Add a repo: start watching + enqueue full index. */
@@ -367,10 +384,7 @@ export class IndexerService {
     this.registeredRepos.add(repoPath);
     // A repo with no root ignore file gets one before the FileFilter below
     // reads it, so the first index already sees it (ac6, Epic c2ba6fa6 s6).
-    const proposal = await proposeIgnoreFile(repoPath, this.cheapTierModel);
-    if (proposal.written) {
-      log.info({ repo: repoPath, source: proposal.source, reason: proposal.reason }, 'repo added: root ignore file created');
-    }
+    await this.ensureRootIgnoreFile(repoPath, 'repo added');
     // FileFilter is the one rule (Epic c2ba6fa6 s6).
     await this.watcher.addRepo(repoPath, this.refreshedFileFilter(repoPath));
     this.queue.enqueue({ kind: 'full', repoPath });
@@ -662,6 +676,7 @@ export class IndexerService {
       // FileFilter (Epic c2ba6fa6 s6) is the one rule for what the walk
       // holds; selectFile() asks the same filter, so a listed file is never
       // 'excluded-by-ignore' -- only not-code / generated / artifact remain.
+      await this.ensureRootIgnoreFile(repoPath, 'full index');
       const filter = this.refreshedFileFilter(repoPath);
       const files = listRepoFiles(filter);
       const supported: string[] = [];

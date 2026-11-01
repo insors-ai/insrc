@@ -1201,5 +1201,9 @@
 	"src/indexer/file-filter.ts#CATCH_ALL_PATTERNS": {
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
+	},
+	"src/analyze/context/run-file-filter.ts#runFilters": {
+		"class": "per-thread",
+		"reason": "An AsyncLocalStorage: its store lives in the async context of the current thread by design, so each thread has its own."
 	}
 }

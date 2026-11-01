@@ -1,4 +1,5 @@
-import { createFileFilter, excludesDirectory } from '../../indexer/file-filter.js';
+import { excludesDirectory } from '../../indexer/file-filter.js';
+import { runFileFilter } from '../context/run-file-filter.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -332,7 +333,7 @@ function enumerateDirs(
 	skipped: SkippedItem[],
 ): Candidate[] {
 	const out: Candidate[] = [];
-	const fileFilter = createFileFilter(repoPath);
+	const fileFilter = runFileFilter(repoPath);
 	function walk(dir: string, depth: number): void {
 		if (depth > MAX_DIR_DEPTH) return;
 		let entries: string[];

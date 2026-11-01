@@ -35,8 +35,8 @@
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { createFileFilter } from '../../indexer/file-filter.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
+import { runFileFilter } from './run-file-filter.js';
 import { getLogger } from '../../shared/logger.js';
 
 const log = getLogger('analyze:repo-ignore-filter');
@@ -69,7 +69,7 @@ export interface RepoIgnoreFilter {
 /** The analyze view of `repoPath`'s FileFilter (Epic c2ba6fa6 s6). */
 export function createRepoIgnoreFilter(repoPath: string): RepoIgnoreFilter {
 	const absRepo = resolve(repoPath);
-	const filter = createFileFilter(absRepo);
+	const filter = runFileFilter(absRepo);
 	// A path not on disk is not included: `git ls-files`, which this filter
 	// replaced, never listed one, and a runner asking about a stored entity's
 	// file must not take a deleted file for real source.

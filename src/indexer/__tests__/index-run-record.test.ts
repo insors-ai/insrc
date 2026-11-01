@@ -51,6 +51,9 @@ test.beforeEach(async () => {
 	repo = mkdtempSync(join(tmpdir(), 'insrc-s5t6-repo-'));
 	mkdirSync(join(repo, 'src'), { recursive: true });
 	for (const f of FILES) writeFileSync(join(repo, 'src', f), `export const ${f[0]} = 1;\n`, 'utf8');
+	// A root ignore file, so the full index proposes none (s6), that leaves
+	// itself out, so the counts are the five source files.
+	writeFileSync(join(repo, '.gitignore'), '.gitignore\n', 'utf8');
 });
 test.afterEach(async () => {
 	await closeGraphStore();

@@ -1,11 +1,23 @@
 import * as parcelWatcher from '@parcel/watcher';
-import { changedIgnoreFile, refreshFileFilter, type FileFilter } from './file-filter.js';
+
+import { getLogger } from '../shared/logger.js';
+import { changedIgnoreFile, nativelyIgnoredPaths, refreshFileFilter, type FileFilter } from './file-filter.js';
 
 export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
 export type EventHandler = (events: FileEvent[]) => void;
 
 const DEBOUNCE_MS = 200;
+
+const log = getLogger('watcher');
+
+/** One watched directory: its subscription, its FileFilter (absent for a
+ *  config dir) and the native ignore list the subscription was made with. */
+interface Watched {
+  sub:     parcelWatcher.AsyncSubscription;
+  readonly filter: FileFilter | undefined;
+  ignored: readonly string[];
+}
 
 /**
  * One batch of a repository's file events through its FileFilter (Epic
@@ -46,7 +58,11 @@ export function filterBatch(filter: FileFilter, events: readonly FileEvent[], on
 export class Watcher {
   private readonly handlers:     EventHandler[]   = [];
   private readonly refreshHandlers: Array<(repoPath: string) => void> = [];
-  private readonly subscriptions: Map<string, parcelWatcher.AsyncSubscription> = new Map();
+  private readonly subscriptions: Map<string, Watched> = new Map();
+  /** Per repository, the native-ignore update in flight (they run one at a
+   *  time, and close() waits for them: a parcel call still running when the
+   *  daemon's worker ends aborts the process). */
+  private readonly resyncs: Map<string, Promise<void>> = new Map();
   private debounceTimer:          ReturnType<typeof setTimeout> | null = null;
   private pendingEvents:          FileEvent[] = [];
 
@@ -69,23 +85,56 @@ export class Watcher {
    *  small and daemon-managed) is unfiltered. */
   async addRepo(repoPath: string, filter?: FileFilter): Promise<void> {
     if (this.subscriptions.has(repoPath)) return;
+    const ignored = filter === undefined ? [] : nativelyIgnoredPaths(filter);
+    const sub = await this.subscribe(repoPath, filter, ignored);
+    this.subscriptions.set(repoPath, { sub, filter, ignored });
+  }
 
-    const sub = await parcelWatcher.subscribe(
+  /**
+   * Bring a repository's native ignores in line with its FileFilter after a
+   * refresh -- the watcher's own (an ignore-file edit in its events) or the
+   * indexer's (a full index, a re-registration). When the directories the
+   * filter leaves out changed, a new subscription is made BEFORE the old one
+   * is dropped, so no event falls between them (one seen twice is harmless:
+   * the queue merges file jobs).
+   */
+  syncIgnores(repoPath: string): Promise<void> {
+    const prior = this.resyncs.get(repoPath) ?? Promise.resolve();
+    const next = prior.then(async () => {
+      const watched = this.subscriptions.get(repoPath);
+      if (watched?.filter === undefined) return;
+      const ignored = nativelyIgnoredPaths(watched.filter);
+      if (ignored.length === watched.ignored.length && ignored.every((p, i) => p === watched.ignored[i])) return;
+      const sub = await this.subscribe(repoPath, watched.filter, ignored);
+      const old = watched.sub;
+      watched.sub = sub;
+      watched.ignored = ignored;
+      await old.unsubscribe();
+    }).catch(err => {
+      log.warn({ repo: repoPath, err: err instanceof Error ? err.message : String(err) }, 'watcher: native ignores not updated; the filter still judges every event');
+    });
+    this.resyncs.set(repoPath, next);
+    void next.finally(() => { if (this.resyncs.get(repoPath) === next) this.resyncs.delete(repoPath); });
+    return next;
+  }
+
+  /** Protected: a test records the native ignores each subscription is made with. */
+  protected subscribe(repoPath: string, filter: FileFilter | undefined, ignored: readonly string[]): Promise<parcelWatcher.AsyncSubscription> {
+    return parcelWatcher.subscribe(
       repoPath,
       (_err, events) => {
         const batch = events.map(e => ({ type: e.type as FileEventType, path: e.path }));
         this.pendingEvents.push(...(filter === undefined ? batch : filterBatch(filter, batch, () => {
           for (const handler of this.refreshHandlers) handler(repoPath);
+          void this.syncIgnores(repoPath);
         })));
         this.scheduleDrain();
       },
-      // The daemon's own .insrc directory is a built-in exclusion and busy
-      // (artifacts, state): its events never reach JS at all. Everything else
-      // is judged by the filter, whose rules can change at run time.
-      { ignore: filter === undefined ? [] : ['.insrc'] },
+      // What the filter leaves out with no rule change in between never
+      // reaches JS (no watches under node_modules/ either); everything else
+      // is judged by the filter itself.
+      { ignore: [...ignored] },
     );
-
-    this.subscriptions.set(repoPath, sub);
   }
 
   /**
@@ -98,9 +147,10 @@ export class Watcher {
 
   /** Stop watching a repo directory. */
   async removeRepo(repoPath: string): Promise<void> {
-    const sub = this.subscriptions.get(repoPath);
-    if (sub) {
-      await sub.unsubscribe();
+    await this.resyncs.get(repoPath);
+    const watched = this.subscriptions.get(repoPath);
+    if (watched) {
+      await watched.sub.unsubscribe();
       this.subscriptions.delete(repoPath);
     }
   }
@@ -111,8 +161,9 @@ export class Watcher {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
     }
-    for (const sub of this.subscriptions.values()) {
-      await sub.unsubscribe();
+    for (const pending of [...this.resyncs.values()]) await pending;
+    for (const watched of this.subscriptions.values()) {
+      await watched.sub.unsubscribe();
     }
     this.subscriptions.clear();
   }

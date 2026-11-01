@@ -2136,7 +2136,7 @@
    ],
    "siteCount": 2,
    "sitesDigest": "2633e9eb55ea52a85d992120a57bae0a60515534d5b356067edbe82103cdd263",
-   "sourceDigest": "ffb2e1a43f39d974a21b814fd11405c30073e958ca1aba8473143fa22792105f",
+   "sourceDigest": "a20bb8bd5b4ad85847f6463581f8ab69d43570317898868420d7e3ffb4ffbd9b",
    "boundaries": [
     "diagnostic",
     "serialization"
@@ -2160,6 +2160,22 @@
    "sourceDigest": "db60c4d7821a5de7118f2533cf9b30893480bdc12615339998d2cf76b2f7859f",
    "boundaries": [
     "provider-factory"
+   ]
+  },
+  "src/analyze/context/run-file-filter.ts": {
+   "classification": "session-invocation",
+   "rationale": "Holds one FileFilter per repository root for the duration of one analysis run (an AsyncLocalStorage scope); it reads only a registered repository's ignore files and git's tracked list, never session material, and nothing outlives the run.",
+   "sites": [
+    [
+     "unresolved-call",
+     "AsyncLocalStorage"
+    ]
+   ],
+   "siteCount": 1,
+   "sitesDigest": "2b71118b77b3e282b83530cc37cea368d617ee30d34ba2be26ef35644c44b563",
+   "sourceDigest": "d1e02a42914f83780a5c1647263dfe3f30a8d67ee5c9456d56a2a7a20f254b84",
+   "boundaries": [
+    "unresolved-call"
    ]
   },
   "src/analyze/context/schema.ts": {
@@ -2653,7 +2669,7 @@
    ],
    "siteCount": 21,
    "sitesDigest": "7a63ebcdefcecad2b192f72ee097a8bd208650ab5ab0959e42067084d274c8d9",
-   "sourceDigest": "ddbaba63e72c925bc61efcbbc2ebd082dbfdaffbdabee3a653f0f987db70e3d3",
+   "sourceDigest": "2f00dc91c30cfc9ee35ec0228b31fbfbc8bf513c3319025f4971fda4e2cf1c07",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -2825,7 +2841,7 @@
    ],
    "siteCount": 8,
    "sitesDigest": "b2db2a52c817f7d98ea4b29c295c25fa02e3be55688f92f7024ffcddd3607269",
-   "sourceDigest": "2647f76c3e27fb014531bbd10e32915716ac7ad25c04c64c9917e1483048b8f7",
+   "sourceDigest": "b4a754782d4ad73b58c4a4ae74001932de5531ac341ce0c9842a757f193ead98",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -3406,7 +3422,7 @@
    ],
    "siteCount": 19,
    "sitesDigest": "8014bad785d66de44d6627284510d0020932afab50e374b28ed4890e4a8f264d",
-   "sourceDigest": "961833f3d34e61c9cc9185442219455cfe068de9ab092499f98620e2a1ec5500",
+   "sourceDigest": "22ed072a22177c7c994a37c527531a72c7c830d4bc80f05f51c11140044a8da5",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -3593,7 +3609,7 @@
    ],
    "siteCount": 10,
    "sitesDigest": "d4d8df638b11d8c5302074a5fd0186e7c2221adf6e553e4fa84a36061f7e2c4e",
-   "sourceDigest": "3b60e57e8620a33e97adc78076e1f75ee3a18565ce5b9eb7d1ae8a6ced51546d",
+   "sourceDigest": "a72f1766d9bd7b195d29794cf7b014bdcbcd4dad8104a2862651a4fac4de4cb3",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -3931,7 +3947,7 @@
    ],
    "siteCount": 45,
    "sitesDigest": "ad8fe97afbfe5ac4b5c32891600877bda47dabc51be0f59c6713d04f6c29f0f0",
-   "sourceDigest": "777a85c92f638fb907bcd8f74dde33b3bb157567f8e51539747e027ffee0a931",
+   "sourceDigest": "e09e4e32d0171cdf0f2dbd43d01e50b9aa4633fd71b3cc9738cacf6a9394ce63",
    "boundaries": [
     "acquisition:pool-member",
     "acquisition:pool-port-call",
@@ -5373,7 +5389,7 @@
    ],
    "siteCount": 1,
    "sitesDigest": "0450d0635cd4880a1b91ab4c340118815c6ae4314cc91fdb9be583b93d2f0d8d",
-   "sourceDigest": "da1d5a82a5a1f444f2133a689676f38afae0ecf03733331e9bb8784118c393e5",
+   "sourceDigest": "0cdad4a91ad2c900f54bbcc038ff47979a3be342ab21b16a091720736f59e769",
    "boundaries": [
     "filesystem-read"
    ]
@@ -30942,7 +30958,7 @@
    ],
    "siteCount": 12,
    "sitesDigest": "777e663a60fbc42a1716a10f5948a4f1ea30fdde39c6b7d8bb3fa48712ff1819",
-   "sourceDigest": "fd5d5bfbc7cdc9c3c356ccb3bec2ff7c900d2be25b8257b514f752009d981dad",
+   "sourceDigest": "34f627911990725109f9b5eb3f09558c7c9b995cc346b69fe181949d8f9f7305",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -31533,7 +31549,7 @@
    ],
    "siteCount": 135,
    "sitesDigest": "93ee7357e574fa171fe79b522e25f7a5041fecd47e050b32454a0e5abd10376e",
-   "sourceDigest": "8de77dbf8100b7f356f0bbe1627bf79d68294ec906eeea658a00c2e4074d9b0b",
+   "sourceDigest": "a8e47ce399145729861932c3f099372c4f00d6b7b9caf671fe3ca804431e5915",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -31903,6 +31919,26 @@
     "filesystem-read",
     "storage-call",
     "unresolved-call"
+   ]
+  },
+  "src/indexer/watcher.ts": {
+   "classification": "background-indexing",
+   "rationale": "Watches registered repositories' files for the indexer and logs when a native-ignore update fails; it carries file paths only, never session configurations or results.",
+   "sites": [
+    [
+     "diagnostic",
+     "getLogger"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ]
+   ],
+   "siteCount": 2,
+   "sitesDigest": "5d3f67f87db2b6e202c156d580429a8fd6706357cbb34c28db614eaf3b81064a",
+   "sourceDigest": "06d53d97a60045bb56da29c7b8cba02151a4c7d15e0777bb175b4a9292c70c36",
+   "boundaries": [
+    "diagnostic"
    ]
   },
   "src/mcp/controller-review.ts": {

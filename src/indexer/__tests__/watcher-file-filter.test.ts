@@ -15,7 +15,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -206,3 +206,65 @@ test('a live ignore-rule change queues the clean-up pass, which removes stored f
 	assert.deepEqual(enqueued.filter(j => (j as { kind: string }).kind === 'reconcile'), [{ kind: 'reconcile', repoPath: '/some/repo' }]);
 });
 
+
+// ---------------------------------------------------------------------------
+// Code review round 2 (s6): native ignores, and a root ignore file for repos
+// registered before s6
+// ---------------------------------------------------------------------------
+
+/** The real watcher, recording the native ignores of every subscription it makes. */
+class RecordingWatcher extends Watcher {
+	readonly recorded: string[][] = [];
+	protected override subscribe(repoPath: string, filter: FileFilter | undefined, ignored: readonly string[]) {
+		this.recorded.push(ignored.map(p => p.slice(repoPath.length + 1)));
+		return super.subscribe(repoPath, filter, ignored);
+	}
+}
+
+test('the watcher natively ignores what the filter leaves out -- pruned directories, nested repositories, .insrc -- and re-subscribes when the rules change', async () => {
+	const repo = indexedRepo();   // .gitignore: a/
+	try {
+		mkdirSync(join(repo, 'node_modules', 'pkg'), { recursive: true });
+		writeFileSync(join(repo, 'node_modules', 'pkg', 'i.js'), 'x', 'utf8');
+		writeFileSync(join(repo, '.gitignore'), 'a/\nnode_modules/\n', 'utf8');
+		mkdirSync(join(repo, 'vendor', 'lib'), { recursive: true });
+		execFileSync('git', ['init', '-q'], { cwd: join(repo, 'vendor', 'lib') });
+		const filter = createFileFilter(repo);
+		const watcher = new RecordingWatcher();
+		const seen: FileEvent[] = [];
+		watcher.onEvents(events => seen.push(...events));
+		await watcher.addRepo(repo, filter);
+		assert.deepEqual(watcher.recorded, [['.insrc', 'a', 'node_modules', 'vendor/lib']]);
+
+		writeFileSync(join(repo, '.gitignore'), 'node_modules/\n', 'utf8');   // a/ no longer left out
+		await waitFor(() => watcher.recorded.length === 2 && seen.some(e => e.path === join(repo, 'a', 'x.ts')));
+		await watcher.close();
+		assert.deepEqual(watcher.recorded[1], ['.insrc', 'node_modules', 'vendor/lib'], 'a/ is watched again');
+		assert.ok(seen.some(e => e.path === join(repo, 'a', 'x.ts') && e.type === 'create'), 'and its file entered');
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('a repository registered before s6 with no root ignore file gets one at start-up, before its filter is built', async () => {
+	const repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-s6-preregistered-')));
+	try {
+		mkdirSync(join(repo, 'node_modules', 'pkg'), { recursive: true });
+		writeFileSync(join(repo, 'node_modules', 'pkg', 'index.js'), 'x', 'utf8');
+		writeFileSync(join(repo, 'app.ts'), 'x', 'utf8');
+		const held: FileFilter[] = [];
+		const watcher = { onEvents() {}, onFilterRefreshed() {}, async addRepo(_p: string, f: FileFilter) { held.push(f); }, async removeRepo() {}, async addConfigDir() {}, async syncIgnores() {} } as unknown as Watcher;
+		const queue = new IndexQueue();
+		queue.enqueue = (() => {}) as typeof queue.enqueue;
+		const svc = new IndexerService(null as unknown as DbClient, queue, watcher, undefined, 600_000);
+		// 'pending' re-queues a full index without reading the store; the root ignore file comes first either way.
+		await svc.start([{ path: repo, name: '', addedAt: '2026-11-01T00:00:00.000Z', status: 'pending' }]);
+
+		assert.equal(held.length, 1);
+		assert.ok(readFileSync(join(repo, '.gitignore'), 'utf8').includes('node_modules/'), 'the plain fallback (no model configured) was written');
+		assert.equal(held[0]!.includes(join(repo, 'node_modules', 'pkg', 'index.js')), false, 'the filter the watcher holds already uses it');
+		assert.equal(held[0]!.includes(join(repo, 'app.ts')), true);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});

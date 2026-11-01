@@ -37,6 +37,7 @@ import { getCachedExploration, putCachedExploration } from '../../db/exploration
 import { getLogger } from '../../shared/logger.js';
 import type { StructuredSchema } from '../../shared/types.js';
 import { createRepoIgnoreFilter } from '../context/repo-ignore-filter.js';
+import { withRunFileFilters } from '../context/run-file-filter.js';
 
 import {
 	CAPABILITY_VERDICTS_SCHEMA,
@@ -151,7 +152,7 @@ export interface ExecutePlanArgs {
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const execution = requireConnectionExecution(args.connectionExecution);
-	return runWithConnectionExecution(execution, () => executePlanWithContext(args));
+	return runWithConnectionExecution(execution, () => withRunFileFilters(() => executePlanWithContext(args)));
 }
 async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPlan> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
@@ -163,10 +164,9 @@ async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPl
 	const outputsById = new Map<string, ExplorationOutput>();
 	let totalCached = 0;
 
-	// One filter per plan execution. Shared across every runner via
-	// ExplorationRunnerContext so a single subprocess call to `git
-	// ls-files` powers .gitignore-aware directory filtering across
-	// the whole plan.
+	// One filter per plan execution, shared across every runner via
+	// ExplorationRunnerContext; the walkers' own FileFilter is the same
+	// run-scoped instance (run-file-filter.ts).
 	const ignoreFilter = createRepoIgnoreFilter(args.repoPath);
 	// One read per plan execution: the relationship lookups state an incomplete index.
 	const repoCompleteness = await readRepoCompleteness(args.repoPath);
@@ -475,7 +475,7 @@ export type StepPlanResult = StepPlanPending | StepPlanDone;
 export async function stepPlan(args: Parameters<typeof stepPlanWithContext>[0]): Promise<StepPlanResult> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const execution = requireConnectionExecution(args.connectionExecution);
-	return runWithConnectionExecution(execution, () => stepPlanWithContext(args));
+	return runWithConnectionExecution(execution, () => withRunFileFilters(() => stepPlanWithContext(args)));
 }
 async function stepPlanWithContext(
 	args: ExecutePlanArgs & {

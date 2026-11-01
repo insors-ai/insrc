@@ -27,7 +27,8 @@ import { basename, extname, join, sep } from 'node:path';
 
 import { getDb } from '../../db/client.js';
 import { listEntitiesForRepo } from '../../db/entities.js';
-import { createFileFilter, excludesDirectory, type FileFilter } from '../../indexer/file-filter.js';
+import { excludesDirectory, type FileFilter } from '../../indexer/file-filter.js';
+import { runFileFilter } from '../context/run-file-filter.js';
 import { getLogger } from '../../shared/logger.js';
 import type { Entity } from '../../shared/types.js';
 
@@ -147,7 +148,7 @@ export async function runModuleProfile(
 	}
 
 	const skipped: SkippedItem[] = [];
-	const profile = await profileDir(path, entities, ctx.ignoreFilter, createFileFilter(ctx.repoPath), measurer, partlyRead, skipped);
+	const profile = await profileDir(path, entities, ctx.ignoreFilter, runFileFilter(ctx.repoPath), measurer, partlyRead, skipped);
 	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:       ctx.runId,
 			path,

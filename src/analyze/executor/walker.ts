@@ -45,6 +45,7 @@ import { captureAnalysisDiagnostics } from '../connection-access.js';
  */
 
 import { runWithConnectionExecution, ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { withRunFileFilters } from '../context/run-file-filter.js';
 import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { isCompletenessRecord } from '../completeness.js';
@@ -89,10 +90,10 @@ export async function runExecutor(args: RunExecutorArgs): Promise<ExecutorResult
 	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.tree, execution); }
 	else assertSessionContinuationNow(args.tree, execution);
 	assertSessionReuseNow(execution);
-	const result = await runWithConnectionExecution(execution, () => executePlan(args.tree, args.intent, args.runId, {
+	const result = await runWithConnectionExecution(execution, () => withRunFileFilters(() => executePlan(args.tree, args.intent, args.runId, {
 		onTaskEvent: args.onTaskEvent,
 		connectionExecution: args.connectionExecution,
-	}));
+	})));
 	assertSessionReuseNow(execution);
 	return result;
 }

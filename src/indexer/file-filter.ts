@@ -232,6 +232,9 @@ interface RuleWalkResult {
 	 *  repository (a submodule, a vendored clone), whose files git does not
 	 *  list as this one's, so neither does this filter. */
 	readonly nestedRepos: Set<string>;
+	/** Directories the walk did not enter: the rules exclude them and git
+	 *  tracks nothing under them. */
+	readonly prunedDirs: Set<string>;
 }
 
 /** One combined walk: collects nested `.gitignore` rules top-down (not
@@ -244,6 +247,7 @@ function walk(repoPath: string, ruleRoot: string, ig: Ignore, tracked: TrackedSe
 	const files: string[] = [];
 	const dirsWithIncludedDescendant = new Set<string>();
 	const nestedRepos = new Set<string>();
+	const prunedDirs = new Set<string>();
 
 	const markIncluded = (absFile: string): void => {
 		files.push(absFile);
@@ -271,7 +275,7 @@ function walk(repoPath: string, ruleRoot: string, ig: Ignore, tracked: TrackedSe
 			if (entry.name === '.git') continue;
 			if (entry.isDirectory()) {
 				const ruleExcluded = ig.ignores(`${rel}/`);
-				if (ruleExcluded && !tracked.dirs.has(abs)) continue;
+				if (ruleExcluded && !tracked.dirs.has(abs)) { prunedDirs.add(abs); continue; }
 				if (existsSync(join(abs, '.git'))) { nestedRepos.add(abs); continue; }
 				visit(abs);
 			} else if (entry.isFile() || (entry.isSymbolicLink() && isFileTarget(abs))) {
@@ -285,7 +289,7 @@ function walk(repoPath: string, ruleRoot: string, ig: Ignore, tracked: TrackedSe
 	};
 	visit(repoPath);
 
-	return { ig, files, dirsWithIncludedDescendant, nestedRepos };
+	return { ig, files, dirsWithIncludedDescendant, nestedRepos, prunedDirs };
 }
 
 function isFileTarget(absLink: string): boolean {
@@ -303,6 +307,7 @@ interface FileFilterState {
 	 *  tree's root, else `repoPath` itself. */
 	readonly ruleRoot: string;
 	readonly nestedRepos: ReadonlySet<string>;
+	readonly prunedDirs: ReadonlySet<string>;
 	files: string[];
 	dirsWithIncludedDescendant: Set<string>;
 	/** The content digest ('' when absent) of each rule file the walk does
@@ -351,12 +356,12 @@ function buildState(absRepo: string): FileFilterState {
 	}
 	for (const gi of above) addPrefixed(ig, readRuleLines(gi), relative(ruleRoot, dirname(gi)));
 
-	const { files, dirsWithIncludedDescendant, nestedRepos } = walk(absRepo, ruleRoot, ig, tracked);
+	const { files, dirsWithIncludedDescendant, nestedRepos, prunedDirs } = walk(absRepo, ruleRoot, ig, tracked);
 	// Rule files a watcher event may never name (the exclude file lies under
 	// .git, the others outside the repository): a change is found by content.
 	const outside = [...(exclude !== undefined ? [exclude] : []), ...(global !== undefined ? [global] : []), ...above];
 	return {
-		ig, tracked, ruleRoot, nestedRepos, files, dirsWithIncludedDescendant,
+		ig, tracked, ruleRoot, nestedRepos, prunedDirs, files, dirsWithIncludedDescendant,
 		outsideRuleDigests: new Map(outside.map(f => [f, fileDigest(f)])),
 	};
 }
@@ -437,6 +442,21 @@ export function excludesDirectory(filter: FileFilter, absDir: string): boolean {
 	const rel = ruleRelative(state, filter.repoPath, abs);
 	if (rel === undefined) return true;
 	return state.ig.ignores(`${rel}/`);
+}
+
+/**
+ * The directories a file watcher need not watch at all, as absolute paths,
+ * sorted: every directory the filter's walk did not enter (excluded by the
+ * rules, nothing tracked under it), every nested repository, and the daemon's
+ * own `.insrc`. Nothing below them is ever included while the rules stand, so
+ * native ignores lose no event the filter would pass -- and a large
+ * `node_modules/` costs no watches (s6 code review). The answer changes when
+ * the filter is refreshed; the watcher re-reads it then.
+ */
+export function nativelyIgnoredPaths(filter: FileFilter): string[] {
+	const state = stateByFilter.get(filter);
+	if (state === undefined) return [];
+	return [...new Set([...state.prunedDirs, ...state.nestedRepos, join(filter.repoPath, '.insrc')])].sort();
 }
 
 // ---------------------------------------------------------------------------

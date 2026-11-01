@@ -43,6 +43,10 @@ test.beforeEach(async () => {
 	store = mkdtempSync(join(tmpdir(), 'insrc-s1t7-store-'));
 	setGraphStorePath(join(store, 'graph.lmdb'));
 	repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-s1t7-repo-')));
+	// A root ignore file, so the full index proposes none (s6), that leaves
+	// itself out, so the selections are the fixtures' own files. A test that
+	// needs its own rules writes over it.
+	writeFileSync(join(repo, '.gitignore'), '.gitignore\n', 'utf8');
 });
 test.afterEach(async () => {
 	await closeGraphStore();

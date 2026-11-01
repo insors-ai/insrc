@@ -12,7 +12,8 @@
     "storyId": "s1",
     "reviewedBy": "daemon",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
-    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "approvedAt": "2026-11-01T19:14:29.408Z"
   },
   "body": {
     "kind": "code-review",

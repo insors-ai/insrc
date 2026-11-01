@@ -1,0 +1,62 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { ReviewActivityStream } from '../review-activity-stream.js';
+import { CliProvider } from '../cli-provider.js';
+import type { ActivityReviewSessionOpts } from '../../../shared/types.js';
+import type { ReviewActivityEvent } from '../../../shared/review-activity.js';
+import { runInProcessGroup } from '../../../shared/process-group.js';
+
+// Synthetic protocol fixtures, not live model evidence. Claude stream-json flags
+// were verified with the installed CLI help. Codex finality uses turn.completed.
+const schema={type:'object',required:['ok'],properties:{ok:{type:'boolean'}},additionalProperties:false};
+const json=(x:unknown)=>JSON.stringify(x)+'\n';
+function harness(kind:'claude'|'codex',accept=true){
+ const events:ReviewActivityEvent[]=[],candidates:unknown[]=[];let stopped=false;
+ const opts:ActivityReviewSessionOpts={mode:'activity',cwd:'/tmp',signal:new AbortController().signal,inactivityMs:1800000,internalRetry:false,onActivity:e=>{events.push(e);},onCandidate:async value=>{candidates.push(value);return{accepted:accept};}};
+ return {parser:new ReviewActivityStream(kind,schema,opts,()=>{stopped=true;}),events,candidates,stopped:()=>stopped};
+}
+test('Claude fragmented UTF-8 streams expose metadata and complete structured candidates, not partial input or acknowledgements',async()=>{
+ const h=harness('claude');await h.parser.start();
+ const frames=[{type:'stream_event',uuid:'a',event:{type:'content_block_start',content_block:{type:'tool_use',id:'read-1',name:'Read'}}},
+ {type:'stream_event',uuid:'b',event:{type:'content_block_delta',delta:{type:'text_delta',text:'private — text'}}},
+ {type:'user',uuid:'c',message:{content:[{type:'tool_result',tool_use_id:'read-1',content:'private file'}]}},
+ {type:'user',uuid:'d',message:{content:[{type:'tool_result',tool_use_id:'output-1',content:{ok:true}}]}},
+ {type:'assistant',uuid:'e',message:{content:[{type:'tool_use',id:'output-1',name:'StructuredOutput',input:{ok:true}}]}}];
+ const bytes=Buffer.from(frames.map(json).join(''));for(let i=0;i<bytes.length;i+=7)await h.parser.feed(bytes.subarray(i,i+7));await h.parser.end();
+ assert.equal(h.stopped(),true);assert.deepEqual(h.candidates,[{ok:true}]);assert.ok(h.events.some(e=>e.kind==='tool_completed'&&e.toolId==='read-1'));
+ assert.ok(!JSON.stringify(h.events).includes('private'));assert.deepEqual(h.parser.result(),{accepted:true,value:{ok:true}});
+});
+test('Codex completed messages wait for successful turn finality and duplicate native IDs do not renew',async()=>{
+ const h=harness('codex');await h.parser.start();
+ await h.parser.feed(Buffer.from(json({type:'item.completed',uuid:'same',item:{type:'agent_message',text:'{"ok":true}'}})));
+ const n=h.events.length;await h.parser.feed(Buffer.from(json({type:'item.completed',uuid:'same',item:{type:'agent_message',text:'{"ok":true}'}})));
+ assert.equal(h.events.length,n);assert.equal(h.candidates.length,0);
+ await h.parser.feed(Buffer.from(json({type:'turn.completed'})));assert.deepEqual(h.parser.result(),{accepted:true,value:{ok:true}});
+ const failed=harness('codex');await failed.parser.start();await failed.parser.feed(Buffer.from(json({type:'item.completed',item:{type:'agent_message',text:'{"ok":true}'}})+json({type:'turn.failed'})));assert.equal(failed.candidates.length,0);assert.throws(()=>failed.parser.completed());
+});
+test('invalid and oversized candidate/frame data fail explicitly without accepting truncated feedback',async()=>{
+ const h=harness('claude');await h.parser.start();
+ await h.parser.feed(Buffer.from(json({type:'assistant',message:{content:[{type:'tool_use',id:'out',name:'StructuredOutput',input:{wrong:true}}]}})));assert.equal(h.candidates.length,0);
+ await assert.rejects(h.parser.feed(Buffer.from('x'.repeat(8*1024*1024+1))),/exceeds 8 MiB/);
+ const big=harness('claude');await big.parser.start();await assert.rejects(big.parser.feed(Buffer.from(json({type:'assistant',message:{content:[{type:'tool_use',id:'out',name:'StructuredOutput',input:{value:'x'.repeat(4*1024*1024)}}]}}))),/exceeds 4 MiB/);
+});
+test('activity subprocess has no fixed timer, serializes observers and bounds retained output',async()=>{
+ const cancel=new AbortController();let active=0,max=0,bytes=0;
+ const r=await runInProcessGroup(process.execPath,['-e',"process.stderr.write('x'.repeat(100000));process.stdout.write('first');setTimeout(()=>process.stdout.write('second'),10);setInterval(()=>{},1000)"],{mode:'activity',signal:cancel.signal,onStdoutChunk:async chunk=>{active++;max=Math.max(max,active);bytes+=chunk.length;await new Promise(r=>setTimeout(r,30));active--;if(bytes>=11)cancel.abort();}});
+ assert.equal(r.aborted,true);assert.equal(r.timedOut,false);assert.equal(r.stdout,'');assert.ok(Buffer.byteLength(r.stderr)<=65536);assert.equal(max,1);assert.equal(bytes,11);
+ assert.throws(()=>runInProcessGroup(process.execPath,[],{mode:'activity',signal:cancel.signal,timeoutMs:1,onStdoutChunk:async()=>{}} as never),/Invalid activity process options/);
+ await assert.rejects(runInProcessGroup(process.execPath,['-e',"process.stdout.write('data');setInterval(()=>{},1000)"],{mode:'activity',signal:new AbortController().signal,onStdoutChunk:async()=>{throw Error('observer rejected');}}),/observer rejected/);
+});
+test('CLI activity mode ignores bounded provider timers and uses stream flags; durable accepted output survives wrapper failure',async()=>{
+ const dir=mkdtempSync(join(tmpdir(),'insrc-activity-cli-'));const bin=join(dir,'fake.mjs'),args=join(dir,'args.json');
+ try{
+  writeFileSync(bin,'#!/usr/bin/env node\nimport{writeFileSync}from"node:fs";writeFileSync('+JSON.stringify(args)+',JSON.stringify(process.argv));process.stdin.resume();setTimeout(()=>{process.stdout.write('+JSON.stringify(json({type:'assistant',message:{content:[{type:'tool_use',id:'out',name:'StructuredOutput',input:{ok:true}}]}}))+');setTimeout(()=>process.exit(1),30)},40);');chmodSync(bin,0o755);
+  const provider=new CliProvider({kind:'claude',binPath:bin,timeoutMs:1,codexFirstOutputMs:1});let count=0;
+  const value=await provider.runReviewSession('private prompt',schema,{mode:'activity',cwd:dir,signal:new AbortController().signal,inactivityMs:1800000,internalRetry:false,onActivity:()=>{},onCandidate:async()=>{count++;return{accepted:true};}});
+  assert.deepEqual(value,{ok:true});assert.equal(count,1);const argv=JSON.parse(readFileSync(args,'utf8')) as string[];
+  assert.equal(argv[argv.indexOf('--output-format')+1],'stream-json');assert.ok(argv.includes('--include-partial-messages'));assert.ok(argv.includes('--verbose'));
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});

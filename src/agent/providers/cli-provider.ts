@@ -1,4 +1,6 @@
-import { requireBoundedReview } from '../../shared/review-activity.js';
+import { ReviewActivityStream } from './review-activity-stream.js';
+import type { ActivityReviewSessionOpts } from '../../shared/types.js';
+import { requireBoundedReview, validateReviewSessionOptions } from '../../shared/review-activity.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -218,6 +220,7 @@ export class CliProvider implements LLMProvider {
 		this.embedDelegate = opts.embedDelegate;
 		this.capabilities = {
 			structuredOutput: true,
+            reviewActivity: true,
 			toolCalling: false,
 			vision: false,
 			webSearch: false,
@@ -454,6 +457,7 @@ export class CliProvider implements LLMProvider {
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+    if (opts.mode === 'activity') { validateReviewSessionOptions(opts); return this.activityReview<T>(prompt,schema,opts); }
     // Preserve the bounded caller's expired-deadline error without starting a process.
     if ((opts.mode === undefined || opts.mode === 'bounded') && Number.isFinite(opts.deadlineMs) && opts.deadlineMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
     requireBoundedReview(opts);
@@ -492,6 +496,31 @@ export class CliProvider implements LLMProvider {
 			}
 		}
 	}
+
+ private async activityReview<T>(prompt:string,schema:StructuredSchema,opts:ActivityReviewSessionOpts):Promise<T>{
+  const acceptedStop=new AbortController();
+  const signal=AbortSignal.any([opts.signal,acceptedStop.signal]);
+  const parser=new ReviewActivityStream<T>(this.kind,schema,opts,()=>acceptedStop.abort());
+  let directory:string|undefined;
+  try{
+   let args:readonly string[];
+   if(this.kind==='claude'){
+    const original=claudeReviewSessionArgs(schema,this.modelArgs(),opts.codeTaskCommands);
+    args=[...original.map((value,index)=>index>0&&original[index-1]==='--output-format'?'stream-json':value),'--verbose','--include-partial-messages'];
+   }else{
+    directory=mkdtempSync(join(tmpdir(),'codex-activity-schema-'));
+    const path=join(directory,'schema.json');writeFileSync(path,codexSchemaJson(schema));
+    args=codexReviewSessionArgs(path,opts.cwd,this.modelArgs());
+   }
+   await parser.start();
+   const result=await runInProcessGroup(resolveBin(this.binPath),args,{mode:'activity',cwd:opts.cwd,stdin:prompt,signal,onStdoutChunk:chunk=>parser.feed(chunk)});
+   await parser.end();
+   const accepted=parser.result();if(accepted.accepted)return accepted.value;
+   if(result.aborted)throw abortError();
+   if(result.spawnError||result.exitCode!==0)throw new Error('Review activity CLI failed');
+   return parser.completed();
+  }finally{if(directory)rmSync(directory,{recursive:true,force:true});}
+ }
 
 	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
 		if (this.kind === 'claude') {

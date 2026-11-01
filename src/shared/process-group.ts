@@ -37,8 +37,7 @@ export interface ProcessGroupResult {
 	readonly spawnError?: string | undefined;
 }
 
-export interface ProcessGroupOpts {
-	readonly timeoutMs: number;
+export interface ProcessGroupCommonOpts {
 	readonly cwd?:      string | undefined;
 	/** Written to the child's stdin, which is then closed. */
 	readonly stdin?:    string | undefined;
@@ -58,6 +57,11 @@ export interface ProcessGroupOpts {
 	readonly signal?:   AbortSignal | undefined;
 }
 
+export type ProcessGroupOpts = ProcessGroupCommonOpts & (
+ | { readonly mode?: 'bounded' | undefined; readonly timeoutMs: number; readonly onStdoutChunk?: never }
+ | { readonly mode: 'activity'; readonly timeoutMs?: never; readonly stall?: never; readonly signal: AbortSignal; readonly onStdoutChunk: (chunk: Buffer) => Promise<void> }
+);
+
 const GROUPS = process.platform !== 'win32';
 
 /** SIGKILL every process in the group led by `pid`. An empty group (ESRCH) is not an error. */
@@ -69,9 +73,10 @@ export function killProcessGroup(pid: number): void {
 	}
 }
 
-/** Spawn `command` in its own process group and wait for it, under `opts.timeoutMs`. Never rejects. */
+/** Spawn `command` in its own process group and wait for it, under a bounded deadline or explicit activity-mode cancellation. Activity observer failures reject. */
 export function runInProcessGroup(command: string, args: readonly string[], opts: ProcessGroupOpts): Promise<ProcessGroupResult> {
-	return new Promise(resolve => {
+	if (opts.mode === 'activity' && ('timeoutMs' in opts || 'stall' in opts || !(opts.signal instanceof AbortSignal) || typeof opts.onStdoutChunk !== 'function')) throw new TypeError('Invalid activity process options');
+	return new Promise((resolve, reject) => {
 		const start = Date.now();
 		if (opts.signal?.aborted === true) {
 			resolve({ stdout: '', stderr: '', exitCode: -1, timedOut: false, durationMs: 0, aborted: true });
@@ -83,12 +88,15 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 		let stalled = false;
 		let aborted = false;
 		let settled = false;
+		let observerError: unknown;
+		let consumption: Promise<void> = Promise.resolve();
 		const finish = (exitCode: number, spawnError?: string): void => {
 			if (settled) return;
 			settled = true;
 			clearTimeout(timer);
 			if (stallTimer !== undefined) clearTimeout(stallTimer);
 			opts.signal?.removeEventListener('abort', onAbort);
+			if (observerError !== undefined) { reject(observerError); return; }
 			resolve({
 				stdout, stderr, exitCode, timedOut, durationMs: Date.now() - start,
 				...(stalled ? { stalled } : {}),
@@ -107,8 +115,8 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 			if (child.pid !== undefined) killProcessGroup(child.pid);
 			else child.kill('SIGKILL');
 		};
-		const timer = setTimeout(() => { timedOut = true; kill(); }, opts.timeoutMs);
-		const stall = opts.stall !== undefined && opts.stall.ms < opts.timeoutMs ? opts.stall : undefined;
+		const timer = opts.mode === 'activity' ? undefined : setTimeout(() => { timedOut = true; kill(); }, opts.timeoutMs);
+		const stall = opts.mode !== 'activity' && opts.stall !== undefined && opts.stall.ms < opts.timeoutMs ? opts.stall : undefined;
 		const onStall = (): void => {
 			if (stall !== undefined && (stall.silence === true || !stall.started(stdout))) { stalled = true; kill(); }
 		};
@@ -116,19 +124,25 @@ export function runInProcessGroup(command: string, args: readonly string[], opts
 
 		const onAbort = (): void => { aborted = true; kill(); };
 		opts.signal?.addEventListener('abort', onAbort, { once: true });
+		if (opts.signal?.aborted) onAbort();
 
-		child.stdout.on('data', (c: Buffer) => {
+		if (opts.mode === 'activity') {
+			consumption = (async () => {
+				try { for await (const chunk of child.stdout) await opts.onStdoutChunk(chunk as Buffer); }
+				catch (error) { observerError = error; kill(); }
+			})();
+		} else child.stdout.on('data', (c: Buffer) => {
 			stdout += c.toString();
 			if (stall?.silence === true && stallTimer !== undefined && !stalled) {
 				clearTimeout(stallTimer);
 				stallTimer = setTimeout(onStall, stall.ms);
 			}
 		});
-		child.stderr.on('data', (c: Buffer) => { stderr += c.toString(); });
+		child.stderr.on('data', (c: Buffer) => { stderr = opts.mode === 'activity' ? Buffer.concat([Buffer.from(stderr),c]).subarray(-65536).toString() : stderr+c.toString(); });
 		child.stdin.on('error', () => { /* the child closed stdin early (EPIPE); its exit is reported below */ });
 		child.on('exit', () => { if (child.pid !== undefined) killProcessGroup(child.pid); });
 		child.on('error', err => finish(-1, err.message));
-		child.on('close', code => finish(code ?? -1));
+		child.on('close', code => { void consumption.then(() => finish(code ?? -1)); });
 		child.stdin.end(opts.stdin ?? '');
 	});
 }

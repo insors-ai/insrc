@@ -6,6 +6,7 @@ import { assertRoot, classifyLayout, errno, LAYOUT_FILE, LAYOUT_PENDING, LAYOUT_
 import type { RootIdentity } from './configuration.js';
 import { loadNative } from './native.js';
 import type { NativeLock } from './native.js';
+import { assertPrivateFile } from './private-file.js';
 import { MemoryError } from './errors.js';
 
 export interface DirectoryOwnership {
@@ -21,10 +22,7 @@ async function closeDescriptor(file: FileHandle): Promise<void> {
 }
 
 async function assertFile(file: FileHandle): Promise<void> {
-  const value = await file.stat();
-  if (!value.isFile() || value.nlink !== 1 || value.uid !== process.getuid!() || (value.mode & 0o077) !== 0) {
-    throw new MemoryError('INVALID_REQUEST', 'Ownership metadata must be a private regular single-link file.');
-  }
+  assertPrivateFile(await file.stat());
 }
 
 async function checkIdentity(root: RootIdentity, file: FileHandle): Promise<void> {

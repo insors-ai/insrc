@@ -1,4 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { ReviewProgressTracker } from './progress.js';
+import { ReviewProgressPersistence } from './progress-persistence.js';
 import { isDeepStrictEqual } from 'node:util';
 import { ReviewActivityMonitor, ReviewInactivityError, REVIEW_INACTIVITY_MS, requireReviewActivity } from '../../../shared/review-activity.js';
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
@@ -29,7 +31,7 @@ export interface TaskReviewDeps {
  readonly timer?: (callback: () => void, ms: number) => () => void;
 }
 export interface ReviewAcknowledgement { reviewId: string; attempt: number; reviewer: 'daemon'; path: string; status: ReviewStatus; crPublication: 'pending' | 'complete'; completedTaskIds: readonly string[]; pendingTaskIds: readonly string[]; }
-interface ActiveReview { checkpoint: ReviewCheckpoint; attempt: ReviewAttempt; done: Promise<void>; }
+interface ActiveReview { checkpoint: ReviewCheckpoint; attempt: ReviewAttempt; done: Promise<void>; progress?: ReviewProgressTracker; persistence?: ReviewProgressPersistence; }
 /** Daemon-owned lifetime with explicit pinned recovery, independent of the submitting socket. */
 export class TaskReviewCoordinator {
  private readonly active = new Map<string, ActiveReview | null>();
@@ -92,15 +94,20 @@ export class TaskReviewCoordinator {
  private async run(path: string, checkpoint: ReviewCheckpoint, entry: ReviewAttempt, prepared: PreparedReviewPacket, resolveProvider: () => LLMProvider): Promise<void> {
   const review:AdmittedReview={path,checkpoint,attempt:entry,prepared};
   const save = this.deps.save ?? saveCheckpoint;
+  const tracker = new ReviewProgressTracker(this.deps.now ? {now:this.deps.now,wall:()=>new Date().toISOString()} : undefined);
+  const active=this.active.get(path); if(active)active.progress=tracker;
   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
   let assignments: readonly TaskAssignment[] | undefined;
   let attributionFailure: { error: unknown; timedOut: boolean } | undefined;
   for (const task of selected.sort((a,b)=>a.order-b.order)) {
    if (entry['review-response'].tasks.some(result=>result.taskId===task.id)) continue;
-   entry.header.status='running';entry.header.activeTaskId=task.id;await save(path,checkpoint);
+   tracker.task(task,selected.indexOf(task)+1,selected.length,entry['review-response'].tasks.length);
+   entry.progress=tracker.snapshot();entry.header.status='running';entry.header.activeTaskId=task.id;await save(path,checkpoint);
    const cancellation=new AbortController();
    let tail:Promise<unknown>=Promise.resolve();
    const serial=<T>(work:()=>Promise<T>):Promise<T>=>{const result=tail.then(work);tail=result.catch(()=>{});return result;};
+   const progress=new ReviewProgressPersistence(entry,tracker,{serial,save:()=>save(path,checkpoint)});
+   if(active)active.persistence=progress;
    let durable:TaskReviewResult|undefined, persistenceError:unknown, inactive:ReviewInactivityError|undefined;
    let rejectExpiry!:(error:unknown)=>void;
    const expired=new Promise<never>((_,reject)=>{rejectExpiry=reject;});
@@ -110,6 +117,7 @@ export class TaskReviewCoordinator {
    const check=()=>{if(inactive)throw inactive;};
    const commitResult=async(result:TaskReviewResult,origin?:TaskResultOrigin):Promise<void>=>{
     if(durable){requireReview(isDeepStrictEqual(durable,result),'result','Conflicting accepted submission replay');return;}
+    tracker.phase('feedback_persistence');progress.boundary();
     const priorTasks=entry['review-response'].tasks,priorOrigins=entry['review-response'].origins;
     entry['review-response'].tasks=[...priorTasks,result];
     if(origin)entry['review-response'].origins=[...(priorOrigins??[]),origin];
@@ -119,11 +127,11 @@ export class TaskReviewCoordinator {
      if(priorOrigins)entry['review-response'].origins=priorOrigins;else delete entry['review-response'].origins;
      entry.header.activeTaskId=task.id;persistenceError=error;throw error;
     }
-    durable=result;
+    durable=result;tracker.phase('task_review',entry['review-response'].tasks.length);
    };
    const options=(candidate:(raw:unknown)=>Promise<{accepted:boolean}>):ReviewSessionOpts=>({
     mode:'activity',cwd:checkpoint.project,inactivityMs:REVIEW_INACTIVITY_MS,internalRetry:false,signal:cancellation.signal,
-    codeTaskCommands:codeTaskCommands(prepared,review),onActivity:event=>{monitor.observe(event);},onCandidate:candidate,
+    codeTaskCommands:codeTaskCommands(prepared,review),onActivity:event=>{if(monitor.observe(event)){const prior=tracker.snapshot().phase;tracker.activity(event,monitor.snapshot().tools.length);progress.request(prior!==tracker.snapshot().phase);}},onCandidate:candidate,
    });
    const flow=(async()=>{
     const provider=resolveProvider();requireReviewActivity(provider);
@@ -136,6 +144,7 @@ export class TaskReviewCoordinator {
       check();if(!assignments)assignments=reviewAssignments(review,raw);
      }
     }
+    tracker.phase('task_review');progress.request(true);
     const assignment=assignments.find(a=>a.taskId===task.id)!;
     const references=await taskReferences(this.deps.sources,prepared,assignment);check();
     if(assignment.reassessment?.action==='reuse'){
@@ -160,11 +169,15 @@ export class TaskReviewCoordinator {
      await serial(()=>commitResult(taskFailure(task.id,message,timedOut)));
     }else log.warn({reviewId:checkpoint.reviewId,taskId:task.id},'CLI stopped after durable task assessment; retained accepted feedback');
    }finally{
-    monitor.stop();cancellation.abort();
+    progress.stop();monitor.stop();cancellation.abort();
     // Do not start another task/provider until the cancelled session releases its resources.
-    await flow.catch(()=>{});await tail;
+    await flow.catch(()=>{});await tail;tracker.stopped();
    }
   }
-  await completeReview({path,checkpoint,attempt:entry,prepared},this.deps);
+  tracker.phase('cr_publication',entry['review-response'].tasks.length);entry.progress=tracker.snapshot();
+  const final={path,checkpoint,attempt:entry,prepared};
+  await completeReview(final,this.deps);
+  tracker.phase(final.attempt['review-response'].crPublication==='complete' || !this.deps.publish ? 'complete' : 'error');tracker.stopped();
+
  }
 }

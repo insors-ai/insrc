@@ -1,4 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { ReviewProgressTracker } from './progress.js';
+import { ReviewProgressPersistence } from './progress-persistence.js';
 import { access, readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { Type } from '@sinclair/typebox';
@@ -32,6 +34,8 @@ const log=getLogger('task-review:controller');
 /** Only the adapter differs: the controller supplies feedback; all assessment and persistence policy is shared. */
 export class ControllerTaskReview {
  readonly done:Promise<void>;
+ readonly progress:ReviewProgressTracker;
+ readonly progressPersistence:ReviewProgressPersistence;
  private resolveDone!:()=>void;
  private tail:Promise<unknown>=Promise.resolve();
  private assignments:readonly TaskAssignment[]|undefined;
@@ -43,6 +47,8 @@ export class ControllerTaskReview {
  private stopped=false;
  private readonly selected:readonly PlanTask[];
  constructor(private readonly review:AdmittedReview,private readonly owner:ControllerReviewOwner,private readonly deps:ControllerDeps){
+  this.progress=new ReviewProgressTracker(deps.now?{now:deps.now,wall:()=>new Date().toISOString()}:undefined);
+  this.progressPersistence=new ReviewProgressPersistence(review.attempt,this.progress,{serial:work=>this.queue(undefined,work),save:()=>persistReview(this.review,this.deps)});
   this.done=new Promise(resolve=>{this.resolveDone=resolve;});
   this.selected=review.prepared.tasks.filter(task=>!review.prepared.packet.taskId||task.id===review.prepared.packet.taskId).sort((a,b)=>a.order-b.order);
   const disconnect=()=>{if(this.finished){this.retire(true);return;}void this.queue(undefined,()=>this.stop()).catch(error=>log.warn({error:String(error)},'Controller interruption could not be persisted'));};
@@ -57,9 +63,9 @@ export class ControllerTaskReview {
    this.monitor?.stop();this.monitor=undefined;delete this.review.attempt.header.activeTaskId;
    for(const task of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id))){
     this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(task.id,`Task attribution failed: ${error instanceof Error?error.message:String(error)}`,false)];
-    await persistReview(this.review,this.deps);
+    await this.persist();
    }
-   this.finished=true;await completeReview(this.review,this.deps);this.retire(false);return this.base('done');
+   this.finished=true;await this.complete();this.retire(false);return this.base('done');
   }
   this.checkTime();this.assignments=assignments;
   return this.frame(owner);
@@ -71,11 +77,12 @@ export class ControllerTaskReview {
   requireReview(this.current()?.id===raw.taskId,'taskId','Result is not for the current task');this.checkTime();
   const refs=await taskReferences(this.deps.sources,this.review.prepared,assignment);
   const result=await assessTaskResult(this.deps.sources,assignment,raw,refs);
+  this.progress.phase('feedback_persistence');
   this.assertOwner(owner);
   this.monitor?.stop();
   this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,result];
   delete this.review.attempt.header.activeTaskId;this.monitor=undefined;
-  await persistReview(this.review,this.deps);
+  await this.persist();
   return this.frame(owner);
  });}
  private current(){return this.selected.find(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id));}
@@ -98,7 +105,9 @@ export class ControllerTaskReview {
     Type.Object({kind:Type.Literal('model_output')},{additionalProperties:false}),
     Type.Object({kind:Type.Union([Type.Literal('tool_started'),Type.Literal('tool_completed')]),toolId:Type.String({minLength:1,maxLength:256})},{additionalProperties:false}),
    ]),input);
-   requireReview(this.monitor?.observe({sessionId:this.executionId!,sequence:this.sequence+1,...event}),'activity','Invalid or duplicate native activity');
+   const native={sessionId:this.executionId!,sequence:this.sequence+1,...event};
+   requireReview(this.monitor?.observe(native),'activity','Invalid or duplicate native activity');
+   const prior=this.progress.snapshot().phase;this.progress.activity(native,this.monitor!.snapshot().tools.length);this.progressPersistence.request(prior!==this.progress.snapshot().phase);
    return{reviewId:this.review.checkpoint.reviewId,attempt:this.review.attempt.header.attempt,taskId:this.current()!.id,executionId:this.executionId,acceptedSequence:this.sequence,inactivityRemainingMs:this.remaining()};
   });
  }
@@ -123,15 +132,16 @@ export class ControllerTaskReview {
  private async frame(owner:ControllerReviewOwner):Promise<ControllerFrame>{
   const task=this.current();
   if(!task){
-   if(!this.finished){this.finished=true;this.monitor?.stop();if(this.review.attempt['review-response'].crPublication!=='complete')await completeReview(this.review,this.deps);this.retire(false);}
+   if(!this.finished){this.finished=true;this.monitor?.stop();if(this.review.attempt['review-response'].crPublication!=='complete')await this.complete();this.retire(false);}
    else{const saved=JSON.parse(await readFile(this.review.path,'utf8')) as ReviewCheckpoint;this.review.checkpoint=saved;this.review.attempt=saved.attempts.at(-1)!;}
    return this.base('done');
   }
   this.assertOwner(owner);
   if(!this.monitor){
    this.executionId=randomUUID();this.sequence=0;this.assignments??=directReviewAssignments(this.review);
+   this.progress.task(task,this.selected.indexOf(task)+1,this.selected.length,this.review.attempt['review-response'].tasks.length);
    this.review.attempt.header.status='running';this.review.attempt.header.activeTaskId=task.id;
-   await persistReview(this.review,this.deps);
+   await this.persist();
    const executionId=this.executionId;
    this.monitor=new ReviewActivityMonitor(error=>{void this.queue(undefined,async()=>{
     if(this.executionId===executionId&&this.current()?.id===task.id){log.warn({taskId:task.id,diagnostic:error.snapshot},'Controller review inactivity');await this.expire();}
@@ -153,8 +163,9 @@ export class ControllerTaskReview {
     this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(task.id,`Reuse failed: ${error instanceof Error?error.message:String(error)}`,false)];
    }
    this.monitor?.stop();this.monitor=undefined;delete this.review.attempt.header.activeTaskId;
-   await persistReview(this.review,this.deps);return this.frame(owner);
+   await this.persist();return this.frame(owner);
   }
+  if(this.progress.snapshot().phase==='scope_preparation'){this.progress.phase('task_review');this.progressPersistence.request(true);}
   return{...this.base('task'),taskId:task.id,prompt:assignmentPrompt(this.review.prepared,assignment,refs,this.review.checkpoint.project,this.review),schema:assignmentResultSchema(assignment),executionId:this.executionId,nextSequence:this.sequence+1};
  }
  private base(kind:ControllerFrame['kind']):ControllerFrame{
@@ -172,12 +183,19 @@ export class ControllerTaskReview {
    for(const remaining of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id)))this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(remaining.id,'Task attribution exceeded the 30-minute inactivity grace.',true)];
   }
   this.monitor=undefined;delete this.review.attempt.header.activeTaskId;
-  await persistReview(this.review,this.deps);
-  if(!this.current()){this.finished=true;await completeReview(this.review,this.deps);this.retire(false);}
+  await this.persist();
+  if(!this.current()){this.finished=true;await this.complete();this.retire(false);}
  }
  private async stop():Promise<void>{
-  if(!this.finished&&!this.stopped){this.review.attempt.header.interrupted=true;await persistReview(this.review,this.deps);}
+  if(!this.finished&&!this.stopped){this.progress.phase('interrupted');this.progress.stopped();this.review.attempt.header.interrupted=true;await this.persist();}
   this.retire(true);
  }
- private retire(drop:boolean):void{this.monitor?.stop();if(drop)this.stopped=true;this.deps.release(drop);this.resolveDone();}
+ private async persist():Promise<void>{this.progressPersistence.boundary();await persistReview(this.review,this.deps);}
+ private async complete():Promise<void>{
+  this.progressPersistence.stop();this.progress.phase('cr_publication',this.review.attempt['review-response'].tasks.length);this.progress.stopped();
+  await this.persist();await completeReview(this.review,this.deps);
+  this.progress.phase(this.review.attempt['review-response'].crPublication==='complete'||!this.deps.publish?'complete':'error');
+
+ }
+ private retire(drop:boolean):void{this.progressPersistence.stop();this.progress.stopped();this.monitor?.stop();if(drop)this.stopped=true;this.deps.release(drop);this.resolveDone();}
 }

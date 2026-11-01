@@ -67,7 +67,7 @@ test('both native adapters preserve feedback queued before expiry and never acce
   }
   const cli=new ObservedCli({kind,binPath:bin,timeoutMs:1});
   const c=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>cli,now:()=>clock,timer:fn=>{wake=fn;return()=>{};},save:async(path,cp)=>{
-   writes++;if(writes===3){entered();if(failWrite)throw Error('checkpoint failure');await gate;}await saveCheckpoint(path,cp);
+   writes++;if(cp.attempts.at(-1)!['review-response'].tasks.length && writes>0){entered();if(failWrite)throw Error('checkpoint failure');await gate;}await saveCheckpoint(path,cp);
   }});
   try{
    const ack=await c.start(f.repo,'native-expiry',1,f.packet);await c.settled(f.repo,'native-expiry');

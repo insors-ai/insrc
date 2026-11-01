@@ -51,7 +51,7 @@ test('controller and daemon share inactivity outcomes; controller write failure 
    clock+=1800000;wake!();return new Promise((_,reject)=>opts.signal!.addEventListener('abort',()=>reject(opts.signal!.reason),{once:true}));
   }} as unknown as LLMProvider)});
   const a=await daemon.start(f.repo,'daemon-quiet',1,f.packet);await daemon.settled(f.repo,'daemon-quiet');assert.deepEqual(f.read(a.path).attempts[0]!['review-response'].tasks[0],controllerResult);
-  let writes=0;const broken=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>{throw Error('No provider');},save:async(path,cp)=>{writes++;if(writes===3)throw Error('write rejected');await saveCheckpoint(path,cp);}});
+  let writes=0;const broken=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>{throw Error('No provider');},save:async(path,cp)=>{writes++;if(cp.attempts.at(-1)!['review-response'].tasks.length)throw Error('write rejected');await saveCheckpoint(path,cp);}});
   const b=await broken.startController(f.repo,'controller-write',1,f.packet,owner,hash);
   await assert.rejects(broken.controllerResult(f.repo,'controller-write',1,f.result,owner,{taskId:b.taskId,executionId:b.executionId,sequence:b.nextSequence}),/write rejected/);
   assert.deepEqual(f.read(checkpointPath(f.repo,'controller-write')).attempts[0]!['review-response'].tasks,[]);

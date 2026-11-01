@@ -64,6 +64,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
   attempt['review-response'].summary='All selected task assessments are terminal. CR publication complete.';
   // Keep the completed feedback summary immutable; publication metadata is separate.
   attempt.header.status=summary.status;
+  if(attempt.progress)attempt.progress={...attempt.progress,phase:'complete',processState:'unknown',activeToolCount:0,completedTasks:attempt['review-response'].tasks.length};
   await (deps.save??saveCheckpoint)(path,checkpoint);
   return {path:paths.md,jsonPath:paths.json,status:summary.status};
  } catch(error) {

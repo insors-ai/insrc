@@ -40,7 +40,7 @@ test('accepted feedback is durable before receipt and survives CLI failure or co
 test('unsaved or invalid feedback never passes and persistence failure preserves the last durable checkpoint',async()=>{
  const f=await fixture();let writes=0,calls=0;
  try{
-  const c=new TaskReviewCoordinator({sources:f.deps.sources,save:async(path,cp)=>{writes++;if(writes===3)throw Error('write rejected');await saveCheckpoint(path,cp);},provider:()=>provider(async opts=>{calls++;await opts.onCandidate(f.result);return f.result;})});
+  const c=new TaskReviewCoordinator({sources:f.deps.sources,save:async(path,cp)=>{writes++;if(cp.attempts.at(-1)!['review-response'].tasks.length)throw Error('write rejected');await saveCheckpoint(path,cp);},provider:()=>provider(async opts=>{calls++;await opts.onCandidate(f.result);return f.result;})});
   const a=await c.start(f.repo,'write-failure',1,f.packet);await c.settled(f.repo,'write-failure');assert.deepEqual(f.read(a.path).attempts[0]!['review-response'].tasks,[]);assert.equal(calls,1);
   const invalid=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async opts=>{calls++;await opts.onCandidate({...f.result,taskId:'wrong'});return f.result;})});
   const b=await invalid.start(f.repo,'invalid-candidate',1,f.packet);await invalid.settled(f.repo,'invalid-candidate');assert.equal(f.read(b.path).attempts[0]!['review-response'].tasks[0]!.status,'failed');assert.equal(calls,2);

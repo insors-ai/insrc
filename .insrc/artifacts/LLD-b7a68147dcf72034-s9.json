@@ -89,6 +89,13 @@
         "choice": "Keep optional, but audit callers first",
         "rationale": "The approved LLD keeps opts.signal optional; the audit decides whether it can be dropped later.",
         "resolvedAt": "2026-11-01T11:31:24.778Z"
+      },
+      "q5abca151": {
+        "question": "The nine migration steps are written at the level of the area moved and are not the plan's task list; the plan stage decides the tasks and their order.",
+        "status": "resolved",
+        "choice": "Dependency-ordered decomposition",
+        "rationale": "Order from the real dependencies so no consumer points at an area that has not moved.",
+        "resolvedAt": "2026-11-01T11:31:51.218Z"
       }
     }
   },

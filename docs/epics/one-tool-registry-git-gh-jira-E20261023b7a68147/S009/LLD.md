@@ -438,6 +438,8 @@ Add a policy snapshot store in the daemon (per repo: the resolved policy or 'non
   - **resolved**: Full independent audit — Accuracy first: derive the gap list from every row against the live tool schemas. _(2026-11-01T11:30:40.599Z)_
 - `qaa98b407` — Does any caller of PolicyReader need the opts.signal, or can the signal be dropped from the type to keep the 44 injected fakes' signature unchanged? The default is to keep it optional.
   - **resolved**: Keep optional, but audit callers first — The approved LLD keeps opts.signal optional; the audit decides whether it can be dropped later. _(2026-11-01T11:31:24.778Z)_
+- `q5abca151` — The nine migration steps are written at the level of the area moved and are not the plan's task list; the plan stage decides the tasks and their order.
+  - **resolved**: Dependency-ordered decomposition — Order from the real dependencies so no consumer points at an area that has not moved. _(2026-11-01T11:31:51.218Z)_
 
 ## Citations
 

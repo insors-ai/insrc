@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c5dc4a96-1e16-4160-af3f-bdfe964efc0d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T12:41:51.348Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Expose read-only progress and deterministic user updates",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3575a5a75ef3e7b32c6ed4b056e1b3c07e611273d11ad07a4902b98d0fa8ddb9",
+        "at": "2026-11-01T12:41:51.349Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:41:51.349Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose read-only progress and deterministic user updates",
+    "summary": "Add validated codeReview.task.progress delegation and deterministic formatter/poll guidance:5sec reads, immediate changes/terminal errors and45sec ongoing updates. No execution restart, provider calls or normal MCP migration. Include a cancellable explicit task-review polling helper using existing IPC client, injectable clock and update callback; controller can use this without retired endpoints.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Read validates project/review/attempt and does not invoke provider/resume",
+      "User sees immediate changes and45sec updates; stale/unknown explicit; no percentage estimates",
+      "Concrete helper emits updates via callback, cancels cleanly and never retriggers review"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Read-only progress IPC validates scope and never invokes providers"
+      },
+      {
+        "level": "unit",
+        "name": "Polling helper emits immediate transitions and45sec updates and cancels cleanly"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

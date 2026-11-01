@@ -2,7 +2,7 @@
   "id": "FUTURE-progress-based-review-timeouts",
   "type": "story",
   "title": "Preserve useful review work with permissive progress-based timeouts",
-  "status": "built-pending-approval",
+  "status": "built-approved",
   "implementationAuthorized": true,
   "sizeEstimate": "M",
   "createdAt": "2026-10-31T18:26:17.252806+00:00",
@@ -60,5 +60,17 @@
     "productionBuild": "pass",
     "liveHostedModelAcceptance": false,
     "codeReview": "deferred until S4 per user order"
+  },
+  "buildApproval": {
+    "revision": 7,
+    "by": {
+      "id": "insrc:approval",
+      "kind": "system",
+      "properties": {}
+    },
+    "at": "2026-11-01T11:56:20.451Z",
+    "override": {
+      "reason": "User explicitly approved completion based on five successful build validations and deterministic tests; full independent code review deferred until S4 progress reporting per the user's requested sequence. Old review engines are removed."
+    }
   }
 }

@@ -1,0 +1,310 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "b8af5213af79d183d99babc0bc2162efe3ce81078edc918a3f51794169e88d2d",
+        "at": "2026-11-01T13:12:02.179Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s4",
+    "createdAt": "2026-11-01T12:43:37.467Z",
+    "updatedAt": "2026-11-01T13:12:02.063Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6927d220f",
+        "ranAt": "2026-11-01T12:43:37.467Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Projects sanitized bounded phases and meaningful activity with unknown-safe elapsed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress.test.ts",
+                "title": "Projects sanitized bounded phases and meaningful activity with unknown-safe elapsed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Reads checkpoints with optional progress and rejects malformed metadata",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress.test.ts",
+                "title": "Reads checkpoints with optional progress and rejects malformed metadata",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 563,
+            "titles": [
+              {
+                "title": "Projects sanitized bounded phases and meaningful activity with unknown-safe elapsed",
+                "result": "pass"
+              },
+              {
+                "title": "Reads checkpoints with optional progress and rejects malformed metadata",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8010269a5",
+        "ranAt": "2026-11-01T12:46:52.945Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Coalesces progress writes and fences stale generations without corrupting results",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-persistence.test.ts",
+                "title": "Coalesces progress writes and fences stale generations without corrupting results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Retains durable feedback when progress persistence fails",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-persistence.test.ts",
+                "title": "Retains durable feedback when progress persistence fails",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress-persistence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 528,
+            "titles": [
+              {
+                "title": "Coalesces progress writes and fences stale generations without corrupting results",
+                "result": "pass"
+              },
+              {
+                "title": "Retains durable feedback when progress persistence fails",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1ca21ac6e",
+        "ranAt": "2026-11-01T12:56:52.082Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Daemon and controller produce equivalent progress without renewing inactivity on heartbeat",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-execution.test.ts",
+                "title": "Daemon and controller produce equivalent progress without renewing inactivity on heartbeat",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Terminal task result supersedes pending progress and stops timers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-execution.test.ts",
+                "title": "Terminal task result supersedes pending progress and stops timers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 975,
+            "titles": [
+              {
+                "title": "Daemon and controller produce equivalent progress without renewing inactivity on heartbeat",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal task result supersedes pending progress and stops timers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "75a04c620",
+        "ranAt": "2026-11-01T13:01:53.363Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Read-only progress IPC validates scope and never invokes providers",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "title": "Read-only progress IPC validates scope and never invokes providers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "title": "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 747,
+            "titles": [
+              {
+                "title": "Read-only progress IPC validates scope and never invokes providers",
+                "result": "pass"
+              },
+              {
+                "title": "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a8ba108b3",
+        "ranAt": "2026-11-01T13:12:02.063Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Both native CLI fixtures expose isolated reconnectable progress through production IPC",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts",
+                "title": "Both native CLI fixtures expose isolated reconnectable progress through production IPC",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Progress write failure restart and terminal races preserve authoritative task outcomes",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts",
+                "title": "Progress write failure restart and terminal races preserve authoritative task outcomes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts",
+                "title": "A new daemon attempt never exposes retired controller progress",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2626,
+            "titles": [
+              {
+                "title": "Both native CLI fixtures expose isolated reconnectable progress through production IPC",
+                "result": "pass"
+              },
+              {
+                "title": "Progress write failure restart and terminal races preserve authoritative task outcomes",
+                "result": "pass"
+              },
+              {
+                "title": "A new daemon attempt never exposes retired controller progress",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

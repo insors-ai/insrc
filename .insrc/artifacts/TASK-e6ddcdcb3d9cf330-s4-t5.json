@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3593c9e1-27bf-4d19-b10a-7639baa937a2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T12:41:51.350Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Verify progress across native adapters, reconnect and failure",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1650b9b503888e15f7a8e9098363efc909bed33c0f57af7ce47237f91b7b6114",
+        "at": "2026-11-01T12:41:51.350Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:41:51.350Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify progress across native adapters, reconnect and failure",
+    "summary": "Use existing fake CLI/production IPC fixtures for both providers; prove isolated reviews, stale restart/reconnect, no extra calls, bounded writes and races. Document use and limits; no full expensive review loop.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Both native fixtures and real IPC prove end-to-end behavior with zero hosted-model calls",
+      "Reconnect,write-failure,terminal race and concurrent review isolation covered; document matching-version recovery limits"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Both native CLI fixtures expose isolated reconnectable progress through production IPC"
+      },
+      {
+        "level": "smoke",
+        "name": "Progress write failure restart and terminal races preserve authoritative task outcomes"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

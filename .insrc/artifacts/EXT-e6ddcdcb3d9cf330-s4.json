@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1793508326558-bwzehg",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T04:46:07.308Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 40735,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "storyId": "s4",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "scope": "M",
+    "notify": "Adds S4 to the current task-checkpoint review epic: incremental user-visible review progress. Backlog only.",
+    "addedStory": {
+      "id": "s4",
+      "title": "Show incremental progress during background code reviews",
+      "userValue": "Users can see which task is being reviewed and the last observed activity throughout a long review, without additional model calls. This story supplies activity observations for FUTURE-progress-based-review-timeouts; timeout intervention policy remains separate. Backlog only; no implementation authorized.",
+      "acceptanceCriteria": [
+        {
+          "id": "ac1",
+          "given": "A background review is running",
+          "when": "The controller polls its progress",
+          "then": "It shows phase, task ID/name and position, completed/total tasks, review/task elapsed time and timestamp of last observed activity. Phases cover scope preparation, task review, test execution, feedback persistence and CR publication; unavailable activity is explicitly unknown.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac2",
+          "given": "A task runs for several minutes",
+          "when": "Native CLI events report source reads, tool/test starts or completions, model output or feedback submission",
+          "then": "Bounded sanitized progress metadata updates during the task without extra model calls, reasoning text, raw prompts or raw tool output; routine updates are throttled and do not rewrite immutable submitted packets or completed results.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac3",
+          "given": "A subprocess is alive but no meaningful activity is observable",
+          "when": "A heartbeat is received or elapsed time advances",
+          "then": "The display distinguishes process liveness from last meaningful activity and never invents progress percentages, findings or completion. This story does not change timeout/retry policy.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac4",
+          "given": "Claude or Codex performs the review",
+          "when": "Progress is polled after reconnect or for concurrent independent review IDs",
+          "then": "Both providers expose the same normalized behavior; progress is isolated by review ID/attempt/task, stale data is labelled, and reconnect recovers the latest snapshot without restarting review.",
+          "operationalizes": []
+        },
+        {
+          "id": "ac5",
+          "given": "A user waits for review",
+          "when": "A phase changes or 30–60 seconds pass",
+          "then": "The controller surfaces a concise update using existing polling, while terminal completion and errors remain visible and authoritative. No additional LLM summary requests are made.",
+          "operationalizes": []
+        }
+      ]
+    },
+    "amendmentId": "AMD-e6ddcdcb3d9cf330-1",
+    "evidence": [
+      {
+        "kind": "file",
+        "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/DEF.md"
+      },
+      {
+        "kind": "file",
+        "ref": "src/workflow/code-review/task-review/coordinator.ts"
+      },
+      {
+        "kind": "file",
+        "ref": "plans/progress-based-review-timeouts.future-work.json"
+      }
+    ],
+    "nextAction": {
+      "command": "insrc_workflow_step phase=start workflow=design.story params={\"epicHash\":\"e6ddcdcb3d9cf330\",\"storyId\":\"s4\"}",
+      "description": "Approve the HLD amendment (`AMD-e6ddcdcb3d9cf330-1`) and the updated Epic, then run `design.story` for the new Story `s4` to produce its LLD."
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "plans/progress-based-review-timeouts.future-work.json"
+    }
+  ]
+}

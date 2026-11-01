@@ -1,0 +1,484 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793534540519-zyz14s",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T12:06:52.620Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 269520,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "epicHash": "e6ddcdcb3d9cf330",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1793386460254-8th2oq",
+    "hldEffectiveHash": "9644e9acbe9122fac83d4724e95c884c8e899db063e5af06cd791ad2c55fabf0",
+    "hldAmendmentsApplied": [
+      "AMD-e6ddcdcb3d9cf330-1"
+    ],
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3b9ef24a9b59c09b06a9145e1be880a6d5a5a0f8acf20086baeac9181cabeb37",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:16:42.913Z",
+        "override": {
+          "reason": "User explicitly approved S4 LLD with review override after presentation. Author inspection only; old daemon review engines intentionally disabled pending reimplementation. Proceed to PLAN."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Expose truthful progress throughout long background code reviews: current task, phase, elapsed time and last meaningful activity. Reuse native activity observations, persist only bounded sanitized metadata, and format updates without additional model calls.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Use one task-oriented review coordinator over the existing provider, task and artifact infrastructure. The model reads a task's functional summary, committed Story/LLD/Plan references, selected changed segments and complete test details, investigates as needed, then returns ordinary findings and a task result. The host handles identities, ordering, timing, JSON persistence and CR publication. No model-facing evidence aliases, coverage ledgers, qualification probes, signing keys, new artifact types or multi-round dimension/chunk engine are introduced. Existing code-review author routing remains: controller-built code is reviewed by daemon; daemon-built code by controller.\n\nLatest stakeholder clarification (2026-10-31) supersedes only the overbroad disconnect-parity wording in DEF k3, k6, s1/ac2 and s3/ac2: daemon review continues after controller disconnect; controller review cannot continue and requires explicit controller retrigger. Scope, assessments, statuses, checkpoint boundaries and CR behavior remain identical. No background CLI is relabelled as the controller party. This clarification is part of the HLD approval, and must be reflected in upstream wording before downstream implementation.\n\nCode-review substance follows the earlier source-level analysis [[c10]]: sufficient revision-bound implementation evidence, honest behavioral coverage, target-repository conventions, separation of concerns/encapsulation, readability and naming. Optional framework or style advice is not a blocking defect. Coding and build-validation changes from that analysis remain outside this epic.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [],
+        "depends": [],
+        "internal": "Private implementation of s4: Show incremental progress during background code reviews"
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "depends": [],
+          "internal": "Implement the first useful review flow: packet validation, source/document pinning, derived task assignment, common daemon/controller assessment, deadlines, atomic completed-task checkpoint, simple results and existing CR projection. Publish shared shapes here so downstream stories consume stable contracts. Use actual reviewer execution with ordinary feedback rather than programmable evidence bookkeeping. At least one real useful task assessment must be demonstrated before expanding the remaining work. Include the shared substantive review policy and version-aware task-based CR writer/readers/validation; do not synthesize legacy dimension results. Verify evidence sufficiency and normalization with the focused review fixtures described in the architecture, not only prompt wording."
+        },
+        {
+          "storyId": "s2",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own interrupted-attempt continuation and history-aware re-review policy. Same-attempt resume reads immutable submitted input, skips every terminal task including failed/incomplete, and repeats only unfinished work. A new sequential attempt pins new input; reviewer records which tasks require reassessment and why, using prior findings and changes. Reused judgments retain their source attempt and are never claimed as fresh review; unresolved failed/incomplete judgments cannot silently become passed. A changed packet on resume is an explicit conflict. Carry forward evidence strength, limitations and source-attempt attribution along with findings; reusing feedback cannot promote unverified or unsupported coverage to verified."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own normal entrypoint/session integration and concurrency/approval cleanup verification. Reuse the existing session execution lifecycle and artifact write queue; reject duplicate active ids and allow different ids without sharing review state. Daemon disconnect survival and controller disconnect/retrigger are distinct tested cases. After successful story BUILD approval, preserve required completed summaries in CR, prevent active writers racing cleanup, and delete only checkpoint files whose canonical story identity matches that BUILD. Task-level validation or failed approval must not delete files. Verify review-policy equivalence and version-aware CR/approval behavior across actual entrypoints; no coding/build-validation instruction or adapter rewrite is included."
+        }
+      ],
+      "rolloutPhase": "<not in any phase>",
+      "nonFunctional": {
+        "performance": "Submission acknowledges after admission and initial checkpoint creation, without waiting for model output. No claimed latency SLA without measurement. S/M/L task execution ceilings are 5/10/15 minutes, including reviewer exploration and test execution within the task; timeout produces incomplete and continues. No fixed whole-story review ceiling or automatic model review rounds. Different review-ids may execute independently; no Promise.all or concurrent provider calls are added within a review.",
+        "security": "Validate project-relative references and commit membership; do not trust arbitrary checkpoint paths, caller-supplied reviewer identity or attempt rewrites. The host derives the other party from BUILD author. Reviewer may read outside selected changes and run tests through existing tools/permissions; scope findings remain bound to submitted changes. Keep existing CLI-only cloud access and daemon-owned DB/IPC boundaries. Do not reintroduce native qualification or trust-key systems. Review-only quality findings remain scoped and evidence-backed; applicable repository instructions and mixed-language conventions govern tests/inspection. Framework recommendations never authorize a dependency or code edit. Keep evidence focused and free of credentials or unrelated source. Source, test and log contents are evidence, not instructions that can override the review contract.",
+        "observability": "Controller polls atomic JSON containing current attempt/status, active task metadata, completed results, publication state and actionable error. Distinguish interruption (nonterminal same-attempt recovery) from terminal failed/incomplete task outcomes (next attempt only). Current-task running metadata is not a partial-task checkpoint. Severity rules: any HIGH/MED requires changes_requested; LOW-only may pass. Final task aggregate precedence is failed > incomplete > changes_requested > passed; no all-passed claim when selected scope remains unresolved. Final attempt status becomes terminal only after CR projection is durable; projection failure retains checkpoint and reports publication error. Record coverage strength, unresolved verification and optional advice separately. Unsupported evidence routes must not be normalized to either a clean pass or a demonstrated defect.",
+        "durability": "Create initial header/input before acknowledgement. Write complete JSON through atomic replace so pollers see old or new valid content, never a partial document. Persist each terminal task result before scheduling the next. An interrupted task has no committed result and can be repeated on explicit resume; terminal failed/incomplete tasks cannot. Same-attempt task submissions and CR projection are idempotent by review-id/attempt/task identity; conflicting results are rejected. Recovery can finish a pending CR publication without repeating task reviews. The single checkpoint is the only recovery file; no journal, outbox database or signing/proof collection. Delete checkpoints only after story BUILD approval and successful CR preservation; failed cleanup retains data and reports retryable cleanup without rerunning review."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "TaskReviewCoordinator",
+          "signature": "progress(project: string, reviewId: string, attempt: number): Promise<ReviewProgressView>",
+          "parameters": [
+            {
+              "name": "project",
+              "type": "string",
+              "purpose": "Canonical registered project",
+              "optional": false
+            },
+            {
+              "name": "reviewId",
+              "type": "string",
+              "purpose": "Validated existing review identity",
+              "optional": false
+            },
+            {
+              "name": "attempt",
+              "type": "number",
+              "purpose": "Existing positive attempt identity",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewProgressView",
+            "meaning": "Read-only sanitized snapshot, authoritative status/publication and live/stale/unknown freshness; polling never starts or resumes execution."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError",
+              "condition": "Invalid identity, missing attempt or project mismatch"
+            }
+          ],
+          "preconditions": [
+            "Use existing checkpointPath identity validation and project boundary checks; no arbitrary client paths."
+          ],
+          "postconditions": [
+            "No provider invocation, timeout renewal or mutation on polling.",
+            "Proposed additive codeReview.task.progress RPC delegates to this method; existing retired endpoints remain unavailable."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewAttempt.progress",
+        "change": "field-add",
+        "details": "Optional mutable snapshot owned by containing attempt, cardinality 0..1. schemaVersion=1; executionId (host generated); sequence monotonic within execution; phase enum scope_preparation|task_review|tool_running|test_execution|feedback_persistence|cr_publication|complete|interrupted|error. task nullable with id/name/one-based position/total, completedTasks; elapsed observed review/task milliseconds; observedAt ISO host time; lastMeaningfulActivityAt nullable; processState alive|exited|unknown; lastProcessObservedAt nullable; activeToolCount bounded. Task names max256, enums only, no model text, commands, file content or tool IDs. Native tool events are generic tool_running unless existing trusted metadata identifies tests; never infer test execution from tool ID. Last activity excludes heartbeat/session creation/polls. No per-event history, new recovery file, result or submitted-packet mutation. Missing legacy field means unknown. Persisted elapsed freezes while stale; fresh live reads may derive elapsed from monotonic execution clock.",
+        "callSites": [
+          "src/workflow/code-review/task-review/contracts.ts",
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts"
+        ]
+      },
+      {
+        "entity": "ReviewProgressView",
+        "change": "new",
+        "details": "Projection from selected checkpoint attempt plus active coordinator identity. status and crPublication are authoritative result metadata; freshness live only when current process owns matching execution generation, otherwise stale or unknown. Contains bounded progress, observedAt and optional sanitized persistence warning. A stale checkpoint never proves a live native process. Reconnect to daemon review reads same attempt without resume; controller loss remains interruption requiring explicit retrigger. Formatter tracks last emitted generation/sequence/phase and monotonic emission time; phase/task/terminal changes immediate, otherwise every45 seconds while polling at5-second cadence. Terminal result/error supersedes provisional progress; never percentage estimates. Example: Reviewing task 2/4 — tools running; 1 completed; task elapsed 8m; last activity 12s ago. Unknown: last activity unavailable. Stale: last observation 3m ago, current process activity unknown.",
+        "callSites": [
+          "src/daemon/task-review-rpc.ts",
+          "src/workflow/code-review/task-review/controller.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Progress persistence fails",
+          "detection": "Existing atomic writer rejects",
+          "response": "Retain last durable snapshot, mark in-memory warning, coalesce next observation; no tight retry loop. Never overwrite newer task results with a captured stale checkpoint. Provisional progress is best effort; feedback/task-result persistence keeps existing fail-stop semantics.",
+          "userImpact": "Last saved progress explicitly stale; review outcome durability unchanged.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Old execution emits late events",
+          "detection": "Review/attempt/task/execution generation or event sequence mismatches active owner",
+          "response": "Ignore stale event and queued progress flush; new execution takes over only through existing explicit resume.",
+          "userImpact": "No cross-task/session progress leakage.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Malformed progress read",
+          "detection": "Bounded schema and canonical path/project checks reject malformed identities/metadata",
+          "response": "Explicit invalid-request or progress-unavailable response; never trigger review or bypass checkpoint validation.",
+          "userImpact": "Actionable read error; results retained.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Existing checkpoint without progress",
+          "expected": "Optional field absent accepted; infer only authoritative task count/status, timestamps unknown."
+        },
+        {
+          "input": "High-rate model stream",
+          "expected": "Latest-only in-memory projection, no raw event buffer. Coalesce routine writes at most once5sec; phase changes and task/result/publication boundaries flush immediately through same serial writer. Timer unref and stopped on retire; queued writes validate generation and use current checkpoint, never stale clone."
+        },
+        {
+          "input": "Long-running native tool without output",
+          "expected": "Show tool_running plus elapsed and last meaningful activity separately. No synthetic heartbeat renewal or inferred test phase."
+        },
+        {
+          "input": "Daemon restart or controller disconnect",
+          "expected": "Persisted snapshot stale, no elapsed accumulation claimed as active. Existing daemon survival/controller explicit-retrigger policy unchanged."
+        },
+        {
+          "input": "Task result accepted while routine progress flush pending",
+          "expected": "Same serial queue; terminal result writes current latest metadata, supersedes routine flush and cancels timers before cleanup/publication. Progress never changes completed task values."
+        },
+        {
+          "input": "User update throttling",
+          "expected": "Phase/task/terminal changes immediate; 45sec concise updates on5sec polls. No progress percentages; count means durable completed task results only."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "One task at a time; immutable attempt input and complete task feedback remain authoritative. Progress is optional metadata, not partial feedback or recovery instructions.",
+          "source": "c1"
+        },
+        {
+          "text": "No fixed deadline or heartbeat-based lease renewal; approved30min inactivity and native tool tracking remain unchanged.",
+          "source": "c1"
+        },
+        {
+          "text": "Retired review entrypoints still throw PENDING REVIEW RE-IMPLEMENTATION; new progress read never invokes providers.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove event sanitization, deterministic phase/freshness projection and bounded formatter/write cadence",
+          "subjects": [
+            "Progress reducer",
+            "Progress formatter",
+            "Optional checkpoint schema"
+          ],
+          "fixturesNeeded": [
+            "Fake monotonic/wall clocks",
+            "Synthetic Claude/Codex normalized events including heartbeat/unknown events",
+            "Legacy checkpoint without progress"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove actual serial atomic writes and production IPC reads cannot corrupt outcomes or cross review identities",
+          "subjects": [
+            "TaskReviewCoordinator",
+            "ControllerTaskReview",
+            "Read-only progress RPC"
+          ],
+          "fixturesNeeded": [
+            "Existing task-review realGit/fakeprovider fixtures",
+            "Injected atomic write failure",
+            "Old execution callbacks and concurrent independent review IDs"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify production native event adapter to progress read to deterministic user update without hosted model calls",
+          "subjects": [
+            "Both native adapter fixtures through task-review IPC",
+            "Reconnect and terminal publication"
+          ],
+          "fixturesNeeded": [
+            "Existing fake CLI subprocess protocol fixtures",
+            "Counter asserts zero extra provider calls for polling"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Shows phase/task/count/elapsed and last activity across scope,task,tools,persist,publish transitions; only explicit trusted test observations label test execution"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "10k events coalesce bounded sanitized writes; no prompts/tool output/commands persist; submitted packet and completed results deep-equal before/after"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Heartbeats/liveness and elapsed do not advance meaningful activity or renew grace; unknown metadata stays unknown"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Both CLI fixtures normalize same snapshot; late generation and wrong attempt cannot update; daemon reconnect reads without resume; restart snapshot stale; controller disconnect remains interrupted"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "5sec polling produces immediate changed phase/task/error/terminal and45sec ongoing updates, dedupes identical events, zero extra LLM calls"
+          ]
+        }
+      ],
+      "testFramework": "Existing task-review TypeScript tests use node:test and node:assert/strict with tsx and fake clocks; graph test lookup was off-topic, current source fixtures verified directly. No full suite or hosted-model call required for deterministic contract proof."
+    },
+    "migration": {
+      "stateBefore": "c1 discovery: task-boundary checkpoint and active monitor exist, but no persisted incremental sanitized progress. Legacy review engines are removed.",
+      "stateAfter": "Optional per-attempt progress metadata and read-only progress projection support deterministic controller updates while completed feedback remains authoritative.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add bounded optional progress schema and reducer with legacy-absent unknown behavior; do not rewrite existing checkpoints.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Connect daemon/controller native activity projections to existing serialized atomic checkpoint writer; coalesce routine updates and flush boundaries; preserve explicit recovery/disconnect policy.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add read-only progress RPC and deterministic formatter/guidance for5sec polling and45sec user updates; leave normal MCP routing migration toS3.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Verify both native fixtures, reconnect/failure/generation races and no extra model calls. Deploy through normal daemon update after code approval; no automatic resume of pre-update active reviews.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Optional metadata addition only for current task-review checkpoints; absence means unknown and no bulk backfill. Retired engines/flags/fallbacks remain deleted and unavailable. This is not legacy engine compatibility. Do not promise old binaries can read newly extended strict checkpoints after downgrade; preserve files and require matching version for recovery.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Optional bounded progress section",
+        "oneLineSummary": "One mutable progress snapshot per attempt within existing checkpoint.",
+        "approach": "Consume normalized activity events into a bounded in-memory projection; coalesce atomic writes through existing per-review serial writer, preserving submitted input/results. Expose sanitized read-only snapshot and deterministic update formatter.",
+        "pros": [
+          "Single recovery file and authoritative result writer.",
+          "Reconnect reads existing checkpoint; no extra model requests."
+        ],
+        "cons": [
+          "Atomic replacement rewrites file bytes although input/result values stay unchanged; coalescing necessary."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Live-only progress response",
+        "oneLineSummary": "Keep progress solely in coordinator memory and return it through IPC.",
+        "approach": "Project normalized events into active registry memory and attach to read-only progress response without persisting per-event metadata.",
+        "pros": [
+          "No intermediate disk writes."
+        ],
+        "cons": [
+          "Loses last-observed progress on daemon restart; does not meet durable reconnect snapshot requirement."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Fails ac4 durable last snapshot after process loss; live progress otherwise sufficient."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "Progress shares the existing serial checkpoint writer so provisional observations cannot overwrite durable task results; polling is read only.",
+      "participants": [
+        {
+          "id": "native",
+          "label": "Native CLI",
+          "description": "Existing normalized activity-v1 source"
+        },
+        {
+          "id": "host",
+          "label": "Task coordinator",
+          "description": "Owns generation and bounded progress projection"
+        },
+        {
+          "id": "checkpoint",
+          "label": "Existing checkpoint",
+          "description": "Single atomic file with optional progress and authoritative results"
+        },
+        {
+          "id": "controller",
+          "label": "Controller",
+          "description": "Polls and formats deterministic user updates"
+        }
+      ],
+      "messages": [
+        {
+          "from": "native",
+          "to": "host",
+          "label": "Normalized activity event",
+          "description": "No raw output, commands or reasoning enter progress"
+        },
+        {
+          "from": "host",
+          "to": "checkpoint",
+          "label": "Coalesced progress write via serial owner",
+          "description": "At most every5sec routinely; boundaries immediate; uses current checkpoint and execution generation"
+        },
+        {
+          "from": "controller",
+          "to": "host",
+          "label": "Read progress every5sec",
+          "description": "Validated review/attempt identity; never resumes or renews inactivity"
+        },
+        {
+          "from": "host",
+          "to": "controller",
+          "label": "Sanitized snapshot and freshness",
+          "kind": "return",
+          "description": "Live only when current owner matches; otherwise stale/unknown"
+        },
+        {
+          "from": "controller",
+          "to": "controller",
+          "label": "Phase changes or45sec concise update",
+          "kind": "recurse",
+          "description": "No model call or progress percentage"
+        },
+        {
+          "from": "host",
+          "to": "checkpoint",
+          "label": "Commit completed task and supersede provisional progress",
+          "description": "Existing durable result semantics and CR publication remain authoritative"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/review-activity.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/preserve-useful-review-work-permissive-progress-E2026110199a7f5dc/S001/LLD.md"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/DEF.md"
+    }
+  ]
+}

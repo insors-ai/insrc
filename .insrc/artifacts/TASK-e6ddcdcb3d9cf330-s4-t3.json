@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-032e7f81-3bf2-4b38-a4c1-be0e8acbd671",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T12:41:51.347Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Connect daemon and controller execution observations",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "45d7cbab14205c2b01c78c1e470a3bd6f7a696a8e62d08f68289c6860a8df305",
+        "at": "2026-11-01T12:41:51.347Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:41:51.348Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Connect daemon and controller execution observations",
+    "summary": "Feed accepted activity-v1 observations and lifecycle transitions from both reviewer routes. Distinguish generic tools, trustworthy test observations and process liveness; preserve30min inactivity and explicit controller retrigger.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Both routes expose task/phase/count and real activity with generation isolation",
+      "Heartbeat/polls do not renew activity; long tools tracked honestly; completed feedback authoritative"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Daemon and controller produce equivalent progress without renewing inactivity on heartbeat"
+      },
+      {
+        "level": "integration",
+        "name": "Terminal task result supersedes pending progress and stops timers"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

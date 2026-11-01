@@ -1,0 +1,230 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "4f537160e404d1854ba335efa260f7538abdb4c907b6c517fff3a0e81515ada3",
+        "at": "2026-11-01T13:14:48.278Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-237590ce-5898-4438-8b10-cef0875f9c49",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T12:43:37.467Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s4",
+    "revision": 6,
+    "updatedAt": "2026-11-01T13:12:02.063Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-committed-work-task-checkpoints"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented incremental review progress across both reviewer routes, safe coalesced checkpoint metadata, read-only IPC and cancellable user updates. Build passed and79 focused deterministic regressions passed; native acceptance uses synthetic CLI fixtures, not hosted models.",
+    "testRecord": {
+      "md": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/progress.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/progress.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/progress-persistence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/progress-persistence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/activity-execution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/progress-execution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/controller.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/execution.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/progress-client.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/progress-view.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "docs/task-review-execution.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/controller-fixture.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:12:02.063Z"
+      }
+    ],
+    "commit": "a8ba108b3"
+  },
+  "citations": []
+}

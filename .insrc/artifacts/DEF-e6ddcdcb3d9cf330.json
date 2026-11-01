@@ -21,7 +21,7 @@
     "epicHash": "e6ddcdcb3d9cf330",
     "epicSlug": "review-committed-work-task-checkpoints",
     "authoredBy": "controller",
-    "revision": 1,
+    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
@@ -30,12 +30,12 @@
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "2fea8b8d28cea7a783b137294d447318cf9aa55ed7a3e940201bda6e317b07f7",
-        "at": "",
+        "number": 3,
+        "contentHash": "7a0f12219a9be74e71938c4ecacf2eb8e197d9347e6e2c75f839a8210eadd7b5",
+        "at": "2026-11-01T12:01:52.363Z",
         "by": {
-          "id": "insrc:system",
-          "kind": "system",
+          "id": "codex:controller",
+          "kind": "agent",
           "properties": {}
         }
       },
@@ -63,13 +63,16 @@
         }
       },
       "approval": {
-        "revision": 1,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-10-30T18:54:02.164Z"
+        "at": "2026-11-01T12:02:09.507Z",
+        "override": {
+          "reason": "User explicitly approved both updated Epic and S4 HLD amendment with review override. S4 progress design authorized, obsolete backlog-only text corrected with audited content update; no other story scope changed. Old review engines disabled."
+        }
       }
     }
   },
@@ -359,6 +362,48 @@
           },
           {
             "statement": "Retain permanent code-review results and remove temporary checkpoints on story BUILD approval."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Show incremental progress during background code reviews",
+        "userValue": "Users can see which task is being reviewed and the last observed activity throughout a long review, without additional model calls. Reuses normalized activity from the approved permissive-timeout implementation; timeout policy remains separate. User authorized S4 design on 2026-11-01.",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A background review is running",
+            "when": "The controller polls its progress",
+            "then": "It shows phase, task ID/name and position, completed/total tasks, review/task elapsed time and timestamp of last observed activity. Phases cover scope preparation, task review, test execution, feedback persistence and CR publication; unavailable activity is explicitly unknown.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac2",
+            "given": "A task runs for several minutes",
+            "when": "Native CLI events report source reads, tool/test starts or completions, model output or feedback submission",
+            "then": "Bounded sanitized progress metadata updates during the task without extra model calls, reasoning text, raw prompts or raw tool output; routine updates are throttled and do not rewrite immutable submitted packets or completed results.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac3",
+            "given": "A subprocess is alive but no meaningful activity is observable",
+            "when": "A heartbeat is received or elapsed time advances",
+            "then": "The display distinguishes process liveness from last meaningful activity and never invents progress percentages, findings or completion. This story does not change timeout/retry policy.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac4",
+            "given": "Claude or Codex performs the review",
+            "when": "Progress is polled after reconnect or for concurrent independent review IDs",
+            "then": "Both providers expose the same normalized behavior; progress is isolated by review ID/attempt/task, stale data is labelled, and reconnect recovers the latest snapshot without restarting review.",
+            "operationalizes": []
+          },
+          {
+            "id": "ac5",
+            "given": "A user waits for review",
+            "when": "A phase changes or 30–60 seconds pass",
+            "then": "The controller surfaces a concise update using existing polling, while terminal completion and errors remain visible and authoritative. No additional LLM summary requests are made.",
+            "operationalizes": []
           }
         ]
       }

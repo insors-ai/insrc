@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-fcd69aee-4177-4ef2-9fb7-4c527f9d2d3f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T04:46:07.307Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "03dc0bf32eb4a219fa99eac8cc174649bd4779a77dea8e42a153f90b0df3bf48",
+        "at": "2026-11-01T04:46:07.307Z",
+        "by": {
+          "id": "insrc:define",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:00:02.035Z",
+        "override": {
+          "reason": "User explicitly approved both the presented updated Epic and S4 HLD boundary amendment with review override. Existing review engines intentionally disabled pending reimplementation; S4 adds sanitized incremental progress without changing timeout policy."
+        }
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-e6ddcdcb3d9cf330-1",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "hldBaseRunId": "wf-1793386460254-8th2oq",
+    "amendment": {
+      "type": "storyBoundary.addStory",
+      "storyId": "s4",
+      "internal": "Private implementation of s4: Show incremental progress during background code reviews"
+    },
+    "rationale": "Adds S4 to the current task-checkpoint review epic: incremental user-visible review progress. Backlog only.",
+    "proposedBy": {
+      "workflow": "define",
+      "runId": "wf-1793508326558-bwzehg",
+      "storyId": "s4",
+      "stepId": "scope.assess"
+    },
+    "proposedAt": "2026-11-01T04:46:07.306Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "plans/progress-based-review-timeouts.future-work.json"
+    }
+  ]
+}

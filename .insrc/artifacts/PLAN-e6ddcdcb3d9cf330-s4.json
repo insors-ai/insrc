@@ -1,0 +1,283 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793535406579-i73t23",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T12:18:43.765Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 114470,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "storyId": "s4",
+    "lldRunId": "wf-1793534540519-zyz14s",
+    "lldEffectiveHash": "9644e9acbe9122fac83d4724e95c884c8e899db063e5af06cd791ad2c55fabf0",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8ce4e89891a470d255409bfdf1ddd00184ab130070d1a2848ca95d001f1a83a5",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:41:50.846Z"
+      }
+    },
+    "rangeBase": "e437559bcfdc3757147a12708a11b9e69d848d17"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build incremental review visibility on the existing activity and checkpoint infrastructure. Keep progress bounded, truthful and separate from review judgments, then expose a read-only polling helper with concise user updates.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define bounded progress contracts and truthful projection",
+        "summary": "Add optional attempt progress schema and bounded sanitized reducer; normalize phase/task/count, monotonic elapsed, meaningful activity and explicit freshness. Existing checkpoint without metadata remains unknown.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Optional bounded metadata accepts old checkpoints without fabricating activity",
+          "No raw model output,commands,tool IDs or reasoning persisted; phase remains unknown/generic without evidence"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Projects sanitized bounded phases and meaningful activity with unknown-safe elapsed"
+          },
+          {
+            "level": "unit",
+            "name": "Reads checkpoints with optional progress and rejects malformed metadata"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Serialize coalesced progress persistence with task results",
+        "summary": "Reuse per-review serial writer; latest-only coalescing,5sec routine writes, immediate boundary flush, generation fencing and timer disposal. Never overwrite newer results or input; progress write failure is best effort while task-result failure remains fail-stop. At most one pending progress flush, including rapid phase changes; serial task/result boundaries remain authoritative.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "High-rate events retain one pending snapshot; routine writes bounded to5sec",
+          "Late queued writes cannot overwrite task results; timer stopped on retirement; failures retain last durable observation",
+          "Rapid phase alternation cannot create an unbounded write queue"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Coalesces progress writes and fences stale generations without corrupting results"
+          },
+          {
+            "level": "integration",
+            "name": "Retains durable feedback when progress persistence fails"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Connect daemon and controller execution observations",
+        "summary": "Feed accepted activity-v1 observations and lifecycle transitions from both reviewer routes. Distinguish generic tools, trustworthy test observations and process liveness; preserve30min inactivity and explicit controller retrigger.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Both routes expose task/phase/count and real activity with generation isolation",
+          "Heartbeat/polls do not renew activity; long tools tracked honestly; completed feedback authoritative"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Daemon and controller produce equivalent progress without renewing inactivity on heartbeat"
+          },
+          {
+            "level": "integration",
+            "name": "Terminal task result supersedes pending progress and stops timers"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Expose read-only progress and deterministic user updates",
+        "summary": "Add validated codeReview.task.progress delegation and deterministic formatter/poll guidance:5sec reads, immediate changes/terminal errors and45sec ongoing updates. No execution restart, provider calls or normal MCP migration. Include a cancellable explicit task-review polling helper using existing IPC client, injectable clock and update callback; controller can use this without retired endpoints.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Read validates project/review/attempt and does not invoke provider/resume",
+          "User sees immediate changes and45sec updates; stale/unknown explicit; no percentage estimates",
+          "Concrete helper emits updates via callback, cancels cleanly and never retriggers review"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Read-only progress IPC validates scope and never invokes providers"
+          },
+          {
+            "level": "unit",
+            "name": "Polling helper emits immediate transitions and45sec updates and cancels cleanly"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Verify progress across native adapters, reconnect and failure",
+        "summary": "Use existing fake CLI/production IPC fixtures for both providers; prove isolated reviews, stale restart/reconnect, no extra calls, bounded writes and races. Document use and limits; no full expensive review loop.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Both native fixtures and real IPC prove end-to-end behavior with zero hosted-model calls",
+          "Reconnect,write-failure,terminal race and concurrent review isolation covered; document matching-version recovery limits"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Both native CLI fixtures expose isolated reconnectable progress through production IPC"
+          },
+          {
+            "level": "smoke",
+            "name": "Progress write failure restart and terminal races preserve authoritative task outcomes"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Progress reducer",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Progress formatter",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Optional checkpoint schema",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "TaskReviewCoordinator",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ControllerTaskReview",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Read-only progress RPC",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Both native adapter fixtures through task-review IPC",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reconnect and terminal publication",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contract/dataModelChanges"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 errorPaths/persistence"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 execution interactions"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 contractDetails/progress read and presentation"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s4 testStrategy/migration"
+    }
+  ]
+}

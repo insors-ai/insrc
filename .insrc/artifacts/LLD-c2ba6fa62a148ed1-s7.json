@@ -1,0 +1,1018 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793558505905-jvv7zr",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T18:47:30.004Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 344090,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s7",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "hldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "hldAmendmentsApplied": [
+      "AMD-c2ba6fa62a148ed1-1",
+      "AMD-c2ba6fa62a148ed1-2",
+      "AMD-c2ba6fa62a148ed1-7",
+      "AMD-c2ba6fa62a148ed1-8",
+      "AMD-c2ba6fa62a148ed1-9",
+      "AMD-c2ba6fa62a148ed1-10"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's acceptance criteria ac1-ac4 and local constraint lc1, and its dependsOn s1/s2, match Story s7 in the approved DEF exactly (same ids, text, operationalizes k1/k5/k6).",
+          "evidence": "DEF-c2ba6fa62a148ed1.json:1195-1263 defines s7 with dependsOn [s1,s2], lc1 'Relationships stored before this change are not presented as if their origin were known', and ac1-ac4 with identical given/when/then and operationalizes k1 (ac1,ac2,ac4) / k5,k6 (ac3) that the LLD section 6 'Acceptance mapping' and §1 reproduce verbatim. [files: .insrc/artifacts/DEF-c2ba6fa62a148ed1.json, docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S007]",
+          "action": "Read .insrc/artifacts/DEF-c2ba6fa62a148ed1.json s7 block and compared against LLD §1, §6, §10.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design stays inside sc3 ownership (evidence byte + its reads) and does not build any 'chosen'-writing capability, matching the DEF's explicit note that 'chosen' is reserved and not added by this Epic.",
+          "evidence": "No source file currently writes or tests the literal 'chosen' value for a relation-evidence purpose (grep across src/ for \"'chosen'\" found only unrelated workflow/brainstorm hits), consistent with the design's repeated statement 'chosen' (reserved, never written) and ac2's 'no \"chosen\" value appears anywhere'.",
+          "action": "Grepped src/ for the literal 'chosen' token.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today both edge-write sites (upsertResolvedRelationsInTxn and promoteResolvedBatch) always write an empty Buffer as the edge value, at exactly the two line pairs the LLD cites (183-184, 564-565).",
+          "evidence": "src/db/relations.ts:183-184 `s.outEdge.put(...,Buffer.alloc(0)); s.inEdge.put(...,Buffer.alloc(0));` and the same pattern at :564-565 inside promoteResolvedBatch — exact line match to the LLD's §3.1 call-site citations. [files: src/db/relations.ts]",
+          "action": "Read src/db/relations.ts around lines 160-188 and 523-577.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RelationEvidence is today the single literal type 'unknown', RelationWrite.evidence carries it, and the file commit's relationOfWrite currently drops evidence when converting RelationWrite back to Relation ('not stored until Story s7').",
+          "evidence": "src/shared/types.ts:696 `export type RelationEvidence = 'unknown';`; src/db/file-commit.ts header comment states 'The evidence is accepted and not stored until Story s7' and relationOfWrite (line 19-24) builds a Relation with no evidence field; writeOfRelation (line 27-32) hardcodes `evidence: 'unknown'`. [files: src/shared/types.ts, src/db/file-commit.ts]",
+          "action": "Read src/shared/types.ts:685-724 and src/db/file-commit.ts in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RelationRead, named as a new sc3 type, does not already exist anywhere in the codebase.",
+          "evidence": "A repo-wide grep for `RelationRead` returned zero matches before this LLD, confirming it is genuinely new rather than a duplicate of an existing type.",
+          "action": "Grepped src/ for RelationRead.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "UnresolvedRow.meta is already a free-form Record<string, unknown> field, so adding meta.evidence to pending rows is reuse of an existing extensible slot and changes no stored schema, as the LLD claims ('No stored form changes').",
+          "evidence": "src/db/graph/codec.ts:225-240 `export interface UnresolvedRow { ... meta: Record<string, unknown>; ... }` with encode/decode via a generic `encode`/`decode` (msgpack-style) that round-trips whatever meta contains. [files: src/db/graph/codec.ts]",
+          "action": "Read src/db/graph/codec.ts:225-243.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "findCallers/findCallees/outNeighbors/inNeighbors and the daemon's search.callers/search.callees IPC handlers exist today with exactly the plain (no-evidence) shapes the LLD describes as the 'before' state, at the locations the LLD cites.",
+          "evidence": "src/db/search.ts:186-211 `findCallers`/`findCallees` return `Promise<Entity[]>`; src/db/graph/edges.ts:87-118 `outNeighbors`/`inNeighbors` return `Promise<bigint[]>` and `neighborsSync` (lines 41-61) yields key-derived u64s only, never reading the edge value; src/daemon/handler-runtime.ts:956-966 'search.callers'/'search.callees' call findCallers/findCallees directly and return Entity[] unchanged. [files: src/db/search.ts, src/db/graph/edges.ts, src/daemon/handler-runtime.ts]",
+          "action": "Read src/db/search.ts:186-212, src/db/graph/edges.ts:1-119, src/daemon/handler-runtime.ts:945-966.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The call-site citations for where Relation.evidence must be set (resolver.ts, cross-file-resolver.ts:379, index.ts:1245-1258, file-commit.ts:19,27) point at the real decision points the design describes (per-file resolver's resolved/pending branches, the Pass-1 IMPORTS rewire's upsertRelations call, and the manifest's DEPENDS_ON write).",
+          "evidence": "src/indexer/resolver.ts:63-118 resolveRelations marks CALLS/IMPORTS resolved exactly as described; src/indexer/cross-file-resolver.ts:289-294 defines rewireImportRelation and line 379 is its `upsertRelations(...)` call; src/indexer/index.ts:1241-1259 builds and writes the DEPENDS_ON manifest relation; src/db/file-commit.ts:19,27 are exactly relationOfWrite/writeOfRelation. [files: src/indexer/resolver.ts, src/indexer/cross-file-resolver.ts, src/indexer/index.ts, src/db/file-commit.ts]",
+          "action": "Read src/indexer/resolver.ts:63-119, src/indexer/cross-file-resolver.ts:289-389, src/indexer/index.ts:1235-1264.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No SCHEMA_VERSION bump or migration step is needed because existing readers (neighborsSync, traversals) already ignore the edge row's value entirely, reading only the key — so widening the value from empty to a 1-byte evidence code cannot break an older reader or require rewriting existing rows.",
+          "evidence": "src/db/graph/edges.ts:41-61 `neighborsSync` iterates `db.getRange` and reads only `key`, never the stored value, for both out_edge and in_edge; this is the substrate every id-only consumer (outNeighbors/inNeighbors/BFS/DFS/closure/SCC) sits on, so an empty-vs-one-byte value is invisible to them, matching the LLD's 'zero downtime / no data rewrite' migration claim. [files: src/db/graph/edges.ts]",
+          "action": "Read src/db/graph/edges.ts in full and cross-checked against the migration section's 'Backward compat' claim.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's own 'Adjacent scope' section correctly reproduces Story s1's real scope (including promoteToResolved/promoteResolvedBatch and the pending-classification/IndexState machinery) and the Story depends on s1 (and s2) per the DEF, so s7's edits to the same functions (adding only an evidence byte/parameter) build on, rather than redesign, s1's control-flow logic — s7 never touches pending classification, IndexState fields, or the reindex/repair logic that s1 and s2 own.",
+          "evidence": "DEF-c2ba6fa62a148ed1.json:1199-1202 lists s7 `dependsOn: [s1, s2]`; the LLD's §4 table marks sc1 'consumes — No IndexState field changes' and sc2 'consumes — The commit's shape and transaction are unchanged'; s7's own code changes (§2.3-2.6) only add an evidence byte/field to functions whose control-flow (skip-vs-pending, classification) the LLD explicitly leaves to s1/s2 ('Until Story s2 lands, s1 applies its rule inside the existing separate writes'). [files: .insrc/artifacts/DEF-c2ba6fa62a148ed1.json]",
+          "action": "Cross-read DEF s1/s2/s7 dependency block against LLD §1 'Adjacent scope' and §4.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Placing the new evidence byte codec in src/db/graph/codec.ts 'beside the other row codecs' is consistent with how that file is already organized (it already holds UnresolvedRow and PendingClass codecs), and the design's never-throw-on-bad-byte rule matches the file's existing style of logging and counting rather than throwing on malformed input.",
+          "evidence": "src/db/graph/codec.ts:225-250 already defines UnresolvedRow's encode/decode and the PendingClass type beside each other in the same file, and src/db/relations.ts's existing error handling (e.g. countUnwritableInTxn + log.warn in upsertUnresolvedRelationsInTxn, lines 312-331) never throws on a malformed/unregistered input — it counts and logs, the same pattern the LLD's error-path table specifies for an unrecognised evidence byte/string. [files: src/db/graph/codec.ts, src/db/relations.ts]",
+          "action": "Read src/db/graph/codec.ts:225-250 and src/db/relations.ts:266-343 for the existing count-and-log (never-throw) convention.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test files the LLD's §6 fixtures name as existing precedent (relations-in-txn.test.ts, file-commit.test.ts, and the search.callers/search.callees IPC handlers under daemon handler tests) genuinely exist and already exercise the surfaces this Story extends, supporting the claim that the new evidence tests can be added 'as existing ... tests do'.",
+          "evidence": "src/db/__tests__/relations-in-txn.test.ts and src/db/__tests__/file-commit.test.ts both exist; src/daemon/__tests__/handler-runtime.test.ts:53-54 lists 'search.callees'/'search.callers' among the exercised IPC methods, matching the LLD's acceptance-mapping fixture 'handler runtime over a seeded store, as existing handler tests do'. [files: src/db/__tests__/relations-in-txn.test.ts, src/db/__tests__/file-commit.test.ts, src/daemon/__tests__/handler-runtime.test.ts]",
+          "action": "Globbed for the named test files and grepped handler-runtime.test.ts for search.callers/search.callees.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each DEF acceptance criterion ac1-ac4 maps to a named proving test in §6's 'Acceptance mapping' table, and none of ac1-ac4 is left without a test.",
+          "evidence": "LLD §6 'Acceptance mapping' table lists at least one integration test per ac1, ac2, ac3 (plus a unit test) and ac4, each naming concrete subjects (findCallees, a pending-row fixture, findCallers/findCallees on a pre-change store, usage.example/search.callers) that correspond to the real functions verified above (src/db/search.ts findCallers/findCallees, src/analyze/explore/usage-example.ts). [files: .insrc/artifacts/DEF-c2ba6fa62a148ed1.json]",
+          "action": "Compared the DEF's ac1-ac4 (from .insrc/artifacts/DEF-c2ba6fa62a148ed1.json) against the LLD §6 table row-by-row.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 13,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T18:47:36.942Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Every stored relationship gains a one-byte record of how it was established: read straight from the source ('extracted'), established by resolution across files ('inferred'), chosen among candidates (reserved, never written) or proposed by a model (written later by s10). The indexer's writers stamp it as they store a relationship, pending rows carry it until their target appears, and the caller, callee, import and inheritance reads, the daemon's requests and the analyzer's lookups return it, so an answer can say which relationships were inferred. Relationships stored before this change read as of unknown origin until their file is next indexed; nothing is migrated.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. It grows out of the existing whole-file replacement (reindexFile), which already replaces a file's entities in one transaction but removes relationships only for entities that disappeared from the file; the commit goes further and replaces the outgoing relationships of every entity of the file. The indexer's refresh, the delete event and the repair all call it; a file is selected for it by one filter built from the repository's ignore files. A relationship is never dropped in the commit: when its target is not stored it becomes a pending row, and pending rows are completed only by the passes that own them: the cross-file pass for code symbols, and the two endpoint passes of the external-services Epic for theirs. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete (relationships awaiting a target that is in an indexed repository, relationships that could not be written, entities without vectors). The four repository status values keep their meaning; completeness is a separate field read from this row and shown wherever status is shown, so a repository with anything outstanding does not read as fully ready. Layer 3, derived data: evidence is a one-byte value on the relationship row, written in the commit, by the cross-file pass and by every other writer of a stored relationship; subsystem grouping, subsystem summaries and model-proposed document relationships are queued passes that start only from a repository whose state is complete, write their own tables, and stamp what they wrote with the generation it was computed from. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "RelationEvidence",
+          "purpose": "How a relationship was established, stored as the value of its row and returned wherever relationships are read. An empty value, which is what every existing row holds, reads as 'unknown', so no existing row is rewritten.",
+          "interfaceSketch": "type RelationEvidence =\n  | 'unknown'      // stored before this change (empty value)\n  | 'extracted'    // read directly from the source text\n  | 'inferred'     // established by resolution across files\n  | 'chosen'       // one target picked among several candidates; reserved, written only if a choosing rule is added\n  | 'model';       // proposed by a model\n\ninterface RelationRead {\n  from: string;\n  kind: RelationKind;\n  to: string;\n  evidence: RelationEvidence;\n}",
+          "ownedByStory": "s7",
+          "consumedByStories": [
+            "s8",
+            "s10"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "IndexState",
+          "purpose": "The recorded per-repository state: the generation of the graph and what is known to be incomplete. Written in the same transaction as every file commit and by the cross-file pass; read by repository status, by the commit's callers, and by every derived pass to decide whether it may run and whether what it wrote is stale.",
+          "interfaceSketch": "type PendingClass = 'awaiting-target' | 'ambiguous' | 'no-candidate' | 'external-endpoint';\n\ninterface IndexState {\n  repoPath: string;\n  generation: number;                 // advanced by every file commit and every completion\n  pending: Record<PendingClass, number>;\n  unwritable: number;                 // relationships refused by the store, with a stated reason\n  unembedded: number;                 // entities the embed step selects (non-empty body) whose vector is not written\n  embeddingAvailable: boolean;        // false when the embedding backend is disabled or cannot be reached\n  uncommittedFiles: string[];         // paths of files whose parse or commit failed; persisted; a path leaves when its file next commits or is removed\n  fullIndexFinished: boolean;         // the full pass, the cross-file pass and both endpoint passes have ended\n  endpointPassFailed: boolean;\n  graphComplete: boolean;             // derived: fullIndexFinished && !endpointPassFailed && uncommittedFiles.length == 0 && awaiting-target == 0 && unwritable == 0\n  complete: boolean;                  // derived: graphComplete && (unembedded == 0 || !embeddingAvailable)\n}\n\ninterface RepoCompleteness {          // returned beside RepoStatus, which keeps its four values\n  complete: boolean;\n  reasons: string[];                  // one line per non-zero cause\n  counts: Pick<IndexState, 'pending' | 'unwritable' | 'unembedded'> & { uncommittedFiles: number };\n  uncommittedFiles: string[];         // the paths that could not be committed\n  generation: number;\n}\n\ninterface DerivedStamp { computedAtGeneration: number; }   // carried by every row a derived pass writes\n  // + reasonCounts: { unwritable: Record<string, number>; awaiting: Record<string, number> };  // counts of unwritable relationships and of awaiting-target rows by reason, so completeness can say why a repository is incomplete (e.g. targets excluded by an ignore rule vs. not stored yet) (amend:AMD-c2ba6fa62a148ed1-2)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s7",
+            "s8",
+            "s10",
+            "s13"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "FileCommit",
+          "purpose": "The one write operation for a file's rows. Everything that adds, replaces or removes a file's entities and relationships hands the store one of these and gets one transaction. The commit removes the outgoing relationships of every entity of the file before writing the new set, leaves the incoming relationships of surviving entities in place, and returns to pending any incoming relationship whose target entity it removes. Entities that are not of the file (shared module stubs) are ensured to exist under the shared-modules rows and are otherwise untouched.",
+          "interfaceSketch": "interface RelationWrite {\n  from: string;                        // entity id in this file\n  kind: RelationKind;\n  target:\n    | { stored: string }               // id of an entity expected to be stored\n    | { pending: UnresolvedRef };      // name/path reference for the cross-file pass\n  evidence: RelationEvidence;          // see sc3; 'unknown' until Story s7 supplies it\n}\n\ninterface FileCommit {\n  repoPath: string;\n  filePath: string;\n  contentHash: string | null;          // null = the file is removed\n  entities: Entity[];                  // empty when removed; module stubs (no repo, no file) are routed to the shared-modules rows\n  relations: RelationWrite[];\n}\n\ninterface FileCommitResult {\n  generation: number;\n  entitiesWritten: number;\n  entitiesRemoved: number;\n  relationsStored: number;\n  relationsPending: number;            // includes { stored } targets found absent\n  relationsUnwritable: number;\n  relationsReturnedToPending: number;  // incoming relationships whose target entity was removed\n  vectorsOutstanding: number;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s7",
+            "s9",
+            "s10",
+            "s13"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s7",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "The one-byte encoding of evidence as the value of a relationship row; the points in the per-file resolver and the cross-file pass that decide 'extracted' or 'inferred' ('chosen' is reserved and not written, since an ambiguous relationship stays pending with its candidates); the passing of evidence as an argument to the store's resolved write and promote operations, so that the two endpoint passes write 'inferred' and the manifest step writes 'extracted' and no relationship written after this change reads 'unknown'; the carrying of evidence through the store's traversal reads and the daemon's caller and callee requests; the marking of inferred and chosen relationships in the analyzer's lookups and answers. No migration rewrites existing rows, since an empty value reads as 'unknown'."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The rule that a relationship with an absent target becomes pending instead of being skipped, at each of the six places in src/db/relations.ts where one is lost today (the resolved write's skip on a missing endpoint and its skip on a kind with no byte, promoteToResolved, promoteResolvedBatch, and the pending write's discard of a row without its file or repository and of a row whose repository is not registered), each either kept as pending or counted as unwritable with a reason; the set of files whose parse or commit failed in a full index, persisted with their paths until they next commit; which fields of the state are recounted on open and which are persisted and carried over; the classification of a pending relationship as awaiting-target, ambiguous or no-candidate, with the external-service rows classed apart and the two endpoint passes counted in when a full index is finished; the class is stored on the pending row itself, in its existing free-form record, so no stored form changes, a row the cross-file pass has not yet attempted counts as awaiting-target, and the recount on open reads the stored class and does not run resolution again; the extension of the cross-file pass to complete relationships awaiting a target by id, for imports and the other code-symbol kinds as well as calls and inheritance, and to follow a re-exporting file to the function it re-exports; the lookup of pending rows by the id they await, with its migration step, and the pass after a file event visiting the rows that await an entity of the files just committed; the change of the reindex request so that it deletes the repository's rows in the graph store and the vector store and builds them again from every file, in place of today's skip of unchanged files, with no separate repair request, returning to pending the relationships that other repositories hold into the deleted entities, and its queuing by the migration for every repository indexed before this change, which starts as not complete; the storing of the repository entity so that the manifest step's dependency relationships are written; the measurement on this repository, before and after a repair, of the awaiting-target, ambiguous, no-candidate and unwritable counts, with unwritable expected to be zero; the IndexState row, its migration step, its recount on open, and the derivation of repository status from it, as a completeness field returned beside the unchanged status by the daemon's status and stats requests and shown in the CLI's repository pane and in both editor plugins; and the analyzer's read of it: an analyzer lookup that reads relationships of a repository that is not complete says so in its result, with the counts, so that an answer over an incomplete graph is not returned as a plain fact. The choice, in this Story's design, of the function reached only through a re-exporting file that the repair is measured on, since the issue's own example (pickScope) has been removed from the source. Raising the log level of a refused relationship from debug is internal. Until Story s2 lands, s1 applies its rule inside the existing separate writes."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The extension of the existing whole-file replacement into the file commit (relationships and pending rows in the same transaction as entities; outgoing relationships of surviving entities replaced, not only those of entities that disappeared; incoming relationships of a removed entity returned to pending), the move of the indexer's refresh and delete paths and of the clean-up pass's removal of a stored file onto it, and the retirement of the separate delete-then-upsert sequence in the indexer. The handling of vectors after the commit: writing the entity row with its embedding marker empty and setting it in a second transaction only after the vector write succeeds, counting an entity with an empty marker in IndexState, comparing entity ids with the vector table on open in both directions, so that a vector left behind by a failed removal is deleted before a plain insert can meet it, and the extension of the existing reembed job to run on daemon start and after an index, with a vector write for an entity whose marker is empty made an upsert, except for an entity first allocated in the same commit, which keeps the plain insert. Three things in that job change with it: it applies the embed step's own selection instead of forcing every entity, so empty-body entities (external endpoints, module stubs) stay unselected and uncounted; its update of an embedding writes the vector first and sets the marker in a second transaction, where today it sets the marker first; and the marker carries the model of the backend that is active, not one fixed name. Which entities count as unembedded (those the embed step selects) and the separate recorded reason when the embedding backend is unavailable. The count of a file whose commit fails on a file event. The queue rule that index jobs go ahead of other jobs and that a long job yields between its units, so that a commit is not held behind a model pass. How a reader sees the old or the new set during a commit is the store's ordinary transaction isolation and needs no new mechanism."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [],
+          "internal": "The by-file and by-repository index of entity rows, its migration step that builds it for an existing store, and its upkeep. No single entity-row write exists today: there are seven raw put and remove sites across src/db/entities.ts and src/db/graph/migrations.ts, and the existing name index is kept in step by a helper each site must remember to call. This Story introduces one put and one remove function for entity rows that maintain the name index and the new index together, routes every raw site through them, and adds a test that fails when a raw put or remove appears outside them. Upkeep therefore sits beneath every caller, so that neither today's writers nor the file commit need to know of it and this Story does not depend on s2. The two reads (findEntitiesByFile, listEntitiesForRepo) keep their results and their callers; a new existence check answers whether a repository holds any entity, and the analyzer's scope check uses it."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [],
+          "internal": "The cause, which ISSUE-0d577569 records as not known, was reproduced on 2026-10-11 and is not the system's semaphore limit, which the library's message names, but the loss of the daemon's own file lock on the store's lock file, after which another process that opens and closes the store removes the store's semaphores; the daemon's next write then fails with the library's message about the limit, and its exit hangs in the library's close. What in the daemon closes a second descriptor on the lock file is not yet identified. First, therefore, the remedy that does not depend on finding it: the live store is opened by the daemon alone, and any other process is refused it. Second, a bound on the whole shutdown including the store's close, so that a close that hangs ends in an exit. Third, recording a store failure of this kind and stating it in the daemon's status. None of this is consumed by another Story."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [],
+          "internal": "The refusal, with a named error and its own code, of a search or analyze request about a repository whose status is indexing, at the analyzer's scope check and at the daemon's search requests, carrying the status and how far the run has got (files done of files selected, and when it began), read from the indexer's running job; the tools that rest on the analyzer (the workflow steps, triage, code review) pass that error on as it is. The order of the analyzer's run: the refusal of a scope the index does not hold comes before a size is announced, or the announcement says the size could not be counted. The named cause and error code for a failed read of the last-indexed time and for a failed lookup, and the three other defects of ISSUE-e2bcadd9 (the wrong provider named, the scope resolved before the cache, and failure text matched inside echoed output). This Story does not read IndexState: it works with the checks the analyzer has today, so that it stays independent of s1."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The in-process matcher of the gitignore grammar over nested ignore files and its conformance test against git; the move onto the one filter of every site that reads the list today in src/indexer/index.ts (the full walk, the start-up scan for changed files, the file event, the clean-up pass, and the two places that seed the list when a repository is registered), of the watcher, and of the analyzer's reader, its two exploration walkers and its infra walker (src/analyze/runtimes/infra/_shared.ts), each of which has its own list of names today, and of the indexer's source-root detection (src/indexer/source-roots.ts), whose own list would otherwise hide a package in a directory the filter includes; a search of the source for such lists found five more, in the daemon's four file-search tools (glob, grep, list-dir, recent under src/daemon/tools/builtins/search) and in the review probe (src/workflow/review/probe.ts), which search the working tree as text, do not decide what the index holds, and are deliberately left as they are; the filter keeps answering for a directory that holds an included file, as the analyzer's reader does now; the retirement of the bare-name list and of the ignore entry in the repository's .insrc config; the two built-in exclusions (generated or minified files, the .insrc directory) applied inside the filter so that the full walk and the file event no longer differ on them; the handling of a change to an ignore file as an event that removes and adds files, and the comparison by content hash of the clone's exclude file and the global ignore file, which the watcher cannot see, whenever the filter is used; the queued step that proposes a root ignore file with the cheap-tier model when a repository is added without one, its fallback, and the rule that an existing file is never written. Two points were decided by the stakeholder: the filter honours all three of git's ignore sources (the .gitignore files, the clone's exclude file, the user's global ignore file), and a file git tracks is indexed even when a rule matches it, so the filter takes git's list of tracked files as an input and a plain folder is filtered by the rules alone."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The grouping of a complete repository's code entities into subsystems, its determinism, the tables for membership, connections and summaries and their migration step; the queued pass and its trigger on a new generation; the cheap-tier summary of a subsystem whose membership changed; the daemon request that returns subsystems; the addition of subsystem context to the analyzer's context builder; the statement that groups rest on an incomplete or older graph. Which relationships count toward grouping, and with what weight by evidence, is decided here."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "One reader per added language (Rust, C#, C, C++) in the existing parser registry with a guarded load, as the Kotlin reader has; the structured reading of SQL in place of the whole-file document, keeping the document entity for retrieval; any entity kinds this needs, appended to the fixed byte table without renumbering; the additions to the Language union; the daemon request that lists the languages read and why any was skipped. Each language can be delivered on its own."
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The reading of links and references between documents, and from a document to code, as relationships of the existing REFERENCES kind written in the file commit with evidence 'extracted'; the queued mid-tier pass over new or changed documents and its own table of model-proposed relationships; the hand-checked set, the measurement, and the recorded figures that switch the capability on or leave it off; the merging of model-proposed relationships into reads with evidence 'model'; the status line when no CLI provider is available."
+        },
+        {
+          "storyId": "s11",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+        },
+        {
+          "storyId": "s12",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+        },
+        {
+          "storyId": "s13",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private implementation of s13: Settling file changes does work proportional to the changed files, never a scan of the repository or the store"
+        }
+      ],
+      "rolloutPhase": "Phase D — evidence and more languages",
+      "nonFunctional": {
+        "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows. A file commit is one write transaction whose size is bounded by one file. A first full index holds more pending rows than today until the cross-file pass runs, and that pass does more work; this is accepted under the accuracy rule. Index jobs take precedence in the queue and a derived pass yields between its units of work, so a commit waits for at most one unit of a pass. Model calls are serial; the mid-tier pass sends only new or changed documents. Vector writes keep the plain insert for entities first stored in the same commit, so a first full index writes vectors at today's cost; the upsert, which costs more against a large vector table, is used only for changed entities and for the backfill, and Story s2's design measures it on this repository.",
+        "security": "No store is opened outside the daemon and no model is reached except through the local provider or the CLI providers. The ignore-file proposal sends the model file names and manifest names, not file contents, and writes into the user's repository only when no root ignore file exists. Document text sent to the mid-tier model goes through the user's own CLI session, as other mid-tier calls do.",
+        "observability": "Repository status carries the completeness counts and the reason a repository is incomplete. A relationship the store refuses is logged at warn with its reason and counted, not logged at debug. A fallback ignore file, a skipped language reader, a store failure after its locks were taken away, and a model-proposed capability that is off each state their cause where status is read. Each derived row carries the generation it was computed from.",
+        "durability": "The file commit is atomic in LMDB: after a crash a file holds its old rows or its new rows. Vectors are written after the commit and may be missing after a crash; the gap is recorded by an empty embedding marker, checked against the vector table on open, and backfilled, and the repository reads as incomplete until it is, unless the embedding backend is unavailable, which is reported as its own reason. The IndexState fields that the tables can answer are recounted when the store is opened; the rest, including the paths of files that could not be committed, are persisted in the state row and survive a restart. Every new table and value arrives by a migration step applied on open; no existing key or kind byte changes, so an older store is brought forward without a re-index. Derived tables can be dropped and recomputed without loss."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "RelationEvidence",
+          "signature": "type RelationEvidence = 'unknown' | 'extracted' | 'inferred' | 'chosen' | 'model';",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "How a relationship was established (sc3). 'unknown' = stored before this change (empty row value) or an unrecognised byte; 'extracted' = read directly from the source text (the per-file resolver, the manifest step); 'inferred' = established by resolution across files (the cross-file pass, the endpoint passes); 'chosen' = one target picked among several candidates, reserved and never written by this Epic; 'model' = proposed by a model (written by s10, not here)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "src/shared/types.ts:696 widens from 'unknown' alone to the five values; RelationWrite.evidence keeps its type name"
+          ]
+        },
+        {
+          "name": "RelationRead",
+          "signature": "interface RelationRead { from: string; kind: RelationKind; to: string; evidence: RelationEvidence }",
+          "parameters": [],
+          "returns": {
+            "type": "interface",
+            "meaning": "sc3's read shape. In this Story it is realised on the single-kind neighbour reads as the returned entity plus its evidence (the request supplies from/kind; the entity is `to` or `from`), since an edge key is unique per (from, kind, to)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "exported from src/shared/types.ts for s8/s10 to consume"
+          ]
+        },
+        {
+          "name": "upsertResolvedRelationsInTxn",
+          "signature": "function upsertResolvedRelationsInTxn(s: GraphStore, relations: readonly Relation[], now?: number): RelationWriteCounts",
+          "parameters": [
+            {
+              "name": "relations",
+              "type": "readonly Relation[]",
+              "purpose": "each Relation may now carry `evidence?: RelationEvidence`; its byte is written as the value of both edge rows",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RelationWriteCounts",
+            "meaning": "unchanged"
+          },
+          "errors": [
+            {
+              "type": "none new",
+              "condition": "an unrecognised evidence string is written as empty (reads 'unknown') and logged; it never refuses the relationship"
+            }
+          ],
+          "preconditions": [
+            "called inside the caller's write transaction (unchanged)"
+          ],
+          "postconditions": [
+            "a stored relationship's out_edge and in_edge rows both hold the evidence byte (empty when the relation carried none)",
+            "a relationship kept pending because its target is not stored keeps its evidence in the pending row's meta.evidence",
+            "rewriting an existing edge overwrites its byte with the new evidence"
+          ]
+        },
+        {
+          "name": "promoteResolvedBatch",
+          "signature": "function promoteResolvedBatch(db: DbClient, items: ReadonlyArray<{ unresolved: UnresolvedRelation; targetEntityId: string; exportName?: string | undefined; evidence?: RelationEvidence | undefined }>): Promise<PromoteResult>",
+          "parameters": [
+            {
+              "name": "items[].evidence",
+              "type": "RelationEvidence | undefined",
+              "purpose": "the evidence to store; when absent, the pending row's stored meta.evidence is used, else empty ('unknown')",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<PromoteResult>",
+            "meaning": "unchanged"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the promoted edge rows hold the item's evidence, or the row's carried evidence when the item has none",
+            "a target still absent keeps the row awaiting with its evidence in meta"
+          ]
+        },
+        {
+          "name": "promoteToResolved",
+          "signature": "function promoteToResolved(db: DbClient, unresolved: UnresolvedRelation, targetEntityId: string, evidence?: RelationEvidence): Promise<void>",
+          "parameters": [
+            {
+              "name": "evidence",
+              "type": "RelationEvidence",
+              "purpose": "passed through to promoteResolvedBatch",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "unchanged"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "same as promoteResolvedBatch for one item"
+          ]
+        },
+        {
+          "name": "returnEdgeToPendingInTxn",
+          "signature": "function returnEdgeToPendingInTxn(s: GraphStore, fromU64: bigint, kindByte: number, toU64: bigint): boolean",
+          "parameters": [],
+          "returns": {
+            "type": "boolean",
+            "meaning": "unchanged"
+          },
+          "errors": [],
+          "preconditions": [
+            "called before the edge rows are deleted (unchanged order in commitFile and deleteEntitiesForRepo)"
+          ],
+          "postconditions": [
+            "the awaiting row it writes carries the returned edge's evidence in meta.evidence, so Pass 0 restores it with the same evidence"
+          ]
+        },
+        {
+          "name": "resolveRelations",
+          "signature": "function resolveRelations(relations: Relation[], filePath: string, repo: string, entities?: Entity[]): Relation[]",
+          "parameters": [],
+          "returns": {
+            "type": "Relation[]",
+            "meaning": "each relation it resolves (parser-resolved, same-file CALLS, relative IMPORTS to a file) carries evidence 'extracted'; relations it leaves pending carry no evidence"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "no relation it returns as resolved lacks evidence"
+          ]
+        },
+        {
+          "name": "writeOfRelation",
+          "signature": "function writeOfRelation(r: Relation): RelationWrite",
+          "parameters": [],
+          "returns": {
+            "type": "RelationWrite",
+            "meaning": "evidence = r.evidence ?? 'unknown' (today always 'unknown')"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "a resolver decision reaches the file commit with its evidence"
+          ]
+        },
+        {
+          "name": "relationOfWrite",
+          "signature": "function relationOfWrite(w: RelationWrite): Relation",
+          "parameters": [],
+          "returns": {
+            "type": "Relation",
+            "meaning": "carries w.evidence onto the Relation (omitted when 'unknown') instead of dropping it"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the commit's in-transaction writers receive the evidence"
+          ]
+        },
+        {
+          "name": "findCallers",
+          "signature": "function findCallers(db: DbClient, entityId: string): Promise<Array<Entity & { evidence: RelationEvidence }>>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<Array<Entity & { evidence: RelationEvidence }>>",
+            "meaning": "each caller with the evidence of its CALLS relationship to the entity"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "callers stored before this change carry 'unknown'",
+            "findCallees, findDefinedIn and findImports are reshaped the same way (one kind each, so one relationship per neighbour)"
+          ]
+        },
+        {
+          "name": "findCallees",
+          "signature": "function findCallees(db: DbClient, entityId: string): Promise<Array<Entity & { evidence: RelationEvidence }>>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<Array<Entity & { evidence: RelationEvidence }>>",
+            "meaning": "each callee with the evidence of the CALLS relationship"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "outNeighbors",
+          "signature": "function outNeighbors(from: bigint, opts?: NeighborOpts): Promise<bigint[]>; function outNeighbors(from: bigint, opts: NeighborOpts & { withEvidence: true }): Promise<Array<{ u64: bigint; kind: RelationKind; evidence: RelationEvidence }>>",
+          "parameters": [
+            {
+              "name": "opts.withEvidence",
+              "type": "true",
+              "purpose": "return one row per stored relationship (not deduped across kinds) with its kind and evidence, for the analyzer's class-hierarchy and import-graph lookups",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "see signature",
+            "meaning": "without withEvidence: unchanged; inNeighbors mirrors it"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "traversals (bfs/dfs/closure/scc) and every existing caller keep the unchanged id-only form"
+          ]
+        },
+        {
+          "name": "search.callers",
+          "signature": "IPC 'search.callers' { entityId: string } -> Array<Entity & { evidence: RelationEvidence }>",
+          "parameters": [],
+          "returns": {
+            "type": "Array<Entity & { evidence: RelationEvidence }>",
+            "meaning": "additive field on each returned entity; search.callees and search.callers_nhop (each hop's caller) likewise, and the graph_callers / graph_callees tools include evidence in each short entity"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "no field is removed or renamed; clients that ignore evidence are unaffected"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "out_edge / in_edge row value",
+        "change": "field-modify",
+        "details": "The value of both rows of a stored relationship, today always an empty buffer, becomes the evidence: empty or 0x00 = 'unknown', 0x01 = 'extracted', 0x02 = 'inferred', 0x03 = 'chosen', 0x04 = 'model'; any other byte decodes to 'unknown'. Both rows of an edge always hold the same byte. Keys, kind bytes and SCHEMA_VERSION are unchanged and no migration step is added: every existing row reads 'unknown' until its relationship is next written (lc1, ac3). Encoding/decoding lives beside the other row codecs in src/db/graph/codec.ts.",
+        "schemaDiff": "out_edge[from|kind|to] = <> (empty)  ->  out_edge[from|kind|to] = <1 byte evidence | empty>\nin_edge[to|kind|from]   = <> (empty)  ->  in_edge[to|kind|from]   = <same byte>",
+        "callSites": [
+          "src/db/relations.ts:183-184",
+          "src/db/relations.ts:564-565",
+          "src/db/graph/edges.ts:41-60",
+          "src/db/search.ts:327-348"
+        ]
+      },
+      {
+        "entity": "Relation",
+        "change": "field-add",
+        "details": "Optional `evidence?: RelationEvidence | undefined` on the writers' Relation shape (src/shared/types.ts), set by the per-file resolver, the cross-file pass's Pass 1 rewire and the manifest step; absent means the writer does not know (stored empty).",
+        "callSites": [
+          "src/indexer/resolver.ts:63-118",
+          "src/indexer/cross-file-resolver.ts:379",
+          "src/indexer/index.ts:1245-1258",
+          "src/db/file-commit.ts:19",
+          "src/db/file-commit.ts:27"
+        ]
+      },
+      {
+        "entity": "UnresolvedRow.meta.evidence",
+        "change": "field-add",
+        "details": "A pending row may carry `evidence` in its existing free-form meta record: written when a resolved relationship is kept awaiting an absent target, when promoteResolvedBatch keeps a row awaiting, and when returnEdgeToPendingInTxn returns an edge (its byte decoded). Pass 0 promotes such a row with the carried value; Pass 1b, Pass 2 and the endpoint passes pass 'inferred' explicitly. No stored form changes (meta is already free-form).",
+        "callSites": [
+          "src/db/relations.ts:682",
+          "src/db/relations.ts:552-556",
+          "src/db/relations.ts:603-610",
+          "src/indexer/cross-file-resolver.ts:221",
+          "src/indexer/cross-file-resolver.ts:482",
+          "src/indexer/cross-file-resolver.ts:585",
+          "src/indexer/external-endpoints.ts:142",
+          "src/indexer/messaging-endpoints.ts:141"
+        ]
+      },
+      {
+        "entity": "usage.example / class-hierarchy / import-graph exploration results",
+        "change": "field-add",
+        "details": "Each listed caller (usage.example), parent/child (class-hierarchy) and importer/importee (import-graph) carries its relationship's evidence, and the exploration's summary states how many of the listed relationships are inferred or chosen and how many are of unknown origin, so the synthesized answer can say which (ac4).",
+        "callSites": [
+          "src/analyze/explore/usage-example.ts:146-183",
+          "src/analyze/explore/class-hierarchy.ts:125-128",
+          "src/analyze/explore/import-graph.ts:134-151"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Defines the five-value RelationEvidence and RelationRead in src/shared/types.ts, stores evidence as the one-byte value of both edge rows, writes it at every writer of a stored relationship (per-file resolver and manifest step 'extracted'; cross-file Pass 1/1b/2 and both endpoint passes 'inferred'; Pass 0 the carried value; 'chosen' never written), and returns it on the caller/callee/defined-in/imports reads, the daemon's search.callers/callees/callers_nhop, the graph tools and the analyzer's usage.example, class-hierarchy and import-graph lookups."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Fills RelationWrite.evidence (which s2 defined as 'unknown') through writeOfRelation from the resolver's decision, and relationOfWrite stops dropping it, so the file commit's in-transaction writers store it. The commit's shape and transaction are unchanged."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "No IndexState field changes. Promotions keep advancing the generation as today; s8 and s10 read evidence and IndexState together."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A stored edge row holds a byte outside the defined values (written by a newer daemon, or damaged)",
+          "detection": "The evidence decoder in src/db/graph/codec.ts meets a value that is not empty and not 0x00-0x04",
+          "response": "Decode it as 'unknown'; never throw from a read",
+          "userImpact": "The relationship reads as of unknown origin rather than failing the request",
+          "recoverable": true
+        },
+        {
+          "scenario": "The out_edge and in_edge rows of one relationship hold different bytes (a crash cannot cause it -- both are written in one transaction -- but a future writer could)",
+          "detection": "Not checked on read; each read takes the byte of the row it iterates (callers read in_edge, callees out_edge)",
+          "response": "Both writers always write the same byte to both rows; a test asserts both rows of every written edge agree",
+          "userImpact": "None while the writers hold the rule",
+          "recoverable": true
+        },
+        {
+          "scenario": "A writer passes an evidence string that is not one of the five values (a typo through an untyped path, e.g. JSON from a test or a meta record)",
+          "detection": "The encoder finds no byte for the string",
+          "response": "Store the edge with an empty value (reads 'unknown'), log at warn with the edge, never refuse the relationship",
+          "userImpact": "The relationship is stored; its origin reads unknown",
+          "recoverable": true
+        },
+        {
+          "scenario": "A pending row's meta.evidence is not a valid value (an older or hand-edited row)",
+          "detection": "Pass 0 reads meta.evidence and the encoder finds no byte",
+          "response": "Promote with empty evidence ('unknown')",
+          "userImpact": "The completed relationship reads unknown instead of a guessed origin",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A store written before this change (every edge value empty), opened by the new daemon",
+          "expected": "No migration runs; every read returns evidence 'unknown'; no re-index is needed (ac3)"
+        },
+        {
+          "input": "A file refreshed after the change whose relationships were stored before it",
+          "expected": "The file commit sweeps and rewrites its outgoing relationships, so they now carry 'extracted' or, once the cross-file pass runs, 'inferred'; incoming relationships other files hold keep 'unknown' until those files are refreshed"
+        },
+        {
+          "input": "A call that matches several candidate targets across files",
+          "expected": "It stays a pending row classed 'ambiguous' with its candidates (s1); no edge is written, so no 'chosen' value appears anywhere (ac2)"
+        },
+        {
+          "input": "A same-file call whose name matches two entities of the file",
+          "expected": "The per-file resolver leaves it pending (unchanged); if the cross-file pass later resolves it uniquely it is stored 'inferred'"
+        },
+        {
+          "input": "A relative import resolved by the per-file resolver to a file not yet stored",
+          "expected": "Kept awaiting the file id with meta.evidence 'extracted'; Pass 0 later stores it 'extracted', not 'inferred'"
+        },
+        {
+          "input": "An incoming relationship whose target entity is removed by a file commit, then the entity comes back",
+          "expected": "returnEdgeToPendingInTxn records the edge's evidence on the awaiting row; Pass 0 restores the edge with the same evidence"
+        },
+        {
+          "input": "The same relationship written twice with different evidence (e.g. a file refresh rewrites an edge the cross-file pass stored)",
+          "expected": "The last write's byte wins on both rows"
+        },
+        {
+          "input": "A neighbour reached by two kinds in an outNeighbors({ withEvidence: true }) read",
+          "expected": "One row per stored relationship, each with its own kind and evidence (not deduped); the id-only form keeps deduping as today"
+        },
+        {
+          "input": "An analyzer usage.example answer where every caller is 'unknown' (an un-refreshed store)",
+          "expected": "The summary says the callers' origin is unknown rather than implying they were read from the source"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Edge keys, relation kind bytes and SCHEMA_VERSION do not change; only the row value is used, and an empty value (every existing row) reads 'unknown'",
+          "source": "c1"
+        },
+        {
+          "text": "Both rows of a stored relationship are written in the same transaction by the same writer (upsertResolvedRelationsInTxn, promoteResolvedBatch); the evidence byte is written by those same two puts",
+          "source": "c1"
+        },
+        {
+          "text": "RelationWrite keeps its shape; the file commit remains one transaction and its result counts are unchanged",
+          "source": "c2"
+        },
+        {
+          "text": "A relationship whose target is not stored is never dropped: it is kept pending (now with its evidence in meta), as s1 established",
+          "source": "c5"
+        },
+        {
+          "text": "Traversals (bfs, dfs, transitiveClosure, scc, unreachable) and every id-only neighbour read keep their results and cost; only the opt-in withEvidence form and the single-kind find* reads read row values",
+          "source": "c6"
+        },
+        {
+          "text": "The daemon's caller/callee responses only gain a field; no field is removed or renamed, so the IDE clients keep working",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The evidence byte encoding and decoding, including the empty and unrecognised values",
+          "subjects": [
+            "evidence codec in src/db/graph/codec.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The writers store the byte on both edge rows, carry it through pending, and the reads return it, against a real temporary graph store",
+          "subjects": [
+            "upsertResolvedRelationsInTxn",
+            "promoteResolvedBatch",
+            "returnEdgeToPendingInTxn",
+            "findCallers",
+            "findCallees",
+            "outNeighbors withEvidence"
+          ],
+          "fixturesNeeded": [
+            "temporary graph store (setGraphStorePath) and useTemporaryLance, as src/db/__tests__/relations-in-txn.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Through the real IndexerService on real files: the per-file resolver stamps 'extracted', the cross-file pass 'inferred', Pass 0 keeps the carried value, an ambiguous call writes no edge",
+          "subjects": [
+            "resolveRelations",
+            "cross-file Pass 0/1/1b/2",
+            "manifest DEPENDS_ON"
+          ],
+          "fixturesNeeded": [
+            "two-file TypeScript repository with a same-file call, a cross-file call, an ambiguous name and a relative import of a file indexed second"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "A store written before the change (empty edge values) is read with evidence 'unknown' and no migration",
+          "subjects": [
+            "findCallers on a pre-change store"
+          ],
+          "fixturesNeeded": [
+            "edges written with an empty value directly through the store, as an older daemon wrote them"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The daemon's caller/callee requests and the analyzer's lookups return and report evidence",
+          "subjects": [
+            "search.callers",
+            "search.callees",
+            "search.callers_nhop",
+            "usage.example",
+            "class-hierarchy",
+            "import-graph"
+          ],
+          "fixturesNeeded": [
+            "handler runtime over a seeded store, as existing handler tests do"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: a file with a same-file call and a call resolved across files, indexed through IndexerService -- findCallees returns the first 'extracted' and the second 'inferred'",
+            "integration: both edge rows of every written relationship hold the same evidence byte"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: a call matching several candidate targets stays a pending row classed 'ambiguous' with its candidates and no edge exists for it; no stored edge in the fixture decodes to 'chosen'"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: edges written with an empty value (a pre-change store), reopened -- findCallers/findCallees return them with evidence 'unknown'; SCHEMA_VERSION is unchanged and no migration step runs",
+            "unit: empty, 0x00 and an unrecognised byte decode to 'unknown'"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: usage.example over a target with one 'extracted', one 'inferred' and one 'unknown' caller -- each listed caller carries its evidence and the summary states how many are inferred or chosen and how many of unknown origin",
+            "integration: search.callers returns each caller with its evidence field"
+          ]
+        }
+      ],
+      "testFramework": "node:test with node:assert/strict, run with `npx tsx --test` (co-located __tests__ files)"
+    },
+    "migration": {
+      "stateBefore": "Every stored relationship's out_edge and in_edge rows hold an empty value, written at the only two edge-write sites (src/db/relations.ts:183-184, :564-565); RelationEvidence is the single value 'unknown' (src/shared/types.ts:696) and the file commit drops it (src/db/file-commit.ts:19); reads yield neighbour ids only (src/db/graph/edges.ts:41-60) and the caller/callee requests return plain entities (src/db/search.ts:186-212, src/daemon/handler-runtime.ts:956-966).",
+      "stateAfter": "Both rows of every relationship written from now on hold a one-byte evidence value; rows written before keep their empty value and read 'unknown'; pending rows carry the evidence of the relationship they hold; the single-kind reads, the daemon's caller/callee requests, the graph tools and the analyzer's usage.example, class-hierarchy and import-graph lookups return evidence beside each relationship.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Widen RelationEvidence to its five values and add RelationRead and the optional Relation.evidence; add the byte codec. Nothing reads or writes them yet.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Make the two edge writers write the evidence byte (empty when a relation carries none) and carry evidence through pending rows and the return of an edge to pending. A daemon rolled back to the previous build ignores the byte (it never reads edge values), so rows written in this step stay valid for it.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Stamp evidence at each decision point: the per-file resolver and the manifest step 'extracted'; cross-file Pass 1, 1b, 2 and both endpoint passes 'inferred'; Pass 0 the carried value; and let the file commit carry it (writeOfRelation / relationOfWrite).",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Return evidence from the single-kind find* reads and the opt-in outNeighbors/inNeighbors withEvidence form, then add the field to search.callers / search.callees / search.callers_nhop and the graph tools, and mark it in the analyzer's lookups.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "No data step: existing rows are not rewritten; each relationship takes its evidence the next time its file is indexed or the cross-file pass writes it.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No key, kind byte or SCHEMA_VERSION change and no migration step: a store written before the change opens unchanged and its relationships read 'unknown'; an older daemon opening a store written after it ignores edge values, as it does today. The daemon's search.callers / search.callees / search.callers_nhop responses and the graph tools only gain an `evidence` field on each entity, so the VS Code and JetBrains clients and MCP callers that ignore it are unaffected. RelationWrite keeps its shape; Relation.evidence is optional, so every existing writer compiles and stores 'unknown' until it is updated.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Byte on the edge row; reads annotate the returned entities",
+        "oneLineSummary": "Evidence is the one-byte value of both edge rows, passed into the two writers; the existing caller/callee reads return each neighbour with the evidence of the relationship that reached it.",
+        "approach": "RelationEvidence (sc3) gains 'extracted' | 'inferred' | 'chosen' | 'model'. Relation gets an optional evidence field; the two edge writes in src/db/relations.ts write its byte (empty when absent, so a writer not yet updated still reads 'unknown'), upsertResolvedRelationsInTxn takes it from the relation and promoteResolvedBatch from each item. A relationship kept pending stores its evidence in the pending row's meta, Pass 0 promotes with the stored value, and returnEdgeToPendingInTxn copies the edge's byte into the row it creates. The per-file resolver marks its decisions 'extracted', the cross-file passes and both endpoint passes 'inferred', the manifest step 'extracted'; writeOfRelation/relationOfWrite carry it through the file commit. Reads: neighborsSync yields the byte alongside the neighbour; findCallers/findCallees (and the other neighbour reads in src/db/search.ts) return Entity values carrying the evidence of the reaching relationship, so search.callers/callees, callers_nhop and the graph tools return it unchanged in shape apart from the added field; usage.example marks callers whose relationship is inferred or chosen.",
+        "pros": [
+          "One read path: every existing consumer of findCallers/findCallees gets evidence without a second lookup",
+          "No new store operation; the HLD's exact shape (byte on the row, empty = unknown, no migration)",
+          "Smallest change that meets ac1-ac4"
+        ],
+        "cons": [
+          "An entity reached by two relationships of different evidence must pick one to show (strongest or a list)",
+          "Entity grows an optional relationship-derived field that only some reads fill"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Byte on the edge row; a separate RelationRead API",
+        "oneLineSummary": "Same storage and writers as a1, but reads go through a new relations-of operation returning sc3's RelationRead (from, kind, to, evidence), and consumers that must show evidence are moved onto it.",
+        "approach": "Storage, writers, pending carry and evidence decisions as in a1. A new store read, relationsOf(entityId, kinds, direction) in src/db/search.ts, returns RelationRead[] with one row per stored relationship; findCallers/findCallees keep returning plain entities. The daemon's search.callers/callees and callers_nhop add the relationship list to their answer (or a new request returns it), the graph tools and usage.example call relationsOf and join the entities themselves.",
+        "pros": [
+          "Matches sc3's RelationRead interface literally: one row per relationship, no choice between two evidences of the same neighbour",
+          "Leaves Entity untouched"
+        ],
+        "cons": [
+          "Every consumer that must show evidence needs a second call and a join, so two read paths exist",
+          "More request and tool shape changes to keep in step with the IDE clients"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Also meets every criterion, but every consumer that shows evidence needs a second read and a join, and the daemon requests and tools change shape more than a1's added field; its advantage (no choice between evidences of one neighbour) buys nothing for the single-kind reads the Story covers."
+      },
+      {
+        "id": "a3",
+        "name": "Evidence in a side table keyed by edge",
+        "oneLineSummary": "Edge rows stay empty; a new sub-database maps an edge key to its evidence byte, written beside every edge write and read on demand.",
+        "approach": "A new LMDB sub-database edge_evidence keyed like out_edge holds the byte; the two writers put it in the same transaction, every edge delete removes it, reads look it up per neighbour; a migration step creates the empty table (absent row = unknown).",
+        "pros": [
+          "Edge rows and their codec are untouched"
+        ],
+        "cons": [
+          "Contradicts the HLD (evidence is the value of the relationship row) and adds a migration step the HLD says is not needed",
+          "Every edge removal (sweeps, detach, return-to-pending) must also remove the side row, a new way to drift out of step",
+          "An extra read per neighbour"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Violates the HLD's stored form for sc3 and adds a second structure every edge removal must keep in step with."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "NOTE (s8 cd3 partial): no new error type is introduced; an invalid evidence value is stored empty (reads 'unknown') and logged, never refused, following s1's never-drop rule.",
+      "NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc1-sc3; the Epic constraints k1, k5 and k6 are the ones those criteria operationalize and were not scored separately.",
+      "NOTE (s8 sbdry3 interpretation): the HLD's 'carrying of evidence through the store's traversal reads' is read as the reads that return relationships (the single-kind find* reads and the opt-in neighbour form with evidence); closure/BFS/SCC traversals return entity sets and stay id-only. Confirm or widen before the plan."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: the stored relationship row and its value",
+      "quotedText": "A stored relationship is a pair of LMDB keys (out_edge from|kind|to, in_edge to|kind|from); its value is written as an empty buffer at exactly two sites, both in src/db/relations.ts: upsertResolvedRelationsInTxn (src/db/relations.ts:165-190, puts at :183-184) and promoteResolvedBatch (src/db/relatio"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: the evidence type as it stands",
+      "quotedText": "src/shared/types.ts:696 declares `type RelationEvidence = 'unknown'` (added by Story s2 t2) and RelationWrite carries `readonly evidence: RelationEvidence` (src/shared/types.ts:712). src/db/file-commit.ts maps RelationWrite to the writers' Relation shape (relationOfWrite, :19) and back (writeOfRelat"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example: where a relationship is decided read-from-source",
+      "quotedText": "resolveRelations (src/indexer/resolver.ts:63-118) is the per-file resolver: a relation the parser already marked resolved (DEFINES, CONTAINS, external-module IMPORTS) passes through; a CALLS whose callee name matches exactly one entity of the same file is resolved to it; a relative IMPORTS whose spe"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example: where a relationship is decided by resolution across files",
+      "quotedText": "The cross-file pass (src/indexer/cross-file-resolver.ts) writes stored relationships in four places: Pass 0 runPass0 (:204, promoteResolvedBatch at :221) completes rows whose awaited target is now stored — those rows may carry a per-file decision (a relative import awaiting its file) or an edge retu"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace: pending rows and the return of an edge to pending",
+      "quotedText": "A pending row (UnresolvedRow, src/db/graph/codec.ts:225-240) has a free-form meta record. A resolved relationship whose target is not stored is kept as an awaiting row built from the relation's meta (awaitingRowFor, src/db/relations.ts:682); promoteResolvedBatch keeps an absent target awaiting with "
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: where relationships are read",
+      "quotedText": "neighborsSync (src/db/graph/edges.ts:41-60) iterates the edge keys and yields neighbour u64s only; outNeighbors/inNeighbors (src/db/graph/edges.ts:87-117) dedupe them. findCallers/findCallees/findDefinedIn/findImports (src/db/search.ts:186-212) go through neighborEntities (src/db/search.ts:327-348) "
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate: tests to extend",
+      "quotedText": "Relationship writers: src/db/__tests__/relations-lmdb.test.ts, relations-in-txn.test.ts, relations-awaiting-target.test.ts, relations-pending-upkeep.test.ts; the file commit: src/db/__tests__/file-commit.test.ts; the per-file resolver: src/indexer/__tests__/resolver-file-target.test.ts, resolver-pyt"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "HLD-c2ba6fa62a148ed1 sc3 RelationEvidence and the s7 boundary"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "DEF-c2ba6fa62a148ed1 Story s7 acceptance criteria ac1-ac4 and lc1"
+    },
+    {
+      "id": "c10",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge: a1 chosen"
+    },
+    {
+      "id": "c11",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify: cd3 partial, alt2 partial, sbdry3 interpretation note"
+    }
+  ]
+}

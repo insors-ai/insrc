@@ -15,7 +15,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -609,6 +609,25 @@ test('a create or update file job for a file under an ignored directory indexes 
 	await upsertEntities(null, [leftover]);
 	await svc.processJob({ kind: 'file', filePath: ignored, event: 'delete' });
 	assert.equal(await exists(leftover), false);
+});
+
+test('ac6: adding a repo with no root ignore file results in one existing before the first index runs', async () => {
+	const fresh = mkdtempSync(join(tmpdir(), 'insrc-2764-fresh-'));
+	try {
+		await addRepo(null, { path: fresh, name: '', addedAt: NOW, status: 'ready', lastIndexed: NOW });
+		const queue = new RecordingQueue();
+		const svc = new (class extends IndexerService {})(db, queue, standInWatcher(), undefined, 600_000);
+
+		await svc.addRepo(fresh);
+
+		// The ignore file exists before the queued full index is even looked
+		// at: addRepo() writes it (via proposeIgnoreFile) synchronously before
+		// returning, strictly earlier than any 'full' job the queue runs.
+		assert.equal(existsSync(join(fresh, '.gitignore')), true);
+		assert.deepEqual(queue.of(fresh), ['full']);
+	} finally {
+		rmSync(fresh, { recursive: true, force: true });
+	}
 });
 
 // ---------------------------------------------------------------------------

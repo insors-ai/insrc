@@ -40,7 +40,7 @@ import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
 import { selectFile } from './file-selection.js';
 import { Watcher } from './watcher.js';
-import { createFileFilter, isGeneratedOrMinifiedFile, type FileFilter } from './file-filter.js';
+import { createFileFilter, isGeneratedOrMinifiedFile, proposeIgnoreFile, type CheapTierModel, type FileFilter } from './file-filter.js';
 import { IndexQueue } from '../daemon/queue.js';
 import { getLogger } from '../shared/logger.js';
 import type { ConfigStore } from '../config/store.js';
@@ -68,6 +68,13 @@ const log = getLogger('indexer');
 function listRepoFiles(filter: FileFilter): string[] {
   return filter.listFiles();
 }
+
+/** Used in place of a real cheap-tier model when the daemon has not wired
+ *  one in: `proposeIgnoreFile` treats the immediate rejection exactly like
+ *  a real model failure, writing the plain fallback ignore file (ac7). */
+const NO_MODEL: CheapTierModel = {
+  complete: () => Promise.reject(new Error('no cheap-tier model configured')),
+};
 
 function contentHash(source: string): string {
   return createHash('sha256').update(source).digest('hex').slice(0, 16);
@@ -157,6 +164,8 @@ export class IndexerService {
    *  (a repo walk + a git subprocess call) on every event. Refreshed on an
    *  ignore-file edit (Story s6/t10) and on every full index. */
   private readonly repoFilters: Map<string, FileFilter> = new Map();
+  /** See the constructor's `cheapTierModel` parameter. */
+  private readonly cheapTierModel: CheapTierModel;
   /** The running document-summary sweep's progress (summarySweepProgress). */
   private sweepProgress: { repoPath: string; done: number; total: number } | undefined = undefined;
 
@@ -175,6 +184,11 @@ export class IndexerService {
     configStore?: ConfigStore | undefined,
     settleWindowMs: number = 2000,
     filePresence: FilePresenceCheck = statPresence,
+    /** The cheap-tier model `proposeIgnoreFile` asks when a newly-added
+     *  repository has no root ignore file (Epic c2ba6fa6 s6/ac6). Absent,
+     *  every repository still gets the plain fallback ignore file --
+     *  `proposeIgnoreFile` itself never fails the add either way. */
+    cheapTierModel?: CheapTierModel | undefined,
   ) {
     this.db             = db;
     this.queue          = queue;
@@ -183,6 +197,7 @@ export class IndexerService {
     this.configStore    = configStore ?? null;
     this.settleWindowMs = settleWindowMs;
     this.filePresence   = filePresence;
+    this.cheapTierModel = cheapTierModel ?? NO_MODEL;
   }
 
   /**
@@ -338,6 +353,12 @@ export class IndexerService {
   async addRepo(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'repo added, enqueuing full index');
     this.registeredRepos.add(repoPath);
+    // A repo with no root ignore file gets one before the FileFilter below
+    // reads it, so the first index already sees it (ac6, Epic c2ba6fa6 s6).
+    const proposal = await proposeIgnoreFile(repoPath, this.cheapTierModel);
+    if (proposal.written) {
+      log.info({ repo: repoPath, source: proposal.source, reason: proposal.reason }, 'repo added: root ignore file created');
+    }
     // FileFilter is the one rule (Epic c2ba6fa6 s6).
     await this.watcher.addRepo(repoPath, this.refreshedFileFilter(repoPath));
     this.queue.enqueue({ kind: 'full', repoPath });

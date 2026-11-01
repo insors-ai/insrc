@@ -8,6 +8,7 @@ export interface OwnedWork {
   stopAdmission(): void;
   pending(): number;
   drain(): Promise<void>;
+  /** Release drained resources only; this must never resume work. */
   close(): Promise<void>;
 }
 type State = 'ready' | 'draining' | 'closing' | 'closed' | 'failed';
@@ -78,7 +79,13 @@ export class EmbeddedMemoryService implements MemoryService {
         this.#stopAdmission();
         this.#models.stop();
         await this.#quiesce();
-        for (const work of this.#work) await work.close();
+        // All participants are quiescent. Attempt every release in dependency
+        // order, but retain the ownership guard if any cleanup is unverified.
+        let cleanupFailed = false;
+        for (const work of this.#work) {
+          try { await work.close(); } catch { cleanupFailed = true; }
+        }
+        if (cleanupFailed) throw new MemoryError('STORE_UNAVAILABLE', 'Owned resource cleanup could not be verified.');
         await this.#owner.close();
         this.#state = 'closed'; this.#log('memory.closed');
       } catch {

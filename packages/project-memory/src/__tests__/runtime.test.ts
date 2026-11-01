@@ -49,3 +49,19 @@ nativeTest(import.meta.url, 'foundation-data-methods-return-not-ready', async ()
     const reopened = await MemoryFactory.open(opts); await reopened.close();
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// A failure in one quiescent participant must not strand later resources.
+test('all-quiescent-participants-close-before-unverified-ownership-is-retained', async () => {
+  const events: string[] = []; let released = false;
+  const opts = options('/unused');
+  const work = [0, 1, 2].map(id => ({
+    stopAdmission() { events.push('stop' + id); }, pending() { return 0; },
+    async drain() { events.push('drain' + id); },
+    async close() { events.push('close' + id); if (id !== 1) throw Error('private cleanup error'); },
+  }));
+  const service = new EmbeddedMemoryService({ async assertOwned() {}, async close() { released = true; } }, new ModelDispatcher(opts.models, 1000), opts.logger, work);
+  const closing = service.close();
+  await assert.rejects(closing, (error: unknown) => error instanceof MemoryError && error.code === 'STORE_UNAVAILABLE' && !error.message.includes('private'));
+  assert.deepEqual(events, ['stop0', 'stop1', 'stop2', 'drain0', 'drain1', 'drain2', 'close0', 'close1', 'close2']);
+  assert.equal(released, false); assert.equal(service.close(), closing);
+});

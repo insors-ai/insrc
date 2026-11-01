@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after } from 'node:test';
 import { execFileSync } from 'node:child_process';
-import { mkdtemp, readFile, writeFile, rm, lstat, rename } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, writeFile, rm, lstat, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -53,7 +53,9 @@ nativeTest(import.meta.url, 'packed-native-missing-import-versus-open', async ()
   const native = join(dir, 'node_modules/fs-ext');
   await rename(native, native + '.unavailable');
   try {
-    await writeFile(join(dir, 'missing.mjs'), `import assert from 'node:assert/strict';\nconst before = process.eventNames().map(String).sort();\nconst { MemoryFactory } = await import('@insrc/project-memory');\nassert.deepEqual(process.eventNames().map(String).sort(), before);\nconst options = { dataDirectory: ${JSON.stringify(join(dir, 'missing-data'))}, models: { embeddingModel: 'x', embeddingDimension: 1, async complete() {}, async embed() {} }, policy: { async bind() {}, async admit() {} }, logger: { write() {} }, limits: { maxEventBytes: 1, segmentBytes: 2, maxPendingBytes: 3, modelTimeoutMs: 1000 } };\nawait assert.rejects(MemoryFactory.open(options), e => e.code === 'NOT_READY');\n`);
+    const unsafe = join(dir, 'unsafe-layout');
+    await mkdir(unsafe, { mode: 0o700 }); await writeFile(join(unsafe, 'index.lance'), 'unrelated');
+    await writeFile(join(dir, 'missing.mjs'), `import assert from 'node:assert/strict';\nconst before = process.eventNames().map(String).sort();\nconst { MemoryFactory } = await import('@insrc/project-memory');\nassert.deepEqual(process.eventNames().map(String).sort(), before);\nconst options = { dataDirectory: ${JSON.stringify(join(dir, 'missing-data'))}, models: { embeddingModel: 'x', embeddingDimension: 1, async complete() {}, async embed() {} }, policy: { async bind() {}, async admit() {} }, logger: { write() {} }, limits: { maxEventBytes: 1, segmentBytes: 2, maxPendingBytes: 3, modelTimeoutMs: 1000 } };\nawait assert.rejects(MemoryFactory.open({ ...options, dataDirectory: ${JSON.stringify(join(dir, 'unsafe-layout'))} }), e => e.code === 'INVALID_REQUEST');\nawait assert.rejects(MemoryFactory.open(options), e => e.code === 'NOT_READY');\n`);
     execFileSync(node22(), ['missing.mjs'], { cwd: dir, env, timeout: 10_000, stdio: 'pipe' });
   } finally { await rename(native + '.unavailable', native); }
 });

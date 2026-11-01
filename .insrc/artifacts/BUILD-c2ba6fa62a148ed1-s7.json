@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:07:14.344Z",
+    "updatedAt": "2026-11-01T19:11:49.297Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Evidence type widened to five values, RelationRead added, Relation.evidence optional; one-byte edge-row codec with empty/0x00/undefined bytes reading 'unknown' and invalid strings encoded empty and flagged.",
+    "summary": "Both edge writers store the evidence byte on both rows; invalid evidence stored empty with a warn; pending rows carry meta.evidence through awaiting and return-to-pending, and promotion stores the given or carried value.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S007/TESTS.md"
     },
@@ -26,37 +30,51 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:07:14.344Z"
+        "timestamp": "2026-11-01T19:11:49.297Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:07:14.344Z"
+        "timestamp": "2026-11-01T19:11:49.297Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/evidence-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:07:14.344Z"
+        "timestamp": "2026-11-01T19:11:49.297Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:07:14.344Z"
+        "timestamp": "2026-11-01T19:11:49.297Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:07:14.344Z"
+        "timestamp": "2026-11-01T19:11:49.297Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/relations-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:11:49.297Z"
+      },
+      {
+        "target": {
+          "file": "src/db/relations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:11:49.297Z"
       }
     ],
-    "commit": "71b4348d2"
+    "commit": "3537ca63c"
   }
 }

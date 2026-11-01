@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -22,3 +22,32 @@ Run at 2026-11-01T19:07:14.344Z on commit `71b4348d2`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/graph/__tests__/evidence-codec.test.ts` | 0 | 2 | 0.5 s |  |
+
+## t2
+
+Run at 2026-11-01T19:11:49.297Z on commit `3537ca63c`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: upsertResolvedRelationsInTxn evidence on both rows**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t2: upsertResolvedRelationsInTxn writes the evidence byte to both edge rows, and a rewrite with another evidence replaces it on both | `src/db/__tests__/relations-evidence.test.ts` |
+| pass | s7 t2: an evidence that is not a value stores the relationship with an empty value and a warn log; it is not refused | `src/db/__tests__/relations-evidence.test.ts` |
+
+**integration: promoteResolvedBatch evidence and carried meta.evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t2: a relationship kept awaiting its target carries its evidence, and promoteResolvedBatch without an evidence stores the carried one; a given evidence wins | `src/db/__tests__/relations-evidence.test.ts` |
+
+**integration: returnEdgeToPendingInTxn keeps evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t2: an edge returned to pending when its target is removed keeps its evidence, and is promoted again with it | `src/db/__tests__/relations-evidence.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/relations-evidence.test.ts` | 0 | 4 | 1.6 s |  |

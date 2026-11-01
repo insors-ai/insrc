@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:07:14.344Z",
+    "updatedAt": "2026-11-01T19:11:49.297Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -48,6 +48,85 @@
               },
               {
                 "title": "s7 t1: an empty value, 0x00 and a byte no value uses decode to unknown; a string that is not a value encodes empty and is reported invalid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "3537ca63c",
+        "ranAt": "2026-11-01T19:11:49.297Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "upsertResolvedRelationsInTxn evidence on both rows",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: upsertResolvedRelationsInTxn writes the evidence byte to both edge rows, and a rewrite with another evidence replaces it on both",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: an evidence that is not a value stores the relationship with an empty value and a warn log; it is not refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "promoteResolvedBatch evidence and carried meta.evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: a relationship kept awaiting its target carries its evidence, and promoteResolvedBatch without an evidence stores the carried one; a given evidence wins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "returnEdgeToPendingInTxn keeps evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: an edge returned to pending when its target is removed keeps its evidence, and is promoted again with it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/relations-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1599,
+            "titles": [
+              {
+                "title": "s7 t2: upsertResolvedRelationsInTxn writes the evidence byte to both edge rows, and a rewrite with another evidence replaces it on both",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t2: an evidence that is not a value stores the relationship with an empty value and a warn log; it is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t2: a relationship kept awaiting its target carries its evidence, and promoteResolvedBatch without an evidence stores the carried one; a given evidence wins",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t2: an edge returned to pending when its target is removed keeps its evidence, and is promoted again with it",
                 "result": "pass"
               }
             ],

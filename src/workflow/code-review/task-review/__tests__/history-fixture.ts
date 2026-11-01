@@ -11,7 +11,7 @@ export async function historyFixture(party:ReviewerParty='daemon'){
  await saveCheckpoint(checkpointPath(f.repo,'history'),state);await publishTaskCheckpoint(f.repo,hash,'history',f.deps);
  const original=f.read(checkpointPath(f.repo,'history')).attempts[0]!;
  f.put('source.js','export const total = 3;\n');const parent=f.git('rev-parse','HEAD');f.git('add','source.js');f.git('commit','-qm','fix task2');const commit=f.git('rev-parse','HEAD');
- const packet:ReviewPacket={...structuredClone(f.packet),functionalSummary:'Review the task2 fix, retain unresolved task3 evidence honestly',reviewSet:[...structuredClone(f.packet.reviewSet),{commit,parent,files:[{path:'source.js',segments:[{before:[1,1],after:[1,1]}]}]}]};
+ const packet:ReviewPacket={...structuredClone(f.packet),functionalSummary:'Review the task2 fix, retain unresolved task3 evidence honestly',reviewSet:[...structuredClone(f.packet.reviewSet),{commit,parent,files:[{path:'source.js',segments:[{after:[1,1]}]}]}]};
  f.build.body.summary='Current fixed build';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
  const fresh=(taskId:string)=>({...structuredClone(f.result),taskId,inspectedReferences:[`${commit}:source.js`],testCoverage:{...f.result.testCoverage,evidenceReferences:[`${commit}:test.js`]}});
  const scope=(sourceAttempt=1,reassess='t2')=>({summary:'Reassess changed task; retain unchanged feedback with its evidence limits',tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[taskId==='t2'?1:0],testIndexes:[0],action:taskId===reassess?'reassess':'reuse',reason:taskId===reassess?'Inspect the changed requirement':'Retain the selected source result without promoting its evidence',...(taskId===reassess?{}:{sourceAttempt})}))});

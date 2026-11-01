@@ -2,14 +2,14 @@
 import { reviewUnavailable } from '../../review-unavailable.js';
 import { Type } from '@sinclair/typebox';
 import { isDeepStrictEqual } from 'node:util';
-import { decodeReview, PacketSchema, requireReview, TaskResultSchema, TaskOriginSchema } from './contracts.js';
+import { decodeReview, StoredPacketSchema, requireReview, TaskResultSchema, TaskOriginSchema } from './contracts.js';
 import type { CompletedReviewSummary, TaskBasedCodeReviewRecord, TaskReviewResult } from './contracts.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const status = TaskResultSchema.properties.status;
 export const SummarySchema = Type.Object({ reviewId: text, attempt: Type.Integer({ minimum: 1 }), storyId: text, taskId: Type.Optional(text), reviewer: Type.Union([Type.Literal('daemon'), Type.Literal('controller')]), status,
- scope: Type.Pick(PacketSchema, ['storyId', 'taskId', 'documents', 'reviewSet']), tasks: Type.Array(TaskResultSchema, { minItems: 1, maxItems: 10000 }), summary: text, completedAt: text,
+ scope: Type.Pick(StoredPacketSchema, ['storyId', 'taskId', 'documents', 'reviewSet']), tasks: Type.Array(TaskResultSchema, { minItems: 1, maxItems: 10000 }), summary: text, completedAt: text,
  origins: Type.Optional(Type.Array(TaskOriginSchema, { maxItems:10000 })), reassessmentSummary: Type.Optional(text),
  buildFingerprint: Type.Optional(Type.String({ pattern: '^[a-f0-9]{64}$' })) }, { additionalProperties: false });
 export const TaskBodySchema = Type.Object({ kind: Type.Literal('code-review'), format: Type.Literal('task-based'), storyId: text, status, reviews: Type.Array(SummarySchema, { minItems: 1, maxItems: 10000 }) }, { additionalProperties: false });

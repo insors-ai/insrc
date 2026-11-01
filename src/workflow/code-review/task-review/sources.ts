@@ -12,19 +12,19 @@ export interface ReviewSources {
  file(commit: string, path: string): Promise<PinnedBlob | null>;
  changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]>;
 }
-export interface ChangedRange { readonly before?: readonly [number, number]; readonly after?: readonly [number, number]; }
+export interface ChangedRange { readonly before?: readonly [number, number]; readonly after?: readonly [number, number]; readonly deletionAt?: number; }
 /** Hunk counts can include unchanged lines (diff.interHunkContext); retain only +/- runs. */
 function changedRuns(section: string): readonly ChangedRange[] {
  const ranges: ChangedRange[] = [];
  let oldLine = 0, newLine = 0, active = false;
  let change: { before?: [number, number]; after?: [number, number] } = {};
  const flush = () => {
-  if (change.before || change.after) ranges.push(change);
+  if (change.before || change.after) ranges.push({ ...change, ...(change.before && !change.after ? { deletionAt: newLine - 1 } : {}) });
   change = {};
  };
  for (const line of section.split('\n')) {
-  const hunk = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line);
-  if (hunk) { flush(); oldLine = Number(hunk[1]); newLine = Number(hunk[2]); active = true; continue; }
+  const hunk = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,(\d+))? @@/.exec(line);
+  if (hunk) { flush(); oldLine = Number(hunk[1]); newLine = Number(hunk[2]) + Number(hunk[3] === '0'); active = true; continue; }
   if (!active || line.startsWith('\\')) continue;
   if (line.startsWith('-')) {
    if (change.before) change.before[1] = oldLine; else change.before = [oldLine, oldLine];

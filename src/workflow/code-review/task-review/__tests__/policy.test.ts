@@ -24,7 +24,7 @@ async function languageFixture(language:typeof languages[number], after:string=l
  f.put('unrelated-secret.txt','CREDENTIAL_CANARY_NOT_REVIEW_CONTEXT');
  f.git('add',language.path,language.test,'unrelated-secret.txt');f.git('commit','-qm','language baseline');const parent=f.git('rev-parse','HEAD');
  f.put(language.path,after);f.git('add',language.path);f.git('commit','-qm','body-only regression');const commit=f.git('rev-parse','HEAD');
- f.packet.reviewSet=[{commit,parent,files:[{path:language.path,segments:[{before:[1,1],after:[1,1]}]}]}];
+ f.packet.reviewSet=[{commit,parent,files:[{path:language.path,segments:[{after:[1,1]}]}]}];
  f.packet.tests=[{file:language.test,cases:['total computes product'],command:language.command,result:'pass',executionDetails:'Builder report only; execution revision not independently established',evidenceReferences:[`${parent}:${language.test}`]}];
  const prepared=await prepareReviewPacket(f.packet,f.deps.sources),assignment=directAssignments(prepared)![0]!,refs=await taskReferences(f.deps.sources,prepared,assignment);
  const result:TaskReviewResult={...structuredClone(f.result),inspectedReferences:[`${commit}:${language.path}`],testCoverage:{assessment:'verified',explanation:'Inspected the committed assertion of product behavior; no independent execution claimed.',evidenceReferences:[`${commit}:${language.test}`]},advice:[],executedTests:[]};
@@ -53,7 +53,7 @@ test('review quality policy: target-language conventions, encapsulation/readabil
   const f=await languageFixture(language);
   try{
    const prompt=assignmentPrompt(f.prepared,f.assignment,f.refs,f.repo),commands=codeTaskCommands(f.prepared);
-   assert.ok(commands.includes(language.command));assert.equal(commands.includes('npx tsc --noEmit'),false);assert.equal(prompt.includes('CREDENTIAL_CANARY'),false);assert.equal(prompt.includes(language.after),false,'implementation is retrieved by pinned pointer, not dumped into context');
+   assert.ok(commands.includes(language.command));assert.equal(commands.includes('npx tsc --noEmit'),false);assert.equal(prompt.includes('CREDENTIAL_CANARY'),false);assert.ok(prompt.includes(JSON.stringify(language.after.trim()).slice(1,-1)), 'selected implementation is embedded');
    for(const required of ['state ownership','encapsulation','excessive verbosity','cryptic code','several relevant naming examples','public/serialized names','Native language constructs and approved frameworks','Revision-mismatched'])assert.ok(prompt.includes(required));
    const advice=['Consider a clearer internal name after comparing neighboring modules; preserve wire names','Native constructs are adequate; an optional framework is not a requirement','Both repeated boilerplate and cryptic compression deserve optional clarity advice'];
    const optional=await assessTaskResult(f.deps.sources,f.assignment,{...f.result,advice},f.refs);

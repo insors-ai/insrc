@@ -3,7 +3,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../../storage.js';
 import { reviewedBuildFingerprint } from '../build-freshness.js';
-import { decodeReview, CheckpointSchema, requireReview, ReviewRequestSchema, reviewPath } from './contracts.js';
+import { decodeReview, CheckpointSchema, requireReview, ReviewRequestSchema, SavedReviewRequestSchema, reviewPath } from './contracts.js';
 import type { ReviewAttempt, ReviewerParty, ReviewOperation } from './contracts.js';
 import { checkpointPath, loadCheckpoint } from './checkpoint.js';
 import { prepareReviewPacket } from './packet.js';
@@ -22,7 +22,7 @@ export function canonicalReviewStory(story: string, hash: string): string {
 /** Read and validate admission without writing or starting a provider. The coordinator owns reservation and save. */
 export async function prepareReviewAdmission(project: string, reviewId: string, attempt: number, input: unknown,
  reviewer: ReviewerParty, sources: ReviewSources, context: { operation?: ReviewOperation | undefined; epicHash?: string | undefined } = {}): Promise<AdmittedReview> {
- const request = decodeReview(ReviewRequestSchema, { reviewId, attempt, ...(input !== undefined ? { packet: input } : {}), ...(context.operation !== undefined ? { operation: context.operation } : {}) });
+ const request = decodeReview(context.operation === 'resume' ? SavedReviewRequestSchema : ReviewRequestSchema, { reviewId, attempt, ...(input !== undefined ? { packet: input } : {}), ...(context.operation !== undefined ? { operation: context.operation } : {}) });
  const operation = request.operation ?? 'start', canonical = await realpath(project), path = checkpointPath(canonical, request.reviewId);
  const saved = await loadCheckpoint(path);
  let priorPrepared: PreparedReviewPacket | undefined;
@@ -31,7 +31,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   requireReview(saved.attempts.every((entry, index) => entry.header.attempt === index + 1), 'attempt', 'Attempt history must be contiguous');
   for (const [index, entry] of saved.attempts.entries()) {
    requireReview(Number.isFinite(Date.parse(entry.header.createdAt)) && (!entry.header.completedAt || Number.isFinite(Date.parse(entry.header.completedAt))), 'checkpoint', 'Invalid attempt timestamp');
-   const prepared = await prepareReviewPacket(entry.submitted, sources);
+   const prepared = await prepareReviewPacket(entry.submitted, sources, true);
    requireReview(!priorPrepared || priorPrepared.epicHash === prepared.epicHash, 'scope', 'Attempt belongs to another epic');
    requireReview(canonicalReviewStory(saved.storyId, prepared.epicHash) === canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) && saved.taskId === prepared.packet.taskId, 'scope', 'Attempt belongs to another story/task');
    const selected = prepared.tasks.filter(task => !saved.taskId || task.id === saved.taskId).map(task => task.id);

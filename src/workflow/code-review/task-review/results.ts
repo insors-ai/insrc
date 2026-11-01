@@ -24,10 +24,10 @@ export function validateTaskResult(input: unknown, scope: TaskResultScope): Task
   const path = location?.[1] ?? finding.location;
   const start = Number(location?.[2]), end = Number(location?.[3] ?? location?.[2]);
   requireReview(scope.changes.some(c => {
-   if (path !== c.path && path !== c.previousPath) return false;
+   if (path !== c.path && !(path === c.previousPath && (!c.segments.length || c.segments.some(s => s.before)))) return false;
    if (!c.segments.length) return !location;
    return location && Number.isSafeInteger(start) && Number.isSafeInteger(end) && end >= start && c.segments.some(s =>
-    [s.before, s.after].some(r => r && start >= r[0] && end <= r[1]));
+    [s.before, s.after].some(r => r && start >= r[0] && end <= r[1]) || (s.deletionAt !== undefined && start === Math.max(1, s.deletionAt) && end === start));
   }), 'location', 'Finding is outside the submitted changed segments');
  }
  const blocking = result.findings.some(f => f.severity === 'HIGH' || f.severity === 'MED');

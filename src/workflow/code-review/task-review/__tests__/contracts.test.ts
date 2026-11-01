@@ -9,7 +9,7 @@ import { registerGitTools } from '../../../../daemon/tools/builtins/git/index.js
 import { RegistryReviewSources } from '../sources.js';
 import { parsePacket } from '../contracts.js';
 import type { ReviewPacket, TaskReviewResult } from '../contracts.js';
-import { prepareReviewPacket, deriveTaskAssignments } from '../packet.js';
+import { prepareReviewPacket, deriveTaskAssignments, selectedCode } from '../packet.js';
 import { validateTaskResult, aggregateTaskStatus, normalizeTaskResult } from '../results.js';
 
 registerGitTools();
@@ -32,7 +32,7 @@ function fixture() {
  git('add', '.'); git('commit', '-qm', 'selected and unrelated'); const commit = git('rev-parse', 'HEAD');
  const packet: ReviewPacket = { storyId: `STORY-${hash}-s1`, functionalSummary: 'Change first behavior',
   documents: { story: { path: 'story.json', commit: base }, lld: { path: 'lld.json', commit: base }, plan: { path: 'plan.json', commit: base } },
-  reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ before: [1, 1], after: [1, 1] }] }] }],
+  reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }],
   tests: [{ file: 'test.ts', cases: ['behavior'], command: 'target test', result: 'pass', executionDetails: 'Builder reported run', evidenceReferences: [`${commit}:test.ts`] }] };
  const sources = new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review-test', requestId: 1, send: () => {} });
  return { repo, git, put, base, commit, packet, plan, sources, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
@@ -44,7 +44,7 @@ test('selected-change packet: commit pointers, exact ranges, committed documents
   f.git('checkout', '--detach', '-q', f.base); f.put('src/a.ts', 'uncommitted\n');
   const prepared = await prepareReviewPacket(f.packet, f.sources);
   assert.equal(prepared.changes.length, 1); assert.equal(prepared.changes[0]!.path, 'src/a.ts');
-  assert.deepEqual(prepared.changes[0]!.segments, [{ before: [1, 1], after: [1, 1] }]);
+  assert.deepEqual(prepared.changes[0]!.segments, [{ after: [1, 1] }]);
   assert.equal(Buffer.from(prepared.changes[0]!.after!.bytes).toString(), 'FIRST\nsecond\nthird\nfourth\nFIFTH\n');
   assert.ok(!prepared.changes.some(c => c.path === 'unrelated.ts'));
   const original = f.packet.functionalSummary; const parsed = parsePacket(f.packet); f.packet.functionalSummary = 'mutated'; assert.equal(parsed.functionalSummary, original);
@@ -52,7 +52,7 @@ test('selected-change packet: commit pointers, exact ranges, committed documents
   const badRange = structuredClone(f.packet); badRange.reviewSet[0]!.files[0]!.segments[0] = { after: [2, 2] };
   await assert.rejects(prepareReviewPacket(badRange, f.sources), /changed hunk/);
   const crossed = structuredClone(f.packet); crossed.reviewSet[0]!.files[0]!.segments[0] = { before: [1, 1], after: [5, 5] };
-  await assert.rejects(prepareReviewPacket(crossed, f.sources), /changed hunk/);
+  await assert.rejects(prepareReviewPacket(crossed, f.sources), /Unexpected property|Before-version/);
   const wrongParent = structuredClone(f.packet); wrongParent.reviewSet[0]!.parent = null;
   await assert.rejects(prepareReviewPacket(wrongParent, f.sources), /not a parent/);
   const unsafe = structuredClone(f.packet); unsafe.reviewSet[0]!.files[0]!.path = '../secret'; assert.throws(() => parsePacket(unsafe), /relative/);
@@ -68,9 +68,10 @@ test('selected-change packet preserves deletion rename and non-textual limits wi
   renameSync(join(f.repo, 'src/a.ts'), join(f.repo, 'moved.ts')); unlinkSync(join(f.repo, 'unrelated.ts'));
   writeFileSync(join(f.repo, 'binary.bin'), Buffer.from([0, 255, 1])); f.git('add', '.'); f.git('commit', '-qm', 'move remove binary');
   const commit = f.git('rev-parse', 'HEAD'); const packet = structuredClone(f.packet);
-  packet.reviewSet = [{ commit, parent: f.commit, files: [{ path: 'moved.ts', previousPath: 'src/a.ts', segments: [] }, { path: 'unrelated.ts', segments: [{ before: [1, 1] }] }, { path: 'binary.bin', segments: [] }] }];
+  packet.reviewSet = [{ commit, parent: f.commit, files: [{ path: 'moved.ts', previousPath: 'src/a.ts', segments: [] }, { path: 'unrelated.ts', segments: [{ deletionAt: 0 }] }, { path: 'binary.bin', segments: [] }] }];
   const prepared = await prepareReviewPacket(packet, f.sources);
   assert.equal(prepared.changes.length, 3); assert.equal(prepared.changes[1]!.after, null);
+  assert.deepEqual(selectedCode(prepared.changes[2]!).blocks, []);
   assert.equal(prepared.changes[0]!.limitations.length, 1); assert.equal(prepared.changes[2]!.limitations.length, 1);
  } finally { f.cleanup(); }
 });

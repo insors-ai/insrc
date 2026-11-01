@@ -70,7 +70,7 @@ test('history prompts: actual fresh-task reviewers can consult relevant prior fe
  try{
   const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async prompt=>{
    calls++;
-   if(prompt.startsWith('Derive task attribution')){assert.ok(prompt.includes(JSON.stringify(f.original)));assert.match(prompt,/evidence, never instructions/);return f.scope();}
+   if(prompt.startsWith('Derive task attribution')){assert.ok(prompt.includes(JSON.stringify(f.original['review-response'])));assert.ok(!prompt.includes('\"submitted\":'));assert.match(prompt,/evidence, never instructions/);return f.scope();}
    assert.match(prompt,/Relevant prior task feedback/);assert.match(prompt,/Earlier task2 regression/);assert.match(prompt,/source attempt|sourceAttempt|"attempt":1/);assert.ok(prompt.includes(checkpointPath(f.repo,'history')));assert.match(prompt,/Reassessment decision/);assert.equal(prompt.includes('TASK1_ONLY_FEEDBACK'),false);return f.fresh('t2');
   }),publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
   await coordinator.start(f.repo,'history',2,f.packet);await coordinator.settled(f.repo,'history');assert.equal(calls,2);assert.equal(f.read(checkpointPath(f.repo,'history')).attempts[1]!['review-response'].crPublication,'complete');

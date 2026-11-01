@@ -28,8 +28,8 @@ async function fixture(scoped = true) {
   'plan.json': JSON.stringify({ meta: { ...meta, workflow: 'plan' }, body: { tasks }, citations: [{ id: 'c1', kind: 'stakeholder', ref: 'Fixture' }] }),
   'source.ts': 'new behavior\n', 'test.ts': 'assert behavior\n',
  };
- const sources: ReviewSources = { commit: async oid => oid === commit ? [parent] : [], file: async (oid, path) => files[path] === undefined ? null : ({ bytes: Buffer.from(oid === parent && path === 'source.ts' ? 'old behavior\n' : files[path]!), oid: 'c'.repeat(40) }), changedRanges: async () => [{ before: [1, 1], after: [1, 1] }] };
- const packet: ReviewPacket = { storyId: 's1', ...(scoped ? { taskId: 't1' } : {}), functionalSummary: 'Changed behavior', documents: { story: { commit, path: 'story.json' }, lld: { commit, path: 'lld.json' }, plan: { commit, path: 'plan.json' } }, reviewSet: [{ commit, parent, files: [{ path: 'source.ts', segments: [{ before: [1, 1], after: [1, 1] }] }] }], tests: [{ file: 'test.ts', cases: ['behavior'], command: 'node --test test.ts', result: 'pass', executionDetails: 'Builder-reported execution', evidenceReferences: [`${commit}:test.ts`] }] };
+ const sources: ReviewSources = { commit: async oid => oid === commit ? [parent] : [], file: async (oid, path) => files[path] === undefined ? null : ({ bytes: Buffer.from(oid === parent && path === 'source.ts' ? 'old behavior\n' : files[path]!), oid: 'c'.repeat(40) }), changedRanges: async () => [{ after: [1, 1] }] };
+ const packet: ReviewPacket = { storyId: 's1', ...(scoped ? { taskId: 't1' } : {}), functionalSummary: 'Changed behavior', documents: { story: { commit, path: 'story.json' }, lld: { commit, path: 'lld.json' }, plan: { commit, path: 'plan.json' } }, reviewSet: [{ commit, parent, files: [{ path: 'source.ts', segments: [{ after: [1, 1] }] }] }], tests: [{ file: 'test.ts', cases: ['behavior'], command: 'node --test test.ts', result: 'pass', executionDetails: 'Builder-reported execution', evidenceReferences: [`${commit}:test.ts`] }] };
  const read = async (path: string): Promise<ReviewCheckpoint> => JSON.parse(await readFile(path, 'utf8')) as ReviewCheckpoint;
  return { project, sources, packet, read, cleanup: () => rm(project, { recursive: true, force: true }) };
 }
@@ -116,7 +116,7 @@ test('code-task provider tools: committed reads, permitted target tests and unch
   assert.ok(!codeTaskCommands(prepared).some(c => c.includes(';')));
   const assignment = deriveTaskAssignments(prepared, [{ taskId: 't1', changeIndexes: [0], testIndexes: [0] }])[0]!;
   const prompt = assignmentPrompt(prepared, assignment, [`${commit}:source.ts`]);
-  assert.ok(prompt.includes('"after":[1,1]'), 'selected ranges preserved'); assert.ok(!prompt.includes('"bytes"'), 'no raw source prepack');
+  assert.ok(prompt.includes('"lines":[1,1]'), 'selected ranges preserved'); assert.ok(!prompt.includes('"bytes"'), 'no raw source prepack');
   assert.ok(prompt.includes('unsupported')); assert.ok(prompt.includes('Builder-reported'));
  } finally { await f.cleanup(); }
 });

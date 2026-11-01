@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { ProgressSchema } from './progress.js';
 import type { ReviewProgress } from './progress.js';
-import { Type } from '@sinclair/typebox';
+import { CloneType, Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 
@@ -14,11 +14,14 @@ const range = Type.Tuple([Type.Integer({ minimum: 1 }), Type.Integer({ minimum: 
 export const DocumentSchema = object({ path: text, commit: oid });
 export const TestDetailSchema = object({ file: text, cases: Type.Array(text, { minItems: 1, maxItems: 10000 }), command: text,
  result: Type.Union((['pass', 'fail', 'skipped', 'not_run'] as const).map(s => Type.Literal(s))), executionDetails: text, evidenceReferences: strings });
-export const PacketSchema = object({ storyId: text, taskId: Type.Optional(text), functionalSummary: text,
+export const StoredPacketSchema = object({ storyId: text, taskId: Type.Optional(text), functionalSummary: text,
  documents: object({ story: DocumentSchema, lld: DocumentSchema, plan: DocumentSchema }),
  reviewSet: Type.Array(object({ commit: oid, parent: Type.Union([oid, Type.Null()]), files: Type.Array(object({ path: text,
-  previousPath: Type.Optional(text), segments: Type.Array(object({ before: Type.Optional(range), after: Type.Optional(range) }), { maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }),
+  previousPath: Type.Optional(text), segments: Type.Array(object({ before: Type.Optional(range), after: Type.Optional(range), deletionAt: Type.Optional(Type.Integer({ minimum: 0 })) }), { maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }),
  tests: Type.Array(TestDetailSchema, { maxItems: 10000 }) });
+/** New submissions exclude prior-version selections. Stored history remains immutable. */
+export const PacketSchema = CloneType(StoredPacketSchema);
+Reflect.deleteProperty(PacketSchema.properties.reviewSet.items.properties.files.items.properties.segments.items.properties, 'before');
 export const TaskResultSchema = object({ taskId: text,
  status: Type.Union((['passed', 'changes_requested', 'incomplete', 'failed'] as const).map(s => Type.Literal(s))), summary: text,
  findings: Type.Array(object({ severity: Type.Union((['HIGH', 'MED', 'LOW'] as const).map(s => Type.Literal(s))), location: text,
@@ -30,8 +33,9 @@ export const TaskOriginSchema = object({ taskId: text, sourceAttempt: Type.Integ
 export type TaskResultOrigin = Static<typeof TaskOriginSchema>;
 export const ReviewRequestSchema = object({ reviewId: text, attempt: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),
  operation: Type.Optional(Type.Union([Type.Literal('start'), Type.Literal('resume')])), packet: Type.Optional(PacketSchema) });
+export const SavedReviewRequestSchema = object({ ...ReviewRequestSchema.properties, packet: Type.Optional(StoredPacketSchema) });
 export type ReviewOperation = 'start' | 'resume';
-export type ReviewPacket = Static<typeof PacketSchema>;
+export type ReviewPacket = Static<typeof StoredPacketSchema>;
 export type CommittedDocument = Static<typeof DocumentSchema>;
 export type TaskReviewResult = Static<typeof TaskResultSchema>;
 export type SubmittedTestDetail = Static<typeof TestDetailSchema>;
@@ -55,8 +59,8 @@ export function decodeReview<T extends TSchema>(schema: T, input: unknown): Stat
 export function reviewPath(path: string): void {
  requireReview(!/[\\\x00-\x1f\x7f:]/.test(path) && !path.startsWith('/') && path.split('/').every(p => p && p !== '.' && p !== '..'), 'path', 'Expected repository-relative literal path');
 }
-export function parsePacket(input: unknown): ReviewPacket {
- const packet = decodeReview(PacketSchema, input);
+export function parsePacket(input: unknown, historical = false): ReviewPacket {
+ const packet = decodeReview(historical ? StoredPacketSchema : PacketSchema, input);
  for (const document of Object.values(packet.documents)) reviewPath(document.path);
  for (const test of packet.tests) reviewPath(test.file);
  const selected = new Set<string>();
@@ -65,7 +69,9 @@ export function parsePacket(input: unknown): ReviewPacket {
   for (const file of commit.files) {
    reviewPath(file.path); if (file.previousPath) reviewPath(file.previousPath);
    for (const segment of file.segments) {
-    requireReview(segment.before || segment.after, 'segments', 'At least one changed side is required');
+    requireReview(historical || segment.before === undefined, 'segments', 'Before-version selections are not accepted; submit reviewed-version blocks or a deletion anchor');
+    requireReview(segment.before || segment.after || segment.deletionAt !== undefined, 'segments', 'A reviewed block or deletion anchor is required');
+    requireReview(segment.deletionAt === undefined || (!segment.before && !segment.after), 'segments', 'Deletion anchors cannot carry code ranges');
     for (const side of [segment.before, segment.after]) if (side) requireReview(side[0] <= side[1], 'segments', 'Reversed range');
    }
    const key = JSON.stringify([commit.commit, commit.parent, file]);
@@ -94,5 +100,5 @@ export interface TaskBasedCodeReviewRecord {
 export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
  progress:Type.Optional(ProgressSchema),
  header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), buildFingerprint:Type.Optional(text), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
- submitted:PacketSchema, 'review-response':Type.Object({ summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text), origins:Type.Optional(Type.Array(TaskOriginSchema, {maxItems:10000})) },{additionalProperties:false})
+ submitted:StoredPacketSchema, 'review-response':Type.Object({ summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text), origins:Type.Optional(Type.Array(TaskOriginSchema, {maxItems:10000})) },{additionalProperties:false})
  },{additionalProperties:false}),{minItems:1}) },{additionalProperties:false});

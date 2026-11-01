@@ -31,7 +31,7 @@ export async function startTaskReview(raw: unknown, trusted?: TrustedRpcContext,
  const epicHash = p['epicHash'];
  const stored = operation === 'resume' ? await loadCheckpoint(checkpointPath(repo, p['reviewId'])) : undefined;
  if (operation === 'resume') requireReview(stored, 'checkpoint', 'missing-checkpoint');
- const packet = parsePacket(operation === 'resume' ? stored!.attempts.at(-1)!.submitted : p['packet']);
+ const packet = parsePacket(operation === 'resume' ? stored!.attempts.at(-1)!.submitted : p['packet'], operation === 'resume');
  const input = operation === 'resume' ? p['packet'] : packet;
  const story = /^s\d+$/.test(packet.storyId) ? packet.storyId : /^STORY-[0-9a-f]{16}-(s\d+)$/.exec(packet.storyId)?.[1];
  requireReview(story, 'storyId', 'Expected canonical story identity');

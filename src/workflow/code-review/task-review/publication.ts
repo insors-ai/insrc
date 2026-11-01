@@ -22,7 +22,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  requireReview(checkpoint.project === canonical && checkpoint.reviewId === reviewId && checkpoint.schemaVersion === 1, 'checkpoint', 'Checkpoint identity mismatch');
  validateResultOrigins(checkpoint.attempts.map(entry => ({ attempt:entry.header.attempt, reviewer:entry.header.reviewer, tasks:entry['review-response'].tasks, origins:entry['review-response'].origins })));
  const attempt = checkpoint.attempts.at(-1)!;
- const prepared = await prepareReviewPacket(attempt.submitted, deps.sources);
+ const prepared = await prepareReviewPacket(attempt.submitted, deps.sources, true);
  requireReview(prepared.epicHash === epicHash && canonicalReviewStory(checkpoint.storyId,epicHash) === canonicalReviewStory(prepared.packet.storyId,epicHash) && checkpoint.taskId === prepared.packet.taskId, 'scope', 'Checkpoint belongs to another review subject');
  const expected = prepared.tasks.filter(t=>!prepared.packet.taskId || t.id===prepared.packet.taskId).map(t=>t.id).sort();
  requireReview(isDeepStrictEqual([...attempt.header.selectedTaskIds].sort(),expected) && isDeepStrictEqual(attempt['review-response'].tasks.map(t=>t.taskId).sort(),expected), 'tasks', 'Selected tasks have not all completed');

@@ -156,3 +156,26 @@ omitted submitted change or test attribution. Applicable tasks with completed
 results remain in attribution context; their saved results are never rewritten
 or rerun by same-attempt recovery. Schema generation clones its templates so
 concurrent scopes cannot alter one another's native constraints.
+
+## Selected source supplied to reviewers
+
+New packets select only reviewed-version code ranges: `segments: [{ after: [start, end] }]`
+(inclusive, one-based). `before` selections are rejected on new attempts. The host
+resolves the selected text from the pinned commit and embeds only those blocks,
+with line ranges, in both attribution and task-assessment inputs. It does not
+embed surrounding or previous-version source. Commit/parent/path pointers let
+the reviewer fetch context or previous code from Git when needed.
+
+A pure deletion is `segments: [{ deletionAt: n }]`, where `n` is the number of
+reviewed-version lines preceding the deletion (zero at the beginning or for a
+deleted file). The host verifies this boundary against the selected commit.
+The marker contains no removed text; the reviewer can retrieve that from Git.
+A deletion finding uses `path:max(1,n)`. Empty segments remain reserved for
+metadata/non-textual changes.
+
+Attribution changes and test records have explicit zero-based indices; every
+entry must still be assigned. Re-review prompts embed saved attempt metadata
+and feedback, with the complete immutable checkpoint available through read
+tools, rather than repeating historical submitted packets. Existing stored
+before/after attempts remain readable and resumable without rewriting their
+input or feedback. They cannot be submitted as a new attempt.

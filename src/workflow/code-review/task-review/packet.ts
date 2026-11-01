@@ -38,8 +38,8 @@ async function document(ref: CommittedDocument, sources: ReviewSources): Promise
  requireReview(canonical, 'documents', 'Commit the referenced canonical artifact JSON with its document');
  return { text, head: head(utf8(canonical)) };
 }
-export async function prepareReviewPacket(input: unknown, sources: ReviewSources): Promise<PreparedReviewPacket> {
- const packet = parsePacket(input);
+export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false): Promise<PreparedReviewPacket> {
+ const packet = parsePacket(input, historical);
  const docs = { story: await document(packet.documents.story, sources), lld: await document(packet.documents.lld, sources), plan: await document(packet.documents.plan, sources) };
  const plan = docs.plan.head, meta = plan['meta'] as Record<string, unknown> | undefined;
  requireReview(meta && typeof meta['epicHash'] === 'string' && /^s\d+$/.test(String(meta['storyId'])), 'documents.plan', 'Expected a canonical story Plan');
@@ -72,8 +72,8 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   requireReview(pointer.parent === null ? parents.length === 0 : parents.includes(pointer.parent), 'parent', 'Explicit parent is not a parent of the referenced commit');
   for (const file of pointer.files) {
    const previousPath = file.previousPath ?? file.path;
-   const before = pointer.parent === null ? null : await sources.file(pointer.parent, previousPath);
    const after = await sources.file(pointer.commit, file.path);
+   const before = pointer.parent === null || (!historical && after && !file.previousPath) ? null : await sources.file(pointer.parent, previousPath);
    if (file.previousPath && file.previousPath !== file.path) {
     requireReview(!await sources.file(pointer.commit, file.previousPath) && (pointer.parent === null || !await sources.file(pointer.parent, file.path)), 'previousPath', 'Expected an actual path move, not an unrelated file');
    }
@@ -86,6 +86,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
    }
    for (const segment of file.segments) {
     requireReview(ranges.some(r => (['before', 'after'] as const).every(side => {
+     if (segment.deletionAt !== undefined) return r.deletionAt === segment.deletionAt;
      const selected = segment[side], changed = r[side];
      return selected === undefined || (changed !== undefined && selected[0] >= changed[0] && selected[1] <= changed[1]);
     })), 'segments', 'Selected range is not inside one referenced changed hunk');
@@ -127,4 +128,15 @@ export function deriveTaskAssignments(prepared: PreparedReviewPacket, attributio
  });
  requireReview(covered.size === prepared.changes.length && assignedTests.size === prepared.packet.tests.length, 'attribution', 'Derived task scopes omit submitted changes or tests');
  return assignments;
+}
+
+/** Model input contains selected reviewed-version text only, never full blobs or prior code. */
+export function selectedCode(change: SelectedChange) {
+ const text = change.after && change.segments.some(segment => segment.after) ? utf8(change.after) : '';
+ const lines = text.split('\n');
+ return { commit: change.commit, parent: change.parent, path: change.path, previousPath: change.previousPath,
+  blocks: change.segments.map(segment => segment.after
+   ? { lines: segment.after, code: lines.slice(segment.after[0] - 1, segment.after[1]).join('\n') + (segment.after[1] < lines.length ? '\n' : '') }
+   : { deletionAt: segment.deletionAt, deleted: true }),
+  deletedFile: change.after === null, limitations: change.limitations };
 }

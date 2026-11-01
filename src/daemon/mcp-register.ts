@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 
 import { getLogger } from '../shared/logger.js';
 import type { McpClient, McpClientOutcome, SteeringSelection } from '../shared/types.js';
+import { readSteeringBlock, upsertMarkedSection } from './steering-inject.js';
 
 const log = getLogger('daemon:mcp-register');
 
@@ -82,6 +83,13 @@ export interface McpRegisterDeps {
 	readonly vibeProjectConfigText?: (repoPath: string) => string | undefined;
 	readonly ensureVibeProjectDir?: (repoPath: string) => void;
 	readonly writeVibeProjectConfig?: (repoPath: string, text: string) => void;
+	/** vibe user-level AGENTS.md seams (LLD-866873cab2dedcc7): the vibe home dir,
+	 *  read of $VIBE_HOME|~/.vibe/AGENTS.md (undefined when absent/unreadable), its
+	 *  write, and the steering block text. */
+	readonly vibeHome?: () => string;
+	readonly vibeAgentsMdText?: () => string | undefined;
+	readonly writeVibeAgentsMd?: (text: string) => void;
+	readonly steeringBlockText?: () => string;
 }
 
 /** One client's registration plan. `selected` comes from the SteeringSelection
@@ -100,6 +108,17 @@ interface ClientPlan {
 function defaultVibeConfigText(): string | undefined {
 	const home = process.env['VIBE_HOME'] ?? join(homedir(), '.vibe');
 	try { return readFileSync(join(home, 'config.toml'), 'utf8'); }
+	catch { return undefined; }
+}
+
+/** vibe's home dir: $VIBE_HOME, else ~/.vibe. */
+function defaultVibeHome(): string {
+	return process.env['VIBE_HOME'] ?? join(homedir(), '.vibe');
+}
+
+/** $VIBE_HOME|~/.vibe/AGENTS.md text, or undefined when absent/unreadable. */
+function defaultVibeAgentsMdText(home: string): string | undefined {
+	try { return readFileSync(join(home, 'AGENTS.md'), 'utf8'); }
 	catch { return undefined; }
 }
 
@@ -166,6 +185,33 @@ export function upsertVibeProjectServer(
  *  `name`? Heuristic on the TOML text — the same line-anchored spirit as
  *  alreadyRegistered: each `[[...]]` chunk must start with `mcp_servers]]` and
  *  carry a `name = "..."` line for the server. */
+/**
+ * LLD-866873cab2dedcc7 — when vibe is registered, also ensure the user-level
+ * ~/.vibe/AGENTS.md carries the insrc steering block, so the agent follows a
+ * project's insrc:steering block when one is present. Reuses the repo-side
+ * writer's pure marked-section upsert (steering-inject.ts): create the file when
+ * absent, replace ONLY the insrc:steering-marked span when present (so future
+ * releases change the block content in place via the shipped
+ * prompts/steering-block.md asset), append when the file has no markers, and
+ * NEVER clobber on malformed or duplicate markers (guarded no-op — the same
+ * 'never guess, never clobber' convention as repo.add's inject). Returns
+ * 'unchanged' | 'updated'. IO errors propagate — the caller guards and never
+ * fails the MCP registration on a steering write.
+ */
+export function upsertVibeAgentsSteering(deps: McpRegisterDeps = {}): 'unchanged' | 'updated' {
+	const home = deps.vibeHome ?? defaultVibeHome;
+	const readText = deps.vibeAgentsMdText ?? (() => defaultVibeAgentsMdText(home()));
+	const writeText = deps.writeVibeAgentsMd ?? ((t: string) => writeFileSync(join(home(), 'AGENTS.md'), t, 'utf8'));
+	const block = deps.steeringBlockText ?? readSteeringBlock;
+	const res = upsertMarkedSection(readText() ?? null, block());
+	if (res.content === null) {
+		if (res.note !== undefined) log.warn({ note: res.note }, 'vibe AGENTS.md steering: guarded no-op');
+		return 'unchanged';
+	}
+	writeText(res.content);
+	return 'updated';
+}
+
 export function vibeConfigHasServer(configText: string, name: string): boolean {
 	const chunks = configText.split(/^\[\[/m);
 	const nameLine = new RegExp(`^\\s*name\\s*=\\s*["']${name}["']`, 'm');
@@ -287,6 +333,17 @@ async function registerOne(
 	try {
 		if (!entrypointExists(mcpJs)) {
 			return { client: p.client, action: 'failed', note: `MCP entrypoint missing at ${mcpJs}` };
+		}
+		// LLD-866873cab2dedcc7: registering vibe also upserts the insrc steering block
+		// into the user-level ~/.vibe/AGENTS.md (idempotent, marker-delimited; future
+		// releases replace the marked span). Never fails the registration.
+		if (p.client === 'vibe') {
+			try {
+				const steering = upsertVibeAgentsSteering(deps);
+				if (steering === 'updated') log.info('vibe AGENTS.md steering block upserted');
+			} catch (err) {
+				log.warn({ err: err instanceof Error ? err.message : String(err) }, 'vibe AGENTS.md steering upsert failed (registration unaffected)');
+			}
 		}
 		// Idempotency pre-check: `<cli> mcp list` where the CLI has one, else
 		// (vibe) vibe's config.toml — the repo's own project-layer file when a

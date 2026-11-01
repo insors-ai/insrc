@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { registerMcpClients, vibeConfigHasServer, type McpRegisterDeps } from '../mcp-register.js';
+import { registerMcpClients, upsertVibeAgentsSteering, vibeConfigHasServer, type McpRegisterDeps } from '../mcp-register.js';
 import type { McpClient, McpClientOutcome } from '../../shared/types.js';
 
 const ROOT = '/opt/insrc/daemon';
@@ -27,13 +27,25 @@ interface RunResult { code: number; stdout: string; stderr: string; spawnError?:
 function stub(script: (bin: string, args: readonly string[]) => RunResult, vibeConfigText?: () => string | undefined): {
 	deps: McpRegisterDeps;
 	calls: { bin: string; args: string[] }[];
+	/** In-memory ~/.vibe/AGENTS.md: current text + every write (LLD-866873cab2dedcc7). */
+	agentsMd: { text: string | undefined; writes: string[] };
 } {
 	const calls: { bin: string; args: string[] }[] = [];
+	const agentsMd = { text: undefined as string | undefined, writes: [] as string[] };
 	const run = async (bin: string, args: readonly string[]): Promise<RunResult> => {
 		calls.push({ bin, args: [...args] });
 		return script(bin, args);
 	};
-	return { deps: { run, entrypointExists: () => true, vibeConfigText: vibeConfigText ?? (() => undefined) }, calls };
+	return { deps: {
+		run,
+		entrypointExists: () => true,
+		vibeConfigText: vibeConfigText ?? (() => undefined),
+		// AGENTS.md seams stay in memory — tests never touch the real ~/.vibe.
+		vibeHome: () => '/fake-vibe-home',
+		vibeAgentsMdText: () => agentsMd.text,
+		writeVibeAgentsMd: (t: string) => { agentsMd.writes.push(t); agentsMd.text = t; },
+		steeringBlockText: () => 'STEERING BLOCK v1',
+	}, calls, agentsMd };
 }
 
 const isList = (args: readonly string[]): boolean => args[0] === 'mcp' && args[1] === 'list';
@@ -122,6 +134,64 @@ test('vibe add failure → failed carrying the CLI stderr; other clients unaffec
 	assert.equal(byClient(r, 'vibe').action, 'failed');
 	assert.match(byClient(r, 'vibe').note ?? '', /blew up/);
 	assert.equal(byClient(r, 'claude').action, 'registered');
+});
+
+// LLD-866873cab2dedcc7 — the user-level ~/.vibe/AGENTS.md steering upsert on vibe registration.
+
+test('upsertVibeAgentsSteering: creates AGENTS.md with the marked steering block when absent, idempotent on second call', () => {
+	let text: string | undefined = undefined;
+	const writes: string[] = [];
+	const deps: McpRegisterDeps = {
+		vibeHome: () => '/fake-home',
+		vibeAgentsMdText: () => text,
+		writeVibeAgentsMd: (t) => { writes.push(t); text = t; },
+		steeringBlockText: () => 'STEERING BLOCK v1',
+	};
+	assert.equal(upsertVibeAgentsSteering(deps), 'updated');
+	assert.equal(writes.length, 1);
+	assert.match(text!, /<!-- insrc:steering:start -->\nSTEERING BLOCK v1\n<!-- insrc:steering:end -->/);
+	assert.equal(upsertVibeAgentsSteering(deps), 'unchanged', 'second call writes nothing');
+	assert.equal(writes.length, 1);
+});
+
+test('upsertVibeAgentsSteering: replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content', () => {
+	let text = '# My notes\n\nkeep me\n\n<!-- insrc:steering:start -->\nOLD v0\n<!-- insrc:steering:end -->\n\ntrailing\n';
+	const writes: string[] = [];
+	const deps: McpRegisterDeps = {
+		vibeHome: () => '/fake-home',
+		vibeAgentsMdText: () => text,
+		writeVibeAgentsMd: (t) => { writes.push(t); text = t; },
+		steeringBlockText: () => 'STEERING BLOCK v2',
+	};
+	assert.equal(upsertVibeAgentsSteering(deps), 'updated');
+	assert.equal(writes.length, 1);
+	assert.ok(text!.startsWith('# My notes\n\nkeep me\n\n'), 'content before the markers is preserved');
+	assert.ok(text!.endsWith('\ntrailing\n'), 'content after the markers is preserved');
+	assert.match(text!, /insrc:steering:start -->\nSTEERING BLOCK v2\n/);
+	assert.ok(!text!.includes('OLD v0'), 'the old block content is gone');
+	assert.equal((text!.match(/insrc:steering:start/g) ?? []).length, 1, 'exactly one marked block');
+});
+
+test('upsertVibeAgentsSteering: malformed markers (open without close) are a guarded no-op — file untouched, never clobbered', () => {
+	const text = '# notes\n<!-- insrc:steering:start -->\nunrelated text after a stray open\n';
+	let written = false;
+	const deps: McpRegisterDeps = {
+		vibeHome: () => '/fake-home',
+		vibeAgentsMdText: () => text,
+		writeVibeAgentsMd: () => { written = true; },
+		steeringBlockText: () => 'STEERING BLOCK v1',
+	};
+	assert.equal(upsertVibeAgentsSteering(deps), 'unchanged');
+	assert.equal(written, false, 'nothing written on malformed markers');
+});
+
+test('registerMcpClients with {vibe:true} also upserts the AGENTS.md steering block (in-memory seam), and registration still succeeds', async () => {
+	const { deps, calls, agentsMd } = stub(() => ok());
+	const r = await registerMcpClients(ROOT, { vibe: true }, deps);
+	assert.equal(byClient(r, 'vibe').action, 'registered');
+	assert.equal(agentsMd.writes.length, 1, 'the steering block was written once');
+	assert.match(agentsMd.text!, /insrc:steering:start -->\nSTEERING BLOCK v1/);
+	assert.deepEqual(calls.map(c => c.bin), ['vibe']);
 });
 
 test('vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values', () => {

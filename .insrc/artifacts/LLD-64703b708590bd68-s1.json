@@ -27,7 +27,39 @@
     "standalone": true,
     "sizeClass": "bugfix",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f77c62ff44bedba6d3c7997b7a7e9dcc5969d37fa998aad0360954c41749da4b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:31:14.063Z",
+        "override": {
+          "reason": "self-review by the controller (docs/standalone/reject-file-modifying-daemon-calls-do-E2026110164703b70/S001/SELF-REVIEW.md); the daemon review framework is not functional (user decision 2026-11-01)"
+        }
+      }
+    },
+    "rangeBase": "60aa6faacabe7044d19b65b9d66e0b298f4e7976"
   },
   "body": {
     "summary": {

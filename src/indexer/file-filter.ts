@@ -80,8 +80,19 @@ export interface FileFilter {
  *  this one instead). */
 const GENERATED_FILE_PATTERN = /\.(min|bundle|dist|production|prod)\.(js|mjs|cjs|css|html|json)$|[-_]min\.(js|mjs|cjs|css)$/i;
 
+/** True for a generated-or-minified file by this Story's own pattern. A
+ *  caller that needs to tell "excluded because of the ignore rules /
+ *  .insrc" apart from "excluded because it's generated" (e.g. the index's
+ *  clean-up pass, which only ever removed a stale entity for the former —
+ *  the full walk's OWN not-code/generated-file check, in file-selection.ts,
+ *  already keeps such a file unindexed without deleting any pre-existing
+ *  row for it) can subtract this from a `false` `includes()` result. */
+export function isGeneratedOrMinifiedFile(absPath: string): boolean {
+	return GENERATED_FILE_PATTERN.test(absPath);
+}
+
 function isBuiltInExcluded(absPath: string, repoPath: string): boolean {
-	if (GENERATED_FILE_PATTERN.test(absPath)) return true;
+	if (isGeneratedOrMinifiedFile(absPath)) return true;
 	const rel = relative(repoPath, absPath);
 	return rel === '.insrc' || rel.startsWith(`.insrc${sep}`);
 }

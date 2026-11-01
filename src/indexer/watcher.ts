@@ -1,4 +1,5 @@
 import * as parcelWatcher from '@parcel/watcher';
+import type { FileFilter } from './file-filter.js';
 
 export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
@@ -38,16 +39,20 @@ export class Watcher {
     this.handlers.push(handler);
   }
 
-  /** Start watching a repo directory. Idempotent. `ignore` is the per-repo
-   *  ignore dir list (from the repo's `.insrc` config); defaults to the
-   *  universal `IGNORE_DIRS` for config dirs / older registrations. */
-  async addRepo(repoPath: string, ignore: readonly string[] = IGNORE_DIRS): Promise<void> {
+  /** Start watching a repo directory. Idempotent. `filter` (Epic c2ba6fa6
+   *  s6) is the repo's FileFilter — every emitted event is checked against
+   *  it before reaching a handler, so the watcher agrees with the full walk
+   *  and the single file event. A config dir (no FileFilter: it is not an
+   *  indexed repository) keeps the universal `IGNORE_DIRS` native-ignore
+   *  guard instead, unfiltered otherwise. */
+  async addRepo(repoPath: string, filter?: FileFilter): Promise<void> {
     if (this.subscriptions.has(repoPath)) return;
 
     const sub = await parcelWatcher.subscribe(
       repoPath,
       (_err, events) => {
         for (const e of events) {
+          if (filter !== undefined && !filter.includes(e.path)) continue;
           this.pendingEvents.push({
             type: e.type as FileEventType,
             path: e.path,
@@ -55,7 +60,7 @@ export class Watcher {
         }
         this.scheduleDrain();
       },
-      { ignore: [...ignore] },
+      { ignore: filter === undefined ? [...IGNORE_DIRS] : [] },
     );
 
     this.subscriptions.set(repoPath, sub);

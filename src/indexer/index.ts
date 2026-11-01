@@ -1,7 +1,6 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { join, extname, resolve, relative, sep, basename } from 'node:path';
+import { join, extname, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
 import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity } from '../shared/types.js';
 import type { SummariseDocResult } from '../analyze/summariser/index.js';
@@ -39,9 +38,9 @@ import './parser/scala.js';
 import './parser/kotlin.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
-import { hasIgnoredSegment, selectFile } from './file-selection.js';
-import { Watcher, IGNORE_DIRS } from './watcher.js';
-import { resolveRepoIgnore, initRepoIgnore } from './repo-ignore-config.js';
+import { selectFile } from './file-selection.js';
+import { Watcher } from './watcher.js';
+import { createFileFilter, isGeneratedOrMinifiedFile, type FileFilter } from './file-filter.js';
 import { IndexQueue } from '../daemon/queue.js';
 import { getLogger } from '../shared/logger.js';
 import type { ConfigStore } from '../config/store.js';
@@ -61,63 +60,13 @@ import {
 const log = getLogger('indexer');
 
 // ---------------------------------------------------------------------------
-// File walker — git-aware (respects .gitignore)
+// File walker — FileFilter is the one rule (Epic c2ba6fa6 s6)
 // ---------------------------------------------------------------------------
 
-const IGNORE_SET = new Set(IGNORE_DIRS);
-
-/**
- * List all files in a repo, respecting .gitignore when inside a git repo.
- *
- * Uses `git ls-files` which correctly handles:
- *   - nested .gitignore files
- *   - global gitignore (~/.config/git/ignore)
- *   - .git/info/exclude
- *
- * Falls back to the directory walker for non-git repos.
- */
-
-function listRepoFiles(repoPath: string, ignore: readonly string[] = IGNORE_DIRS): string[] {
-  const ignoreSet = new Set(ignore);
-  if (!existsSync(join(repoPath, '.git'))) {
-    log.debug({ repo: repoPath }, 'not a git repo, using directory walker');
-    return [...walkFilesLegacy(repoPath, ignoreSet)];
-  }
-
-  try {
-    // --cached: tracked files
-    // --others: untracked files (new files not yet committed)
-    // --exclude-standard: honour .gitignore, .git/info/exclude, global gitignore
-    const stdout = execFileSync(
-      'git',
-      ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
-      { cwd: repoPath, maxBuffer: 50 * 1024 * 1024, encoding: 'utf8' },
-    );
-    const files = stdout.split('\0').filter(Boolean).map(f => resolve(repoPath, f))
-      .filter(f => !hasIgnoredSegment(f, repoPath, ignoreSet));
-    log.info({ repo: repoPath, files: files.length }, 'git ls-files');
-    return files;
-  } catch (err) {
-    log.warn({ repo: repoPath, err: String(err) }, 'git ls-files failed, falling back to directory walker');
-    return [...walkFilesLegacy(repoPath, ignoreSet)];
-  }
-}
-
-/** Legacy directory walker — used as fallback for non-git repos. */
-function* walkFilesLegacy(dir: string, ignoreSet: Set<string> = IGNORE_SET): Iterable<string> {
-  let entries;
-  try { entries = readdirSync(dir, { withFileTypes: true }); }
-  catch { return; }
-
-  for (const entry of entries) {
-    if (ignoreSet.has(entry.name)) continue;
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      yield* walkFilesLegacy(full, ignoreSet);
-    } else if (entry.isFile()) {
-      yield full;
-    }
-  }
+/** Every file `filter` includes — the one rule for what the index holds,
+ *  for a git repo and a plain folder alike (Epic c2ba6fa6 s6). */
+function listRepoFiles(filter: FileFilter): string[] {
+  return filter.listFiles();
 }
 
 function contentHash(source: string): string {
@@ -202,6 +151,12 @@ export class IndexerService {
    * paths. Now we restrict to the explicitly-registered roots.
    */
   private readonly registeredRepos: Set<string> = new Set();
+  /** One FileFilter per registered repo (Epic c2ba6fa6 s6) -- built once at
+   *  registration / daemon start, reused everywhere so the full walk, a
+   *  single file event, and the clean-up pass all agree without rebuilding
+   *  (a repo walk + a git subprocess call) on every event. Refreshed on an
+   *  ignore-file edit (Story s6/t10) and on every full index. */
+  private readonly repoFilters: Map<string, FileFilter> = new Map();
   /** The running document-summary sweep's progress (summarySweepProgress). */
   private sweepProgress: { repoPath: string; done: number; total: number } | undefined = undefined;
 
@@ -269,10 +224,9 @@ export class IndexerService {
       }
 
       this.registeredRepos.add(repo.path);
-      // Seed the per-repo ignore config for already-registered repos too
-      // (idempotent) so every repo gets the externalized `.insrc` config,
-      // not just fresh adds.
-      await this.watcher.addRepo(repo.path, initRepoIgnore(repo.path));
+      // FileFilter is the one rule (Epic c2ba6fa6 s6) -- built fresh on
+      // every daemon start, not persisted.
+      await this.watcher.addRepo(repo.path, this.refreshedFileFilter(repo.path));
 
       if (
         repo.status === 'pending' ||
@@ -338,7 +292,7 @@ export class IndexerService {
     const sinceMs = new Date(lastIndexed).getTime();
     if (Number.isNaN(sinceMs)) return [];
 
-    const allFiles = listRepoFiles(repoPath, resolveRepoIgnore(repoPath));
+    const allFiles = listRepoFiles(this.fileFilterFor(repoPath));
     const changed: string[] = [];
 
     for (const filePath of allFiles) {
@@ -358,13 +312,34 @@ export class IndexerService {
     return changed;
   }
 
+  /** The repo's cached FileFilter, built fresh and cached when none is held
+   *  yet (Epic c2ba6fa6 s6). Registration and a full index always build a
+   *  new one (the repo may have changed since any previous build); every
+   *  other caller reuses the cached instance. */
+  private fileFilterFor(repoPath: string): FileFilter {
+    let filter = this.repoFilters.get(repoPath);
+    if (filter === undefined) {
+      filter = createFileFilter(repoPath);
+      this.repoFilters.set(repoPath, filter);
+    }
+    return filter;
+  }
+
+  /** Builds a fresh FileFilter for `repoPath`, caches it, and returns it --
+   *  used at registration and by a full index, both of which already walk
+   *  the whole repo so the extra build is not wasted work. */
+  private refreshedFileFilter(repoPath: string): FileFilter {
+    const filter = createFileFilter(repoPath);
+    this.repoFilters.set(repoPath, filter);
+    return filter;
+  }
+
   /** Add a repo: start watching + enqueue full index. */
   async addRepo(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'repo added, enqueuing full index');
     this.registeredRepos.add(repoPath);
-    // Seed the per-repo .insrc ignore config (idempotent) + watch with it.
-    const ignore = initRepoIgnore(repoPath);
-    await this.watcher.addRepo(repoPath, ignore);
+    // FileFilter is the one rule (Epic c2ba6fa6 s6).
+    await this.watcher.addRepo(repoPath, this.refreshedFileFilter(repoPath));
     this.queue.enqueue({ kind: 'full', repoPath });
 
     // Watch project config dir if it exists
@@ -379,6 +354,7 @@ export class IndexerService {
   async removeRepo(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'repo removed');
     this.registeredRepos.delete(repoPath);
+    this.repoFilters.delete(repoPath);
     await this.watcher.removeRepo(repoPath);
   }
 
@@ -477,7 +453,7 @@ export class IndexerService {
       return;
     }
 
-    const ignoreSet = new Set(resolveRepoIgnore(repoPath));
+    const filter = this.fileFilterFor(repoPath);
     const stored = await listEntityFilesForRepo(this.db, repoPath);
 
     // Phase 1: decide, without writing. Nothing is removed until the whole
@@ -493,7 +469,11 @@ export class IndexerService {
         await new Promise<void>(resolveYield => setImmediate(resolveYield));
       }
 
-      const ignored = hasIgnoredSegment(file, repoPath, ignoreSet);
+      // A generated/minified file is kept unindexed by the full walk's own
+      // not-code check (file-selection.ts), not removed here as "ignored"
+      // -- the clean-up pass's "ignored" reason is the gitignore-rule (and
+      // .insrc) decision alone, unchanged from before this Story.
+      const ignored = !filter.includes(file) && !isGeneratedOrMinifiedFile(file);
       // An ignored file goes whether or not it exists; it is stat'ed only
       // while no stored file has been seen on disk yet (see below).
       let onDisk: boolean | null = null;
@@ -645,12 +625,15 @@ export class IndexerService {
       await beginFullIndexState(repoPath);
       log.info({ repo: repoPath, returnedToPending, carriedDocSummaries }, 'full index: repository rows deleted');
 
-      const ignore = resolveRepoIgnore(repoPath);
-      const files = listRepoFiles(repoPath, ignore);
+      // FileFilter (Epic c2ba6fa6 s6) is the one rule for what the walk
+      // holds; listRepoFiles() already excludes everything it would -- an
+      // empty ignore list here means selectFile() classes only not-code /
+      // generated / artifact, never 'excluded-by-ignore' a second time.
+      const files = listRepoFiles(this.refreshedFileFilter(repoPath));
       const supported: string[] = [];
       let notCode = 0;
       for (const filePath of files) {
-        if (selectFile(filePath, repoPath, ignore) === 'selected') supported.push(filePath);
+        if (selectFile(filePath, repoPath, []) === 'selected') supported.push(filePath);
         else notCode++;
       }
       setIndexRunSelected(repoPath, supported.length);
@@ -817,12 +800,14 @@ export class IndexerService {
       this.scheduleSettle(repoPath, filePath);
       return;
     }
-    // create or update. A file the repo's ignore list excludes is not
-    // indexed: the walker applies the list, but a `file` job (the watcher,
-    // or the daemon's `index.file` request for any path) did not, so an
-    // ignored file could re-enter the index between two clean-ups.
-    if (hasIgnoredSegment(filePath, repoPath, new Set(resolveRepoIgnore(repoPath)))) {
-      log.debug({ file: filePath, event }, 'file event skipped: excluded by the repo ignore list');
+    // create or update. A file FileFilter excludes is not indexed: the
+    // walker applies it, but a `file` job (the watcher, or the daemon's
+    // `index.file` request for any path) is a separate entry point, so an
+    // excluded file could re-enter the index between two clean-ups. Using
+    // the same FileFilter here as the full walk is the invariant this
+    // Story (Epic c2ba6fa6 s6) exists to hold: both must agree (ac4).
+    if (!this.fileFilterFor(repoPath).includes(filePath)) {
+      log.debug({ file: filePath, event }, 'file event skipped: excluded by the repo file filter');
       return;
     }
     await this.indexFile(filePath, repoPath, true);

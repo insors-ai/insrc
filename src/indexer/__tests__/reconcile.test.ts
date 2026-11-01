@@ -61,6 +61,13 @@ test.beforeEach(async () => {
 	setLanceConnPath(join(store, 'lance'));
 	repoA = mkdtempSync(join(tmpdir(), 'insrc-2764-a-'));
 	repoC = mkdtempSync(join(tmpdir(), 'insrc-2764-c-'));
+	// Epic c2ba6fa6 s6: FileFilter is the one rule now, taken from the
+	// repo's real ignore files -- the old universal bare-name default (which
+	// included `out`/`vendor`) is retired (ac2). These tests' own "ignored
+	// directory" fixtures name a real rule instead, to exercise the SAME
+	// clean-up behaviour this file is about, not FileFilter itself.
+	writeFileSync(join(repoA, '.gitignore'), '/out/\n/vendor/\n', 'utf8');
+	writeFileSync(join(repoC, '.gitignore'), '/out/\n/vendor/\n', 'utf8');
 	await addRepo(null, { path: repoA, name: '', addedAt: NOW, status: 'ready', lastIndexed: NOW });
 	await addRepo(null, { path: repoC, name: '', addedAt: NOW, status: 'ready', lastIndexed: NOW });
 });

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 38 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -224,3 +224,23 @@ Run at 2026-11-01T10:45:59.718Z on commit `e52dd8f0f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 6 | 1.5 s |  |
+
+## t11
+
+Run at 2026-11-01T10:49:57.271Z on commit `6a343240e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/analyze/explore/concept-resolve.ts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ac9: a non-git folder gets its ignore files' rules, the same answer as the equivalent git repository, not a permissive one | `src/analyze/context/__tests__/repo-ignore-filter.test.ts` |
+| pass | every ancestor of a tracked file is considered included | `src/analyze/context/__tests__/repo-ignore-filter.test.ts` |
+| pass | respects a subdirectory .gitignore | `src/analyze/context/__tests__/repo-ignore-filter.test.ts` |
+| pass | concept.resolve enumerates only the directories FileFilter includes | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/repo-ignore-filter.test.ts` | 0 | 6 | 0.9 s |  |
+| `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.5 s |  |

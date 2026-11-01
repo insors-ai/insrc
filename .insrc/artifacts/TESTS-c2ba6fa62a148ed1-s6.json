@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s6",
     "createdAt": "2026-11-01T08:48:41.494Z",
-    "updatedAt": "2026-11-01T10:45:59.718Z",
+    "updatedAt": "2026-11-01T10:49:57.271Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1207,6 +1207,110 @@
               },
               {
                 "title": "a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "6a343240e",
+        "ranAt": "2026-11-01T10:49:57.271Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/analyze/explore/concept-resolve.ts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/repo-ignore-filter.test.ts",
+                "title": "ac9: a non-git folder gets its ignore files' rules, the same answer as the equivalent git repository, not a permissive one",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/repo-ignore-filter.test.ts",
+                "title": "every ancestor of a tracked file is considered included",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/repo-ignore-filter.test.ts",
+                "title": "respects a subdirectory .gitignore",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+                "title": "concept.resolve enumerates only the directories FileFilter includes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/repo-ignore-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 918,
+            "titles": [
+              {
+                "title": "excludes directories matching a root .gitignore rule",
+                "result": "pass"
+              },
+              {
+                "title": "every ancestor of a tracked file is considered included",
+                "result": "pass"
+              },
+              {
+                "title": "respects a subdirectory .gitignore",
+                "result": "pass"
+              },
+              {
+                "title": "ac9: a non-git folder gets its ignore files' rules, the same answer as the equivalent git repository, not a permissive one",
+                "result": "pass"
+              },
+              {
+                "title": "permissiveIgnoreFilter is always-include",
+                "result": "pass"
+              },
+              {
+                "title": "include() returns only tracked items",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1514,
+            "titles": [
+              {
+                "title": "the fixture's include/exclude set is FileFilter's own answer",
+                "result": "pass"
+              },
+              {
+                "title": "infra walkFiles yields exactly the files FileFilter includes",
+                "result": "pass"
+              },
+              {
+                "title": "infra walkFiles of a directory inside the repository applies the repository's own rules",
+                "result": "pass"
+              },
+              {
+                "title": "infra walkFiles reports a directory it cannot read, and never descends into an ignored one",
+                "result": "pass"
+              },
+              {
+                "title": "module.profile lists only the subdirectories and files FileFilter includes",
+                "result": "pass"
+              },
+              {
+                "title": "concept.resolve enumerates only the directories FileFilter includes",
                 "result": "pass"
               }
             ],

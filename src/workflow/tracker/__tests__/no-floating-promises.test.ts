@@ -93,3 +93,68 @@ export async function good(): Promise<unknown> {
 		assert.ok(found.every(f => /bad|port\.|closeIssue|load/.test(f)));
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+/** The statements in `program` that drop the result of a PolicyReader call (a value or a Promise) without awaiting it. */
+export function floatingPolicyReads(program: ts.Program, include: (file: string) => boolean): string[] {
+	const checker = program.getTypeChecker();
+	const found: string[] = [];
+	for (const file of program.getSourceFiles()) {
+		if (file.isDeclarationFile || !include(file.fileName)) continue;
+		const visit = (node: ts.Node): void => {
+			if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression)) {
+				const call = node.expression;
+				const calleeType = checker.getTypeAtLocation(call.expression);
+				const nonNull = calleeType.getNonNullableType();
+				const isReader = (nonNull.aliasSymbol?.name ?? '') === 'PolicyReader'
+					|| (nonNull.isUnion() && nonNull.types.some(t => (t.aliasSymbol?.name ?? '') === 'PolicyReader'))
+					|| /\b(policyReader|readPolicy)\b/.test(call.expression.getText());
+				const type = checker.getTypeAtLocation(call);
+				const mayBePromise = (type.isUnion() ? type.types : [type]).some(t => (t.symbol?.name ?? '') === 'Promise');
+				if (isReader && mayBePromise) {
+					const { line } = file.getLineAndCharacterOfPosition(node.getStart());
+					found.push(`${file.fileName}:${line + 1}: ${node.getText().slice(0, 80)}`);
+				}
+			}
+			ts.forEachChild(node, visit);
+		};
+		visit(file);
+	}
+	return found;
+}
+
+test('no-floating-promises.test.ts: the PolicyReader readers await the widened return', () => {
+	// (1) the production tree drops no PolicyReader call
+	const configPath = join(ROOT, 'tsconfig.json');
+	const cfg = ts.getParsedCommandLineOfConfigFile(configPath, {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: d => { throw new Error(ts.flattenDiagnosticMessageText(d.messageText, '\n')); } })!;
+	const program = ts.createProgram(cfg.fileNames.filter(f => !/__tests__|\.test\./.test(f)), cfg.options);
+	const found = floatingPolicyReads(program, f => f.startsWith(join(ROOT, 'src')) && !/__tests__|\.test\./.test(f));
+	assert.deepEqual(found.map(f => relative(ROOT, f)), []);
+
+	// (2) the scan reports a dropped reader call and accepts the awaited and returned forms; a value read from an un-awaited result does not compile
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-floating-policy-'));
+	try {
+		const file = join(dir, 'sample.ts');
+		writeFileSync(file, `
+type PolicyResult<T> = { ok: true; value: T } | { ok: false; reason: string };
+type PolicyReader = (repo: string, opts?: { signal?: AbortSignal }) => PolicyResult<string> | Promise<PolicyResult<string>>;
+declare const policyReader: PolicyReader; declare const injected: PolicyReader | undefined;
+export async function bad(): Promise<void> {
+	policyReader('/r');
+	(injected ?? policyReader)('/r');
+}
+export async function good(): Promise<unknown> {
+	const a = await policyReader('/r');
+	const b = await (injected ?? policyReader)('/r');
+	void policyReader('/r');
+	return [a, b, policyReader('/r')];
+}
+export function unawaited(): boolean { return policyReader('/r').ok; }
+`);
+		const options: ts.CompilerOptions = { strict: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, noEmit: true };
+		const sample = ts.createProgram([file], options);
+		const dropped = floatingPolicyReads(sample, f => f === file);
+		assert.equal(dropped.length, 2, dropped.join('\n'));
+		const errors = ts.getPreEmitDiagnostics(sample).filter(d => d.file?.fileName === file);
+		assert.ok(errors.some(d => /does not exist on type|Property 'ok'/.test(ts.flattenDiagnosticMessageText(d.messageText, '\n'))), 'reading .ok of an un-awaited result is a type error');
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});

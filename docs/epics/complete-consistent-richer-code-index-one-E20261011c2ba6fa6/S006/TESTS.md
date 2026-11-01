@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -184,3 +184,23 @@ Run at 2026-11-01T10:35:33.944Z on commit `9b36bd798`. Tests check: **passed**. 
 | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.6 s |  |
 | `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` | 0 | 24 | 4.7 s |  |
 | `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` | 0 | 1 | 0.5 s |  |
+
+## t9
+
+Run at 2026-11-01T10:40:49.186Z on commit `198583e88`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/indexer/index.ts (full walk, single file event, clean-up pass, registration)**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | lc1: a stale .insrc/config.json ignore array from before Story s6 is read by nothing -- only FileFilter decides what the full index takes | `src/indexer/__tests__/file-selection.test.ts` |
+| pass | the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected | `src/indexer/__tests__/file-selection.test.ts` |
+| pass | on a mixed fixture the full index selects the files it selected before, less only the lock file and the oversized JSON the artifact parser skipped | `src/indexer/__tests__/file-selection.test.ts` |
+| pass | a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed | `src/indexer/__tests__/reconcile.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.5 s |  |
+| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.1 s |  |

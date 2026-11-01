@@ -208,14 +208,14 @@ Run at 2026-11-01T19:50:58.195Z on commit `8edd763c1`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-11-01T19:52:31.152Z on commit `14cf172cc`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+Run at 2026-11-01T20:10:39.454Z on commit `6024a6b89`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 the gate ran no test: every named test of this Task was reported by the builder
 
 **smoke: combined-s1-acceptance-evidence-and-boundary-check**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/FOUNDATION-EVIDENCE.md; evidence/macos-combined.tap: 18 pass, 0 fail/skip; Linux run 41343486195: 13 pass, 0 fail/skip
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/FOUNDATION-EVIDENCE.md; refreshed macos-combined.tap: 19 pass, 0 fail/skip; Linux run 41345031980: 14 pass, 0 fail/skip, source matches current
 
 **smoke: preserved-root-package-first-build**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/root-build.txt; npm run build exit 0, package tsc then backend tsc/model validation/asset copy
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/root-build.txt refreshed after de4da9d4c; npm run build exit 0

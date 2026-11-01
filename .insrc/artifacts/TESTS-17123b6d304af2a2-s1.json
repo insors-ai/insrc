@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T19:52:31.152Z",
+    "updatedAt": "2026-11-01T20:10:39.454Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -507,8 +507,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "14cf172cc",
-        "ranAt": "2026-11-01T19:52:31.152Z",
+        "commit": "6024a6b89",
+        "ranAt": "2026-11-01T20:10:39.454Z",
         "testsPassed": true,
         "tests": [
           {
@@ -519,7 +519,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/FOUNDATION-EVIDENCE.md; evidence/macos-combined.tap: 18 pass, 0 fail/skip; Linux run 41343486195: 13 pass, 0 fail/skip"
+              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/FOUNDATION-EVIDENCE.md; refreshed macos-combined.tap: 19 pass, 0 fail/skip; Linux run 41345031980: 14 pass, 0 fail/skip, source matches current"
             }
           },
           {
@@ -530,7 +530,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/root-build.txt; npm run build exit 0, package tsc then backend tsc/model validation/asset copy"
+              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/root-build.txt refreshed after de4da9d4c; npm run build exit 0"
             }
           }
         ],

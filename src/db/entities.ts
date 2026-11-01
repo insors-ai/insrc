@@ -362,9 +362,12 @@ const NOTHING_COMMITTED: FileCommitResult = {
  * In the transaction: the file's previous entities are read through
  * entity_by_file (Story s3), each parsed entity is upserted (module stubs
  * ensure-exist under the shared-modules rows; an unchanged row is not
- * rewritten), the previous entities no longer parsed are removed with their
- * derived rows, the generation advances and the file leaves
- * uncommittedFiles. `contentHash: null` removes the file: no entities are
+ * rewritten), the outgoing relationships of every previous entity of the
+ * file and the file's pending rows are removed, the previous entities no
+ * longer parsed are removed with their derived rows (a relationship another
+ * entity holds into one of them returns to pending), the file's new
+ * relationships are written by Story s1's rule, the generation advances and
+ * the file leaves uncommittedFiles. `contentHash: null` removes the file: no entities are
  * written and every previous one is removed. After the commit the removed
  * entities' vectors are deleted and the new vectors written.
  */
@@ -395,12 +398,22 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 		);
 	}
 
+	// Imported before the transaction: relations.ts imports this module (a cycle).
+	const rel = await import('./relations.js');
+	const { relationOfWrite } = await import('./file-commit.js');
+	const relations = removing ? [] : commit.relations.map(relationOfWrite);
+	const resolved = rel.dedupeResolvedRelations(relations.filter(r => r.resolved));
+	const unresolved = relations.filter(r => !r.resolved);
+
 	const toLanceDelete: string[] = [];
 	type LanceWrite = { entity: Entity; firstEmbed: boolean };
 	const lanceWrites: LanceWrite[] = [];
 	let entitiesWritten = 0;
 	let entitiesRemoved = 0;
 	let generation = 0;
+	let returnedToPending = 0;
+	let resolvedCounts: import('./relations.js').RelationWriteCounts | undefined;
+	let unresolvedCounts: import('./relations.js').RelationWriteCounts | undefined;
 	await withWriteTxn(s => {
 		// Strict contract: the repository must be registered.
 		const repoId = lookupRepoIdInTxn(s, repoPath);
@@ -464,16 +477,34 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 			seen.add(u64);
 		}
 
-		// 3. Remove the previous entities no longer parsed (all of them for a removal).
+		// 3. The file's relationships are replaced, not merged: the outgoing
+		//    edges of EVERY previous entity of the file and the file's pending rows go.
+		for (const u64 of existing) sweepOutgoingEdges(s, u64);
+		rel.deletePendingRowsForFileInTxn(s, repoId, filePath);
+
+		// 4. Remove the previous entities no longer parsed (all of them for a
+		//    removal). A relationship another entity holds into one of them is
+		//    not lost: it returns to pending, awaiting the removed id, so the
+		//    cross-file pass completes it if the entity comes back.
 		const toDelete = existing.filter(u64 => !seen.has(u64));
+		const removed = new Set(toDelete);
 		for (const u64 of toDelete) {
 			const sid = lookupStringIdByU64(s, u64);
 			if (sid !== undefined) toLanceDelete.push(sid);
+			for (const { kind, from } of incomingEdgesInTxn(s, u64)) {
+				if (removed.has(from)) continue;
+				if (rel.returnEdgeToPendingInTxn(s, from, kind, u64)) returnedToPending++;
+			}
 		}
 		detachDeleteEntitiesInTxn(s, toDelete);
 		entitiesRemoved = toDelete.length;
 
-		// 4. The repository's index state, in the same transaction.
+		// 5. The file's new relationships, by Story s1's rule (edge / pending / counted unwritable).
+		const now = Date.now();
+		resolvedCounts = rel.upsertResolvedRelationsInTxn(s, resolved, now);
+		unresolvedCounts = rel.upsertUnresolvedRelationsInTxn(s, unresolved, now);
+
+		// 6. The repository's index state, in the same transaction.
 		generation = updateIndexStateRowInTxn(s, repoId, row => {
 			row.generation++;
 			row.uncommittedFiles = row.uncommittedFiles.filter(f => f !== filePath);
@@ -512,7 +543,15 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 			);
 		}
 	}
-	return { ...NOTHING_COMMITTED, generation, entitiesWritten, entitiesRemoved };
+	if (resolvedCounts !== undefined) rel.logResolvedWrite(resolvedCounts, resolved.length);
+	if (unresolvedCounts !== undefined) rel.logUnresolvedWrite(unresolvedCounts, unresolved.length);
+	return {
+		...NOTHING_COMMITTED, generation, entitiesWritten, entitiesRemoved,
+		relationsStored:            resolvedCounts?.stored ?? 0,
+		relationsPending:           (resolvedCounts?.pending ?? 0) + (unresolvedCounts?.pending ?? 0),
+		relationsUnwritable:        (resolvedCounts?.unwritable ?? 0) + (unresolvedCounts?.unwritable ?? 0),
+		relationsReturnedToPending: returnedToPending,
+	};
 }
 
 export async function deleteEntitiesForFile(_db: DbClient, filePath: string): Promise<void> {

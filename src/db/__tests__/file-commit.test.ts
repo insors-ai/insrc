@@ -17,10 +17,12 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
 import { closeGraphStore, getGraphStore, setGraphStorePath } from '../graph/store.js';
-import { commitFile, findEntitiesByFile } from '../entities.js';
+import { decodeUnresolvedRow } from '../graph/codec.js';
+import { encodeOutEdgeKey, RELATION_KIND_BYTE } from '../graph/keys.js';
+import { commitFile, entityU64ForId, findEntitiesByFile } from '../entities.js';
 import { readIndexState, setUncommittedFiles } from '../index-state.js';
 import { addRepo } from '../repos.js';
-import type { Entity } from '../../shared/types.js';
+import type { Entity, RelationWrite } from '../../shared/types.js';
 import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
 
 useTemporaryLance();
@@ -118,3 +120,67 @@ test('t3: an unregistered repository is refused and nothing is written', async (
 		/not-registered|UnregisteredRepo|not registered/i,
 	);
 });
+
+// ---------------------------------------------------------------------------
+// t4: the relationship half
+// ---------------------------------------------------------------------------
+
+const calls = (from: Entity, to: Entity | string): RelationWrite =>
+	({ from: from.id, kind: 'CALLS', target: { stored: typeof to === 'string' ? to : to.id, meta: { repo: REPO } }, evidence: 'unknown' });
+const imports = (from: Entity, spec: string): RelationWrite =>
+	({ from: from.id, kind: 'IMPORTS', target: { pending: { to: spec, meta: { repo: REPO, file: from.file } } }, evidence: 'unknown' });
+
+async function edge(from: Entity, to: Entity): Promise<boolean> {
+	const store = await getGraphStore();
+	const [f, t] = [await entityU64ForId(from.id), await entityU64ForId(to.id)];
+	return f !== undefined && t !== undefined && store.outEdge.get(encodeOutEdgeKey(f, RELATION_KIND_BYTE['CALLS'], t)) !== undefined;
+}
+async function pending(): Promise<Array<{ from: string; kind: string; to: string; file: string }>> {
+	const store = await getGraphStore();
+	return [...store.unresolved.getRange()].map(({ value }) => decodeUnresolvedRow(value as Buffer))
+		.map(r => ({ from: r.fromEntity, kind: r.kind, to: r.rawTo, file: r.fromFile })).sort((a, b) => (a.to < b.to ? -1 : 1));
+}
+
+test('t4: a refresh replaces the file\'s outgoing relationships and pending rows in the same commit as its entities, and a relationship to an entity not stored becomes a pending row awaiting it', async () => {
+	const [keep, helper, other] = [entity(FILE, 'keep'), entity(FILE, 'helper'), entity(OTHER, 'other')];
+	await commitFile({ repoPath: REPO, filePath: OTHER, contentHash: 'h1', entities: [other], relations: [] });
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [keep, helper],
+		relations: [calls(keep, other), calls(keep, helper), imports(keep, './old')] });
+	assert.deepEqual([await edge(keep, other), await edge(keep, helper)], [true, true]);
+
+	// The new parse keeps both entities but calls only `helper` and a function not stored yet, and imports './new'.
+	const later = `${'f'.repeat(32)}`;
+	const result = await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h2', entities: [keep, helper],
+		relations: [calls(keep, helper), calls(keep, later), imports(keep, './new')] });
+
+	assert.deepEqual([await edge(keep, other), await edge(keep, helper)], [false, true], 'keep -> other is gone although both entities survive');
+	assert.deepEqual((await pending()).map(p => `${p.kind} ${p.to}`).sort(), [`CALLS ${later}`, 'IMPORTS ./new'], "the old import row is gone; the new import and the call to the unstored function are pending");
+	assert.deepEqual([result.relationsStored, result.relationsPending, result.relationsUnwritable], [1, 2, 0]);
+});
+
+test('t4: relationships other files hold into surviving entities are left in place by a refresh', async () => {
+	const [keep, other] = [entity(FILE, 'keep'), entity(OTHER, 'other')];
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [keep], relations: [] });
+	await commitFile({ repoPath: REPO, filePath: OTHER, contentHash: 'h1', entities: [other], relations: [calls(other, keep)] });
+
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h2', entities: [entity(FILE, 'keep', 'function keep() { return 2; }')], relations: [] });
+
+	assert.equal(await edge(other, keep), true);
+	assert.deepEqual(await pending(), []);
+});
+
+test('t4 (ac4): contentHash null removes the file\'s entities, relationships and pending rows together, and returns relationships other files hold into it to pending', async () => {
+	const [keep, helper, other] = [entity(FILE, 'keep'), entity(FILE, 'helper'), entity(OTHER, 'other')];
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [keep, helper], relations: [calls(keep, helper), imports(keep, './x')] });
+	await commitFile({ repoPath: REPO, filePath: OTHER, contentHash: 'h1', entities: [other], relations: [calls(other, keep)] });
+
+	const result = await commitFile({ repoPath: REPO, filePath: FILE, contentHash: null, entities: [], relations: [] });
+
+	assert.deepEqual(await names(FILE), []);
+	assert.equal(result.relationsReturnedToPending, 1);
+	// The import row of the removed file is gone; the call other -> keep now awaits keep's id.
+	assert.deepEqual(await pending(), [{ from: other.id, kind: 'CALLS', to: keep.id, file: OTHER }]);
+	// When the file comes back, the cross-file pass (s1) can complete it: the row awaits the same id.
+	assert.equal((await readIndexState(REPO))!.pending['awaiting-target'], 1);
+});
+

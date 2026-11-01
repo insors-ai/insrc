@@ -22544,6 +22544,18 @@
      "import"
     ],
     [
+     "unresolved-call",
+     "import"
+    ],
+    [
+     "unresolved-call",
+     "import"
+    ],
+    [
+     "storage-call",
+     "incomingEdgesInTxn"
+    ],
+    [
      "storage-call",
      "incomingEdgesInTxn"
     ],
@@ -22841,6 +22853,34 @@
     ],
     [
      "storage-call",
+     "rel.dedupeResolvedRelations"
+    ],
+    [
+     "storage-call",
+     "rel.deletePendingRowsForFileInTxn"
+    ],
+    [
+     "storage-call",
+     "rel.logResolvedWrite"
+    ],
+    [
+     "storage-call",
+     "rel.logUnresolvedWrite"
+    ],
+    [
+     "storage-call",
+     "rel.returnEdgeToPendingInTxn"
+    ],
+    [
+     "storage-call",
+     "rel.upsertResolvedRelationsInTxn"
+    ],
+    [
+     "storage-call",
+     "rel.upsertUnresolvedRelationsInTxn"
+    ],
+    [
+     "storage-call",
      "removeEntityRowInTxn"
     ],
     [
@@ -23109,6 +23149,10 @@
     ],
     [
      "storage-call",
+     "sweepOutgoingEdges"
+    ],
+    [
+     "storage-call",
      "toAbsolutePath"
     ],
     [
@@ -23204,9 +23248,9 @@
      "writer"
     ]
    ],
-   "siteCount": 354,
-   "sitesDigest": "7f3b68c2ee7fc4cd94264bf77d4dab07ad2907c4f76b545ff8de3eb45060a462",
-   "sourceDigest": "f3963486a822a6da3af84766a9f43a5e398a672f466ee41ce47e5c948188ca55",
+   "siteCount": 365,
+   "sitesDigest": "9a7f91c6fcd52ae7e9aaacbc96cdb065d6fa3b8298887529b2c81377dccc3da8",
+   "sourceDigest": "7770b018be5d0e27924dc6007366381301a23ba5ae14796e3084cc1ce5541b5f",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -27505,6 +27549,10 @@
      "(value as Buffer).toString"
     ],
     [
+     "serialization",
+     "(value as Buffer).toString"
+    ],
+    [
      "storage-call",
      "absolutePath"
     ],
@@ -27709,6 +27757,10 @@
      "deleteUnresolvedRowInTxn"
     ],
     [
+     "storage-call",
+     "deleteUnresolvedRowInTxn"
+    ],
+    [
      "serialization",
      "encodeEntityKey"
     ],
@@ -27806,6 +27858,14 @@
     ],
     [
      "serialization",
+     "encodeUnresolvedByFileKey"
+    ],
+    [
+     "serialization",
+     "encodeUnresolvedByFileKey"
+    ],
+    [
+     "storage-call",
      "encodeUnresolvedByFileKey"
     ],
     [
@@ -28102,6 +28162,10 @@
     ],
     [
      "storage-call",
+     "s.unresolvedByFile.getValues"
+    ],
+    [
+     "storage-call",
      "s.unresolvedByFile.put"
     ],
     [
@@ -28265,9 +28329,9 @@
      "writePendingRowInTxn"
     ]
    ],
-   "siteCount": 194,
-   "sitesDigest": "b4795805a1a7da5b1736084ea1fe0eaf0dcf4da555b451bb1c5dcb1938eac570",
-   "sourceDigest": "53cdf6b49ca4b6e30c6f6c12772faef6ea949e3e2863d526c427e4e6fbb6b183",
+   "siteCount": 199,
+   "sitesDigest": "244ba258b2008ddfdd6d5c18fa667856f9cbd8b2b19dc414f924fa41cf015e35",
+   "sourceDigest": "b1f9dcf63b5378972a55d0e21dd2efe22471024093e35c177e9301262870425a",
    "boundaries": [
     "diagnostic",
     "serialization",

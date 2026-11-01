@@ -452,6 +452,17 @@ export async function deleteUnresolvedForRepoFile(
 	});
 }
 
+/** Remove every pending row of one file of a repository, inside the caller's
+ *  write transaction (Epic c2ba6fa6 s2: the file commit replaces them). */
+export function deletePendingRowsForFileInTxn(s: GraphStore, repoId: number, file: string): number {
+	const ids: string[] = [];
+	for (const value of s.unresolvedByFile.getValues(encodeUnresolvedByFileKey(repoId, file))) {
+		ids.push((value as Buffer).toString('utf8'));
+	}
+	for (const id of ids) deleteUnresolvedRowInTxn(s, id);
+	return ids.length;
+}
+
 export async function deleteUnresolvedForRepo(_db: DbClient, repo: string): Promise<void> {
 	assertNoSessionPersistence();
 	const store = await getGraphStore();

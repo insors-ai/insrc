@@ -51,8 +51,9 @@ export interface TsSourceInfo {
 // Public API
 // ---------------------------------------------------------------------------
 
-export function detectSourceRoots(repoRoot: string): SourceRoots {
-  const filter = createFileFilter(repoRoot);
+/** `filter`: the repository's FileFilter when the caller holds one (the
+ *  indexer's cached instance), so a settle pass does not build another. */
+export function detectSourceRoots(repoRoot: string, filter: FileFilter = createFileFilter(repoRoot)): SourceRoots {
   return {
     java:       detectJavaRoots(repoRoot),
     scala:      detectScalaRoots(repoRoot),

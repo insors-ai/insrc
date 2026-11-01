@@ -1197,5 +1197,9 @@
 	"src/indexer/file-filter.ts#stateByFilter": {
 		"class": "per-thread",
 		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
+	},
+	"src/indexer/file-filter.ts#CATCH_ALL_PATTERNS": {
+		"class": "per-thread",
+		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	}
 }

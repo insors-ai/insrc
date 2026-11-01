@@ -30563,7 +30563,7 @@
    ],
    "siteCount": 52,
    "sitesDigest": "21a428a04001f915e3621721a3f1f9b4935bbb5a80887ee5ab15a7715bbc5c9d",
-   "sourceDigest": "e0f57c9ad9a7bd333e482e619e943beeaf59260932653759cdb93345f9659359",
+   "sourceDigest": "787f4ac9ce223b9f5be232c2c51d6dedb8dc5fe4e78c202d93a5a6bf0fda53b3",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -30928,6 +30928,10 @@
      "statSync"
     ],
     [
+     "filesystem-read",
+     "statSync"
+    ],
+    [
      "filesystem-write",
      "writeFileSync"
     ],
@@ -30936,9 +30940,9 @@
      "writeFileSync"
     ]
    ],
-   "siteCount": 11,
-   "sitesDigest": "71d8c1f02692b845c680b4b727e3b16b4ac7dea2da9c79c2f9dc775c96266450",
-   "sourceDigest": "f27f610cd87d2b34785bd3eb4d921dbede801847a30bba8288d02b791e960d69",
+   "siteCount": 12,
+   "sitesDigest": "777e663a60fbc42a1716a10f5948a4f1ea30fdde39c6b7d8bb3fa48712ff1819",
+   "sourceDigest": "fd5d5bfbc7cdc9c3c356ccb3bec2ff7c900d2be25b8257b514f752009d981dad",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -31529,7 +31533,7 @@
    ],
    "siteCount": 135,
    "sitesDigest": "93ee7357e574fa171fe79b522e25f7a5041fecd47e050b32454a0e5abd10376e",
-   "sourceDigest": "1deb064a66ac0642198428f551552c876646214e63a179ca3d2f2dc0461f14dd",
+   "sourceDigest": "8de77dbf8100b7f356f0bbe1627bf79d68294ec906eeea658a00c2e4074d9b0b",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -31815,7 +31819,7 @@
    ],
    "siteCount": 6,
    "sitesDigest": "9458184d283c1ef796fde4bc4bf39b3d2d6cee4c9fdfa25eabf35a1b12ca984e",
-   "sourceDigest": "163b287769ec3e84fbf2c6bfe7078c6a46ca010c411d45476450e4ecf3ff20a8",
+   "sourceDigest": "cb7e6416fe9aa8603557f8fb7b8338c77c46c4ea078caad0cb63941637b34c95",
    "boundaries": [
     "filesystem-read",
     "serialization"

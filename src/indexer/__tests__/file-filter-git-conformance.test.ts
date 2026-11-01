@@ -18,7 +18,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 
@@ -137,5 +137,84 @@ test('ac9: a non-git folder holding the same tree leaves out the same files its 
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 		rmSync(plain, { recursive: true, force: true });
+	}
+});
+
+// ---------------------------------------------------------------------------
+// Code review round 1 (s6): cases git answers that the first fixture did not reach
+// ---------------------------------------------------------------------------
+
+test('a repository registered at a subdirectory of a git working tree gets the tree\'s rules and tracked files, as git ls-files run there does', () => {
+	const repo = gitRepo();
+	try {
+		const sub = join(repo, 'pkg');
+		// Left out only by a rule ABOVE pkg/ (the root's *.log), and a file git
+		// tracks under a directory pkg/'s own rule leaves out.
+		writeFileSync(join(sub, 'build.log'), 'x\n', 'utf8');
+		writeFileSync(join(sub, 'out', 'forced.ts'), 'x\n', 'utf8');
+		execFileSync('git', ['add', '-f', 'pkg/out/forced.ts'], { cwd: repo });
+		const fromGit = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: sub, encoding: 'utf8' })
+			.split('\0').filter(Boolean).sort();
+		// The root .gitignore's `*.log` and `secret.txt` and the exclude file reach into pkg/.
+		assert.ok(fromGit.includes('secret.txt') && !fromGit.includes('out/o.ts'), 'pkg/\'s own rules apply');
+		assert.ok(!fromGit.includes('build.log'), 'the root .gitignore reaches into pkg/');
+		assert.ok(fromGit.includes('out/forced.ts'), 'a tracked file is included under an ignored directory');
+		assert.deepEqual(listed(createFileFilter(sub), sub), fromGit);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('a symbolic link to a file is listed as git lists it, and one to a directory is not followed', () => {
+	const repo = gitRepo();
+	try {
+		symlinkSync(join(repo, 'src', 'a.ts'), join(repo, 'src', 'link.ts'));
+		symlinkSync(join(repo, 'src'), join(repo, 'srclink'));
+		const expected = gitIncluded(repo);
+		assert.ok(expected.includes('src/link.ts') && expected.includes('srclink') && !expected.includes('srclink/a.ts'));
+		// git lists the directory link as an entry; the index takes files only.
+		assert.deepEqual(listed(createFileFilter(repo), repo), expected.filter(rel => rel !== 'srclink'));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('a nested repository\'s files are not this repository\'s, as git does not list them', () => {
+	const repo = gitRepo();
+	try {
+		const nested = join(repo, 'third_party', 'lib');
+		mkdirSync(nested, { recursive: true });
+		execFileSync('git', ['init', '-q'], { cwd: nested });
+		writeFileSync(join(nested, 'lib.ts'), 'x\n', 'utf8');
+		const expected = gitIncluded(repo);
+		assert.ok(!expected.includes('third_party/lib/lib.ts'));
+		const filter = createFileFilter(repo);
+		assert.deepEqual(listed(filter, repo), expected.filter(rel => rel !== 'third_party/lib/'));
+		assert.equal(filter.includes(join(nested, 'lib.ts')), false);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('the clone\'s exclude file outranks the global ignore file, as in git, and the global file is found under XDG_CONFIG_HOME', t => {
+	const repo = gitRepo();
+	const xdg = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-s6-xdg-')));
+	const saved = process.env['XDG_CONFIG_HOME'];
+	try {
+		mkdirSync(join(xdg, 'git'));
+		writeFileSync(join(xdg, 'git', 'ignore'), '*.tmp\nnotes.md\n', 'utf8');
+		writeFileSync(join(repo, '.git', 'info', 'exclude'), 'excluded-by-clone.ts\nvendor/\n!keep.tmp\n', 'utf8');
+		for (const f of ['a.tmp', 'keep.tmp', 'notes.md']) writeFileSync(join(repo, f), 'x\n', 'utf8');
+		process.env['XDG_CONFIG_HOME'] = xdg;   // git itself reads the same variable
+		const configured = spawnSync('git', ['config', '--get', 'core.excludesFile'], { cwd: repo, encoding: 'utf8' }).stdout.trim();
+		if (configured.length > 0) { t.skip('core.excludesFile is configured on this machine, which outranks XDG for git and the filter alike'); return; }
+
+		const expected = gitIncluded(repo);
+		assert.ok(expected.includes('keep.tmp') && !expected.includes('a.tmp') && !expected.includes('notes.md'), 'git applies the XDG global file below the exclude file');
+		assert.deepEqual(listed(createFileFilter(repo), repo), expected);
+	} finally {
+		if (saved === undefined) delete process.env['XDG_CONFIG_HOME']; else process.env['XDG_CONFIG_HOME'] = saved;
+		rmSync(repo, { recursive: true, force: true });
+		rmSync(xdg, { recursive: true, force: true });
 	}
 });

@@ -168,3 +168,41 @@ test('a full index or re-registration refreshes the filter the watcher holds, in
 	}
 });
 
+// ---------------------------------------------------------------------------
+// Code review round 1 (s6)
+// ---------------------------------------------------------------------------
+
+test('a refresh is reported, and a .gitignore a tool writes inside an ignored directory refreshes nothing', () => {
+	const repo = indexedRepo();
+	try {
+		const filter = createFileFilter(repo);
+		let refreshes = 0;
+		mkdirSync(join(repo, 'a', 'cache'));
+		writeFileSync(join(repo, 'a', 'cache', '.gitignore'), '*\n', 'utf8');   // inside a/, which the rules leave out
+		assert.deepEqual(filterBatch(filter, [{ type: 'create', path: join(repo, 'a', 'cache', '.gitignore') }], () => refreshes++), []);
+		assert.equal(refreshes, 0);
+
+		writeFileSync(join(repo, '.gitignore'), 'b/\n', 'utf8');
+		filterBatch(filter, [{ type: 'update', path: join(repo, '.gitignore') }], () => refreshes++);
+		assert.equal(refreshes, 1);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built', async () => {
+	const queue = new IndexQueue();
+	const enqueued: unknown[] = [];
+	queue.enqueue = (job => { enqueued.push(job); }) as typeof queue.enqueue;
+	let refreshed: ((repoPath: string) => void) | undefined;
+	const watcher = {
+		onEvents() {}, onFilterRefreshed(h: (repoPath: string) => void) { refreshed = h; },
+		async addRepo() {}, async removeRepo() {}, async addConfigDir() {},
+	} as unknown as Watcher;
+	const svc = new IndexerService(null as unknown as DbClient, queue, watcher, undefined, 600_000);
+	await svc.start([]);
+	assert.ok(refreshed !== undefined, 'the indexer listens for refreshes');
+	refreshed('/some/repo');
+	assert.deepEqual(enqueued.filter(j => (j as { kind: string }).kind === 'reconcile'), [{ kind: 'reconcile', repoPath: '/some/repo' }]);
+});
+

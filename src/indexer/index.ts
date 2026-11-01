@@ -206,6 +206,10 @@ export class IndexerService {
    */
   async start(repos: RegisteredRepo[]): Promise<void> {
     log.info({ repos: repos.length }, 'indexer starting');
+    // A live ignore-rule change: the clean-up pass removes every stored file
+    // the new rules leave out -- also one indexed after the filter was last
+    // rebuilt, which the refresh's own 'left' list cannot name (s6 review).
+    this.watcher.onFilterRefreshed?.(repoPath => this.queue.enqueue({ kind: 'reconcile', repoPath }));
     this.watcher.onEvents(events => {
       for (const e of events) {
         // Check if this is a config file event
@@ -568,8 +572,9 @@ export class IndexerService {
    * as in the settle pass).
    */
   protected async resolveAfterReconcile(repoPath: string): Promise<void> {
-    const sourceRoots = detectSourceRoots(repoPath);
-    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'repository' });
+    const fileFilter = this.fileFilterFor(repoPath);
+    const sourceRoots = detectSourceRoots(repoPath, fileFilter);
+    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'repository', fileFilter });
     log.info({ repo: repoPath, ...cf }, 'cross-file pass after index clean-up');
     try {
       await resolveExternalEndpoints({ db: this.db, repo: repoPath });
@@ -736,8 +741,9 @@ export class IndexerService {
       // outer catch correctly sets `status='error'` on the repo so the
       // next startup re-enqueues a full index instead of treating a
       // half-done index as ready.
-      const sourceRoots = detectSourceRoots(repoPath);
-      const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'full' });
+      const fileFilter = this.fileFilterFor(repoPath);
+      const sourceRoots = detectSourceRoots(repoPath, fileFilter);
+      const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'full', fileFilter });
       log.info({ repo: repoPath, ...cf }, 'cross-file pass after full index');
       let endpointPassFailed = false;
 
@@ -903,9 +909,12 @@ export class IndexerService {
     this.settleScopeFiles.delete(repoPath);
     if (scope === undefined || scope.size === 0) return;
 
-    const sourceRoots = detectSourceRoots(repoPath);
+    // The cached FileFilter: a settle follows every save, and building a
+    // filter walks the whole repository.
+    const fileFilter = this.fileFilterFor(repoPath);
+    const sourceRoots = detectSourceRoots(repoPath, fileFilter);
     const result = await runCrossFileResolver({
-      db: this.db, repoRoot: repoPath, sourceRoots, mode: 'settle', committedFiles: [...scope],
+      db: this.db, repoRoot: repoPath, sourceRoots, mode: 'settle', committedFiles: [...scope], fileFilter,
     });
     const totalResolved = result.resolved, totalAmbiguous = result.ambiguous, totalRewired = result.importsRewired;
 

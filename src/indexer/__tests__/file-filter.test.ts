@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -323,3 +323,51 @@ test('error path: a broken .git directory degrades the tracked-file override to 
 		rmSync(dir, { recursive: true, force: true });
 	}
 });
+
+// ---------------------------------------------------------------------------
+// Code review round 1 (s6): what a model proposal may write
+// ---------------------------------------------------------------------------
+
+function proposalRepo(): string {
+	return realpathSync(mkdtempSync(join(tmpdir(), 'insrc-s6-proposal-')));
+}
+
+test('a proposal wrapped in markdown fences is written without the fence lines', async () => {
+	const dir = proposalRepo();
+	try {
+		const model: CheapTierModel = { complete: async () => ({ text: '```gitignore\nnode_modules/\ndist/\n```\n', stopReason: 'end_turn' }) as never };
+		assert.deepEqual(await proposeIgnoreFile(dir, model), { written: true, source: 'model' });
+		assert.equal(readFileSync(join(dir, '.gitignore'), 'utf8'), 'node_modules/\ndist/\n');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('a proposal with a pattern that leaves out the whole repository is not written; the plain fallback is', async () => {
+	const dir = proposalRepo();
+	try {
+		const model: CheapTierModel = { complete: async () => ({ text: 'node_modules/\n*\n', stopReason: 'end_turn' }) as never };
+		const proposal = await proposeIgnoreFile(dir, model);
+		assert.equal(proposal.source, 'fallback');
+		assert.ok(!readFileSync(join(dir, '.gitignore'), 'utf8').split('\n').includes('*'));
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('a model that does not answer in time is aborted and the plain fallback is written', async () => {
+	const dir = proposalRepo();
+	try {
+		let aborted = false;
+		const model: CheapTierModel = {
+			complete: (_messages, opts) => new Promise(() => { opts?.signal?.addEventListener('abort', () => { aborted = true; }); }),
+		};
+		const proposal = await proposeIgnoreFile(dir, model, 50);
+		assert.equal(proposal.source, 'fallback');
+		assert.equal(aborted, true, 'the model call was aborted');
+		assert.ok(readFileSync(join(dir, '.gitignore'), 'utf8').length > 0);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+

@@ -16,11 +16,14 @@ const DEBOUNCE_MS = 200;
  * the refresh moved are then reported too, so the index follows the rules
  * without re-adding the repository: each file that left as a 'delete', each
  * that entered as a 'create' (unless the batch already carries an event for
- * it).
+ * it). `onRefreshed` is told of a refresh: a file indexed after the filter
+ * was last rebuilt is not on its 'left' list, so the indexer runs its
+ * clean-up pass too.
  */
-export function filterBatch(filter: FileFilter, events: readonly FileEvent[]): FileEvent[] {
+export function filterBatch(filter: FileFilter, events: readonly FileEvent[], onRefreshed?: () => void): FileEvent[] {
   const changed = changedIgnoreFile(filter, events.map(e => e.path));
   const change = changed !== undefined ? refreshFileFilter(filter, changed) : undefined;
+  if (change !== undefined) onRefreshed?.();
   const out = events.filter(e => filter.includes(e.path));
   if (change !== undefined) {
     const carried = new Set(out.map(e => e.path));
@@ -42,6 +45,7 @@ export function filterBatch(filter: FileFilter, events: readonly FileEvent[]): F
  */
 export class Watcher {
   private readonly handlers:     EventHandler[]   = [];
+  private readonly refreshHandlers: Array<(repoPath: string) => void> = [];
   private readonly subscriptions: Map<string, parcelWatcher.AsyncSubscription> = new Map();
   private debounceTimer:          ReturnType<typeof setTimeout> | null = null;
   private pendingEvents:          FileEvent[] = [];
@@ -49,6 +53,12 @@ export class Watcher {
   /** Register an event handler (call before addRepo). */
   onEvents(handler: EventHandler): void {
     this.handlers.push(handler);
+  }
+
+  /** Register a handler told when a repository's FileFilter was refreshed
+   *  by an ignore-rule change in its event stream (call before addRepo). */
+  onFilterRefreshed(handler: (repoPath: string) => void): void {
+    this.refreshHandlers.push(handler);
   }
 
   /** Start watching a repo directory. Idempotent. `filter` (Epic c2ba6fa6
@@ -64,10 +74,15 @@ export class Watcher {
       repoPath,
       (_err, events) => {
         const batch = events.map(e => ({ type: e.type as FileEventType, path: e.path }));
-        this.pendingEvents.push(...(filter === undefined ? batch : filterBatch(filter, batch)));
+        this.pendingEvents.push(...(filter === undefined ? batch : filterBatch(filter, batch, () => {
+          for (const handler of this.refreshHandlers) handler(repoPath);
+        })));
         this.scheduleDrain();
       },
-      { ignore: [] },
+      // The daemon's own .insrc directory is a built-in exclusion and busy
+      // (artifacts, state): its events never reach JS at all. Everything else
+      // is judged by the filter, whose rules can change at run time.
+      { ignore: filter === undefined ? [] : ['.insrc'] },
     );
 
     this.subscriptions.set(repoPath, sub);

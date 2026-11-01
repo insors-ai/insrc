@@ -68,7 +68,7 @@ import type { SourceRoots } from './source-roots.js';
 import { selectFile, type FileSelection } from './file-selection.js';
 import { resolveImportPath } from './resolver.js';
 import { listExportNames } from '../db/export-names.js';
-import { createFileFilter } from './file-filter.js';
+import { createFileFilter, type FileFilter } from './file-filter.js';
 
 const log = getLogger('cross-file-resolver');
 
@@ -113,6 +113,9 @@ export interface CrossFileResolveOpts {
   readonly mode?:        CrossFileMode | undefined;
   /** Required in 'settle' mode: the files committed since the last settle (absolute paths). */
   readonly committedFiles?: readonly string[] | undefined;
+  /** The repository's FileFilter when the caller holds one (the indexer's
+   *  cached instance); absent, one is built for the file-target classing. */
+  readonly fileFilter?: FileFilter | undefined;
 }
 
 export interface CrossFileResolveResult {
@@ -235,7 +238,7 @@ async function runPass0(opts: CrossFileResolveOpts, mode: CrossFileMode, index: 
 async function classifyFileTargets(opts: CrossFileResolveOpts, mode: CrossFileMode): Promise<void> {
   // FileFilter is the one rule (Epic c2ba6fa6 s6): the same filter the full
   // walk and the file event use decides 'excluded-by-ignore'.
-  const filter = createFileFilter(opts.repoRoot);
+  const filter = opts.fileFilter ?? createFileFilter(opts.repoRoot);
   const updates: { id: string; meta: Record<string, unknown> }[] = [];
   for (const row of await rowsInScope({ ...opts, scopeFile: undefined }, mode)) {
     const target = row.meta['targetFile'];

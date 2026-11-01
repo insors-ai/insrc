@@ -117,15 +117,28 @@ interface TrackedSets {
 
 const EMPTY_TRACKED: TrackedSets = { files: new Set(), dirs: new Set() };
 
+/** The git working tree `absPath` lies in: the nearest directory, itself
+ *  or an ancestor, holding a `.git` entry (a directory, or the link file of
+ *  a worktree or submodule). Undefined outside any git working tree. A
+ *  repository registered at a subdirectory of a git working tree is judged
+ *  by that tree's rules and tracked files, as `git ls-files` run there is. */
+function gitRootOf(absPath: string): string | undefined {
+	for (let d = absPath; ; d = dirname(d)) {
+		if (existsSync(join(d, '.git'))) return d;
+		if (dirname(d) === d) return undefined;
+	}
+}
+
 /** `git ls-files --cached` for `repoPath`, as absolute paths, plus every
  *  ancestor directory of a tracked file up to (and including) `repoPath` —
  *  so a directory query answers true when it holds a tracked descendant.
- *  Empty for a non-git `repoPath`, or when the git call fails (logged at
+ *  Empty outside a git working tree, or when the git call fails (logged at
  *  warn — error path 3: a tracked file inside a corrupted/missing-git
  *  repo degrades, in this one failure case, to ignore-rules-alone, the
- *  same as a genuinely non-git folder). */
+ *  same as a genuinely non-git folder). Run in `repoPath`, git lists only
+ *  the files under it, relative to it. */
 function trackedSetsFor(repoPath: string): TrackedSets {
-	if (!existsSync(join(repoPath, '.git'))) return EMPTY_TRACKED;
+	if (gitRootOf(resolve(repoPath)) === undefined) return EMPTY_TRACKED;
 
 	let stdout: string;
 	try {
@@ -161,7 +174,8 @@ function trackedSetsFor(repoPath: string): TrackedSets {
 // ---------------------------------------------------------------------------
 
 /** `git config --get core.excludesFile`, expanded; falls back to the XDG
- *  default (`~/.config/git/ignore`) when git is not configured with one.
+ *  default (`$XDG_CONFIG_HOME/git/ignore`, `~/.config/git/ignore` when that
+ *  is unset) when git is not configured with one.
  *  Never throws — a missing git binary or an unset config is simply "no
  *  global ignore file", not an error. */
 function globalIgnoreFile(repoPath: string): string | undefined {
@@ -175,7 +189,8 @@ function globalIgnoreFile(repoPath: string): string | undefined {
 	} catch {
 		// Not configured, or git itself unavailable — fall through to the default.
 	}
-	const xdgDefault = join(homedir(), '.config', 'git', 'ignore');
+	const xdgHome = process.env['XDG_CONFIG_HOME'];
+	const xdgDefault = join(xdgHome !== undefined && xdgHome.length > 0 ? xdgHome : join(homedir(), '.config'), 'git', 'ignore');
 	return existsSync(xdgDefault) ? xdgDefault : undefined;
 }
 
@@ -213,6 +228,10 @@ interface RuleWalkResult {
 	readonly ig: Ignore;
 	readonly files: string[];
 	readonly dirsWithIncludedDescendant: Set<string>;
+	/** Directories below `repoPath` holding their own `.git`: another
+	 *  repository (a submodule, a vendored clone), whose files git does not
+	 *  list as this one's, so neither does this filter. */
+	readonly nestedRepos: Set<string>;
 }
 
 /** One combined walk: collects nested `.gitignore` rules top-down (not
@@ -221,9 +240,10 @@ interface RuleWalkResult {
  *  directory is reached, which is always complete for that directory and
  *  everything above it — decides every file's inclusion in the same pass,
  *  recording the ancestor directories of every included file. */
-function walk(repoPath: string, ig: Ignore, tracked: TrackedSets): RuleWalkResult {
+function walk(repoPath: string, ruleRoot: string, ig: Ignore, tracked: TrackedSets): RuleWalkResult {
 	const files: string[] = [];
 	const dirsWithIncludedDescendant = new Set<string>();
+	const nestedRepos = new Set<string>();
 
 	const markIncluded = (absFile: string): void => {
 		files.push(absFile);
@@ -237,7 +257,7 @@ function walk(repoPath: string, ig: Ignore, tracked: TrackedSets): RuleWalkResul
 	};
 
 	const visit = (dir: string): void => {
-		const relDir = relative(repoPath, dir);
+		const relDir = relative(ruleRoot, dir);
 		const giPath = join(dir, '.gitignore');
 		if (existsSync(giPath)) addPrefixed(ig, readRuleLines(giPath), relDir);
 
@@ -247,13 +267,16 @@ function walk(repoPath: string, ig: Ignore, tracked: TrackedSets): RuleWalkResul
 
 		for (const entry of entries) {
 			const abs = join(dir, entry.name);
-			const rel = relative(repoPath, abs).split(sep).join('/');
+			const rel = relative(ruleRoot, abs).split(sep).join('/');
 			if (entry.name === '.git') continue;
 			if (entry.isDirectory()) {
 				const ruleExcluded = ig.ignores(`${rel}/`);
 				if (ruleExcluded && !tracked.dirs.has(abs)) continue;
+				if (existsSync(join(abs, '.git'))) { nestedRepos.add(abs); continue; }
 				visit(abs);
-			} else if (entry.isFile()) {
+			} else if (entry.isFile() || (entry.isSymbolicLink() && isFileTarget(abs))) {
+				// git lists a symbolic link as an entry of its own and never
+				// follows one into a directory: a link to a file is a file here.
 				if (isBuiltInExcluded(abs, repoPath)) continue;
 				const included = tracked.files.has(abs) || !ig.ignores(rel);
 				if (included) markIncluded(abs);
@@ -262,7 +285,11 @@ function walk(repoPath: string, ig: Ignore, tracked: TrackedSets): RuleWalkResul
 	};
 	visit(repoPath);
 
-	return { ig, files, dirsWithIncludedDescendant };
+	return { ig, files, dirsWithIncludedDescendant, nestedRepos };
+}
+
+function isFileTarget(absLink: string): boolean {
+	try { return statSync(absLink).isFile(); } catch { return false; }
 }
 
 // ---------------------------------------------------------------------------
@@ -272,11 +299,16 @@ function walk(repoPath: string, ig: Ignore, tracked: TrackedSets): RuleWalkResul
 interface FileFilterState {
 	readonly ig: Ignore;
 	readonly tracked: TrackedSets;
+	/** What patterns are matched relative to: the enclosing git working
+	 *  tree's root, else `repoPath` itself. */
+	readonly ruleRoot: string;
+	readonly nestedRepos: ReadonlySet<string>;
 	files: string[];
 	dirsWithIncludedDescendant: Set<string>;
 	/** The content digest ('' when absent) of each rule file the walk does
-	 *  not visit -- the clone's exclude file and the global ignore file --
-	 *  as read when this state was built. */
+	 *  not visit -- the clone's exclude file, the global ignore file, and the
+	 *  .gitignore files of the git working tree above `repoPath` -- as read
+	 *  when this state was built. */
 	readonly outsideRuleDigests: ReadonlyMap<string, string>;
 }
 
@@ -286,7 +318,7 @@ const stateByFilter = new WeakMap<FileFilter, FileFilterState>();
  *  `.git/info/exclude`, and the user's global gitignore. */
 function sourcesFor(repoPath: string): RuleSource[] {
 	const ruleFiles: string[] = [];
-	const excludeFile = join(repoPath, '.git', 'info', 'exclude');
+	const excludeFile = join(gitRootOf(repoPath) ?? repoPath, '.git', 'info', 'exclude');
 	if (existsSync(excludeFile)) ruleFiles.push(excludeFile);
 	const global = globalIgnoreFile(repoPath);
 	if (global !== undefined) ruleFiles.push(global);
@@ -299,26 +331,45 @@ function sourcesFor(repoPath: string): RuleSource[] {
  *  `refreshFileFilter` (Story s6/t3) both need. */
 function buildState(absRepo: string): FileFilterState {
 	const tracked = trackedSetsFor(absRepo);
+	const gitRoot = gitRootOf(absRepo);
+	const ruleRoot = gitRoot ?? absRepo;
 
+	// Lowest precedence first: in one `ignore` matcher the last matching
+	// pattern wins, and git ranks the global file below the clone's exclude
+	// file, both below every .gitignore.
 	const ig = ignore();
-	addPrefixed(ig, readRuleLines(join(absRepo, '.git', 'info', 'exclude')), '');
 	const global = globalIgnoreFile(absRepo);
+	const exclude = gitRoot !== undefined ? join(gitRoot, '.git', 'info', 'exclude') : undefined;
 	if (global !== undefined) addPrefixed(ig, readRuleLines(global), '');
+	if (exclude !== undefined) addPrefixed(ig, readRuleLines(exclude), '');
+	// A repository registered below its git working tree's root: the
+	// .gitignore files above it, root first, as git reads them.
+	const above: string[] = [];
+	for (let d = dirname(absRepo); gitRoot !== undefined && d.length >= gitRoot.length; d = dirname(d)) {
+		above.unshift(join(d, '.gitignore'));
+		if (d === gitRoot) break;
+	}
+	for (const gi of above) addPrefixed(ig, readRuleLines(gi), relative(ruleRoot, dirname(gi)));
 
-	const { files, dirsWithIncludedDescendant } = walk(absRepo, ig, tracked);
-	return { ig, tracked, files, dirsWithIncludedDescendant, outsideRuleDigests: outsideRuleDigests(absRepo) };
+	const { files, dirsWithIncludedDescendant, nestedRepos } = walk(absRepo, ruleRoot, ig, tracked);
+	// Rule files a watcher event may never name (the exclude file lies under
+	// .git, the others outside the repository): a change is found by content.
+	const outside = [...(exclude !== undefined ? [exclude] : []), ...(global !== undefined ? [global] : []), ...above];
+	return {
+		ig, tracked, ruleRoot, nestedRepos, files, dirsWithIncludedDescendant,
+		outsideRuleDigests: new Map(outside.map(f => [f, fileDigest(f)])),
+	};
 }
 
-/** The clone's exclude file and the global ignore file: rule files a
- *  watcher event may never name (the exclude file lies under `.git`, the
- *  global one outside the repository), so a change is found by content. */
-function outsideRuleFiles(absRepo: string): string[] {
-	const global = globalIgnoreFile(absRepo);
-	return [join(absRepo, '.git', 'info', 'exclude'), ...(global !== undefined ? [global] : [])];
-}
-
-function outsideRuleDigests(absRepo: string): Map<string, string> {
-	return new Map(outsideRuleFiles(absRepo).map(f => [f, fileDigest(f)]));
+/** `abs` relative to the state's rule root, '/'-separated; undefined for a
+ *  path outside `repoPath`, or inside a nested repository. */
+function ruleRelative(state: FileFilterState, absRepo: string, abs: string): string | undefined {
+	const inRepo = relative(absRepo, abs);
+	if (inRepo.startsWith('..') || resolve(absRepo, inRepo) !== abs) return undefined;
+	for (const nested of state.nestedRepos) {
+		if (abs === nested || abs.startsWith(`${nested}${sep}`)) return undefined;
+	}
+	return relative(state.ruleRoot, abs).split(sep).join('/');
 }
 
 function fileDigest(path: string): string {
@@ -346,15 +397,18 @@ export function createFileFilter(repoPath: string): FileFilter {
 			if (isBuiltInExcluded(abs, absRepo)) return false;
 			if (state.tracked.files.has(abs) || state.tracked.dirs.has(abs)) return true;
 			if (state.dirsWithIncludedDescendant.has(abs)) return true;
+			// A path outside repoPath (e.g. a watcher event reported under a
+			// different resolution of a symlinked temp dir than absRepo), or in
+			// a nested repository, is never included -- and `ignore` throws on
+			// a `..`-escaping pathname.
+			const rel = ruleRelative(state, absRepo, abs);
+			if (rel === undefined || abs === absRepo) return false;
+			// The rules first: a path they exclude needs no stat (a burst of
+			// events under node_modules/ costs no file-system call).
+			if (state.ig.ignores(rel)) return false;
 			let isDir = false;
 			try { isDir = statSync(abs).isDirectory(); } catch { /* path may not exist yet */ }
-			if (isDir) return false;   // not tracked, no recorded included descendant: empty of included content
-			const rel = relative(absRepo, abs).split(sep).join('/');
-			// A path outside repoPath (e.g. a watcher event reported under a
-			// different resolution of a symlinked temp dir than absRepo) is
-			// never included -- `ignore` throws on a `..`-escaping pathname.
-			if (rel === '' || rel.startsWith('../') || rel.startsWith('..\\')) return false;
-			return !state.ig.ignores(rel);
+			return !isDir;   // a directory: not tracked, no recorded included descendant, so empty of included content
 		},
 		listFiles(): string[] {
 			const state = stateByFilter.get(filter);
@@ -379,9 +433,9 @@ export function excludesDirectory(filter: FileFilter, absDir: string): boolean {
 	const abs = resolve(absDir);
 	if (isBuiltInExcluded(abs, filter.repoPath)) return true;
 	if (state.tracked.dirs.has(abs) || state.dirsWithIncludedDescendant.has(abs)) return false;
-	const rel = relative(filter.repoPath, abs).split(sep).join('/');
-	if (rel === '') return false;
-	if (rel.startsWith('../')) return true;
+	if (abs === filter.repoPath) return false;
+	const rel = ruleRelative(state, filter.repoPath, abs);
+	if (rel === undefined) return true;
 	return state.ig.ignores(`${rel}/`);
 }
 
@@ -403,7 +457,9 @@ export function changedIgnoreFile(filter: FileFilter, changedPaths: readonly str
 		const abs = resolve(p);
 		const rel = relative(filter.repoPath, abs);
 		if (rel === '' || rel.startsWith('..') || isGitDir(rel)) continue;
-		if (basename(abs) === '.gitignore') return abs;
+		// One inside a directory the rules already exclude (a tool's cache
+		// writes its own) changes nothing git reads.
+		if (basename(abs) === '.gitignore' && !excludesDirectory(filter, dirname(abs))) return abs;
 	}
 	// The paths resolved when the filter was built: no git subprocess per batch.
 	for (const [f, digest] of stateByFilter.get(filter)?.outsideRuleDigests ?? []) {
@@ -467,14 +523,25 @@ function fallbackIgnoreContent(repoPath: string): string {
 	return [...base].sort().map(d => `${d}/`).join('\n') + '\n';
 }
 
-/** Non-empty, line-based: at least one non-blank, non-comment line, and no
- *  line that looks like prose rather than a gitignore entry (a line with
- *  whitespace in it is not a valid gitignore pattern). */
-function looksLikeIgnoreFile(text: string): boolean {
-	const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
-	if (lines.length === 0) return false;
-	return lines.every(l => !/\s/.test(l));
+/** A pattern that would leave out the whole repository (or every file). */
+const CATCH_ALL_PATTERNS = new Set(['*', '**', '/*', '/**', '**/*', '/', '.', './', '*/', '**/']);
+
+/** The model's reply as ignore-file content, or undefined when it is not
+ *  usable: markdown fence lines are dropped; what is left must have at least
+ *  one pattern, no line that reads as prose (a line with whitespace in it is
+ *  not a valid gitignore pattern), and no pattern that would leave out the
+ *  whole repository. */
+function usableIgnoreContent(text: string): string | undefined {
+	const kept = text.split('\n').filter(l => !l.trim().startsWith('```'));
+	const patterns = kept.map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
+	if (patterns.length === 0) return undefined;
+	if (!patterns.every(l => !/\s/.test(l) && !CATCH_ALL_PATTERNS.has(l))) return undefined;
+	return `${kept.join('\n').trim()}\n`;
 }
+
+/** How long a repository add waits for the model's proposal before it
+ *  writes the plain fallback file instead. */
+const PROPOSAL_TIMEOUT_MS = 120_000;
 
 /**
  * Proposes a root ignore file for `repoPath` when none exists, asking
@@ -484,7 +551,7 @@ function looksLikeIgnoreFile(text: string): boolean {
  * back to a plain universal-base ignore file instead (ac7, lc2) — the
  * repository add this gates is never failed by it.
  */
-export async function proposeIgnoreFile(repoPath: string, model: CheapTierModel): Promise<IgnoreFileProposal> {
+export async function proposeIgnoreFile(repoPath: string, model: CheapTierModel, timeoutMs: number = PROPOSAL_TIMEOUT_MS): Promise<IgnoreFileProposal> {
 	const rootIgnorePath = join(repoPath, '.gitignore');
 	if (existsSync(rootIgnorePath)) {
 		return { written: false, source: 'fallback', reason: 'a root ignore file already exists' };
@@ -492,8 +559,16 @@ export async function proposeIgnoreFile(repoPath: string, model: CheapTierModel)
 
 	const types = detectRepoType(repoPath);
 	let modelText: string | undefined;
+	const abort = new AbortController();
+	let timer: ReturnType<typeof setTimeout> | undefined;
 	try {
-		const response = await model.complete([
+		const timedOut = new Promise<never>((_resolve, reject) => {
+			timer = setTimeout(() => {
+				abort.abort();
+				reject(new Error(`no proposal within ${timeoutMs} ms`));
+			}, timeoutMs);
+		});
+		const response = await Promise.race([model.complete([
 			{
 				role: 'system',
 				content: 'You write .gitignore files. Reply with ONLY the file content: one pattern per line, no prose, no markdown fences.',
@@ -502,14 +577,17 @@ export async function proposeIgnoreFile(repoPath: string, model: CheapTierModel)
 				role: 'user',
 				content: `Propose a .gitignore for a repository at "${repoPath}"${types.length > 0 ? ` detected as: ${types.join(', ')}` : ''}. Cover build output, dependency, and cache directories typical for these languages/tools.`,
 			},
-		]);
+		], { signal: abort.signal }), timedOut]);
 		modelText = response.text;
 	} catch (err) {
 		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'proposeIgnoreFile: model call failed; writing fallback ignore file');
+	} finally {
+		if (timer !== undefined) clearTimeout(timer);
 	}
 
-	const usable = modelText !== undefined && looksLikeIgnoreFile(modelText);
-	const content = usable ? `${modelText!.trimEnd()}\n` : fallbackIgnoreContent(repoPath);
+	const proposed = modelText !== undefined ? usableIgnoreContent(modelText) : undefined;
+	const usable = proposed !== undefined;
+	const content = proposed ?? fallbackIgnoreContent(repoPath);
 	const source: IgnoreFileProposal['source'] = usable ? 'model' : 'fallback';
 	const reason = usable ? undefined : (modelText === undefined ? 'the model call failed' : 'the model response was not usable ignore-file content');
 

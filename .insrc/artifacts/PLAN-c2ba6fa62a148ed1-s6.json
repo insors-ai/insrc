@@ -1,0 +1,580 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793521858001-rtiz60",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T08:35:36.592Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 278581,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s6",
+    "lldRunId": "wf-1793519701699-0od7dh",
+    "lldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-01T08:45:06.021Z",
+    "rangeBase": "6e67f713a3dc8357461fcfe22ddcf073835a2bd4"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means adding one new in-process module (FileFilter, backed by the `ignore` npm package plus git's own tracked-file list) and then migrating roughly a dozen scattered bare-name-list call sites across the indexer, the watcher, and the analyzer onto it, one family of call sites per task. The riskiest pieces are the live-refresh path (an ignore-file edit must take effect without re-registering the repo) and the model-backed ignore-file proposal for a repo with none, both of which get their own fallback-tested tasks before anything is wired to them. The last task proves the whole thing against real git over real fixture trees, including a non-git folder.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the ignore npm dependency",
+        "summary": "Add the `ignore` package to package.json as a new runtime dependency for in-process gitignore-grammar matching.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "package.json lists `ignore` as a runtime dependency; npm install succeeds; tsc --noEmit stays clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "npm install resolves the ignore package and tsc --noEmit stays clean"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement FileFilter/RuleSource/BuiltInExclusion/createFileFilter",
+        "summary": "New module implementing the sc4 types and createFileFilter(repoPath): reads nested .gitignore files (root-first) via the ignore package, .git/info/exclude, and the user's global gitignore into one matcher per directory; unions with git ls-files --cached for the tracked-file override (empty for a non-git repoPath, ac9); applies the two built-in exclusions (generated-or-minified, insrc-directory) inside includes() regardless of rule-source content.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "unit: createFileFilter/FileFilter.includes/.listFiles over fixture ignore-file trees match ac1, ac2, ac3, ac9's baseline case",
+          "git ls-files failure is caught and treated as an empty tracked-file override, logged at warn (error path 3)"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "createFileFilter"
+          },
+          {
+            "level": "unit",
+            "name": "FileFilter.includes"
+          },
+          {
+            "level": "unit",
+            "name": "FileFilter.listFiles"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement refreshFileFilter",
+        "summary": "Live-update function: given a filter and the absolute path of a changed ignore file (a .gitignore, the clone exclude file, or the global ignore file compared by content hash), recomputes the matcher for the affected directory scope in place and returns FilterChange{left, entered} — no repo re-registration.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "unit: refreshFileFilter given an ignore file that gained one rule and lost another returns correct left/entered sets (ac5)"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "refreshFileFilter"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement proposeIgnoreFile (model proposal + fallback)",
+        "summary": "proposeIgnoreFile(repoPath, model): called only when repoPath has no root ignore file; asks the cheap-tier model for entries fit to the repo's detected languages/tools, validates the response is non-empty line-based text before writing, and on model failure/timeout/malformed-content catches it and writes a plain fallback ignore file instead — never touches an existing root ignore file, never fails the repo add.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "unit: success path writes a model-sourced file and returns {written:true, source:'model'} (ac6)",
+          "unit: model-throw path still writes a fallback file and returns {written:true, source:'fallback', reason} without throwing (ac7, lc2)",
+          "unit: an existing root ignore file is byte-for-byte untouched and the model is never invoked (ac8)"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "proposeIgnoreFile"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Route src/indexer/index.ts's 6 call sites onto FileFilter",
+        "summary": "Replace resolveRepoIgnore/initRepoIgnore/hasIgnoredSegment calls at index.ts:275,341,366,480,648,824 (full walk, start-up scan, the two registration seed sites, clean-up pass, single file event) with FileFilter.includes()/.listFiles(), so the full walk and the single file event agree.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "integration: a single FileEvent for a file matched only by a pattern rule is not indexed (ac4), exercising the same code path index.ts:824 calls today",
+          "integration: full walk and single file event give the same include/exclude answer for the same fixture tree (invariant: 'the full walk and the single file event path must agree')"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c13",
+          "c14",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/indexer/index.ts (full walk, single file event, clean-up pass, registration)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Wire proposeIgnoreFile into repo registration",
+        "summary": "Call proposeIgnoreFile exactly when a repository is added with no root ignore file, before the first index runs, using it as the FileFilter is built for that repository (after t6 has already routed the registration seed sites onto FileFilter).",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "integration: adding a repo with no root ignore file results in one existing before the first index runs (ac6)"
+        ],
+        "derivedFrom": [
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/indexer/index.ts (full walk, single file event, clean-up pass, registration)"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Route cross-file-resolver.ts, source-roots.ts, and watcher.ts addRepo onto FileFilter",
+        "summary": "Replace cross-file-resolver.ts:236's ignore read, source-roots.ts:245's bare-name list, and watcher.ts's IGNORE_DIRS constant; Watcher.addRepo's ignore parameter changes from a bare-name list to a FileFilter instance, filtering every emitted file event through it before the indexer sees it.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "integration: source-roots.ts no longer hides a package in a directory FileFilter includes (ac2's source-root case)",
+          "integration: a watcher-emitted event for a FileFilter-excluded file never reaches the indexer"
+        ],
+        "derivedFrom": [
+          "c13",
+          "c16",
+          "c17"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/indexer/watcher.ts"
+          },
+          {
+            "level": "integration",
+            "name": "src/indexer/cross-file-resolver.ts"
+          },
+          {
+            "level": "integration",
+            "name": "src/indexer/source-roots.ts"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Route the analyzer's reader, two exploration walkers, and infra walker onto FileFilter",
+        "summary": "Replace the bare-name list literals in concept-resolve.ts:324, module-profile.ts:51, and src/analyze/runtimes/infra/_shared.ts:57 with FileFilter.includes()/.listFiles().",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "integration: these three call sites agree with the conformance fixture's expected include/exclude set"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c18"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/analyze/explore/concept-resolve.ts"
+          },
+          {
+            "level": "integration",
+            "name": "src/analyze/explore/module-profile.ts"
+          },
+          {
+            "level": "integration",
+            "name": "src/analyze/runtimes/infra/_shared.ts"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Remove repo-ignore-config.ts and file-selection.ts's hasIgnoredSegment",
+        "summary": "Delete src/indexer/repo-ignore-config.ts (initRepoIgnore/resolveRepoIgnore/gitignoreDirs) entirely and remove hasIgnoredSegment from file-selection.ts; selectFile now calls FileFilter.includes() after its unchanged not-code/generated-file checks. A stale .insrc/config.json 'ignore' array from before this Story is left on disk untouched but no longer read by anything (lc1).",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "a repository carrying a persisted .insrc/config.json 'ignore' array is not double-filtered — only FileFilter decides (lc1 edge case)",
+          "selectFile's existing not-code/generated-or-minified/artifact-skip checks are unchanged (invariant)"
+        ],
+        "derivedFrom": [
+          "c13",
+          "c19",
+          "c20",
+          "c21"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/indexer/index.ts (full walk, single file event, clean-up pass, registration)"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Wire the watcher's ignore-file-edit detection to refreshFileFilter",
+        "summary": "Inspect each watcher event batch for a path matching one of the filter's rule files (or the clone-exclude/global-ignore files compared by content hash) before evaluating the batch's other files; call refreshFileFilter first so the rest of the batch is evaluated against the refreshed filter.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t3",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "integration: an ignore-file edit concurrent with edits to files it newly covers resolves consistently in one pass (ac5, error path 2)"
+        ],
+        "derivedFrom": [
+          "c22",
+          "c23"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/indexer/watcher.ts"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Reimplement createRepoIgnoreFilter as a thin wrapper over FileFilter",
+        "summary": "src/analyze/context/repo-ignore-filter.ts's createRepoIgnoreFilter is rewritten to delegate isIncluded/include<T>/gitBacked to createFileFilter, removing its own git-ls-files subprocess call and its non-git permissive-degrade branch. The public RepoIgnoreFilter interface (isIncluded/include/repoPath/gitBacked) stays unchanged so its 9 exploration-file consumers (via executor.ts:170,506) need no changes; a non-git repo now gets FileFilter's correct ignore-rules-alone handling instead of today's permissive fallback.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "none of the 9 RepoIgnoreFilter consumer files change",
+          "a non-git repo's RepoIgnoreFilter answer matches the ac9 integration fixture instead of today's fully-permissive answer"
+        ],
+        "derivedFrom": [
+          "c24",
+          "c25"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/analyze/explore/concept-resolve.ts"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Conformance test against real git, full acceptance-criteria sweep",
+        "summary": "A real temp git repository (git init + real nested .gitignore files + real git ls-files) proves FileFilter's in-process answer matches real git's own check-ignore/ls-files answer; a real temp non-git folder proves ac9. Runs every remaining acceptance criterion not already covered by an earlier task's own tests.",
+        "size": "L",
+        "order": 12,
+        "dependsOn": [
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "integration: FileFilter matches real git over the fixture tree for ac1 and ac3's negation/precedence case",
+          "integration: the non-git fixture folder's ignore-file exclusions match the git-repo fixture's equivalent files (ac9)"
+        ],
+        "derivedFrom": [
+          "c26",
+          "c27"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/indexer/index.ts (full walk, single file event, clean-up pass, registration)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "createFileFilter",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "FileFilter.includes",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "FileFilter.listFiles",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "refreshFileFilter",
+        "coveredByTaskIds": [
+          "t3",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "proposeIgnoreFile",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/indexer/index.ts (full walk, single file event, clean-up pass, registration)",
+        "coveredByTaskIds": [
+          "t6",
+          "t5",
+          "t9",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/indexer/watcher.ts",
+        "coveredByTaskIds": [
+          "t7",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/indexer/cross-file-resolver.ts",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/indexer/source-roots.ts",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/concept-resolve.ts",
+        "coveredByTaskIds": [
+          "t8",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/module-profile.ts",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/runtimes/infra/_shared.ts",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[0] (add ignore package)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 alternativesConsidered[a1] (chosen: ignore npm package + git tracked-file union)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api.FileFilter"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api.RuleSource"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api.createFileFilter"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges[0] (FileFilter/RuleSource/BuiltInExclusion/FilterChange/IgnoreFileProposal, new, 12 call sites)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[1] (implement createFileFilter/FileFilter/RuleSource/BuiltInExclusion/refreshFileFilter)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 errorPaths.errorCases[2] (git ls-files --cached fails)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api.refreshFileFilter"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails.api.proposeIgnoreFile"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 errorPaths.errorCases[0] (proposeIgnoreFile's model call fails/times out/malformed)"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[2] (implement proposeIgnoreFile + wire into repo registration)"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges[1] (repo-ignore-config.ts field-remove)"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[3] (route index.ts's 6 call sites)"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 invariantsToPreserve[1] (full walk and single file event must agree)"
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges[3] (watcher.ts IGNORE_DIRS, Watcher.addRepo field-modify)"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[4] (route cross-file-resolver.ts/source-roots.ts/watcher.ts addRepo)"
+    },
+    {
+      "id": "c18",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[5] (route the analyzer's reader/walkers/infra walker)"
+    },
+    {
+      "id": "c19",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges[2] (file-selection.ts hasIgnoredSegment field-remove)"
+    },
+    {
+      "id": "c20",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[6] (remove repo-ignore-config.ts and hasIgnoredSegment)"
+    },
+    {
+      "id": "c21",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 invariantsToPreserve[2] (selectFile's existing not-code/generated-file checks unchanged)"
+    },
+    {
+      "id": "c22",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 errorPaths.errorCases[1] (ignore-file edit concurrent with a batch of other file events)"
+    },
+    {
+      "id": "c23",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[7] (wire watcher's ignore-file-edit detection to refreshFileFilter)"
+    },
+    {
+      "id": "c24",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 dataModelChanges[4] (repo-ignore-filter.ts createRepoIgnoreFilter/RepoIgnoreFilter field-modify)"
+    },
+    {
+      "id": "c25",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration.migrationSteps[8] (reimplement createRepoIgnoreFilter as a thin wrapper over FileFilter)"
+    },
+    {
+      "id": "c26",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 testStrategy.testLevels[1] (integration: conformance against real git)"
+    },
+    {
+      "id": "c27",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 testStrategy.acceptanceMapping (ac1-ac9)"
+    }
+  ]
+}

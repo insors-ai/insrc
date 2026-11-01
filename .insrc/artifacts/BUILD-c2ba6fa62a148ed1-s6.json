@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s6",
+    "createdAt": "2026-11-01T08:48:41.494Z",
+    "updatedAt": "2026-11-01T09:31:19.231Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S006/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T09:31:19.231Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T09:31:19.231Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/file-filter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T09:31:19.231Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/file-filter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T09:31:19.231Z"
+      }
+    ],
+    "commit": "3ebfde396"
+  }
+}

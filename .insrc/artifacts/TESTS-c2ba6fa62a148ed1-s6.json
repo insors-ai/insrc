@@ -1,0 +1,219 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s6",
+    "createdAt": "2026-11-01T08:48:41.494Z",
+    "updatedAt": "2026-11-01T09:31:19.231Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e726a7f08",
+        "ranAt": "2026-11-01T09:21:57.295Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "npm install resolves the ignore package and tsc --noEmit stays clean",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "package.json:51 lists \"ignore\": \"^7.0.14\"; npm install succeeded; npx tsc --noEmit produced no output"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t2",
+        "commit": "42f077889",
+        "ranAt": "2026-11-01T09:27:24.952Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "createFileFilter",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "ac1: an anchored rule excludes the top-level directory it names, not a same-named directory deeper in the tree",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "error path: a broken .git directory degrades the tracked-file override to empty, not a throw",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "FileFilter.includes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "ac2: a tracked directory named 'target' (an old built-in bare name) not matched by any ignore rule is included",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "ac3: a subdirectory .gitignore rule scopes to that subdirectory, excluding a same-named file elsewhere in the tree",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "ac9 baseline: a non-git folder with no ignore files includes every file (only the built-ins apply)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "a non-git folder with an ignore file is filtered by its rules alone (ac9)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "a tracked file under .insrc is excluded (built-in override, even over the tracked-file union)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "FileFilter.listFiles",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "listFiles() returns exactly the included files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/file-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1328,
+            "titles": [
+              {
+                "title": "ac1: an anchored rule excludes the top-level directory it names, not a same-named directory deeper in the tree",
+                "result": "pass"
+              },
+              {
+                "title": "ac2: a tracked directory named 'target' (an old built-in bare name) not matched by any ignore rule is included",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a subdirectory .gitignore rule scopes to that subdirectory, excluding a same-named file elsewhere in the tree",
+                "result": "pass"
+              },
+              {
+                "title": "ac9 baseline: a non-git folder with no ignore files includes every file (only the built-ins apply)",
+                "result": "pass"
+              },
+              {
+                "title": "a non-git folder with an ignore file is filtered by its rules alone (ac9)",
+                "result": "pass"
+              },
+              {
+                "title": "a tracked file under .insrc is excluded (built-in override, even over the tracked-file union)",
+                "result": "pass"
+              },
+              {
+                "title": "listFiles() returns exactly the included files",
+                "result": "pass"
+              },
+              {
+                "title": "error path: a broken .git directory degrades the tracked-file override to empty, not a throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "3ebfde396",
+        "ranAt": "2026-11-01T09:31:19.231Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "refreshFileFilter",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "ac5: refreshFileFilter, given an ignore file that gained one rule and lost another, returns the correct left/entered sets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/file-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1147,
+            "titles": [
+              {
+                "title": "ac1: an anchored rule excludes the top-level directory it names, not a same-named directory deeper in the tree",
+                "result": "pass"
+              },
+              {
+                "title": "ac2: a tracked directory named 'target' (an old built-in bare name) not matched by any ignore rule is included",
+                "result": "pass"
+              },
+              {
+                "title": "ac3: a subdirectory .gitignore rule scopes to that subdirectory, excluding a same-named file elsewhere in the tree",
+                "result": "pass"
+              },
+              {
+                "title": "ac9 baseline: a non-git folder with no ignore files includes every file (only the built-ins apply)",
+                "result": "pass"
+              },
+              {
+                "title": "a non-git folder with an ignore file is filtered by its rules alone (ac9)",
+                "result": "pass"
+              },
+              {
+                "title": "a tracked file under .insrc is excluded (built-in override, even over the tracked-file union)",
+                "result": "pass"
+              },
+              {
+                "title": "listFiles() returns exactly the included files",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: refreshFileFilter, given an ignore file that gained one rule and lost another, returns the correct left/entered sets",
+                "result": "pass"
+              },
+              {
+                "title": "error path: a broken .git directory degrades the tracked-file override to empty, not a throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

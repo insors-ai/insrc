@@ -4,10 +4,15 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s3",
     "createdAt": "2026-11-01T06:05:36.818Z",
-    "updatedAt": "2026-11-01T06:28:01.177Z",
+    "updatedAt": "2026-11-01T07:54:54.491Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
-    "epicSlug": "complete-consistent-richer-code-index-one"
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-01T07:54:54.667Z",
+    "reviewOverride": {
+      "reason": "Code-review framework is being rewritten on another branch; manual code review via independent subagent completed with no findings (verdict: safe to approve) per standing project rule.",
+      "at": "2026-11-01T07:54:54.667Z"
+    }
   },
   "body": {
     "tasks": [
@@ -48,7 +53,24 @@
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S003/TESTS.md"
     },
-    "changeLog": [],
-    "commit": "f054482bb"
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S003/LLD.md",
+          "version": "77571a318"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T07:54:54.491Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S003/PLAN.md",
+          "version": "77571a318"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T07:54:54.491Z"
+      }
+    ],
+    "commit": "77571a318"
   }
 }

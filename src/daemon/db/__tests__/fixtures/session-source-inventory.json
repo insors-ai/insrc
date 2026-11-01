@@ -21864,79 +21864,59 @@
      "collectEntityU64sByRepo"
     ],
     [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
-     "serialization",
-     "decodeEntityRow"
-    ],
-    [
      "storage-call",
+     "commitFile"
+    ],
+    [
+     "serialization",
      "decodeEntityRow"
     ],
     [
-     "storage-call",
+     "serialization",
      "decodeEntityRow"
     ],
     [
-     "storage-call",
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
      "decodeEntityRow"
     ],
     [
@@ -22065,6 +22045,22 @@
     ],
     [
      "serialization",
+     "decodeRepoKey"
+    ],
+    [
+     "storage-call",
+     "decodeRepoKey"
+    ],
+    [
+     "serialization",
+     "decodeRepoRow"
+    ],
+    [
+     "serialization",
+     "decodeRepoRow"
+    ],
+    [
+     "storage-call",
      "decodeRepoRow"
     ],
     [
@@ -22137,11 +22133,59 @@
     ],
     [
      "serialization",
-     "encodeEntityKey"
+     "encodeEntityByFileKey"
     ],
     [
      "serialization",
-     "encodeEntityKey"
+     "encodeEntityByFileKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityByFilePrefix"
+    ],
+    [
+     "serialization",
+     "encodeEntityByFilePrefix"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFilePrefix"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFilePrefix"
     ],
     [
      "serialization",
@@ -22304,39 +22348,7 @@
      "encodeEntityKey"
     ],
     [
-     "storage-call",
-     "encodeEntityKey"
-    ],
-    [
-     "storage-call",
-     "encodeEntityKey"
-    ],
-    [
      "serialization",
-     "encodeEntityRow"
-    ],
-    [
-     "serialization",
-     "encodeEntityRow"
-    ],
-    [
-     "serialization",
-     "encodeEntityRow"
-    ],
-    [
-     "serialization",
-     "encodeEntityRow"
-    ],
-    [
-     "storage-call",
-     "encodeEntityRow"
-    ],
-    [
-     "storage-call",
-     "encodeEntityRow"
-    ],
-    [
-     "storage-call",
      "encodeEntityRow"
     ],
     [
@@ -22365,14 +22377,6 @@
     ],
     [
      "serialization",
-     "encodeNameIndexKey"
-    ],
-    [
-     "serialization",
-     "encodeNameIndexKey"
-    ],
-    [
-     "storage-call",
      "encodeNameIndexKey"
     ],
     [
@@ -22426,6 +22430,10 @@
     [
      "storage-call",
      "formatTimestamp"
+    ],
+    [
+     "storage-call",
+     "getGraphStore"
     ],
     [
      "storage-call",
@@ -22653,7 +22661,7 @@
     ],
     [
      "storage-call",
-     "lookupRepoPath"
+     "lookupRepoIdInTxn"
     ],
     [
      "storage-call",
@@ -22773,6 +22781,38 @@
     ],
     [
      "storage-call",
+     "prefixSuccessor"
+    ],
+    [
+     "storage-call",
+     "prefixSuccessor"
+    ],
+    [
+     "storage-call",
+     "putEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "putEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "putEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "putEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "readEntityRow"
+    ],
+    [
+     "storage-call",
+     "readEntityRow"
+    ],
+    [
+     "storage-call",
      "readEntityRow"
     ],
     [
@@ -22797,6 +22837,18 @@
     ],
     [
      "storage-call",
+     "readRepoPath"
+    ],
+    [
+     "storage-call",
+     "removeEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "resolveOwningRepoIdInTxn"
+    ],
+    [
+     "storage-call",
      "resolveRepoId"
     ],
     [
@@ -22805,7 +22857,7 @@
     ],
     [
      "storage-call",
-     "rewireNameIndexInTxn"
+     "rewireEntityByFileInTxn"
     ],
     [
      "storage-call",
@@ -22862,22 +22914,6 @@
     [
      "storage-call",
      "s.entity.get"
-    ],
-    [
-     "storage-call",
-     "s.entity.getRange"
-    ],
-    [
-     "storage-call",
-     "s.entity.put"
-    ],
-    [
-     "storage-call",
-     "s.entity.put"
-    ],
-    [
-     "storage-call",
-     "s.entity.put"
     ],
     [
      "storage-call",
@@ -22886,6 +22922,22 @@
     [
      "storage-call",
      "s.entity.remove"
+    ],
+    [
+     "storage-call",
+     "s.entityByFile.getValues"
+    ],
+    [
+     "storage-call",
+     "s.entityByFile.put"
+    ],
+    [
+     "storage-call",
+     "s.entityByFile.remove"
+    ],
+    [
+     "storage-call",
+     "s.entityByFile.remove"
     ],
     [
      "storage-call",
@@ -22953,10 +23005,6 @@
     ],
     [
      "storage-call",
-     "s.nameIndex.put"
-    ],
-    [
-     "storage-call",
      "s.nameIndex.remove"
     ],
     [
@@ -22978,6 +23026,10 @@
     [
      "storage-call",
      "s.repo.get"
+    ],
+    [
+     "storage-call",
+     "s.repo.getRange"
     ],
     [
      "storage-call",
@@ -23009,11 +23061,15 @@
     ],
     [
      "storage-call",
-     "store.entity.getRange"
+     "store.entityByFile.getRange"
     ],
     [
      "storage-call",
-     "store.entity.getRange"
+     "store.entityByFile.getRange"
+    ],
+    [
+     "storage-call",
+     "store.entityByFile.getValues"
     ],
     [
      "storage-call",
@@ -23065,14 +23121,6 @@
     ],
     [
      "storage-call",
-     "toAbsolutePath"
-    ],
-    [
-     "storage-call",
-     "toAbsolutePath"
-    ],
-    [
-     "storage-call",
      "toBigInt"
     ],
     [
@@ -23093,6 +23141,14 @@
     ],
     [
      "storage-call",
+     "toRepoRelative"
+    ],
+    [
+     "storage-call",
+     "toRepoRelative"
+    ],
+    [
+     "storage-call",
      "UnregisteredRepoError"
     ],
     [
@@ -23106,6 +23162,10 @@
     [
      "storage-call",
      "unwrapEmbedding"
+    ],
+    [
+     "storage-call",
+     "updateIndexStateRowInTxn"
     ],
     [
      "storage-call",
@@ -23144,9 +23204,9 @@
      "writer"
     ]
    ],
-   "siteCount": 339,
-   "sitesDigest": "e9f3ceeda4f968fb0a72f998eb743661cc188a6e33b98a9cb6a5de7b1ad99ec6",
-   "sourceDigest": "6ccd6688e0d63bf6ab97dda50fd00d6800ed5e0a756127ce985838526fd45186",
+   "siteCount": 354,
+   "sitesDigest": "7f3b68c2ee7fc4cd94264bf77d4dab07ad2907c4f76b545ff8de3eb45060a462",
+   "sourceDigest": "f3963486a822a6da3af84766a9f43a5e398a672f466ee41ce47e5c948188ca55",
    "boundaries": [
     "diagnostic",
     "serialization",

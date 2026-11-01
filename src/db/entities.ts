@@ -38,7 +38,7 @@ import { assertNoSessionPersistence } from '../shared/connection-persistence.js'
 
 import { relative } from 'node:path';
 
-import type { Entity, EntityKind, Language } from '../shared/types.js';
+import type { Entity, EntityKind, FileCommit, FileCommitResult, Language } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
 import {
 	getGraphStore,
@@ -72,6 +72,7 @@ import {
 	SHARED_MODULES_NAMESPACE_BY_LANG,
 	SHARED_MODULES_REPO_ID,
 } from '../shared/repo-namespaces.js';
+import { updateIndexStateRowInTxn } from './graph/index-state-rows.js';
 import { carryDocSummariesInTxn, deleteCarriedDocSummariesInTxn, deleteDocSummaryInTxn } from './doc-summaries.js';
 
 const log = getLogger('db.entities');
@@ -332,32 +333,10 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 }
 
 /**
- * Atomic re-index of a single file. Phase 2.9 of the LMDB+Lance
- * migration: snapshot the file's existing entities, upsert each
- * parsed entity (allocating new u64 IDs as needed), then tombstone
- * any entities that disappeared from the parse. All in one LMDB
- * write transaction so readers never see a half-state.
- *
- * Compared to calling `deleteEntitiesForFile` followed by
- * `upsertEntities`:
- *   - Atomic: no window where rows are deleted but new ones not yet
- *     written.
- *   - Idempotent: parsing the same file twice produces the same row
- *     set (same SHA → same u64 → same EntityRow).
- *   - Body-write short-circuit: rows whose `contentHash` matches the
- *     prior parse are skipped (typical re-index hits this for
- *     unchanged entities).
- *   - Cascade: tombstoned entities take their incident edges with
- *     them via the same prefix-scan logic used by
- *     `deleteEntitiesForFile`.
- *
- * `repoPath` is the repo root path (e.g. `/repo/foo`); `filePath` is
- * the absolute path of the file being re-parsed (matches the prior
- * call shape used by the indexer). Caller passes the parsed entities
- * exactly as returned by the parser (`Entity[]` with string SHA ids).
- *
- * Auto-allocates a u32 repoId for `repoPath` if the repo isn't
- * registered yet (matches the existing `upsertEntities` behaviour).
+ * Atomic re-index of a single file, kept as the entity-only form of
+ * commitFile (Epic c2ba6fa6 s2, lc1: the file commit grew from this
+ * function). `repoPath` is the registered repo root; `filePath` the
+ * absolute path of the re-parsed file; `parsed` its entities.
  */
 export async function reindexFile(
 	_db: DbClient,
@@ -365,14 +344,33 @@ export async function reindexFile(
 	filePath: string,
 	parsed: Entity[],
 ): Promise<void> {
+	const fileEntity = parsed.find(e => e.kind === 'file' && e.file === filePath);
+	await commitFile({ repoPath, filePath, contentHash: fileEntity?.hash ?? '', entities: parsed, relations: [] });
+}
+
+const NOTHING_COMMITTED: FileCommitResult = {
+	generation: 0, entitiesWritten: 0, entitiesRemoved: 0, relationsStored: 0, relationsPending: 0,
+	relationsUnwritable: 0, relationsReturnedToPending: 0, vectorsOutstanding: 0,
+};
+
+/**
+ * The file commit (Epic c2ba6fa6 sc2): ONE write transaction replaces the
+ * file's entity rows and advances the repository's index state, so a reader
+ * sees the file's complete old set or its complete new set, and a failure
+ * leaves the old set (withWriteTxn aborts a throwing transaction).
+ *
+ * In the transaction: the file's previous entities are read through
+ * entity_by_file (Story s3), each parsed entity is upserted (module stubs
+ * ensure-exist under the shared-modules rows; an unchanged row is not
+ * rewritten), the previous entities no longer parsed are removed with their
+ * derived rows, the generation advances and the file leaves
+ * uncommittedFiles. `contentHash: null` removes the file: no entities are
+ * written and every previous one is removed. After the commit the removed
+ * entities' vectors are deleted and the new vectors written.
+ */
+export async function commitFile(commit: FileCommit): Promise<FileCommitResult> {
 	assertNoSessionPersistence();
-	// Phase 2.10 / 2026-05-07 guardrail: reject reindex calls with
-	// invalid repo paths. Same intent as the upsertEntities check --
-	// don't let an empty / banned-root repoPath silently auto-allocate
-	// a phantom Repo registry row through `allocateRepoIdInTxn` below.
-	// Unlike upsertEntities, reindexFile has no kind-module fallback
-	// path (it's whole-file replacement); empty repoPath here is
-	// always a bug.
+	const { repoPath, filePath } = commit;
 	try {
 		validateRepoPathShape(repoPath);
 	} catch (err) {
@@ -381,44 +379,39 @@ export async function reindexFile(
 				repoPath,
 				filePath,
 				reason: err instanceof Error ? err.message : String(err),
-				stackHint: new Error('reindexFile caller stack').stack?.split('\n').slice(2, 7),
+				stackHint: new Error('commitFile caller stack').stack?.split('\n').slice(2, 7),
 			},
-			'reindexFile: rejected -- invalid repoPath. Caller should be passing the registered repo root, not a derived / empty / system path.',
+			'commitFile: rejected -- invalid repoPath. Caller should be passing the registered repo root, not a derived / empty / system path.',
 		);
-		return;
+		return NOTHING_COMMITTED;
 	}
 
-	// Dedupe by SHA id (same protective pass `upsertEntities` does)
-	const { unique, duplicateIds } = dedupeEntitiesById(parsed);
+	const removing = commit.contentHash === null;
+	const { unique, duplicateIds } = dedupeEntitiesById(removing ? [] : commit.entities);
 	if (duplicateIds.size > 0) {
 		log.warn(
-			{ totalDuplicates: duplicateIds.size, kept: unique.length, original: parsed.length, file: filePath },
-			'reindexFile: collapsed duplicate entity ids in input batch (last-wins)',
+			{ totalDuplicates: duplicateIds.size, kept: unique.length, original: commit.entities.length, file: filePath },
+			'commitFile: collapsed duplicate entity ids in input batch (last-wins)',
 		);
 	}
 
 	const toLanceDelete: string[] = [];
 	type LanceWrite = { entity: Entity; firstEmbed: boolean };
 	const lanceWrites: LanceWrite[] = [];
+	let entitiesWritten = 0;
+	let entitiesRemoved = 0;
+	let generation = 0;
 	await withWriteTxn(s => {
-		// Phase 5.x strict-contract: repo must be pre-registered.
-		// reindexFile is only ever called for files inside a known
-		// workspace, so the lookup should always succeed; throw
-		// otherwise to surface the programming error loudly.
+		// Strict contract: the repository must be registered.
 		const repoId = lookupRepoIdInTxn(s, repoPath);
 		if (repoId === undefined) {
 			throw new UnregisteredRepoError(repoPath);
 		}
 
-		// 1. Snapshot existing entities for this (repoId, filePath).
-		//    Scan the entity sub-DB; cheap at typical scale (a few
-		//    dozen entities per file).
+		// 1. The file's existing entities, by its entity_by_file key.
 		const existing: bigint[] = [];
-		for (const { key, value } of s.entity.getRange()) {
-			const row = decodeEntityRow(value as Buffer);
-			if (row.repoId !== repoId) continue;
-			if (toAbsolutePath(row.filePath, repoPath) !== filePath) continue;
-			existing.push(decodeKeyU64(key as Buffer));
+		for (const u64Buf of s.entityByFile.getValues(encodeEntityByFileKey(repoId, toRepoRelative(filePath, repoPath)))) {
+			existing.push(decodeKeyU64(u64Buf as Buffer));
 		}
 
 		// 2. Upsert each parsed entity, tracking which u64s we touched.
@@ -461,6 +454,7 @@ export async function reindexFile(
 
 			const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
 			putEntityRowInTxn(s, u64, prev, newRow);
+			entitiesWritten++;
 			if (e.embedding !== undefined && e.embedding.length > 0) {
 				lanceWrites.push({
 					entity: e,
@@ -470,20 +464,22 @@ export async function reindexFile(
 			seen.add(u64);
 		}
 
-		// 3. Tombstone unseen (= deleted from the file).
-		for (const u64 of existing) {
-			if (!seen.has(u64)) {
-				const sid = lookupStringIdByU64(s, u64);
-				if (sid !== undefined) toLanceDelete.push(sid);
-			}
-		}
-		const toDelete: bigint[] = [];
-		for (const u64 of existing) {
-			if (!seen.has(u64)) toDelete.push(u64);
+		// 3. Remove the previous entities no longer parsed (all of them for a removal).
+		const toDelete = existing.filter(u64 => !seen.has(u64));
+		for (const u64 of toDelete) {
+			const sid = lookupStringIdByU64(s, u64);
+			if (sid !== undefined) toLanceDelete.push(sid);
 		}
 		detachDeleteEntitiesInTxn(s, toDelete);
+		entitiesRemoved = toDelete.length;
+
+		// 4. The repository's index state, in the same transaction.
+		generation = updateIndexStateRowInTxn(s, repoId, row => {
+			row.generation++;
+			row.uncommittedFiles = row.uncommittedFiles.filter(f => f !== filePath);
+		}).generation;
 	});
-	// After LMDB commits, drop Lance rows for the tombstoned entities.
+	// After LMDB commits, drop Lance rows for the removed entities.
 	if (toLanceDelete.length > 0) {
 		const { deleteEntityVecsByIds } = await import('./lance/entity-vec.js');
 		await deleteEntityVecsByIds(toLanceDelete);
@@ -512,10 +508,11 @@ export async function reindexFile(
 		} catch (err) {
 			log.warn(
 				{ count: lanceWrites.length, err: err instanceof Error ? err.message : String(err) },
-				'reindexFile: Lance write failed after LMDB commit -- vectors not persisted; rerun reembed to backfill',
+				'commitFile: Lance write failed after LMDB commit -- vectors not persisted; rerun reembed to backfill',
 			);
 		}
 	}
+	return { ...NOTHING_COMMITTED, generation, entitiesWritten, entitiesRemoved };
 }
 
 export async function deleteEntitiesForFile(_db: DbClient, filePath: string): Promise<void> {

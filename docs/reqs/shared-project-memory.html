@@ -65,7 +65,7 @@
           <tr><td>Durable asynchronous ingestion</td><td>A submission is accepted only after its queue event is durably recorded. Semantic processing occurs in the worker.</td></tr>
           <tr><td>Separate rotating queue</td><td>Size triggers segment rotation. Completed processing permits segment recycling; unprocessed events are never discarded merely to enforce a size limit.</td></tr>
           <tr><td>One store writer</td><td>The context-builder worker is the only writer, including updates, deletions, receipts, indexing and store maintenance.</td></tr>
-          <tr><td>LanceDB-only memory store</td><td>Canonical content, vectors and lifecycle records live in LanceDB. A semantic read can return the authoritative content directly, without LMDB hydration.</td></tr>
+          <tr><td>LanceDB-only memory store</td><td>Canonical content, vectors and lifecycle records live in a dedicated LanceDB database directory, physically separate from the existing index store. A semantic read can return the authoritative content directly, without LMDB hydration.</td></tr>
           <tr><td>Mutable context</td><td>Memories may be expanded, overridden, superseded, expired and deleted. Queue replay cannot resurrect a forgotten memory.</td></tr>
           <tr><td>Shared integration contract</td><td>Use host-controlled turn adapters where possible, native hooks where supported, and common MCP tools for explicit operations and deeper recall.</td></tr>
         </tbody>
@@ -266,13 +266,21 @@
     <section id="store">
       <h2><span class="num">10</span>LanceDB as the sole memory store</h2>
       <p>Canonical text and its vector are stored together. A semantic query returns the authoritative row, avoiding a second store lookup. Direct instructions and handoffs use scalar lookup or cached snapshots, rather than vector search on every turn.</p>
-      <div class="requirement" id="L-01"><p><span class="rid">L-01</span>The new subsystem MUST use daemon-owned LanceDB memory tables. No LMDB shadow authority or separate SQLite history database is required by this design. Existing insrc storage outside the subsystem remains unchanged.</p></div>
+      <div class="callout"><p><strong>Physical store separation is required.</strong> Memory uses its own LanceDB connection and database directory, not another table in the existing index database. This separates stored tables, indexes and lifecycle operations; both stores may still share daemon CPU, memory and disk resources.</p></div>
+      <pre><code>~/.insrc/
+  lance/                 existing index database
+  memory/
+    lance/               proposed dedicated memory database
+    queue/               separate rotating ingestion journal</code></pre>
+      <p class="small">The existing index path is shown for context. The new memory paths are proposed locations, not an implemented configuration. Their resolved directories must be distinct from the index database, and neither database cleanup path may encompass the other or the queue.</p>
+      <div class="requirement" id="L-01"><p><span class="rid">L-01</span>The new subsystem MUST use a dedicated daemon-owned LanceDB database directory and separately managed connection/table handles. It MUST NOT place memory tables in the existing index store or reuse its connection singleton. No LMDB shadow authority or separate SQLite history database is required by this design. Existing insrc storage outside the subsystem remains unchanged.</p></div>
       <div class="requirement" id="L-02"><p><span class="rid">L-02</span>Qualify an atomic commit representation for an event's complete effects. A proposed single typed table holds current-memory, revision, source, receipt, tombstone, delivery and control rows, using stable row IDs and nullable vector fields where appropriate. A context query filters to active current-memory rows.</p></div>
       <div class="requirement" id="L-03"><p><span class="rid">L-03</span>A qualified single-table batch mutation MUST commit memory transitions and the processing receipt together. Lance table operations are not assumed to provide a general multi-table transaction. If implementation splits the commit unit, it requires a documented, tested recovery protocol before acceptance.</p></div>
       <div class="requirement" id="L-04"><p><span class="rid">L-04</span>Single-writer ownership does not create uniqueness constraints automatically. The worker MUST validate IDs, expected revisions and duplicate batch keys. Canonical text/vector updates, logical deletion and generation publication must not expose an intermediate inconsistent state.</p></div>
       <div class="requirement" id="L-05"><p><span class="rid">L-05</span>Persist embedding model identity, dimension and normalization version. Embed changed canonical content; do not recompute embeddings merely because another evidence reference was attached. Model/dimension migration must have an explicit compatibility and rebuild plan.</p></div>
       <div class="requirement" id="L-06"><p><span class="rid">L-06</span>Readers MUST observe the qualified current committed table state. Verify table-handle consistency across updates, deletes and maintenance. Avoid long-lived stale checkouts in session context reads.</p></div>
       <div class="requirement" id="L-07"><p><span class="rid">L-07</span>Small-update performance, scalar indexes, FTS/vector visibility, nullable-vector behavior, compaction and old-version cleanup MUST be verified against the installed LanceDB version before choosing the physical schema. Batch writes through the sole worker where useful without violating operation latency or ordering requirements.</p></div>
+      <div class="requirement" id="L-08"><p><span class="rid">L-08</span>Store configuration, ownership checks, migrations, maintenance, reset, backup and cleanup MUST distinguish the memory database from the index database. Index rebuild/reset must preserve memory; memory cleanup/reset must preserve index data and pending queue events. Validate resolved paths and cleanup boundaries to prevent accidental cross-store deletion. Memory-store ownership and its sole-writer guard apply to the new connection as well.</p></div>
       <div class="table-wrap"><table>
         <caption>Proposed logical row identities, not a final Arrow schema</caption>
         <thead><tr><th scope="col">Row kind</th><th scope="col">Identity example</th><th scope="col">Normal context eligibility</th></tr></thead>
@@ -454,6 +462,7 @@
           <tr id="AC-26"><td>AC-26</td><td>Model/embedding version migration</td><td>Compatibility is checked; migration cannot revive deleted records or silently mix incompatible vectors.</td></tr>
           <tr id="AC-27"><td>AC-27</td><td>Structured submission and explicit correction</td><td>Extraction can be bypassed while validation, replay protection and mutation guards still apply.</td></tr>
           <tr id="AC-28"><td>AC-28</td><td>Store outage / missing memory</td><td>Unavailable and empty results are distinguishable; no fabricated recall or unchecked stale fallback.</td></tr>
+          <tr id="AC-29"><td>AC-29</td><td>Independent memory and index stores</td><td>Resolved database directories and connections are distinct. Index reset/rebuild preserves memory; memory reset/cleanup preserves index data and pending queue events. Unsafe overlapping cleanup paths are refused.</td></tr>
         </tbody>
       </table></div>
       <p class="small">A release decision requires defined quality thresholds, measured candidate/deduplication recall and false-merge rates, crash-injection evidence, and explicit live-integration coverage. No benchmark, supported-provider guarantee or completion approval is created by this document.</p>

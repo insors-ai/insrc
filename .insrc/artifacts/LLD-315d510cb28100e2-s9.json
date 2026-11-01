@@ -38,9 +38,37 @@
     ],
     "authoredBy": "controller",
     "envelope": {
+      "description": "",
+      "references": [],
       "attachments": []
     },
-    "revision": 4
+    "revision": 4,
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "af0d72526d9b2a579cd55478ce1a48b6f310eacb921f3bc7f729d5cf2085e64b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:17:36.887Z",
+        "override": {
+          "reason": "self-review by the controller (docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S009/SELF-REVIEW.md); the daemon review framework is not functional (user decision 2026-11-01)"
+        }
+      }
+    }
   },
   "body": {
     "summary": {

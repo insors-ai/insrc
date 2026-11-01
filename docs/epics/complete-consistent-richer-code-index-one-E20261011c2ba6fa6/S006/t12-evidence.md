@@ -42,3 +42,14 @@ of the commit before s6 (`45a5eb6c9^` = 6e67f713a):
   `src/daemon/index.ts` in the connections Epic's S005 consumer-inventory.json;
   66e0566c0 changed one line of that file (the threads-off IndexerService gets
   the cheap-tier ignore model).
+
+## After code review rounds 1 and 2 (c8a1b9942, e272bcc5f)
+
+Real-repo conformance re-run: this repository 6,796 = 6,796 files;
+`vscode-plugin/` registered as a subdirectory 302 = 302.
+
+Full sweep: 7,173 tests, 7,004 pass, 31 fail, 0 cancelled, 135 skipped. Every
+failure is one listed above as failing before s6 or load-only, plus four
+connection-manager tests (compatibility, isolation, kotlin-mutation, parity)
+that pass when run alone. None comes from s6. The digest pin (CM-S5-GATE)
+was refreshed by user decision in d92b123b9.

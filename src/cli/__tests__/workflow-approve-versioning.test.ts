@@ -6,7 +6,7 @@
 
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync } from 'node:fs';
 import { createConnection, createServer } from 'node:net';
 import type { Socket } from 'node:net';
 import { join } from 'node:path';
@@ -16,6 +16,9 @@ import { approve } from '../services/workflow.js';
 
 const dir = mkdtempSync('/tmp/insrc-approve-versioning-');
 after(() => rmSync(dir, { recursive: true, force: true }));
+/** A real repository folder: the client names the repo that holds an artifact, so the path must be under one. */
+const REPO = join(dir, 'repo');
+mkdirSync(join(REPO, '.insrc', 'artifacts'), { recursive: true });
 
 test('workflow-approve-versioning.test.ts: against the existing handler (which accepts workflow.approve and ignores withTracker) the client uses only workflow.approvePipeline; a daemon without it gives the method-not-found error and no publication happens', async () => {
 	const seen: string[] = [];
@@ -29,7 +32,7 @@ test('workflow-approve-versioning.test.ts: against the existing handler (which a
 	await new Promise<void>(r => server.listen(path, () => r()));
 	try {
 		for (const withTracker of [true, false]) {
-			await assert.rejects(approve('/r/LLD.md', withTracker, undefined, () => createConnection(path)), /does not support workflow\.approvePipeline/);
+			await assert.rejects(approve(join(REPO, 'LLD.md'), withTracker, undefined, () => createConnection(path)), /does not support workflow\.approvePipeline/);
 		}
 		assert.deepEqual(seen, [], 'workflow.approve was never called: nothing was published or approved by the older method');
 	} finally { await new Promise<void>(r => server.close(() => r())); }

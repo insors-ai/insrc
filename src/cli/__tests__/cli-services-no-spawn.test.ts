@@ -6,7 +6,7 @@
 
 import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { createConnection, createServer } from 'node:net';
 import type { Socket } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -19,6 +19,10 @@ import { teamClaim, teamRefresh, teamRelease } from '../services/team.js';
 
 const dir = mkdtempSync('/tmp/insrc-nospawn-');
 after(() => rmSync(dir, { recursive: true, force: true }));
+/** A real repository folder: the client names the repo that holds an artifact, so the path must be under one. */
+const REPO = join(dir, 'repo');
+mkdirSync(join(REPO, '.insrc', 'artifacts'), { recursive: true });
+const LLD = join(REPO, 'docs', 'LLD.md');
 
 /** A daemon that records each call (method and params) and answers `answers[method]`. */
 async function recordingDaemon(answers: Record<string, unknown>): Promise<{ connect: () => Socket; calls: Array<{ method: string; params: unknown }>; close: () => Promise<void> }> {
@@ -46,25 +50,25 @@ test('cli-services-no-spawn.test.ts: approve, sync, trackerSetup and the team se
 	});
 	try {
 		const unit = { unit: 'story' as const, epicHash: '0123456789abcdef', storyId: 's1' };
-		await approve('/repo/docs/LLD.md', false, 'because', d.connect);
-		await approve('/repo/docs/LLD.md', true, undefined, d.connect);
-		await sync('/repo', '0123456789abcdef', d.connect);
-		await trackerSetup('/repo', { includeProject: true }, { connect: d.connect });
-		await teamRefresh('/repo', 'main', d.connect);
-		await teamClaim('/repo', unit, d.connect);
-		await teamRelease('/repo', unit, d.connect);
-		await reviewArtifact('/repo', '/repo/docs/LLD.md', d.connect);
-		await resolveFinding('/repo/docs/LLD.md', 'f1', 'accept', 'fine', d.connect);
+		await approve(LLD, false, 'because', d.connect);
+		await approve(LLD, true, undefined, d.connect);
+		await sync(REPO, '0123456789abcdef', d.connect);
+		await trackerSetup(REPO, { includeProject: true }, { connect: d.connect });
+		await teamRefresh(REPO, 'main', d.connect);
+		await teamClaim(REPO, unit, d.connect);
+		await teamRelease(REPO, unit, d.connect);
+		await reviewArtifact(REPO, LLD, d.connect);
+		await resolveFinding(LLD, 'f1', 'accept', 'fine', d.connect);
 		assert.deepEqual(d.calls, [
-			{ method: 'workflow.approvePipeline', params: { artifactPath: '/repo/docs/LLD.md', withTracker: false, overrideReview: 'because' } },
-			{ method: 'workflow.approvePipeline', params: { artifactPath: '/repo/docs/LLD.md', withTracker: true } },
-			{ method: 'tracker.sync', params: { repoPath: '/repo', epicHash: '0123456789abcdef' } },
-			{ method: 'tracker.setup', params: { repoPath: '/repo', opts: { includeProject: true } } },
-			{ method: 'team.refresh', params: { repoPath: '/repo', branch: 'main' } },
-			{ method: 'team.claim', params: { repoPath: '/repo', unit } },
-			{ method: 'team.release', params: { repoPath: '/repo', unit } },
-			{ method: 'workflow.reviewArtifact', params: { repoPath: '/repo', artifactPath: '/repo/docs/LLD.md' } },
-			{ method: 'workflow.resolveFinding', params: { artifactPath: '/repo/docs/LLD.md', findingId: 'f1', action: 'accept', note: 'fine' } },
+			{ method: 'workflow.approvePipeline', params: { repo: REPO, artifactPath: LLD, withTracker: false, overrideReview: 'because' } },
+			{ method: 'workflow.approvePipeline', params: { repo: REPO, artifactPath: LLD, withTracker: true } },
+			{ method: 'tracker.sync', params: { repoPath: REPO, epicHash: '0123456789abcdef' } },
+			{ method: 'tracker.setup', params: { repoPath: REPO, opts: { includeProject: true } } },
+			{ method: 'team.refresh', params: { repoPath: REPO, branch: 'main' } },
+			{ method: 'team.claim', params: { repoPath: REPO, unit } },
+			{ method: 'team.release', params: { repoPath: REPO, unit } },
+			{ method: 'workflow.reviewArtifact', params: { repoPath: REPO, artifactPath: LLD } },
+			{ method: 'workflow.resolveFinding', params: { repoPath: REPO, artifactPath: LLD, findingId: 'f1', action: 'accept', note: 'fine' } },
 		]);
 	} finally { await d.close(); }
 

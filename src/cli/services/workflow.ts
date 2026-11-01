@@ -39,6 +39,7 @@ import type { CommitArtifactsResult } from '../../workflow/tracker/github.js';
 import type { TrackerSetupOptions, TrackerSetupReport } from '../../workflow/tracker/setup.js';
 import type { SyncResult } from '../../workflow/tracker/sync.js';
 import { lifecycleFor, repoOfArtifactPath } from '../../daemon/lifecycle-registry.js';
+import { toAbsPath } from './repo.js';
 import type { LifecycleService } from '../../workflow/artifact-core/lifecycle-service.js';
 import type { SyncResult as TaskSyncResult } from '../../workflow/tasks/task-set.js';
 import type { AttachUnitResult } from '../../workflow/tracker/attach-unit.js';
@@ -162,8 +163,18 @@ export function approveOutcomeOf(reply: PipelineReply): ApproveOutcome {
 /** Approve an artifact by its `.md`/`.json` path through the daemon's approve pipeline. When `withTracker` is true (default) an approved
  *  HLD/LLD/plan is published to the GitHub tracker, checked in and attached; false stops after the approval and the Task reconciliation. */
 export async function approve(artifactPath: string, withTracker = true, overrideReview?: string, connect?: () => Socket): Promise<ApproveOutcome> {
-	const reply = await callDaemon<PipelineReply>('workflow.approvePipeline', { artifactPath, withTracker, ...(overrideReview !== undefined ? { overrideReview } : {}) }, connect);
+	const { repo, path } = repoAndPathOf(artifactPath);
+	const reply = await callDaemon<PipelineReply>('workflow.approvePipeline', { repo, artifactPath: path, withTracker, ...(overrideReview !== undefined ? { overrideReview } : {}) }, connect);
 	return approveOutcomeOf(reply);
+}
+
+/** The absolute path of an artifact (resolved against this process's working directory) and the repository that holds it: the daemon is
+ *  always told both, never left to resolve a relative path against its own directory. */
+function repoAndPathOf(artifactPath: string): { readonly repo: string; readonly path: string } {
+	const path = toAbsPath(artifactPath);
+	const repo = repoOfArtifactPath(path);
+	if (repo === undefined) throw new Error(`no repository holds ${path}: it is not under a .insrc/artifacts folder`);
+	return { repo, path };
 }
 
 /** The service of the repository that holds the artifact at `jsonPath`. */
@@ -193,7 +204,8 @@ export function reviewFindings(artifactPath: string): ReviewFindingsResult {
 
 /** Resolve one review finding (apply | accept | override | defer). */
 export async function resolveFinding(artifactPath: string, findingId: string, action: ReviewAction, note?: string, connect?: () => Socket): Promise<ResolveReviewResult> {
-	return await callDaemon<ResolveReviewResult>('workflow.resolveFinding', { artifactPath, findingId, action, ...(note !== undefined ? { note } : {}) }, connect);
+	const { repo, path } = repoAndPathOf(artifactPath);
+	return await callDaemon<ResolveReviewResult>('workflow.resolveFinding', { repoPath: repo, artifactPath: path, findingId, action, ...(note !== undefined ? { note } : {}) }, connect);
 }
 
 export interface StreamRunResult {
@@ -252,7 +264,7 @@ export async function runWorkflowStreaming(
  *  pinned core to otherwise). The resulting `block` verdict is what `approve`
  *  then enforces. */
 export async function reviewArtifact(repoPath: string, artifactPath: string, connect?: () => Socket): Promise<ReviewArtifactResult> {
-	return await callDaemon<ReviewArtifactResult>('workflow.reviewArtifact', { repoPath, artifactPath }, connect);
+	return await callDaemon<ReviewArtifactResult>('workflow.reviewArtifact', { repoPath: toAbsPath(repoPath), artifactPath: toAbsPath(artifactPath) }, connect);
 }
 
 export async function ackStale(artifactPath: string, reason: string): Promise<{ readonly path: string; readonly ackedAt: string; readonly reason: string }> {
@@ -305,7 +317,7 @@ export function resolveEpicHashArg(repoPath: string, hashOrSlug: string): string
 /** Pull GitHub issue state for an Epic + its Stories into meta.tracker
  *  (read by the chain report). Deterministic; read-only against GitHub. */
 export async function sync(repoPath: string, epicHash: string, connect?: () => Socket): Promise<SyncResult> {
-	return await callDaemon<SyncResult>('tracker.sync', { repoPath, epicHash }, connect);
+	return await callDaemon<SyncResult>('tracker.sync', { repoPath: toAbsPath(repoPath), epicHash }, connect);
 }
 
 /** Seams for the tracker setup wrapper; tests replace them, production uses the defaults. */
@@ -316,5 +328,5 @@ export interface TrackerSetupDeps {
 /** Bootstrap the GitHub tracker for a repo — auth/scope preflight, config, labels, issue types, and (optionally) a Projects board — in the
  *  daemon, which owns github.json and reaches gh and git through the registry. Returns the structured checklist; the command layer renders it. */
 export async function trackerSetup(repoPath: string, opts: TrackerSetupOptions = {}, deps: TrackerSetupDeps = {}): Promise<TrackerSetupReport> {
-	return await callDaemon<TrackerSetupReport>('tracker.setup', { repoPath, opts }, deps.connect);
+	return await callDaemon<TrackerSetupReport>('tracker.setup', { repoPath: toAbsPath(repoPath), opts }, deps.connect);
 }

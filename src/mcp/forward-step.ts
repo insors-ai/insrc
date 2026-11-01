@@ -20,9 +20,11 @@
  * own errors.
  */
 
+import { isAbsolute } from 'node:path';
 import { createConnection, type Socket } from 'node:net';
 
 import { privateSessionBootstrap } from './session-bootstrap.js';
+import { resolveRepoPath } from './resolve-repo.js';
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
 import type { StepClient, StepToolName } from '../shared/step-context.js';
@@ -56,6 +58,8 @@ export interface ForwardStepExtra {
 }
 
 export interface ForwardStepDeps {
+	/** Test seam: the repo resolver (default: the session-aware resolveRepoPath over this process's cwd). */
+	readonly resolveRepo?: ((explicit: string | undefined) => Promise<string | undefined>) | undefined;
 	readonly connect?: (() => Socket) | undefined;
 	readonly cwd?:     string | undefined;
 	readonly envRepo?: string | undefined;
@@ -83,8 +87,38 @@ function envelopeFor(err: Error): StepMcpEnvelope {
 	return errorEnvelope('step-failed', 'StepFailedError', err.message, false);
 }
 
+/** The step tools whose phases can write into a repository: the daemon is told the repo explicitly. */
+const REPO_WRITING_STEP_TOOLS: ReadonlySet<string> = new Set(['insrc_workflow_step', 'insrc_build_step']);
+
+/**
+ * `args` with the session's repo made explicit: a call that names no repo and carries no run token (the first phase of a run) gets the
+ * repo the session workspace resolves to, as an absolute path. A call with a repo or a token, or one the session cannot resolve, is
+ * unchanged: the daemon refuses a modifying phase that still has no repo.
+ */
+export async function withExplicitRepo(args: unknown, resolveRepo: (explicit: string | undefined) => Promise<string | undefined>): Promise<unknown> {
+	if (args === null || typeof args !== 'object' || Array.isArray(args)) return args;
+	const a = args as Record<string, unknown>;
+	const has = (k: string): boolean => typeof a[k] === 'string' && (a[k] as string).length > 0;
+	if (has('repo') || has('state')) return args;
+	const repo = await resolveRepo(undefined);
+	return repo !== undefined && isAbsolute(repo) ? { ...a, repo } : args;
+}
+
 /** Forward one step-tool call to the daemon and return its reply envelope. */
-export function forwardStep(
+export async function forwardStep(
+	tool:    StepToolName,
+	rawArgs: unknown,
+	extra:   ForwardStepExtra = {},
+	deps:    ForwardStepDeps = {},
+): Promise<StepMcpEnvelope> {
+	let args = rawArgs;
+	if (REPO_WRITING_STEP_TOOLS.has(tool)) {
+		try { args = await withExplicitRepo(rawArgs, deps.resolveRepo ?? (e => resolveRepoPath(e, deps.cwd !== undefined ? { cwd: deps.cwd } : {}))); } catch { args = rawArgs; }
+	}
+	return forwardStepNow(tool, args, extra, deps);
+}
+
+function forwardStepNow(
 	tool:    StepToolName,
 	rawArgs: unknown,
 	extra:   ForwardStepExtra = {},

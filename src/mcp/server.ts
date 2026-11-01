@@ -22,6 +22,8 @@ import { reviewUnavailable } from '../workflow/review-unavailable.js';
  * is configured.
  */
 
+import { isAbsolute, join } from 'node:path';
+
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { resolveRepoPath } from './resolve-repo.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -789,7 +791,9 @@ export function buildInsrcMcpServerWithRegistry(): {
 				'review. Approval only: it does NOT ' +
 				'gh-push or commit (that stays with the TUI approve). Pass `overrideReview` ' +
 				'to approve past a missing, same-party or blocking review with a recorded reason. `repo` falls back ' +
-				'to the session workspace / INSRC_REPO (required only for an epicHash batch).',
+				'to the registered repo that contains the session workspace and is always sent to the daemon as an absolute path; the daemon ' +
+				'refuses an approval whose repo is missing, not registered, or whose artifactPath is outside it. A relative `artifactPath` is ' +
+				'taken relative to the repo.',
 			annotations: {
 				readOnlyHint:   false,   // approves the artifact in its lifecycle
 				idempotentHint: true,    // re-approving an approved artifact changes nothing
@@ -803,7 +807,7 @@ export function buildInsrcMcpServerWithRegistry(): {
 					.describe('Batch target: approve every review-clean, still-pending artifact under this epic. Exactly one of artifactPath | epicHash.')
 					.optional(),
 				repo: z.string()
-					.describe('Absolute repo path; falls back to the session workspace / INSRC_REPO. Required only for an epicHash batch.')
+					.describe('Absolute path of a registered repo; defaults to the registered repo that contains the session workspace. The daemon refuses a call whose repo is missing or not registered.')
 					.optional(),
 				overrideReview: z.string()
 					.describe('Optional review-override reason — approves past a HIGH/MED review block and records the reason on the artifact.')
@@ -982,9 +986,14 @@ export interface WorkflowApproveArgs {
 
 /** Normalize the flat tool input to exactly-one-of target, resolve the repo,
  *  and forward to the daemon `workflow.approve` IPC. Holds no approval logic. */
+export interface WorkflowApproveDeps extends UnaryRpcDeps {
+	/** Test seam: the repo resolver (default: the session-aware resolveRepoPath). */
+	readonly resolveRepo?: ((explicit: string | undefined) => Promise<string | undefined>) | undefined;
+}
+
 export async function handleWorkflowApprove(
 	args: WorkflowApproveArgs,
-	deps: UnaryRpcDeps = {},
+	deps: WorkflowApproveDeps = {},
 ): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
 	const err = (msg: string): { content: { type: 'text'; text: string }[]; isError: boolean } =>
 		({ content: [{ type: 'text', text: msg }], isError: true });
@@ -994,16 +1003,17 @@ export async function handleWorkflowApprove(
 	if (hasPath === hasEpic) {   // neither, or both
 		return err('insrc_workflow_approve: exactly one of `artifactPath` or `epicHash` is required.');
 	}
-	const repo = await resolveRepoPath(args.repo);
-	if (hasEpic && (repo === undefined || repo.length === 0)) {
-		return err('insrc_workflow_approve: no repo (pass `repo`, or run in a registered repo) — required for an epicHash batch.');
+	// The daemon is always told an absolute repo and an absolute path: it never resolves either against its own directory or environment.
+	const repo = await (deps.resolveRepo ?? resolveRepoPath)(args.repo);
+	if (repo === undefined || !isAbsolute(repo)) {
+		return err('insrc_workflow_approve: no absolute repo (pass `repo` as an absolute path of a registered repository, or run in a registered repo).');
 	}
 	const refusal = repoSchemaRefusal(repo);
 	if (refusal !== undefined) return err(`insrc_workflow_approve: ${refusal}`);
 	try {
 		const result = await approveWorkflow({
-			repo: repo ?? '',
-			...(hasPath ? { artifactPath: args.artifactPath } : {}),
+			repo,
+			...(hasPath ? { artifactPath: isAbsolute(args.artifactPath!) ? args.artifactPath! : join(repo, args.artifactPath!) } : {}),
 			...(hasEpic ? { epicHash: args.epicHash } : {}),
 			...(args.overrideReview !== undefined ? { overrideReview: args.overrideReview } : {}),
 		}, deps);
@@ -1174,10 +1184,15 @@ async function dispatchWorkflowRun(
 	}
 	// START.
 	if (typeof args.workflow === 'string' && args.workflow.length > 0 && typeof args.focus === 'string' && args.focus.length > 0) {
+		// the run writes artifacts into a repository: the daemon is told an absolute one, never left to pick its own
+		const repo = await resolveRepoPath(args.repo);
+		if (repo === undefined || !isAbsolute(repo)) {
+			return { error: 'insrc_workflow_run: no absolute repo (pass `repo` as an absolute path of a registered repository, or run in a registered repo).' };
+		}
 		const { runId } = await startRun({
 			workflow: args.workflow,
 			focus:    args.focus,
-			...(args.repo   !== undefined ? { repo:   args.repo }   : {}),
+			repo,
 			...(args.params !== undefined ? { params: args.params } : {}),
 			...(client      !== undefined ? { client }              : {}),
 		}, deps);

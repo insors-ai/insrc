@@ -1,0 +1,170 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "16b8d3d50f14fc1d",
+    "storyId": "S001",
+    "createdAt": "2026-11-01T05:18:23.988Z",
+    "updatedAt": "2026-11-01T05:32:00.215Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicCreatedAt": "2026-10-31T14:59:44.852Z",
+    "epicSlug": "insrc-present-cannot-resolve-standalone-story",
+    "approvedAt": "2026-11-01T05:45:15.906Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Back-fill build gate for the already-committed fix (ISSUE-16b8d3d50f14fc1d): code and tests are on main; this validate writes the BUILD record and runs the gate over the touched test files.",
+    "testRecord": {
+      "md": "docs/standalone/insrc-present-cannot-resolve-standalone-story-E2026103116b8d3d5/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-7b6a5fa936278e5d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-16b8d3d50f14fc1d.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-7b6a5fa936278e5d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-7b6a5fa936278e5d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/7b6a5fa936278e5d-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-delivery-board-insrc-status-bar-E202610317b6a5fa9/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-delivery-board-insrc-status-bar-E202610317b6a5fa9/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/add-delivery-board-insrc-status-bar-E202610317b6a5fa9/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/insrc-present-cannot-resolve-standalone-story-E2026103116b8d3d5/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/pending.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/pending.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/CHANGELOG.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/present-dispatch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-client.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T05:32:00.215Z"
+      }
+    ],
+    "commit": "fb907090c"
+  }
+}

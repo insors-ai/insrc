@@ -21,7 +21,11 @@
     "epicSlug": "show-every-document-chat-turn-presents",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-01T05:13:09.093Z",
+    "parentRef": {
+      "slug": "show-every-document-chat-turn-presents"
+    }
   },
   "body": {
     "title": "Show every document a chat turn presents for review, not only the last",

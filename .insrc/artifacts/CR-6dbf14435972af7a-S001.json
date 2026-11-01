@@ -1,0 +1,122 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793511384015-9n522w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T05:36:15.108Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 225310,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6dbf14435972af7a",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "6dbf14435972af7a",
+      "storyId": "S001",
+      "author": "controller",
+      "sourceDigest": "3b4e843e4e3e28607afab5d411c062509e13148eb8388b0ce380566a0c12cd67",
+      "contractDigest": "94bca157d055c25f71f8fee743108fd0ad536a07424d7b2877d1e271f640153b",
+      "buildDigest": "1db5aced12e214a439e0c97009a813624c3ef29341a323300878f97a9183dc7b",
+      "testsDigest": "529287c4f297f2386d51de6dfd37e408cc79aaddc70bf871c77e474b118f02d1",
+      "digest": "5cd0a74c1d82db1cc7f7fe60ca97b0dd51b7278e905c2d3a3cb72f4e1ff8d3af"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-10-17T16:28:19.493Z",
+    "epicSlug": "present-every-artifact-awaiting-decision-buttons",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "6dbf14435972af7a",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/mcp/__tests__/present-dispatch.test.ts",
+        "src/mcp/server.ts",
+        "src/workflow/__tests__/pending.test.ts",
+        "src/workflow/pending.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+        "vscode-plugin/src/chat/docs-review-client.ts",
+        "vscode-plugin/src/chat/docs-review-panel.ts"
+      ],
+      "changeSetAttribution": "first-parent-range",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:openDoc",
+            "message": "openDoc's `opts` parameter declares its optional fields as `kind?: string`, `path?: string`, `readOnly?: boolean`, `reveal?: boolean`, `changed?: boolean` without the explicit `| undefined` union. Under exactOptionalPropertyTypes (strict-optional-indexed), the project convention is to write optional properties as `prop?: T | undefined` — followed correctly elsewhere in this same Story's changes (e.g. src/mcp/server.ts's `handleWorkflowRun(..., client?: StepClient | undefined)` and `forward`'s `extra._meta?: {...} | undefined`, and the sibling test file's `runWebview(opts: { markedMissing?: boolean | undefined; ... })`).",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:reopen",
+            "message": "reopen's `how` parameter declares `changed?: boolean` instead of `changed?: boolean | undefined`, the same strict-optional-indexed deviation as openDoc's `opts`, inconsistent with the explicit `| undefined` idiom used elsewhere in this Story's own changed files.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/mcp/server.ts:1",
+            "message": "`err()` and `errorResult()` both build the identical MCP error envelope shape (`{ content: [{ type: 'text', text }], isError: true }`). `err` is used by handleWorkflowApprove/handleInsrcPresent while `errorResult` has no recorded callers, meaning the same helper was duplicated rather than reused and one copy may now be dead. Unify on a single error-envelope helper.",
+            "counterpartRef": "errorResult",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:1",
+            "message": "createDocsReviewHost defines ~29 nested closures (post, refreshPending, startPoll, tickPoll, openDoc, reopen, setOpened, startQuiet, dropWatch, decide, decideNow, openCompanion, …) with a cyclic call path: openDoc -> setOpened -> startQuiet -> reopen -> openDoc. This is exactly the shape that produced the known openDoc-supersede race; the routine is hard to reason about and easy to regress when adding another entry point into the cycle.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:1",
+            "message": "`decide` calls `decideNow`, and `decideNow`'s own callee list includes `decide` again, i.e. mutual recursion between the two with no depth/attempt guard visible in either signature. If a decision keeps hitting the `refuse`/error branch inside decideNow and that branch re-enters decide, this can recurse indefinitely instead of surfacing a bounded retry or failure to the user.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/pending.ts:1",
+            "message": "`handleWorkflowPending` has no recorded callers in the changed symbol set, unlike every other IPC-style handler in this diff (handleWorkflowApprove, handleInsrcPresent, handleWorkflowRun) which are wired into buildInsrcMcpServerWithRegistry. Confirm this new pending-listing entry point is actually dispatched from the daemon/MCP layer and not just covered by its own unit test.",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 5,
+      "low": 1
+    }
+  }
+}

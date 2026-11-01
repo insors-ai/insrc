@@ -21,7 +21,11 @@
     "epicSlug": "insrc-present-cannot-resolve-standalone-story",
     "standalone": true,
     "magnitude": "small",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-01T05:12:55.057Z",
+    "parentRef": {
+      "slug": "insrc-present-cannot-resolve-standalone-story"
+    }
   },
   "body": {
     "title": "insrc_present cannot resolve a standalone Story's BUILD record (no CR sibling exists to satisfy the pending-list gate)",

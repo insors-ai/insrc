@@ -13,6 +13,13 @@ export interface DirectoryOwnership {
   close(): Promise<void>;
 }
 
+// Explicit lifetime, including failed cleanup: FileHandle GC must not grant ownership.
+const liveDescriptors = new Set<FileHandle>();
+async function closeDescriptor(file: FileHandle): Promise<void> {
+  await file.close();
+  liveDescriptors.delete(file);
+}
+
 async function assertFile(file: FileHandle): Promise<void> {
   const value = await file.stat();
   if (!value.isFile() || value.nlink !== 1 || value.uid !== process.getuid!() || (value.mode & 0o077) !== 0) {
@@ -56,6 +63,7 @@ export async function acquireOwnership(root: RootIdentity, suppliedNative?: Nati
     const native = suppliedNative ?? await loadNative();
     await classifyLayout(root); // Do not create lock files in unrelated directories.
     file = await open(join(root.path, OWNER_FILE), constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
+    liveDescriptors.add(file);
     await assertFile(file);
     native.closeOnExec(file.fd);
     await native.exclusive(file.fd);
@@ -71,12 +79,12 @@ export async function acquireOwnership(root: RootIdentity, suppliedNative?: Nati
         catch { throw new MemoryError('STORE_UNAVAILABLE', 'Memory ownership cannot be verified.'); }
       },
       close() {
-        closing ??= owned.close().catch(() => { throw new MemoryError('STORE_UNAVAILABLE', 'Memory ownership release could not be verified.'); });
+        closing ??= closeDescriptor(owned).catch(() => { throw new MemoryError('STORE_UNAVAILABLE', 'Memory ownership release could not be verified.'); });
         return closing;
       },
     });
   } catch (error) {
-    try { await file?.close(); }
+    try { if (file) await closeDescriptor(file); }
     catch { throw new MemoryError('STORE_UNAVAILABLE', 'Failed ownership cleanup could not be verified.'); }
     if (error instanceof MemoryError) throw error;
     const code = errno(error);

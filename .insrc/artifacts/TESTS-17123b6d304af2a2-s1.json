@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T19:13:38.568Z",
+    "updatedAt": "2026-11-01T19:18:50.331Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -207,6 +207,68 @@
               },
               {
                 "title": "native-callback-cleanup-and-inode-faults",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "43a7b4586",
+        "ranAt": "2026-11-01T19:18:50.331Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "one-underlying-call-complete-and-embed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+                "title": "one-underlying-call-complete-and-embed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cancel-timeout-rejection-and-bounded-backpressure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+                "title": "cancel-timeout-rejection-and-bounded-backpressure",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+                "title": "queued-cancellation-never-invokes-provider",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 504,
+            "titles": [
+              {
+                "title": "one-underlying-call-complete-and-embed",
+                "result": "pass"
+              },
+              {
+                "title": "cancel-timeout-rejection-and-bounded-backpressure",
+                "result": "pass"
+              },
+              {
+                "title": "queued-cancellation-never-invokes-provider",
                 "result": "pass"
               }
             ],

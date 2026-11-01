@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -88,3 +88,26 @@ Run at 2026-11-01T19:13:38.568Z on commit `b611b51b1`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/ownership.test.ts` | 0 | 2 | 1.5 s |  |
+
+## t5
+
+Run at 2026-11-01T19:18:50.331Z on commit `43a7b4586`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: one-underlying-call-complete-and-embed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | one-underlying-call-complete-and-embed | `packages/project-memory/src/__tests__/model-dispatcher.test.ts` |
+
+**unit: cancel-timeout-rejection-and-bounded-backpressure**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | cancel-timeout-rejection-and-bounded-backpressure | `packages/project-memory/src/__tests__/model-dispatcher.test.ts` |
+| pass | queued-cancellation-never-invokes-provider | `packages/project-memory/src/__tests__/model-dispatcher.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/model-dispatcher.test.ts` | 0 | 3 | 0.5 s |  |

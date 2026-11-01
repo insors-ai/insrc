@@ -263,6 +263,23 @@ export function encodeUnresolvedByFileKey(repoId: number, fromFile: string): Buf
 	return Buffer.concat([encodeRepoKey(repoId), utf8(fromFile)]);
 }
 
+// entity_by_file: (u32 repo BE, utf8 filePath) -> dupsort u64 entity_id.
+// A getRange keyed to (repoId, filePath) answers findEntitiesByFile directly;
+// a getRange prefixed by repoId alone (encodeEntityByFilePrefix) answers
+// listEntitiesForRepo and, with a 1-item iteration limit, the existence
+// check -- the same prefix-scan idiom encodeNameIndexPrefix already uses.
+export function encodeEntityByFileKey(repoId: number, filePath: string): Buffer {
+	return Buffer.concat([encodeRepoKey(repoId), utf8(filePath)]);
+}
+
+export function encodeEntityByFilePrefix(repoId: number): Buffer {
+	return encodeRepoKey(repoId);
+}
+
+export function decodeEntityByFileKey(buf: Buffer): { repoId: number; filePath: string } {
+	return { repoId: buf.readUInt32BE(0), filePath: buf.subarray(4).toString('utf8') };
+}
+
 // plan_step: (utf8 plan_id, \0, u32 idx BE)
 export function encodePlanStepKey(planId: string, idx: number): Buffer {
 	const plan = utf8(planId);

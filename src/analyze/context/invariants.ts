@@ -234,7 +234,7 @@ export function taskRefusalMapping(err: unknown): { readonly code: TaskRefusalCo
  */
 export async function ensureNonEmptyClosure(
 	scope: ResolvedScope,
-	deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'> & { readonly indexRun?: ((repoPath: string) => IndexRunView | undefined) | undefined },
+	deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo' | 'repoHasAnyEntity'> & { readonly indexRun?: ((repoPath: string) => IndexRunView | undefined) | undefined },
 ): Promise<string | undefined> {
 	// Data-only scopes don't need a code graph.
 	if (scope.kind === 'connection') {
@@ -284,12 +284,22 @@ export async function ensureNonEmptyClosure(
 		);
 	}
 
-	// Count entities indexed for this repo. Stops at the first hit;
-	// no need to materialise the full list.
-	const entities = deps !== undefined
-		? await deps.listEntitiesForRepo(best.path)
-		: await listEntitiesForRepo(null, best.path);
-	if (entities.length === 0) {
+	// Epic c2ba6fa6 Story s3 (ac4): prefer the cheap existence check when
+	// the caller's deps supply it -- it never builds the entity list.
+	// Fall back to today's full listEntitiesForRepo + length check
+	// otherwise, unchanged.
+	let empty: boolean;
+	let entityCount: number | undefined;
+	if (deps?.repoHasAnyEntity !== undefined) {
+		empty = !(await deps.repoHasAnyEntity(best.path));
+	} else {
+		const entities = deps !== undefined
+			? await deps.listEntitiesForRepo(best.path)
+			: await listEntitiesForRepo(null, best.path);
+		empty = entities.length === 0;
+		entityCount = entities.length;
+	}
+	if (empty) {
 		throw new ScopeNotIndexedError(
 			scopePath,
 			best.path,
@@ -297,7 +307,7 @@ export async function ensureNonEmptyClosure(
 		);
 	}
 
-	captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, repo: best.path, entityCount: entities.length }, 'ensureNonEmptyClosure: closure non-empty']);
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, repo: best.path, entityCount }, 'ensureNonEmptyClosure: closure non-empty']);
 	return best.path;
 }
 

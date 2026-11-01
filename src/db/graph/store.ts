@@ -139,7 +139,7 @@ export const MAX_DBS = 64;
  *         workspace repository with fullIndexFinished false and its
  *         pending counts recounted from the stored rows.
  */
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 const META_SCHEMA_VERSION = 'schema_version';
 
@@ -269,6 +269,7 @@ export interface GraphStore {
 	entityIdByString:    AnyDb;
 	entityStringByU64:   AnyDb;
 	nameIndex:           AnyDb;
+	entityByFile:        AnyDb;
 	outEdge:             AnyDb;
 	inEdge:              AnyDb;
 	unresolved:          AnyDb;
@@ -639,6 +640,7 @@ export async function getGraphStore(): Promise<GraphStore> {
 				encoding:    'ordered-binary',  // string values
 			}),
 			nameIndex:          open_('name_index', { dupSort: true }),
+			entityByFile:       open_('entity_by_file', { dupSort: true }),
 			outEdge:            open_('out_edge'),
 			inEdge:             open_('in_edge'),
 			unresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),
@@ -1411,7 +1413,7 @@ function writeSchemaVersion(store: GraphStore, version: number): void {
 
 
 const graphMutators = new Set(['put', 'putSync', 'remove', 'removeSync', 'clearAsync', 'clearSync', 'drop', 'dropSync', 'batch', 'transaction', 'transactionAsync', 'transactionSync', 'childTransaction', 'openDB', 'backup', 'close', 'resize', 'resetReadTxn']);
-const structuralTables = new Set(['meta', 'repo', 'entity', 'entityIdByString', 'entityStringByU64', 'nameIndex', 'outEdge', 'inEdge', 'unresolved', 'unresolvedByFile', 'unresolvedByTarget', 'exportNames', 'indexState']);
+const structuralTables = new Set(['meta', 'repo', 'entity', 'entityIdByString', 'entityStringByU64', 'nameIndex', 'entityByFile', 'outEdge', 'inEdge', 'unresolved', 'unresolvedByFile', 'unresolvedByTarget', 'exportNames', 'indexState']);
 /** Guard the owned handles too: a warm handle must not bypass transaction admission.
  * Structural read methods keep their native iterator API; history/cache/config/plan
  * handles deny all Session method calls. Guards consult context only to DENY. */

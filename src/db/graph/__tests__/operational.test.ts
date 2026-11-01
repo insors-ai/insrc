@@ -147,7 +147,9 @@ test('SCHEMA_VERSION constant is exported and stable', () => {
 	// v3->v4 migration (no row rewrite).
 	// v5 (Epic c2ba6fa6, Story s1) adds unresolved_by_target, export_names and
 	// index_state, and writes an IndexStateRow per workspace repository.
-	assert.equal(SCHEMA_VERSION, 5);
+	// v6 (Epic c2ba6fa6, Story s3) adds entity_by_file, backfilled from the
+	// existing entity table for fast by-file/by-repo reads.
+	assert.equal(SCHEMA_VERSION, 6);
 });
 
 // ---------------------------------------------------------------------------

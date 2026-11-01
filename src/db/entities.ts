@@ -48,6 +48,9 @@ import {
 import { allocateEntityIdInTxn } from './graph/ids.js';
 import {
 	encodeEntityKey,
+	encodeEntityByFileKey,
+	encodeEntityByFilePrefix,
+	decodeRepoKey,
 	encodeOutEdgePrefix,
 	encodeInEdgePrefix,
 	encodeNameIndexKey,
@@ -269,11 +272,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 				const row = entityToRow(e, repoId, e.repo);
 				const prevBuf = s.entity.get(encodeEntityKey(existingU64));
 				const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
-				s.entity.put(encodeEntityKey(existingU64), encodeEntityRow(row));
-				// Reconcile name_index: drop the prior (repo, kind, name)
-				// entry if any of those identity fields changed, then
-				// rewrite the new one. Idempotent for unchanged rows.
-				rewireNameIndexInTxn(s, existingU64, prev, row);
+				putEntityRowInTxn(s, existingU64, prev, row);
 				if (e.embedding !== undefined && e.embedding.length > 0) {
 					lanceWrites.push({
 						entity: e,
@@ -286,11 +285,9 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 			// New entity: allocate u64, write the row + index entries
 			const u64 = allocateEntityIdInTxn(s);
 			const row = entityToRow(e, repoId, e.repo);
-			s.entity.put(encodeEntityKey(u64), encodeEntityRow(row));
 			s.entityIdByString.put(e.id, u64);
 			s.entityStringByU64.put(encodeEntityKey(u64), e.id);
-			// dupsort put: multiple entities can share (repo, kind, name)
-			s.nameIndex.put(encodeNameIndexKey(repoId, ENTITY_KIND_BYTE[row.kind], row.name), encodeEntityKey(u64));
+			putEntityRowInTxn(s, u64, null, row);
 			if (e.embedding !== undefined && e.embedding.length > 0) {
 				lanceWrites.push({ entity: e, firstEmbed: true });
 			}
@@ -463,8 +460,7 @@ export async function reindexFile(
 			}
 
 			const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
-			s.entity.put(encodeEntityKey(u64), encodeEntityRow(newRow));
-			rewireNameIndexInTxn(s, u64, prev, newRow);
+			putEntityRowInTxn(s, u64, prev, newRow);
 			if (e.embedding !== undefined && e.embedding.length > 0) {
 				lanceWrites.push({
 					entity: e,
@@ -816,16 +812,36 @@ export async function listEntitiesByKinds(
 	return out;
 }
 
+/**
+ * Whether `repo` holds any stored entity, without building its entity
+ * list (Epic c2ba6fa6 Story s3, ac4): a limit-1 range on entity_by_file
+ * by repoId-prefix. An unregistered repo answers false.
+ */
+export async function repoHasAnyEntity(_db: DbClient, repo: string): Promise<boolean> {
+	const store = await getGraphStore();
+	const repoId = lookupRepoIdInTxn(store, repo);
+	if (repoId === undefined) return false;
+	const prefix = encodeEntityByFilePrefix(repoId);
+	for (const _ of store.entityByFile.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+		return true;
+	}
+	return false;
+}
+
 export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]> {
 	const store = await getGraphStore();
 	const repoId = lookupRepoIdInTxn(store, repo);
 	if (repoId === undefined) return [];
 	const out: Entity[] = [];
 	const repoCache = new Map<number, string>([[repoId, repo]]);
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		if (row.repoId !== repoId) continue;
-		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
+	// Epic c2ba6fa6 Story s3: a repoId-prefix range over entity_by_file,
+	// not a full store.entity scan -- cost follows this repo's own rows.
+	const prefix = encodeEntityByFilePrefix(repoId);
+	for (const { value } of store.entityByFile.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+		const u64 = decodeKeyU64(value as Buffer);
+		const row = readEntityRow(store, u64);
+		if (row === null) continue;
+		const stringId = lookupStringIdByU64(store, u64);
 		if (stringId === undefined) continue;
 		out.push(rowToDomainEntity(stringId, row, lookupRepoPath(store, row.repoId, repoCache)));
 	}
@@ -863,16 +879,22 @@ export async function listEntityFilesForRepo(
 
 export async function findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]> {
 	const store = await getGraphStore();
-	// `file` from callers is an absolute path; rows store the
-	// repo-relative `filePath`. We resolve the row's repo root via its
-	// repoId, recompute the absolute, and compare.
+	// Epic c2ba6fa6 Story s3: resolve the owning repo (longest matching
+	// root), then an exact (repoId, relativeFilePath) key lookup on
+	// entity_by_file -- not a full store.entity scan with per-row path
+	// recomputation. `file` from callers is absolute; rows store the
+	// repo-relative `filePath`.
+	const repoId = resolveOwningRepoIdInTxn(store, file);
+	if (repoId === undefined) return [];
+	const repoPath = readRepoPath(store, repoId) ?? '';
+	const relativeFilePath = toRepoRelative(file, repoPath);
 	const out: Entity[] = [];
-	const repoCache = new Map<number, string>();
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		const repoPath = lookupRepoPath(store, row.repoId, repoCache);
-		if (toAbsolutePath(row.filePath, repoPath) !== file) continue;
-		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
+	const key = encodeEntityByFileKey(repoId, relativeFilePath);
+	for (const u64Buf of store.entityByFile.getValues(key)) {
+		const u64 = decodeKeyU64(u64Buf as Buffer);
+		const row = readEntityRow(store, u64);
+		if (row === null) continue;
+		const stringId = lookupStringIdByU64(store, u64);
 		if (stringId === undefined) continue;
 		out.push(rowToDomainEntity(stringId, row, repoPath));
 	}
@@ -971,7 +993,7 @@ export async function updateEmbedding(
 		if (row === null) return;
 		isFirstEmbed = row.embeddingModel === '';
 		const next: EntityRow = { ...row, embeddingModel };
-		s.entity.put(encodeEntityKey(toBigInt(u64)), encodeEntityRow(next));
+		putEntityRowInTxn(s, toBigInt(u64), row, next);
 		repoId = row.repoId;
 		kind = row.kind;
 		artifact = row.artifact;
@@ -1013,6 +1035,14 @@ const lookupStringIdByU64 = (s: GraphStore, u64: bigint): string | undefined => 
 	return typeof v === 'string' ? v : undefined;
 };
 
+// GUARD-TEST-BOUNDARY: entity-row write path begins. The guard test in
+// entities-lmdb.test.ts (Epic c2ba6fa6 Story s3, t4) strips everything
+// between this marker and its "ends" counterpart before scanning this
+// file for a raw entity.put/entity.remove/nameIndex.put/nameIndex.remove/
+// entityByFile.put/entityByFile.remove call. Only `putEntityRowInTxn` and
+// `removeEntityRowInTxn` (and their own private helpers) may write these
+// tables directly; every other site in this file must call one of them.
+
 /**
  * Reconcile `name_index` for an entity write:
  *   - drop the prior (repoId, kind, name) entry if any of those
@@ -1044,6 +1074,67 @@ function rewireNameIndexInTxn(
 	s.nameIndex.put(nextKey, u64Buf);
 }
 
+/**
+ * Reconcile `entity_by_file` for an entity write (Epic c2ba6fa6 Story s3):
+ * drop the prior (repoId, filePath) entry if either changed, then write
+ * the new one. Mirrors `rewireNameIndexInTxn`'s shape exactly. An entity
+ * with an empty filePath (e.g. an external-service endpoint) still gets
+ * a (repoId, '') entry -- that key is part of the repoId-prefix range
+ * `listEntitiesForRepo` scans, so such entities stay included there,
+ * while no absolute file path ever resolves to '' for `findEntitiesByFile`.
+ */
+function rewireEntityByFileInTxn(
+	s: GraphStore,
+	u64: bigint,
+	prev: EntityRow | null,
+	next: EntityRow,
+): void {
+	const nextKey = encodeEntityByFileKey(next.repoId, next.filePath);
+	const u64Buf  = encodeEntityKey(u64);
+	if (prev !== null) {
+		const prevKey = encodeEntityByFileKey(prev.repoId, prev.filePath);
+		if (!prevKey.equals(nextKey)) {
+			s.entityByFile.remove(prevKey, u64Buf);
+		}
+	}
+	s.entityByFile.put(nextKey, u64Buf);
+}
+
+/**
+ * Write (create or replace) an entity row, keeping `entity`, `nameIndex`
+ * and `entityByFile` in exact step inside the caller's transaction. The
+ * SOLE entry point for an entity-row write (Epic c2ba6fa6 Story s3) --
+ * every call site that used to write `store.entity`/`nameIndex` raw now
+ * calls this instead, closing the gap where some sites wrote nameIndex
+ * inline rather than through `rewireNameIndexInTxn`.
+ */
+export function putEntityRowInTxn(
+	s: GraphStore,
+	u64: bigint,
+	prev: EntityRow | null,
+	next: EntityRow,
+): void {
+	s.entity.put(encodeEntityKey(u64), encodeEntityRow(next));
+	rewireNameIndexInTxn(s, u64, prev, next);
+	rewireEntityByFileInTxn(s, u64, prev, next);
+}
+
+/**
+ * Remove an entity row, dropping its `nameIndex` and `entityByFile`
+ * entries along with it. The other half of the single write path every
+ * entity-row mutation now goes through (Epic c2ba6fa6 Story s3).
+ */
+export function removeEntityRowInTxn(s: GraphStore, u64: bigint, row: EntityRow): void {
+	s.nameIndex.remove(
+		encodeNameIndexKey(row.repoId, ENTITY_KIND_BYTE[row.kind], row.name),
+		encodeEntityKey(u64),
+	);
+	s.entityByFile.remove(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
+	s.entity.remove(encodeEntityKey(u64));
+}
+
+// GUARD-TEST-BOUNDARY: entity-row write path ends.
+
 const readEntityRow = (s: GraphStore, u64: bigint | number): EntityRow | null => {
 	const buf = s.entity.get(encodeEntityKey(toBigInt(u64)));
 	if (buf === undefined) return null;
@@ -1070,6 +1161,30 @@ const readRepoPath = (s: GraphStore, repoId: number): string | undefined => {
 	if (buf === undefined) return undefined;
 	return decodeRepoRow(buf as Buffer).path;
 };
+
+/**
+ * The registered repo owning an absolute file path, by the longest
+ * (most specific) root that contains it at a path-segment boundary
+ * (Epic c2ba6fa6 Story s3). `src/db` cannot import
+ * `src/analyze/context/scope.ts`'s `longestPrefixRepo` (layering), so
+ * this independently re-implements the identical boundary-safe
+ * comparison: a plain string-prefix test would wrongly match
+ * `/x/repo2/a.ts` against root `/x/repo`.
+ */
+function resolveOwningRepoIdInTxn(s: GraphStore, file: string): number | undefined {
+	let bestId: number | undefined;
+	let bestPathLen = -1;
+	for (const { key, value } of s.repo.getRange()) {
+		const row = decodeRepoRow(value as Buffer);
+		const contains = file === row.path || file.startsWith(`${row.path}/`);
+		if (!contains) continue;
+		if (row.path.length > bestPathLen) {
+			bestPathLen = row.path.length;
+			bestId = decodeRepoKey(key as Buffer);
+		}
+	}
+	return bestId;
+}
 
 const decodeKeyU64 = (buf: Buffer): bigint => buf.readBigUInt64BE(0);
 
@@ -1159,25 +1274,18 @@ function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void
 			s.exportNames.remove(key);
 		}
 		// Drop derived indices BEFORE the row itself so we have the
-		// row's (repoId, kind, name) available for the name_index
-		// lookup. Reverse-lookup via entityStringByU64 is O(1).
+		// row's (repoId, kind, name, filePath) available for the
+		// name_index / entity_by_file lookups. Reverse-lookup via
+		// entityStringByU64 is O(1).
 		const stringId = s.entityStringByU64.get(encodeEntityKey(u64)) as string | undefined;
 		const rowBuf = s.entity.get(encodeEntityKey(u64));
 		if (rowBuf !== undefined) {
-			const row = decodeEntityRow(rowBuf as Buffer);
-			// dupsort remove(key, value): drop only this entity's u64 from
-			// the dup set, leaving other entities that share (repo, kind,
-			// name) untouched.
-			s.nameIndex.remove(
-				encodeNameIndexKey(row.repoId, ENTITY_KIND_BYTE[row.kind], row.name),
-				encodeEntityKey(u64),
-			);
+			removeEntityRowInTxn(s, u64, decodeEntityRow(rowBuf as Buffer));
 		}
 		if (stringId !== undefined) {
 			s.entityIdByString.remove(stringId);
 			s.entityStringByU64.remove(encodeEntityKey(u64));
 		}
-		s.entity.remove(encodeEntityKey(u64));
 	}
 }
 

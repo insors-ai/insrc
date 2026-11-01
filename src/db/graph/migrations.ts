@@ -44,6 +44,7 @@ import {
 import {
 	decodeEntityKey,
 	encodeEntityKey,
+	encodeEntityByFileKey,
 	encodeNameIndexKey,
 	encodeRepoKey,
 	ENTITY_KIND_BYTE,
@@ -51,13 +52,13 @@ import {
 import {
 	decodeEntityRow,
 	decodeRepoRow,
-	encodeEntityRow,
 	encodeIndexStateRow,
 	encodeRepoRow,
 	type EntityRow,
 	type RepoRow,
 } from './codec.js';
 import { emptyIndexStateRow, recountPending } from './pending-class.js';
+import { putEntityRowInTxn, removeEntityRowInTxn } from '../entities.js';
 import type { GraphStore } from './store.js';
 
 const log = getLogger('graph-migrations');
@@ -119,7 +120,11 @@ const MIGRATION_V1_TO_V2: Migration = {
 			reverseSeeded++;
 		}
 
-		// 2. Backfill name_index from the entity table.
+		// 2. Backfill name_index from the entity table. GUARD-TEST-EXEMPT
+		// (Epic c2ba6fa6 Story s3, t4): this is a standalone index-only
+		// backfill, not an entity-row write -- it never calls entity.put/
+		// entity.remove, so it is not one of the sites that must route
+		// through putEntityRowInTxn/removeEntityRowInTxn.
 		let nameSeeded = 0;
 		for (const { key, value } of store.entity.getRange()) {
 			const u64 = (key as Buffer).readBigUInt64BE(0);
@@ -227,7 +232,6 @@ const MIGRATION_V2_TO_V3: Migration = {
 			readonly newRow:        EntityRow;
 		}
 		const rewires: ModuleRewire[] = [];
-		const oldNameIndexKeys: Buffer[] = [];
 
 		for (const { key, value } of store.entity.getRange()) {
 			const row = decodeEntityRow(value as Buffer);
@@ -249,22 +253,16 @@ const MIGRATION_V2_TO_V3: Migration = {
 			const newRow: EntityRow = { ...row, repoId: newRepoId };
 
 			rewires.push({ u64, oldStringId, newStringId, oldRow: row, newRow });
-
-			// Cache the OLD name_index key so we can delete it
-			// (the new key is computed from newRow.repoId).
-			const oldKindByte = ENTITY_KIND_BYTE[row.kind];
-			if (oldKindByte !== undefined) {
-				oldNameIndexKeys.push(encodeNameIndexKey(row.repoId, oldKindByte, row.name));
-			}
 		}
 
 		let modulesRewired = 0;
-		for (let i = 0; i < rewires.length; i++) {
-			const r = rewires[i]!;
-			const oldKey = oldNameIndexKeys[i];
-
-			// Update the entity row itself (key is u64; unchanged).
-			store.entity.put(encodeEntityKey(r.u64), encodeEntityRow(r.newRow));
+		for (const r of rewires) {
+			// Update the entity row itself (key is u64; unchanged), and
+			// rewire name_index + entity_by_file together through the
+			// single entity-row write path (Epic c2ba6fa6 Story s3) -- the
+			// old (oldRepoId, kind, name) / (oldRepoId, filePath) entries
+			// are dropped and the new-repoId ones written.
+			putEntityRowInTxn(store, r.u64, r.oldRow, r.newRow);
 
 			// Swap the string-id indices. Module IDs become
 			// namespace-scoped, so the old `('', '', 'module', name)`
@@ -273,19 +271,6 @@ const MIGRATION_V2_TO_V3: Migration = {
 				store.entityIdByString.remove(r.oldStringId);
 				store.entityIdByString.put(r.newStringId, r.u64);
 				store.entityStringByU64.put(encodeEntityKey(r.u64), r.newStringId);
-			}
-
-			// Rewire name_index: drop old (oldRepoId, kind, name)
-			// dupsort entry; add new (newRepoId, kind, name) entry.
-			const kindByte = ENTITY_KIND_BYTE[r.newRow.kind];
-			if (kindByte !== undefined) {
-				if (oldKey !== undefined) {
-					store.nameIndex.remove(oldKey, encodeEntityKey(r.u64));
-				}
-				store.nameIndex.put(
-					encodeNameIndexKey(r.newRow.repoId, kindByte, r.newRow.name),
-					encodeEntityKey(r.u64),
-				);
 			}
 
 			modulesRewired++;
@@ -329,21 +314,16 @@ const MIGRATION_V2_TO_V3: Migration = {
 				const u64Key = encodeEntityKey(u64);
 				const entVal = store.entity.get(u64Key);
 				if (entVal !== undefined) {
-					const entRow = decodeEntityRow(entVal as Buffer);
-					const kindByte = ENTITY_KIND_BYTE[entRow.kind];
-					if (kindByte !== undefined) {
-						store.nameIndex.remove(
-							encodeNameIndexKey(entRow.repoId, kindByte, entRow.name),
-							u64Key,
-						);
-					}
+					// Drops the entity row, name_index and entity_by_file
+					// entries together through the single entity-row write
+					// path (Epic c2ba6fa6 Story s3).
+					removeEntityRowInTxn(store, u64, decodeEntityRow(entVal as Buffer));
 				}
 				const stringId = readStringByU64(store, u64);
 				if (stringId !== undefined) {
 					store.entityIdByString.remove(stringId);
 				}
 				store.entityStringByU64.remove(u64Key);
-				store.entity.remove(u64Key);
 				phantomEntitiesDropped++;
 			}
 			store.repo.remove(encodeRepoKey(p.repoId));
@@ -407,6 +387,34 @@ export const MIGRATION_V4_TO_V5: Migration = {
 };
 
 /**
+ * v5 -> v6: fast by-file / by-repo reads (Epic c2ba6fa6, Story s3 --
+ * ISSUE-61045de91faef1a0). Walks the existing entity table once and
+ * populates the new `entity_by_file` index for every row. Idempotent:
+ * a dupSort put of an (key, value) pair already present is a no-op, so
+ * a crash mid-migration followed by a re-run (schema_version still at
+ * 5) safely redoes the walk without creating duplicate entries. No
+ * existing key, value or kind byte is rewritten.
+ */
+export const MIGRATION_V5_TO_V6: Migration = {
+	from: 5,
+	to:   6,
+	description: 'entity_by_file (sc3): backfill the new by-file/by-repo entity index from the existing entity table',
+	run: (store) => {
+		// GUARD-TEST-EXEMPT (Epic c2ba6fa6 Story s3, t4): standalone
+		// index-only backfill, not an entity-row write -- it never calls
+		// entity.put/entity.remove.
+		let seeded = 0;
+		for (const { key, value } of store.entity.getRange()) {
+			const u64 = decodeEntityKey(key as Buffer);
+			const row = decodeEntityRow(value as Buffer);
+			store.entityByFile.put(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
+			seeded++;
+		}
+		log.info({ seeded }, 'v5->v6: entity_by_file backfill done');
+	},
+};
+
+/**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
  * and we don't want to introduce a cycle).
@@ -438,6 +446,7 @@ export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V2_TO_V3,
 	MIGRATION_V3_TO_V4,
 	MIGRATION_V4_TO_V5,
+	MIGRATION_V5_TO_V6,
 ];
 
 /**

@@ -33,7 +33,7 @@ import { dirname } from 'node:path';
 
 import { loadConnections } from '../../daemon/db/config.js';
 import type { LoadedConnections } from '../../daemon/db/config.js';
-import { findEntitiesByFile, listEntitiesForRepo } from '../../db/entities.js';
+import { findEntitiesByFile, listEntitiesForRepo, repoHasAnyEntity } from '../../db/entities.js';
 import { listRepos } from '../../db/repos.js';
 import type { AnalyzeScopeRef, AnalyzeTarget } from '../../shared/analyze-types.js';
 import { getLogger } from '../../shared/logger.js';
@@ -79,6 +79,15 @@ export interface ScopeDeps {
 	findEntitiesByFile(file: string): Promise<readonly Entity[]>;
 	listEntitiesForRepo(repoPath: string): Promise<readonly Entity[]>;
 	loadConnections(repoPath: string): Promise<LoadedConnections>;
+	/**
+	 * OPTIONAL fast path (Epic c2ba6fa6 Story s3, ac4): whether a repo
+	 * holds any stored entity, without building its entity list. When
+	 * absent, callers fall back to `listEntitiesForRepo(...).length ===
+	 * 0`. Optional (not required) so the ~30 existing files that
+	 * construct a `ScopeDeps`-shaped object literal keep compiling and
+	 * behaving unchanged.
+	 */
+	repoHasAnyEntity?: ((repoPath: string) => Promise<boolean>) | undefined;
 }
 
 const REAL_DEPS: ScopeDeps = {
@@ -86,6 +95,7 @@ const REAL_DEPS: ScopeDeps = {
 	findEntitiesByFile:  (file) => findEntitiesByFile(null, file),
 	listEntitiesForRepo: (repoPath) => listEntitiesForRepo(null, repoPath),
 	loadConnections,
+	repoHasAnyEntity:    (repoPath) => repoHasAnyEntity(null, repoPath),
 };
 
 export async function resolveScope(

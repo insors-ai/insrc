@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -152,3 +152,23 @@ Run at 2026-11-01T15:04:42.397Z on commit `7c3e1dd09`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/file-commit-vectors.test.ts` | 0 | 10 | 2.3 s |  |
+
+## t8
+
+Run at 2026-11-01T15:13:36.050Z on commit `d9fe9ff86`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: IndexerService.indexFile**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t8 (ac1): a refresh whose embed step fails after the parse leaves the file's previous entities and pending rows as they were, and records the file as uncommitted | `src/indexer/__tests__/file-refresh.test.ts` |
+| pass | t8 (ac2): a read while a refresh is held in its embed step sees the complete old set, and after the commit the complete new set | `src/indexer/__tests__/file-refresh.test.ts` |
+| pass | t8 (ac4): a delete event removes the file's entities and pending rows together | `src/indexer/__tests__/file-refresh.test.ts` |
+| pass | a kept file's link into a removed entity is removed with it and returns to pending awaiting it, and the kept file's other links and entities stay | `src/indexer/__tests__/reconcile.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/file-refresh.test.ts` | 0 | 3 | 1.1 s |  |
+| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.1 s |  |

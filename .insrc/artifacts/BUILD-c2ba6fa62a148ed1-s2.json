@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T15:04:42.397Z",
+    "updatedAt": "2026-11-01T15:13:36.050Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -38,9 +38,13 @@
       {
         "id": "t7",
         "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
       }
     ],
-    "summary": "reconcileEntityVectors deletes vectors whose entity is not stored and clears the marker (counting it unembedded) of entities marked embedded without a vector; IndexerService.start runs it before any job. db+indexer suites 954/954.",
+    "summary": "indexFile parses, resolves and embeds then makes one commitFile call (no delete first); the delete event and removeStoredFile commit with contentHash null; a failed file event records the file in uncommittedFiles. commitFile also clears the file's export_names with its EXPORTS edges. Two older tests updated to the sc2 behaviour (incoming link returns to pending; a refreshed barrel keeps its u64). db+indexer+analyze suites pass.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
     },
@@ -50,121 +54,149 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-types.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-vectors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/indexer/embedder.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/graph/index-state-rows.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/cross-file-modes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/full-index-rebuild.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/db/lance/entity-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:04:42.397Z"
+        "timestamp": "2026-11-01T15:13:36.050Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/delete-entities-by-id.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:13:36.050Z"
+      },
+      {
+        "target": {
+          "file": "src/db/index-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:13:36.050Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/file-refresh.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:13:36.050Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/reconcile.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:13:36.050Z"
       }
     ],
-    "commit": "7c3e1dd09"
+    "commit": "d9fe9ff86"
   }
 }

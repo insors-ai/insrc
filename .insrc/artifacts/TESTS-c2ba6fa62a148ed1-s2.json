@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T15:04:42.397Z",
+    "updatedAt": "2026-11-01T15:13:36.050Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -571,6 +571,154 @@
               },
               {
                 "title": "t7: the indexer reconciles the graph and the vector table when it starts, before any job",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "d9fe9ff86",
+        "ranAt": "2026-11-01T15:13:36.050Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "IndexerService.indexFile",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-refresh.test.ts",
+                "title": "t8 (ac1): a refresh whose embed step fails after the parse leaves the file's previous entities and pending rows as they were, and records the file as uncommitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-refresh.test.ts",
+                "title": "t8 (ac2): a read while a refresh is held in its embed step sees the complete old set, and after the commit the complete new set",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-refresh.test.ts",
+                "title": "t8 (ac4): a delete event removes the file's entities and pending rows together",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a kept file's link into a removed entity is removed with it and returns to pending awaiting it, and the kept file's other links and entities stay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/file-refresh.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1119,
+            "titles": [
+              {
+                "title": "t8 (ac1): a refresh whose embed step fails after the parse leaves the file's previous entities and pending rows as they were, and records the file as uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "t8 (ac2): a read while a refresh is held in its embed step sees the complete old set, and after the commit the complete new set",
+                "result": "pass"
+              },
+              {
+                "title": "t8 (ac4): a delete event removes the file's entities and pending rows together",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/reconcile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4088,
+            "titles": [
+              {
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept",
+                "result": "pass"
+              },
+              {
+                "title": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose parent directory became a file is removed as absent",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it",
+                "result": "pass"
+              },
+              {
+                "title": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain",
+                "result": "pass"
+              },
+              {
+                "title": "a kept file's link into a removed entity is removed with it and returns to pending awaiting it, and the kept file's other links and entities stay",
+                "result": "pass"
+              },
+              {
+                "title": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result",
+                "result": "pass"
+              },
+              {
+                "title": "a store failure part-way through a clean-up job still drops the cached results and runs the resolver for the files already removed, and the job fails",
+                "result": "pass"
+              },
+              {
+                "title": "a resolver failure after a clean-up fails the job with the cached results already dropped",
+                "result": "pass"
+              },
+              {
+                "title": "a failure on the only stale file still drops the cached results and runs the resolver, because part of the file may be gone",
+                "result": "pass"
+              },
+              {
+                "title": "a repository whose directory is there but holds none of the stored files loses nothing, and one where only ignored files are left on disk is still cleaned",
+                "result": "pass"
+              },
+              {
+                "title": "an ignored file is removed whatever the check of its presence says, also when it is the only thing stored",
+                "result": "pass"
+              },
+              {
+                "title": "a clean-up failure inside a full index fails the full index and marks the repository error",
+                "result": "pass"
+              },
+              {
+                "title": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: adding a repo with no root ignore file results in one existing before the first index runs",
+                "result": "pass"
+              },
+              {
+                "title": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
                 "result": "pass"
               }
             ],

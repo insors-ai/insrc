@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-11-01T13:16:17.185Z  ·  **Updated:** 2026-11-01T15:04:42.397Z
+**Standalone:** no  ·  **Created:** 2026-11-01T13:16:17.185Z  ·  **Updated:** 2026-11-01T15:13:36.050Z
 
-**Commit:** 7c3e1dd09
+**Commit:** d9fe9ff86
 
 ## Summary
 
-reconcileEntityVectors deletes vectors whose entity is not stored and clears the marker (counting it unembedded) of entities marked embedded without a vector; IndexerService.start runs it before any job. db+indexer suites 954/954.
+indexFile parses, resolves and embeds then makes one commitFile call (no delete first); the delete event and removeStoredFile commit with contentHash null; a failed file event records the file in uncommittedFiles. commitFile also clears the file's export_names with its EXPORTS edges. Two older tests updated to the sc2 behaviour (incoming link returns to pending; a refreshed barrel keeps its u64). db+indexer+analyze suites pass.
 
 ## Tasks validated
 
@@ -19,25 +19,30 @@ reconcileEntityVectors deletes vectors whose entity is not stored and clears the
 - ✓ `t5`
 - ✓ `t6`
 - ✓ `t7`
+- ✓ `t8`
 
 **Tests:** [TESTS.md](TESTS.md) — what the gate ran for each Task, and what each test case did.
 
 ## Changes
 
-- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/__tests__/relations-in-txn.test.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/relations.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/__tests__/file-commit-types.test.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/file-commit.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/shared/types.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/__tests__/file-commit.test.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/entities.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/daemon/threads/__tests__/fixtures/module-state-inventory.json` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/__tests__/file-commit-vectors.test.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/indexer/embedder.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/graph/index-state-rows.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/indexer/__tests__/cross-file-modes.test.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/indexer/__tests__/full-index-rebuild.test.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/db/lance/entity-vec.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
-- `src/indexer/index.ts` — **insrc-build** (2026-11-01T15:04:42.397Z)
+- `src/daemon/db/__tests__/fixtures/session-source-inventory.json` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/__tests__/relations-in-txn.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/relations.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/__tests__/file-commit-types.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/file-commit.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/shared/types.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/__tests__/file-commit.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/entities.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/daemon/threads/__tests__/fixtures/module-state-inventory.json` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/__tests__/file-commit-vectors.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/indexer/embedder.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/analyze/explore/__tests__/completeness-all-lookups.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/graph/index-state-rows.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/indexer/__tests__/cross-file-modes.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/indexer/__tests__/full-index-rebuild.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/lance/entity-vec.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/indexer/index.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/__tests__/delete-entities-by-id.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/db/index-state.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/indexer/__tests__/file-refresh.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)
+- `src/indexer/__tests__/reconcile.test.ts` — **insrc-build** (2026-11-01T15:13:36.050Z)

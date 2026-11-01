@@ -42,13 +42,14 @@ test('controller submissions: replay idempotency, conflicting/foreign result ref
   const params={repo:f.repo,reviewId:'controller-replay',attempt:1,result:f.result};
   await assert.rejects(startTaskReview({repo:f.repo,epicHash:hash,reviewId:'untrusted-owner',attempt:1,packet:f.packet,owner:{id:'forged',signal:{}}}),/Trusted controller connection lifetime/);
   assert.equal(existsSync(checkpointPath(f.repo,'untrusted-owner')),false);
-  const before=readFileSync(start.path,'utf8');
+  const authoritative=()=>{const head=JSON.parse(readFileSync(start.path,'utf8'));for(const attempt of head.attempts)delete attempt.progress;return head;};
+  const before=authoritative();
   await assert.rejects(foreign.call('codeReview.task.result',{...params,owner:'forged',reviewer:'controller',connectionIdentity:'forged'}),/wrong-reviewer/);
-  assert.equal(readFileSync(start.path,'utf8'),before);
+  assert.deepEqual(authoritative(),before);
   await assert.rejects(client.call('codeReview.task.result',{...params,result:{...f.result,taskId:'foreign'}}),/Wrong or unassigned task/);
-  assert.equal(readFileSync(start.path,'utf8'),before);
+  assert.deepEqual(authoritative(),before);
   await assert.rejects(client.call('codeReview.task.result',{...params,attempt:2}),/Attempt mismatch/);
-  assert.equal(readFileSync(start.path,'utf8'),before);
+  assert.deepEqual(authoritative(),before);
   const done=await client.call<ControllerFrame>('codeReview.task.result',params);
   const after=readFileSync(start.path,'utf8'),cr=readFileSync(join(f.repo,`.insrc/artifacts/CR-${hash}-s1.json`),'utf8');
   assert.equal((await client.call<ControllerFrame>('codeReview.task.result',params)).status,done.status);

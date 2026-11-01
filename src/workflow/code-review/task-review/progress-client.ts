@@ -11,7 +11,7 @@ export function formatReviewProgress(view:ReviewProgressView):string{
  return `Review ${view.reviewId}/${view.attempt}: ${view.status}${view.interrupted?' (interrupted)':''}${view.hasError?' (review/publication error)':''}; `+
   `${task?`task ${task.position}/${task.total} ${task.name}`:'task unknown'}; ${p?.phase??'phase unknown'}; `+
   `${view.completedTasks}/${view.totalTasks} completed; review elapsed ${p?duration(p.reviewElapsedMs):'unknown'}; task elapsed ${p?.taskElapsedMs==null?'unknown':duration(p.taskElapsedMs)}; `+
-  `last meaningful activity ${activity}; ${view.freshness==='live'?`process ${p?.processState??'unknown'}`:'current process activity unknown'}; snapshot ${view.freshness}`+
+  `last meaningful activity ${activity}; ${view.freshness==='live'?`last observed process ${p?.processState??'unknown'} at ${p?.lastProcessObservedAt??'unknown'}`:'current process activity unknown'}; snapshot ${view.freshness}`+
   `${view.warning?'; progress persistence failed':''}; publication ${view.crPublication}`;
 }
 function wait(ms:number,signal:AbortSignal):Promise<void>{

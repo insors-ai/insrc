@@ -89,7 +89,7 @@ test('task execution: checkpoint before next task, one inactivity grace, failure
 
 test('checkpoint write failure stops scheduling and retains the last complete JSON', async () => {
  const f = await fixture(false); let writes = 0, calls = 0;
- const coordinator = new TaskReviewCoordinator({ sources: f.sources, save: async (path, record) => { writes++; if (writes === 5) throw new Error('Disk full'); await saveCheckpoint(path, record); }, provider: () => provider(async prompt => {
+ const coordinator = new TaskReviewCoordinator({ sources: f.sources, save: async (path, record) => { writes++; if (record.attempts.at(-1)!['review-response'].tasks.some(task=>task.taskId==='t2')) throw new Error('Disk full'); await saveCheckpoint(path, record); }, provider: () => provider(async prompt => {
   calls++; if (prompt.startsWith('Derive task attribution')) return { tasks: ['t1', 't2', 't3'].map(taskId => ({ taskId, changeIndexes: [0], testIndexes: [0] })) };
   return assessment(calls === 2 ? 't1' : 't2');
  }) });

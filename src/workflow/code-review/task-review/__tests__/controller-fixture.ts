@@ -3,7 +3,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { createConnection } from 'node:net';
 import { join } from 'node:path';
 import { IpcServer, directDispatch } from '../../../../daemon/server.js';
-import { exchangeControllerTaskReview, startTaskReview } from '../../../../daemon/task-review-rpc.js';
+import { exchangeControllerTaskReview, startTaskReview, readTaskReviewProgress } from '../../../../daemon/task-review-rpc.js';
 import type { LLMProvider } from '../../../../shared/types.js';
 export async function channel(path:string){
  const socket=createConnection(path);await new Promise<void>((resolve,reject)=>{socket.once('connect',resolve);socket.once('error',reject);});
@@ -34,6 +34,7 @@ export function provider(run:(prompt:string)=>Promise<unknown>):LLMProvider{retu
 export async function serve(repo:string,resolveProvider:()=>LLMProvider){
  const path=join(repo,'controller.sock');
  const server=new IpcServer(directDispatch({
+  'codeReview.task.progress':params=>readTaskReviewProgress(params),
   'codeReview.task.start':(params,context)=>startTaskReview(params,context,{provider:resolveProvider}),
   'codeReview.task.activity':(params,context)=>exchangeControllerTaskReview(params,context,'activity'),
   'codeReview.task.assignment':(params,context)=>exchangeControllerTaskReview(params,context,'assignment'),

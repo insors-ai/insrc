@@ -74,7 +74,7 @@ export class TaskReviewCoordinator {
   requireReview(saved&&saved.project===project&&saved.reviewId===id,'checkpoint','Missing or mismatched checkpoint');
   const entry=saved.attempts.find(value=>value.header.attempt===attempt);requireReview(entry,'attempt','Missing attempt');
   const active=this.active.get(path),owned=active?.attempt.header.attempt===attempt;
-  const controller=owned?this.controllers.get(path):undefined;
+  const controller=owned&&active?.attempt.header.reviewer==='controller'?this.controllers.get(path):undefined;
   const tracker=owned?(controller?.progress??active?.progress):undefined;
   const progress=tracker?.snapshot()??entry.progress??null;
   const completed=entry['review-response'].tasks.length;

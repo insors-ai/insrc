@@ -265,14 +265,10 @@ function sourcesFor(repoPath: string): RuleSource[] {
 	return [{ name: 'git', ruleFiles }];
 }
 
-/**
- * Builds the filter by reading the repo's real ignore files from disk and
- * (when `repoPath/.git` exists) the tracked-file set via `git ls-files
- * --cached`. For a non-git `repoPath` the tracked-file override is simply
- * empty and the ignore-file rules alone decide inclusion (ac9).
- */
-export function createFileFilter(repoPath: string): FileFilter {
-	const absRepo = resolve(repoPath);
+/** Reads every rule source from disk and walks `absRepo` to build a fresh
+ *  `FileFilterState` — the full computation `createFileFilter` and
+ *  `refreshFileFilter` (Story s6/t3) both need. */
+function buildState(absRepo: string): FileFilterState {
 	const tracked = trackedSetsFor(absRepo);
 
 	const ig = ignore();
@@ -281,6 +277,17 @@ export function createFileFilter(repoPath: string): FileFilter {
 	if (global !== undefined) addPrefixed(ig, readRuleLines(global), '');
 
 	const { files, dirsWithIncludedDescendant } = walk(absRepo, ig, tracked);
+	return { ig, tracked, files, dirsWithIncludedDescendant };
+}
+
+/**
+ * Builds the filter by reading the repo's real ignore files from disk and
+ * (when `repoPath/.git` exists) the tracked-file set via `git ls-files
+ * --cached`. For a non-git `repoPath` the tracked-file override is simply
+ * empty and the ignore-file rules alone decide inclusion (ac9).
+ */
+export function createFileFilter(repoPath: string): FileFilter {
+	const absRepo = resolve(repoPath);
 
 	const filter: FileFilter = {
 		repoPath: absRepo,
@@ -304,19 +311,42 @@ export function createFileFilter(repoPath: string): FileFilter {
 			return state === undefined ? [] : [...state.files];
 		},
 	};
-	stateByFilter.set(filter, { ig, tracked, files, dirsWithIncludedDescendant });
+	stateByFilter.set(filter, buildState(absRepo));
 	return filter;
 }
 
-/** Internal: lets `refreshFileFilter` (Story s6/t3) replace a filter's
- *  cached state in place after an ignore file changes on disk. */
-export function _setFileFilterState(filter: FileFilter, state: FileFilterState): void {
-	stateByFilter.set(filter, state);
+// ---------------------------------------------------------------------------
+// refreshFileFilter
+// ---------------------------------------------------------------------------
+
+/** `{ left, entered }` — the files that newly left and newly entered the
+ *  included set, per sc4's own `FilterChange` shape. */
+export interface FilterChange {
+	readonly left: string[];
+	readonly entered: string[];
 }
 
-/** Internal: lets `refreshFileFilter` read a filter's current cached state. */
-export function _getFileFilterState(filter: FileFilter): FileFilterState | undefined {
-	return stateByFilter.get(filter);
+/**
+ * Recomputes `filter`'s rules + tracked-file override from disk, in place,
+ * after `changedIgnoreFile` (one of its `.gitignore` files, the clone's
+ * `.git/info/exclude`, or the user's global gitignore) changed content —
+ * no repo re-registration. `filter.includes()` reflects the new content for
+ * every call that follows (ac5). A full rebuild is the smallest correct
+ * implementation here: rebuilding only the changed directory's own rules
+ * is not enough, because a nested `.gitignore` change can also move the
+ * tracked-file / built-in-independent decision for files the walk would
+ * now (or no longer) reach by itself.
+ */
+export function refreshFileFilter(filter: FileFilter, changedIgnoreFile: string): FilterChange {
+	const prevFiles = new Set(stateByFilter.get(filter)?.files ?? []);
+	const next = buildState(filter.repoPath);
+	stateByFilter.set(filter, next);
+
+	const nextFiles = new Set(next.files);
+	const left = [...prevFiles].filter(f => !nextFiles.has(f));
+	const entered = [...nextFiles].filter(f => !prevFiles.has(f));
+	log.debug({ repo: filter.repoPath, changedIgnoreFile, left: left.length, entered: entered.length }, 'file filter refreshed');
+	return { left, entered };
 }
 
 export { walk as _walkForFileFilter, trackedSetsFor as _trackedSetsFor };

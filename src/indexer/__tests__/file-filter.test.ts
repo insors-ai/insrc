@@ -14,7 +14,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { createFileFilter } from '../file-filter.js';
+import { createFileFilter, refreshFileFilter } from '../file-filter.js';
 
 function makeGitRepo(prefix: string): string {
 	const dir = mkdtempSync(join(tmpdir(), `${prefix}-`));
@@ -176,6 +176,45 @@ test('listFiles() returns exactly the included files', () => {
 		assert.ok(files.includes(join(repo, 'src/a.ts')));
 		assert.ok(files.includes(join(repo, '.gitignore')));
 		assert.ok(!files.includes(join(repo, 'out/a.js')));
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+// ---------------------------------------------------------------------------
+// refreshFileFilter (ac5) — an ignore-file edit takes effect live, without
+// re-registering the repo
+// ---------------------------------------------------------------------------
+
+test('ac5: refreshFileFilter, given an ignore file that gained one rule and lost another, returns the correct left/entered sets', () => {
+	const repo = makeGitRepo('file-filter-refresh');
+	try {
+		writeFileSync(join(repo, '.gitignore'), '/build/\n', 'utf8');
+		mkdirSync(join(repo, 'build'));
+		writeFileSync(join(repo, 'build/out.js'), 'x', 'utf8');
+		writeFileSync(join(repo, 'keep.ts'), 'x', 'utf8');
+		commit(repo, 'init');
+		// Untracked, not covered by any rule yet — so a new /tmp/ rule can
+		// actually exclude it (a TRACKED file would stay included by the
+		// tracked-file union override, which is correct but not what this
+		// case means to exercise).
+		mkdirSync(join(repo, 'tmp'));
+		writeFileSync(join(repo, 'tmp/scratch.txt'), 'x', 'utf8');
+
+		const f = createFileFilter(repo);
+		assert.equal(f.includes(join(repo, 'build/out.js')), false, 'excluded before the edit');
+		assert.equal(f.includes(join(repo, 'tmp/scratch.txt')), true, 'included before the edit');
+
+		// Lose the /build/ rule, gain a /tmp/ rule.
+		const ignoreFile = join(repo, '.gitignore');
+		writeFileSync(ignoreFile, '/tmp/\n', 'utf8');
+		const change = refreshFileFilter(f, ignoreFile);
+
+		assert.ok(change.left.includes(join(repo, 'tmp/scratch.txt')), 'newly excluded file is in left');
+		assert.ok(change.entered.includes(join(repo, 'build/out.js')), 'newly included file is in entered');
+		assert.equal(f.includes(join(repo, 'build/out.js')), true, 'includes() reflects the new rule content immediately');
+		assert.equal(f.includes(join(repo, 'tmp/scratch.txt')), false);
+		assert.equal(f.includes(join(repo, 'keep.ts')), true, 'untouched file is unaffected');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdtemp, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -32,6 +33,10 @@ nativeTest(import.meta.url, 'canonical-root-and-readonly-layout-validation', asy
     await writeFile(join(path, LAYOUT_PENDING), LAYOUT_TEXT.slice(0, 12), { mode: 0o600 });
     assert.equal(await classifyLayout(root), 'new');
     assert.equal((await readdir(path)).length, 1, 'read-only validation must not repair metadata');
+    await rm(join(path, LAYOUT_PENDING));
+    execFileSync('mkfifo', ['-m', '600', join(path, LAYOUT_PENDING)]);
+    await assert.rejects(classifyLayout(root), MemoryError, 'special metadata files must fail without waiting for a writer');
+    await rm(join(path, LAYOUT_PENDING));
     await writeFile(join(path, 'index.lance'), 'unrelated');
     await assert.rejects(classifyLayout(root), MemoryError);
   } finally { await rm(dir, { recursive: true, force: true }); }

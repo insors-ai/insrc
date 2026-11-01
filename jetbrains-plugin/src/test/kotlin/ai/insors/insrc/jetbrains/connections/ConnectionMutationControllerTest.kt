@@ -14,6 +14,26 @@ class ConnectionMutationControllerTest:BasePlatformTestCase() {
     override fun setUp(){super.setUp();AppScopedConsumers.claimForTest()}
     override fun tearDown(){try{AppScopedConsumers.resetForTest()}finally{super.tearDown()}}
     private val descriptor get()=ConnectionProtocol.descriptors(ConnectionCorpus.load()["driverDescriptors"]).first{it.kind=="postgres"}
+    fun testExpiredTicketBeforeSubmitIsDismissibleWithoutMutationOrReplay() {
+        val corpus=ConnectionCorpus.load()
+        val ticket=corpus.getAsJsonArray("wire").first{it.asJsonObject["kind"].asString=="ticket"&&it.asJsonObject["valid"].asBoolean}.asJsonObject["input"].deepCopy().asJsonObject
+        val key=ConnectionKey("/fixture/repo-a","saved","warehouse")
+        ticket.addProperty("mode","create");ticket.addProperty("connectionId",key.id);ticket.addProperty("lookupRoot",key.repoRoot)
+        var now=java.time.Instant.parse(ticket["expiresAt"].asString).toEpochMilli()+1;var mutations=0
+        val controller=ConnectionMutationController(MutationPorts(now={now},sessionStamp={null},refresh={_,_->CompletableFuture.completedFuture(JsonArray())},call={_,method,_,_->
+            if(method.endsWith(".ticket"))CompletableFuture.completedFuture(ticket)else{
+                assertEquals("db.connections.v2.mutate",method);mutations++
+                CompletableFuture.completedFuture(JsonObject().apply{addProperty("status","rejected");addProperty("code","invalid-input");addProperty("message","Fixture refusal")})
+            }
+        }))
+        val draft=ConnectionDraft(descriptor,key).apply{setField(listOf("endpoint"),JsonPrimitive("postgresql://fixture.invalid/db"))}
+        try{
+            val expired=await(controller.submit(draft));assertEquals("ticket-error",expired.phase);assertEquals("ticket-expired",expired.errorCode)
+            assertEquals(0,mutations);assertFalse(expired.canReplay);assertTrue(expired.canDismiss);assertFalse(controller.isBlocked(key));assertFalse(draft.view.discarded)
+            failed("invalid-state",controller.replay(expired.recordId));controller.dismiss(expired.recordId)
+            now=java.time.Instant.parse(ticket["issuedAt"].asString).toEpochMilli();assertEquals("rejected",await(controller.submit(draft)).phase);assertEquals(1,mutations)
+        }finally{controller.close();}
+    }
     private fun <T> await(stage:CompletionStage<T>):T=stage.toCompletableFuture().get(25,TimeUnit.SECONDS)
     private fun draft(b:ConnectionMutationBackend,id:String,scope:String="saved")=ConnectionDraft(descriptor,ConnectionKey(b.root,scope,id)).apply{
         setField(listOf("endpoint"),JsonPrimitive("postgres://fixture.invalid/db"));setCredential("url.password","replace","fixture-only-private-replacement")

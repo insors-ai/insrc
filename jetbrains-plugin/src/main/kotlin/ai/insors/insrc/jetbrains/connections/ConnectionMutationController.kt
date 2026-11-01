@@ -141,8 +141,10 @@ class ConnectionMutationController internal constructor(@Transient private val p
                     if(attempts.values.any{it!==r&&it.operationId==ticket.operationId})throw MutationStateException("invalid-state")
                     r.ticket=ticket
                     r.operationId=ticket.operationId
-                    if(!unexpired(r)){r.phase="reconciliation-required"
-                        r.errorCode="reconciliation-required"
+                    // Before mutate, no effect is possible. Post-submit expiry
+                    // must retain its separate unknown-outcome recovery block.
+                    if(!unexpired(r)){r.phase="ticket-error"
+                        r.errorCode="ticket-expired"
                         release(r)
                         return@launch}
                     val request=ConnectionProtocol.parseData(text).asJsonObject.apply{add("ticket",ticketJson(ticket))

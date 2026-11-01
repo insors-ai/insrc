@@ -9,7 +9,7 @@ import { runConnectionJUnit } from './fixtures/connection-junit.js';
 import { loadConnectionCorpus } from './fixtures/connection-corpus.js';
 import { createConnectionManager, reduceConnectionManager, projectConnectionManager } from '../connection-manager/model.js';
 import type { ManagerEvent } from '../connection-manager/model.js';
-import { decodeManagementCapabilities, decodeSafeConnectionList, decodeSafeConnection, decodeOperationTicket, decodeMutationOutcome, decodeOperationStatus, decodeDraftTestResult, decodeRemovalState } from '../connection-manager/wire.js';
+import { decodeManagementCapabilities, decodeSafeConnectionList, decodeSafeConnection, decodeOperationTicket, decodeMutationOutcome, decodeOperationStatus, decodeDraftTestResult, decodeRemovalState, decodePublicConnectionPatch } from '../connection-manager/wire.js';
 
 test('CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail', {timeout:360000}, () => {
   const dir=mkdtempSync(join(tmpdir(),'s5-parity-'));
@@ -23,10 +23,18 @@ test('CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and dive
     const decoders:Record<string,(value:unknown)=>unknown>={capabilities:decodeManagementCapabilities,list:value=>decodeSafeConnectionList(value,'/fixture/repo-a'),read:decodeSafeConnection,ticket:decodeOperationTicket,outcome:decodeMutationOutcome,status:decodeOperationStatus,test:decodeDraftTestResult,removal:decodeRemovalState};
     const wire=corpus.wire.map(item=>{let accepted=false;try{decoders[item.kind]!(item.input);accepted=true;}catch{}assert.equal(accepted,item.valid,item.id);return{id:item.id,accepted};});
     runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionsManagerModelTest',2,dir);
-    runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest',6,dir);
+    runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionProtocolTest',7,dir);
     const native=JSON.parse(readFileSync(join(dir,'model.json'),'utf8'));
     assert.deepEqual(native,JSON.parse(JSON.stringify(actual)),'Full native and TypeScript projections/effects differ');
     assert.deepEqual(JSON.parse(readFileSync(join(dir,'wire.json'),'utf8')),wire);
+    const endpoints=corpus.endpointCases.map(item=>{
+      const row=structuredClone(corpus.wire.find(c=>c.kind==='read'&&c.valid)!.input) as {publicConfig:Record<string,unknown>};row.publicConfig['endpoint']=item.value;
+      const actions=[()=>decodeSafeConnection(row),()=>decodeSafeConnectionList([row],'/fixture/repo-a'),()=>decodePublicConnectionPatch({endpoint:item.value}),()=>decodePublicConnectionPatch({options:{endpoint:item.value}})];
+      const accepted=actions.map(action=>{try{action();return true;}catch{return false;}});assert.deepEqual(accepted,Array(4).fill(item.valid),item.id);return{id:item.id,accepted};
+    });
+    assert.deepEqual(JSON.parse(readFileSync(join(dir,'endpoints.json'),'utf8')),endpoints,'Full endpoint read/list/public/nested-patch verdicts must match across clients');
+    const wrongEndpoint=structuredClone(endpoints);wrongEndpoint[0]!.accepted[0]=!wrongEndpoint[0]!.accepted[0];
+    assert.throws(()=>assert.deepEqual(wrongEndpoint,endpoints),assert.AssertionError);
     // A harness which only loads matching fixtures would incorrectly accept these.
     const wrongField=structuredClone(native);wrongField[0].projection.repoRoot='/divergent-consumer-root';
     assert.throws(()=>assert.deepEqual(wrongField,actual),assert.AssertionError);
@@ -57,6 +65,6 @@ test('CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provide
 });
 
 test('CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets', {timeout:360000}, () => {
-  runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest',6);
+  runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest',7);
   runConnectionJUnit('ai.insors.insrc.jetbrains.connections.ConnectionRemovalsTest',4);
 });

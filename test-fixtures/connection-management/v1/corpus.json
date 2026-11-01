@@ -6667,5 +6667,325 @@
       "mode": "forged",
       "expected": false
     }
+  ],
+  "endpointPolicy": {
+    "version": 1,
+    "purpose": "Portable public-field safety only; driver-specific connection validity remains a daemon gate. Original strings are never normalized.",
+    "rules": [
+      "Absolute ASCII scheme and nonempty remainder; no trimming or normalization.",
+      "Raw C0, DEL, C1 controls, unpaired UTF-16 surrogates and backslashes are refused.",
+      "http/https/ws/wss/ftp/file require canonical // syntax; network authorities must be nonempty except file.",
+      "Authority is text between // and first / ? #; opaque non-network forms use their prefix before / ? # for conservative credential screening.",
+      "At most 8 stable percent-decoding passes in authority; reject userinfo @, separators, controls, Unicode whitespace and unsafe authority punctuation.",
+      "Path/query/fragment Unicode, escapable punctuation and repeated # are retained unchanged, subject to the existing secret-reference boundary.",
+      "This is not complete WHATWG or RFC URL conformance, and an accepted public field does not prove connectability."
+    ]
+  },
+  "endpointCases": [
+    {
+      "id": "endpoint-01",
+      "value": "https://host/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-02",
+      "value": "postgresql://fixture.invalid/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-03",
+      "value": "redis://my_host:6379",
+      "valid": true
+    },
+    {
+      "id": "endpoint-04",
+      "value": "mongodb://a:27017,b:27018/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-05",
+      "value": "custom:opaque-value",
+      "valid": true
+    },
+    {
+      "id": "endpoint-06",
+      "value": "file:///tmp/data.csv",
+      "valid": true
+    },
+    {
+      "id": "endpoint-07",
+      "value": "https://host/?q=a b",
+      "valid": true
+    },
+    {
+      "id": "endpoint-08",
+      "value": "https://host/?q={value}",
+      "valid": true
+    },
+    {
+      "id": "endpoint-09",
+      "value": "https://host/[value]?q=100%",
+      "valid": true
+    },
+    {
+      "id": "endpoint-10",
+      "value": "https://host/#a#b",
+      "valid": true
+    },
+    {
+      "id": "endpoint-11",
+      "value": "https://host/?q=\u00a0",
+      "valid": true
+    },
+    {
+      "id": "endpoint-12",
+      "value": "https://host/?q=\u2028",
+      "valid": true
+    },
+    {
+      "id": "endpoint-13",
+      "value": "https://host/a\u3000b",
+      "valid": true
+    },
+    {
+      "id": "endpoint-14",
+      "value": "https://\u4f8b\u3048.invalid/\u6570\u636e",
+      "valid": true
+    },
+    {
+      "id": "endpoint-15",
+      "value": "https://[::1]:443/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-16",
+      "value": "https://host/path@value?q=x@y#z@q",
+      "valid": true
+    },
+    {
+      "id": "endpoint-17",
+      "value": "postgresql://host/db?q=%25",
+      "valid": true
+    },
+    {
+      "id": "endpoint-18",
+      "value": "redis://:pw@my_host:6379",
+      "valid": false
+    },
+    {
+      "id": "endpoint-19",
+      "value": "postgresql://u:p@a:1,b:2/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-20",
+      "value": "https:user:pw@host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-21",
+      "value": "https:///user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-22",
+      "value": "https:\\\\user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-23",
+      "value": "https:/\\tab/user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-24",
+      "value": "https://user:pw@host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-25",
+      "value": "https:\tuser:pw@host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-26",
+      "value": "https://user:\npw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-27",
+      "value": "https://user:\rpw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-28",
+      "value": "https://u%40host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-29",
+      "value": "https://u%2540host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-30",
+      "value": "https://host%2fother/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-31",
+      "value": "https://host%5cother/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-32",
+      "value": "https://host%3fother/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-33",
+      "value": "https://host%23other/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-34",
+      "value": "https://bad host/?q=ok",
+      "valid": false
+    },
+    {
+      "id": "endpoint-35",
+      "value": "https://bad\u00a0host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-36",
+      "value": "https://bad\u2028host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-37",
+      "value": "https://{host}/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-38",
+      "value": "https://host\\@other/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-39",
+      "value": "https://host/a\\b",
+      "valid": false
+    },
+    {
+      "id": "endpoint-40",
+      "value": "https://host/a\u007fb",
+      "valid": false
+    },
+    {
+      "id": "endpoint-41",
+      "value": "https://host/a\u0085b",
+      "valid": false
+    },
+    {
+      "id": "endpoint-42",
+      "value": "https://",
+      "valid": false
+    },
+    {
+      "id": "endpoint-43",
+      "value": "https:///",
+      "valid": false
+    },
+    {
+      "id": "endpoint-44",
+      "value": "https:host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-45",
+      "value": "https:/host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-46",
+      "value": "http:opaque",
+      "valid": false
+    },
+    {
+      "id": "endpoint-47",
+      "value": "http://?q=value",
+      "valid": false
+    },
+    {
+      "id": "endpoint-48",
+      "value": "custom:",
+      "valid": false
+    },
+    {
+      "id": "endpoint-49",
+      "value": "relative/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-50",
+      "value": "//host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-51",
+      "value": "://host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-52",
+      "value": "1scheme://host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-53",
+      "value": " https://host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-54",
+      "value": "custom:user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-55",
+      "value": "https://%ff/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-56",
+      "value": "https://host/%24%7Bsecret%3Afixture%7D",
+      "valid": false
+    },
+    {
+      "id": "endpoint-57",
+      "value": "https://\ud800.invalid/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-58",
+      "value": "https://\udc00.invalid/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-59",
+      "value": "https://host/\ud800",
+      "valid": false
+    },
+    {
+      "id": "endpoint-60",
+      "value": "https://\ud83d\ude00.invalid/",
+      "valid": true
+    },
+    {
+      "id": "endpoint-61",
+      "value": "https://host/\ud83d\ude00",
+      "valid": true
+    }
   ]
 }

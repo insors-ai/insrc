@@ -100,6 +100,24 @@ export function decodeDriverDescriptors(value: unknown): readonly ClientDriverDe
  });
 }
 export const PUBLIC_CONNECTION_FIELDS = Object.freeze(['kind','label','endpoint','path','schemaSource','namespace','pii','options','recursive','partitioning']);
+/** Portable public-field safety grammar, shared with ConnectionProtocol.kt and
+ * the endpointCases corpus. Driver-specific URL validity remains a daemon gate.
+ * Never normalize the returned value or use platform URL parser side effects. */
+function safeEndpoint(value:string):void {
+ if(/[\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)||value.includes('\\'))fail();
+ const scheme=/^([A-Za-z][A-Za-z0-9+.-]*):/.exec(value)??fail();
+ const rest=value.slice(scheme[0].length);if(!rest)fail();
+ const network=['http','https','ws','wss','ftp','file'].includes(scheme[1]!.toLowerCase());
+ const hierarchical=rest.startsWith('//');if(network&&!hierarchical)fail();
+ let authority=(hierarchical?rest.slice(2):rest).split(/[/?#]/,1)[0]!;
+ if(network&&scheme[1]!.toLowerCase()!=='file'&&!authority)fail();
+ for(let n=0;n<8;n++){
+  if(/[\u0000-\u0020\u007f-\u009f\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff@/\\?#<>"{}|^`]/u.test(authority))fail();
+  let next:string;try{next=decodeURIComponent(authority.replace(/%(?![0-9a-f]{2})/gi,'%25'));}catch{return fail();}
+  if(next===authority)return;authority=next;
+ }
+ fail();
+}
 function safePublicFields(value: unknown): void {
  const config=object(value);
  if(Object.keys(config).some(k=>!PUBLIC_CONNECTION_FIELDS.includes(k)))fail();
@@ -116,7 +134,7 @@ function safePublicFields(value: unknown): void {
   if(Array.isArray(v)){v.forEach(walk);return;}
   if(v&&typeof v==='object')for(const [k,child]of Object.entries(v)){
    if(['secretRef','password','credentials','capability','sessionHandle','runtimeAuth'].includes(k))fail();
-   if(k==='endpoint'&&typeof child==='string'){try{const url=new URL(child);if(url.username||url.password)fail();}catch{return fail();}}
+   if(k==='endpoint'&&typeof child==='string')safeEndpoint(child);
    walk(child);
   }
  };

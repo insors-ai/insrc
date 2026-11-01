@@ -1,13 +1,21 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { loadConnectionCorpus } from './fixtures/connection-corpus.js';
-import { ConnectionReplyError, CONNECTION_REPLY_LIMITS, connectionReplyData, decodeManagementCapabilities, decodeDriverDescriptors, decodeSafeConnection, decodeSafeConnectionList, decodeOperationTicket, decodeMutationOutcome, decodeOperationStatus, decodeDraftTestResult, decodeRemovalState } from '../connection-manager/wire.js';
+import { ConnectionReplyError, CONNECTION_REPLY_LIMITS, connectionReplyData, decodeManagementCapabilities, decodeDriverDescriptors, decodeSafeConnection, decodeSafeConnectionList, decodeOperationTicket, decodeMutationOutcome, decodeOperationStatus, decodeDraftTestResult, decodeRemovalState, decodePublicConnectionPatch } from '../connection-manager/wire.js';
 import type { ConnectionKey, OperationTicket } from '../connection-management.js';
 import '../../daemon/db/drivers/index.js';
 import { driverDescriptors } from '../../daemon/db/driver-profiles.js';
 
 const corpus=loadConnectionCorpus();
 const key=corpus.identity.key as ConnectionKey;
+test('CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries',()=>{
+ assert.equal(corpus.endpointPolicy.version,1);assert.equal(corpus.endpointCases.length,61);
+ for(const item of corpus.endpointCases){
+  const row=example('read');row.publicConfig.endpoint=item.value;
+  const actions=[()=>decodeSafeConnection(row).publicConfig['endpoint'],()=>decodeSafeConnectionList([row],key.repoRoot)[0]!.publicConfig['endpoint'],()=>decodePublicConnectionPatch({endpoint:item.value})['endpoint'],()=>((decodePublicConnectionPatch({options:{endpoint:item.value}})['options'] as Record<string,unknown>)['endpoint'])];
+  for(const action of actions)if(item.valid)assert.equal(action(),item.value,item.id);else assert.throws(action,ConnectionReplyError,item.id);
+ }
+});
 const decoders:Record<string,(v:unknown)=>unknown>={capabilities:decodeManagementCapabilities,list:v=>decodeSafeConnectionList(v,key.repoRoot),read:decodeSafeConnection,ticket:decodeOperationTicket,outcome:decodeMutationOutcome,status:decodeOperationStatus,test:decodeDraftTestResult,removal:decodeRemovalState};
 type MutableFixture = Record<string,unknown> & {publicConfig:Record<string,unknown>;value:Record<string,unknown>};
 function example(kind:string):MutableFixture { return structuredClone(corpus.wire.find(c=>c.kind===kind&&c.valid)!.input) as MutableFixture; }
@@ -63,6 +71,13 @@ test('CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tupl
 test('CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy',()=>{
  const raw=example('read');raw.publicConfig.secretRef='PRIVATE_SDK_MESSAGE';refuses(()=>decodeSafeConnection(raw));
  const endpoint=example('read');endpoint.publicConfig.endpoint='postgresql://secret:password@fixture.invalid/db';refuses(()=>decodeSafeConnection(endpoint));
+ for(const value of ['redis://:pw@my_host:6379','postgresql://u:p@a:1,b:2/db']){
+  const authority=example('read');authority.publicConfig.endpoint=value;refuses(()=>decodeSafeConnection(authority));refuses(()=>decodePublicConnectionPatch({endpoint:value}));
+ }
+ for(const value of ['https://host/?q=a b','https://host/?q={value}','https://host/[value]?q=100%']){
+  const escaped=example('read');escaped.publicConfig.endpoint=value;assert.equal(decodeSafeConnection(escaped).publicConfig['endpoint'],value);assert.equal(decodeSafeConnectionList([escaped],key.repoRoot).length,1);assert.equal(decodePublicConnectionPatch({endpoint:value})['endpoint'],value);
+ }
+ refuses(()=>decodePublicConnectionPatch({endpoint:'https://bad host/?q=ok'}));
  for(const path of ['${secret:PRIVATE_SDK_MESSAGE}','%24%7Bsecret%3APRIVATE_SDK_MESSAGE%7D','%2524%257Bsecret%253APRIVATE_SDK_MESSAGE%257D']){
   const file=example('read');file.publicConfig={path};refuses(()=>decodeSafeConnection(file));
  }

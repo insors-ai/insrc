@@ -32,6 +32,8 @@ class ConnectionCorpusTest {
         assertEquals(18, corpus.getAsJsonArray("wire").size())
         assertEquals(8, corpus.getAsJsonArray("wire").count { it.asJsonObject["valid"].asBoolean })
         assertEquals(12, corpus.getAsJsonArray("transcripts").size())
+        assertEquals(1,corpus.getAsJsonObject("endpointPolicy")["version"].asInt)
+        assertEquals(61,corpus.getAsJsonArray("endpointCases").size())
         assertEquals(20, corpus.getAsJsonArray("removalSnapshots").size())
         val coverage = corpus.getAsJsonArray("coverage")
         assertEquals(20, coverage.size())

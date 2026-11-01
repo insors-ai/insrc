@@ -10,7 +10,7 @@ export type MutationPhase='ticketing'|'ticket-error'|'submitting'|'unknown'|'pen
 export interface MutationView {
  readonly recordId:string;readonly key:ConnectionKey;readonly mode:OperationTicket['mode'];readonly phase:MutationPhase;
  readonly operationId:string|null;readonly outcome:CommittedOutcome|null;readonly busy:boolean;
- readonly refresh:'not-started'|'pending'|'complete'|'failed';readonly errorCode:ManagementErrorCode|'transport-error'|'invalid-response'|null;
+ readonly refresh:'not-started'|'pending'|'complete'|'failed';readonly errorCode:ManagementErrorCode|'transport-error'|'invalid-response'|'ticket-expired'|null;
  readonly canReplay:boolean;readonly canDismiss:boolean;
  readonly removal:RemovalState|null;
 }
@@ -87,11 +87,15 @@ export class ConnectionMutationController {
    if(!this.#alive(r))return this.#view(r);
    r.ticket=freeze(decodeOperationTicket(raw,{key:r.key,mode:r.mode}));r.operationId=r.ticket.operationId;
    if([...this.#records.values()].some(other=>other!==r&&other.operationId===r.operationId))throw new MutationStateError('invalid-state');
-   if(!this.#unexpired(r)){r.phase='reconciliation-required';r.errorCode='reconciliation-required';this.#release(r);return this.#view(r);}
-   const request=freeze({...input,ticket:r.ticket,operationId:r.operationId});const requestBytes=byteSize(request);
-   if(this.#bytes-r.bytes+requestBytes>MUTATION_CONTROLLER_LIMITS.attemptBytes)throw new MutationStateError('resource-limit');
-   this.#bytes+=requestBytes-r.bytes;r.bytes=requestBytes;r.request=request;r.input=null;
-   await this.#mutate(r);
+   // No mutation was sent: this is a terminal ticket failure, not an unknown
+   // outcome. Expiry AFTER submission still requires original-ticket recovery.
+   if(!this.#unexpired(r)){r.phase='ticket-error';r.errorCode='ticket-expired';this.#release(r);}
+   else{
+    const request=freeze({...input,ticket:r.ticket,operationId:r.operationId});const requestBytes=byteSize(request);
+    if(this.#bytes-r.bytes+requestBytes>MUTATION_CONTROLLER_LIMITS.attemptBytes)throw new MutationStateError('resource-limit');
+    this.#bytes+=requestBytes-r.bytes;r.bytes=requestBytes;r.request=request;r.input=null;
+    await this.#mutate(r);
+   }
   }catch{
    if(this.#alive(r)&&r.phase==='ticketing'){r.phase='ticket-error';r.errorCode='invalid-response';r.ticket=null;this.#release(r);}
   }finally{r.busy=false;this.#emit();}

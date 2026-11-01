@@ -16,6 +16,29 @@ class ConnectionDraftTestsTest:BasePlatformTestCase() {
     override fun tearDown(){try{AppScopedConsumers.resetForTest()}finally{super.tearDown()}}
     private fun <T> await(value:CompletionStage<T>):T=value.toCompletableFuture().get(25,TimeUnit.SECONDS)
     private val descriptors get()=ConnectionProtocol.descriptors(ConnectionCorpus.load()["driverDescriptors"])
+    fun testRejectedInputsReleaseFreshReservationsButBusyRetainsSource() {
+        var sources=0;var code="invalid-input"
+        val source=object:DraftTestSource {
+            override fun run(request:JsonObject):CompletionStage<JsonElement> = CompletableFuture.completedFuture(JsonObject().apply{
+                addProperty("status","rejected");addProperty("code",code);addProperty("message","PRIVATE_REJECTION_CANARY")
+            })
+            override fun cancel(requestId:String):CompletionStage<JsonElement> = CompletableFuture.completedFuture(JsonObject())
+        }
+        val tests=ConnectionDraftTests(DraftTestPorts{_,_->sources++;CompletableFuture.completedFuture(source)})
+        val key=ConnectionKey("/fixture/repo-a","saved","rejected")
+        val draft=ConnectionDraft(descriptors.first{it.kind=="csv"},key).apply{setField(listOf("path"),JsonPrimitive("orders.csv"))}
+        val identity=DraftTestIdentity(key,"fixture-epoch",1)
+        try{
+            tests.setView(identity)
+            repeat(2){await(tests.test(draft,identity));assertEquals("failed",tests.view.status);assertFalse(tests.view.cleanupUnverified)}
+            assertEquals(2,sources)
+            assertEquals("Check the connection settings. File and schema paths must point to readable files inside the selected repository.",tests.view.message)
+            code="busy";await(tests.test(draft,identity));assertEquals("unavailable",tests.view.status);assertTrue(tests.view.cleanupUnverified)
+            assertEquals("Connection test is busy. Wait for earlier tests to finish, then retry.",tests.view.message)
+            code="invalid-input";await(tests.test(draft,identity));assertEquals("failed",tests.view.status);assertTrue(tests.view.cleanupUnverified)
+            assertEquals(3,sources);assertFalse(Gson().toJson(tests.view).contains("PRIVATE_REJECTION_CANARY"))
+        }finally{tests.close();draft.clear()}
+    }
     private fun key(b:ConnectionTestBackend,scope:String="saved",id:String="fixture")=ConnectionKey(b.roots[0],scope,id)
     private fun identity(s:ConnectionsSessionService,k:ConnectionKey,generation:Long)=DraftTestIdentity(k,s.view.daemonEpoch!!,generation)
     private fun draft(b:ConnectionTestBackend,k:ConnectionKey=key(b),edit:Boolean=false):ConnectionDraft {

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import Ajv from 'ajv';
 import { ConnectionDraft, connectionDriverChoices } from '../connection-manager/draft.js';
 import type { DraftNavigation } from '../connection-manager/draft.js';
 import type { ConnectionKey, CredentialPatch } from '../connection-management.js';
@@ -8,6 +9,20 @@ import { loadConnectionCorpus } from './fixtures/connection-corpus.js';
 
 const corpus=loadConnectionCorpus(),descriptors=decodeDriverDescriptors(corpus.driverDescriptors);
 const key:ConnectionKey={repoRoot:'/fixture/repo-a',scope:'saved',id:'draft'};
+test('CM-S5-FORM-TS: repeated driver rendering reuses validators without a global compiler cache',()=>{
+ const descriptor=decodeDriverDescriptors([structuredClone(corpus.driverDescriptors[0])])[0]!;
+ const original=Ajv.prototype.compile;let compiles=0;const compilers=new Set<Ajv>();
+ Ajv.prototype.compile=function(this:Ajv,...args:Parameters<typeof original>){compiles++;compilers.add(this);return original.apply(this,args);} as typeof original;
+ try{
+  for(let i=0;i<100;i++)assert.equal(connectionDriverChoices([descriptor])[0]!.enabled,true);
+  assert.equal(compiles,2);assert.equal(compilers.size,1);
+  // A new schema has its own compiler, so an obsolete descriptor is not rooted
+  // by the compiler used by the next descriptor generation.
+  const next=decodeDriverDescriptors([structuredClone(corpus.driverDescriptors[0])])[0]!;
+  assert.equal(connectionDriverChoices([next])[0]!.enabled,true);
+  assert.equal(compiles,4);assert.equal(compilers.size,2);
+ }finally{Ajv.prototype.compile=original;}
+});
 function draft(kind='postgres'):ConnectionDraft {return new ConnectionDraft(descriptors.find(d=>d.kind===kind)!,key);}
 function example(schema:Record<string,unknown>,path:string[],kind:string):unknown {
  if(Object.hasOwn(schema,'const'))return schema['const'];

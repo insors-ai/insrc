@@ -29,7 +29,10 @@ export interface DraftView {
  readonly credentials:readonly {readonly slot:string;readonly present:boolean;readonly action:CredentialPatch['action'];readonly masked:true;readonly format:'text'|'address-list'}[];
  readonly confirmDiscard:boolean;readonly discarded:boolean;
 }
-const ajv=new Ajv({strict:false,allErrors:false,useDefaults:false,removeAdditional:false,coerceTypes:false});
+type DraftValidators={full:ValidateFunction;editing:ValidateFunction};
+// The schema belongs to its descriptor/draft. A weak cache avoids recompiling on
+// every render without making a process-wide Ajv retain every retired schema.
+const validatorCache=new WeakMap<object,DraftValidators|null>();
 const guidance='This connection requires a newer editor or has compatibility restrictions.';
 function fail():never {throw new ConnectionDraftError('invalid-fields');}
 function data<T>(value:T):T {return connectionReplyData(value) as T;}
@@ -46,8 +49,9 @@ function editingSchema(schema:Readonly<Record<string,unknown>>):Record<string,un
  }
  return result;
 }
-function validators(descriptor:ClientDriverDescriptor):{full:ValidateFunction;editing:ValidateFunction}|null {
+function validators(descriptor:ClientDriverDescriptor):DraftValidators|null {
  if(!descriptor.editable)return null;
+ const cached=validatorCache.get(descriptor.publicInputSchema);if(cached!==undefined)return cached;
  const props=descriptor.publicInputSchema['properties'] as Record<string,unknown>;
  if(Object.keys(props).some(k=>!PUBLIC_CONNECTION_FIELDS.includes(k)))return null;
  const privateNames=new Set(['password','credentials','secretRef','runtimeAuth','capability','sessionHandle']);
@@ -58,7 +62,11 @@ function validators(descriptor:ClientDriverDescriptor):{full:ValidateFunction;ed
    &&(!schema['anyOf']||(schema['anyOf'] as Record<string,unknown>[]).every(supported));
  };
  if(!supported(descriptor.publicInputSchema))return null;
- try{return {full:ajv.compile(descriptor.publicInputSchema),editing:ajv.compile(editingSchema(descriptor.publicInputSchema))};}catch{return null;}
+ try{
+  const ajv=new Ajv({strict:false,allErrors:false,useDefaults:false,removeAdditional:false,coerceTypes:false});
+  const result={full:ajv.compile(descriptor.publicInputSchema),editing:ajv.compile(editingSchema(descriptor.publicInputSchema))};
+  validatorCache.set(descriptor.publicInputSchema,result);return result;
+ }catch{validatorCache.set(descriptor.publicInputSchema,null);return null;}
 }
 export function connectionDriverChoices(descriptors:readonly ClientDriverDescriptor[]):readonly {kind:string;family:DriverDescriptor['family'];enabled:boolean;guidance:string|null}[] {
  return freeze(descriptors.map(d=>{const enabled=validators(d)!==null;return{kind:d.kind,family:d.family,enabled,guidance:enabled?null:guidance};}));

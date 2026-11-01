@@ -3,6 +3,27 @@ import test, { mock } from 'node:test';
 import { deferred } from '../../../../src/daemon/db/__tests__/fixtures/saved-management-fixture.js';
 import type { MutationRequest } from '../../../../src/shared/connection-management.js';
 import { managementFixture as fixture } from './fixtures/management.js';
+import { ConnectionMutationController } from '../../../../src/shared/connection-manager/controller.js';
+import { ConnectionDraft } from '../../../../src/shared/connection-manager/draft.js';
+import { decodeDriverDescriptors } from '../../../../src/shared/connection-manager/wire.js';
+import { loadConnectionCorpus } from '../../../../src/shared/__tests__/fixtures/connection-corpus.js';
+
+test('CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay',async()=>{
+ const corpus=loadConnectionCorpus();const ticket=structuredClone(corpus.wire.find(c=>c.kind==='ticket'&&c.valid)!.input) as Record<string,unknown>;
+ const key={...corpus.identity.key,scope:'saved' as const};ticket['mode']='create';ticket['connectionId']=key.id;ticket['lookupRoot']=key.repoRoot;
+ let now=Date.parse(ticket['expiresAt'] as string)+1,mutations=0;
+ const controller=new ConnectionMutationController({now:()=>now,sessionStamp:()=>null,refresh:async()=>[],call:async(_key,method)=>{
+  if(method.endsWith('.ticket'))return ticket;
+  assert.equal(method,'db.connections.v2.mutate');mutations++;return {status:'rejected',code:'invalid-input',message:'Fixture refusal'};
+ }});
+ const draft=new ConnectionDraft(decodeDriverDescriptors(corpus.driverDescriptors).find(d=>d.kind==='postgres')!,key);draft.setField(['endpoint'],'postgresql://fixture.invalid/db');
+ try{
+  const expired=await controller.submit(draft);assert.equal(expired.phase,'ticket-error');assert.equal(expired.errorCode,'ticket-expired');
+  assert.equal(mutations,0);assert.equal(expired.canReplay,false);assert.equal(expired.canDismiss,true);assert.equal(controller.isBlocked(key),false);assert.equal(draft.view.discarded,false);
+  await assert.rejects(controller.replay(expired.recordId),{code:'invalid-state'});controller.dismiss(expired.recordId);
+  now=Date.parse(ticket['issuedAt'] as string);assert.equal((await controller.submit(draft)).phase,'rejected');assert.equal(mutations,1);
+ }finally{controller.dispose();}
+});
 
 async function until(predicate:()=>boolean):Promise<void>{const deadline=Date.now()+5000;while(!predicate()){if(Date.now()>deadline)assert.fail('Fixture did not reach the required state');await new Promise<void>(resolve=>setImmediate(resolve));}}
 

@@ -11,6 +11,8 @@ test('CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malforme
  assert.equal(corpus.wire.filter(c => !c.valid).length, 10);
  assert.equal(new Set(corpus.wire.map(c => c.id)).size, corpus.wire.length);
  assert.equal(corpus.transcripts.length, 12);
+ assert.equal(corpus.endpointPolicy.version,1);assert.equal(corpus.endpointCases.length,61);
+ assert.equal(new Set(corpus.endpointCases.map(c=>c.id)).size,61);
  assert.ok(corpus.transcripts.every(c => c.events.length && c.expected && Array.isArray(c.effects)));
  const lld = JSON.parse(readFileSync(new URL('../../../.insrc/artifacts/LLD-484fcef7efaf229e-s5.json', import.meta.url), 'utf8'));
  const subjects = lld.body.testStrategy.testLevels.flatMap((level: { subjects: string[] }) => level.subjects);

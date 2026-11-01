@@ -4,7 +4,6 @@ import com.google.gson.*
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import java.io.StringReader
-import java.net.URI
 import java.time.Instant
 import java.time.format.DateTimeFormatterBuilder
 import java.util.Collections
@@ -197,6 +196,23 @@ object ConnectionProtocol {
         Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes.toByteArray())).toString()
     }
     fun publicPatch(value: JsonElement): JsonObject = checked { obj(data(value)).also { safePublicFields(it) } }
+    /** Public-field safety only; driver URL validity is a daemon gate. Keep this
+     * grammar aligned with wire.ts and the shared endpointCases corpus. */
+    private fun safeEndpoint(value:String) {
+        if(Regex("""[\u0000-\u001f\u007f-\u009f\ud800-\udfff]""").containsMatchIn(value)||'\\' in value)fail()
+        val scheme=Regex("^([A-Za-z][A-Za-z0-9+.-]*):").find(value)?:fail()
+        val rest=value.substring(scheme.value.length);if(rest.isEmpty())fail()
+        val name=scheme.groupValues[1].lowercase()
+        val network=name in setOf("http","https","ws","wss","ftp","file")
+        val hierarchical=rest.startsWith("//");if(network&&!hierarchical)fail()
+        var authority=(if(hierarchical)rest.substring(2)else rest).split(Regex("[/?#]"),2)[0]
+        if(network&&name!="file"&&authority.isEmpty())fail()
+        repeat(8){
+            if(Regex("""[\u0000-\u0020\u007f-\u009f\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff@/\\?#<>"{}|^`]""").containsMatchIn(authority))fail()
+            val next=decodePublicPercent(authority);if(next==authority)return;authority=next
+        }
+        fail()
+    }
     private fun safePublicFields(config: JsonObject) {
         if (config.keySet().any { it !in publicFieldNames }) fail()
         fun walk(v: JsonElement) {
@@ -214,7 +230,7 @@ object ConnectionProtocol {
             if (v.isJsonObject) for ((k, child) in v.asJsonObject.entrySet()) {
                 if (k in setOf("secretRef", "password", "credentials", "capability", "sessionHandle", "runtimeAuth")) fail()
                 if (k == "endpoint" && child.isJsonPrimitive && child.asJsonPrimitive.isString) {
-                    val uri = URI(child.asString); if (uri.scheme == null || uri.rawUserInfo != null) fail()
+                    safeEndpoint(child.asString)
                 }
                 walk(child)
             }

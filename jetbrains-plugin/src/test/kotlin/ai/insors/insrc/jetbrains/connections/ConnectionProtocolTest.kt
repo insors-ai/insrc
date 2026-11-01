@@ -7,6 +7,21 @@ import org.junit.jupiter.api.Test
 class ConnectionProtocolTest {
     private val corpus = ConnectionCorpus.load()
     private val key = ConnectionKey("/fixture/repo-a", "saved", "warehouse")
+    @Test fun `shared endpoint safety cases retain values across read list and patch boundaries`() {
+        assertEquals(1,corpus.getAsJsonObject("endpointPolicy")["version"].asInt)
+        val cases=corpus.getAsJsonArray("endpointCases");assertEquals(61,cases.size());val actual=JsonArray()
+        for(item in cases){val c=item.asJsonObject;val endpoint=c["value"].asString
+            val row=example("read").asJsonObject.apply{getAsJsonObject("publicConfig").addProperty("endpoint",endpoint)}
+            val actions=listOf<()->String>(
+                {ConnectionProtocol.safeConnection(row).publicConfig["endpoint"].asString},
+                {ConnectionProtocol.list(JsonArray().apply{add(row)},key.repoRoot).single().publicConfig["endpoint"].asString},
+                {ConnectionProtocol.publicPatch(JsonObject().apply{addProperty("endpoint",endpoint)})["endpoint"].asString},
+                {ConnectionProtocol.publicPatch(JsonObject().apply{add("options",JsonObject().apply{addProperty("endpoint",endpoint)})}).getAsJsonObject("options")["endpoint"].asString})
+            val accepted=actions.map{action->if(c["valid"].asBoolean)assertEquals(endpoint,action(),c["id"].asString)else refuses{action()};runCatching{action()}.isSuccess}
+            actual.add(JsonObject().apply{add("id",c["id"]);add("accepted",Gson().toJsonTree(accepted))})
+        }
+        System.getProperty("insrc.parity.dir")?.takeIf{it.isNotBlank()}?.let{java.nio.file.Files.writeString(java.nio.file.Path.of(it,"endpoints.json"),actual.toString())}
+    }
     private fun example(kind: String): JsonElement = corpus.getAsJsonArray("wire").first {
         it.asJsonObject["kind"].asString == kind && it.asJsonObject["valid"].asBoolean
     }.asJsonObject["input"].deepCopy()
@@ -92,6 +107,20 @@ class ConnectionProtocolTest {
         val url = example("read").asJsonObject
         url.getAsJsonObject("publicConfig").addProperty("endpoint", "postgresql://secret:password@fixture.invalid/db")
         refuses { ConnectionProtocol.safeConnection(url) }
+        for (endpoint in listOf("redis://:pw@my_host:6379", "postgresql://u:p@a:1,b:2/db")) {
+            val registryAuthority = example("read").asJsonObject
+            registryAuthority.getAsJsonObject("publicConfig").addProperty("endpoint", endpoint)
+            refuses { ConnectionProtocol.safeConnection(registryAuthority) }
+            refuses { ConnectionProtocol.publicPatch(JsonObject().apply { addProperty("endpoint", endpoint) }) }
+        }
+        assertNotNull(ConnectionProtocol.publicPatch(JsonObject().apply { addProperty("endpoint", "redis://my_host:6379") }))
+        for(endpoint in listOf("https://host/?q=a b","https://host/?q={value}","https://host/[value]?q=100%")){
+            val escaped=example("read").asJsonObject.apply{getAsJsonObject("publicConfig").addProperty("endpoint",endpoint)}
+            assertEquals(endpoint,ConnectionProtocol.safeConnection(escaped).publicConfig["endpoint"].asString)
+            assertEquals(1,ConnectionProtocol.list(JsonArray().apply{add(escaped)},key.repoRoot).size)
+            assertEquals(endpoint,ConnectionProtocol.publicPatch(JsonObject().apply{addProperty("endpoint",endpoint)})["endpoint"].asString)
+        }
+        refuses { ConnectionProtocol.publicPatch(JsonObject().apply{addProperty("endpoint","https://bad host/?q=ok")}) }
         for (path in listOf("\${secret:PRIVATE_SDK_MESSAGE}", "%24%7Bsecret%3APRIVATE_SDK_MESSAGE%7D")) {
             val encoded = example("read").asJsonObject
             encoded.add("publicConfig", JsonObject().apply { addProperty("path", path) })

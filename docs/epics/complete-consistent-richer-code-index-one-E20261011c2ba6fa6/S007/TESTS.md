@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -153,3 +153,26 @@ Run at 2026-11-01T19:45:32.101Z on commit `383398e2b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/search-evidence-rpc.test.ts` | 0 | 2 | 1.1 s |  |
+
+## t7
+
+Run at 2026-11-01T19:52:06.282Z on commit `14cf172cc`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: usage.example evidence and counts**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t7: usage.example lists each caller with its evidence and states how many are inferred and how many of unknown origin (ac4) | `src/analyze/explore/__tests__/evidence-lookups.test.ts` |
+| pass | s7 t7: an all-unknown caller list says the origin is unknown and none is known to be read from the source; a chosen relationship is named | `src/analyze/explore/__tests__/evidence-lookups.test.ts` |
+
+**integration: class-hierarchy and import-graph evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t7: class.hierarchy carries evidence on each supertype, interface, subclass and implementer; import.graph on each importer and importee file | `src/analyze/explore/__tests__/evidence-lookups.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/explore/__tests__/evidence-lookups.test.ts` | 0 | 3 | 1.3 s |  |

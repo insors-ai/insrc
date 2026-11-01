@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:45:32.101Z",
+    "updatedAt": "2026-11-01T19:52:06.282Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -436,6 +436,68 @@
               },
               {
                 "title": "s7 t6: graph_callers and graph_callees include the evidence in each short entity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "14cf172cc",
+        "ranAt": "2026-11-01T19:52:06.282Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "usage.example evidence and counts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+                "title": "s7 t7: usage.example lists each caller with its evidence and states how many are inferred and how many of unknown origin (ac4)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+                "title": "s7 t7: an all-unknown caller list says the origin is unknown and none is known to be read from the source; a chosen relationship is named",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "class-hierarchy and import-graph evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+                "title": "s7 t7: class.hierarchy carries evidence on each supertype, interface, subclass and implementer; import.graph on each importer and importee file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1297,
+            "titles": [
+              {
+                "title": "s7 t7: usage.example lists each caller with its evidence and states how many are inferred and how many of unknown origin (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t7: an all-unknown caller list says the origin is unknown and none is known to be read from the source; a chosen relationship is named",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t7: class.hierarchy carries evidence on each supertype, interface, subclass and implementer; import.graph on each importer and importee file",
                 "result": "pass"
               }
             ],

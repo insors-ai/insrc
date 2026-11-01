@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d1b4a24f01c6bf1750afdbd7b696c6d064d8e42d1ea082648a4e1685ca0e1f4a",
+        "at": "2026-11-01T15:47:53.998Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "38c04322b8e4acdd",
+    "storyId": "s1",
+    "createdAt": "2026-11-01T15:47:53.870Z",
+    "updatedAt": "2026-11-01T15:47:53.870Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-01T15:42:51.207Z",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "6b37240bd",
+        "ranAt": "2026-11-01T15:47:53.870Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/review-scope-policy.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/review-scope-policy.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/review-scope-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 966,
+            "titles": [
+              {
+                "title": "optional execution notes remain nonblocking on daemon and controller routes and in CR publication",
+                "result": "pass"
+              },
+              {
+                "title": "skipped mandatory modules or test-coverage review stay incomplete even when optional checks pass",
+                "result": "pass"
+              },
+              {
+                "title": "native policy and schema descriptions separate required inspection from optional execution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

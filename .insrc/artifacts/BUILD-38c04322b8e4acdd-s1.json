@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "ddc05b7ae0c8159f08b7be29c7a9be98529b7733157019c7e9c7f7c7917809f2",
+        "at": "2026-11-01T15:48:47.294Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-2eeffba3-d357-44b6-bcd9-0d354327d668",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T15:42:51.207Z",
+    "epicCreatedAt": "2026-11-01T15:42:51.207Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "38c04322b8e4acdd",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "updatedAt": "2026-11-01T15:47:53.870Z"
+  },
+  "body": {
+    "focus": "Separate mandatory review coverage from optional execution\n\nLive review review-e6ddcdcb-s4-t4-live-20261101 completed with zero HIGH/MED/LOW findings and independently verified all four task tests plus typecheck. It nevertheless returned incomplete because it disclosed that production integration and the broader builder tests/build were not separately rerun. Expected: optional execution disclosures alone do not block; skipped in-scope code/modules, requirements or test-coverage inspection do block. [[c1]] [[c3]]\n\nThe task-review policy places every limitation in the same blocking bucket. Shared normalization and validation conservatively make any limitations entry incomplete, while the renderer separately supports nonblocking advice. Optional execution boundaries were emitted as mandatory limitations, so a fully assessed task could not pass. The validator rule is appropriate for mandatory missing evidence; the prompt/field semantics fail to distinguish optional execution from mandatory inspection. [[c1]] [[c2]]\n\nRequire complete inspection of all submitted code/modules, requirements and relevant test coverage. Treat executing integration checks, tests and builds as optional and disclose omissions in the existing nonblocking output section. Make verified testCoverage mean completed evidence-based coverage assessment, not mandatory reviewer execution; demonstrated coverage defects remain findings. Keep mandatory omissions incomplete regardless of reason, preserve HIGH/MED handling and pinned historical results, and add regressions for optional nonexecution, skipped modules and unassessed coverage. No new result fields, compatibility mode, automatic verdict promotion or revived review engine. [[c1]] [[c2]] [[c3]]",
+    "producesLld": false,
+    "commit": "6b37240bd",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Mandatory code/module/requirements and test-coverage inspection remain blocking when incomplete. Optional integration/test/typecheck/build execution is disclosed in nonblocking advice. Existing result shape and historical verdicts are preserved. Build/typecheck and73 focused regressions pass.",
+    "testRecord": {
+      "md": "docs/standalone/38c04322b8e4acdd-E2026110138c04322/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/task-review-execution.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:47:53.870Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/review-scope-policy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:47:53.870Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:47:53.870Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:47:53.870Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:47:53.870Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:47:53.870Z"
+      }
+    ]
+  },
+  "citations": []
+}

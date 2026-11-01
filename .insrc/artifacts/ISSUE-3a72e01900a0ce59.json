@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793547586446-kyuh9k",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T15:40:40.898Z",
+    "epicCreatedAt": "2026-11-01T15:40:40.898Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 54451,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "3a72e01900a0ce59",
+    "epicSlug": "separate-mandatory-review-coverage-from-optional",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0e9f42a0d26dca6990c1f0b7668f44f101ac522964fe92491d13396d2adb7881",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T15:42:02.730Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "3a72e01900a0ce59",
+      "slug": "EPIC-3a72e01900a0ce59"
+    }
+  },
+  "body": {
+    "title": "Separate mandatory review coverage from optional execution",
+    "reproduction": "Live review review-e6ddcdcb-s4-t4-live-20261101 completed with zero HIGH/MED/LOW findings and independently verified all four task tests plus typecheck. It nevertheless returned incomplete because it disclosed that production integration and the broader builder tests/build were not separately rerun. Expected: optional execution disclosures alone do not block; skipped in-scope code/modules, requirements or test-coverage inspection do block. [[c1]] [[c3]]",
+    "rootCause": "The task-review policy places every limitation in the same blocking bucket. Shared normalization and validation conservatively make any limitations entry incomplete, while the renderer separately supports nonblocking advice. Optional execution boundaries were emitted as mandatory limitations, so a fully assessed task could not pass. The validator rule is appropriate for mandatory missing evidence; the prompt/field semantics fail to distinguish optional execution from mandatory inspection. [[c1]] [[c2]]",
+    "fixIntent": "Require complete inspection of all submitted code/modules, requirements and relevant test coverage. Treat executing integration checks, tests and builds as optional and disclose omissions in the existing nonblocking output section. Make verified testCoverage mean completed evidence-based coverage assessment, not mandatory reviewer execution; demonstrated coverage defects remain findings. Keep mandatory omissions incomplete regardless of reason, preserve HIGH/MED handling and pinned historical results, and add regressions for optional nonexecution, skipped modules and unassessed coverage. No new result fields, compatibility mode, automatic verdict promotion or revived review engine. [[c1]] [[c2]] [[c3]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/results.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/record.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "User clarified that all in-scope module/code and test-coverage review is mandatory; only integration/test/build execution is optional."
+    }
+  ]
+}

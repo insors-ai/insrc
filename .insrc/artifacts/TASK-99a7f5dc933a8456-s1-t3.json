@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6ab17ef3-a224-4ca5-8abf-f984c1ef28ac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T10:47:16.518Z",
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99a7f5dc933a8456",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integrate daemon review supervision and durable feedback commits",
+      "parent": {
+        "entityId": "STORY-99a7f5dc933a8456-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-99a7f5dc933a8456-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6cfe64c1e806500e2154be5cc5b8b09a594f925d5752c4334cda595916fe6c07",
+        "at": "2026-11-01T10:47:16.522Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T10:47:16.523Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integrate daemon review supervision and durable feedback commits",
+    "summary": "Replace size deadlines in TaskReviewCoordinator with shared task monitor and activity provider mode, including serial attribution. Serialize validation, atomic completed-task persistence and expiry; accept durable results before wrapper cleanup, retain incomplete work honestly, and check provider capability before admission writes.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Progressing tasks survive former S/M/L limits; one current-task monitor spans serial attribution/task sessions",
+      "Actual inactivity cancels owned subprocess and records incomplete without repeating completed tasks",
+      "Complete candidates pass existing schema/scope/evidence assessment before checkpoint write; receipt/cleanup only after durability",
+      "Candidate-then-crash retains committed assessment; invalid/conflicting/unsaved candidate never passes; write failure preserves prior durable history",
+      "Attribution candidates cannot become task results; no automatic review retry or old engine fallback"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Daemon task activity survives old limits; attribution/task session identity; expiry persists incomplete without automatic retry"
+      },
+      {
+        "level": "integration",
+        "name": "Durable candidate vs crash/expiry/write failure/conflicting duplicate; validate before commit, receipt after checkpoint and cleanup"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

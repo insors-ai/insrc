@@ -1,0 +1,649 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793509312835-bp3buc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T05:06:34.257Z",
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 279898,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99a7f5dc933a8456",
+    "epicSlug": "preserve-useful-review-work-permissive-progress",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793509312835-bp3buc",
+    "hldEffectiveHash": "99a7f5dc933a8456b4c10154390c52fb125001e566370a652e7dbf6f883d7fab",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive policy story across existing task execution and CLI provider handling; choices around remote silence, tool hangs and submitted feedback need design. Prior graph exploration located TaskReviewCoordinator and runReviewSession; direct source confirms fixed task deadlines.",
+    "authoredBy": "controller",
+    "revision": 4,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "abf718c1fb47aaebe86581c87ac67c2f63c35ae5b79515f6b0ee707c321a0c23",
+        "at": "2026-11-01T09:56:24.301Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 3,
+          "low": 12
+        },
+        "at": "2026-11-01T06:08:44.937Z",
+        "report": {
+          "entityId": "LLD-99a7f5dc933a8456-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-d454349e45437794ad8c82856c045ae8"
+        }
+      },
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T10:36:27.942Z",
+        "override": {
+          "reason": "User approved the corrected revision 4 after author self-review found no HIGH/MED issues. Independent daemon design review is unavailable and its old engine was explicitly removed by user instruction."
+        }
+      }
+    },
+    "rangeBase": "7fade73261287997914726fadcc6f7084e70f422"
+  },
+  "body": {
+    "summary": {
+      "prose": "Replace size-based task termination with 30-minute inactivity supervision. Task size remains an expected-duration hint. Native provider activity and explicit controller activity renew the grace; process heartbeats and repeated polls do not. Track running tools independently and preserve valid completed feedback before cancelling a silent wrapper. STORY-e6ddcdcb3d9cf330-s4 [[c6]] owns presentation.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Preserve useful review work with permissive progress-based timeouts"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ReviewActivityMonitor",
+          "signature": "observe(event: ReviewActivityEvent): void; snapshot(): ReviewActivitySnapshot; stop(): void",
+          "parameters": [
+            {
+              "name": "event",
+              "type": "ReviewActivityEvent",
+              "purpose": "Host-observed event bound to review/attempt/task/session; no arbitrary reason text or claimed timestamp",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ReviewActivitySnapshot",
+            "meaning": "Current phase, meaningful activity age and active tool identities/start times; supports STORY-e6ddcdcb3d9cf330-s4 [[c6]] without UI"
+          },
+          "errors": [
+            {
+              "type": "ReviewInactivityError",
+              "condition": "1800000ms without meaningful activity; snapshot diagnostics and cancel owned session unless valid feedback can first be committed"
+            }
+          ],
+          "preconditions": [
+            "Use monotonic host time; each task execution owns one monitor; serial attribution/task calls share the current task monitor"
+          ],
+          "postconditions": [
+            "No fixed task wall-clock cutoff",
+            "Tool start/completion are activity; tool age and CLI-owned command termination, when available (not a host guarantee) are independent",
+            "A running process, polls and heartbeat never refresh meaningful activity",
+            "No automatic model retry"
+          ]
+        },
+        {
+          "name": "runReviewSession",
+          "signature": "runReviewSession<T>(prompt, schema, opts: ReviewSessionOpts): Promise<T>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "ReviewSessionOpts",
+              "purpose": "Opt-in activity-supervised task mode, cancellation, event callback and optional validated candidate callback; existing bounded non-task callers retain behavior",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<T>",
+            "meaning": "One validated final assessment; accepted candidate may survive wrapper-exit timeout only after full schema/scope validation"
+          },
+          "errors": [
+            {
+              "type": "ReviewInactivityError",
+              "condition": "No activity for the configured 30-minute grace and no recoverable valid assessment"
+            },
+            {
+              "type": "AbortError",
+              "condition": "Explicit cancellation; do not treat as timeout or retry"
+            },
+            {
+              "type": "ReviewActivityUnsupportedError",
+              "condition": "Activity-supervised task mode is requested from Ollama or another provider without explicit review-activity capability; refuse before execution, do not reroute"
+            }
+          ],
+          "preconditions": [
+            "Claude and Codex native event adapters normalize only observable metadata",
+            "Do not treat partial JSON, tool acknowledgement or transcript snippets as completed assessment",
+            "NEW REQUIRED PROVIDER WORK [[c5]]: for activity-supervised task calls only, invoke Claude with --print --output-format stream-json --verbose --include-partial-messages plus the existing schema/read-only grants. Parse incremental JSONL assistant/content/tool/result events and the terminal result envelope; retain schema validation and structured_output semantics. Other Claude call modes keep their current json flags. Codex already uses exec --json; parse its item/turn lifecycle records incrementally instead of waiting for runSubprocess to return. Add an opt-in stdout-chunk observer through runSubprocess/spawnOnce/runInProcessGroup. Decode UTF-8 incrementally, bound frame buffers and map only documented/fixture-verified native events; malformed/unknown frames never renew activity. Verify installed CLI flags and event fixtures before wiring; capability failure is explicit, never fake progress.",
+            "[[c7]] Opt-in activity-supervised task mode initially requires a provider explicitly advertising native review-activity capability (CliProvider Claude/Codex). OllamaProvider implements the same runReviewSession interface in src/agent/providers/ollama.ts but currently uses a bounded local read-only tool loop. Add an explicit capability check at task admission before checkpoint mutation or provider execution; when review resolves to Ollama, refuse unsupported activity-supervised mode with ReviewActivityUnsupportedError. No silent fallback to an old deadline, no provider/model substitution and no automatic retry. Normal bounded Ollama design-review and non-task calls remain supported and unchanged. Ollama runReviewSession also rejects an explicitly supplied activity-supervised task option defensively, before starting its loop; omitted option retains existing deadline/signal semantics. Adding native Ollama activity support is separate future work, not implied by this story.",
+            "EXECUTION UNION [[c8]]: retain existing bounded shape {mode?: \"bounded\", deadlineMs: positive finite number, ...existingOptions}; add disjoint activity shape {mode: \"activity\", inactivityMs: 1800000, signal: AbortSignal, onActivity: (event) => void, onCandidate: async (candidate) => CandidateReceipt, internalRetry: false}; deadlineMs, stallMs and reviewBudget are forbidden in activity mode. Runtime validation rejects mixed modes. Task callers use activity mode only. Provider ExecOverride and ProcessGroupOpts distinguish bounded {timeoutMs: positive finite number} from activity {mode:\"activity\", signal, onStdoutChunk}; activity branch arms NO wall-clock timeout or old first-output/raw-stdout silence watchdog. Never implement no-timeout with Infinity, zero, giant timer, or fallback provider timeout. Task monitor is sole inactivity timer, explicit cancellation remains active. Non-task bounded callers retain current behavior. Coordinator attribution and task calls share a task monitor but get distinct native session IDs. Provider resolution/capability check happens before admission writes; late adapter errors become explicit incomplete results."
+          ],
+          "postconditions": [
+            "No hidden provider timeout/first-output watchdog undercuts task policy",
+            "Process group cleanup retained",
+            "Unrelated design/LLM calls keep existing timeout behavior",
+            "Partial model-output arrival may renew activity without retaining or exposing its text; tool identities/start/end are metadata only. Complete feedback candidates use the existing full schema and host assessment validation before durable acceptance. A tool-use acknowledgement or incomplete tool input never counts as a finished assessment."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewActivityEvent",
+        "change": "new",
+        "details": "Ephemeral typed events: session_started, model_output, tool_started, tool_completed, feedback_submitted. Host binds IDs and timestamps; no reasoning, raw prompts, command output or untrusted arbitrary status. Bounded incremental JSONL parsers handle partial frames. Unknown/keepalive events do not renew grace. [[c5]] Native stream adapters and chunk-observer plumbing are NEW work, not existing capabilities. Coordinator constructs the task-owned monitor, passes observation callbacks into each serial provider call and handles expiry. Controller constructs the same monitor and routes owner-bound activity into it. No host per-tool kill facility is claimed: records identify running tools and their age, while 30-minute no-activity expiry cancels the owned review group; do not invent an additional tool duration threshold. A running tool with observed progress may continue; an unobservable silent tool is unknown until grace expires.",
+        "callSites": [
+          "src/shared/types.ts",
+          "src/agent/providers/cli-provider.ts",
+          "src/shared/process-group.ts",
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts",
+          "src/daemon/task-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Task execution timing",
+        "change": "invariant-change",
+        "details": "Remove size-dependent 5/10/15-minute cancellation and controller remainingMs semantics for task reviews. Expected duration remains advisory. A task owns one inactivity clock and zero-to-many active tool records keyed by native call ID. Duplicate/replayed events do not extend leases. Tool records contain start time and terminal state; elapsed tool time is distinct from model silence. No host per-tool deadline is assumed; CLI-internal limits are not relied upon; merely being active never renews review inactivity. End-to-end cancellation reason remains explicit. STORY-e6ddcdcb3d9cf330-s4 [[c6]] adds durable presentation snapshot; no immutable packet mutation here.",
+        "callSites": [
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts",
+          "src/daemon/task-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Controller activity ownership",
+        "change": "field-add",
+        "details": "Add owner-bound activity submission to explicit controller protocol with a monotonic sequence, task/attempt IDs and allowlisted event kinds. Polling and client timestamps cannot extend grace. Controller must forward its actual review execution events; unsupported telemetry reports unknown and still receives 30-minute grace. Disconnect continues existing explicit-retrigger behavior. Daemon adapter obtains events directly from subprocess. Document additive wire capability and reject stale/wrong-owner activity without changing checkpoints.",
+        "callSites": [
+          "src/workflow/code-review/task-review/controller.ts",
+          "src/daemon/task-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Review inactivity diagnostic snapshot",
+        "change": "new",
+        "details": "[[c5]] Record observation facts, not inferred root causes: phase (awaiting_model/tool_running/feedback_pending), activityAgeMs, active tool IDs/ages, event-loop delay sampled through node:perf_hooks monitorEventLoopDelay, normalized OS load (node:os loadavg and availableParallelism), and telemetry availability. Snapshot is bounded and emits only at inactivity or explicit diagnostics, not a monitoring subsystem. local_contention_observed means sampled event-loop delay >=1000ms or normalized one-minute load >=1; include measured values and report correlation only, never proof that load caused model silence. With no active tool and no local contention evidence use remote_or_model_wait_unconfirmed; if metrics unavailable use inactivity_cause_unknown. With active tool use tool_running_no_observed_progress, include any local contention flag independently; do not diagnose a proven hang merely from silence. CLI-reported tool failure/timeout is separately tool_failed/tool_timeout. On delayed timer wake evaluate fresh monotonic age and latest parsed events before intervening. All cases retain the same 30-minute inactivity policy, no heartbeat extension.",
+        "callSites": [
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts",
+          "src/agent/providers/cli-provider.ts"
+        ]
+      },
+      {
+        "entity": "Review activity capability and Ollama boundary",
+        "change": "field-add",
+        "details": "[[c7]] Add optional review-activity capability to the shared provider contract; absent means unsupported. CliProvider advertises support only for implemented native event adapters. OllamaProvider keeps bounded non-task review sessions and explicitly rejects opt-in activity-supervised task execution. Coordinator admission checks capability before writing or running; controller route uses its explicit owned event protocol rather than guessing provider support. Constructor/type fixtures cover every implementor. No standalone sibling S4 exists: the presentation consumer is STORY-e6ddcdcb3d9cf330-s4 [[c6]]. The diagnostic snapshot remains internal here and presentation may be implemented later without blocking timeout correctness.",
+        "callSites": [
+          "src/shared/types.ts",
+          "src/agent/providers/cli-provider.ts",
+          "src/agent/providers/ollama.ts",
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/daemon/task-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Controller activity exchange wire contract",
+        "change": "field-add",
+        "details": "[[c8]] Add codeReview.task.activity RPC beside existing codeReview.task.assignment/scope/result exchanges; all use trusted persistent connection owner checks and serialized controller queue. Request is {repo, reviewId, attempt, taskId, executionId, sequence, event:{kind:\"model_output\"|\"tool_started\"|\"tool_completed\", toolId?:string}}. executionId is host-generated opaque token per current task execution; sequence is safe positive integer strictly increasing across scope/activity/result exchanges for that execution. Only tool events require bounded toolId; no text, caller timestamp, heartbeat or arbitrary phase. Scope/result submissions also carry taskId/executionId/sequence so stale output cannot complete another execution. Exact accepted replays return the saved receipt without renewing the lease; differing replay conflicts. Stale/out-of-order or wrong-owner events reject with no clock/result mutation. An event ack is {reviewId,attempt,taskId,executionId,acceptedSequence,inactivityRemainingMs}. Scope/task frames add timing:{mode:\"activity\",inactivityMs:1800000,inactivityRemainingMs,expectedDurationMs}, executionId and nextSequence; omit legacy remainingMs entirely. expectedDurationMs is advisory only. Assignment polling never renews inactivity. Explicit resume retains immutable packet/history and creates a new executionId and sequence origin for unfinished task; old-generation events/results reject. Older controllers may omit activity submissions and receive unknown telemetry plus full grace, but must understand activity timing and execution envelope; unsupported timing protocol refuses explicitly, never interprets it as bounded remainingMs. Disconnect/retrigger behavior remains unchanged. Expose capability in start acknowledgement; do not migrate normal entrypoints owned by epic S3.",
+        "callSites": [
+          "src/workflow/code-review/task-review/controller.ts",
+          "src/daemon/task-review-rpc.ts",
+          "src/workflow/code-review/task-review/coordinator.ts"
+        ]
+      },
+      {
+        "entity": "Validated feedback commit protocol",
+        "change": "new",
+        "details": "[[c8]] Provider adapters emit candidate kind and parsed object through awaited onCandidate, never edit checkpoints. Claude early recovery accepts only a complete StructuredOutput tool_use input matching the exact requested task schema; partial input_json_delta, tool_result acknowledgement and generic assistant JSON are excluded. Host runs the same assignment schema, normalizeTaskResult, evidence-reference and assessTaskResult checks as ordinary final results. Complete host-validated ordinary task assessment is authoritative after its atomic checkpoint write, irrespective of later CLI envelope/nonzero exit: subsequent wrapper failure is diagnostic, cannot revoke or replace an already accepted assessment. This intentional precedence is tested. Attribution is not a task result: accepted scope candidates only populate assignment state; do not persist or treat as passed task. Codex accepts a completed final assistant item only when its full object passes host validation; no other assistant snippets are accepted. If native metadata cannot identify a final item unambiguously, wait for successful turn.completed plus schema-valid final object and disclose early recovery unavailable; never guess. Same host validation/commit rule for both providers. Serialize feedback validation, atomic result write and expiry via one task-owned queue; candidate received before expiry is enqueued before expiry, which rechecks activity and durable result. Invalid candidate is rejected, no result/lease promotion, and no auto retry. Host can count its complete native event as activity only if recognized as genuine new model output. Once the write succeeds return accepted receipt and cancel/clean up the owned subprocess group without waiting for another model turn. Later duplicate identical candidate/final envelope returns saved result; conflicting duplicate is rejected and logged. Checkpoint write failure stops execution and preserves last durable checkpoint; a valid but unsaved candidate is NOT reported completed, no in-memory result may leak into next task. Expiry with no durable result cancels group and writes incomplete through normal checkpoint path. Tests cover candidate then crash, acknowledgement only, invalid candidate, conflicting duplicates, write failure, candidate/expiry ordering and cancellation after commit. No new candidate persistence format is required: the completed-task checkpoint is the durable record.",
+        "callSites": [
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts",
+          "src/agent/providers/cli-provider.ts"
+        ]
+      },
+      {
+        "entity": "Bounded task CLI stream retention",
+        "change": "invariant-change",
+        "details": "[[c8]] Task activity subprocess mode uses incremental StringDecoder UTF-8 parsing and does not accumulate full stdout/stderr as the existing bounded subprocess runner does. Maximum incomplete/native JSON frame is 8 MiB; maximum complete candidate is existing 4 MiB review JSON ceiling; bounded stderr/diagnostic ring is 64 KiB; retain at most one parsed candidate/final envelope, discard raw processed frames immediately. Overflow explicitly stops as incomplete with safe diagnostic and no model retry, never truncates a candidate or silently drops required evidence. Parse/callback exceptions cancel the owned group and release timers/decoder resources. Observer queues are serialized with backpressure so chunk/event accumulation cannot grow without bound; listener consumes chunks without unawaited per-event promises. Existing non-task buffering is unchanged. Lifecycle cancellation must remain responsive while validation is pending; no event callback may await process exit or another provider call.",
+        "callSites": [
+          "src/shared/process-group.ts",
+          "src/agent/providers/cli-provider.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "No observed activity while awaiting model with no local pressure evidence",
+          "detection": "No active tool, activityAgeMs >=1800000; sampled event-loop delay/load below thresholds or unavailable",
+          "response": "Record remote_or_model_wait_unconfirmed (or inactivity_cause_unknown if unavailable), metric availability and values. Validate/persist any complete feedback candidate first; otherwise cancel owned session and checkpoint incomplete. Never claim a verified network outage.",
+          "userImpact": "Silent hosted-model wait is distinguishable from observed local pressure without inventing causation",
+          "recoverable": true
+        },
+        {
+          "scenario": "Tool hangs or CLI never exits after valid feedback",
+          "detection": "Tool record exists with start time/age and no newer meaningful event for 30 minutes, or CLI explicitly reports tool failure/timeout; no pre-existing host tool deadline is assumed",
+          "response": "Record tool_running_no_observed_progress plus tool ID/age; an explicit CLI timeout is tool_timeout. Apply review inactivity cancellation to the owned process group, not a guessed per-tool kill. Persist complete valid assessment first where available; retain incomplete if required verification is unknown.",
+          "userImpact": "Useful assessment is not discarded merely waiting for wrapper exit",
+          "recoverable": true
+        },
+        {
+          "scenario": "Malformed/stale activity or output parser failure",
+          "detection": "Bounded parser/schema check; owner/task/attempt/sequence validation",
+          "response": "Ignore unsupported activity without renewing grace; reject stale ownership; surface telemetry unknown. Invalid assessment never becomes pass.",
+          "userImpact": "Honest incomplete status when evidence unavailable",
+          "recoverable": true
+        },
+        {
+          "scenario": "Checkpoint write fails or cancellation races feedback",
+          "detection": "Serialized durable result commit fails or cancellation signal arrives",
+          "response": "Preserve last durable checkpoint, release ownership safely; one terminal winner, no automatic re-execution",
+          "userImpact": "Resume only unfinished work using existing recovery rules",
+          "recoverable": true
+        },
+        {
+          "scenario": "Local machine contention observed during review inactivity",
+          "detection": "At expiry sample event-loop delay >=1000ms or normalized one-minute OS load >=1; retain both raw measured values and telemetry availability",
+          "response": "Record local_contention_observed independently of phase/tool records, not as proof of cause. Reconcile pending activity/valid feedback before the same inactivity intervention.",
+          "userImpact": "Diagnostics expose actual local pressure separately from unexplained remote/model silence",
+          "recoverable": true
+        },
+        {
+          "scenario": "Review role resolves to Ollama for activity-supervised task execution",
+          "detection": "Provider capability absent/unsupported at admission, or direct Ollama call contains opt-in task activity mode",
+          "response": "Return ReviewActivityUnsupportedError before model/tool execution or checkpoint writes. Keep configured provider unchanged and require an explicit user/configuration decision; no fallback or retry.",
+          "userImpact": "Unsupported local task mode is explicit; existing bounded Ollama non-task reviews continue unchanged",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Continuous meaningful activity beyond former task deadline",
+          "expected": "Continue without fixed task cutoff; size hint remains advisory"
+        },
+        {
+          "input": "Repeated heartbeat/poll/duplicated event",
+          "expected": "Inactivity clock unchanged"
+        },
+        {
+          "input": "Tool start, no more progress for 30 minutes",
+          "expected": "Tool remains separately identified; the new review inactivity monitor intervenes, no unbounded lease"
+        },
+        {
+          "input": "Complete validated feedback just before inactivity alarm",
+          "expected": "Serialize feedback persistence before cancellation; do not reinterpret raw transcript as assessment"
+        },
+        {
+          "input": "Unrelated design review or ordinary provider call",
+          "expected": "Existing bounded execution behavior unchanged"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Only submitted change set defines scope; immutable per-attempt inputs and per-task durable checkpoint remain.",
+          "source": "c1"
+        },
+        {
+          "text": "Explicit controller retrigger; failed/incomplete tasks handled in subsequent attempts; no automatic model retry.",
+          "source": "c1"
+        },
+        {
+          "text": "Daemon/controller and Claude/Codex follow identical inactivity semantics; no direct cloud REST.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Use fake monotonic time to verify exactly 30-minute inactivity, activity beyond former size deadlines, heartbeat/replay rejection and isolated tool timing without waiting real minutes.",
+          "subjects": [
+            "activity monitor",
+            "task timeout policy"
+          ],
+          "fixturesNeeded": [
+            "fake clock/timer"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise daemon/controller parity and real subprocess streaming adapters with deterministic fake CLI binaries; no live-model retries.",
+          "subjects": [
+            "TaskReviewCoordinator",
+            "controller review protocol",
+            "CliProvider Claude/Codex adapters",
+            "process-group cancellation"
+          ],
+          "fixturesNeeded": [
+            "fragmented native event streams",
+            "silent process",
+            "long tool",
+            "near-expiry structured feedback",
+            "wrong owner/stale event",
+            "Claude stream-json partial/content/tool/result event fixtures",
+            "Codex JSONL item/turn events delivered in fragmented UTF-8 chunks",
+            "Injected local load/event-loop-delay metrics and unavailable diagnostics",
+            "Activity execution union rejects deadlineMs/stallMs mixtures; no legacy timer armed; bounded caller unchanged",
+            "Actual IPC activity/scope/result generation envelopes, stale resume and owner checks; poll and accepted replay do not renew",
+            "Valid Claude StructuredOutput then process crash retains committed result; acknowledgement/partial JSON never passes",
+            "Codex unambiguous final-item acceptance and successful-turn fallback; conflict/write-failure/expiry race parity",
+            "Fragmented UTF-8/frame overflow, bounded stderr/event queues and cancellation during callback; no output truncation or whole-stream accumulation"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Validate old checkpoint/result compatibility, additive controller capabilities and unchanged non-task bounded provider calls.",
+          "subjects": [
+            "ReviewSessionOpts",
+            "controller frames",
+            "existing checkpoint/CR readers",
+            "OllamaProvider.runReviewSession in src/agent/providers/ollama.ts",
+            "src/agent/providers/__tests__/ollama-review-session.test.ts"
+          ],
+          "fixturesNeeded": [
+            "Existing bounded Ollama deadline/AbortSignal tests with activity option omitted",
+            "Opt-in unsupported task mode rejected before any Ollama complete/tool call",
+            "Configured Ollama review role rejected before checkpoint mutation; zero fallback calls"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Production build and focused existing reviewer/provider regressions; no whole-repository or paid live sweep.",
+          "subjects": [
+            "TypeScript build",
+            "task-review tests",
+            "provider review-session tests"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Progressing task survives old S/M/L cutoffs; no fixed task termination"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Fake-clock 30-minute inactivity grace; process heartbeat, repeated polls and replayed events do not renew",
+            "No active tool + normal local samples => remote_or_model_wait_unconfirmed, not proven network failure",
+            "Injected loop-delay/high-load metrics => local_contention_observed with measured facts; unavailable metrics => inactivity_cause_unknown",
+            "Active silent tool => tool_running_no_observed_progress with age; explicit native timeout => tool_timeout; activity on a long tool extends grace",
+            "Delayed event-loop timer reconciles recent queued activity and candidate feedback before expiry"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Near-expiry validated candidate persisted exactly once; malformed output stays incomplete",
+            "Valid Claude StructuredOutput then process crash retains committed result; acknowledgement/partial JSON never passes",
+            "Codex unambiguous final-item acceptance and successful-turn fallback; conflict/write-failure/expiry race parity",
+            "Fragmented UTF-8/frame overflow, bounded stderr/event queues and cancellation during callback; no output truncation or whole-stream accumulation"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Daemon/controller and Claude/Codex parity; no retry; stale ownership rejected",
+            "Ollama bounded non-task review-session regressions unchanged; unsupported activity mode refuses early without model calls, checkpoint mutation or provider substitution"
+          ]
+        }
+      ],
+      "testFramework": "Existing node:test via tsx, fake clocks and fake CLI processes; production npm run build. Any live smoke separately authorized and labelled; do not rerun 123-test/full review rounds as design validation."
+    },
+    "migration": {
+      "stateBefore": "Task review applies size-based 5/10/15-minute host cancellation; provider may have independent deadlines/watchdogs. No incremental review-session activity contract.",
+      "stateAfter": "New task executions use a shared 30-minute inactivity policy with no fixed task wall clock; tools tracked separately. STORY-e6ddcdcb3d9cf330-s4 [[c6]] consumes normalized activity for presentation later.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add/test opt-in shared monitor and provider event adapters; preserve non-task callers and existing persisted formats. Explicitly introduce Claude stream-json task-mode flags, incremental Codex parsing and opt-in process stdout observation; no assumed existing activity stream.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Wire daemon and controller task execution to policy; remove old size deadlines and undercutting provider timeouts only for task mode. Expose additive controller activity capability.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Build and focused regressions, commit/push when requested, user updates daemon; existing active process finishes under its admitted old policy. New runs use new policy; no running-review hot patch.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Implement STORY-e6ddcdcb3d9cf330-s4 [[c6]] presentation using shared events, then resume overall review work with preserved history and explicit subsequent attempts.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No rewrite of submitted packets, checkpoint history or CR schema. Legacy/non-task provider contracts remain bounded. Controller clients without activity telemetry get explicit unknown plus full inactivity grace; never silently infer progress from polls. Rollback changes future executions only.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Raise fixed task deadlines",
+        "oneLineSummary": "Keep wall-clock cancellation but increase allowances.",
+        "approach": "Replace current size-based limits with larger fixed limits; otherwise retain provider and controller timing contracts.",
+        "pros": [
+          "Small change"
+        ],
+        "cons": [
+          "Still discards slow progressing work",
+          "Does not distinguish hangs from hosted-model delays"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Larger fixed deadlines still discard useful progressing work."
+      },
+      {
+        "id": "a2",
+        "name": "Shared inactivity supervision",
+        "oneLineSummary": "Remove task wall-clock cutoff; supervise observable activity consistently.",
+        "approach": "Use one execution policy for daemon and controller: task size provides expected duration only, meaningful observed events renew an inactivity grace, process heartbeats do not. Track tool executions separately, preserve validated feedback and keep explicit caller cancellation. User confirmed 30-minute grace.",
+        "pros": [
+          "Matches requested progress-based behavior",
+          "Provides reusable activity events for STORY-e6ddcdcb3d9cf330-s4 [[c6]]",
+          "Avoids automatic review retries"
+        ],
+        "cons": [
+          "Requires incremental native CLI observation and controller activity contract",
+          "Silent remote work must remain explicitly unknown"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Unlimited unsupervised review",
+        "oneLineSummary": "Remove every deadline without detecting inactivity.",
+        "approach": "Allow sessions to run until completion or manual cancellation with no progress or tool-hang supervision.",
+        "pros": [
+          "No deadline loss of model work"
+        ],
+        "cons": [
+          "Hung subprocesses can persist indefinitely",
+          "Does not satisfy requirement to detect stuck work"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Unsupervised unlimited sessions cannot detect stuck work."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "Shows host-owned activity supervision and feedback persistence before cancellation; user-visible progress presentation is deferred to STORY-e6ddcdcb3d9cf330-s4 [[c6]].",
+      "participants": [
+        {
+          "id": "runner",
+          "label": "Task runner",
+          "description": "Owns task lifecycle and durable result"
+        },
+        {
+          "id": "cli",
+          "label": "Claude/Codex adapter",
+          "description": "Normalizes native observable events"
+        },
+        {
+          "id": "monitor",
+          "label": "Activity monitor",
+          "description": "Owns 30-minute monotonic inactivity clock and separate tool records"
+        },
+        {
+          "id": "checkpoint",
+          "label": "Checkpoint writer",
+          "description": "Persists validated task feedback atomically"
+        }
+      ],
+      "messages": [
+        {
+          "from": "runner",
+          "to": "monitor",
+          "label": "Start task inactivity supervision",
+          "description": "No fixed task deadline; one monitor per current task"
+        },
+        {
+          "from": "runner",
+          "to": "cli",
+          "label": "Run review session",
+          "description": "One serial provider request, no automatic retry"
+        },
+        {
+          "from": "cli",
+          "to": "monitor",
+          "label": "Observe model/tool activity",
+          "description": "Meaningful metadata renews grace; heartbeat/poll does not"
+        },
+        {
+          "from": "cli",
+          "to": "runner",
+          "label": "Submit complete feedback candidate",
+          "description": "Candidate remains untrusted until schema and task-scope validation"
+        },
+        {
+          "from": "runner",
+          "to": "checkpoint",
+          "label": "Persist validated terminal result",
+          "description": "Serialize persistence before expiry cancellation; retain previous durable state on error"
+        },
+        {
+          "from": "monitor",
+          "to": "runner",
+          "label": "Signal 30-minute inactivity",
+          "description": "If no valid result exists, cancel owned process group and persist incomplete"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/preserve-useful-review-work-permissive-progress-E2026110199a7f5dc/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "stakeholder",
+      "ref": "User confirmation 2026-11-01: no fixed task deadline; 30-minute inactivity grace; tools tracked separately"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts",
+      "quotedText": "Current Claude json envelope and Codex post-exit parsing require new task-mode stream adapters; independent review correction 2026-11-01."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/DEF-e6ddcdcb3d9cf330.json",
+      "quotedText": "body.stories contains s4: Show incremental progress during background code reviews; presentation belongs to this separate epic."
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/agent/providers/ollama.ts:712",
+      "quotedText": "OllamaProvider implements runReviewSession using a bounded local tool loop; new activity mode needs explicit capability handling."
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/controller.ts",
+      "quotedText": "Current controller has required timing checks/remainingMs and owner-serialized exchange; author self-review correction makes replacement execution protocol explicit."
+    }
+  ]
+}

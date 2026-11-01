@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-760adadf-e39b-440d-a48a-455052e482b6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T10:47:16.529Z",
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99a7f5dc933a8456",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify recovery, compatibility and deployable timeout behavior",
+      "parent": {
+        "entityId": "STORY-99a7f5dc933a8456-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-99a7f5dc933a8456-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "86f5ca81a607e10e1af70df9cf93918d17c38cde73b80e4fd302beb29ceedc2c",
+        "at": "2026-11-01T10:47:16.533Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T10:47:16.534Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify recovery, compatibility and deployable timeout behavior",
+    "summary": "Add end-to-end deterministic regressions for both adapters and routes, preserved bounded provider calls, result durability, cancellation/resource cleanup and removed review boundary invariants. Document new activity contract and internal diagnostic limits; build and retain test evidence without paid model/full repository sweeps.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Fake-time tests cover long progress, exactly 30-minute inactivity, long silent tools, local-pressure/unknown diagnostics and delayed event-loop wake",
+      "Both native CLI fixture streams cover valid feedback then crash, candidate-expiry race, write failure, malformed frames, bounded output and group cleanup",
+      "Current checkpoint/CR history and explicit resume remain valid; unrelated bounded Ollama/CLI tests and retired exception tests pass",
+      "Production build and focused relevant suites pass; test evidence distinguishes deterministic fixtures from live model proof",
+      "Handoff exposes normalized activity for separate STORY-e6ddcdcb3d9cf330-s4 without implementing its presentation or the future design-review epic"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "End-to-end deterministic recovery: two CLI adapters/routes, silent tools/local-pressure/unknown telemetry, no repeated completed task"
+      },
+      {
+        "level": "smoke",
+        "name": "Production build plus focused task-review, provider, IPC and retired-boundary regression suites; no paid/live or full repository sweep"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

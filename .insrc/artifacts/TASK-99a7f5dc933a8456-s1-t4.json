@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3e272a23-ce17-4d77-b1b5-0e47a50330c3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T10:47:16.524Z",
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99a7f5dc933a8456",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add controller activity exchanges with generation fencing",
+      "parent": {
+        "entityId": "STORY-99a7f5dc933a8456-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-99a7f5dc933a8456-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "087169543d9538b0cd0cc5b208c85e7fe9546811583919c29ade6b2c269a7170",
+        "at": "2026-11-01T10:47:16.527Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T10:47:16.528Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add controller activity exchanges with generation fencing",
+    "summary": "Use the same inactivity policy for ControllerTaskReview. Add codeReview.task.activity and timing capability to explicit task protocol, sequence/host execution identity on activity/scope/result, exact replay receipts and new generation on resume. Preserve trusted ownership and existing disconnect/retrigger rules.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Actual IPC exercises task/attempt/execution identity, strictly ordered events and wrong-owner rejection",
+      "Frames expose activity timing and advisory expectation, omit legacy remainingMs; unsupported timing clients refuse explicitly",
+      "Polling/replayed accepted events do not renew; stale generation output cannot finish resumed work",
+      "Controller and daemon terminal-result/expiry/write-failure behavior agree; disconnect does not silently continue controller work",
+      "Normal MCP migration/S4 user-visible presentation remain outside this task",
+      "Removed insrc_review_step, insrc_code_review_step and old review RPCs continue throwing PENDING REVIEW RE-IMPLEMENTATION"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Real IPC controller activity envelope: owner/generation/sequence fencing, exact replay receipts, poll non-renewal and resume"
+      },
+      {
+        "level": "integration",
+        "name": "Controller/daemon expiry and persistence parity; capability/timing refusal and removed endpoints remain unavailable"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

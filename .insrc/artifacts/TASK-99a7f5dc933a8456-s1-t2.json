@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e1909a28-bbc3-4f3c-b926-03f737d12472",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T10:47:16.513Z",
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99a7f5dc933a8456",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add bounded native CLI activity streams and candidate parsing",
+      "parent": {
+        "entityId": "STORY-99a7f5dc933a8456-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-99a7f5dc933a8456-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-99a7f5dc933a8456-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "30177536ae3054be03e2a46c52e9144df79bc2589b8ad3cd51939c6e35ed019d",
+        "at": "2026-11-01T10:47:16.516Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T10:47:16.517Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add bounded native CLI activity streams and candidate parsing",
+    "summary": "Add opt-in no-wall-clock process mode, incremental UTF-8 stdout observation/backpressure and bounded diagnostics. Claude task sessions use stream-json flags; Codex parses JSONL as received. Normalize allowlisted native metadata and emit complete candidate events without treating draft or acknowledgements as results.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Neither process timeout nor old first-output/raw-stdout watchdog is armed in activity mode; explicit group cancellation remains",
+      "Both adapters recognize fixture-verified model/tool events with serial callbacks and per-session identity",
+      "8 MiB frame/4 MiB candidate/64 KiB diagnostic bounds and queue backpressure hold; overflow stops explicitly without truncation",
+      "Candidate recognition is conservative: Claude complete StructuredOutput input, Codex unambiguous final item or successful-turn fallback; acknowledgements and partial JSON excluded",
+      "Existing non-task CLI envelope/schema behavior and timeout handling remain unchanged",
+      "Native fixtures identify their actual source/dialect; locally available CLI metadata may be inspected without model calls; no fabricated live-proof claim"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Claude/Codex fixture streams: incremental UTF-8, partial frames, tool IDs, candidate recognition and conservative final-output fallback"
+      },
+      {
+        "level": "integration",
+        "name": "Activity process has no fixed timer/watchdog, explicit cancellation kills group, buffers/queues remain bounded and non-task mode unchanged"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

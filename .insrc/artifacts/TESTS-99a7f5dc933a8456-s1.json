@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "f4532d9942aef6d355c8021dcb236cc70173d2f79c8cf89063aa2183aa3ff91c",
+        "at": "2026-11-01T11:39:49.132Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "99a7f5dc933a8456",
+    "storyId": "s1",
+    "createdAt": "2026-11-01T10:51:28.549Z",
+    "updatedAt": "2026-11-01T11:39:48.999Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "epicSlug": "preserve-useful-review-work-permissive-progress",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b076f9581",
+        "ranAt": "2026-11-01T10:51:28.549Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Fake-clock monitor: progress beyond expected duration, 1800000ms expiry, no heartbeat/replay renewal and separate tool ages",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-activity.test.ts",
+                "title": "activity monitor survives expected durations, ignores heartbeats/replays and expires after 30 quiet minutes",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/review-activity.test.ts",
+                "title": "tool ages are independent, native sessions are fenced and a silent tool cannot renew inactivity",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/review-activity.test.ts",
+                "title": "fresh activity and stop fence delayed timer callbacks and tool IDs are bounded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Execution union rejects mixed timers; capability/Ollama refusal before execution; factual diagnostic classification",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-activity.test.ts",
+                "title": "execution options reject mixed timers and unsupported providers before execution",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/review-activity.test.ts",
+                "title": "inactivity diagnostics distinguish observed local pressure, remote wait and unknown without claiming a cause",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/review-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 731,
+            "titles": [
+              {
+                "title": "activity monitor survives expected durations, ignores heartbeats/replays and expires after 30 quiet minutes",
+                "result": "pass"
+              },
+              {
+                "title": "tool ages are independent, native sessions are fenced and a silent tool cannot renew inactivity",
+                "result": "pass"
+              },
+              {
+                "title": "fresh activity and stop fence delayed timer callbacks and tool IDs are bounded",
+                "result": "pass"
+              },
+              {
+                "title": "inactivity diagnostics distinguish observed local pressure, remote wait and unknown without claiming a cause",
+                "result": "pass"
+              },
+              {
+                "title": "execution options reject mixed timers and unsupported providers before execution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "0d716479d",
+        "ranAt": "2026-11-01T11:00:00.714Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Claude/Codex fixture streams: incremental UTF-8, partial frames, tool IDs, candidate recognition and conservative final-output fallback",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+                "title": "Claude fragmented UTF-8 streams expose metadata and complete structured candidates, not partial input or acknowledgements",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+                "title": "Codex completed messages wait for successful turn finality and duplicate native IDs do not renew",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+                "title": "invalid and oversized candidate/frame data fail explicitly without accepting truncated feedback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Activity process has no fixed timer/watchdog, explicit cancellation kills group, buffers/queues remain bounded and non-task mode unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+                "title": "activity subprocess has no fixed timer, serializes observers and bounds retained output",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+                "title": "CLI activity mode ignores bounded provider timers and uses stream flags; durable accepted output survives wrapper failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 746,
+            "titles": [
+              {
+                "title": "Claude fragmented UTF-8 streams expose metadata and complete structured candidates, not partial input or acknowledgements",
+                "result": "pass"
+              },
+              {
+                "title": "Codex completed messages wait for successful turn finality and duplicate native IDs do not renew",
+                "result": "pass"
+              },
+              {
+                "title": "invalid and oversized candidate/frame data fail explicitly without accepting truncated feedback",
+                "result": "pass"
+              },
+              {
+                "title": "activity subprocess has no fixed timer, serializes observers and bounds retained output",
+                "result": "pass"
+              },
+              {
+                "title": "CLI activity mode ignores bounded provider timers and uses stream flags; durable accepted output survives wrapper failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "d05822208",
+        "ranAt": "2026-11-01T11:10:18.743Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Daemon task activity survives old limits; attribution/task session identity; expiry persists incomplete without automatic retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-execution.test.ts",
+                "title": "daemon review progresses beyond old deadlines and expires only after 30 quiet minutes without retry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-execution.test.ts",
+                "title": "unsupported activity providers refuse before checkpoint writes or model execution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Durable candidate vs crash/expiry/write failure/conflicting duplicate; validate before commit, receipt after checkpoint and cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-execution.test.ts",
+                "title": "accepted feedback is durable before receipt and survives CLI failure or conflicting duplicates",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-execution.test.ts",
+                "title": "unsaved or invalid feedback never passes and persistence failure preserves the last durable checkpoint",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/activity-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1087,
+            "titles": [
+              {
+                "title": "daemon review progresses beyond old deadlines and expires only after 30 quiet minutes without retry",
+                "result": "pass"
+              },
+              {
+                "title": "accepted feedback is durable before receipt and survives CLI failure or conflicting duplicates",
+                "result": "pass"
+              },
+              {
+                "title": "unsaved or invalid feedback never passes and persistence failure preserves the last durable checkpoint",
+                "result": "pass"
+              },
+              {
+                "title": "unsupported activity providers refuse before checkpoint writes or model execution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "4d07cbd7a",
+        "ranAt": "2026-11-01T11:24:30.279Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Real IPC controller activity envelope: owner/generation/sequence fencing, exact replay receipts, poll non-renewal and resume",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts",
+                "title": "real IPC activity protocol fences owners, sequences, replays and resumed execution generations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Controller/daemon expiry and persistence parity; capability/timing refusal and removed endpoints remain unavailable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts",
+                "title": "controller and daemon share inactivity outcomes; controller write failure never returns accepted feedback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts",
+                "title": "controller feedback queued before expiry commits before a later inactivity callback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts",
+                "title": "real IPC activity protocol fences owners, sequences, replays and resumed execution generations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1239,
+            "titles": [
+              {
+                "title": "real IPC activity protocol fences owners, sequences, replays and resumed execution generations",
+                "result": "pass"
+              },
+              {
+                "title": "controller and daemon share inactivity outcomes; controller write failure never returns accepted feedback",
+                "result": "pass"
+              },
+              {
+                "title": "controller feedback queued before expiry commits before a later inactivity callback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "4c250b16a",
+        "ranAt": "2026-11-01T11:39:48.999Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "End-to-end deterministic recovery: two CLI adapters/routes, silent tools/local-pressure/unknown telemetry, no repeated completed task",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+                "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+                "title": "both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/review-activity.test.ts",
+                "title": "tool ages are independent, native sessions are fenced and a silent tool cannot renew inactivity",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/review-activity.test.ts",
+                "title": "inactivity diagnostics distinguish observed local pressure, remote wait and unknown without claiming a cause",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts",
+                "title": "controller feedback queued before expiry commits before a later inactivity callback",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+                "title": "a non-JSON final Codex message cannot promote earlier JSON and terminal failure cannot accept later feedback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Production build plus focused task-review, provider, IPC and retired-boundary regression suites; no paid/live or full repository sweep",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Final npm run build passed (/tmp/review-timeout-final-build.log). Prior focused serial task-review/shared-monitor/native-stream/CLI/Ollama/subprocess/retired-boundary/writer-inventory suite: 114 passed, 0 failed/skipped (/tmp/review-timeout-t5-regressions.log). Final native-finality and strengthened wrapper-exit/expiry/write-failure e2e recheck: 8 passed, 0 failed/skipped (/tmp/review-timeout-finality-regression.log). Synthetic frames and fake local CLIs, not live hosted-model acceptance. Only affected regressions repeated for final fix 4c250b16a."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 767,
+            "titles": [
+              {
+                "title": "Claude fragmented UTF-8 streams expose metadata and complete structured candidates, not partial input or acknowledgements",
+                "result": "pass"
+              },
+              {
+                "title": "Codex completed messages wait for successful turn finality and duplicate native IDs do not renew",
+                "result": "pass"
+              },
+              {
+                "title": "invalid and oversized candidate/frame data fail explicitly without accepting truncated feedback",
+                "result": "pass"
+              },
+              {
+                "title": "activity subprocess has no fixed timer, serializes observers and bounds retained output",
+                "result": "pass"
+              },
+              {
+                "title": "CLI activity mode ignores bounded provider timers and uses stream flags; durable accepted output survives wrapper failure",
+                "result": "pass"
+              },
+              {
+                "title": "a non-JSON final Codex message cannot promote earlier JSON and terminal failure cannot accept later feedback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/review-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 724,
+            "titles": [
+              {
+                "title": "activity monitor survives expected durations, ignores heartbeats/replays and expires after 30 quiet minutes",
+                "result": "pass"
+              },
+              {
+                "title": "tool ages are independent, native sessions are fenced and a silent tool cannot renew inactivity",
+                "result": "pass"
+              },
+              {
+                "title": "fresh activity and stop fence delayed timer callbacks and tool IDs are bounded",
+                "result": "pass"
+              },
+              {
+                "title": "inactivity diagnostics distinguish observed local pressure, remote wait and unknown without claiming a cause",
+                "result": "pass"
+              },
+              {
+                "title": "execution options reject mixed timers and unsupported providers before execution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2204,
+            "titles": [
+              {
+                "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
+                "result": "pass"
+              },
+              {
+                "title": "both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/controller-activity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1335,
+            "titles": [
+              {
+                "title": "real IPC activity protocol fences owners, sequences, replays and resumed execution generations",
+                "result": "pass"
+              },
+              {
+                "title": "controller and daemon share inactivity outcomes; controller write failure never returns accepted feedback",
+                "result": "pass"
+              },
+              {
+                "title": "controller feedback queued before expiry commits before a later inactivity callback",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

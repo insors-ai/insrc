@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c8944a42-f075-4ecf-83db-ac3e479f030f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T10:47:16.507Z",
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99a7f5dc933a8456",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define activity execution contracts and inactivity monitor",
+      "parent": {
+        "entityId": "STORY-99a7f5dc933a8456-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-99a7f5dc933a8456-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "316469afd8dd5ddf33770fe70b29c38aaab09e4f8e0a9a82d2b4147ea9578cac",
+        "at": "2026-11-01T10:47:16.510Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T10:47:16.511Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define activity execution contracts and inactivity monitor",
+    "summary": "Introduce bounded/activity execution union, provider capability, host-owned 30-minute monotonic monitor, separately tracked tools and bounded factual diagnostic snapshots. Preserve non-task bounded calls; explicitly refuse unsupported Ollama task mode before execution.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Activity mode forbids fixed deadlines/stall watchdogs and automatic retries; malformed mixed options reject",
+      "Meaningful activity extends 30-minute grace; heartbeat, poll and duplicate events do not; tool IDs/ages remain separate",
+      "Monotonic fake-clock expiry and injected local-pressure/unknown diagnostics are deterministic",
+      "Ollama opt-in task activity refuses before model calls; existing bounded behavior unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Fake-clock monitor: progress beyond expected duration, 1800000ms expiry, no heartbeat/replay renewal and separate tool ages"
+      },
+      {
+        "level": "unit",
+        "name": "Execution union rejects mixed timers; capability/Ollama refusal before execution; factual diagnostic classification"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

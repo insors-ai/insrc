@@ -1,0 +1,357 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793529396804-4spygn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T10:39:24.982Z",
+    "epicCreatedAt": "2026-11-01T05:06:34.257Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 167398,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "99a7f5dc933a8456",
+    "epicSlug": "preserve-useful-review-work-permissive-progress",
+    "storyId": "s1",
+    "lldRunId": "wf-1793509312835-bp3buc",
+    "lldEffectiveHash": "99a7f5dc933a8456b4c10154390c52fb125001e566370a652e7dbf6f883d7fab",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d3fd5dddd3a3facc09c56e499b2ec9374e3e2f6bf087ba680cad88b6185d6452",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T10:47:16.113Z"
+      }
+    },
+    "rangeBase": "7fade73261287997914726fadcc6f7084e70f422"
+  },
+  "body": {
+    "summary": {
+      "prose": "Implement the approved 30-minute inactivity policy in five ordered tasks, preserving useful feedback and the removed-engine boundary. Native activity and controller protocol support the separate S4 progress story; no presentation or design-review redesign is included.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define activity execution contracts and inactivity monitor",
+        "summary": "Introduce bounded/activity execution union, provider capability, host-owned 30-minute monotonic monitor, separately tracked tools and bounded factual diagnostic snapshots. Preserve non-task bounded calls; explicitly refuse unsupported Ollama task mode before execution.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Activity mode forbids fixed deadlines/stall watchdogs and automatic retries; malformed mixed options reject",
+          "Meaningful activity extends 30-minute grace; heartbeat, poll and duplicate events do not; tool IDs/ages remain separate",
+          "Monotonic fake-clock expiry and injected local-pressure/unknown diagnostics are deterministic",
+          "Ollama opt-in task activity refuses before model calls; existing bounded behavior unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Fake-clock monitor: progress beyond expected duration, 1800000ms expiry, no heartbeat/replay renewal and separate tool ages"
+          },
+          {
+            "level": "unit",
+            "name": "Execution union rejects mixed timers; capability/Ollama refusal before execution; factual diagnostic classification"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add bounded native CLI activity streams and candidate parsing",
+        "summary": "Add opt-in no-wall-clock process mode, incremental UTF-8 stdout observation/backpressure and bounded diagnostics. Claude task sessions use stream-json flags; Codex parses JSONL as received. Normalize allowlisted native metadata and emit complete candidate events without treating draft or acknowledgements as results.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Neither process timeout nor old first-output/raw-stdout watchdog is armed in activity mode; explicit group cancellation remains",
+          "Both adapters recognize fixture-verified model/tool events with serial callbacks and per-session identity",
+          "8 MiB frame/4 MiB candidate/64 KiB diagnostic bounds and queue backpressure hold; overflow stops explicitly without truncation",
+          "Candidate recognition is conservative: Claude complete StructuredOutput input, Codex unambiguous final item or successful-turn fallback; acknowledgements and partial JSON excluded",
+          "Existing non-task CLI envelope/schema behavior and timeout handling remain unchanged",
+          "Native fixtures identify their actual source/dialect; locally available CLI metadata may be inspected without model calls; no fabricated live-proof claim"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Claude/Codex fixture streams: incremental UTF-8, partial frames, tool IDs, candidate recognition and conservative final-output fallback"
+          },
+          {
+            "level": "integration",
+            "name": "Activity process has no fixed timer/watchdog, explicit cancellation kills group, buffers/queues remain bounded and non-task mode unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Integrate daemon review supervision and durable feedback commits",
+        "summary": "Replace size deadlines in TaskReviewCoordinator with shared task monitor and activity provider mode, including serial attribution. Serialize validation, atomic completed-task persistence and expiry; accept durable results before wrapper cleanup, retain incomplete work honestly, and check provider capability before admission writes.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Progressing tasks survive former S/M/L limits; one current-task monitor spans serial attribution/task sessions",
+          "Actual inactivity cancels owned subprocess and records incomplete without repeating completed tasks",
+          "Complete candidates pass existing schema/scope/evidence assessment before checkpoint write; receipt/cleanup only after durability",
+          "Candidate-then-crash retains committed assessment; invalid/conflicting/unsaved candidate never passes; write failure preserves prior durable history",
+          "Attribution candidates cannot become task results; no automatic review retry or old engine fallback"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Daemon task activity survives old limits; attribution/task session identity; expiry persists incomplete without automatic retry"
+          },
+          {
+            "level": "integration",
+            "name": "Durable candidate vs crash/expiry/write failure/conflicting duplicate; validate before commit, receipt after checkpoint and cleanup"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add controller activity exchanges with generation fencing",
+        "summary": "Use the same inactivity policy for ControllerTaskReview. Add codeReview.task.activity and timing capability to explicit task protocol, sequence/host execution identity on activity/scope/result, exact replay receipts and new generation on resume. Preserve trusted ownership and existing disconnect/retrigger rules.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Actual IPC exercises task/attempt/execution identity, strictly ordered events and wrong-owner rejection",
+          "Frames expose activity timing and advisory expectation, omit legacy remainingMs; unsupported timing clients refuse explicitly",
+          "Polling/replayed accepted events do not renew; stale generation output cannot finish resumed work",
+          "Controller and daemon terminal-result/expiry/write-failure behavior agree; disconnect does not silently continue controller work",
+          "Normal MCP migration/S4 user-visible presentation remain outside this task",
+          "Removed insrc_review_step, insrc_code_review_step and old review RPCs continue throwing PENDING REVIEW RE-IMPLEMENTATION"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Real IPC controller activity envelope: owner/generation/sequence fencing, exact replay receipts, poll non-renewal and resume"
+          },
+          {
+            "level": "integration",
+            "name": "Controller/daemon expiry and persistence parity; capability/timing refusal and removed endpoints remain unavailable"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Verify recovery, compatibility and deployable timeout behavior",
+        "summary": "Add end-to-end deterministic regressions for both adapters and routes, preserved bounded provider calls, result durability, cancellation/resource cleanup and removed review boundary invariants. Document new activity contract and internal diagnostic limits; build and retain test evidence without paid model/full repository sweeps.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Fake-time tests cover long progress, exactly 30-minute inactivity, long silent tools, local-pressure/unknown diagnostics and delayed event-loop wake",
+          "Both native CLI fixture streams cover valid feedback then crash, candidate-expiry race, write failure, malformed frames, bounded output and group cleanup",
+          "Current checkpoint/CR history and explicit resume remain valid; unrelated bounded Ollama/CLI tests and retired exception tests pass",
+          "Production build and focused relevant suites pass; test evidence distinguishes deterministic fixtures from live model proof",
+          "Handoff exposes normalized activity for separate STORY-e6ddcdcb3d9cf330-s4 without implementing its presentation or the future design-review epic"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "End-to-end deterministic recovery: two CLI adapters/routes, silent tools/local-pressure/unknown telemetry, no repeated completed task"
+          },
+          {
+            "level": "smoke",
+            "name": "Production build plus focused task-review, provider, IPC and retired-boundary regression suites; no paid/live or full repository sweep"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "activity monitor",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "task timeout policy",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "TaskReviewCoordinator",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "controller review protocol",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "CliProvider Claude/Codex adapters",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "process-group cancellation",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "ReviewSessionOpts",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "controller frames",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "existing checkpoint/CR readers",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "OllamaProvider.runReviewSession in src/agent/providers/ollama.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/agent/providers/__tests__/ollama-review-session.test.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "TypeScript build",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "task-review tests",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "provider review-session tests",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-99a7f5dc933a8456-s1 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD-99a7f5dc933a8456-s1 dataModelChanges"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD-99a7f5dc933a8456-s1 errorPaths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-99a7f5dc933a8456-s1 testStrategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD-99a7f5dc933a8456-s1 migration"
+    }
+  ]
+}

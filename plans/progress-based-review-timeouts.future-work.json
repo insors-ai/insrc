@@ -2,8 +2,8 @@
   "id": "FUTURE-progress-based-review-timeouts",
   "type": "story",
   "title": "Preserve useful review work with permissive progress-based timeouts",
-  "status": "backlog",
-  "implementationAuthorized": false,
+  "status": "built-pending-approval",
+  "implementationAuthorized": true,
   "sizeEstimate": "M",
   "createdAt": "2026-10-31T18:26:17.252806+00:00",
   "requestedBy": "user",
@@ -32,5 +32,33 @@
     "Meaningful progress signals, grace periods and per-tool limits across Claude/Codex.",
     "Safe early-feedback capture and validation without treating transcript/tool acknowledgements as completed host results."
   ],
-  "currentWork": "Backlog only. Continue existing S1 code-review findings; do not implement this policy change in S1."
+  "currentWork": "All five tasks implemented and validated. Await explicit BUILD approval with review override; then design/build separate progress story STORY-e6ddcdcb3d9cf330-s4 before resuming overall review work.",
+  "priority": "next",
+  "executionOrder": [
+    "timeout policy",
+    "S4 incremental review progress",
+    "resume overall review work"
+  ],
+  "inactivityGraceMs": 1800000,
+  "fixedTaskDeadline": false,
+  "toolTracking": "separate",
+  "trackedArtifact": "LLD-99a7f5dc933a8456-s1",
+  "designPath": "docs/standalone/preserve-useful-review-work-permissive-progress-E2026110199a7f5dc/S001/LLD.md",
+  "buildArtifact": "BUILD-99a7f5dc933a8456-s1",
+  "sourceCommits": [
+    "b076f9581",
+    "0d716479d",
+    "d05822208",
+    "4d07cbd7a",
+    "f07562e11",
+    "4c250b16a"
+  ],
+  "validation": {
+    "tasksPassed": 5,
+    "focusedRegressions": 114,
+    "finalAffectedRegressions": 8,
+    "productionBuild": "pass",
+    "liveHostedModelAcceptance": false,
+    "codeReview": "deferred until S4 per user order"
+  }
 }

@@ -28014,22 +28014,6 @@
     ],
     [
      "serialization",
-     "Buffer.alloc"
-    ],
-    [
-     "serialization",
-     "Buffer.alloc"
-    ],
-    [
-     "serialization",
-     "Buffer.alloc"
-    ],
-    [
-     "serialization",
-     "Buffer.alloc"
-    ],
-    [
-     "serialization",
      "Buffer.from"
     ],
     [
@@ -28051,6 +28035,10 @@
     [
      "serialization",
      "Buffer.from"
+    ],
+    [
+     "storage-call",
+     "carriedEvidence"
     ],
     [
      "storage-call",
@@ -28079,6 +28067,14 @@
     [
      "storage-call",
      "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEvidence"
+    ],
+    [
+     "storage-call",
+     "decodeEvidence"
     ],
     [
      "serialization",
@@ -28174,18 +28170,18 @@
     ],
     [
      "serialization",
-     "encodeInEdgeKey"
-    ],
-    [
-     "serialization",
-     "encodeInEdgeKey"
-    ],
-    [
-     "serialization",
-     "encodeInEdgeKey"
+     "encodeEvidence"
     ],
     [
      "storage-call",
+     "encodeEvidence"
+    ],
+    [
+     "serialization",
+     "encodeInEdgeKey"
+    ],
+    [
+     "serialization",
      "encodeInEdgeKey"
     ],
     [
@@ -28349,6 +28345,10 @@
      "log.warn"
     ],
     [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
      "storage-call",
      "logResolvedWrite"
     ],
@@ -28407,6 +28407,14 @@
     [
      "storage-call",
      "promoteResolvedBatch"
+    ],
+    [
+     "storage-call",
+     "putEdgeInTxn"
+    ],
+    [
+     "storage-call",
+     "putEdgeInTxn"
     ],
     [
      "storage-call",
@@ -28506,15 +28514,11 @@
     ],
     [
      "storage-call",
-     "s.inEdge.put"
-    ],
-    [
-     "storage-call",
      "s.inEdge.remove"
     ],
     [
      "storage-call",
-     "s.outEdge.put"
+     "s.outEdge.get"
     ],
     [
      "storage-call",
@@ -28650,6 +28654,18 @@
     ],
     [
      "storage-call",
+     "withEvidence"
+    ],
+    [
+     "storage-call",
+     "withEvidence"
+    ],
+    [
+     "storage-call",
+     "withEvidence"
+    ],
+    [
+     "storage-call",
      "withWriteTxn"
     ],
     [
@@ -28717,9 +28733,9 @@
      "writePendingRowInTxn"
     ]
    ],
-   "siteCount": 199,
-   "sitesDigest": "244ba258b2008ddfdd6d5c18fa667856f9cbd8b2b19dc414f924fa41cf015e35",
-   "sourceDigest": "b1f9dcf63b5378972a55d0e21dd2efe22471024093e35c177e9301262870425a",
+   "siteCount": 203,
+   "sitesDigest": "8fba03c3a30665f907db0c51d9c37bb4af0c75f0be0d231ffb5c2e07ea7d440d",
+   "sourceDigest": "1211d7d0713303f614aac38694bd9925f9121c12ab6a98914163f8dd1e194375",
    "boundaries": [
     "diagnostic",
     "serialization",

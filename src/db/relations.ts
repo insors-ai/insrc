@@ -40,7 +40,7 @@ import { assertNoSessionPersistence } from '../shared/connection-persistence.js'
 
 import { createHash } from 'node:crypto';
 
-import type { Relation, RelationKind } from '../shared/types.js';
+import type { Relation, RelationEvidence, RelationKind } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
 import {
 	getGraphStore,
@@ -60,6 +60,8 @@ import {
 import {
 	encodeUnresolvedRow,
 	decodeEntityRow,
+	decodeEvidence,
+	encodeEvidence,
 	decodeUnresolvedRow,
 	decodeRepoRow,
 	type UnresolvedRow,
@@ -176,12 +178,12 @@ export function upsertResolvedRelationsInTxn(s: GraphStore, relations: readonly 
 		}
 		const toU64 = lookupU64ByStringId(s, r.to);
 		if (toU64 === undefined) {
-			writePendingRowInTxn(s, awaitingRowFor(s, fromU64, r.from, r.kind, r.to, r.meta, now));
+			// Kept awaiting its target with the evidence it was established by (s7).
+			writePendingRowInTxn(s, awaitingRowFor(s, fromU64, r.from, r.kind, r.to, withEvidence(r.meta, r.evidence), now));
 			counts.pending++;
 			continue;
 		}
-		s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
-		s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
+		putEdgeInTxn(s, fromU64, kindByte, toU64, r.evidence, r);
 		counts.stored++;
 	}
 	return counts;
@@ -498,8 +500,9 @@ export async function promoteToResolved(
 	_db: DbClient,
 	unresolved: UnresolvedRelation,
 	targetEntityId: string,
+	evidence?: RelationEvidence,
 ): Promise<void> {
-	await promoteResolvedBatch(_db, [{ unresolved, targetEntityId }]);
+	await promoteResolvedBatch(_db, [{ unresolved, targetEntityId, evidence }]);
 }
 
 export async function updateUnresolvedMeta(
@@ -527,6 +530,8 @@ export async function promoteResolvedBatch(
 		targetEntityId: string;
 		/** An EXPORTS row: the name the file exports it under, written to export_names with the edge. */
 		exportName?: string | undefined;
+		/** How the promoter established it (s7); absent = the evidence the pending row carries, else unknown. */
+		evidence?: RelationEvidence | undefined;
 	}>,
 ): Promise<PromoteResult> {
 	const result: PromoteResult = { promoted: 0, keptAwaiting: 0, unwritable: 0 };
@@ -535,8 +540,9 @@ export async function promoteResolvedBatch(
 	const now = Date.now();
 	await withWriteTxn(s => {
 		const promotedRepos = new Set<number>();
-		for (const { unresolved, targetEntityId, exportName } of items) {
+		for (const { unresolved, targetEntityId, exportName, evidence: given } of items) {
 			const stored = getPendingRowInTxn(s, unresolved.id);
+			const evidence = given ?? carriedEvidence(stored?.meta ?? unresolved.meta);
 			const repoId = stored?.repoId ?? repoIdByPathInTxn(s, unresolved.repo);
 			const kindByte = RELATION_KIND_BYTE[unresolved.kind as InternalRelationKind];
 			if (kindByte === undefined) {
@@ -555,14 +561,13 @@ export async function promoteResolvedBatch(
 			}
 			const toU64 = lookupU64ByStringId(s, targetEntityId);
 			if (toU64 === undefined) {
-				const meta = { ...(stored?.meta ?? unresolved.meta) };
+				const meta = withEvidence({ ...(stored?.meta ?? unresolved.meta) }, evidence);
 				removePendingRowInTxn(s, unresolved.id);
 				writePendingRowInTxn(s, awaitingRowFor(s, fromU64, unresolved.fromEntity, unresolved.kind, targetEntityId, meta, now));
 				result.keptAwaiting++;
 				continue;
 			}
-			s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), Buffer.alloc(0));
-			s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), Buffer.alloc(0));
+			putEdgeInTxn(s, fromU64, kindByte, toU64, evidence, { kind: unresolved.kind, from: unresolved.fromEntity, to: targetEntityId });
 			if (exportName !== undefined) putExportNameInTxn(s, fromU64, exportName, targetEntityId);
 			removePendingRowInTxn(s, unresolved.id);
 			if (repoId !== undefined) promotedRepos.add(repoId);
@@ -605,13 +610,47 @@ export function returnEdgeToPendingInTxn(s: GraphStore, fromU64: bigint, kindByt
 	const fromEntity = s.entityStringByU64.get(encodeEntityKey(fromU64)) as string | undefined;
 	const target = s.entityStringByU64.get(encodeEntityKey(toU64)) as string | undefined;
 	if (kind === undefined || fromEntity === undefined || target === undefined) return false;
-	writePendingRowInTxn(s, awaitingRowFor(s, fromU64, fromEntity, kind, target, undefined, Date.now()));
+	// The returned relationship keeps the evidence its edge holds (s7), so the
+	// cross-file pass restores it as it was.
+	const evidence = decodeEvidence(s.outEdge.get(encodeOutEdgeKey(fromU64, kindByte, toU64)) as Buffer | undefined);
+	writePendingRowInTxn(s, awaitingRowFor(s, fromU64, fromEntity, kind, target, withEvidence(undefined, evidence), Date.now()));
 	return true;
 }
 
 // ---------------------------------------------------------------------------
 // Internals
 // ---------------------------------------------------------------------------
+
+/**
+ * Both rows of a stored relationship, holding its evidence byte (Epic c2ba6fa6
+ * s7). An evidence string that is not a value is stored empty (reads
+ * 'unknown') and logged; the relationship is never refused for it.
+ */
+function putEdgeInTxn(
+	s: GraphStore,
+	fromU64: bigint,
+	kindByte: number,
+	toU64: bigint,
+	evidence: string | undefined,
+	what: { readonly kind: string; readonly from: string; readonly to: string },
+): void {
+	const { value, valid } = encodeEvidence(evidence);
+	if (!valid) log.warn({ ...what, evidence }, 'relationship written with an evidence that is not a value: stored as unknown');
+	s.outEdge.put(encodeOutEdgeKey(fromU64, kindByte, toU64), value);
+	s.inEdge.put(encodeInEdgeKey(toU64, kindByte, fromU64), value);
+}
+
+/** A pending row's record with the evidence of the relationship it holds (none for 'unknown'). */
+function withEvidence(meta: Record<string, unknown> | undefined, evidence: string | undefined): Record<string, unknown> | undefined {
+	if (evidence === undefined || evidence === 'unknown') return meta;
+	return { ...meta, evidence };
+}
+
+/** The evidence a pending row carries, if it carries one. */
+function carriedEvidence(meta: Record<string, unknown> | undefined): string | undefined {
+	const evidence = meta?.['evidence'];
+	return typeof evidence === 'string' ? evidence : undefined;
+}
 
 function slotOf(row: UnresolvedRow): PendingSlot {
 	const cls = pendingClassOf(row);

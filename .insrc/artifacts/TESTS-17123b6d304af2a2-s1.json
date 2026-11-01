@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T19:42:27.065Z",
+    "updatedAt": "2026-11-01T19:50:58.195Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -445,6 +445,59 @@
               },
               {
                 "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "8edd763c1",
+        "ranAt": "2026-11-01T19:50:58.195Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "manual-linux-ext4-node22-native-and-lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/project-memory-qualification.test.ts",
+                "title": "manual-linux-ext4-node22-native-and-lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manual-linux-packed-consumer-and-natural-exit",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/project-memory-qualification.test.ts",
+                "title": "manual-linux-packed-consumer-and-natural-exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/project-memory-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 646,
+            "titles": [
+              {
+                "title": "manual-linux-ext4-node22-native-and-lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "manual-linux-packed-consumer-and-natural-exit",
                 "result": "pass"
               }
             ],

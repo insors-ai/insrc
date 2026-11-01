@@ -1,0 +1,22 @@
+
+> @insrc/backend@0.2.1 build
+> npm run build --workspace @insrc/project-memory && tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs
+
+
+> @insrc/project-memory@0.1.0 build
+> tsc -p tsconfig.json
+
+[check-model-definitions] model definitions v1 valid (/Users/subhagho/work/projects/insors/insrc/src/assets/models)
+[19:50:28] INFO: [daemon:model-catalog] model definitions validated
+    module: "daemon:model-catalog"
+    dir: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
+    version: 1
+    models: {
+      "cli-claude": 4,
+      "cli-codex": 7,
+      "cli-vibe": 6,
+      "ollama": 2,
+      "ollama-claude": 6
+    }
+[copy-assets] copied prompts/ -> /Users/subhagho/work/projects/insors/insrc/out/prompts
+[copy-assets] copied assets/ -> /Users/subhagho/work/projects/insors/insrc/out/assets

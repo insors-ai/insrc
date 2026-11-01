@@ -1,0 +1,4 @@
+{"at":"2026-11-01T20:09:47.485Z","step":"probe","seconds":5,"localCallers":["s7SmokeMain: extracted"],"helperCallers":["s7SmokeMain: inferred"]}
+{"at":"2026-11-01T20:09:47.507Z","step":"untouched","getLoggerCallers":254,"byEvidence":{"unknown":254},"unknownSample":["/Users/subhagho/work/projects/insors/insrc/src/agent/providers/__tests__/cli-ollama.test.ts @ src/agent/providers/__tests__/cli-ollama.test.ts","/Users/subhagho/work/projects/insors/insrc/src/agent/providers/cli-provider.ts @ src/agent/providers/cli-provider.ts","/Users/subhagho/work/projects/insors/insrc/src/agent/providers/ollama.ts @ src/agent/providers/ollama.ts"]}
+{"at":"2026-11-01T20:09:48.519Z","step":"cleanup","probeGone":true}
+{"at":"2026-11-01T20:09:48.519Z","result":"pass"}

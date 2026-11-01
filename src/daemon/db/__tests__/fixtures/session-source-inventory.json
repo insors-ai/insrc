@@ -21789,6 +21789,14 @@
    "sites": [
     [
      "storage-call",
+     "activeEmbeddingModel"
+    ],
+    [
+     "storage-call",
+     "activeEmbeddingModel"
+    ],
+    [
+     "storage-call",
      "allocateEntityIdInTxn"
     ],
     [
@@ -23288,9 +23296,9 @@
      "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 375,
-   "sitesDigest": "a82b816a3799d7efeaf54665fb3d75c462f2b3fad7393be477e30481d59c6030",
-   "sourceDigest": "c7469481f7c171ad22f6c437594040a2d262c4cb272b810999801b006744a5af",
+   "siteCount": 377,
+   "sitesDigest": "fb14f9c250bbc3a8f3d6f41a5a15b4d27dc4999f377a2a9b8b6603545bf9736f",
+   "sourceDigest": "2b6e89c75b37c007c0f832b0a6dd75aefe53e8321d614483dfb10f57c910135a",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -30848,14 +30856,6 @@
      "embeddingModel"
     ],
     [
-     "provider-adapter",
-     "embeddingModel"
-    ],
-    [
-     "provider-use",
-     "embeddingModel"
-    ],
-    [
      "provider-use",
      "embeddingModel"
     ],
@@ -31012,9 +31012,9 @@
      "withTimeout"
     ]
    ],
-   "siteCount": 55,
-   "sitesDigest": "baae65df6d1fe4121f11c514394522bdd23ed6d55074fd4c38cbe5a4740ba3ac",
-   "sourceDigest": "0c7dd0b07e970e410ec24850fa159e3c9232dbf44308b97983566818eea15997",
+   "siteCount": 53,
+   "sitesDigest": "1bed65501860d85c2dcb649e473ca8a1c1754c24d1f6206aba50e095074cd84d",
+   "sourceDigest": "6e9e861d3975e727bcdca5b61d18804d238fe18ac1b5f402146c7e044c9a5dce",
    "boundaries": [
     "diagnostic",
     "provider-adapter",

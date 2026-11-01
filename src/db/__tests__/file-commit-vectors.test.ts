@@ -30,7 +30,7 @@ useTemporaryLance();
 const REPO = '/repo/file-commit-vectors';
 const FILE = `${REPO}/src/a.ts`;
 const DIM = loadLocalProviderConfig().embeddingDim;
-const MODEL = 'test-embedder';
+const MODEL = loadLocalProviderConfig().embeddingModel;   // the marker names the configured (active) model
 
 let dir: string;
 test.beforeEach(async () => {
@@ -52,7 +52,7 @@ function entity(name: string, opts: { body?: string; vector?: number[] } = {}): 
 		id: createHash('sha256').update(`${REPO}\x00${FILE}\x00function\x00${name}\x00${Date.now()}`).digest('hex').slice(0, 32),
 		kind: 'function', name, language: 'typescript', repoId: 1, repo: REPO, file: FILE,
 		startLine: 1, endLine: 2, body: opts.body ?? `function ${name}() {}`,
-		embedding: opts.vector ?? [], ...(opts.vector !== undefined ? { embeddingModel: MODEL } : {}),
+		embedding: opts.vector ?? [],
 		indexedAt: '2026-11-01T00:00:00.000Z',
 	};
 }
@@ -69,7 +69,7 @@ async function vectorRows(id: string, v: number[]): Promise<number> {
 	return hits.filter(h => h.id === id).length;
 }
 
-test('t5: a successful vector write sets each changed entity\'s marker to the model its vector came from; nothing is outstanding', async () => {
+test('t5: a successful vector write sets each changed entity\'s marker to the active embedding model; nothing is outstanding', async () => {
 	const a = entity('a', { vector: vec(1) });
 	const result = await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [a], relations: [] });
 

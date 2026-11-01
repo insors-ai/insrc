@@ -73,6 +73,7 @@ import {
 	SHARED_MODULES_REPO_ID,
 } from '../shared/repo-namespaces.js';
 import { updateIndexStateRowInTxn } from './graph/index-state-rows.js';
+import { loadLocalProviderConfig } from '../config/local.js';
 import { carryDocSummariesInTxn, deleteCarriedDocSummariesInTxn, deleteDocSummaryInTxn } from './doc-summaries.js';
 
 const log = getLogger('db.entities');
@@ -310,8 +311,9 @@ interface VectorWrite {
  * s2): rows are committed with an empty marker, then the vectors are written
  * (a plain add for an entity first allocated in that commit, an upsert for any
  * other, which may still have a vector from before), then ONE transaction sets
- * each written entity's marker to the model its vector came from
- * (entity.embeddingModel, set by the embedder). Returns how many vectors are
+ * each written entity's marker to the active embedding model (the
+ * configured models.local.embeddingModel, which names the ONNX model too
+ * when that backend runs). Returns how many vectors are
  * still outstanding: all of them when the vector write or the marker
  * transaction fails, which is logged and never fails the caller's graph write;
  * their markers stay empty for the backfill to find.
@@ -339,6 +341,7 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 		);
 		return writes.length;
 	}
+	const model = activeEmbeddingModel();
 	try {
 		await withWriteTxn(s => {
 			for (const w of writes) {
@@ -346,7 +349,7 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 				if (u64 === undefined) continue;
 				const row = readEntityRowSync(s, u64);
 				if (row === null || row.embeddingModel !== '') continue;
-				putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: w.entity.embeddingModel ?? '' });
+				putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: model });
 			}
 		});
 	} catch (err) {
@@ -357,6 +360,11 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 		return writes.length;
 	}
 	return 0;
+}
+
+/** The model a stored marker names: the configured embedding model. */
+function activeEmbeddingModel(): string {
+	return loadLocalProviderConfig().embeddingModel;
 }
 
 /** The row an entity is committed as: its marker empty when a vector write follows. */
@@ -494,7 +502,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 				 && prev.startLine === newRow.startLine
 				 && prev.endLine === newRow.endLine
 				 && prev.signature === newRow.signature
-				 && (!embedded || prev.embeddingModel === (e.embeddingModel ?? ''))) {
+				 && (!embedded || prev.embeddingModel === activeEmbeddingModel())) {
 					seen.add(u64);
 					continue; // unchanged -- skip write
 				}

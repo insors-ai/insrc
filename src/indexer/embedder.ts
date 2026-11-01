@@ -183,8 +183,8 @@ export async function embedEntities(
           const entity    = batch[j];
           const embedding = result.embeddings[j];
           if (entity && embedding) {
-            entity.embedding      = embedding;
-            entity.embeddingModel = embeddingModel();
+            // The stored marker is set by the store once the vector is written (Epic c2ba6fa6 s2).
+            entity.embedding = embedding;
           }
         }
 			} catch (err) {
@@ -212,8 +212,7 @@ export async function embedEntities(
         const entity = batch[j];
         const embedding = vectors[j];
         if (entity && embedding) {
-          entity.embedding      = embedding;
-          entity.embeddingModel = ONNX_EMBEDDING_MODEL;
+          entity.embedding = embedding;
         }
       }
 		} catch (err) {

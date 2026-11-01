@@ -37,6 +37,6 @@ test('audit-rows.test.ts: every replacement row names its tool and op and says c
     if (status === 'derived') { assert.ok(note.length > 0, `${site}: a derived row gives the reason`); }
   }
   for (const file of FILES) { assert.ok(rows.some(r => r[0]!.includes(file)), `${file} has a row`); }
-  assert.deepEqual(gapIds, ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9', 'g10', 'g11']);
-  for (const id of gapIds.filter(g => g !== 'g11')) { assert.ok(rows.some(r => r[2] === 'gap' && r[3]!.startsWith(`${id}:`)), `${id} is used by a row`); }   // g11 was found later, in t10
+  assert.deepEqual(gapIds, ['g1', 'g2', 'g3', 'g4', 'g5', 'g6', 'g7', 'g8', 'g9', 'g10', 'g11', 'g12']);
+  for (const id of gapIds.filter(g => g !== 'g11' && g !== 'g12')) { assert.ok(rows.some(r => r[2] === 'gap' && r[3]!.startsWith(`${id}:`)), `${id} is used by a row`); }   // g11 was found later, in t10
 });

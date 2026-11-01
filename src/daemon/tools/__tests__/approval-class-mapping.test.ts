@@ -124,7 +124,7 @@ test('approval-class-mapping.test.ts: the tool ids and input schemas match the s
 	const corrected = new Set(['gh:project:item-archive', 'gh:project:item-delete']);
 	// Optional inputs added since the snapshot (the snapshot stays pinned): every other property is the snapshot's.
 	const ADDED_SINCE = new Map([['git_ls_files', ['maxBytes']], ['git_push', ['configured']], ['gh_pr_view', ['jsonFields']],
-		['git_status', ['paths', 'untrackedFiles']], ['git_log', ['firstParent']], ['git_diff', ['againstWorktree']], ['git_worktree', ['startPoint']], ['git_stage', ['force']]]);
+		['git_status', ['paths', 'untrackedFiles']], ['git_log', ['firstParent']], ['git_diff', ['againstWorktree', 'excludeDeleted']], ['git_worktree', ['startPoint']], ['git_stage', ['force']], ['git_show', ['excludeDeleted']]]);
 	for (const old of snapshot) {
 		assert.ok(live.has(old.id), `${old.id} is still registered`);
 		if (corrected.has(old.id)) { continue; }

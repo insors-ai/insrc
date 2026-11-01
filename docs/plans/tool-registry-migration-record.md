@@ -177,6 +177,7 @@ This list is final. A gap found later is a plan amendment, not part of t2.
 | g10 | `git_diff` | an optional `againstWorktree` input (`git diff <from>`), built by t24 | validation-checks |
 
 | g11 | `git_stage` | an optional `force` input (`git add -f`), found while moving the handoff park in t10 and built there | handoff park (`.insrc/handoff` files) |
+| g12 | `git_diff`, `git_show` | an optional `excludeDeleted` input (`--diff-filter=d`), found while moving the validation checks in t13: the files' `change` label is a guess from the line counts, so a deleted file cannot be told from an edit that only removes lines | validation-checks |
 
 Not gaps: the `signal` that `git_log`, `git_diff`, `git_status`, `git_rev_list`, `git_for_each_ref`, `git_ls_files` and `git_path_history` do not pass to
 their process. The refresh uses only `git_ls_remote` and `git_fetch_refs`, which do; the other sites have no abort requirement.

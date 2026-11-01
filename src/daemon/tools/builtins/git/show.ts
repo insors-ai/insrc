@@ -29,6 +29,7 @@ export const gitShowTool = {
     cwd: Type.Optional(Type.String({ description: 'Repository root. Defaults to process cwd.' })),
     ref: Type.Optional(Type.String({ description: 'Commit ref to show (SHA / branch / tag / HEAD~N). Default HEAD.' })),
     path: Type.Optional(Type.String({ description: 'Limit the diff to this file or directory.' })),
+    excludeDeleted: Type.Optional(Type.Boolean({ description: 'Leave out the files the commit deleted (--diff-filter=d), from the file list and the diff.' })),
     maxBytes: Type.Optional(Type.Number({ description: `Diff byte cap (default ${DEFAULT_MAX_BYTES}, max ${MAX_MAX_BYTES}).` })),
   }, { additionalProperties: false }),
   outputSchema: GitShowDataSchema,
@@ -71,9 +72,10 @@ export const gitShowTool = {
     }
 
     // Diff + numstat in parallel.
-    const diffArgv = ['git', 'show', '--no-color', '--pretty=format:', ref];
+    const excludeDeleted = input['excludeDeleted'] === true ? ['--diff-filter=d'] : [];
+    const diffArgv = ['git', 'show', '--no-color', ...excludeDeleted, '--pretty=format:', ref];
     if (path) { diffArgv.push('--', path); }
-    const statArgv = ['git', 'show', '--no-color', '--numstat', '--pretty=format:', ref];
+    const statArgv = ['git', 'show', '--no-color', '--numstat', ...excludeDeleted, '--pretty=format:', ref];
     if (path) { statArgv.push('--', path); }
 
     // The diff and the stat run one after the other, so none starts after an abort and a stat cut short by

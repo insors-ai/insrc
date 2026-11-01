@@ -54,6 +54,7 @@ export const gitDiffTool = {
     staged: Type.Optional(Type.Boolean({ description: 'When true, diff index vs HEAD (what `git commit` would record).' })),
     from: Type.Optional(Type.String({ description: 'Starting ref for a range diff (commit SHA, branch, tag, "HEAD~3").' })),
     to: Type.Optional(Type.String({ description: 'Ending ref. When omitted with `from`, defaults to HEAD.' })),
+    excludeDeleted: Type.Optional(Type.Boolean({ description: 'Leave out the files the change deleted (--diff-filter=d), from the file list and the body.' })),
     againstWorktree: Type.Optional(Type.Boolean({ description: 'With `from` and without `to`: diff `from` against the working tree (git diff <from>), tracked files only.' })),
     path: Type.Optional(Type.String({ description: 'Restrict the diff to this file or directory.' })),
     paths: Type.Optional(Type.Array(Type.String({ minLength: 1 }), {
@@ -120,14 +121,15 @@ export const gitDiffTool = {
       MAX_MAX_BYTES,
     );
 
-    const diffOpts: DiffOpts = { staged, ignoreWhitespace, ...(againstWorktree ? { againstWorktree } : {}) };
+    const excludeDeleted = input['excludeDeleted'] === true;
+    const diffOpts: DiffOpts = { staged, ignoreWhitespace, ...(againstWorktree ? { againstWorktree } : {}), ...(excludeDeleted ? { excludeDeleted } : {}) };
     if (from !== undefined) { diffOpts.from = from; }
     if (to !== undefined) { diffOpts.to = to; }
     if (path !== undefined) { diffOpts.path = path; }
     if (rawPaths !== undefined) { diffOpts.paths = rawPaths; }
     if (exclude.length > 0) { diffOpts.exclude = exclude; }
     if (context !== undefined) { diffOpts.context = context; }
-    const statOpts: DiffOpts = { staged, ...(againstWorktree ? { againstWorktree } : {}) };
+    const statOpts: DiffOpts = { staged, ...(againstWorktree ? { againstWorktree } : {}), ...(excludeDeleted ? { excludeDeleted } : {}) };
     if (from !== undefined) { statOpts.from = from; }
     if (to !== undefined) { statOpts.to = to; }
     if (path !== undefined) { statOpts.path = path; }
@@ -208,6 +210,8 @@ export interface DiffOpts {
   staged?: boolean;
   /** With `from` and no `to`: `git diff <from>`, that revision against the working tree. */
   againstWorktree?: boolean;
+  /** Leave out the files the change deleted (`--diff-filter=d`). */
+  excludeDeleted?: boolean;
   from?: string;
   to?: string;
   path?: string;
@@ -246,6 +250,7 @@ function pathspecArgs(o: DiffOpts): string[] {
 
 export function buildDiffArgv(o: DiffOpts): { argv: string[]; mode: string; range: string } {
   const base = ['git', 'diff', '--no-color'];
+  if (o.excludeDeleted) { base.push('--diff-filter=d'); }
   if (o.ignoreWhitespace) { base.push('-w'); }
   if (typeof o.context === 'number') { base.push(`-U${o.context}`); }
 
@@ -277,6 +282,7 @@ export function buildStatArgv(o: DiffOpts): string[] {
   // -z: NUL-delimited records with literal paths, never git's quoted or compact
   // `dir/{a => b}/file` rename display (ISSUE-b97752e9).
   const base = ['git', 'diff', '--no-color', '--numstat', '-z'];
+  if (o.excludeDeleted) { base.push('--diff-filter=d'); }
   if (o.staged) { base.push('--cached'); }
   else if (o.from && o.againstWorktree) { base.push(o.from); }
   else if (o.from) { base.push(`${o.from}..${o.to ?? 'HEAD'}`); }

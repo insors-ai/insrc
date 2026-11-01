@@ -13,11 +13,14 @@
  * names, builds the check plan for each build route, and runs it.
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 
+import { gitDiffTool } from '../../tools/builtins/git/diff.js';
+import { gitShowTool } from '../../tools/builtins/git/show.js';
+import { gitCall, GitCallFailed, lsFiles } from '../../../workflow/git-calls.js';
+import { isToolDenied } from '../../../workflow/tracker/tool-denied.js';
 import { getLogger } from '../../../shared/logger.js';
 import { storyChangeSet } from '../../../workflow/runners/build/story-commits.js';
 import { runInProcessGroup, type ProcessGroupOpts, type ProcessGroupResult } from '../../../shared/process-group.js';
@@ -150,14 +153,31 @@ export interface CheckRunnerDeps {
 /** A leading '<base>.test.ts:' prefix — the convention plans use for test names. */
 const LEADING_TEST_FILE = /^\s*([A-Za-z0-9_.-]+\.test\.ts)\s*:/;
 
-export function trackedFiles(repoPath: string): string[] {
+/** The most a file listing may hold: the git_ls_files tool's own cap (the direct call allowed a little more). */
+const LISTING_MAX_BYTES = 50 * 1024 * 1024;
+
+/** The time one git read of the validation may take. */
+const GIT_MS = 60_000;
+
+export async function trackedFiles(repoPath: string): Promise<string[]> {
 	try {
-		return execFileSync('git', ['ls-files'], { cwd: repoPath, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 })
-			.split('\n').filter(f => f.length > 0);
+		return (await lsFiles(repoPath, { cached: true, maxBytes: LISTING_MAX_BYTES }, { timeoutMs: GIT_MS })).filter(f => f.length > 0);
 	} catch (err) {
-		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'validate: git ls-files failed; no test files can be resolved');
+		if (!(err instanceof GitCallFailed)) throw err;   // a denied call ends the stage
+		log.warn({ repoPath, err: err.message }, 'validate: git ls-files failed; no test files can be resolved');
 		return [];
 	}
+}
+
+/**
+ * The files a commit range or a commit changed, without those it deleted (`git diff --name-only --diff-filter=d base HEAD`, or
+ * `git show --name-only --diff-filter=d --format= HEAD` without a base): the tools' `excludeDeleted` input is that filter.
+ */
+async function committedChanges(repoPath: string, base: string | undefined): Promise<string[]> {
+	const files = base !== undefined
+		? (await gitCall(gitDiffTool, { from: base, to: 'HEAD', excludeDeleted: true }, repoPath, { timeoutMs: GIT_MS })).files
+		: (await gitCall(gitShowTool, { ref: 'HEAD', excludeDeleted: true }, repoPath, { timeoutMs: GIT_MS })).files;
+	return files.map(f => f.path);
 }
 
 /**
@@ -206,20 +226,19 @@ function basePlan(): Pick<ValidationCheckPlan, 'typecheck' | 'testCommand' | 'ty
  * committed, and new files not yet tracked. Each listing stands on its own: one
  * that fails is logged and the others still count.
  */
-function changedFiles(repoPath: string, base: string | undefined): string[] {
-	const listings: readonly (readonly string[])[] = [
-		base !== undefined
-			? ['diff', '--name-only', '--diff-filter=d', base, 'HEAD']
-			: ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'],
-		['diff', '--name-only', '--diff-filter=d', 'HEAD'],
-		['ls-files', '--others', '--exclude-standard'],
+async function changedFiles(repoPath: string, base: string | undefined): Promise<string[]> {
+	const listings: ReadonlyArray<readonly [string, () => Promise<string[]>]> = [
+		[base !== undefined ? `diff --name-only --diff-filter=d ${base} HEAD` : 'show --name-only --diff-filter=d --format= HEAD', () => committedChanges(repoPath, base)],
+		['diff --name-only --diff-filter=d HEAD', async () => (await gitCall(gitDiffTool, { from: 'HEAD', againstWorktree: true, excludeDeleted: true }, repoPath, { timeoutMs: GIT_MS })).files.map(f => f.path)],
+		['ls-files --others --exclude-standard', () => lsFiles(repoPath, { others: true, maxBytes: LISTING_MAX_BYTES }, { timeoutMs: GIT_MS })],
 	];
 	const files: string[] = [];
-	for (const args of listings) {
+	for (const [what, list] of listings) {
 		try {
-			files.push(...execFileSync('git', args, { cwd: repoPath, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\n').filter(f => f.length > 0));
+			files.push(...(await list()).filter(f => f.length > 0));
 		} catch (err) {
-			log.warn({ repoPath, git: args.join(' '), err: err instanceof Error ? err.message : String(err) }, 'validate: could not list changed files; a project they belong to may go unchecked');
+			if (!(err instanceof GitCallFailed)) throw err;   // a denied call ends the stage
+			log.warn({ repoPath, git: what, err: err.message }, 'validate: could not list changed files; a project they belong to may go unchecked');
 		}
 	}
 	return files;
@@ -279,6 +298,7 @@ export async function withTypecheckProjects(repoPath: string, plan: ValidationCh
 		try {
 			built = await storyFiles(repoPath, base, storyKey);
 		} catch (err) {
+			if (isToolDenied(err)) throw err;   // a denied call ends the stage
 			log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the Story\'s files; a project they belong to may go unchecked');
 			built = [];
 		}
@@ -376,12 +396,10 @@ export async function trivialCheckPlan(repoPath: string, base?: string | undefin
 			touched = (await storyFiles(repoPath, base, storyKey)).filter(f => isTest(f) && existsSync(join(repoPath, f)));
 		} else {
 			// --diff-filter=d leaves out files the build deleted: they no longer exist to run.
-			const args = base !== undefined
-				? ['diff', '--name-only', '--diff-filter=d', base, 'HEAD']
-				: ['show', '--name-only', '--diff-filter=d', '--format=', 'HEAD'];
-			touched = execFileSync('git', args, { cwd: repoPath, encoding: 'utf8' }).split('\n').filter(isTest);
+			touched = (await committedChanges(repoPath, base)).filter(isTest);
 		}
 	} catch (err) {
+		if (isToolDenied(err)) throw err;   // a denied call ends the stage
 		listError = err instanceof Error ? err.message : String(err);
 		log.warn({ repoPath, base, err: listError }, 'validate: could not list the build\'s files');
 	}

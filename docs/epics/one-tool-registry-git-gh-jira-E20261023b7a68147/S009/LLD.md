@@ -429,3 +429,18 @@ Add a policy snapshot store in the daemon (per repo: the resolved policy or 'non
 - Which exact tool ops lack an input a site needs (git_status path filter, git_log or git_path_history options for story-commits, git_config scope)? Task t1 of the plan checks every row against the tool input schemas and adds any missing optional input as an additive extension flagged for the tool's owner.
 - Does any caller of PolicyReader need the opts.signal, or can the signal be dropped from the type to keep the 44 injected fakes' signature unchanged? The default is to keep it optional.
 - The nine migration steps are written at the level of the area moved and are not the plan's task list; the plan stage decides the tasks and their order.
+
+## Resolved questions
+
+- `q660011fb` — Decision needed: the git commands src/workflow/runners/build/story-commits.ts runs (diff-tree --root -z, merge-tree --write-tree, hash-object -t tree /dev/null, and rev-parse --git-path SQUASH_MSG in mergeInProgress) have no tool or op: diff-tree and merge-tree are assigned to s8 in the coverage table (src/daemon/tools/builtins/git/coverage.ts) and not built, git_hash_object takes a path only and git_rev_parse has no git-path input. This Story builds them, as s7 did for git_config, git_ls_remote, git_update_ref and git_rm: new read-only tools git_diff_tree and git_merge_tree, an optional type input on git_hash_object and an optional gitPath input on git_rev_parse, each with its own tests, and the s8 coverage table marks the two tools built by s9. The alternative is to build s8 first (its long-tail tools) and let this Story depend on it; the recommended route is the first, so the cutover is not held up by the 93-command long tail.
+  - **resolved**: Build-in-s9 (full ownership) — User approved the LLD on 2026-11-01 with this route recommended; follows the s7 precedent and keeps the cutover off s8's long tail. _(2026-11-01T11:29:18.716Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `the sites left after s10 (forbidden-spawn scan, report mode, 45 sites, 3 exempt files)`
+- **[[c2]]** `analyze-bundle` `the team module's use of runGit and runGitAsync (the largest group of sites)`
+- **[[c3]]** `analyze-bundle` `what Story s10 left in place for s9 to build on`
+- **[[c4]]** `analyze-bundle` `git tools available to the replacement and their failure model`
+- **[[c5]]** `doc` `docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/DEF.md#6.9` — "once the last site has moved the old wrappers and seams are gone so no code can run git or gh around the registry"
+- **[[c6]]** `doc` `docs/plans/tool-registry.md#s10-lands-before-s9`
+- **[[c7]]** `code` `scripts/forbidden-spawn-scan.mjs`

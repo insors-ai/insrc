@@ -43,7 +43,7 @@
     },
     "revision": 3,
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
         "contentHash": "14e241acf65cf87cb984619aebe4daa98f29699c4f2fccdde8166337e160503a",
@@ -54,7 +54,28 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:27:31.273Z",
+        "override": {
+          "reason": "self-review by the controller (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S009/SELF-REVIEW.md); the design review is not functional (user decision 2026-11-01)"
+        }
+      }
+    },
+    "questionResolutions": {
+      "q660011fb": {
+        "question": "Decision needed: the git commands src/workflow/runners/build/story-commits.ts runs (diff-tree --root -z, merge-tree --write-tree, hash-object -t tree /dev/null, and rev-parse --git-path SQUASH_MSG in mergeInProgress) have no tool or op: diff-tree and merge-tree are assigned to s8 in the coverage table (src/daemon/tools/builtins/git/coverage.ts) and not built, git_hash_object takes a path only and git_rev_parse has no git-path input. This Story builds them, as s7 did for git_config, git_ls_remote, git_update_ref and git_rm: new read-only tools git_diff_tree and git_merge_tree, an optional type input on git_hash_object and an optional gitPath input on git_rev_parse, each with its own tests, and the s8 coverage table marks the two tools built by s9. The alternative is to build s8 first (its long-tail tools) and let this Story depend on it; the recommended route is the first, so the cutover is not held up by the 93-command long tail.",
+        "status": "resolved",
+        "choice": "Build-in-s9 (full ownership)",
+        "rationale": "User approved the LLD on 2026-11-01 with this route recommended; follows the s7 precedent and keeps the cutover off s8's long tail.",
+        "resolvedAt": "2026-11-01T11:29:18.716Z"
+      }
     }
   },
   "body": {

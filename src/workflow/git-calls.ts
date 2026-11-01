@@ -23,13 +23,18 @@ import { gitLsRemoteTool } from '../daemon/tools/builtins/git/ls-remote.js';
 import { gitPathHistoryTool } from '../daemon/tools/builtins/git/path-history.js';
 import { gitRemoteTool } from '../daemon/tools/builtins/git/remote.js';
 import { gitRevListTool } from '../daemon/tools/builtins/git/rev-list.js';
+import { gitLsTreeTool } from '../daemon/tools/builtins/git/ls-tree.js';
 import { gitRevParseTool } from '../daemon/tools/builtins/git/rev-parse.js';
+import { gitSymbolicRefTool } from '../daemon/tools/builtins/git/symbolic-ref.js';
 import { gitStatusTool } from '../daemon/tools/builtins/git/status.js';
 import type { GitLsRemoteData, GitStatusData } from '../daemon/tools/builtins/git/schemas.js';
 import type { TypedTool } from '../daemon/tools/call-tool.js';
 import type { CommonApprovalMode, ToolFailureKind } from '../daemon/tools/types.js';
 import { run, workflowToolDeps } from './tracker/registry-table.js';
 import { ToolDenied } from './tracker/tool-denied.js';
+
+/** The time a local git read may take when its site sets none (what the team module's synchronous runner allowed). */
+export const LOCAL_GIT_TIMEOUT_MS = 5_000;
 
 /** What a site sets for one call. */
 export interface GitCallOptions {
@@ -170,4 +175,21 @@ export async function rootCommits(cwd: string, rev: string, opts?: GitCallOption
 	const data = await gitCall(gitRevListTool, { rev, maxParents: 0 }, cwd, opts);
 	if (!('commits' in data)) throw new GitCallFailed('git_rev_list', 'schema-mismatch', 'git_rev_list answered a listing with a count');
 	return data.commits;
+}
+
+/** The names of the remotes of the repository, in the order git lists them. */
+export async function remoteNames(cwd: string, opts?: GitCallOptions): Promise<string[]> {
+	return ((await gitCall(gitRemoteTool, { op: 'list' }, cwd, opts)).remotes ?? []).map(r => r.name);
+}
+
+/** The ref a symbolic ref points at, or undefined when it is not set (or not symbolic). */
+export async function symbolicRef(cwd: string, ref: string, opts?: GitCallOptions): Promise<string | undefined> {
+	return (await gitCall(gitSymbolicRefTool, { ref, op: 'get', quiet: true }, cwd, opts)).target ?? undefined;
+}
+
+/** The names `git ls-tree --name-only` lists for `paths` in the tree of `rev`, read from the root of the tree. */
+export async function lsTreeNames(cwd: string, rev: string, paths: readonly string[], opts?: GitCallOptions): Promise<string[]> {
+	const data = await gitCall(gitLsTreeTool, { rev, nameOnly: true, fullTree: true, paths: [...paths] }, cwd, opts);
+	if (!('names' in data)) throw new GitCallFailed('git_ls_tree', 'schema-mismatch', 'git_ls_tree answered a name listing with entries');
+	return data.names;
 }

@@ -11,9 +11,13 @@
  * first-parent history of the tracking ref, so a later delete and re-add never
  * moves it. A shallow repository is never trusted, because git lists the
  * shallow boundary commit as an add even though the file existed earlier.
+ *
+ * The git reads go through the tool registry (Story s9): a denied call is thrown as ToolDenied; any other
+ * failure leaves the anchor unknown, as before.
  */
 
-import { POLICY_PATH, runGit } from './git.js';
+import { LOCAL_GIT_TIMEOUT_MS, orFallback, pathHistory, revParseValues } from '../git-calls.js';
+import { POLICY_PATH } from './git.js';
 import type { PolicyAnchor } from './types.js';
 
 const UNKNOWN: PolicyAnchor = { known: false, firstCommit: '', firstCommitTime: '' };
@@ -31,12 +35,13 @@ export function parseAnchorLog(output: string): PolicyAnchor {
  * `budget`, when given, returns the milliseconds left in a caller's deadline; each git call
  * below takes what is left at that moment, so the two calls together never exceed it.
  */
-export function findAnchor(repo: string, trackingRef: string, budget?: () => number): PolicyAnchor {
+export async function findAnchor(repo: string, trackingRef: string, budget?: () => number, signal?: AbortSignal): Promise<PolicyAnchor> {
 	if (budget !== undefined && budget() <= 0) return UNKNOWN; // no time left: do not start another git call
-	const left = (): number | undefined => (budget === undefined ? undefined : Math.max(1, budget()));
-	const shallow = runGit(repo, ['rev-parse', '--is-shallow-repository'], left());
-	if (!shallow.ok || shallow.stdout.trim() !== 'false') return UNKNOWN;
+	const left = (): number => (budget === undefined ? LOCAL_GIT_TIMEOUT_MS : Math.max(1, budget()));
+	const shallow = await orFallback(revParseValues(repo, { isShallow: true }, { timeoutMs: left(), signal }), undefined);
+	if (shallow === undefined || shallow[0] !== 'false') return UNKNOWN;
 	if (budget !== undefined && budget() <= 0) return UNKNOWN;
-	const log = runGit(repo, ['log', '--first-parent', '--diff-filter=A', '--reverse', '--format=%H%x09%cI', trackingRef, '--', `:(top)${POLICY_PATH}`], left());
-	return log.ok ? parseAnchorLog(log.stdout) : UNKNOWN;
+	const added = await orFallback(pathHistory(repo, { rev: trackingRef, path: POLICY_PATH, diffFilter: 'A', firstParent: true, reverse: true }, { timeoutMs: left(), signal }), undefined);
+	const first = added?.[0];
+	return first === undefined ? UNKNOWN : { known: true, firstCommit: first.sha, firstCommitTime: first.committerTime };
 }

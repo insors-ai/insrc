@@ -6,7 +6,7 @@
 /**
  * PolicyReader (Story s2, HLD contract sc2).
  *
- * Synchronous, non-interactive and network-free: it reads the policy from the
+ * Non-interactive and network-free: it reads the policy from the
  * local copy git keeps of the remote default branch (the remote-tracking ref),
  * never from the working tree or another branch, and never guesses a branch.
  *
@@ -23,11 +23,13 @@ import { dirname, join, resolve } from 'node:path';
 
 import { getLogger } from '../../shared/logger.js';
 import { findAnchor } from './anchor-finder.js';
-import { POLICY_PATH, runGit } from './git.js';
+import { catFileExists, catFileText, forEachRef, GitCallFailed, LOCAL_GIT_TIMEOUT_MS, lsTreeNames, remoteNames, revParse, revParseValues, symbolicRef } from '../git-calls.js';
+import { POLICY_PATH } from './git.js';
 import { parsePolicyFile, buildTeamPolicy } from './policy-parser.js';
 import { acquireLock, isSafeRefName, mergeAnchor, publishSightingIfAbsent, readSighting } from './sighting-store.js';
 import type { Sighting } from './sighting-store.js';
-import type { PolicyAnchor, PolicyResult, TeamPolicy } from './types.js';
+import { isToolDenied } from '../tracker/tool-denied.js';
+import type { PolicyAnchor, PolicyReadOptions, PolicyResult, TeamPolicy } from './types.js';
 
 const log = getLogger('team-policy-reader');
 
@@ -36,9 +38,11 @@ export interface ReaderOptions {
 	readonly teamDir?: string | undefined;
 	readonly now?: (() => Date) | undefined;
 	/** Seam for the create-only first-observation write; tests inject a failing one. */
-	readonly publish?: typeof publishSightingIfAbsent | undefined;
+	readonly publish?: ((...args: Parameters<typeof publishSightingIfAbsent>) => 'created' | 'exists' | Promise<'created' | 'exists'>) | undefined;
 	/** Test seam: runs after the policy is read and before the first sighting is recorded. */
 	readonly beforeRecord?: (() => void) | undefined;
+	/** Stops the git reads of this call (the executor kills the running one). */
+	readonly signal?: AbortSignal | undefined;
 }
 
 type Found =
@@ -63,63 +67,83 @@ function hasGitEntry(dir: string): boolean {
 /**
  * Is `repo` inside a git repository? A directory with no `.git` anywhere up its tree is confirmed non-git; a git failure
  * where a `.git` entry does exist (a timeout, a damaged repository, a missing git program) is an error, not "not a repo".
+ *
+ * Every git read below goes through the tool registry (Story s9). A call the user or a missing client denied is thrown as
+ * ToolDenied and ends the read; any other failure keeps the result it had when git was run directly.
  */
-export function probeGitRepo(repo: string, timeoutMs?: number): Probe<boolean> {
-	const out = runGit(repo, ['rev-parse', '--git-dir'], timeoutMs);
-	if (out.ok) return { ok: true, value: true };
-	return hasGitEntry(repo) ? { ok: false, reason: `the repository could not be inspected: ${out.stderr}` } : { ok: true, value: false };
+export async function probeGitRepo(repo: string, timeoutMs?: number, signal?: AbortSignal): Promise<Probe<boolean>> {
+	try {
+		await revParseValues(repo, { gitDir: true }, { timeoutMs: timeoutMs ?? LOCAL_GIT_TIMEOUT_MS, signal });
+		return { ok: true, value: true };
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return hasGitEntry(repo) ? { ok: false, reason: `the repository could not be inspected: ${err.message}` } : { ok: true, value: false };
+	}
 }
 
-export function isGitRepo(repo: string, timeoutMs?: number): boolean {
-	const probe = probeGitRepo(repo, timeoutMs);
+export async function isGitRepo(repo: string, timeoutMs?: number, signal?: AbortSignal): Promise<boolean> {
+	const probe = await probeGitRepo(repo, timeoutMs, signal);
 	return probe.ok && probe.value;
 }
 
 /** The policy remote: origin when present, else the sole remote, else none (never guessed). */
-export function probeRemote(repo: string, timeoutMs?: number): Probe<string | undefined> {
-	const listed = runGit(repo, ['remote'], timeoutMs);
-	if (!listed.ok) return { ok: false, reason: `the remotes could not be listed: ${listed.stderr}` };
-	const remotes = listed.stdout.split('\n').map(r => r.trim()).filter(r => r.length > 0 && isSafeRefName(r));
+export async function probeRemote(repo: string, timeoutMs?: number, signal?: AbortSignal): Promise<Probe<string | undefined>> {
+	let names: string[];
+	try {
+		names = await remoteNames(repo, { timeoutMs: timeoutMs ?? LOCAL_GIT_TIMEOUT_MS, signal });
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { ok: false, reason: `the remotes could not be listed: ${err.message}` };
+	}
+	const remotes = names.map(r => r.trim()).filter(r => r.length > 0 && isSafeRefName(r));
 	if (remotes.includes('origin')) return { ok: true, value: 'origin' };
 	return { ok: true, value: remotes.length === 1 ? remotes[0] : undefined };
 }
 
-export function pickRemote(repo: string, timeoutMs?: number): string | undefined {
-	const probe = probeRemote(repo, timeoutMs);
+export async function pickRemote(repo: string, timeoutMs?: number, signal?: AbortSignal): Promise<string | undefined> {
+	const probe = await probeRemote(repo, timeoutMs, signal);
 	return probe.ok ? probe.value : undefined;
 }
 
-/** The default branch git itself recorded for the remote (refs/remotes/<remote>/HEAD); `quiet` failure means none is set. */
-function probeRemoteHead(repo: string, remote: string): Probe<string | undefined> {
-	const head = runGit(repo, ['symbolic-ref', '-q', `refs/remotes/${remote}/HEAD`]);
-	if (!head.ok) return head.quiet === true ? { ok: true, value: undefined } : { ok: false, reason: `refs/remotes/${remote}/HEAD could not be read: ${head.stderr}` };
+/** The default branch git itself recorded for the remote (refs/remotes/<remote>/HEAD); an unset symbolic ref means none is set. */
+async function probeRemoteHead(repo: string, remote: string, signal?: AbortSignal): Promise<Probe<string | undefined>> {
+	let ref: string | undefined;
+	try {
+		ref = await symbolicRef(repo, `refs/remotes/${remote}/HEAD`, { timeoutMs: LOCAL_GIT_TIMEOUT_MS, signal });
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { ok: false, reason: `refs/remotes/${remote}/HEAD could not be read: ${err.message}` };
+	}
 	const prefix = `refs/remotes/${remote}/`;
-	const ref = head.stdout.trim();
-	if (!ref.startsWith(prefix)) return { ok: true, value: undefined };
-	const branch = ref.slice(prefix.length);
+	if (ref === undefined || !ref.trim().startsWith(prefix)) return { ok: true, value: undefined };
+	const branch = ref.trim().slice(prefix.length);
 	return { ok: true, value: isSafeRefName(branch) ? branch : undefined };
 }
 
 /** Kept for callers that only want the answer: a failure reads as "not set". */
-export function remoteHeadBranch(repo: string, remote: string): string | undefined {
-	const probe = probeRemoteHead(repo, remote);
+export async function remoteHeadBranch(repo: string, remote: string, signal?: AbortSignal): Promise<string | undefined> {
+	const probe = await probeRemoteHead(repo, remote, signal);
 	return probe.ok ? probe.value : undefined;
 }
 
 type Rev = { readonly kind: 'found'; readonly sha: string } | { readonly kind: 'missing' } | { readonly kind: 'error'; readonly reason: string };
 
 /**
- * Resolve a revision to a commit. `rev-parse --verify -q` exits quietly (no message) when the revision does not
- * exist; any message means git itself failed (a timeout, a damaged repository), which is not the same as absence.
+ * Resolve a revision to a commit. A revision that is not a commit is 'missing' (git_cat_file answers that as a value); a
+ * failure of git itself (a timeout, a damaged repository) is not the same as absence.
  */
-function resolveRev(repo: string, rev: string): Rev {
-	const out = runGit(repo, ['rev-parse', '--verify', '-q', `${rev}^{commit}`]);
-	if (out.ok) return { kind: 'found', sha: out.stdout.trim() };
-	return out.quiet === true ? { kind: 'missing' } : { kind: 'error', reason: `${rev} could not be resolved: ${out.stderr}` };
+async function resolveRev(repo: string, rev: string, signal?: AbortSignal): Promise<Rev> {
+	try {
+		if (!(await catFileExists(repo, `${rev}^{commit}`, { timeoutMs: LOCAL_GIT_TIMEOUT_MS, signal }))) return { kind: 'missing' };
+		return { kind: 'found', sha: await revParse(repo, `${rev}^{commit}`, { verify: true }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS, signal }) };
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { kind: 'error', reason: `${rev} could not be resolved: ${err.message}` };
+	}
 }
 
-function resolveSha(repo: string, rev: string): string | undefined {
-	const r = resolveRev(repo, rev);
+async function resolveSha(repo: string, rev: string, signal?: AbortSignal): Promise<string | undefined> {
+	const r = await resolveRev(repo, rev, signal);
 	return r.kind === 'found' ? r.sha : undefined;
 }
 
@@ -128,18 +152,29 @@ function resolveSha(repo: string, rev: string): string | undefined {
  * 'missing' means the revision does not exist or the file is confirmed absent from it; any other git failure
  * (a timeout, a damaged object, output too large) is an 'error', never taken for absence.
  */
-function readAt(repo: string, rev: string, label: string, fetchedAt: string, anchor: PolicyAnchor): Found {
+async function readAt(repo: string, rev: string, label: string, fetchedAt: string, anchor: PolicyAnchor, signal?: AbortSignal): Promise<Found> {
 	// Pin the revision to one commit so the lookup and the read cannot see a ref that moves in between.
-	const resolved = resolveRev(repo, rev);
+	const resolved = await resolveRev(repo, rev, signal);
 	if (resolved.kind === 'missing') return { kind: 'missing' };
 	if (resolved.kind === 'error') return { kind: 'error', reason: resolved.reason, exists: false };
 	const sha = resolved.sha;
-	const tree = runGit(repo, ['ls-tree', '--full-tree', '--name-only', sha, '--', POLICY_PATH]);
-	if (!tree.ok) return { kind: 'error', reason: `the policy file on ${label} could not be looked up: ${tree.stderr}`, exists: false };
-	if (tree.stdout.trim().length === 0) return { kind: 'missing' };
-	const shown = runGit(repo, ['show', `${sha}:${POLICY_PATH}`]);
-	if (!shown.ok) return { kind: 'error', reason: `the policy file on ${label} could not be read: ${shown.stderr}`, exists: true };
-	const parsed = parsePolicyFile(shown.stdout);
+	let names: string[];
+	try {
+		names = await lsTreeNames(repo, sha, [POLICY_PATH], { timeoutMs: LOCAL_GIT_TIMEOUT_MS, signal });
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { kind: 'error', reason: `the policy file on ${label} could not be looked up: ${err.message}`, exists: false };
+	}
+	if (names.length === 0) return { kind: 'missing' };
+	let text: string | undefined;
+	try {
+		text = await catFileText(repo, sha, POLICY_PATH, { timeoutMs: LOCAL_GIT_TIMEOUT_MS, signal });
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { kind: 'error', reason: `the policy file on ${label} could not be read: ${err.message}`, exists: true };
+	}
+	if (text === undefined) return { kind: 'error', reason: `the policy file on ${label} could not be read: it is not in the tree`, exists: true };
+	const parsed = parsePolicyFile(text);
 	if (!parsed.ok) return { kind: 'invalid', reason: `policy file on ${label} is invalid: ${parsed.reason}` };
 	return { kind: 'policy', policy: buildTeamPolicy(parsed.value, { ref: label, fetchedAt, anchor }) };
 }
@@ -157,37 +192,45 @@ type Scan =
  * Do any tracking refs of `remote` (the symbolic HEAD skipped) carry the policy file?
  * A listing or lookup that fails is an 'error', never taken for "no policy".
  */
-function scanForPolicy(repo: string, remote: string): Scan {
-	const listed = runGit(repo, ['for-each-ref', '--format=%(refname)', `refs/remotes/${remote}/`]);
-	if (!listed.ok) return { kind: 'error', reason: `the fetched refs of remote '${remote}' could not be listed: ${listed.stderr}` };
+async function scanForPolicy(repo: string, remote: string, signal?: AbortSignal): Promise<Scan> {
+	let listed: Array<Record<string, string>>;
+	try {
+		listed = await forEachRef(repo, { pattern: [`refs/remotes/${remote}/`], fields: ['refname'] }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS, signal });
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { kind: 'error', reason: `the fetched refs of remote '${remote}' could not be listed: ${err.message}` };
+	}
 	const head = `refs/remotes/${remote}/HEAD`;
-	for (const ref of listed.stdout.split('\n').map(r => r.trim()).filter(r => r.length > 0 && r !== head)) {
-		const tree = runGit(repo, ['ls-tree', '--full-tree', '--name-only', ref, '--', POLICY_PATH]);
-		if (!tree.ok) return { kind: 'error', reason: `${ref} could not be searched for the policy file: ${tree.stderr}` };
-		if (tree.stdout.trim().length > 0) return { kind: 'found', ref };
+	for (const ref of listed.map(r => (r['refname'] ?? '').trim()).filter(r => r.length > 0 && r !== head)) {
+		try {
+			if ((await lsTreeNames(repo, ref, [POLICY_PATH], { timeoutMs: LOCAL_GIT_TIMEOUT_MS, signal })).length > 0) return { kind: 'found', ref };
+		} catch (err) {
+			if (!(err instanceof GitCallFailed)) throw err;
+			return { kind: 'error', reason: `${ref} could not be searched for the policy file: ${err.message}` };
+		}
 	}
 	return { kind: 'none' };
 }
 
-export function readPolicy(repo: string, opts: ReaderOptions = {}): PolicyResult<TeamPolicy | 'none'> {
+export async function readPolicy(repo: string, opts: ReaderOptions = {}): Promise<PolicyResult<TeamPolicy | 'none'>> {
 	const now = (opts.now ?? ((): Date => new Date()))().toISOString();
-	const seen = readSighting(repo, opts.teamDir);
+	const seen = await readSighting(repo, opts.teamDir);
 
-	if (seen.kind === 'valid') return readKnownRepo(repo, seen.sighting);
-	if (seen.kind === 'damaged') return readDamaged(repo, seen.reason, now);
-	return readUnseen(repo, now, opts.teamDir, opts.publish ?? publishSightingIfAbsent, opts.beforeRecord);
+	if (seen.kind === 'valid') return readKnownRepo(repo, seen.sighting, opts.signal);
+	if (seen.kind === 'damaged') return readDamaged(repo, seen.reason, now, opts.signal);
+	return readUnseen(repo, now, opts.teamDir, opts.publish ?? publishSightingIfAbsent, opts.beforeRecord, opts.signal);
 }
 
 /** A sighting exists: the repo is known to carry a policy, so it is never 'none'. */
-function readKnownRepo(repo: string, s: Sighting): PolicyResult<TeamPolicy | 'none'> {
+async function readKnownRepo(repo: string, s: Sighting, signal?: AbortSignal): Promise<PolicyResult<TeamPolicy | 'none'>> {
 	const ref = trackingRef(s.remote, s.branch);
-	const pinned = resolveSha(repo, ref) ?? ref; // one commit for the anchor and the read
-	const anchor = s.anchor.known ? s.anchor : mergeAnchor(s.anchor, findAnchor(repo, pinned));
-	let found = readAt(repo, pinned, ref, s.refreshedAt, anchor);
+	const pinned = (await resolveSha(repo, ref, signal)) ?? ref; // one commit for the anchor and the read
+	const anchor = s.anchor.known ? s.anchor : mergeAnchor(s.anchor, await findAnchor(repo, pinned, undefined, signal));
+	let found = await readAt(repo, pinned, ref, s.refreshedAt, anchor, signal);
 	let from = ref;
-	if (found.kind === 'missing' && resolveRev(repo, ref).kind === 'missing') {
+	if (found.kind === 'missing' && (await resolveRev(repo, ref, signal)).kind === 'missing') {
 		// The tracking ref is gone (remote removed, ref pruned): the commit the last refresh recorded still holds the policy.
-		found = readAt(repo, s.sha, ref, s.refreshedAt, anchor);
+		found = await readAt(repo, s.sha, ref, s.refreshedAt, anchor, signal);
 		from = `commit ${s.sha}`;
 	}
 	if (found.kind === 'policy') return { ok: true, value: found.policy };
@@ -196,12 +239,12 @@ function readKnownRepo(repo: string, s: Sighting): PolicyResult<TeamPolicy | 'no
 }
 
 /** The sighting is damaged: that is evidence of a policy, never absence. Try the remote HEAD branch, else refuse. */
-function readDamaged(repo: string, why: string, now: string): PolicyResult<TeamPolicy | 'none'> {
-	const remote = pickRemote(repo);
-	const branch = remote === undefined ? undefined : remoteHeadBranch(repo, remote);
+async function readDamaged(repo: string, why: string, now: string, signal?: AbortSignal): Promise<PolicyResult<TeamPolicy | 'none'>> {
+	const remote = await pickRemote(repo, undefined, signal);
+	const branch = remote === undefined ? undefined : await remoteHeadBranch(repo, remote, signal);
 	if (remote !== undefined && branch !== undefined) {
 		const ref = trackingRef(remote, branch);
-		const found = readAt(repo, ref, ref, now, findAnchor(repo, ref));
+		const found = await readAt(repo, ref, ref, now, await findAnchor(repo, ref, undefined, signal), signal);
 		if (found.kind === 'policy') return { ok: true, value: found.policy };
 		if (found.kind === 'invalid' || found.kind === 'error') return { ok: false, reason: found.reason };
 	}
@@ -209,20 +252,20 @@ function readDamaged(repo: string, why: string, now: string): PolicyResult<TeamP
 }
 
 /** No sighting: only local evidence of a policy on the default branch's tracking ref counts. */
-function readUnseen(repo: string, now: string, teamDir: string | undefined, publish: typeof publishSightingIfAbsent, beforeRecord?: () => void): PolicyResult<TeamPolicy | 'none'> {
-	const inRepo = probeGitRepo(repo);
+async function readUnseen(repo: string, now: string, teamDir: string | undefined, publish: NonNullable<ReaderOptions['publish']>, beforeRecord?: () => void, signal?: AbortSignal): Promise<PolicyResult<TeamPolicy | 'none'>> {
+	const inRepo = await probeGitRepo(repo, undefined, signal);
 	if (!inRepo.ok) return { ok: false, reason: inRepo.reason };
 	if (!inRepo.value) return { ok: true, value: 'none' };
-	const picked = probeRemote(repo);
+	const picked = await probeRemote(repo, undefined, signal);
 	if (!picked.ok) return { ok: false, reason: picked.reason };
 	const remote = picked.value;
 	if (remote === undefined) return { ok: true, value: 'none' };
-	const head = probeRemoteHead(repo, remote);
+	const head = await probeRemoteHead(repo, remote, signal);
 	if (!head.ok) return { ok: false, reason: head.reason };
 	const branch = head.value;
 
 	if (branch === undefined) {
-		const scan = scanForPolicy(repo, remote);
+		const scan = await scanForPolicy(repo, remote, signal);
 		if (scan.kind === 'none') return { ok: true, value: 'none' };
 		if (scan.kind === 'error') return { ok: false, reason: scan.reason };
 		return {
@@ -233,12 +276,12 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined, publ
 	}
 
 	const ref = trackingRef(remote, branch);
-	const resolved = resolveRev(repo, ref);
+	const resolved = await resolveRev(repo, ref, signal);
 	if (resolved.kind === 'missing') return { ok: true, value: 'none' };
 	if (resolved.kind === 'error') return { ok: false, reason: resolved.reason };
 	const sha = resolved.sha;
-	const anchor = findAnchor(repo, sha);
-	const found = readAt(repo, sha, ref, now, anchor);
+	const anchor = await findAnchor(repo, sha, undefined, signal);
+	const found = await readAt(repo, sha, ref, now, anchor, signal);
 	if (found.kind === 'missing') return { ok: true, value: 'none' };
 	if (found.kind === 'error' && !found.exists) return { ok: false, reason: found.reason };
 
@@ -246,14 +289,15 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined, publ
 	// Done under the same lock a refresh holds (taken without waiting): if a refresh is running it records the repo itself,
 	// and the revision read above is checked again so a record is never made from a ref that has moved since.
 	beforeRecord?.();
-	const lock = acquireLock(repo, teamDir);
+	const lock = await acquireLock(repo, teamDir);
 	if (lock.ok) {
 		try {
-			const again = resolveRev(repo, ref);
+			const again = await resolveRev(repo, ref, signal);
 			if (again.kind === 'found' && again.sha === sha) {
-				publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
+				await publish(repo, { remote, branch, branchSource: 'remote', sha, refreshedAt: now, anchor }, teamDir);
 			}
 		} catch (err) {
+			if (isToolDenied(err)) throw err;
 			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record first sighting; the result is unchanged');
 		} finally {
 			lock.release();
@@ -262,5 +306,5 @@ function readUnseen(repo: string, now: string, teamDir: string | undefined, publ
 	return found.kind === 'policy' ? { ok: true, value: found.policy } : { ok: false, reason: found.reason };
 }
 
-/** The HLD's PolicyReader: `(repo) => PolicyResult<TeamPolicy | 'none'>`. */
-export const policyReader = (repo: string): PolicyResult<TeamPolicy | 'none'> => readPolicy(repo);
+/** The HLD's PolicyReader: `(repo, opts?) => Promise<PolicyResult<TeamPolicy | 'none'>>`. */
+export const policyReader = (repo: string, opts: PolicyReadOptions = {}): Promise<PolicyResult<TeamPolicy | 'none'>> => readPolicy(repo, opts.signal !== undefined ? { signal: opts.signal } : {});

@@ -84,8 +84,8 @@ test('a dangling remote HEAD is refused without --branch and a real branch is re
 
 		// The decision is what gets recorded: stored in the sighting it reads back as a user pin.
 		if (pinned.ok) {
-			writeSighting(clone, { remote: 'origin', branch: pinned.branch, branchSource: pinned.source, sha: git(clone, 'rev-parse', 'origin/main'), refreshedAt: 'now', anchor: NO_ANCHOR }, f.teamDir);
-			const back = readSighting(clone, f.teamDir);
+			(await writeSighting(clone, { remote: 'origin', branch: pinned.branch, branchSource: pinned.source, sha: git(clone, 'rev-parse', 'origin/main'), refreshedAt: 'now', anchor: NO_ANCHOR }, f.teamDir));
+			const back = (await readSighting(clone, f.teamDir));
 			assert.equal(back.kind === 'valid' ? back.sighting.branchSource : undefined, 'user');
 			assert.equal(back.kind === 'valid' ? back.sighting.branch : undefined, 'main');
 		}

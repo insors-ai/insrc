@@ -28,7 +28,7 @@ test('parsing git log output picks the oldest add even after a later delete and 
 	assert.equal(parseAnchorLog('not a log line').known, false);
 });
 
-test('adoption, approval, deletion and reintroduction keeps the adoption commit on real history', () => {
+test('adoption, approval, deletion and reintroduction keeps the adoption commit on real history', async () => {
 	const f = makeFixture();
 	try {
 		const { bare, work } = makeOrigin(f);
@@ -39,14 +39,14 @@ test('adoption, approval, deletion and reintroduction keeps the adoption commit 
 		git(work, 'push', '-q', 'origin', 'main');
 
 		const clone = cloneOf(f, bare, 'clone');
-		const anchor = findAnchor(clone, 'refs/remotes/origin/main');
+		const anchor = (await findAnchor(clone, 'refs/remotes/origin/main'));
 		assert.equal(anchor.known, true);
 		assert.equal(anchor.firstCommit, adoption);
 		assert.equal(new Date(anchor.firstCommitTime).toISOString(), '2026-02-01T00:00:00.000Z', 'committer time is ISO');
 	} finally { f.cleanup(); }
 });
 
-test('a depth-1 shallow clone gives known false and deepening gives a known anchor', () => {
+test('a depth-1 shallow clone gives known false and deepening gives a known anchor', async () => {
 	const f = makeFixture();
 	try {
 		const { bare, work } = makeOrigin(f);
@@ -55,22 +55,22 @@ test('a depth-1 shallow clone gives known false and deepening gives a known anch
 		git(work, 'push', '-q', 'origin', 'main');
 
 		const shallow = cloneOf(f, bare, 'shallow', '--depth', '1');
-		const unknown = findAnchor(shallow, 'refs/remotes/origin/main');
+		const unknown = (await findAnchor(shallow, 'refs/remotes/origin/main'));
 		assert.deepEqual(unknown, { known: false, firstCommit: '', firstCommitTime: '' });
 
 		git(shallow, 'fetch', '-q', '--unshallow');
-		const deepened = findAnchor(shallow, 'refs/remotes/origin/main');
+		const deepened = (await findAnchor(shallow, 'refs/remotes/origin/main'));
 		assert.equal(deepened.known, true);
 		assert.equal(deepened.firstCommit, adoption);
 	} finally { f.cleanup(); }
 });
 
-test('a failing git log gives known false without throwing', () => {
+test('a failing git log gives known false without throwing', async () => {
 	const f = makeFixture();
 	try {
 		const { work } = makeOrigin(f);
-		assert.equal(findAnchor(work, 'refs/remotes/origin/does-not-exist').known, false);
-		assert.equal(findAnchor(work, 'refs/remotes/origin/main').known, false, 'no add of the policy file on this history');
-		assert.equal(findAnchor(f.root + '/not-a-repo', 'refs/remotes/origin/main').known, false);
+		assert.equal((await findAnchor(work, 'refs/remotes/origin/does-not-exist')).known, false);
+		assert.equal((await findAnchor(work, 'refs/remotes/origin/main')).known, false, 'no add of the policy file on this history');
+		assert.equal((await findAnchor(f.root + '/not-a-repo', 'refs/remotes/origin/main')).known, false);
 	} finally { f.cleanup(); }
 });

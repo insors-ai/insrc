@@ -28,7 +28,7 @@ import type { GitRun } from './git.js';
 import { parsePolicyFile } from './policy-parser.js';
 import { isGitRepo, pickRemote } from './policy-reader.js';
 import { REFRESH_DEADLINE_MS, acquireLock, resolveRepoIdentity, mergeAnchor, readSighting, removeSighting, writeSighting } from './sighting-store.js';
-import type { PolicyRefreshOutcome, PolicyResult } from './types.js';
+import type { PolicyAnchor, PolicyRefreshOutcome, PolicyResult } from './types.js';
 
 const log = getLogger('team-policy-refresh');
 
@@ -40,9 +40,9 @@ export interface RefreshOptions {
 	readonly deadlineMs?: number | undefined;
 	/** Test seams. */
 	readonly git?: GitAsync | undefined;
-	readonly write?: typeof writeSighting | undefined;
+	readonly write?: ((...args: Parameters<typeof writeSighting>) => void | Promise<void>) | undefined;
 	readonly local?: LocalGit | undefined;
-	readonly anchor?: typeof findAnchor | undefined;
+	readonly anchor?: ((repo: string, trackingRef: string, budget?: () => number) => PolicyAnchor | Promise<PolicyAnchor>) | undefined;
 }
 
 type LocalGit = (repo: string, args: readonly string[], deadline: Deadline) => GitRun;
@@ -64,10 +64,10 @@ export async function refreshPolicy(repo: string, optsOrBranch: RefreshOptions |
 	// One deadline for the whole refresh, started before the first git call.
 	const deadline = createDeadline(opts.deadlineMs ?? REFRESH_DEADLINE_MS);
 	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before it started');
-	if (!isGitRepo(repo, deadline.remainingMs())) return fail('this directory is not a git repository');
+	if (!(await isGitRepo(repo, deadline.remainingMs()))) return fail('this directory is not a git repository');
 
-	resolveRepoIdentity(repo, Math.max(1, deadline.remainingMs())); // ask git once, inside the budget; the store reuses the answer
-	const lock = acquireLock(repo, opts.teamDir);
+	await resolveRepoIdentity(repo, Math.max(1, deadline.remainingMs())); // ask git once, inside the budget; the store reuses the answer
+	const lock = await acquireLock(repo, opts.teamDir);
 	if (!lock.ok) return fail(lock.reason);
 	try {
 		return await refreshLocked(repo, opts, deadline);
@@ -81,9 +81,9 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 	const write = opts.write ?? writeSighting;
 	const localGit = opts.local ?? defaultLocalGit;
 	const now = (opts.now ?? ((): Date => new Date()))().toISOString();
-	const seen = readSighting(repo, opts.teamDir);
+	const seen = await readSighting(repo, opts.teamDir);
 	const sighting = seen.kind === 'valid' ? seen.sighting : undefined;
-	const remote = sighting?.remote ?? pickRemote(repo, Math.max(1, deadline.remainingMs()));
+	const remote = sighting?.remote ?? await pickRemote(repo, Math.max(1, deadline.remainingMs()));
 	if (remote === undefined) return fail('no single remote to refresh from: add a remote named origin');
 
 	const decision = await resolveDefaultBranch({ repo, remote, sighting, supplied: opts.branch, deadline, git });
@@ -117,7 +117,7 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 			}
 		}
 		try {
-			removeSighting(repo, opts.teamDir);
+			await removeSighting(repo, opts.teamDir);
 		} catch (err) {
 			return fail(`the policy file is absent on '${branch}' but the stored record could not be removed (${err instanceof Error ? err.message : String(err)}); the next refresh retries`);
 		}
@@ -130,11 +130,11 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 	// The file exists. Whatever happens next, remember this repo as a team repo: even a file that cannot be read is evidence.
 	const shown = localGit(repo, ['show', `${commit}:${POLICY_PATH}`], deadline);
 	const parsed = shown.ok ? parsePolicyFile(shown.stdout) : undefined;
-	const anchor = mergeAnchor(sighting?.anchor, (opts.anchor ?? findAnchor)(repo, commit, () => deadline.remainingMs()));
+	const anchor = mergeAnchor(sighting?.anchor, await (opts.anchor ?? findAnchor)(repo, commit, () => deadline.remainingMs()));
 	// An anchor lookup that ran out of time reads as 'unknown'; never record a result the deadline cut short.
 	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before the policy could be recorded; nothing was recorded');
 	try {
-		write(repo, { remote, branch, branchSource: decision.source, sha: commit, refreshedAt: now, anchor }, opts.teamDir);
+		await write(repo, { remote, branch, branchSource: decision.source, sha: commit, refreshedAt: now, anchor }, opts.teamDir);
 	} catch (err) {
 		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record the fetched policy');
 		return fail(`the fetched policy could not be recorded (${err instanceof Error ? err.message : String(err)}); ${ref} has already moved, and the next refresh repairs the record`);

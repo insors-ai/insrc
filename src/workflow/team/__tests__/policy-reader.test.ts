@@ -38,55 +38,55 @@ function teamRepo(f: Fixture): { bare: string; work: string; clone: string } {
 	return { bare, work, clone: cloneOf(f, bare, 'clone') };
 }
 
-test("reads the policy from the remote default branch's tracking ref", () => {
+test("reads the policy from the remote default branch's tracking ref", async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
-		const policy = policyOf(readPolicy(clone, { teamDir: f.teamDir }));
+		const policy = policyOf((await readPolicy(clone, { teamDir: f.teamDir })));
 		assert.equal(policy.teamMode, true);
 		assert.deepEqual(policy.signoffStages, ['DEF', 'HLD', 'LLD', 'BUILD']);
 		assert.equal(policy.source.ref, 'refs/remotes/origin/main');
 		assert.equal(policy.source.anchorKnown, true);
-		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the first observation is remembered');
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'valid', 'the first observation is remembered');
 	} finally { f.cleanup(); }
 });
 
-test('a working-tree edit has no effect', () => {
+test('a working-tree edit has no effect', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
 		writeFileSync(join(clone, POLICY_PATH), POLICY_OFF);
-		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir })).teamMode, true);
+		assert.equal(policyOf((await readPolicy(clone, { teamDir: f.teamDir }))).teamMode, true);
 	} finally { f.cleanup(); }
 });
 
-test('a feature-branch edit has no effect', () => {
+test('a feature-branch edit has no effect', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
 		git(clone, 'checkout', '-q', '-b', 'feature');
 		commitFile(clone, POLICY_PATH, POLICY_OFF, 'weaken policy on a feature branch');
-		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir })).teamMode, true);
+		assert.equal(policyOf((await readPolicy(clone, { teamDir: f.teamDir }))).teamMode, true);
 	} finally { f.cleanup(); }
 });
 
-test('a policy on an unlabelled tracking ref is never applied', () => {
+test('a policy on an unlabelled tracking ref is never applied', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
 		git(clone, 'remote', 'set-head', 'origin', '-d');
-		const result = readPolicy(clone, { teamDir: f.teamDir });
+		const result = (await readPolicy(clone, { teamDir: f.teamDir }));
 		assert.equal(result.ok, false, 'no policy value is returned for an unlabelled ref');
-		assert.equal(readSighting(clone, f.teamDir).kind, 'absent', 'nothing is recorded from an unlabelled ref');
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'absent', 'nothing is recorded from an unlabelled ref');
 	} finally { f.cleanup(); }
 });
 
-test('an unknown default branch with a fetched policy is refused with the --branch instruction', () => {
+test('an unknown default branch with a fetched policy is refused with the --branch instruction', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
 		git(clone, 'remote', 'set-head', 'origin', '-d');
-		const result = readPolicy(clone, { teamDir: f.teamDir });
+		const result = (await readPolicy(clone, { teamDir: f.teamDir }));
 		assert.equal(result.ok, false);
 		if (!result.ok) {
 			assert.match(result.reason, /team refresh --branch/);
@@ -95,49 +95,49 @@ test('an unknown default branch with a fetched policy is refused with the --bran
 	} finally { f.cleanup(); }
 });
 
-test('a remote without a remote HEAD and with no policy on any fetched ref reads as none', () => {
+test('a remote without a remote HEAD and with no policy on any fetched ref reads as none', async () => {
 	const f = makeFixture();
 	try {
 		const { bare } = makeOrigin(f);
 		const clone = cloneOf(f, bare, 'clone');
 		git(clone, 'remote', 'set-head', 'origin', '-d');
-		assert.deepEqual(readPolicy(clone, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(clone, { teamDir: f.teamDir })), { ok: true, value: 'none' });
 	} finally { f.cleanup(); }
 });
 
-test('a repo with no policy and no sighting reads as none and writes nothing', () => {
+test('a repo with no policy and no sighting reads as none and writes nothing', async () => {
 	const f = makeFixture();
 	try {
 		const { bare } = makeOrigin(f);
 		const clone = cloneOf(f, bare, 'clone');
-		assert.deepEqual(readPolicy(clone, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(clone, { teamDir: f.teamDir })), { ok: true, value: 'none' });
 		assert.equal(existsSync(f.teamDir), false, 'no team directory is created');
 	} finally { f.cleanup(); }
 });
 
-test('non-git, no-commit and no-remote directories without a sighting read as none', () => {
+test('non-git, no-commit and no-remote directories without a sighting read as none', async () => {
 	const f = makeFixture();
 	try {
 		const plain = join(f.root, 'plain');
 		mkdirSync(plain);
-		assert.deepEqual(readPolicy(plain, { teamDir: f.teamDir }), { ok: true, value: 'none' });
-		assert.deepEqual(readPolicy(join(f.root, 'missing'), { teamDir: f.teamDir }), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(plain, { teamDir: f.teamDir })), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(join(f.root, 'missing'), { teamDir: f.teamDir })), { ok: true, value: 'none' });
 
 		const empty = join(f.root, 'empty');
 		mkdirSync(empty);
 		git(empty, 'init', '-q', '-b', 'main');
-		assert.deepEqual(readPolicy(empty, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(empty, { teamDir: f.teamDir })), { ok: true, value: 'none' });
 
 		const noRemote = join(f.root, 'no-remote');
 		mkdirSync(noRemote);
 		git(noRemote, 'init', '-q', '-b', 'main');
 		commitFile(noRemote, 'a.txt', 'x\n', 'a');
-		assert.deepEqual(readPolicy(noRemote, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(noRemote, { teamDir: f.teamDir })), { ok: true, value: 'none' });
 		assert.equal(existsSync(f.teamDir), false, 'nothing is written');
 	} finally { f.cleanup(); }
 });
 
-test('a never-fetched repo with no sighting reads as none', () => {
+test('a never-fetched repo with no sighting reads as none', async () => {
 	const f = makeFixture();
 	try {
 		const { bare } = makeOrigin(f);
@@ -146,52 +146,52 @@ test('a never-fetched repo with no sighting reads as none', () => {
 		git(repo, 'init', '-q', '-b', 'main');
 		commitFile(repo, 'a.txt', 'x\n', 'a');
 		git(repo, 'remote', 'add', 'origin', bare);
-		assert.deepEqual(readPolicy(repo, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(repo, { teamDir: f.teamDir })), { ok: true, value: 'none' });
 	} finally { f.cleanup(); }
 });
 
-test('a known team repo with no fetched policy is refused with the reason', () => {
+test('a known team repo with no fetched policy is refused with the reason', async () => {
 	const f = makeFixture();
 	try {
 		const repo = join(f.root, 'known');
 		mkdirSync(repo);
 		git(repo, 'init', '-q', '-b', 'main');
 		commitFile(repo, 'a.txt', 'x\n', 'a');
-		writeSighting(repo, { remote: 'origin', branch: 'main', branchSource: 'remote', sha: 'c'.repeat(40), refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, f.teamDir);
-		const result = readPolicy(repo, { teamDir: f.teamDir });
+		(await writeSighting(repo, { remote: 'origin', branch: 'main', branchSource: 'remote', sha: 'c'.repeat(40), refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, f.teamDir));
+		const result = (await readPolicy(repo, { teamDir: f.teamDir }));
 		assert.equal(result.ok, false);
 		if (!result.ok) assert.match(result.reason, /known to carry a team policy/);
 
 		// A damaged record is evidence too: refused, never none, and left untouched.
-		writeFileSync(sightingPath(repo, f.teamDir), 'garbage');
-		const damaged = readPolicy(repo, { teamDir: f.teamDir });
+		writeFileSync((await sightingPath(repo, f.teamDir)), 'garbage');
+		const damaged = (await readPolicy(repo, { teamDir: f.teamDir }));
 		assert.equal(damaged.ok, false);
 		if (!damaged.ok) assert.match(damaged.reason, /damaged/);
-		assert.equal(readFileSync(sightingPath(repo, f.teamDir), 'utf8'), 'garbage');
+		assert.equal(readFileSync((await sightingPath(repo, f.teamDir)), 'utf8'), 'garbage');
 	} finally { f.cleanup(); }
 });
 
-test('a known team repo whose remote was removed is refused or read from the recorded commit, never none', () => {
+test('a known team repo whose remote was removed is refused or read from the recorded commit, never none', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
-		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir })).teamMode, true);
+		assert.equal(policyOf((await readPolicy(clone, { teamDir: f.teamDir }))).teamMode, true);
 
 		git(clone, 'remote', 'remove', 'origin'); // also deletes the remote-tracking refs
-		const afterRemoval = readPolicy(clone, { teamDir: f.teamDir });
+		const afterRemoval = (await readPolicy(clone, { teamDir: f.teamDir }));
 		assert.notDeepEqual(afterRemoval, { ok: true, value: 'none' });
 		assert.equal(policyOf(afterRemoval).teamMode, true, 'read from the commit the sighting recorded');
 
 		// The directory is no longer a git repository at all: refused, still never none.
 		const gone = join(f.root, 'not-a-repo-anymore');
 		mkdirSync(gone);
-		writeSighting(gone, { remote: 'origin', branch: 'main', branchSource: 'remote', sha: 'd'.repeat(40), refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, f.teamDir);
-		const refused = readPolicy(gone, { teamDir: f.teamDir });
+		(await writeSighting(gone, { remote: 'origin', branch: 'main', branchSource: 'remote', sha: 'd'.repeat(40), refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, f.teamDir));
+		const refused = (await readPolicy(gone, { teamDir: f.teamDir }));
 		assert.equal(refused.ok, false);
 	} finally { f.cleanup(); }
 });
 
-test("the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative", () => {
+test("the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative", async () => {
 	const f = makeFixture();
 	try {
 		const { bare, work } = makeOrigin(f);
@@ -201,27 +201,27 @@ test("the remote is origin, else the sole remote, never guessed, and a sighting'
 		// A sole remote that is not called origin is used.
 		const sole = join(f.root, 'sole');
 		git(f.root, 'clone', '-q', '-o', 'upstream', `file://${bare}`, sole);
-		assert.equal(policyOf(readPolicy(sole, { teamDir: join(f.teamDir, 'sole') })).source.ref, 'refs/remotes/upstream/main');
+		assert.equal(policyOf((await readPolicy(sole, { teamDir: join(f.teamDir, 'sole') }))).source.ref, 'refs/remotes/upstream/main');
 
 		// Two remotes and no origin: not guessed, so there is no evidence and the repo reads as none.
 		const two = join(f.root, 'two');
 		git(f.root, 'clone', '-q', '-o', 'one', `file://${bare}`, two);
 		git(two, 'remote', 'add', 'two', `file://${bare}`);
 		git(two, 'fetch', '-q', 'two');
-		assert.deepEqual(readPolicy(two, { teamDir: join(f.teamDir, 'two') }), { ok: true, value: 'none' });
+		assert.deepEqual((await readPolicy(two, { teamDir: join(f.teamDir, 'two') })), { ok: true, value: 'none' });
 
 		// With origin present, origin wins over another remote.
 		git(two, 'remote', 'rename', 'one', 'origin');
-		assert.equal(policyOf(readPolicy(two, { teamDir: join(f.teamDir, 'two-origin') })).source.ref, 'refs/remotes/origin/main');
+		assert.equal(policyOf((await readPolicy(two, { teamDir: join(f.teamDir, 'two-origin') }))).source.ref, 'refs/remotes/origin/main');
 
 		// A recorded remote stays authoritative even when origin exists.
 		const sha = git(two, 'rev-parse', 'refs/remotes/two/main');
-		writeSighting(two, { remote: 'two', branch: 'main', branchSource: 'remote', sha, refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, join(f.teamDir, 'auth'));
-		assert.equal(policyOf(readPolicy(two, { teamDir: join(f.teamDir, 'auth') })).source.ref, 'refs/remotes/two/main');
+		(await writeSighting(two, { remote: 'two', branch: 'main', branchSource: 'remote', sha, refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, join(f.teamDir, 'auth')));
+		assert.equal(policyOf((await readPolicy(two, { teamDir: join(f.teamDir, 'auth') }))).source.ref, 'refs/remotes/two/main');
 	} finally { f.cleanup(); }
 });
 
-test('first observation creates the sighting create-only and a failed write does not change the result', () => {
+test('first observation creates the sighting create-only and a failed write does not change the result', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
@@ -229,19 +229,19 @@ test('first observation creates the sighting create-only and a failed write does
 		// The first-observation write fails: the result is unchanged and nothing is recorded.
 		let attempts = 0;
 		const failing = (): never => { attempts++; throw new Error('disk full'); };
-		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir, publish: failing })).teamMode, true);
+		assert.equal(policyOf((await readPolicy(clone, { teamDir: f.teamDir, publish: failing }))).teamMode, true);
 		assert.equal(attempts, 1, 'the write path was exercised');
-		assert.equal(readSighting(clone, f.teamDir).kind, 'absent');
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'absent');
 
 		// Create-only: an existing sighting is never overwritten by a later read.
-		writeSighting(clone, { remote: 'origin', branch: 'main', branchSource: 'user', sha: git(clone, 'rev-parse', 'origin/main'), refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, f.teamDir);
-		readPolicy(clone, { teamDir: f.teamDir });
-		const after = readSighting(clone, f.teamDir);
+		(await writeSighting(clone, { remote: 'origin', branch: 'main', branchSource: 'user', sha: git(clone, 'rev-parse', 'origin/main'), refreshedAt: 'then', anchor: { known: false, firstCommit: '', firstCommitTime: '' } }, f.teamDir));
+		(await readPolicy(clone, { teamDir: f.teamDir }));
+		const after = (await readSighting(clone, f.teamDir));
 		assert.equal(after.kind === 'valid' ? after.sighting.branchSource : undefined, 'user', 'the reader did not overwrite the existing sighting');
 	} finally { f.cleanup(); }
 });
 
-test('a policy file that exists but cannot be read is refused, never taken for absence', () => {
+test('a policy file that exists but cannot be read is refused, never taken for absence', async () => {
 	const f = makeFixture();
 	try {
 		const { bare, work } = makeOrigin(f);
@@ -250,19 +250,19 @@ test('a policy file that exists but cannot be read is refused, never taken for a
 		commitFile(work, POLICY_PATH, huge, 'adopt a huge policy');
 		git(work, 'push', '-q', 'origin', 'main');
 		const clone = cloneOf(f, bare, 'clone');
-		const result = readPolicy(clone, { teamDir: f.teamDir });
+		const result = (await readPolicy(clone, { teamDir: f.teamDir }));
 		assert.equal(result.ok, false, 'an unreadable policy must not read as none');
 		if (!result.ok) assert.match(result.reason, /could not be read/);
-		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the repo is remembered as a team repo even though the file could not be read');
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'valid', 'the repo is remembered as a team repo even though the file could not be read');
 
 		// Even if the tracking ref later disappears, the repo is still known to carry a policy: never none.
 		git(clone, 'remote', 'remove', 'origin');
-		const after = readPolicy(clone, { teamDir: f.teamDir });
+		const after = (await readPolicy(clone, { teamDir: f.teamDir }));
 		assert.notDeepEqual(after, { ok: true, value: 'none' });
 	} finally { f.cleanup(); }
 });
 
-test('a branch with non-ASCII letters is a valid default branch', () => {
+test('a branch with non-ASCII letters is a valid default branch', async () => {
 	const f = makeFixture();
 	try {
 		const { bare, work } = makeOrigin(f);
@@ -271,11 +271,11 @@ test('a branch with non-ASCII letters is a valid default branch', () => {
 		git(work, 'push', '-q', 'origin', 'équipe');
 		git(bare, 'symbolic-ref', 'HEAD', 'refs/heads/équipe');
 		const clone = cloneOf(f, bare, 'clone');
-		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir })).source.ref, 'refs/remotes/origin/équipe');
+		assert.equal(policyOf((await readPolicy(clone, { teamDir: f.teamDir }))).source.ref, 'refs/remotes/origin/équipe');
 	} finally { f.cleanup(); }
 });
 
-test('a ref listing that fails is refused, not taken for no policy', () => {
+test('a ref listing that fails is refused, not taken for no policy', async () => {
 	const f = makeFixture();
 	try {
 		const { bare } = makeOrigin(f);
@@ -283,38 +283,38 @@ test('a ref listing that fails is refused, not taken for no policy', () => {
 		git(clone, 'remote', 'set-head', 'origin', '-d');
 		// A corrupt packed-refs file makes the ref listing fail.
 		writeFileSync(join(clone, '.git', 'packed-refs'), 'this is not a valid packed-refs file\n');
-		const result = readPolicy(clone, { teamDir: f.teamDir });
+		const result = (await readPolicy(clone, { teamDir: f.teamDir }));
 		assert.equal(result.ok, false);
 	} finally { f.cleanup(); }
 });
 
-test('a git failure while resolving the default branch ref is refused, not taken for no policy', () => {
+test('a git failure while resolving the default branch ref is refused, not taken for no policy', async () => {
 	const f = makeFixture();
 	try {
 		const { bare } = makeOrigin(f);
 		const clone = cloneOf(f, bare, 'clone');
 		// The remote HEAD is intact, but the packed refs are corrupt, so resolving origin/main fails with a message.
 		writeFileSync(join(clone, '.git', 'packed-refs'), 'this is not a valid packed-refs file\n');
-		const result = readPolicy(clone, { teamDir: f.teamDir });
+		const result = (await readPolicy(clone, { teamDir: f.teamDir }));
 		assert.equal(result.ok, false);
 	} finally { f.cleanup(); }
 });
 
-test('the reader leaves the first sighting to a refresh that is running', () => {
+test('the reader leaves the first sighting to a refresh that is running', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
-		const held = acquireLock(clone, f.teamDir);
+		const held = (await acquireLock(clone, f.teamDir));
 		assert.ok(held.ok);
-		assert.equal(policyOf(readPolicy(clone, { teamDir: f.teamDir })).teamMode, true, 'the policy is still returned');
-		assert.equal(readSighting(clone, f.teamDir).kind, 'absent', 'but nothing is recorded while a refresh holds the lock');
+		assert.equal(policyOf((await readPolicy(clone, { teamDir: f.teamDir }))).teamMode, true, 'the policy is still returned');
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'absent', 'but nothing is recorded while a refresh holds the lock');
 		if (held.ok) held.release();
-		policyOf(readPolicy(clone, { teamDir: f.teamDir }));
-		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'recorded once the refresh is over');
+		policyOf((await readPolicy(clone, { teamDir: f.teamDir })));
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'valid', 'recorded once the refresh is over');
 	} finally { f.cleanup(); }
 });
 
-test('a git failure while inspecting a repository is refused; only a directory with no .git anywhere is confirmed non-git', () => {
+test('a git failure while inspecting a repository is refused; only a directory with no .git anywhere is confirmed non-git', async () => {
 	const f = makeFixture();
 	try {
 		const { bare } = makeOrigin(f);
@@ -326,43 +326,43 @@ test('a git failure while inspecting a repository is refused; only a directory w
 		const path = process.env['PATH'];
 		process.env['PATH'] = join(f.root, 'no-such-bin');
 		try {
-			assert.equal(readPolicy(clone, { teamDir: f.teamDir }).ok, false, 'a repository that cannot be inspected is refused');
-			assert.deepEqual(readPolicy(plain, { teamDir: f.teamDir }), { ok: true, value: 'none' });
+			assert.equal((await readPolicy(clone, { teamDir: f.teamDir })).ok, false, 'a repository that cannot be inspected is refused');
+			assert.deepEqual((await readPolicy(plain, { teamDir: f.teamDir })), { ok: true, value: 'none' });
 		} finally {
 			if (path === undefined) delete process.env['PATH']; else process.env['PATH'] = path;
 		}
 
 		// A damaged repository (git no longer recognises it, yet .git is there) is refused, not taken for a plain directory.
 		writeFileSync(join(clone, '.git', 'HEAD'), 'garbage\n');
-		assert.equal(readPolicy(clone, { teamDir: f.teamDir }).ok, false);
+		assert.equal((await readPolicy(clone, { teamDir: f.teamDir })).ok, false);
 	} finally { f.cleanup(); }
 });
 
-test('the first sighting is not recorded from a revision that moved before it was published', () => {
+test('the first sighting is not recorded from a revision that moved before it was published', async () => {
 	const f = makeFixture();
 	try {
 		const { clone, work } = teamRepo(f);
 		// After the policy is read and before it is recorded, a refresh moves the tracking ref (here: a new default-branch commit).
 		commitFile(work, 'docs/more.md', 'x\n', 'default branch moves on');
 		git(work, 'push', '-q', 'origin', 'main');
-		const result = readPolicy(clone, {
+		const result = (await readPolicy(clone, {
 			teamDir: f.teamDir,
 			beforeRecord: () => { git(clone, 'fetch', '-q', 'origin'); },
-		});
+		}));
 		assert.equal(policyOf(result).teamMode, true, 'the policy that was read is still returned');
-		assert.equal(readSighting(clone, f.teamDir).kind, 'absent', 'no record is made from the stale revision');
-		policyOf(readPolicy(clone, { teamDir: f.teamDir }));
-		assert.equal(readSighting(clone, f.teamDir).kind, 'valid', 'the next read records the current revision');
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'absent', 'no record is made from the stale revision');
+		policyOf((await readPolicy(clone, { teamDir: f.teamDir })));
+		assert.equal((await readSighting(clone, f.teamDir)).kind, 'valid', 'the next read records the current revision');
 	} finally { f.cleanup(); }
 });
 
-test('the policy is found when the reader is run from a subdirectory of the repository', () => {
+test('the policy is found when the reader is run from a subdirectory of the repository', async () => {
 	const f = makeFixture();
 	try {
 		const { clone } = teamRepo(f);
 		const sub = join(clone, 'docs', 'deeper');
 		mkdirSync(sub, { recursive: true });
-		const fromSub = policyOf(readPolicy(sub, { teamDir: f.teamDir }));
+		const fromSub = policyOf((await readPolicy(sub, { teamDir: f.teamDir })));
 		assert.equal(fromSub.teamMode, true, 'not none just because the working directory is not the root');
 		assert.equal(fromSub.source.anchorKnown, true, 'the anchor walk also uses a root-relative path');
 	} finally { f.cleanup(); }

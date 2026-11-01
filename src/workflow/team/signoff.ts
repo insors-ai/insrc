@@ -389,8 +389,8 @@ export async function publishArtifactsBranch(repo: string, paths: readonly strin
 	if (!head.ok) return rejected(`the current branch cannot be read: ${head.stderr}`);
 	const branch = head.stdout.trim();
 	if (branch === 'HEAD' || branch.length === 0) return rejected('a signoff request needs a branch: this checkout has a detached HEAD');
-	const remote = pickRemote(repo);
-	const defaultBranch = remote === undefined ? undefined : remoteHeadBranch(repo, remote);
+	const remote = await pickRemote(repo);
+	const defaultBranch = remote === undefined ? undefined : await remoteHeadBranch(repo, remote);
 	if (defaultBranch !== undefined && branch === defaultBranch) return rejected(`a signoff request needs a branch other than the default branch ('${branch}'): commit the artifacts on a feature branch`);
 	const ahead = runGit(repo, ['rev-list', '--count', '@{u}..HEAD']);
 	if (!ahead.ok) return rejected(`the branch '${branch}' has no upstream: push it first`);

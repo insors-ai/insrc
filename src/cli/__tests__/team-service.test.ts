@@ -51,7 +51,7 @@ test('team refresh followed by a reader call in a temp clone returns the policy 
 		const ctx = { services: servicesWithDaemon(), repoPath: clone, setPane: () => {}, onLog: () => {}, exit: () => {} };
 
 		// With the default branch unknown and a policy on a fetched ref, the reader asks for the branch...
-		const before = readPolicy(clone);
+		const before = (await readPolicy(clone));
 		assert.equal(before.ok, false);
 
 		// ...the command is told the branch, fetches it and records it...
@@ -61,7 +61,7 @@ test('team refresh followed by a reader call in a temp clone returns the policy 
 		assert.match(out[0] ?? '', /^✓ fetched main @ [0-9a-f]{7} — team policy applied/);
 
 		// ...and the reader now returns the policy.
-		const after = readPolicy(clone);
+		const after = (await readPolicy(clone));
 		assert.ok(after.ok && after.value !== 'none' && after.value.teamMode === true);
 	} finally { f.cleanup(); }
 });
@@ -80,7 +80,7 @@ test('team init writes a starter that the reader accepts once it is on the defau
 		fixture.git(work, 'commit', '-q', '-m', 'adopt the starter policy');
 		fixture.git(work, 'push', '-q', 'origin', 'main');
 		const clone = fixture.cloneOf(f, bare, 'clone');
-		const read = readPolicy(clone);
+		const read = (await readPolicy(clone));
 		assert.ok(read.ok && read.value !== 'none' && read.value.signoffStages.join() === 'DEF,HLD,LLD,BUILD' && read.value.claimsEnforced);
 	} finally { f.cleanup(); }
 });

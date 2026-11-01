@@ -1,0 +1,271 @@
+{
+ "a damaged sighting": {
+  "read": {
+   "ok": true,
+   "value": {
+    "administrators": [
+     "lead"
+    ],
+    "claimUnits": {
+     "epic": [
+      "DEF",
+      "HLD"
+     ],
+     "story": [
+      "LLD",
+      "PLAN"
+     ],
+     "task": [
+      "BUILD"
+     ]
+    },
+    "claimsEnforced": true,
+    "forceTaskIssues": true,
+    "signoffStages": [
+     "DEF",
+     "HLD",
+     "LLD",
+     "BUILD"
+    ],
+    "source": {
+     "anchorKnown": true,
+     "fetchedAt": "2026-05-05T00:00:00.000Z",
+     "firstCommit": "<sha>",
+     "firstCommitTime": "2026-02-01T00:00:00Z",
+     "ref": "refs/remotes/origin/main"
+    },
+    "teamMode": true
+   }
+  }
+ },
+ "a detached HEAD with the default branch unknown": {
+  "read": {
+   "ok": false,
+   "reason": "the default branch of remote 'origin' is not known, and a fetched ref (refs/remotes/origin/main) carries .insrc/policy.json; run 'team refresh --branch <default-branch-name>' to name the default branch"
+  }
+ },
+ "a policy on the default branch": {
+  "again": {
+   "ok": true,
+   "value": {
+    "administrators": [
+     "lead"
+    ],
+    "claimUnits": {
+     "epic": [
+      "DEF",
+      "HLD"
+     ],
+     "story": [
+      "LLD",
+      "PLAN"
+     ],
+     "task": [
+      "BUILD"
+     ]
+    },
+    "claimsEnforced": true,
+    "forceTaskIssues": true,
+    "signoffStages": [
+     "DEF",
+     "HLD",
+     "LLD",
+     "BUILD"
+    ],
+    "source": {
+     "anchorKnown": true,
+     "fetchedAt": "2026-05-05T00:00:00.000Z",
+     "firstCommit": "<sha>",
+     "firstCommitTime": "2026-02-01T00:00:00Z",
+     "ref": "refs/remotes/origin/main"
+    },
+    "teamMode": true
+   }
+  },
+  "anchor": {
+   "firstCommit": "<sha>",
+   "firstCommitTime": "2026-02-01T00:00:00Z",
+   "known": true
+  },
+  "head": "main",
+  "read": {
+   "ok": true,
+   "value": {
+    "administrators": [
+     "lead"
+    ],
+    "claimUnits": {
+     "epic": [
+      "DEF",
+      "HLD"
+     ],
+     "story": [
+      "LLD",
+      "PLAN"
+     ],
+     "task": [
+      "BUILD"
+     ]
+    },
+    "claimsEnforced": true,
+    "forceTaskIssues": true,
+    "signoffStages": [
+     "DEF",
+     "HLD",
+     "LLD",
+     "BUILD"
+    ],
+    "source": {
+     "anchorKnown": true,
+     "fetchedAt": "2026-05-05T00:00:00.000Z",
+     "firstCommit": "<sha>",
+     "firstCommitTime": "2026-02-01T00:00:00Z",
+     "ref": "refs/remotes/origin/main"
+    },
+    "teamMode": true
+   }
+  }
+ },
+ "a remote with nothing fetched": {
+  "read": {
+   "ok": true,
+   "value": "none"
+  },
+  "remote": {
+   "ok": true,
+   "value": "origin"
+  }
+ },
+ "a shallow clone": {
+  "anchor": {
+   "firstCommit": "",
+   "firstCommitTime": "",
+   "known": false
+  },
+  "read": {
+   "ok": true,
+   "value": {
+    "administrators": [
+     "lead"
+    ],
+    "claimUnits": {
+     "epic": [
+      "DEF",
+      "HLD"
+     ],
+     "story": [
+      "LLD",
+      "PLAN"
+     ],
+     "task": [
+      "BUILD"
+     ]
+    },
+    "claimsEnforced": true,
+    "forceTaskIssues": true,
+    "signoffStages": [
+     "DEF",
+     "HLD",
+     "LLD",
+     "BUILD"
+    ],
+    "source": {
+     "anchorKnown": false,
+     "fetchedAt": "2026-05-05T00:00:00.000Z",
+     "firstCommit": "",
+     "firstCommitTime": "",
+     "ref": "refs/remotes/origin/main"
+    },
+    "teamMode": true
+   }
+  }
+ },
+ "a tracking ref that is gone after a sighting": {
+  "read": {
+   "ok": true,
+   "value": {
+    "administrators": [
+     "lead"
+    ],
+    "claimUnits": {
+     "epic": [
+      "DEF",
+      "HLD"
+     ],
+     "story": [
+      "LLD",
+      "PLAN"
+     ],
+     "task": [
+      "BUILD"
+     ]
+    },
+    "claimsEnforced": true,
+    "forceTaskIssues": true,
+    "signoffStages": [
+     "DEF",
+     "HLD",
+     "LLD",
+     "BUILD"
+    ],
+    "source": {
+     "anchorKnown": true,
+     "fetchedAt": "2026-05-05T00:00:00.000Z",
+     "firstCommit": "<sha>",
+     "firstCommitTime": "2026-02-01T00:00:00Z",
+     "ref": "refs/remotes/origin/main"
+    },
+    "teamMode": true
+   }
+  }
+ },
+ "an invalid policy on the default branch": {
+  "read": {
+   "ok": false,
+   "reason": "policy file on refs/remotes/origin/main is invalid: policy file is not valid JSON: Unexpected end of JSON input"
+  }
+ },
+ "no policy on the default branch": {
+  "anchor": {
+   "firstCommit": "",
+   "firstCommitTime": "",
+   "known": false
+  },
+  "read": {
+   "ok": true,
+   "value": "none"
+  }
+ },
+ "no remote": {
+  "probe": {
+   "ok": true,
+   "value": true
+  },
+  "read": {
+   "ok": true,
+   "value": "none"
+  },
+  "remote": {
+   "ok": true
+  }
+ },
+ "not a repository": {
+  "probe": {
+   "ok": true,
+   "value": false
+  },
+  "read": {
+   "ok": true,
+   "value": "none"
+  },
+  "remote": {
+   "ok": false,
+   "reason": "the remotes could not be listed: fatal: not a git repository (or any parent up to mount point /)\nStopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set)."
+  }
+ },
+ "two remotes and no origin": {
+  "remote": {
+   "ok": true
+  }
+ }
+}

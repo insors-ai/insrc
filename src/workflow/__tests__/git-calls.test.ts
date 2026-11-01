@@ -16,7 +16,7 @@ import { _resetRegistryForTests } from '../../daemon/tools/registry.js';
 import type { ApprovalGate } from '../../daemon/tools/types.js';
 import {
 	catFileExists, catFileText, configGet, fallbackMayCover, fetchRefs, forEachRef, GitCallFailed, lsFiles, lsRemote, orFallback,
-	pathHistory, remoteUrl, revParse, revParseValues, rootCommits, statusPaths,
+	lsTreeNames, pathHistory, remoteNames, remoteUrl, revParse, revParseValues, rootCommits, statusPaths, symbolicRef,
 } from '../git-calls.js';
 import { _setWorkflowToolDepsForTests } from '../tracker/registry-table.js';
 import { ToolDenied } from '../tracker/tool-denied.js';
@@ -66,6 +66,9 @@ const helperCalls = (signal?: AbortSignal): Array<[string, string, () => Promise
 		['git_remote', 'remoteUrl', () => remoteUrl(repo, 'origin', o)],
 		['git_status', 'statusPaths', () => statusPaths(repo, { paths: ['dir'], untrackedFiles: 'all' }, o)],
 		['git_rev_list', 'rootCommits', () => rootCommits(repo, 'HEAD', o)],
+		['git_remote', 'remoteNames', () => remoteNames(repo, o)],
+		['git_symbolic_ref', 'symbolicRef', () => symbolicRef(repo, 'refs/remotes/origin/HEAD', o)],
+		['git_ls_tree', 'lsTreeNames', () => lsTreeNames(repo, 'HEAD', ['dir'], o)],
 	];
 };
 
@@ -87,6 +90,8 @@ test("git-calls.test.ts: each helper calls its tool through callTool with the ca
 	assert.equal(values.get('configGet'), 't@example.com');
 	assert.equal(values.get('remoteUrl'), remote);
 	assert.deepEqual(values.get('rootCommits'), [git(repo, 'rev-parse', 'HEAD').trim()]);
+	assert.deepEqual(values.get('remoteNames'), ['origin']);
+	assert.deepEqual(values.get('lsTreeNames'), ['dir']);
 
 	// the site's signal: an aborted signal stops every helper with a cancelled denial before git runs
 	const aborted = AbortSignal.abort();

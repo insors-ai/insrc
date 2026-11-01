@@ -498,7 +498,7 @@ function handoffNote(plan: ParkPlan, commit: string): string {
  */
 export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<ParkResult> {
 	const { repo, branch } = plan;
-	const remote = pickRemote(repo);
+	const remote = await pickRemote(repo);
 	if (remote === undefined) return { ok: false, reason: 'park failed: the repository has no git remote to push the handoff branch to' };
 	const fail = (step: string, detail: string): ParkResult => ({ ok: false, reason: `park failed at ${step}: ${detail}` });
 
@@ -699,7 +699,7 @@ export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly 
 		const named = handoffBranchName((deps.branchPattern ?? resolveBranchPattern)(repo), unit, slug);
 		if (!named.ok) return refused(named.reason);
 		const branch = named.name;
-		const remote = pickRemote(repo);
+		const remote = await pickRemote(repo);
 		if (remote === undefined) return restart('this repository has no git remote, so there is no parked branch: start the stage afresh on the committed artifacts');
 		const listed = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${branch}`], deps);
 		if (!listed.ok) return refused(`the remote '${remote}' could not be reached to look for the handoff branch: ${listed.stderr}`);

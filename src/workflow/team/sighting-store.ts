@@ -23,7 +23,7 @@ import { join, resolve } from 'node:path';
 
 import { PATHS } from '../../shared/paths.js';
 import { publishCreateOnly } from './create-only.js';
-import { runGit } from './git.js';
+import { LOCAL_GIT_TIMEOUT_MS, orFallback, revParseValues } from '../git-calls.js';
 import type { PolicyAnchor } from './types.js';
 
 export type BranchSource = 'remote' | 'user';
@@ -89,11 +89,11 @@ const identityCache = new Map<string, { readonly id: string; readonly at: number
  * one lock. A directory that is not inside a git work tree is identified by its own real path. The answer is remembered
  * briefly so one operation asks git once; a caller with a deadline calls this first, under its own budget.
  */
-export function resolveRepoIdentity(repo: string, timeoutMs?: number): string {
+export async function resolveRepoIdentity(repo: string, timeoutMs?: number, signal?: AbortSignal): Promise<string> {
 	const cached = identityCache.get(repo);
 	if (cached !== undefined && Date.now() - cached.at <= IDENTITY_TTL_MS) return cached.id;
-	const top = runGit(repo, ['rev-parse', '--show-toplevel'], timeoutMs);
-	const root = top.ok ? top.stdout.trim() : '';
+	const top = await orFallback(revParseValues(repo, { showToplevel: true }, { timeoutMs: timeoutMs ?? LOCAL_GIT_TIMEOUT_MS, signal }), undefined);
+	const root = top?.[0]?.trim() ?? '';
 	let id = resolve(repo);
 	for (const candidate of [root, repo]) {
 		if (candidate === '') continue;
@@ -108,20 +108,24 @@ export function resolveRepoIdentity(repo: string, timeoutMs?: number): string {
 }
 
 /** 16 hex characters of the sha256 of the repository's identity. */
-export function sightingKey(repo: string): string {
-	return createHash('sha256').update(resolveRepoIdentity(repo)).digest('hex').slice(0, 16);
+export async function sightingKey(repo: string): Promise<string> {
+	return keyOfIdentity(await resolveRepoIdentity(repo));
+}
+
+function keyOfIdentity(identity: string): string {
+	return createHash('sha256').update(identity).digest('hex').slice(0, 16);
 }
 
 function seenDir(teamDir: string): string {
 	return join(teamDir, 'seen');
 }
 
-export function sightingPath(repo: string, teamDir: string = PATHS.team): string {
-	return join(seenDir(teamDir), `${sightingKey(repo)}.json`);
+export async function sightingPath(repo: string, teamDir: string = PATHS.team): Promise<string> {
+	return join(seenDir(teamDir), `${await sightingKey(repo)}.json`);
 }
 
-function lockPath(repo: string, teamDir: string): string {
-	return join(seenDir(teamDir), `${sightingKey(repo)}.lock`);
+async function lockPath(repo: string, teamDir: string): Promise<string> {
+	return join(seenDir(teamDir), `${await sightingKey(repo)}.lock`);
 }
 
 function validateSighting(raw: unknown): Sighting | string {
@@ -143,8 +147,8 @@ function validateSighting(raw: unknown): Sighting | string {
 	return { remote, branch, branchSource, sha, refreshedAt, anchor: { known: a['known'], firstCommit: a['firstCommit'], firstCommitTime: a['firstCommitTime'] } };
 }
 
-export function readSighting(repo: string, teamDir: string = PATHS.team): SightingRead {
-	const path = sightingPath(repo, teamDir);
+export async function readSighting(repo: string, teamDir: string = PATHS.team): Promise<SightingRead> {
+	const path = await sightingPath(repo, teamDir);
 	let text: string;
 	try {
 		text = readFileSync(path, 'utf8');
@@ -162,9 +166,9 @@ export function readSighting(repo: string, teamDir: string = PATHS.team): Sighti
 	return typeof checked === 'string' ? { kind: 'damaged', reason: checked } : { kind: 'valid', sighting: checked };
 }
 
-function writeUniqueTemp(repo: string, sighting: Sighting, teamDir: string): string {
+async function writeUniqueTemp(repo: string, sighting: Sighting, teamDir: string): Promise<string> {
 	mkdirSync(seenDir(teamDir), { recursive: true });
-	const tmp = join(seenDir(teamDir), `${sightingKey(repo)}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`);
+	const tmp = join(seenDir(teamDir), `${await sightingKey(repo)}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`);
 	try {
 		writeFileSync(tmp, JSON.stringify(sighting, null, 2) + '\n', { flag: 'wx' });
 	} catch (err) {
@@ -175,10 +179,10 @@ function writeUniqueTemp(repo: string, sighting: Sighting, teamDir: string): str
 }
 
 /** Overwrite the sighting (refresh, under the lock). Throws if it cannot be written. */
-export function writeSighting(repo: string, sighting: Sighting, teamDir: string = PATHS.team): void {
-	const tmp = writeUniqueTemp(repo, sighting, teamDir);
+export async function writeSighting(repo: string, sighting: Sighting, teamDir: string = PATHS.team): Promise<void> {
+	const tmp = await writeUniqueTemp(repo, sighting, teamDir);
 	try {
-		renameSync(tmp, sightingPath(repo, teamDir));
+		renameSync(tmp, await sightingPath(repo, teamDir));
 	} catch (err) {
 		try { unlinkSync(tmp); } catch { /* best effort */ }
 		throw err;
@@ -190,13 +194,14 @@ export function writeSighting(repo: string, sighting: Sighting, teamDir: string 
  * link to an existing name fails, so an existing or damaged sighting is never
  * overwritten. Throws on any failure other than "already exists".
  */
-export function publishSightingIfAbsent(repo: string, sighting: Sighting, teamDir: string = PATHS.team): 'created' | 'exists' {
-	return publishCreateOnly(sightingPath(repo, teamDir), JSON.stringify(sighting, null, 2) + '\n');
+export async function publishSightingIfAbsent(repo: string, sighting: Sighting, teamDir: string = PATHS.team): Promise<'created' | 'exists'> {
+	return publishCreateOnly(await sightingPath(repo, teamDir), JSON.stringify(sighting, null, 2) + '\n');
 }
 
-export function removeSighting(repo: string, teamDir: string = PATHS.team): void {
+export async function removeSighting(repo: string, teamDir: string = PATHS.team): Promise<void> {
+	const path = await sightingPath(repo, teamDir);
 	try {
-		unlinkSync(sightingPath(repo, teamDir));
+		unlinkSync(path);
 	} catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
 	}
@@ -240,18 +245,18 @@ function lockHolder(path: string, token: string): LockResult {
  * write a refresh makes is itself atomic (unique-temp rename, create-only link, and
  * git's own atomic ref update), so an overlap in the rare reclaim window is harmless.
  */
-export function acquireLock(
+export async function acquireLock(
 	repo: string,
 	teamDir: string = PATHS.team,
 	now: () => number = Date.now,
 	writeToken: (fd: number, token: string) => void = (fd, token) => { writeSync(fd, token); }, // test seam
-): LockResult {
+): Promise<LockResult> {
 	try {
 		mkdirSync(seenDir(teamDir), { recursive: true });
 	} catch (err) {
 		return { ok: false, reason: `lock could not be taken: ${err instanceof Error ? err.message : String(err)}` };
 	}
-	const path = lockPath(repo, teamDir);
+	const path = await lockPath(repo, teamDir);
 	const token = `${process.pid} ${randomBytes(8).toString('hex')}\n`;
 
 	const create = (): LockResult | undefined => {

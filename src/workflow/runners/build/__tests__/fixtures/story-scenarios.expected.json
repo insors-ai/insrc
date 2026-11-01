@@ -1,0 +1,226 @@
+{
+ "a clean merge, a conflicting merge and an octopus merge": {
+  "clean": {
+   "attribution": "first-parent-range",
+   "foldedPaths": [],
+   "paths": [
+    "src/main.ts"
+   ],
+   "perUnit": false,
+   "sharedPaths": [],
+   "sharedWithExcluded": [],
+   "units": [
+    {
+     "kind": "commit",
+     "paths": [
+      "src/main.ts"
+     ]
+    }
+   ]
+  },
+  "conflicted": {
+   "attribution": "first-parent-range",
+   "foldedPaths": [
+    "clash.txt"
+   ],
+   "paths": [
+    "clash.txt",
+    "src/main.ts"
+   ],
+   "perUnit": false,
+   "sharedPaths": [
+    "clash.txt"
+   ],
+   "sharedWithExcluded": [],
+   "units": [
+    {
+     "kind": "commit",
+     "paths": [
+      "src/main.ts"
+     ]
+    },
+    {
+     "kind": "merge-edit",
+     "paths": [
+      "clash.txt"
+     ]
+    }
+   ]
+  },
+  "octopus": {
+   "attribution": "first-parent-range",
+   "foldedPaths": [
+    "clash.txt",
+    "o1.txt",
+    "o2.txt"
+   ],
+   "paths": [
+    "clash.txt",
+    "o1.txt",
+    "o2.txt",
+    "src/main.ts"
+   ],
+   "perUnit": false,
+   "sharedPaths": [
+    "clash.txt"
+   ],
+   "sharedWithExcluded": [],
+   "units": [
+    {
+     "kind": "commit",
+     "paths": [
+      "src/main.ts"
+     ]
+    },
+    {
+     "kind": "merge-edit",
+     "paths": [
+      "clash.txt"
+     ]
+    },
+    {
+     "kind": "merge-edit",
+     "paths": [
+      "o1.txt",
+      "o2.txt"
+     ]
+    }
+   ]
+  }
+ },
+ "a file name with a space and a newline": {
+  "attribution": "first-parent-range",
+  "foldedPaths": [],
+  "paths": [
+   "src/new\nline.ts",
+   "src/with space.ts"
+  ],
+  "perUnit": false,
+  "sharedPaths": [],
+  "sharedWithExcluded": [],
+  "units": [
+   {
+    "kind": "commit",
+    "paths": [
+     "src/new\nline.ts",
+     "src/with space.ts"
+    ]
+   }
+  ]
+ },
+ "a merge in progress and a squash in progress": {
+  "merging": true,
+  "none": false,
+  "notARepo": false,
+  "squashing": true
+ },
+ "a range that includes a root commit": {
+  "attribution": "first-parent-range",
+  "foldedPaths": [],
+  "paths": [
+   "README.md",
+   "src/a.ts"
+  ],
+  "perUnit": false,
+  "sharedPaths": [],
+  "sharedWithExcluded": [],
+  "units": [
+   {
+    "kind": "commit",
+    "paths": [
+     "README.md"
+    ]
+   },
+   {
+    "kind": "commit",
+    "paths": [
+     "src/a.ts"
+    ]
+   }
+  ]
+ },
+ "an empty Story and an unresolvable base": {
+  "badBase": {
+   "threw": "NoBuildChangesError"
+  },
+  "empty": {
+   "attribution": "first-parent-range",
+   "foldedPaths": [],
+   "paths": [],
+   "perUnit": false,
+   "sharedPaths": [],
+   "sharedWithExcluded": [],
+   "units": []
+  },
+  "strictEmpty": {
+   "attribution": "first-parent-range",
+   "foldedPaths": [],
+   "paths": [],
+   "perUnit": false,
+   "sharedPaths": [],
+   "sharedWithExcluded": [],
+   "units": []
+  }
+ },
+ "commits of the range": {
+  "files": [
+   "src/a.ts"
+  ],
+  "set": {
+   "attribution": "first-parent-range",
+   "foldedPaths": [],
+   "paths": [
+    "src/a.ts",
+    "src/b.ts"
+   ],
+   "perUnit": false,
+   "sharedPaths": [],
+   "sharedWithExcluded": [],
+   "units": [
+    {
+     "kind": "commit",
+     "paths": [
+      "src/a.ts"
+     ]
+    },
+    {
+     "kind": "commit",
+     "paths": [
+      "src/a.ts",
+      "src/b.ts"
+     ]
+    },
+    {
+     "kind": "commit",
+     "paths": [
+      "src/b.ts"
+     ]
+    }
+   ]
+  }
+ },
+ "trailers pick the Story out of mixed commits": {
+  "files": [
+   "src/mine.ts"
+  ],
+  "newest": "string",
+  "story": {
+   "attribution": "story-trailer",
+   "foldedPaths": [],
+   "paths": [
+    "src/mine.ts"
+   ],
+   "perUnit": true,
+   "sharedPaths": [],
+   "sharedWithExcluded": [],
+   "units": [
+    {
+     "kind": "commit",
+     "paths": [
+      "src/mine.ts"
+     ]
+    }
+   ]
+  }
+ }
+}

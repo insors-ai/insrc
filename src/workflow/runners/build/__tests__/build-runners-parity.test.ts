@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 import { buildStartRelPath } from '../range-base.js';
 import { runBuildScenarios } from './helpers/build-scenarios.js';
 import { newBuildApi } from './helpers/new-build-api.js';
+import { newStoryApi } from './helpers/new-story-api.js';
+import { runStoryScenarios } from './helpers/story-scenarios.js';
 
 const expected = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'build-scenarios.expected.json'), 'utf8')) as Record<string, unknown>;
 
@@ -21,4 +23,12 @@ test('build-runners-parity.test.ts: range base, build start stamp and standalone
 	const actual = JSON.parse(JSON.stringify(await runBuildScenarios(newBuildApi, buildStartRelPath))) as Record<string, unknown>;
 	assert.deepEqual(Object.keys(actual).sort(), Object.keys(expected).sort());
 	for (const name of Object.keys(expected)) assert.deepEqual(actual[name], expected[name], name);
+});
+
+const storyExpected = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'story-scenarios.expected.json'), 'utf8')) as Record<string, unknown>;
+
+test('build-runners-parity.test.ts: storyChangeSet and mergeInProgress equal the old results', async () => {
+	const actual = JSON.parse(JSON.stringify(await runStoryScenarios(newStoryApi))) as Record<string, unknown>;
+	assert.deepEqual(Object.keys(actual).sort(), Object.keys(storyExpected).sort());
+	for (const name of Object.keys(storyExpected)) assert.deepEqual(actual[name], storyExpected[name], name);
 });

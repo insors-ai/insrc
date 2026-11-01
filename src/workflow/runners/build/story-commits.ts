@@ -42,11 +42,18 @@
  * merge is reviewed over its whole change.
  */
 
-import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 
+import { gitDiffTool } from '../../../daemon/tools/builtins/git/diff.js';
+import { gitDiffTreeTool } from '../../../daemon/tools/builtins/git/diff-tree.js';
+import { gitHashObjectTool } from '../../../daemon/tools/builtins/git/hash-object.js';
+import { gitLogTool } from '../../../daemon/tools/builtins/git/log.js';
+import { gitMergeTreeTool } from '../../../daemon/tools/builtins/git/merge-tree.js';
+import { gitRevListTool } from '../../../daemon/tools/builtins/git/rev-list.js';
 import { getLogger } from '../../../shared/logger.js';
+import { catFileExists, gitCall, GitCallFailed, LOCAL_GIT_TIMEOUT_MS, revParse, revParseValues } from '../../git-calls.js';
+import type { GitCallOptions } from '../../git-calls.js';
 import { NoBuildChangesError } from './changed-files.js';
 import { resolveStoryRangeEnd } from './range-base.js';
 
@@ -90,23 +97,24 @@ export interface AttributedStoryChangeSet extends StoryChangeSet {
 /** The trailer every build commit of a Story carries (ISSUE-b47dadc7). */
 export const STORY_TRAILER_KEY = 'Insrc-Story';
 
-const MAX_BUFFER = 64 * 1024 * 1024;
+/** The time one git call of the change-set derivation may take. */
+const GIT_MS = 60_000;
 
-/** Run git and return stdout; exit codes in `okCodes` (besides 0) are not failures. */
-function git(repoPath: string, args: readonly string[], okCodes: readonly number[] = []): string {
-	try {
-		return execFileSync('git', args, { cwd: repoPath, encoding: 'utf8', maxBuffer: MAX_BUFFER, stdio: ['ignore', 'pipe', 'pipe'] });
-	} catch (err) {
-		const e = err as { status?: number | null; stdout?: string; stderr?: string; message?: string };
-		if (typeof e.status === 'number' && okCodes.includes(e.status) && typeof e.stdout === 'string') return e.stdout;
-		throw new NoBuildChangesError(`git ${args.join(' ')} failed in ${repoPath}: ${(e.stderr ?? e.message ?? String(err)).trim()}`);
+/** The most commits one `git_log` call returns; a range of this many is read as unreadable rather than cut short. */
+const LOG_LIMIT = 500;
+
+/** Make one git call over the tool registry; an ordinary failure is a {@link NoBuildChangesError}, a denial is thrown as it is. */
+async function viaTools<T>(repoPath: string, what: string, run: (o: GitCallOptions) => Promise<T>): Promise<T> {
+	try { return await run({ timeoutMs: GIT_MS }); }
+	catch (err) {
+		if (err instanceof GitCallFailed) throw new NoBuildChangesError(`git ${what} failed in ${repoPath}: ${err.message.trim()}`);
+		throw err;
 	}
 }
 
-/** NUL-separated path output (`-z`) to a list. */
-function zPaths(out: string): string[] {
-	return out.split('\0').filter(p => p.length > 0);
-}
+/** The names of the paths a diff between two trees or commits lists (`git diff --name-only`). */
+const diffPaths = async (repoPath: string, from: string, to: string): Promise<string[]> =>
+	(await viaTools(repoPath, `diff --name-only ${from} ${to}`, o => gitCall(gitDiffTool, { from, to }, repoPath, o))).files.map(f => f.path);
 
 interface TrailerScan {
 	/** Commits whose message carries the Story's trailer. */
@@ -126,11 +134,13 @@ interface TrailerScan {
  *  line followed by a blank line and a co-author block would be missed
  *  (ISSUE-f431a442). It must be a whole line of that form; a mention inside
  *  other text does not count. */
-function scanTrailers(repoPath: string, base: string, storyKey: string, strict = false): TrailerScan | undefined {
-	let out: string;
+async function scanTrailers(repoPath: string, base: string, storyKey: string, strict = false): Promise<TrailerScan | undefined> {
+	let commits: readonly { sha: string; shortSha: string; subject: string; body: string }[];
 	try {
-		out = git(repoPath, ['log', '--first-parent', '--format=%H%x1f%h%x1f%s%x1f%B%x1e', `${base}..HEAD`]);
+		commits = (await viaTools(repoPath, `log --first-parent ${base}..HEAD`, o => gitCall(gitLogTool, { ref: `${base}..HEAD`, firstParent: true, limit: LOG_LIMIT }, repoPath, o))).commits;
+		if (commits.length >= LOG_LIMIT) throw new NoBuildChangesError(`git log ${base}..HEAD in ${repoPath} lists ${LOG_LIMIT} commits or more: the range is too long to read the trailers of`);
 	} catch (err) {
+		if (!(err instanceof NoBuildChangesError)) throw err;   // a denied call ends the derivation
 		if (strict) throw err;
 		log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'storyChangeSet: could not read commit trailers; using the first-parent range');
 		return undefined;
@@ -140,11 +150,10 @@ function scanTrailers(repoPath: string, base: string, storyKey: string, strict =
 	const subjects = new Map<string, string>();
 	let newest: string | undefined;
 	// git log lists newest first, so the first carrying commit is the newest.
-	for (const record of out.split('\x1e')) {
-		const [sha, short, subject, ...rest] = record.trim().split('\x1f');
-		if (sha === undefined || sha.length === 0) continue;
-		subjects.set(sha, subject ?? '');
-		const keys = storyLines(rest.join('\x1f'));
+	for (const { sha, shortSha: short, subject, body } of commits) {
+		if (sha.length === 0) continue;
+		subjects.set(sha, subject);
+		const keys = storyLines(`${subject}\n${body}`);
 		if (keys.includes(storyKey)) {
 			carrying.add(sha);
 			newest ??= short;
@@ -167,8 +176,8 @@ export function storyLines(message: string): string[] {
 /** The abbreviated sha of the newest first-parent commit since `base` carrying
  *  `Insrc-Story: <storyKey>`; undefined when none does or the trailers cannot
  *  be read. Never throws. */
-export function newestStoryCommit(repoPath: string, base: string, storyKey: string): string | undefined {
-	return scanTrailers(repoPath, base, storyKey)?.newest;
+export async function newestStoryCommit(repoPath: string, base: string, storyKey: string): Promise<string | undefined> {
+	return (await scanTrailers(repoPath, base, storyKey))?.newest;
 }
 
 /**
@@ -178,11 +187,12 @@ export function newestStoryCommit(repoPath: string, base: string, storyKey: stri
  */
 export async function storyChangeSet(repoPath: string, base: string, opts: { readonly storyKey?: string | undefined; readonly strict?: boolean | undefined } = {}): Promise<AttributedStoryChangeSet> {
 	// Each line: "<commit> <parent>..." along the first-parent line, oldest first.
-	const lines = git(repoPath, ['rev-list', '--first-parent', '--reverse', '--parents', `${base}..HEAD`])
-		.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+	const listed = await viaTools(repoPath, `rev-list --first-parent --reverse --parents ${base}..HEAD`, o => gitCall(gitRevListTool, { rev: `${base}..HEAD`, firstParent: true, parents: true }, repoPath, o));
+	if (!('commits' in listed)) throw new NoBuildChangesError(`git rev-list ${base}..HEAD in ${repoPath} answered a count`);
+	const lines = listed.commits.map((ref, i) => [ref, ...(listed.parents?.[i] ?? [])].join(' ')).reverse();
 
 	const { storyKey } = opts;
-	const scan = storyKey !== undefined ? scanTrailers(repoPath, base, storyKey, opts.strict === true) : undefined;
+	const scan = storyKey !== undefined ? await scanTrailers(repoPath, base, storyKey, opts.strict === true) : undefined;
 	const byTrailer = scan !== undefined && scan.carrying.size > 0;
 	const [epicHash, storyId] = storyKey?.split('/') ?? [];
 	// A pre-trailer Story's range ends at its recorded build commit (ISSUE-b97752e9):
@@ -196,7 +206,7 @@ export async function storyChangeSet(repoPath: string, base: string, opts: { rea
 			const at = refs.indexOf(end);
 			if (at >= 0) {
 				for (const r of refs.slice(at + 1)) afterEnd.add(r);
-			} else if (end === git(repoPath, ['rev-parse', '--verify', `${base}^{commit}`]).trim()) {
+			} else if (end === (await viaTools(repoPath, `rev-parse --verify ${base}^{commit}`, o => revParse(repoPath, `${base}^{commit}`, { verify: true }, o))).trim()) {
 				for (const r of refs) afterEnd.add(r);
 			} else {
 				log.warn({ repoPath, storyKey, end }, 'storyChangeSet: the recorded build commit is not on the range\'s first-parent line; the range runs to HEAD');
@@ -218,8 +228,8 @@ export async function storyChangeSet(repoPath: string, base: string, opts: { rea
 
 		if (parents.length <= 1) {
 			const parent = parents[0];
-			const from = parent ?? (emptyTree ??= git(repoPath, ['hash-object', '-t', 'tree', '/dev/null']).trim());
-			const paths = zPaths(git(repoPath, ['diff-tree', '--no-commit-id', '--name-only', '-r', '-z', '--root', ref]));
+			const from = parent ?? (emptyTree ??= (await viaTools(repoPath, 'hash-object -t tree /dev/null', o => gitCall(gitHashObjectTool, { path: '/dev/null', type: 'tree' }, repoPath, o))).sha.trim());
+			const paths = (await viaTools(repoPath, `diff-tree --root ${ref}`, o => gitCall(gitDiffTreeTool, { rev: ref, root: true }, repoPath, o))).paths;
 			if (foreign(ref) || (byTrailer && !scan.carrying.has(ref))) {
 				for (const p of paths) excludedPaths.add(p);
 				if (foreign(ref)) leftOutForeign = true;
@@ -238,7 +248,7 @@ export async function storyChangeSet(repoPath: string, base: string, opts: { rea
 		if (parents.length > 2) {
 			// merge-tree cannot compute an octopus auto-merge: review the whole
 			// change rather than drop anything.
-			const paths = zPaths(git(repoPath, ['diff', '--name-only', '-z', first, ref]));
+			const paths = await diffPaths(repoPath, first, ref);
 			if (foreign(ref)) {
 				for (const p of paths) excludedPaths.add(p);
 				leftOutForeign = true;
@@ -251,10 +261,10 @@ export async function storyChangeSet(repoPath: string, base: string, opts: { rea
 
 		// Exit 1 is a conflicted auto-merge: its tree (with conflict markers) is
 		// still the first line, and the hand resolution is then a merge edit.
-		const auto = git(repoPath, ['merge-tree', '--write-tree', first, second], [1]).split('\n')[0]?.trim() ?? '';
+		const auto = (await viaTools(repoPath, `merge-tree --write-tree ${first} ${second}`, o => gitCall(gitMergeTreeTool, { a: first, b: second }, repoPath, o))).tree.trim();
 		if (auto.length === 0) throw new NoBuildChangesError(`git merge-tree printed no tree for ${ref} in ${repoPath}`);
-		for (const p of zPaths(git(repoPath, ['diff', '--name-only', '-z', first, auto]))) mergedIn.add(p);
-		const edited = zPaths(git(repoPath, ['diff', '--name-only', '-z', auto, ref]));
+		for (const p of await diffPaths(repoPath, first, auto)) mergedIn.add(p);
+		const edited = await diffPaths(repoPath, auto, ref);
 		if (foreign(ref)) {
 			for (const p of edited) excludedPaths.add(p);
 			leftOutForeign = true;
@@ -280,21 +290,20 @@ export async function storyChangeSet(repoPath: string, base: string, opts: { rea
  * an uncommitted `git merge --squash` left SQUASH_MSG. Any other git failure is
  * logged and reads as false, so this check never blocks a build on its own.
  */
-export function mergeInProgress(repoPath: string): boolean {
+export async function mergeInProgress(repoPath: string): Promise<boolean> {
 	try {
-		execFileSync('git', ['rev-parse', '-q', '--verify', 'MERGE_HEAD'], { cwd: repoPath, stdio: 'ignore' });
-		return true;
+		if (await catFileExists(repoPath, 'MERGE_HEAD', { timeoutMs: LOCAL_GIT_TIMEOUT_MS })) return true;
 	} catch (err) {
-		if ((err as { status?: number | null }).status !== 1) {
-			log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'mergeInProgress: could not check MERGE_HEAD');
-			return false;
-		}
+		if (!(err instanceof GitCallFailed)) throw err;
+		log.warn({ repoPath, err: err.message }, 'mergeInProgress: could not check MERGE_HEAD');
+		return false;
 	}
 	try {
-		const rel = execFileSync('git', ['rev-parse', '--git-path', 'SQUASH_MSG'], { cwd: repoPath, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-		return existsSync(isAbsolute(rel) ? rel : join(repoPath, rel));
+		const rel = (await revParseValues(repoPath, { gitPath: 'SQUASH_MSG' }, { timeoutMs: LOCAL_GIT_TIMEOUT_MS }))[0]?.trim() ?? '';
+		return rel.length > 0 && existsSync(isAbsolute(rel) ? rel : join(repoPath, rel));
 	} catch (err) {
-		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'mergeInProgress: could not locate SQUASH_MSG');
+		if (!(err instanceof GitCallFailed)) throw err;
+		log.warn({ repoPath, err: err.message }, 'mergeInProgress: could not locate SQUASH_MSG');
 		return false;
 	}
 }

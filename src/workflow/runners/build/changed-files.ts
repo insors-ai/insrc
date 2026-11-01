@@ -23,7 +23,7 @@ import { isAbsolute, relative } from 'node:path';
 
 import { gitDiffTool } from '../../../daemon/tools/builtins/git/diff.js';
 import type { GitDiffData } from '../../../daemon/tools/builtins/git/diff.js';
-import type { ToolDeps } from '../../../daemon/tools/types.js';
+import { gitCall, GitCallFailed } from '../../git-calls.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { FileChangeLog, FileChangeEntry } from '../../artifacts/provenance/types.js';
 import { storyChangeSet } from './story-commits.js';
@@ -108,13 +108,12 @@ async function collectDiff(
 	input: Readonly<Record<string, unknown>>,
 	into: Set<string>,
 ): Promise<void> {
-	const toolDeps: ToolDeps = { sessionId: 'code-review', repoPath, send: () => {}, requestId: 0 };
-	const res = await gitDiffTool.execute({ cwd: repoPath, ...input }, toolDeps);
-	if (!res.success) {
-		throw new NoBuildChangesError(`git_diff failed for ${repoPath}: ${res.error ?? res.output}`);
+	let data: GitDiffData;
+	try { data = await gitCall(gitDiffTool, input as never, repoPath, { timeoutMs: 60_000 }); }
+	catch (err) {
+		if (err instanceof GitCallFailed) throw new NoBuildChangesError(`git_diff failed for ${repoPath}: ${err.message}`);
+		throw err;   // a denied call ends the derivation
 	}
-	const data = res.data as GitDiffData | undefined;
-	if (!data) throw new NoBuildChangesError(`git_diff returned no data for ${repoPath}`);
 	for (const f of data.files) into.add(f.path);
 }
 

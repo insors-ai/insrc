@@ -141,7 +141,7 @@ test('with strict, a trailer scan that cannot read the commit messages throws No
 		git(r, 'config', 'log.date', 'bogus');
 		await assert.rejects(() => storyChangeSet(r, base, { storyKey: STORY, strict: true }), NoBuildChangesError);
 		// newestStoryCommit keeps the lenient scan.
-		assert.equal(newestStoryCommit(r, base, STORY), undefined);
+		assert.equal((await newestStoryCommit(r, base, STORY)), undefined);
 	} finally { cleanup(); }
 });
 

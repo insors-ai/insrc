@@ -73,7 +73,7 @@ test("storyChangeSet lists the Story's non-merge first-parent commits and leaves
 		assert.deepEqual(set.units.map(u => [u.kind, u.ref]), [['commit', s1], ['commit', s2]]);
 		assert.deepEqual(set.sharedPaths, []);
 		assert.deepEqual(set.foldedPaths, []);
-		assert.equal(mergeInProgress(r), false);
+		assert.equal((await mergeInProgress(r)), false);
 		assert.equal(snapshot(r), before, 'mergeInProgress is read-only too');
 	} finally { cleanup(); }
 });
@@ -155,25 +155,25 @@ test('storyChangeSet throws NoBuildChangesError for an unresolvable base', async
 	} finally { cleanup(); }
 });
 
-test('mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed', () => {
+test('mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed', async () => {
 	const { repo: r, cleanup } = repo();
 	try {
 		commit(r, { 'src/story1.ts': 'one\n' }, 'story 1');
 		git(r, 'merge', '-q', '--no-ff', '--no-commit', 'upstream');
-		assert.equal(mergeInProgress(r), true);
+		assert.equal((await mergeInProgress(r)), true);
 		git(r, 'commit', '-q', '-m', 'merge upstream');
-		assert.equal(mergeInProgress(r), false);
+		assert.equal((await mergeInProgress(r)), false);
 	} finally { cleanup(); }
 });
 
-test('mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG', () => {
+test('mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG', async () => {
 	const { repo: r, cleanup } = repo();
 	try {
 		commit(r, { 'src/story1.ts': 'one\n' }, 'story 1');
 		git(r, 'merge', '-q', '--squash', 'upstream');
-		assert.equal(mergeInProgress(r), true);
+		assert.equal((await mergeInProgress(r)), true);
 		git(r, 'commit', '-q', '-m', 'squash upstream');
-		assert.equal(mergeInProgress(r), false);
+		assert.equal((await mergeInProgress(r)), false);
 	} finally { cleanup(); }
 });
 

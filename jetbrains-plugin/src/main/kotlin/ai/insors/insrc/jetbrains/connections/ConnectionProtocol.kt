@@ -203,10 +203,11 @@ object ConnectionProtocol {
         val scheme=Regex("^([A-Za-z][A-Za-z0-9+.-]*):").find(value)?:fail()
         val rest=value.substring(scheme.value.length);if(rest.isEmpty())fail()
         val name=scheme.groupValues[1].lowercase()
-        val network=name in setOf("http","https","ws","wss","ftp","file")
-        val hierarchical=rest.startsWith("//");if(network&&!hierarchical)fail()
-        var authority=(if(hierarchical)rest.substring(2)else rest).split(Regex("[/?#]"),2)[0]
-        if(network&&name!="file"&&authority.isEmpty())fail()
+        // Match the producer's hierarchical public projection; opaque SDK
+        // dialects must never be guessed or exposed as public endpoints.
+        if(!rest.startsWith("//"))fail()
+        var authority=rest.substring(2).split(Regex("[/?#]"),2)[0]
+        if(name!="file"&&authority.isEmpty())fail()
         repeat(8){
             if(Regex("""[\u0000-\u0020\u007f-\u009f\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff@/\\?#<>"{}|^`]""").containsMatchIn(authority))fail()
             val next=decodePublicPercent(authority);if(next==authority)return;authority=next
@@ -229,9 +230,7 @@ object ConnectionProtocol {
             if (v.isJsonArray) v.asJsonArray.forEach { walk(it) }
             if (v.isJsonObject) for ((k, child) in v.asJsonObject.entrySet()) {
                 if (k in setOf("secretRef", "password", "credentials", "capability", "sessionHandle", "runtimeAuth")) fail()
-                if (k == "endpoint" && child.isJsonPrimitive && child.asJsonPrimitive.isString) {
-                    safeEndpoint(child.asString)
-                }
+                if (k == "endpoint") { if(!child.isJsonPrimitive||!child.asJsonPrimitive.isString)fail();safeEndpoint(child.asString) }
                 walk(child)
             }
         }

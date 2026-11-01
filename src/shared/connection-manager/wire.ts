@@ -107,10 +107,11 @@ function safeEndpoint(value:string):void {
  if(/[\u0000-\u001f\u007f-\u009f\ud800-\udfff]/u.test(value)||value.includes('\\'))fail();
  const scheme=/^([A-Za-z][A-Za-z0-9+.-]*):/.exec(value)??fail();
  const rest=value.slice(scheme[0].length);if(!rest)fail();
- const network=['http','https','ws','wss','ftp','file'].includes(scheme[1]!.toLowerCase());
- const hierarchical=rest.startsWith('//');if(network&&!hierarchical)fail();
- let authority=(hierarchical?rest.slice(2):rest).split(/[/?#]/,1)[0]!;
- if(network&&scheme[1]!.toLowerCase()!=='file'&&!authority)fail();
+ // Producer uri()/address() expose hierarchical forms only. Never guess the
+ // credential syntax of an opaque or nested SDK-specific connection string.
+ if(!rest.startsWith('//'))fail();
+ let authority=rest.slice(2).split(/[/?#]/,1)[0]!;
+ if(scheme[1]!.toLowerCase()!=='file'&&!authority)fail();
  for(let n=0;n<8;n++){
   if(/[\u0000-\u0020\u007f-\u009f\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff@/\\?#<>"{}|^`]/u.test(authority))fail();
   let next:string;try{next=decodeURIComponent(authority.replace(/%(?![0-9a-f]{2})/gi,'%25'));}catch{return fail();}
@@ -134,7 +135,7 @@ function safePublicFields(value: unknown): void {
   if(Array.isArray(v)){v.forEach(walk);return;}
   if(v&&typeof v==='object')for(const [k,child]of Object.entries(v)){
    if(['secretRef','password','credentials','capability','sessionHandle','runtimeAuth'].includes(k))fail();
-   if(k==='endpoint'&&typeof child==='string')safeEndpoint(child);
+   if(k==='endpoint'){if(typeof child==='string')safeEndpoint(child);else fail();}
    walk(child);
   }
  };

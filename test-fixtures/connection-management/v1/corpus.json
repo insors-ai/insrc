@@ -6669,16 +6669,17 @@
     }
   ],
   "endpointPolicy": {
-    "version": 1,
+    "version": 2,
     "purpose": "Portable public-field safety only; driver-specific connection validity remains a daemon gate. Original strings are never normalized.",
     "rules": [
       "Absolute ASCII scheme and nonempty remainder; no trimming or normalization.",
       "Raw C0, DEL, C1 controls, unpaired UTF-16 surrogates and backslashes are refused.",
-      "http/https/ws/wss/ftp/file require canonical // syntax; network authorities must be nonempty except file.",
-      "Authority is text between // and first / ? #; opaque non-network forms use their prefix before / ? # for conservative credential screening.",
+      "All endpoint schemes require canonical scheme://authority syntax, matching producer uri()/address(). Authority must be nonempty except file. Opaque or nested SDK strings are refused, never guessed.",
+      "Authority is text between scheme:// and first / ? #. Refuse user-info and unsafe delimiter/whitespace spellings after bounded strict decoding.",
       "At most 8 stable percent-decoding passes in authority; reject userinfo @, separators, controls, Unicode whitespace and unsafe authority punctuation.",
-      "Path/query/fragment Unicode, escapable punctuation and repeated # are retained unchanged, subject to the existing secret-reference boundary.",
-      "This is not complete WHATWG or RFC URL conformance, and an accepted public field does not prove connectability."
+      "Path/query/fragment text is returned unchanged, subject to existing strict UTF-8 percent decoding and encoded secret-reference checks; malformed encoded bytes are refused.",
+      "This is not complete WHATWG or RFC URL conformance, and an accepted public field does not prove connectability.",
+      "An endpoint field must be a string. The daemon retains unsupported raw SDK config server-side and projects readonly metadata without an endpoint."
     ]
   },
   "endpointCases": [
@@ -6705,7 +6706,7 @@
     {
       "id": "endpoint-05",
       "value": "custom:opaque-value",
-      "valid": true
+      "valid": false
     },
     {
       "id": "endpoint-06",
@@ -6986,6 +6987,90 @@
       "id": "endpoint-61",
       "value": "https://host/\ud83d\ude00",
       "valid": true
+    },
+    {
+      "id": "endpoint-62",
+      "value": "jdbc:postgresql://user:pw@host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-63",
+      "value": "jdbc:mysql://u:p@h/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-64",
+      "value": "jdbc:sqlserver://u:p@h",
+      "valid": false
+    },
+    {
+      "id": "endpoint-65",
+      "value": "jdbc:postgresql://host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-66",
+      "value": "custom:/u:p@h",
+      "valid": false
+    },
+    {
+      "id": "endpoint-67",
+      "value": "custom:?u:p@h",
+      "valid": false
+    },
+    {
+      "id": "endpoint-68",
+      "value": "custom:prefix//u:p@host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-69",
+      "value": "https://host/?q=%E9",
+      "valid": false
+    },
+    {
+      "id": "endpoint-70",
+      "value": "https://host/%ff",
+      "valid": false
+    },
+    {
+      "id": "endpoint-71",
+      "value": "https://%41.invalid/path",
+      "valid": true
+    },
+    {
+      "id": "endpoint-72",
+      "value": "https://%25252525252525252540host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-73",
+      "value": null,
+      "valid": false
+    },
+    {
+      "id": "endpoint-74",
+      "value": 17,
+      "valid": false
+    },
+    {
+      "id": "endpoint-75",
+      "value": true,
+      "valid": false
+    },
+    {
+      "id": "endpoint-76",
+      "value": [
+        "https://u:p@host"
+      ],
+      "valid": false
+    },
+    {
+      "id": "endpoint-77",
+      "value": {
+        "value": "https://u:p@host"
+      },
+      "valid": false
     }
   ]
 }

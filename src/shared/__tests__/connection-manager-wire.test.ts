@@ -3,17 +3,27 @@ import test from 'node:test';
 import { loadConnectionCorpus } from './fixtures/connection-corpus.js';
 import { ConnectionReplyError, CONNECTION_REPLY_LIMITS, connectionReplyData, decodeManagementCapabilities, decodeDriverDescriptors, decodeSafeConnection, decodeSafeConnectionList, decodeOperationTicket, decodeMutationOutcome, decodeOperationStatus, decodeDraftTestResult, decodeRemovalState, decodePublicConnectionPatch } from '../connection-manager/wire.js';
 import type { ConnectionKey, OperationTicket } from '../connection-management.js';
+import type { ConnectionConfig } from '../db-driver.js';
 import '../../daemon/db/drivers/index.js';
-import { driverDescriptors } from '../../daemon/db/driver-profiles.js';
+import { driverDescriptors, safeConnection as projectSafeConnection } from '../../daemon/db/driver-profiles.js';
 
 const corpus=loadConnectionCorpus();
 const key=corpus.identity.key as ConnectionKey;
 test('CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries',()=>{
- assert.equal(corpus.endpointPolicy.version,1);assert.equal(corpus.endpointCases.length,61);
+ assert.equal(corpus.endpointPolicy.version,2);assert.equal(corpus.endpointCases.length,77);
  for(const item of corpus.endpointCases){
   const row=example('read');row.publicConfig.endpoint=item.value;
   const actions=[()=>decodeSafeConnection(row).publicConfig['endpoint'],()=>decodeSafeConnectionList([row],key.repoRoot)[0]!.publicConfig['endpoint'],()=>decodePublicConnectionPatch({endpoint:item.value})['endpoint'],()=>((decodePublicConnectionPatch({options:{endpoint:item.value}})['options'] as Record<string,unknown>)['endpoint'])];
   for(const action of actions)if(item.valid)assert.equal(action(),item.value,item.id);else assert.throws(action,ConnectionReplyError,item.id);
+ }
+});
+test('CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata',()=>{
+ for(const [kind,url] of [['postgres','jdbc:postgresql://user:pw@host/db'],['oracle','jdbc:oracle:thin:user/pw@host']] as const){
+  const config:ConnectionConfig={id:key.id,kind,url};const before=structuredClone(config);
+  const row=projectSafeConnection(config,key,corpus.identity.revision);
+  assert.equal(row.readOnly,true);assert.equal(Object.hasOwn(row.publicConfig,'endpoint'),false);
+  assert.equal(decodeSafeConnection(row).readOnly,true);assert.equal(JSON.stringify(row).includes('user/pw'),false);assert.equal(JSON.stringify(row).includes('user:pw'),false);
+  assert.deepEqual(config,before,'the producer retains the original SDK-specific config server-side');
  }
 });
 const decoders:Record<string,(v:unknown)=>unknown>={capabilities:decodeManagementCapabilities,list:v=>decodeSafeConnectionList(v,key.repoRoot),read:decodeSafeConnection,ticket:decodeOperationTicket,outcome:decodeMutationOutcome,status:decodeOperationStatus,test:decodeDraftTestResult,removal:decodeRemovalState};

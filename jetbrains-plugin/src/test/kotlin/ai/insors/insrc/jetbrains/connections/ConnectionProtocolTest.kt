@@ -8,15 +8,15 @@ class ConnectionProtocolTest {
     private val corpus = ConnectionCorpus.load()
     private val key = ConnectionKey("/fixture/repo-a", "saved", "warehouse")
     @Test fun `shared endpoint safety cases retain values across read list and patch boundaries`() {
-        assertEquals(1,corpus.getAsJsonObject("endpointPolicy")["version"].asInt)
-        val cases=corpus.getAsJsonArray("endpointCases");assertEquals(61,cases.size());val actual=JsonArray()
-        for(item in cases){val c=item.asJsonObject;val endpoint=c["value"].asString
-            val row=example("read").asJsonObject.apply{getAsJsonObject("publicConfig").addProperty("endpoint",endpoint)}
-            val actions=listOf<()->String>(
-                {ConnectionProtocol.safeConnection(row).publicConfig["endpoint"].asString},
-                {ConnectionProtocol.list(JsonArray().apply{add(row)},key.repoRoot).single().publicConfig["endpoint"].asString},
-                {ConnectionProtocol.publicPatch(JsonObject().apply{addProperty("endpoint",endpoint)})["endpoint"].asString},
-                {ConnectionProtocol.publicPatch(JsonObject().apply{add("options",JsonObject().apply{addProperty("endpoint",endpoint)})}).getAsJsonObject("options")["endpoint"].asString})
+        assertEquals(2,corpus.getAsJsonObject("endpointPolicy")["version"].asInt)
+        val cases=corpus.getAsJsonArray("endpointCases");assertEquals(77,cases.size());val actual=JsonArray()
+        for(item in cases){val c=item.asJsonObject;val endpoint=c["value"]
+            val row=example("read").asJsonObject.apply{getAsJsonObject("publicConfig").add("endpoint",endpoint)}
+            val actions=listOf<()->JsonElement>(
+                {ConnectionProtocol.safeConnection(row).publicConfig["endpoint"]},
+                {ConnectionProtocol.list(JsonArray().apply{add(row)},key.repoRoot).single().publicConfig["endpoint"]},
+                {ConnectionProtocol.publicPatch(JsonObject().apply{add("endpoint",endpoint)})["endpoint"]},
+                {ConnectionProtocol.publicPatch(JsonObject().apply{add("options",JsonObject().apply{add("endpoint",endpoint)})}).getAsJsonObject("options")["endpoint"]})
             val accepted=actions.map{action->if(c["valid"].asBoolean)assertEquals(endpoint,action(),c["id"].asString)else refuses{action()};runCatching{action()}.isSuccess}
             actual.add(JsonObject().apply{add("id",c["id"]);add("accepted",Gson().toJsonTree(accepted))})
         }

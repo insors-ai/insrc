@@ -33,12 +33,10 @@ class ModelCall<T> implements Call {
     clearTimeout(this.#timer);
     this.#external?.removeEventListener('abort', this.#onAbort);
   }
-  #fail(reason: MemoryError): void {
+  /** Provider failure, timeout and caller abort share this one settlement path. */
+  cancel(reason: MemoryError): void {
     if (this.#settled) return;
     this.#settled = true; this.#cleanup(); this.#reject(reason);
-  }
-  cancel(reason: MemoryError): void {
-    this.#fail(reason);
     this.#controller.abort(reason);
     this.cancelled(this);
   }
@@ -48,7 +46,7 @@ class ModelCall<T> implements Call {
       return this.run(this.#controller.signal);
     }).then(value => {
       if (!this.#settled) { this.#settled = true; this.#cleanup(); this.#resolve(value); }
-    }, () => this.#fail(new MemoryError('NOT_READY', 'Memory model provider request failed.', true)))
+    }, () => this.cancel(new MemoryError('NOT_READY', 'Memory model provider request failed.', true)))
       .finally(this.finished);
   }
 }

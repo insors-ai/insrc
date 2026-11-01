@@ -87,8 +87,11 @@ export function resolveRelations(
   const language = detectLanguage(filePath, entities);
 
   // Every resolved relation names its repository (Epic c2ba6fa6 s1), so the
-  // store counts one it cannot write against this repository.
-  const withRepo = (rel: Relation): Relation => ({ ...rel, meta: { ...rel.meta, repo } });
+  // store counts one it cannot write against this repository. Everything this
+  // resolver decides is read from the file's own text -- the parser's own
+  // resolutions, a call to a function of the same file, a relative import of a
+  // file on disk -- so it is 'extracted' (s7).
+  const withRepo = (rel: Relation): Relation => ({ ...rel, meta: { ...rel.meta, repo }, evidence: 'extracted' });
 
   return relations.map(rel => {
     if (rel.resolved) return withRepo(rel);

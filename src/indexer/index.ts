@@ -1256,6 +1256,8 @@ export class IndexerService {
         // The repository entity has no file: a refused or kept-pending write is
         // counted against this repository, and only its repository delete removes it.
         meta: { repo: repoPath, file: repoPath },
+        // Read from the manifest's own text (s7).
+        evidence: 'extracted',
       }]);
     }
     void workspaceRepoId;  // not directly referenced in this loop, but

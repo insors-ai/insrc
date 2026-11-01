@@ -11,16 +11,18 @@
  * stored form changes: a { stored } target is a resolved relationship (an
  * edge, or a pending row awaiting the id when the target is not stored), a
  * { pending } target a name/path reference kept for the cross-file pass. The
- * evidence is accepted and not stored until Story s7.
+ * evidence rides along to the writers, which store it as the edge's byte or on
+ * the pending row (Story s7); 'unknown' is not carried, so it is stored empty.
  */
 
 import type { Relation, RelationWrite } from '../shared/types.js';
 
 export function relationOfWrite(w: RelationWrite): Relation {
+	const evidence = w.evidence === 'unknown' ? {} : { evidence: w.evidence };
 	if ('stored' in w.target) {
-		return { kind: w.kind, from: w.from, to: w.target.stored, resolved: true, ...(w.target.meta !== undefined ? { meta: w.target.meta } : {}) };
+		return { kind: w.kind, from: w.from, to: w.target.stored, resolved: true, ...(w.target.meta !== undefined ? { meta: w.target.meta } : {}), ...evidence };
 	}
-	return { kind: w.kind, from: w.from, to: w.target.pending.to, resolved: false, meta: w.target.pending.meta };
+	return { kind: w.kind, from: w.from, to: w.target.pending.to, resolved: false, meta: w.target.pending.meta, ...evidence };
 }
 
 /** The inverse: a resolver Relation as a file commit's RelationWrite (its meta kept as it is). */
@@ -28,6 +30,6 @@ export function writeOfRelation(r: Relation): RelationWrite {
 	const target: RelationWrite['target'] = r.resolved
 		? { stored: r.to, ...(r.meta !== undefined ? { meta: r.meta } : {}) }
 		: { pending: { to: r.to, meta: r.meta ?? {} } };
-	return { from: r.from, kind: r.kind, target, evidence: 'unknown' };
+	return { from: r.from, kind: r.kind, target, evidence: r.evidence ?? 'unknown' };
 }
 

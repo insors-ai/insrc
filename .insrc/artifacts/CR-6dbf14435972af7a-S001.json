@@ -26,7 +26,8 @@
     "reviewInputSchemaVersion": 1,
     "epicCreatedAt": "2026-10-17T16:28:19.493Z",
     "epicSlug": "present-every-artifact-awaiting-decision-buttons",
-    "standalone": true
+    "standalone": true,
+    "approvedAt": "2026-11-01T05:56:33.800Z"
   },
   "body": {
     "kind": "code-review",

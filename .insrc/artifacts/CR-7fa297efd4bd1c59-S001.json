@@ -26,7 +26,8 @@
     "reviewInputSchemaVersion": 1,
     "epicCreatedAt": "2026-10-18T13:58:04.794Z",
     "epicSlug": "show-every-document-chat-turn-presents",
-    "standalone": true
+    "standalone": true,
+    "approvedAt": "2026-11-01T05:56:18.698Z"
   },
   "body": {
     "kind": "code-review",

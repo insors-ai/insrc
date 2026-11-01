@@ -605,6 +605,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// no-verdict reason (no approved contract / no build) rather than a
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
+		'codeReview.task.progress': async params => (await import('./task-review-rpc.js')).readTaskReviewProgress(params),
 		'codeReview.task.publish': async params => (await import('./task-review-rpc.js')).publishStoredTaskReview(params),
 		'codeReview.task.start': async (params, context) => (await import('./task-review-rpc.js')).startTaskReview(params, context),
 		'codeReview.task.activity': async (params, context) => (await import('./task-review-rpc.js')).exchangeControllerTaskReview(params, context, 'activity'),

@@ -90,3 +90,13 @@ export async function publishStoredTaskReview(raw: unknown): Promise<unknown> {
  requireReview(!coordinators.get(repo)?.isActive(repo, p['reviewId']), 'reviewId', 'already-running');
  return publishTaskCheckpoint(repo, p['epicHash'], p['reviewId'], publicationDeps(repo));
 }
+
+/** Read-only observation. Never starts/resumes a review or resolves an LLM provider. */
+export async function readTaskReviewProgress(raw:unknown):Promise<unknown>{
+ requireReview(raw&&typeof raw==='object','request','Expected progress request');
+ const p=raw as Record<string,unknown>;
+ requireReview(typeof p['repo']==='string'&&p['repo'].startsWith('/'),'repo','Expected absolute project');
+ requireReview(typeof p['reviewId']==='string'&&Number.isSafeInteger(p['attempt'])&&Number(p['attempt'])>0,'request','Expected reviewId and positive safe attempt');
+ const repo=await realpath(p['repo']);
+ return coordinatorFor(repo).progress(repo,p['reviewId'],Number(p['attempt']));
+}

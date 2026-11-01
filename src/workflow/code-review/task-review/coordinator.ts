@@ -1,4 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import type { ReviewProgressView } from './progress-view.js';
 import { ReviewProgressTracker } from './progress.js';
 import { ReviewProgressPersistence } from './progress-persistence.js';
 import { isDeepStrictEqual } from 'node:util';
@@ -66,6 +67,23 @@ export class TaskReviewCoordinator {
  async controllerScope(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).scope(input,owner,envelope);}
  async controllerResult(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<ControllerFrame>{return(await this.controller(project,id,attempt)).submit(input,owner,envelope);}
  async controllerActivity(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<unknown>{return(await this.controller(project,id,attempt)).activity(input,owner,envelope);}
+ /** Read-only: saved feedback is authoritative; live observations never imply a durable result. */
+ async progress(project:string,id:string,attempt:number):Promise<ReviewProgressView>{
+  requireReview(Number.isSafeInteger(attempt)&&attempt>0,'attempt','Expected positive safe attempt');
+  const path=checkpointPath(project,id),saved=await loadCheckpoint(path);
+  requireReview(saved&&saved.project===project&&saved.reviewId===id,'checkpoint','Missing or mismatched checkpoint');
+  const entry=saved.attempts.find(value=>value.header.attempt===attempt);requireReview(entry,'attempt','Missing attempt');
+  const active=this.active.get(path),owned=active?.attempt.header.attempt===attempt;
+  const controller=owned?this.controllers.get(path):undefined;
+  const tracker=owned?(controller?.progress??active?.progress):undefined;
+  const progress=tracker?.snapshot()??entry.progress??null;
+  const completed=entry['review-response'].tasks.length;
+  const warning=owned?(controller?.progressPersistence.warning??active?.persistence?.warning):undefined;
+  return {reviewId:id,attempt,status:entry.header.status,crPublication:entry['review-response'].crPublication,
+   completedTasks:completed,totalTasks:entry.header.selectedTaskIds.length,interrupted:entry.header.interrupted===true,
+   hasError:!!entry['review-response'].error,freshness:tracker?'live':progress?'stale':'unknown',
+   progress:progress?{...progress,completedTasks:completed}:null,...(warning?{warning}:{})};
+ }
  private async controller(project:string,id:string,attempt:number):Promise<ControllerTaskReview>{
   const path=checkpointPath(project,id);
   const saved=await loadCheckpoint(path);requireReview(saved,'checkpoint','missing-checkpoint');

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, open, readFile, readdir, rm, stat, symlink, unlink, writeFile } from 'node:fs/promises';
+import { link, mkdtemp, open, readFile, readdir, rm, stat, symlink, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { prepareRoot, validateOptions, LAYOUT_FILE, LAYOUT_PENDING, LAYOUT_TEXT, OWNER_FILE } from '../configuration.js';
@@ -52,6 +52,15 @@ nativeTest(import.meta.url, 'native-callback-cleanup-and-inode-faults', async ()
     await unlink(join(root.path, OWNER_FILE));
     await symlink(join(root.path, 'outside'), join(root.path, OWNER_FILE));
     await assert.rejects(acquireOwnership(options(root.path)), MemoryError);
+    await unlink(join(root.path, OWNER_FILE));
+    await writeFile(join(root.path, OWNER_FILE), '', { mode: 0o600 });
+    await link(join(root.path, OWNER_FILE), join(dir, 'hardlinked-owner'));
+    let lockCalls = 0;
+    await assert.rejects(acquireOwnership(options(root.path), {
+      closeOnExec: fd => native.closeOnExec(fd),
+      async exclusive(fd) { lockCalls++; await native.exclusive(fd); },
+    }), (error: unknown) => error instanceof MemoryError && error.code === 'INVALID_REQUEST');
+    assert.equal(lockCalls, 0, 'an unsafe candidate must be rejected before invoking flock');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

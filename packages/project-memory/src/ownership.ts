@@ -70,16 +70,26 @@ async function failedAcquisition(file: FileHandle | undefined, error: unknown): 
   throw acquisitionError(error);
 }
 
-/** This phase owns only descriptor acquisition; a failure releases that fd once. */
-async function lockDescriptor(root: RootIdentity, native: NativeLock): Promise<FileHandle> {
+/** Refuse an unsafe candidate before any native lock operation. */
+async function openLockCandidate(root: RootIdentity): Promise<FileHandle> {
   let file: FileHandle | undefined;
   try {
-    await assertRoot(root);
+    await assertRoot(root); // Before O_CREAT: do not create a file in a replaced root.
     file = await open(join(root.path, OWNER_FILE), constants.O_RDWR | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
     liveDescriptors.add(file);
-    await assertFile(file);
+    await assertFile(file); // Before flock: do not lock a FIFO/hardlinked file.
+    return file;
+  } catch (error) { return failedAcquisition(file, error); }
+}
+
+/** Acquire the validated candidate, then freshly verify identity after the await. */
+async function lockDescriptor(root: RootIdentity, native: NativeLock): Promise<FileHandle> {
+  const file = await openLockCandidate(root);
+  try {
     native.closeOnExec(file.fd);
     await native.exclusive(file.fd);
+    // The candidate checks precede native acquisition. A delayed native result
+    // may follow inode/root replacement, so this post-acquisition check is fresh.
     await checkIdentity(root, file);
     return file;
   } catch (error) { return failedAcquisition(file, error); }

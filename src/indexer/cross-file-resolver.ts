@@ -216,6 +216,7 @@ async function runPass0(opts: CrossFileResolveOpts, mode: CrossFileMode, index: 
   for (const row of rows) {
     if (BOUNDARY_RELATION_KINDS.has(row.kind) || row.meta['awaitsId'] !== true) continue;
     if (await entityU64ForId(row.rawTo) === undefined) continue;
+    // No evidence passed: the row's own (carried) evidence is stored (s7).
     items.push({ unresolved: row, targetEntityId: row.rawTo });
   }
   const result = await promoteResolvedBatch(opts.db, items);
@@ -290,6 +291,8 @@ export function rewireImportRelation(r: Rewire, repoRoot: string, byId: Readonly
   return {
     kind: 'IMPORTS', from: r.fromId, to: r.targetFileId, resolved: true,
     meta: { repo: repoRoot, file: byId.get(r.fromId)?.file ?? repoRoot },
+    // Located across files, not read from the importing file alone (s7).
+    evidence: 'inferred',
   };
 }
 
@@ -445,7 +448,7 @@ async function runPass1b(opts: CrossFileResolveOpts, mode: CrossFileMode, index:
     .filter(r => r.kind === 'EXPORTS' && r.meta['awaitsId'] !== true);
   if (pending.length === 0) return 0;
   const exports = await listExportNames();
-  const promotes: { unresolved: UnresolvedRelation; targetEntityId: string; exportName: string }[] = [];
+  const promotes: { unresolved: UnresolvedRelation; targetEntityId: string; exportName: string; evidence: 'inferred' }[] = [];
   const classUpdates: { id: string; meta: Record<string, unknown> }[] = [];
   const settle = (row: UnresolvedRelation, meta: Record<string, unknown>): void => {
     const update = classUpdate(row, meta);
@@ -466,7 +469,7 @@ async function runPass1b(opts: CrossFileResolveOpts, mode: CrossFileMode, index:
       const exportedAs = typeof row.meta['exportedAs'] === 'string' ? row.meta['exportedAs'] as string : row.rawTo;
       const targets = row.rawTo === '*' ? [source] : exportedTargets(source.id, row.rawTo, index, exports);
       if (targets.length === 1) {
-        promotes.push({ unresolved: row, targetEntityId: targets[0]!.id, exportName: exportedAs });
+        promotes.push({ unresolved: row, targetEntityId: targets[0]!.id, exportName: exportedAs, evidence: 'inferred' });
         addExport(exports, barrel.id, exportedAs, targets[0]!.id);
         progress = true;
       } else if (targets.length > 1) {
@@ -533,7 +536,7 @@ async function runPass2(
   );
 
   // Step 2 -- in-memory loop over unresolved rows. Accumulate intents.
-  const promotes:         { unresolved: UnresolvedRelation; targetEntityId: string }[] = [];
+  const promotes:         { unresolved: UnresolvedRelation; targetEntityId: string; evidence: 'inferred' }[] = [];
   // Every attempted row that stays pending gets its class, in every mode.
   const classUpdates:     { id: string; meta: Record<string, unknown> }[]              = [];
 
@@ -558,7 +561,9 @@ async function runPass2(
       ? resolveCall(opts, row, index, importsByFile, exports)
       : resolveInheritance(opts, row, index, importsByFile);
     if (intent.kind === 'resolved') {
-      promotes.push({ unresolved: row, targetEntityId: intent.targetId });
+      // Resolved by name across files (s7). An ambiguous name writes no edge:
+      // it stays pending with its candidates, so 'chosen' is never written.
+      promotes.push({ unresolved: row, targetEntityId: intent.targetId, evidence: 'inferred' });
       resolved++;
     } else if (intent.kind === 'ambiguous') {
       const update = classUpdate(row, { ...intent.meta, class: 'ambiguous' });

@@ -25,6 +25,7 @@ import { join } from 'node:path';
 
 import { closeGraphStore, getGraphStore, setGraphStorePath, withWriteTxn } from '../../db/graph/store.js';
 import { encodeOutEdgeKey, RELATION_KIND_BYTE } from '../../db/graph/keys.js';
+import { decodeEvidence } from '../../db/graph/codec.js';
 import { useTemporaryLance } from '../../db/lance/__tests__/helpers/temp-lance.js';
 import { addRepo } from '../../db/repos.js';
 import { findCallers } from '../../db/search.js';
@@ -94,12 +95,12 @@ test('ac3: calls through `export { f } from`, an aliased re-export (g() is a cal
 		'only the cycle\'s re-exports stay pending');
 });
 
-test('the stored EXPORTS edge value is empty and export_names holds (barrel, g) -> f and the star entries', async () => {
+test('the stored EXPORTS edge holds the evidence inferred (Epic c2ba6fa6 s7) and export_names holds (barrel, g) -> f and the star entries', async () => {
 	const s = await getGraphStore();
 	const indexU64 = (await entityU64ForId(fileId('index.ts')))!, fU64 = (await entityU64ForId(fnId('b.ts', 'f')))!;
 	const value = s.outEdge.get(encodeOutEdgeKey(indexU64, RELATION_KIND_BYTE.EXPORTS, fU64)) as Buffer | undefined;
 	assert.ok(value !== undefined, 'index.ts EXPORTS f is an edge');
-	assert.equal(value.length, 0, 'with an empty value');
+	assert.equal(decodeEvidence(value), 'inferred', 'its value is the evidence of a re-export followed across files (Pass 1b)');
 
 	const names = await listExportNames();
 	assert.deepEqual([...(names.get(fileId('index.ts'))?.get('g') ?? [])], [fnId('b.ts', 'f')]);

@@ -90,7 +90,7 @@ export async function resolveMessagingEndpoints(
 	const now = new Date().toISOString();
 	const resolvedByExpr = new Map<string, ResolvedTarget>();
 	const endpointsById = new Map<string, Entity>();
-	const promotes: { unresolved: UnresolvedRelation; targetEntityId: string }[] = [];
+	const promotes: { unresolved: UnresolvedRelation; targetEntityId: string; evidence: 'inferred' }[] = [];
 	let skipped = 0;
 
 	for (const row of rows) {
@@ -132,7 +132,7 @@ export async function resolveMessagingEndpoints(
 			// `rawExpression` is present ONLY when unresolved (exactOptionalPropertyTypes).
 			endpointsById.set(id, rt.resolved ? base : { ...base, rawExpression: row.rawTo });
 		}
-		promotes.push({ unresolved: row, targetEntityId: id });
+		promotes.push({ unresolved: row, targetEntityId: id, evidence: 'inferred' });   // resolved to an endpoint across files (s7)
 	}
 
 	if (endpointsById.size > 0) await upsertEntities(opts.db, [...endpointsById.values()]);

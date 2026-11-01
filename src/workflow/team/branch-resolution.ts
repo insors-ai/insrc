@@ -15,8 +15,9 @@
  * Nothing here writes: a refusal or a failed verification records nothing.
  */
 
-import type { Deadline, GitAsync } from './git-async.js';
-import { runGitAsync } from './git-async.js';
+import { refreshGit } from './refresh-git.js';
+import type { RefreshGit } from './refresh-git.js';
+import type { Deadline } from './sighting-store.js';
 import { isSafeRefName } from './sighting-store.js';
 import type { BranchSource, Sighting } from './sighting-store.js';
 
@@ -32,7 +33,7 @@ export interface ResolveInput {
 	/** The name from --branch. */
 	readonly supplied?: string | undefined;
 	readonly deadline:  Deadline;
-	readonly git?:      GitAsync | undefined;
+	readonly git?:      RefreshGit | undefined;
 }
 
 /** `ref: refs/heads/main\tHEAD` -> `main` (undefined when the remote names no default branch). */
@@ -44,15 +45,22 @@ export function parseSymrefHead(output: string): string | undefined {
 	return undefined;
 }
 
+/** The branch the remote's HEAD names, from the symrefs git_ls_remote reports (undefined when it names none). */
+function symrefBranch(symrefs: readonly { readonly ref: string; readonly target: string }[]): string | undefined {
+	const head = symrefs.find(s => s.ref === 'HEAD');
+	const m = head === undefined ? null : /^refs\/heads\/(\S+)$/.exec(head.target);
+	return m !== null && m[1] !== undefined && isSafeRefName(m[1]) ? m[1] : undefined;
+}
+
 const ASK = (remote: string): string => `run 'team refresh --branch <default-branch-name>' to name the default branch of remote '${remote}'`;
 
 export async function resolveDefaultBranch(input: ResolveInput): Promise<BranchDecision> {
-	const git = input.git ?? runGitAsync;
+	const git = input.git ?? refreshGit();
 	const { repo, remote, deadline } = input;
 
-	const symref = await git(repo, ['ls-remote', '--symref', remote, 'HEAD'], deadline);
+	const symref = await git.lsRemote(repo, { remote, symref: true, patterns: ['HEAD'] }, deadline);
 	if (symref.ok) {
-		const named = parseSymrefHead(symref.stdout);
+		const named = symrefBranch(symref.value.symrefs);
 		if (named !== undefined) return { ok: true, branch: named, source: 'remote' };
 	}
 	if (!symref.ok) return { ok: false, reason: `remote '${remote}' could not be reached (${symref.stderr}); nothing was recorded` };
@@ -63,9 +71,9 @@ export async function resolveDefaultBranch(input: ResolveInput): Promise<BranchD
 	if (input.supplied !== undefined) {
 		const name = input.supplied;
 		if (!isSafeRefName(name)) return { ok: false, reason: `'${name}' is not a usable branch name` };
-		const heads = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${name}`], deadline);
+		const heads = await git.lsRemote(repo, { remote, heads: true, patterns: [`refs/heads/${name}`] }, deadline);
 		if (!heads.ok) return { ok: false, reason: `branch '${name}' could not be verified on remote '${remote}' (${heads.stderr}); nothing was recorded` };
-		const listed = heads.stdout.split('\n').some(l => l.trim().endsWith(`\trefs/heads/${name}`));
+		const listed = heads.value.entries.some(e => e.ref === `refs/heads/${name}`);
 		if (!listed) return { ok: false, reason: `branch '${name}' does not exist on remote '${remote}'; nothing was recorded` };
 		return { ok: true, branch: name, source: 'user' };
 	}

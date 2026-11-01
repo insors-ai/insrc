@@ -15,9 +15,11 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { POLICY_PATH, runGit } from '../git.js';
+import { POLICY_PATH } from '../git.js';
 import { readPolicy } from '../policy-reader.js';
 import { refreshPolicy } from '../policy-refresh.js';
+import { refreshLocal } from '../refresh-git.js';
+import type { RefreshLocal } from '../refresh-git.js';
 import { LOCK_STALE_MS, acquireLock, readSighting, sightingKey } from '../sighting-store.js';
 import { VALID_POLICY, cloneOf, commitFile, git, makeFixture, makeOrigin, removeAndCommit } from './git-fixture.js';
 
@@ -282,8 +284,7 @@ test('a git failure while looking for the policy file is not mistaken for a remo
 		assert.ok((await refreshPolicy(clone, { teamDir: f.teamDir })).ok);
 
 		// Every local lookup of the policy file fails (as on a timeout or a damaged repository): the record must survive.
-		const broken = (repo: string, args: readonly string[]): { ok: false; stderr: string } | { ok: true; stdout: string } =>
-			args[0] === 'ls-tree' ? { ok: false, stderr: 'fatal: unable to read tree' } : runGit(repo, args);
+		const broken: RefreshLocal = { ...refreshLocal(), policyNames: async () => ({ ok: false, stderr: 'fatal: unable to read tree', timedOut: false }) };
 		const result = await refreshPolicy(clone, { teamDir: f.teamDir, local: broken });
 		assert.equal(result.ok, false);
 		if (!result.ok) assert.match(result.reason, /could not look for the policy file/);
@@ -303,8 +304,7 @@ test('removal never deletes the record before a possibly stale remote HEAD is fi
 		writeFileSync(headLock, '');
 
 		// The HEAD cannot be inspected (unknown) and cannot be updated: nothing was deleted, so there is nothing to put back.
-		const noInspect = (repo: string, args: readonly string[]): { ok: false; stderr: string } | { ok: true; stdout: string } =>
-			args[0] === 'symbolic-ref' && args.includes('-q') ? { ok: false, stderr: 'the refresh deadline passed' } : runGit(repo, args);
+		const noInspect: RefreshLocal = { ...refreshLocal(), remoteHead: async () => ({ ok: false, stderr: 'the refresh deadline passed', timedOut: true }) };
 		let writes = 0;
 		const countingWrite = (): never => { writes++; throw new Error('must not be called'); };
 		const unknown = await refreshPolicy(clone, { teamDir: f.teamDir, local: noInspect, write: countingWrite });

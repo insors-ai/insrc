@@ -16,7 +16,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { createDeadline } from '../git-async.js';
-import type { GitAsync } from '../git-async.js';
+import type { RefreshGit } from '../refresh-git.js';
 import { parseSymrefHead, resolveDefaultBranch } from '../branch-resolution.js';
 import { readSighting, writeSighting } from '../sighting-store.js';
 import type { Sighting } from '../sighting-store.js';
@@ -27,12 +27,18 @@ function recorded(branch: string, branchSource: 'remote' | 'user'): Sighting {
 	return { remote: 'origin', branch, branchSource, sha: 'a'.repeat(40), refreshedAt: 'then', anchor: NO_ANCHOR };
 }
 
-/** A fake git: `symref` is ls-remote --symref's stdout (or a failure), `heads` the branches ls-remote --heads lists. */
-function fakeGit(symref: string | Error, heads: readonly string[]): GitAsync {
-	return async (_cwd, args) => {
-		if (args.includes('--symref')) return symref instanceof Error ? { ok: false, stderr: symref.message, timedOut: false } : { ok: true, stdout: symref };
-		const wanted = args[args.length - 1] ?? '';
-		return { ok: true, stdout: heads.filter(h => `refs/heads/${h}` === wanted).map(h => `${'1'.repeat(40)}\trefs/heads/${h}\n`).join('') };
+/** A fake git: `symref` is what ls-remote --symref reports (or a failure), `heads` the branches ls-remote --heads lists. */
+function fakeGit(symref: string | Error, heads: readonly string[]): RefreshGit {
+	const symrefs = symref instanceof Error ? [] : symref.split('\n').flatMap(line => {
+		const m = /^ref:\s+(\S+)\s+(\S+)\s*$/.exec(line.trim());
+		return m === null ? [] : [{ ref: m[2]!, target: m[1]! }];
+	});
+	return {
+		async lsRemote(_repo, query) {
+			if (query.symref === true) return symref instanceof Error ? { ok: false, stderr: symref.message, timedOut: false } : { ok: true, value: { entries: [], symrefs } };
+			return { ok: true, value: { entries: heads.filter(h => query.patterns?.includes(`refs/heads/${h}`)).map(h => ({ objectId: '1'.repeat(40), ref: `refs/heads/${h}` })), symrefs: [] } };
+		},
+		async fetchRefs() { return { ok: true, value: undefined }; },
 	};
 }
 

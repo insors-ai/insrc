@@ -19,15 +19,16 @@
  */
 
 import { getLogger } from '../../shared/logger.js';
+import { isToolDenied } from '../tracker/tool-denied.js';
 import { findAnchor } from './anchor-finder.js';
 import { resolveDefaultBranch } from './branch-resolution.js';
-import { createDeadline, runGitAsync } from './git-async.js';
-import type { Deadline, GitAsync } from './git-async.js';
-import { POLICY_PATH, runGit } from './git.js';
-import type { GitRun } from './git.js';
+import { POLICY_PATH } from './git.js';
+import { refreshGit, refreshLocal } from './refresh-git.js';
+import type { RefreshGit, RefreshLocal } from './refresh-git.js';
 import { parsePolicyFile } from './policy-parser.js';
 import { isGitRepo, pickRemote } from './policy-reader.js';
-import { REFRESH_DEADLINE_MS, acquireLock, resolveRepoIdentity, mergeAnchor, readSighting, removeSighting, writeSighting } from './sighting-store.js';
+import { REFRESH_DEADLINE_MS, createDeadline, acquireLock, resolveRepoIdentity, mergeAnchor, readSighting, removeSighting, writeSighting } from './sighting-store.js';
+import type { Deadline } from './sighting-store.js';
 import type { PolicyAnchor, PolicyRefreshOutcome, PolicyResult } from './types.js';
 
 const log = getLogger('team-policy-refresh');
@@ -38,21 +39,14 @@ export interface RefreshOptions {
 	readonly teamDir?: string | undefined;
 	readonly now?: (() => Date) | undefined;
 	readonly deadlineMs?: number | undefined;
+	/** Stops the refresh at the call that is running (the executor kills it): the daemon method was cancelled or the connection closed. */
+	readonly signal?: AbortSignal | undefined;
 	/** Test seams. */
-	readonly git?: GitAsync | undefined;
+	readonly git?: RefreshGit | undefined;
 	readonly write?: ((...args: Parameters<typeof writeSighting>) => void | Promise<void>) | undefined;
-	readonly local?: LocalGit | undefined;
+	readonly local?: RefreshLocal | undefined;
 	readonly anchor?: ((repo: string, trackingRef: string, budget?: () => number) => PolicyAnchor | Promise<PolicyAnchor>) | undefined;
 }
-
-type LocalGit = (repo: string, args: readonly string[], deadline: Deadline) => GitRun;
-
-/** A local git call that shares the refresh's single deadline instead of carrying its own timeout. */
-const defaultLocalGit: LocalGit = (repo, args, deadline) => {
-	const left = deadline.remainingMs();
-	if (left <= 0) return { ok: false, stderr: 'the refresh deadline passed' };
-	return runGit(repo, args, left);
-};
 
 function fail(reason: string): { ok: false; reason: string } {
 	return { ok: false, reason };
@@ -61,29 +55,33 @@ function fail(reason: string): { ok: false; reason: string } {
 /** The LLD's `PolicyRefresh`: `(repo, branch?)`. The second argument may also be a full options object. */
 export async function refreshPolicy(repo: string, optsOrBranch: RefreshOptions | string = {}): Promise<PolicyResult<PolicyRefreshOutcome>> {
 	const opts: RefreshOptions = typeof optsOrBranch === 'string' ? { branch: optsOrBranch } : optsOrBranch;
-	// One deadline for the whole refresh, started before the first git call.
+	// One deadline for the whole refresh, started before the first git call; every call takes what is left of it.
 	const deadline = createDeadline(opts.deadlineMs ?? REFRESH_DEADLINE_MS);
-	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before it started');
-	if (!(await isGitRepo(repo, deadline.remainingMs()))) return fail('this directory is not a git repository');
-
-	await resolveRepoIdentity(repo, Math.max(1, deadline.remainingMs())); // ask git once, inside the budget; the store reuses the answer
-	const lock = await acquireLock(repo, opts.teamDir);
-	if (!lock.ok) return fail(lock.reason);
 	try {
-		return await refreshLocked(repo, opts, deadline);
+		if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before it started');
+		if (!(await isGitRepo(repo, deadline.remainingMs(), opts.signal))) return fail('this directory is not a git repository');
+
+		await resolveRepoIdentity(repo, Math.max(1, deadline.remainingMs()), opts.signal); // ask git once, inside the budget; the store reuses the answer
+		const lock = await acquireLock(repo, opts.teamDir);
+		if (!lock.ok) return fail(lock.reason);
+		try {
+			return await refreshLocked(repo, opts, deadline);
+		} finally {
+			lock.release();
+		}
 	} finally {
-		lock.release();
+		deadline.dispose();
 	}
 }
 
 async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadline): Promise<PolicyResult<PolicyRefreshOutcome>> {
-	const git = opts.git ?? runGitAsync;
+	const git = opts.git ?? refreshGit(opts.signal);
 	const write = opts.write ?? writeSighting;
-	const localGit = opts.local ?? defaultLocalGit;
+	const local = opts.local ?? refreshLocal(opts.signal);
 	const now = (opts.now ?? ((): Date => new Date()))().toISOString();
 	const seen = await readSighting(repo, opts.teamDir);
 	const sighting = seen.kind === 'valid' ? seen.sighting : undefined;
-	const remote = sighting?.remote ?? await pickRemote(repo, Math.max(1, deadline.remainingMs()));
+	const remote = sighting?.remote ?? await pickRemote(repo, Math.max(1, deadline.remainingMs()), opts.signal);
 	if (remote === undefined) return fail('no single remote to refresh from: add a remote named origin');
 
 	const decision = await resolveDefaultBranch({ repo, remote, sighting, supplied: opts.branch, deadline, git });
@@ -91,26 +89,26 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 	const { branch } = decision;
 	const ref = `refs/remotes/${remote}/${branch}`;
 
-	const fetched = await git(repo, ['fetch', '--no-tags', '--no-write-fetch-head', '--no-recurse-submodules', '--no-prune', '--refmap=', remote, `+refs/heads/${branch}:${ref}`], deadline);
+	const fetched = await git.fetchRefs(repo, { remote, refspecs: [`+refs/heads/${branch}:${ref}`] }, deadline);
 	if (!fetched.ok) return fail(`fetching '${branch}' from '${remote}' failed: ${fetched.stderr}`);
 
-	const sha = localGit(repo, ['rev-parse', '--verify', '-q', `${ref}^{commit}`], deadline);
+	const sha = await local.resolveCommit(repo, ref, deadline);
 	if (!sha.ok) return fail(`'${branch}' was fetched but ${ref} cannot be resolved`);
-	const commit = sha.stdout.trim();
+	const commit = sha.value.trim();
 	const warnings: string[] = [];
 
-	// Tell "the file is not on the branch" (ls-tree succeeds and lists nothing) from any other git failure,
+	// Tell "the file is not on the branch" (the listing succeeds and lists nothing) from any other git failure,
 	// which must never be mistaken for a removal.
-	const tree = localGit(repo, ['ls-tree', '--full-tree', '--name-only', commit, '--', POLICY_PATH], deadline);
+	const tree = await local.policyNames(repo, commit, POLICY_PATH, deadline);
 	if (!tree.ok) return fail(`could not look for the policy file on ${ref} (${tree.stderr}); nothing was changed`);
 
-	if (tree.stdout.trim().length === 0) {
+	if (tree.value.length === 0) {
 		// The policy file is not on the default branch: a deliberate removal reads as solo again.
 		// If the remote HEAD may still name another retained branch (which could still hold an old policy), it is not
 		// cosmetic any more: fix it BEFORE touching the record, and if that fails leave everything as it was and fail.
 		let head: { ok: true } | { ok: false; warning: string } | undefined;
-		if (remoteHeadMayBeStale(localGit, repo, remote, branch, deadline)) {
-			head = setRemoteHead(localGit, repo, remote, branch, deadline);
+		if (await remoteHeadMayBeStale(local, repo, remote, branch, deadline)) {
+			head = await setRemoteHead(local, repo, remote, branch, deadline);
 			if (!head.ok) {
 				return fail(`the policy file is absent on '${branch}', but refs/remotes/${remote}/HEAD may still point at another branch and could not be updated (${head.warning}); `
 					+ 'the record was kept, so run the refresh again');
@@ -122,20 +120,21 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 			return fail(`the policy file is absent on '${branch}' but the stored record could not be removed (${err instanceof Error ? err.message : String(err)}); the next refresh retries`);
 		}
 		// Update the remote HEAD once: reuse the result when it was already fixed above.
-		head ??= setRemoteHead(localGit, repo, remote, branch, deadline);
+		head ??= await setRemoteHead(local, repo, remote, branch, deadline);
 		if (!head.ok) warnings.push(head.warning);
 		return { ok: true, value: { kind: 'absent', branch, warnings } };
 	}
 
 	// The file exists. Whatever happens next, remember this repo as a team repo: even a file that cannot be read is evidence.
-	const shown = localGit(repo, ['show', `${commit}:${POLICY_PATH}`], deadline);
-	const parsed = shown.ok ? parsePolicyFile(shown.stdout) : undefined;
-	const anchor = mergeAnchor(sighting?.anchor, await (opts.anchor ?? findAnchor)(repo, commit, () => deadline.remainingMs()));
+	const shown = await local.policyText(repo, commit, POLICY_PATH, deadline);
+	const parsed = shown.ok ? parsePolicyFile(shown.value) : undefined;
+	const anchor = mergeAnchor(sighting?.anchor, await (opts.anchor ?? findAnchor)(repo, commit, () => deadline.remainingMs(), opts.signal));
 	// An anchor lookup that ran out of time reads as 'unknown'; never record a result the deadline cut short.
 	if (deadline.remainingMs() <= 0) return fail('the refresh deadline passed before the policy could be recorded; nothing was recorded');
 	try {
 		await write(repo, { remote, branch, branchSource: decision.source, sha: commit, refreshedAt: now, anchor }, opts.teamDir);
 	} catch (err) {
+		if (isToolDenied(err)) throw err;
 		log.warn({ err: err instanceof Error ? err.message : String(err) }, 'could not record the fetched policy');
 		return fail(`the fetched policy could not be recorded (${err instanceof Error ? err.message : String(err)}); ${ref} has already moved, and the next refresh repairs the record`);
 	}
@@ -143,7 +142,7 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 		return fail(`the policy file on ${ref} exists but could not be read (${shown.ok ? 'unreadable' : shown.stderr}); the repository was recorded as carrying a policy, so team actions are refused until it can be read`);
 	}
 
-	const head = setRemoteHead(localGit, repo, remote, branch, deadline);
+	const head = await setRemoteHead(local, repo, remote, branch, deadline);
 	if (!head.ok) warnings.push(head.warning);
 	return parsed.ok
 		? { ok: true, value: { kind: 'fetched', branch, sha: commit, warnings } }
@@ -151,17 +150,17 @@ async function refreshLocked(repo: string, opts: RefreshOptions, deadline: Deadl
 }
 
 /** Keep a clone-style remote HEAD pointing at the default branch. A failure is reported to the caller to decide. */
-function setRemoteHead(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): { ok: true } | { ok: false; warning: string } {
-	const head = localGit(repo, ['symbolic-ref', `refs/remotes/${remote}/HEAD`, `refs/remotes/${remote}/${branch}`], deadline);
+async function setRemoteHead(local: RefreshLocal, repo: string, remote: string, branch: string, deadline: Deadline): Promise<{ ok: true } | { ok: false; warning: string }> {
+	const head = await local.setRemoteHead(repo, remote, branch, deadline);
 	return head.ok ? { ok: true } : { ok: false, warning: `could not update refs/remotes/${remote}/HEAD (${head.stderr}); the recorded branch is used instead` };
 }
 
 /**
  * True unless the remote HEAD is known to name `branch`. An unset HEAD counts too: the reader then searches every fetched
- * ref for a policy, so a retained branch with an old one would make a removed policy look present. A HEAD that cannot be
+ * ref for a policy, so a retained branch with an old policy would make a removed policy look present. A HEAD that cannot be
  * inspected is of course unknown.
  */
-function remoteHeadMayBeStale(localGit: LocalGit, repo: string, remote: string, branch: string, deadline: Deadline): boolean {
-	const head = localGit(repo, ['symbolic-ref', '-q', `refs/remotes/${remote}/HEAD`], deadline);
-	return !head.ok || head.stdout.trim() !== `refs/remotes/${remote}/${branch}`;
+async function remoteHeadMayBeStale(local: RefreshLocal, repo: string, remote: string, branch: string, deadline: Deadline): Promise<boolean> {
+	const head = await local.remoteHead(repo, remote, deadline);
+	return !head.ok || head.value?.trim() !== `refs/remotes/${remote}/${branch}`;
 }

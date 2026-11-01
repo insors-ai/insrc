@@ -181,3 +181,9 @@ test('a lock that fails while being initialised is removed, not left behind', ()
 		assert.equal(acquireLock(repoA, teamDir).ok, true, 'the next caller is not told a refresh is running');
 	} finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test('sighting-store.test.ts: the lock-lifetime reasoning still holds (the lock lifetime is greater than REFRESH_DEADLINE_MS plus the stop time)', () => {
+	const STOP_MS = 2_000;   // a killed git process group is gone within 2 seconds
+	assert.equal(REFRESH_DEADLINE_MS, 10_000, 'the refresh budget is still 10 seconds');
+	assert.ok(LOCK_STALE_MS > REFRESH_DEADLINE_MS + STOP_MS, 'a live holder has released before its lock can look stale');
+});

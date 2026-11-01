@@ -45,6 +45,23 @@ export type SightingRead =
 /** Longest a holder may keep the lock: the refresh's single deadline kills its git children and ends the refresh. */
 export const REFRESH_DEADLINE_MS = 10_000;
 
+/** One time budget shared by the calls of a stage, with a signal that aborts when it is spent. */
+export interface Deadline {
+	remainingMs(): number;
+	/** Aborts when the budget is spent; pass it to every call of the stage so the running one is stopped. */
+	readonly signal: AbortSignal;
+	/** Clears the timer; call it in a finally when the stage ends before the budget does. */
+	dispose(): void;
+}
+
+export function createDeadline(totalMs: number = REFRESH_DEADLINE_MS, now: () => number = Date.now): Deadline {
+	const end = now() + totalMs;
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), Math.max(0, totalMs));
+	timer.unref();
+	return { remainingMs: () => Math.max(0, end - now()), signal: controller.signal, dispose: () => clearTimeout(timer) };
+}
+
 /**
  * A lock older than this is stale and may be taken over. It is deliberately a multiple of
  * {@link REFRESH_DEADLINE_MS}: a live holder always finishes (and releases) within the deadline,

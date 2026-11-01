@@ -14,16 +14,11 @@
 
 import { execFile } from 'node:child_process';
 
-import { REFRESH_DEADLINE_MS } from './sighting-store.js';
+import type { Deadline } from './sighting-store.js';
 
-export interface Deadline {
-	remainingMs(): number;
-}
-
-export function createDeadline(totalMs: number = REFRESH_DEADLINE_MS, now: () => number = Date.now): Deadline {
-	const end = now() + totalMs;
-	return { remainingMs: () => Math.max(0, end - now()) };
-}
+// the deadline lives beside REFRESH_DEADLINE_MS (Story s9); these exports keep the imports of this module working
+export { createDeadline } from './sighting-store.js';
+export type { Deadline } from './sighting-store.js';
 
 export type GitAsyncRun =
 	| { readonly ok: true;  readonly stdout: string }

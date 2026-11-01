@@ -18,7 +18,7 @@ import { embedQuery } from '../../../../indexer/embedder.js';
 import { registerTool } from '../../registry.js';
 import { guardSearchRequest, SearchRefusedError, underIndexFilter } from '../../../search-guard.js';
 import type { SearchRequestNames } from '../../../search-guard.js';
-import type { Entity, EntityKind } from '../../../../shared/types.js';
+import type { Entity, EntityKind, RelationEvidence } from '../../../../shared/types.js';
 import type { RelationKind } from '../../../../db/graph/keys.js';
 import type { TraversalOpts } from '../../../../db/graph/traversal.js';
 import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
@@ -67,6 +67,9 @@ function shortEntity(e: Entity): Record<string, unknown> {
     endLine: e.endLine,
     repo: e.repo,
     signature: e.signature,
+    // How the relationship that reached it was established, on the caller /
+    // callee results (Epic c2ba6fa6 s7); absent on other entity lists.
+    ...('evidence' in e && { evidence: (e as Entity & { evidence: RelationEvidence }).evidence }),
   };
 }
 

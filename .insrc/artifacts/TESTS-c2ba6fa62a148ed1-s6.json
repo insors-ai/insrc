@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s6",
     "createdAt": "2026-11-01T08:48:41.494Z",
-    "updatedAt": "2026-11-01T11:46:05.908Z",
+    "updatedAt": "2026-11-01T12:21:45.714Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -495,8 +495,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "66e0566c0",
-        "ranAt": "2026-11-01T10:19:27.313Z",
+        "commit": "e272bcc5f",
+        "ranAt": "2026-11-01T12:11:59.354Z",
         "testsPassed": true,
         "tests": [
           {
@@ -507,6 +507,11 @@
               {
                 "file": "src/indexer/__tests__/reconcile.test.ts",
                 "title": "ac6: adding a repo with no root ignore file results in one existing before the first index runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "a repository registered before s6 with no root ignore file gets one at start-up, before its filter is built",
                 "result": "pass"
               },
               {
@@ -528,7 +533,7 @@
             "file": "src/indexer/__tests__/ignore-proposal-model.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 522,
+            "durationMs": 582,
             "titles": [
               {
                 "title": "ac6: a repo added with no root ignore file gets the cheap-tier model's proposal, resolved at call time",
@@ -545,7 +550,7 @@
             "file": "src/indexer/__tests__/reconcile.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4372,
+            "durationMs": 4541,
             "titles": [
               {
                 "title": "a clean-up job for a registered repository with nothing stored is processed without error",
@@ -625,6 +630,55 @@
               },
               {
                 "title": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1803,
+            "titles": [
+              {
+                "title": "a watcher-emitted event for a FileFilter-excluded file never reaches a registered handler, while one for an included file does",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: an ignore-file edit that drops one rule and adds another, in one batch with edits to the files it moves, is judged by the new rules -- the newly covered file leaves, the uncovered one enters, once each",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a file the removed rule covered enters the index even when the batch carries no event for it",
+                "result": "pass"
+              },
+              {
+                "title": "a change to the clone's exclude file, which no event names, is found by its content and applied before the batch is judged",
+                "result": "pass"
+              },
+              {
+                "title": "the real watcher applies an ignore-file edit and an edit to a file it newly covers consistently in one pass",
+                "result": "pass"
+              },
+              {
+                "title": "a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh is reported, and a .gitignore a tool writes inside an ignored directory refreshes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built",
+                "result": "pass"
+              },
+              {
+                "title": "the watcher natively ignores what the filter leaves out -- pruned directories, nested repositories, .insrc -- and re-subscribes when the rules change",
+                "result": "pass"
+              },
+              {
+                "title": "a repository registered before s6 with no root ignore file gets one at start-up, before its filter is built",
                 "result": "pass"
               }
             ],
@@ -858,8 +912,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "9b36bd798",
-        "ranAt": "2026-11-01T10:35:33.944Z",
+        "commit": "e272bcc5f",
+        "ranAt": "2026-11-01T12:16:38.581Z",
         "testsPassed": true,
         "tests": [
           {
@@ -922,6 +976,16 @@
                 "file": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
                 "title": "walkFiles: a node_modules directory the repository ignores is skipped; other files visible",
                 "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-file-filter.test.ts",
+                "title": "inside a run every consumer gets the same filter for a repository; outside, each call builds its own",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-file-filter.test.ts",
+                "title": "the plan's RepoIgnoreFilter and the infra file walk judge by one snapshot inside a run, the current rules outside one",
+                "result": "pass"
               }
             ],
             "files": []
@@ -929,10 +993,27 @@
         ],
         "files": [
           {
+            "file": "src/analyze/context/__tests__/run-file-filter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 661,
+            "titles": [
+              {
+                "title": "inside a run every consumer gets the same filter for a repository; outside, each call builds its own",
+                "result": "pass"
+              },
+              {
+                "title": "the plan's RepoIgnoreFilter and the infra file walk judge by one snapshot inside a run, the current rules outside one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1595,
+            "durationMs": 1504,
             "titles": [
               {
                 "title": "the fixture's include/exclude set is FileFilter's own answer",
@@ -965,7 +1046,7 @@
             "file": "src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4747,
+            "durationMs": 4008,
             "titles": [
               {
                 "title": "readScopeRef: well-formed -> returns",
@@ -1070,7 +1151,7 @@
             "file": "src/analyze/runtimes/infra/__tests__/walk-files.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 526,
+            "durationMs": 455,
             "titles": [
               {
                 "title": "the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given",
@@ -1083,8 +1164,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "198583e88",
-        "ranAt": "2026-11-01T10:40:49.186Z",
+        "commit": "e272bcc5f",
+        "ranAt": "2026-11-01T12:21:04.629Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1121,7 +1202,7 @@
             "file": "src/indexer/__tests__/file-selection.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1482,
+            "durationMs": 1742,
             "titles": [
               {
                 "title": "the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected",
@@ -1146,7 +1227,7 @@
             "file": "src/indexer/__tests__/reconcile.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4099,
+            "durationMs": 3963,
             "titles": [
               {
                 "title": "a clean-up job for a registered repository with nothing stored is processed without error",
@@ -1235,8 +1316,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "c8a1b9942",
-        "ranAt": "2026-11-01T11:44:37.506Z",
+        "commit": "e272bcc5f",
+        "ranAt": "2026-11-01T12:14:51.238Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1278,6 +1359,11 @@
                 "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
                 "title": "a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built",
                 "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "the watcher natively ignores what the filter leaves out -- pruned directories, nested repositories, .insrc -- and re-subscribes when the rules change",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1288,7 +1374,7 @@
             "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1562,
+            "durationMs": 1933,
             "titles": [
               {
                 "title": "a watcher-emitted event for a FileFilter-excluded file never reaches a registered handler, while one for an included file does",
@@ -1321,6 +1407,14 @@
               {
                 "title": "a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built",
                 "result": "pass"
+              },
+              {
+                "title": "the watcher natively ignores what the filter leaves out -- pruned directories, nested repositories, .insrc -- and re-subscribes when the rules change",
+                "result": "pass"
+              },
+              {
+                "title": "a repository registered before s6 with no root ignore file gets one at start-up, before its filter is built",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1329,8 +1423,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "6a343240e",
-        "ranAt": "2026-11-01T10:49:57.271Z",
+        "commit": "e272bcc5f",
+        "ranAt": "2026-11-01T12:18:25.377Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1367,7 +1461,7 @@
             "file": "src/analyze/context/__tests__/repo-ignore-filter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 918,
+            "durationMs": 880,
             "titles": [
               {
                 "title": "excludes directories matching a root .gitignore rule",
@@ -1400,7 +1494,7 @@
             "file": "src/analyze/explore/__tests__/file-filter-walkers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1514,
+            "durationMs": 1446,
             "titles": [
               {
                 "title": "the fixture's include/exclude set is FileFilter's own answer",
@@ -1433,8 +1527,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "98f3aff9e",
-        "ranAt": "2026-11-01T11:46:05.908Z",
+        "commit": "e272bcc5f",
+        "ranAt": "2026-11-01T12:21:45.714Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1491,7 +1585,7 @@
             "file": "src/indexer/__tests__/file-filter-git-conformance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1206,
+            "durationMs": 1261,
             "titles": [
               {
                 "title": "ac1/ac3: FileFilter lists exactly the files real git includes, over anchored, nested, negation, precedence, directory-only and globstar rules",
@@ -1528,7 +1622,7 @@
             "file": "src/indexer/__tests__/file-selection.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1427,
+            "durationMs": 1470,
             "titles": [
               {
                 "title": "the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected",

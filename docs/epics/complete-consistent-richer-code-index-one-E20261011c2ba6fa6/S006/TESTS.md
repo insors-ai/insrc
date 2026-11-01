@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 55 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -106,13 +106,14 @@ Run at 2026-11-01T10:05:42.218Z on commit `0fa779e65`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-01T10:19:27.313Z on commit `66e0566c0`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T12:11:59.354Z on commit `e272bcc5f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/index.ts (full walk, single file event, clean-up pass, registration)**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | ac6: adding a repo with no root ignore file results in one existing before the first index runs | `src/indexer/__tests__/reconcile.test.ts` |
+| pass | a repository registered before s6 with no root ignore file gets one at start-up, before its filter is built | `src/indexer/__tests__/watcher-file-filter.test.ts` |
 | pass | ac6: a repo added with no root ignore file gets the cheap-tier model's proposal, resolved at call time | `src/indexer/__tests__/ignore-proposal-model.test.ts` |
 | pass | ac7: a cheap tier that cannot be resolved still leaves a fallback root ignore file | `src/indexer/__tests__/ignore-proposal-model.test.ts` |
 
@@ -120,8 +121,9 @@ Run at 2026-11-01T10:19:27.313Z on commit `66e0566c0`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/ignore-proposal-model.test.ts` | 0 | 2 | 0.5 s |  |
-| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.4 s |  |
+| `src/indexer/__tests__/ignore-proposal-model.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.5 s |  |
+| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 10 | 1.8 s |  |
 
 ## t7
 
@@ -155,7 +157,7 @@ Run at 2026-11-01T11:43:23.247Z on commit `c8a1b9942`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-01T10:35:33.944Z on commit `9b36bd798`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T12:16:38.581Z on commit `e272bcc5f`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/analyze/explore/concept-resolve.ts**
 
@@ -179,18 +181,21 @@ Run at 2026-11-01T10:35:33.944Z on commit `9b36bd798`. Tests check: **passed**. 
 | pass | infra walkFiles reports a directory it cannot read, and never descends into an ignored one | `src/analyze/explore/__tests__/file-filter-walkers.test.ts` |
 | pass | the file walk goes to the end with a null cap and stops at its cap, as before, with a number or with none given | `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` |
 | pass | walkFiles: a node_modules directory the repository ignores is skipped; other files visible | `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` |
+| pass | inside a run every consumer gets the same filter for a repository; outside, each call builds its own | `src/analyze/context/__tests__/run-file-filter.test.ts` |
+| pass | the plan's RepoIgnoreFilter and the infra file walk judge by one snapshot inside a run, the current rules outside one | `src/analyze/context/__tests__/run-file-filter.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.6 s |  |
-| `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` | 0 | 24 | 4.7 s |  |
+| `src/analyze/context/__tests__/run-file-filter.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.5 s |  |
+| `src/analyze/runtimes/infra/__tests__/infra-runtimes.test.ts` | 0 | 24 | 4 s |  |
 | `src/analyze/runtimes/infra/__tests__/walk-files.test.ts` | 0 | 1 | 0.5 s |  |
 
 ## t9
 
-Run at 2026-11-01T10:40:49.186Z on commit `198583e88`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T12:21:04.629Z on commit `e272bcc5f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/index.ts (full walk, single file event, clean-up pass, registration)**
 
@@ -205,12 +210,12 @@ Run at 2026-11-01T10:40:49.186Z on commit `198583e88`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.5 s |  |
-| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.1 s |  |
+| `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.7 s |  |
+| `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4 s |  |
 
 ## t10
 
-Run at 2026-11-01T11:44:37.506Z on commit `c8a1b9942`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T12:14:51.238Z on commit `e272bcc5f`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/watcher.ts**
 
@@ -223,16 +228,17 @@ Run at 2026-11-01T11:44:37.506Z on commit `c8a1b9942`. Tests check: **passed**. 
 | pass | a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one | `src/indexer/__tests__/watcher-file-filter.test.ts` |
 | pass | a refresh is reported, and a .gitignore a tool writes inside an ignored directory refreshes nothing | `src/indexer/__tests__/watcher-file-filter.test.ts` |
 | pass | a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+| pass | the watcher natively ignores what the filter leaves out -- pruned directories, nested repositories, .insrc -- and re-subscribes when the rules change | `src/indexer/__tests__/watcher-file-filter.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 8 | 1.6 s |  |
+| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 10 | 1.9 s |  |
 
 ## t11
 
-Run at 2026-11-01T10:49:57.271Z on commit `6a343240e`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T12:18:25.377Z on commit `e272bcc5f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/analyze/explore/concept-resolve.ts**
 
@@ -248,11 +254,11 @@ Run at 2026-11-01T10:49:57.271Z on commit `6a343240e`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/repo-ignore-filter.test.ts` | 0 | 6 | 0.9 s |  |
-| `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.5 s |  |
+| `src/analyze/explore/__tests__/file-filter-walkers.test.ts` | 0 | 6 | 1.4 s |  |
 
 ## t12
 
-Run at 2026-11-01T11:46:05.908Z on commit `98f3aff9e`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T12:21:45.714Z on commit `e272bcc5f`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/index.ts (full walk, single file event, clean-up pass, registration)**
 
@@ -271,5 +277,5 @@ Run at 2026-11-01T11:46:05.908Z on commit `98f3aff9e`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/file-filter-git-conformance.test.ts` | 0 | 7 | 1.2 s |  |
-| `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.4 s |  |
+| `src/indexer/__tests__/file-filter-git-conformance.test.ts` | 0 | 7 | 1.3 s |  |
+| `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.5 s |  |

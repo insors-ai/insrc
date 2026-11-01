@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T14:59:32.825Z",
+    "updatedAt": "2026-11-01T15:04:42.397Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -481,6 +481,96 @@
               },
               {
                 "title": "t6: the recount when the store opens corrects a wrong stored count",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7c3e1dd09",
+        "ranAt": "2026-11-01T15:04:42.397Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "listUnembeddedEntities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t7: an entity whose marker says embedded but whose vector is missing has its marker cleared and is counted unembedded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "IndexerService.reembed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t7: a vector whose entity is not stored is deleted, so a later first commit of that id leaves exactly one vector row",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t7: the indexer reconciles the graph and the vector table when it starts, before any job",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit-vectors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2334,
+            "titles": [
+              {
+                "title": "t5: a successful vector write sets each changed entity's marker to the active embedding model; nothing is outstanding",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a failed vector write leaves the changed entities' markers empty and reports them as outstanding, and the graph rows are still committed",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a first-allocated entity is added and a changed one upserted: one vector row per id after both",
+                "result": "pass"
+              },
+              {
+                "title": "t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it",
+                "result": "pass"
+              },
+              {
+                "title": "t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero",
+                "result": "pass"
+              },
+              {
+                "title": "t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the recount when the store opens corrects a wrong stored count",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a vector whose entity is not stored is deleted, so a later first commit of that id leaves exactly one vector row",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an entity whose marker says embedded but whose vector is missing has its marker cleared and is counted unembedded",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the indexer reconciles the graph and the vector table when it starts, before any job",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -129,3 +129,26 @@ Run at 2026-11-01T14:59:32.825Z on commit `9ee41aac7`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/file-commit-vectors.test.ts` | 0 | 7 | 2 s |  |
+
+## t7
+
+Run at 2026-11-01T15:04:42.397Z on commit `7c3e1dd09`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: listUnembeddedEntities**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t7: an entity whose marker says embedded but whose vector is missing has its marker cleared and is counted unembedded | `src/db/__tests__/file-commit-vectors.test.ts` |
+
+**integration: IndexerService.reembed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t7: a vector whose entity is not stored is deleted, so a later first commit of that id leaves exactly one vector row | `src/db/__tests__/file-commit-vectors.test.ts` |
+| pass | t7: the indexer reconciles the graph and the vector table when it starts, before any job | `src/db/__tests__/file-commit-vectors.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/file-commit-vectors.test.ts` | 0 | 10 | 2.3 s |  |

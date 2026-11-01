@@ -63,6 +63,7 @@ export class ReviewActivityStream<T> {
   await this.activity(kind,id);
  }
  private async candidate(raw: unknown): Promise<void> {
+  if (this.failed || this.accepted) return;
   if (Buffer.byteLength(JSON.stringify(raw)??'')>CANDIDATE_BYTES) throw new Error('Review candidate exceeds 4 MiB');
   const checked=validateAgainstSchema<T>(this.schema,raw);if(!checked.ok)return;
   await this.activity('feedback_submitted');
@@ -97,7 +98,10 @@ export class ReviewActivityStream<T> {
   if(frame.type==='item.started'&&item&&['command_execution','mcp_tool_call'].includes(String(item.type)))await this.tool('tool_started',item.id);
   if(frame.type==='item.completed'&&item){
    if(['command_execution','mcp_tool_call'].includes(String(item.type)))await this.tool('tool_completed',item.id);
+   if(item.type==='agent_message'&&typeof item.text!=='string')throw new Error('Review native final message has no text');
    if(item.type==='agent_message'&&typeof item.text==='string'){
+    // Only the most recent assistant message can become the final answer.
+    this.pendingFinal=undefined;this.finalSucceeded=false;
     await this.activity('model_output');
     if(Buffer.byteLength(item.text)>CANDIDATE_BYTES)throw new Error('Review candidate exceeds 4 MiB');
     let raw:unknown;try{raw=JSON.parse(item.text);}catch{return;}

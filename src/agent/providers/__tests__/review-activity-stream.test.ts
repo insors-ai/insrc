@@ -60,3 +60,14 @@ test('CLI activity mode ignores bounded provider timers and uses stream flags; d
   assert.equal(argv[argv.indexOf('--output-format')+1],'stream-json');assert.ok(argv.includes('--include-partial-messages'));assert.ok(argv.includes('--verbose'));
  }finally{rmSync(dir,{recursive:true,force:true});}
 });
+
+test('a non-JSON final Codex message cannot promote earlier JSON and terminal failure cannot accept later feedback',async()=>{
+ const codex=harness('codex');await codex.parser.start();
+ await codex.parser.feed(Buffer.from(json({type:'item.completed',item:{type:'agent_message',text:'{"ok":true}'}})+json({type:'item.completed',item:{type:'agent_message',text:'not a structured final answer'}})+json({type:'turn.completed'})));
+ assert.deepEqual(codex.candidates,[]);assert.throws(()=>codex.parser.completed(),/successful final assessment/);
+ const malformed=harness('codex');await malformed.parser.start();
+ await assert.rejects(malformed.parser.feed(Buffer.from(json({type:'item.completed',item:{type:'agent_message'}}))),/final message has no text/);
+ const claude=harness('claude');await claude.parser.start();
+ await claude.parser.feed(Buffer.from(json({type:'result',is_error:true})+json({type:'assistant',message:{content:[{type:'tool_use',id:'late',name:'StructuredOutput',input:{ok:true}}]}})));
+ assert.deepEqual(claude.candidates,[]);
+});

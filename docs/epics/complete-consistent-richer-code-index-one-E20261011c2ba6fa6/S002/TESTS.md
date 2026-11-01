@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -215,3 +215,13 @@ Run at 2026-11-01T15:27:13.358Z on commit `6c2a9620d`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/backfill.test.ts` | 0 | 4 | 1.3 s |  |
+
+## t11
+
+Run at 2026-11-01T15:31:58.489Z on commit `bdb97bc03`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: upsert vs add on this repository's vector table (two-point)**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: scripts/measure-entity-vec-write.ts run 2026-11-01 15:29Z on a copy of ~/.insrc/lance/entity_vec.lance (80,043 rows, 79,920 distinct ids, 1024 dims), medians of 5: refresh-sized batch (16) upsert 29 ms / add 11 ms; backfill-sized batch (256) upsert 49 ms / add 31 ms; one-row upsert 25 ms. Batch size set from it: BACKFILL_BATCH = 256 with one upsert per round (src/indexer/index.ts BACKFILL_BATCH comment; commit bdb97bc03); per-round single upsert pinned by src/indexer/__tests__/backfill.test.ts 't11: the backfill writes each round's vectors with one upsert, never one write per entity (a Lance write is ~25 ms whatever its size)'.

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T15:27:13.358Z",
+    "updatedAt": "2026-11-01T15:31:58.489Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -887,6 +887,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "bdb97bc03",
+        "ranAt": "2026-11-01T15:31:58.489Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "upsert vs add on this repository's vector table (two-point)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "scripts/measure-entity-vec-write.ts run 2026-11-01 15:29Z on a copy of ~/.insrc/lance/entity_vec.lance (80,043 rows, 79,920 distinct ids, 1024 dims), medians of 5: refresh-sized batch (16) upsert 29 ms / add 11 ms; backfill-sized batch (256) upsert 49 ms / add 31 ms; one-row upsert 25 ms. Batch size set from it: BACKFILL_BATCH = 256 with one upsert per round (src/indexer/index.ts BACKFILL_BATCH comment; commit bdb97bc03); per-round single upsert pinned by src/indexer/__tests__/backfill.test.ts 't11: the backfill writes each round's vectors with one upsert, never one write per entity (a Lance write is ~25 ms whatever its size)'."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

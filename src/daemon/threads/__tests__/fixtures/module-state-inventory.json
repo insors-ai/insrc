@@ -1205,5 +1205,9 @@
 	"src/analyze/context/run-file-filter.ts#runFilters": {
 		"class": "per-thread",
 		"reason": "An AsyncLocalStorage: its store lives in the async context of the current thread by design, so each thread has its own."
+	},
+	"src/db/entities.ts#vectorWriterForTest": {
+		"class": "per-thread",
+		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
 	}
 }

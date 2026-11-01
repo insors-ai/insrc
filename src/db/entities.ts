@@ -223,8 +223,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 	// Lance write step. Filled inside the txn so we have prior-row
 	// state available; flushed to Lance after the LMDB commit so a
 	// Lance failure doesn't block the structural write.
-	type LanceWrite = { entity: Entity; firstEmbed: boolean };
-	const lanceWrites: LanceWrite[] = [];
+	const vectorWrites: VectorWrite[] = [];
 
 	await withWriteTxn(s => {
 		// Phase 5.x strict-contract resolver. The storage layer no
@@ -270,66 +269,100 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 			if (existingU64 !== undefined) {
 				// Module entities are ensure-exists: don't overwrite.
 				if (e.kind === 'module') continue;
-				const row = entityToRow(e, repoId, e.repo);
+				const row = rowAwaitingVector(e, repoId, e.repo);
 				const prevBuf = s.entity.get(encodeEntityKey(existingU64));
 				const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
 				putEntityRowInTxn(s, existingU64, prev, row);
-				if (e.embedding !== undefined && e.embedding.length > 0) {
-					lanceWrites.push({
-						entity: e,
-						firstEmbed: prev === null || prev.embeddingModel === '',
-					});
-				}
+				if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, isNew: false });
 				continue;
 			}
 
 			// New entity: allocate u64, write the row + index entries
 			const u64 = allocateEntityIdInTxn(s);
-			const row = entityToRow(e, repoId, e.repo);
+			const row = rowAwaitingVector(e, repoId, e.repo);
 			s.entityIdByString.put(e.id, u64);
 			s.entityStringByU64.put(encodeEntityKey(u64), e.id);
 			putEntityRowInTxn(s, u64, null, row);
-			if (e.embedding !== undefined && e.embedding.length > 0) {
-				lanceWrites.push({ entity: e, firstEmbed: true });
-			}
+			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, isNew: true });
 		}
 	});
 
-	// Push vectors to Lance after the LMDB commit. Two paths:
-	//   - firstEmbed:  use addEntityEmbeddings (raw .add(), no JOIN).
-	//                  Indexer's bulk first-index hits this path for
-	//                  every entity -- O(N) total instead of the
-	//                  O(N²) cost of mergeInsert at scale.
-	//   - re-embed:    use writeEntityEmbeddings (mergeInsert) so the
-	//                  prior Lance row is replaced.
-	// Lance failure is non-fatal: the LMDB row's `embeddingModel`
-	// already reflects the intent; a `daemon reembed` (Phase 9.x or
-	// manual) replays the missing vectors.
-	if (lanceWrites.length > 0) {
-		try {
-			const lance = await import('./lance/entity-vec.js');
-			type Row = Parameters<typeof lance.addEntityEmbeddings>[0][number];
-			const adds:    Row[] = [];
-			const upserts: Row[] = [];
-			for (const w of lanceWrites) {
-				const row: Row = {
-					id:        w.entity.id,
-					embedding: new Float32Array(w.entity.embedding),
-					repo:      w.entity.repo,
-					kind:      w.entity.kind as string,
-					artifact:  w.entity.artifact ?? false,
-				};
-				if (w.firstEmbed) adds.push(row); else upserts.push(row);
-			}
-			if (adds.length > 0)    await lance.addEntityEmbeddings(adds);
-			if (upserts.length > 0) await lance.writeEntityEmbeddings(upserts);
-		} catch (err) {
-			log.warn(
-				{ count: lanceWrites.length, err: err instanceof Error ? err.message : String(err) },
-				'upsertEntities: Lance write failed after LMDB commit -- vectors not persisted; rerun reembed to backfill',
-			);
-		}
+	// The vectors, then the markers (writeVectorsThenMarkers).
+	await writeVectorsThenMarkers(vectorWrites, 'upsertEntities');
+}
+
+/** The vector writes this module makes; a test puts a failing one in front of the real table. */
+type VectorWriter = Pick<typeof import('./lance/entity-vec.js'), 'addEntityEmbeddings' | 'writeEntityEmbeddings' | 'writeEntityEmbedding'>;
+let vectorWriterForTest: VectorWriter | undefined;
+/** Test seam: the vector writer commitFile, upsertEntities and updateEmbedding use (undefined: the real table). */
+export function _setVectorWriterForTest(writer: VectorWriter | undefined): void { vectorWriterForTest = writer; }
+async function vectorWriter(): Promise<VectorWriter> { return vectorWriterForTest ?? await import('./lance/entity-vec.js'); }
+
+/** One entity whose vector is written after its row commits. */
+interface VectorWrite {
+	readonly entity: Entity;
+	/** First allocated in the same transaction: no vector can exist yet, so a plain add. */
+	readonly isNew:  boolean;
+}
+
+/**
+ * The embedding marker is set only once the vector is stored (Epic c2ba6fa6
+ * s2): rows are committed with an empty marker, then the vectors are written
+ * (a plain add for an entity first allocated in that commit, an upsert for any
+ * other, which may still have a vector from before), then ONE transaction sets
+ * each written entity's marker to the model its vector came from
+ * (entity.embeddingModel, set by the embedder). Returns how many vectors are
+ * still outstanding: all of them when the vector write or the marker
+ * transaction fails, which is logged and never fails the caller's graph write;
+ * their markers stay empty for the backfill to find.
+ */
+async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: string): Promise<number> {
+	if (writes.length === 0) return 0;
+	const lance = await vectorWriter();
+	type Row = Parameters<VectorWriter['addEntityEmbeddings']>[0][number];
+	const rowOf = (e: Entity): Row => ({
+		id:        e.id,
+		embedding: new Float32Array(e.embedding),
+		repo:      e.repo,
+		kind:      e.kind as string,
+		artifact:  e.artifact ?? false,
+	});
+	try {
+		const adds    = writes.filter(w => w.isNew).map(w => rowOf(w.entity));
+		const upserts = writes.filter(w => !w.isNew).map(w => rowOf(w.entity));
+		if (adds.length > 0)    await lance.addEntityEmbeddings(adds);
+		if (upserts.length > 0) await lance.writeEntityEmbeddings(upserts);
+	} catch (err) {
+		log.warn(
+			{ count: writes.length, err: err instanceof Error ? err.message : String(err) },
+			`${who}: vector write failed after the graph commit -- markers left empty for the backfill`,
+		);
+		return writes.length;
 	}
+	try {
+		await withWriteTxn(s => {
+			for (const w of writes) {
+				const u64 = lookupU64ByStringId(s, w.entity.id);
+				if (u64 === undefined) continue;
+				const row = readEntityRowSync(s, u64);
+				if (row === null || row.embeddingModel !== '') continue;
+				putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: w.entity.embeddingModel ?? '' });
+			}
+		});
+	} catch (err) {
+		log.warn(
+			{ count: writes.length, err: err instanceof Error ? err.message : String(err) },
+			`${who}: marker transaction failed after the vector write -- markers left empty for the backfill`,
+		);
+		return writes.length;
+	}
+	return 0;
+}
+
+/** The row an entity is committed as: its marker empty when a vector write follows. */
+function rowAwaitingVector(e: Entity, repoId: number, repoPath: string): EntityRow {
+	const row = entityToRow(e, repoId, repoPath);
+	return e.embedding !== undefined && e.embedding.length > 0 ? { ...row, embeddingModel: '' } : row;
 }
 
 /**
@@ -406,8 +439,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 	const unresolved = relations.filter(r => !r.resolved);
 
 	const toLanceDelete: string[] = [];
-	type LanceWrite = { entity: Entity; firstEmbed: boolean };
-	const lanceWrites: LanceWrite[] = [];
+	const vectorWrites: VectorWrite[] = [];
 	let entitiesWritten = 0;
 	let entitiesRemoved = 0;
 	let generation = 0;
@@ -450,16 +482,19 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 			// Body-write short-circuit: skip the put if everything that
 			// would change is identical. We compare contentHash + body
 			// (contentHash alone is a hash collision risk but body adds
-			// the actual-bytes safety net).
-			const newRow = entityToRow(e, repoId, repoPath);
+			// the actual-bytes safety net). An unchanged row whose marker
+			// already names this vector's model (or that was not re-embedded)
+			// keeps its marker and its vector.
+			const newRow = rowAwaitingVector(e, repoId, repoPath);
 			if (prevBuf !== undefined) {
 				const prev = decodeEntityRow(prevBuf as Buffer);
+				const embedded = e.embedding !== undefined && e.embedding.length > 0;
 				if (prev.contentHash === newRow.contentHash
 				 && prev.body === newRow.body
 				 && prev.startLine === newRow.startLine
 				 && prev.endLine === newRow.endLine
 				 && prev.signature === newRow.signature
-				 && prev.embeddingModel === newRow.embeddingModel) {
+				 && (!embedded || prev.embeddingModel === (e.embeddingModel ?? ''))) {
 					seen.add(u64);
 					continue; // unchanged -- skip write
 				}
@@ -468,12 +503,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 			const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
 			putEntityRowInTxn(s, u64, prev, newRow);
 			entitiesWritten++;
-			if (e.embedding !== undefined && e.embedding.length > 0) {
-				lanceWrites.push({
-					entity: e,
-					firstEmbed: isNew || prev === null || prev.embeddingModel === '',
-				});
-			}
+			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, isNew });
 			seen.add(u64);
 		}
 
@@ -515,34 +545,8 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 		const { deleteEntityVecsByIds } = await import('./lance/entity-vec.js');
 		await deleteEntityVecsByIds(toLanceDelete);
 	}
-	// Push vectors for newly-parsed / re-embedded entities. Same
-	// dispatch as upsertEntities -- addEntityEmbeddings for first-
-	// embed (no JOIN), writeEntityEmbeddings for re-embed (mergeInsert).
-	if (lanceWrites.length > 0) {
-		try {
-			const lance = await import('./lance/entity-vec.js');
-			type Row = Parameters<typeof lance.addEntityEmbeddings>[0][number];
-			const adds:    Row[] = [];
-			const upserts: Row[] = [];
-			for (const w of lanceWrites) {
-				const row: Row = {
-					id:        w.entity.id,
-					embedding: new Float32Array(w.entity.embedding),
-					repo:      w.entity.repo,
-					kind:      w.entity.kind as string,
-					artifact:  w.entity.artifact ?? false,
-				};
-				if (w.firstEmbed) adds.push(row); else upserts.push(row);
-			}
-			if (adds.length > 0)    await lance.addEntityEmbeddings(adds);
-			if (upserts.length > 0) await lance.writeEntityEmbeddings(upserts);
-		} catch (err) {
-			log.warn(
-				{ count: lanceWrites.length, err: err instanceof Error ? err.message : String(err) },
-				'commitFile: Lance write failed after LMDB commit -- vectors not persisted; rerun reembed to backfill',
-			);
-		}
-	}
+	// The vectors of the written entities, then their markers.
+	const vectorsOutstanding = await writeVectorsThenMarkers(vectorWrites, 'commitFile');
 	if (resolvedCounts !== undefined) rel.logResolvedWrite(resolvedCounts, resolved.length);
 	if (unresolvedCounts !== undefined) rel.logUnresolvedWrite(unresolvedCounts, unresolved.length);
 	return {
@@ -551,6 +555,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 		relationsPending:           (resolvedCounts?.pending ?? 0) + (unresolvedCounts?.pending ?? 0),
 		relationsUnwritable:        (resolvedCounts?.unwritable ?? 0) + (unresolvedCounts?.unwritable ?? 0),
 		relationsReturnedToPending: returnedToPending,
+		vectorsOutstanding,
 	};
 }
 
@@ -1002,53 +1007,31 @@ export async function updateEmbedding(
 	embeddingModel: string,
 ): Promise<void> {
 	assertNoSessionPersistence();
-	// Two-step write: update the LMDB row first (sync inside a write
-	// txn), then persist the vector to Lance. Lance write happens after
-	// the LMDB commit so a Lance failure leaves the EntityRow's
-	// `embeddingModel` advertising "embedded" -- caller can re-run.
-	//
-	// Dispatch the Lance side based on whether this is a first-time
-	// embed or a re-embed. First-time = prior `embeddingModel` was
-	// empty; we know the entity has no existing Lance row, so we can
-	// use the fast `addEntityEmbedding` (table.add, no JOIN). Re-embed
-	// = prior model non-empty; the row may already exist, so we must
-	// upsert via `writeEntityEmbedding` (mergeInsert). This matters at
-	// scale: the indexer reembeds 1M entities through this path
-	// serially; mergeInsert against a growing target is O(target) per
-	// call and goes quadratic, while pure add stays linear.
-	let repoId = -1;
-	let repoPath = '';
-	let kind = '';
-	let artifact = false;
-	let touched = false;
-	let isFirstEmbed = false;
-	await withWriteTxn(s => {
-		const u64 = s.entityIdByString.get(id) as bigint | number | undefined;
-		if (u64 === undefined) return; // no-op (matches prior DuckDB UPDATE behaviour)
-		const row = readEntityRowSync(s, u64);
-		if (row === null) return;
-		isFirstEmbed = row.embeddingModel === '';
-		const next: EntityRow = { ...row, embeddingModel };
-		putEntityRowInTxn(s, toBigInt(u64), row, next);
-		repoId = row.repoId;
-		kind = row.kind;
-		artifact = row.artifact;
-		touched = true;
+	if (embedding.length === 0) return;
+	// The vector first, the marker second (Epic c2ba6fa6 s2): a marker is set
+	// only for a vector that is stored. This is the backfill's write, for an
+	// entity whose marker is empty and that may still have a vector from an
+	// interrupted earlier write, so it is always an upsert, never a plain add.
+	const store = await getGraphStore();
+	const u64 = lookupU64ByStringId(store, id);
+	if (u64 === undefined) return; // no-op (matches prior DuckDB UPDATE behaviour)
+	const row = readEntityRowSync(store, u64);
+	if (row === null) return;
+	const lance = await vectorWriter();
+	await lance.writeEntityEmbedding({
+		id,
+		embedding: new Float32Array(embedding),
+		repo: readRepoPath(store, row.repoId) ?? '',
+		kind: row.kind,
+		artifact: row.artifact,
 	});
-	if (!touched) return;
-	if (embedding.length > 0) {
-		const store = await getGraphStore();
-		repoPath = readRepoPath(store, repoId) ?? '';
-		const lance = await import('./lance/entity-vec.js');
-		const writer = isFirstEmbed ? lance.addEntityEmbedding : lance.writeEntityEmbedding;
-		await writer({
-			id,
-			embedding: new Float32Array(embedding),
-			repo: repoPath,
-			kind,
-			artifact,
-		});
-	}
+	await withWriteTxn(s => {
+		const at = lookupU64ByStringId(s, id);
+		if (at === undefined) return;
+		const current = readEntityRowSync(s, at);
+		if (current === null) return;
+		putEntityRowInTxn(s, at, current, { ...current, embeddingModel });
+	});
 }
 
 // ---------------------------------------------------------------------------

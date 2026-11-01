@@ -22417,14 +22417,6 @@
     ],
     [
      "storage-call",
-     "entityToRow"
-    ],
-    [
-     "storage-call",
-     "entityToRow"
-    ],
-    [
-     "storage-call",
      "fn"
     ],
     [
@@ -22544,14 +22536,6 @@
      "import"
     ],
     [
-     "unresolved-call",
-     "import"
-    ],
-    [
-     "unresolved-call",
-     "import"
-    ],
-    [
      "storage-call",
      "incomingEdgesInTxn"
     ],
@@ -22592,22 +22576,18 @@
      "lance.addEntityEmbeddings"
     ],
     [
+     "serialization",
+     "lance.writeEntityEmbedding"
+    ],
+    [
      "storage-call",
-     "lance.addEntityEmbeddings"
+     "lance.writeEntityEmbedding"
     ],
     [
      "serialization",
      "lance.writeEntityEmbeddings"
     ],
     [
-     "serialization",
-     "lance.writeEntityEmbeddings"
-    ],
-    [
-     "storage-call",
-     "lance.writeEntityEmbeddings"
-    ],
-    [
      "storage-call",
      "lance.writeEntityEmbeddings"
     ],
@@ -22738,6 +22718,18 @@
     [
      "storage-call",
      "lookupStringIdByU64"
+    ],
+    [
+     "storage-call",
+     "lookupU64ByStringId"
+    ],
+    [
+     "storage-call",
+     "lookupU64ByStringId"
+    ],
+    [
+     "storage-call",
+     "lookupU64ByStringId"
     ],
     [
      "storage-call",
@@ -22817,7 +22809,7 @@
     ],
     [
      "storage-call",
-     "readEntityRow"
+     "putEntityRowInTxn"
     ],
     [
      "storage-call",
@@ -22830,6 +22822,18 @@
     [
      "storage-call",
      "readEntityRow"
+    ],
+    [
+     "storage-call",
+     "readEntityRow"
+    ],
+    [
+     "storage-call",
+     "readEntityRowSync"
+    ],
+    [
+     "storage-call",
+     "readEntityRowSync"
     ],
     [
      "storage-call",
@@ -22902,6 +22906,26 @@
     [
      "storage-call",
      "rewireNameIndexInTxn"
+    ],
+    [
+     "storage-call",
+     "rowAwaitingVector"
+    ],
+    [
+     "storage-call",
+     "rowAwaitingVector"
+    ],
+    [
+     "storage-call",
+     "rowAwaitingVector"
+    ],
+    [
+     "storage-call",
+     "rowOf"
+    ],
+    [
+     "storage-call",
+     "rowOf"
     ],
     [
      "storage-call",
@@ -22978,10 +23002,6 @@
     [
      "storage-call",
      "s.entityByFile.remove"
-    ],
-    [
-     "storage-call",
-     "s.entityIdByString.get"
     ],
     [
      "storage-call",
@@ -23177,10 +23197,6 @@
     ],
     [
      "storage-call",
-     "toBigInt"
-    ],
-    [
-     "storage-call",
      "toRepoRelative"
     ],
     [
@@ -23217,7 +23233,11 @@
     ],
     [
      "storage-call",
-     "withReadTxn"
+     "vectorWriter"
+    ],
+    [
+     "storage-call",
+     "vectorWriter"
     ],
     [
      "storage-call",
@@ -23225,7 +23245,7 @@
     ],
     [
      "storage-call",
-     "withWriteTxn"
+     "withReadTxn"
     ],
     [
      "storage-call",
@@ -23245,12 +23265,32 @@
     ],
     [
      "storage-call",
-     "writer"
+     "withWriteTxn"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "serialization",
+     "writeVectorsThenMarkers"
+    ],
+    [
+     "serialization",
+     "writeVectorsThenMarkers"
+    ],
+    [
+     "storage-call",
+     "writeVectorsThenMarkers"
+    ],
+    [
+     "storage-call",
+     "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 365,
-   "sitesDigest": "9a7f91c6fcd52ae7e9aaacbc96cdb065d6fa3b8298887529b2c81377dccc3da8",
-   "sourceDigest": "7770b018be5d0e27924dc6007366381301a23ba5ae14796e3084cc1ce5541b5f",
+   "siteCount": 375,
+   "sitesDigest": "a82b816a3799d7efeaf54665fb3d75c462f2b3fad7393be477e30481d59c6030",
+   "sourceDigest": "c7469481f7c171ad22f6c437594040a2d262c4cb272b810999801b006744a5af",
    "boundaries": [
     "diagnostic",
     "serialization",

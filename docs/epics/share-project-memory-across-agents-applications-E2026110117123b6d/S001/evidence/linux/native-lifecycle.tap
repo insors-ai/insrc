@@ -2,75 +2,81 @@ TAP version 13
 # Subtest: options-fail-before-side-effects
 ok 1 - options-fail-before-side-effects
   ---
-  duration_ms: 14.999069
+  duration_ms: 12.334123
   type: 'test'
   ...
 # Subtest: canonical-root-and-readonly-layout-validation
 ok 2 - canonical-root-and-readonly-layout-validation
   ---
-  duration_ms: 18.075076
+  duration_ms: 29.223772
   type: 'test'
   ...
 # Subtest: same-process-package-copy-thread-process-contention
 ok 3 - same-process-package-copy-thread-process-contention
   ---
-  duration_ms: 261.31016
+  duration_ms: 450.263412
   type: 'test'
   ...
 # Subtest: killed-owner-release-stopped-owner-exclusion-and-aliases
 ok 4 - killed-owner-release-stopped-owner-exclusion-and-aliases
   ---
-  duration_ms: 91.045272
+  duration_ms: 135.286129
   type: 'test'
   ...
 # Subtest: node22-fs-ext-abi-and-separate-descriptor-probe
 ok 5 - node22-fs-ext-abi-and-separate-descriptor-probe
   ---
-  duration_ms: 11.221317
+  duration_ms: 20.066021
   type: 'test'
   ...
 # Subtest: native-load-failure-is-not-ready
 ok 6 - native-load-failure-is-not-ready
   ---
-  duration_ms: 0.357642
+  duration_ms: 0.691648
   type: 'test'
   ...
 # Subtest: exclusive-descriptor-and-owned-bootstrap
 ok 7 - exclusive-descriptor-and-owned-bootstrap
   ---
-  duration_ms: 44.497821
+  duration_ms: 55.695821
   type: 'test'
   ...
 # Subtest: native-callback-cleanup-and-inode-faults
 ok 8 - native-callback-cleanup-and-inode-faults
   ---
-  duration_ms: 11.617837
+  duration_ms: 14.177121
+  type: 'test'
+  ...
+# Subtest: layout-state-is-decided-under-ownership-after-one-preflight
+ok 9 - layout-state-is-decided-under-ownership-after-one-preflight
+  ---
+  duration_ms: 28.543807
   type: 'test'
   ...
 # Subtest: idempotent-drain-close-and-provider-ownership
-ok 9 - idempotent-drain-close-and-provider-ownership
+ok 10 - idempotent-drain-close-and-provider-ownership
   ---
-  duration_ms: 9.997982
+  duration_ms: 18.204439
   type: 'test'
   ...
 # Subtest: foundation-data-methods-return-not-ready
-ok 10 - foundation-data-methods-return-not-ready
+ok 11 - foundation-data-methods-return-not-ready
   ---
-  duration_ms: 41.231954
+  duration_ms: 79.661143
   type: 'test'
   ...
 # Subtest: all-quiescent-participants-close-before-unverified-ownership-is-retained
-ok 11 - all-quiescent-participants-close-before-unverified-ownership-is-retained
+ok 12 - all-quiescent-participants-close-before-unverified-ownership-is-retained
   ---
-  duration_ms: 0.703904
+  duration_ms: 1.028475
   type: 'test'
   ...
-1..11
-# tests 11
+1..12
+# tests 12
 # suites 0
-# pass 11
+# pass 12
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 606.501605
+# duration_ms 970.413002

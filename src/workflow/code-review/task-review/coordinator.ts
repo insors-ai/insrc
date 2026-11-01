@@ -80,6 +80,7 @@ export class TaskReviewCoordinator {
   const completed=entry['review-response'].tasks.length;
   const warning=owned?(controller?.progressPersistence.warning??active?.persistence?.warning):undefined;
   return {reviewId:id,attempt,status:entry.header.status,crPublication:entry['review-response'].crPublication,
+   executionState:owned?'active':this.active.has(path)&&active===null?'starting':'inactive',
    completedTasks:completed,totalTasks:entry.header.selectedTaskIds.length,interrupted:entry.header.interrupted===true,
    hasError:!!entry['review-response'].error,freshness:tracker?'live':progress?'stale':'unknown',
    progress:progress?{...progress,completedTasks:completed}:null,...(warning?{warning}:{})};

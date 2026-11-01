@@ -114,3 +114,11 @@ CLI decoder, IPC server, progress read route and polling helper. Tests also cove
 write failure, stale process restart and independent review IDs. This is
 controlled adapter/integration evidence, not hosted-model acceptance or a claim
 that the installed daemon has already been updated.
+
+The progress view also reports execution ownership as `active`, `starting` or
+`inactive`, separately from the saved review status. A fatal checkpoint-write
+failure or daemon restart can leave the durable header at `running` while no
+execution exists. In that case the observer reports **explicit recovery required**
+and stops polling; it does not invent failed task feedback, overwrite the
+checkpoint or automatically retrigger. Cancellation closes the observation RPC
+socket immediately and suppresses late updates; it does not cancel review work.

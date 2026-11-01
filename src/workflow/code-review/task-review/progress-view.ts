@@ -8,6 +8,7 @@ export const ProgressViewSchema=Type.Object({
  reviewId:Type.String({minLength:1,maxLength:128}),attempt:Type.Integer({minimum:1,maximum:Number.MAX_SAFE_INTEGER}),
  status:Type.Union((['pending','running','passed','changes_requested','incomplete','failed'] as const).map(v=>Type.Literal(v))),
  crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]),
+ executionState:Type.Union([Type.Literal('active'),Type.Literal('starting'),Type.Literal('inactive')]),
  completedTasks:count,totalTasks:count,interrupted:Type.Boolean(),hasError:Type.Boolean(),
  freshness:Type.Union([Type.Literal('live'),Type.Literal('stale'),Type.Literal('unknown')]),
  progress:Type.Union([ProgressSchema,Type.Null()]),

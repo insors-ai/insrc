@@ -22,7 +22,10 @@ import { registerMcpClients, daemonInstallRoot } from './mcp-register.js';
 import { PATHS } from '../shared/paths.js';
 import { getLogger } from '../shared/logger.js';
 import { getDb } from '../db/client.js';
-import { gateRepoCall } from './repo-call-gate.js';
+import { gateHandlers, gateRepoCall } from './repo-call-gate.js';
+
+/** The methods gated inside their own handlers (the approval family): the table-wide wrapper leaves them alone. */
+const APPROVAL_FAMILY: ReadonlySet<string> = new Set(['workflow.approve', 'workflow.approvePipeline']);
 import { listRepos, addRepo, removeRepo, repoContainingCwd, InvalidRepoPathError, validateRepoPath } from '../db/repos.js';
 import { deleteEntitiesForRepo, findEntitiesByFile, getEntity } from '../db/entities.js';
 import { deleteUnresolvedForRepo } from '../db/relations.js';
@@ -138,6 +141,8 @@ export interface RuntimeIndexer {
 
 export interface HandlerRuntimeDeps {
  readonly stepCallHandler?: StreamHandler | undefined;
+	/** Test seam: the registered repositories' paths (default: the registry in `db`). */
+	readonly registeredRepos?: (() => Promise<ReadonlySet<string>>) | undefined;
 	readonly db: Awaited<ReturnType<typeof getDb>>;
 	readonly configStore: ConfigStore;
 	readonly queue: RuntimeQueue;
@@ -308,7 +313,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
 	const repoSettingsHandlers = createRepoSettingsHandlers({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) });
 	/** The registered repositories' paths, read for each file-modifying call (the repo gate refuses a call whose registry cannot be read). */
-	const registeredRepos = async (): Promise<ReadonlySet<string>> => new Set((await listRepos(db)).map(r => r.path));
+	const registeredRepos = deps.registeredRepos ?? (async (): Promise<ReadonlySet<string>> => new Set((await listRepos(db)).map(r => r.path)));
 	const rpcHandlers: RpcHandlers = {
 		...handoffRpcHandlers(),
 		'repo.add': async (params) => {
@@ -424,7 +429,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 
 		// s5: feedback and replies on any artifact (a Task included) through the repository's FeedbackService, the threads of an
 		// artifact (open ones on request), and the person's declared ids. Each returns { error } on a bad request, never a throw.
-		'artifact.feedback.add': async (params) => (await import('./feedback-handlers.js')).handleFeedbackAdd(params, process.env['INSRC_REPO']),
+		'artifact.feedback.add': async (params) => (await import('./feedback-handlers.js')).handleFeedbackAdd(params, undefined),
 		'artifact.feedback.list': async (params) => (await import('./feedback-handlers.js')).handleFeedbackList(params, process.env['INSRC_REPO']),
 		'identity.show': async () => (await import('./feedback-handlers.js')).handleIdentityShow(),
 		'identity.declare': async (params) => (await import('./feedback-handlers.js')).handleIdentityDeclare(params),
@@ -486,19 +491,19 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// s9: convert the repository's artifacts to the current schema (a preview unless mode is 'apply'). Exempt from the schema gate.
 		'repo.convert': async (params) => {
 			const { handleRepoConvert } = await import('./repo-convert.js');
-			return handleRepoConvert(params, process.env['INSRC_REPO']);
+			return handleRepoConvert(params, undefined);
 		},
 
 		// s6: attach a unit's committed documents to its issue (a link per revision). Commits nothing.
 		'tracker.attach': async (params) => {
 			const { handleTrackerAttach } = await import('./tracker-attach.js');
-			return handleTrackerAttach(params, process.env['INSRC_REPO']);
+			return handleTrackerAttach(params, undefined);
 		},
 
 		// s8: read a unit's issue comments in as feedback and post feedback entered here out. Commits nothing.
 		'tracker.syncComments': async (params) => {
 			const { handleTrackerSyncComments } = await import('./tracker-sync-comments.js');
-			return handleTrackerSyncComments(params, process.env['INSRC_REPO']);
+			return handleTrackerSyncComments(params, undefined);
 		},
 
 		// sc1 (ide-artifact-review-panel S001): the pending-approval artifact
@@ -559,7 +564,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { handleResolveComment } = await import('../workflow/resolve-comment.js');
 			return handleResolveComment(
 				params as Parameters<typeof handleResolveComment>[0],
-				process.env['INSRC_REPO'],
+				undefined,
 			);
 		},
 
@@ -575,7 +580,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { lifecycleFor } = await import('./lifecycle-registry.js');
 			return handleReviewDecision(
 				params as Parameters<typeof handleReviewDecision>[0],
-				process.env['INSRC_REPO'],
+				undefined,
 				{
 					lifecycleFor: repoPath => lifecycleFor(repoPath).service,
 					feedbackFor: repoPath => {
@@ -1726,5 +1731,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	});
 	Object.assign(rpcHandlers, understandingRoutes.rpc);
 	Object.assign(streamHandlers, understandingRoutes.streams);
+	// Every other file-modifying call goes through the repo gate too (the approval family is gated inside its handlers above).
+	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, APPROVAL_FAMILY);
+	gateHandlers(streamHandlers as never, 'stream', registeredRepos);
 	return { rpcHandlers, streamHandlers, understandingRoutes };
 }

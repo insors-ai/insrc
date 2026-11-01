@@ -32,7 +32,7 @@ export interface TrackerSyncCommentsParams {
 export async function handleTrackerSyncComments(params: unknown, repoEnv: string | undefined): Promise<CommentSyncResult | { error: string }> {
 	const p = (params ?? {}) as TrackerSyncCommentsParams;
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv;
-	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required (or set INSRC_REPO)' };
+	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required' };
 	const refusal = repoSchemaRefusal(repoPath);
 	if (refusal !== undefined) return { error: refusal };
 	if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) return { error: 'epicHash is required' };

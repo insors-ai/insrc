@@ -415,9 +415,10 @@ export interface PreparedWorkflowRun {
  *  wrap this and surface the message their own way). */
 export function prepareWorkflowRun(rawParams: unknown): PreparedWorkflowRun {
 	const p = parseParams(rawParams);
-	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : process.env['INSRC_REPO'];
+	// the repo gate has already required an absolute registered repo; the daemon's own INSRC_REPO is never a fallback
+	const repoPath = p.repo;
 	if (repoPath === undefined || repoPath.length === 0) {
-		throw new Error('workflow.run: no repo (pass `repo` or set INSRC_REPO)');
+		throw new Error('workflow.run: no repo (`repo` is required: an absolute path of a registered repository)');
 	}
 	const refusal = repoSchemaRefusal(repoPath);
 	if (refusal !== undefined) throw new Error(refusal);

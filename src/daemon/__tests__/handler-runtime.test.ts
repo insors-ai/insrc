@@ -106,7 +106,9 @@ test('src/daemon/__tests__/handler-runtime.test.ts: the recorded handler key set
 
 test('workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests', async () => {
 	try {
+		const registered = new Set<string>();   // the registry the repo gate reads
 		const runtime = buildHandlerRuntime({
+			registeredRepos: async () => registered,
 			db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
 			startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
 		});
@@ -115,10 +117,12 @@ test('workflow.approvePipeline, tracker.sync and tracker.setup are registered an
 		const noRepo = await h['workflow.approvePipeline']!({}) as { error: string; code: string };
 		assert.equal(noRepo.code, 'repo-missing');   // the repo gate answers first, before any registry read
 		assert.match(noRepo.error, /workflow\.approvePipeline: `repo` .* is required/);
-		assert.deepEqual(await h['tracker.sync']!({}), { error: 'tracker.sync: `repoPath` is required' });
-		assert.deepEqual(await h['tracker.setup']!({}), { error: 'tracker.setup: `repoPath` is required' });
+		const noSyncRepo = await h['tracker.sync']!({}) as { code: string };
+		assert.equal(noSyncRepo.code, 'repo-missing');   // the repo gate answers first
+		assert.equal(((await h['tracker.setup']!({})) as { code: string }).code, 'repo-missing');
 		// an Epic that was never pushed is skipped, as the terminal's sync reported it
 		const repo = mkdtempSync(join(tmpdir(), 'insrc-hr-sync-'));
+		registered.add(repo);
 		try {
 			const r = await h['tracker.sync']!({ repoPath: repo, epicHash: '0123456789abcdef' }) as { status: string };
 			assert.equal(r.status, 'skipped');
@@ -130,12 +134,15 @@ test('workflow.approvePipeline, tracker.sync and tracker.setup are registered an
 
 test('team.refresh, team.claim and team.release are registered and return the old results', async () => {
 	try {
+		const registered = new Set<string>();   // the registry the repo gate reads
 		const runtime = buildHandlerRuntime({
+			registeredRepos: async () => registered,
 			db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
 			startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
 		});
 		const h = runtime.rpcHandlers;
 		const repo = mkdtempSync(join(tmpdir(), 'insrc-hr-team-'));
+		registered.add(repo);
 		try {
 			// a repository that does not enforce claims: a claim and a release answer the terminal's refusal line
 			const unit = { unit: 'story', epicHash: '0123456789abcdef', storyId: 's1' };
@@ -143,7 +150,7 @@ test('team.refresh, team.claim and team.release are registered and return the ol
 			assert.match(String(await h['team.release']!({ repoPath: repo, unit })), /^✗ not released — /);
 			// a refresh of a directory that is no git work tree is the refusal the terminal printed: an error of the call
 			await assert.rejects(Promise.resolve(h['team.refresh']!({ repoPath: repo })), /./);
-			await assert.rejects(Promise.resolve(h['team.claim']!({})), /`repoPath` is required/);
+			assert.equal(((await h['team.claim']!({})) as unknown as { code: string }).code, 'repo-missing');
 		} finally { rmSync(repo, { recursive: true, force: true }); }
 	} finally {
 		rmSync(HOME, { recursive: true, force: true });

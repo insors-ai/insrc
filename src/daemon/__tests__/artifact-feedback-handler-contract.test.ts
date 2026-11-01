@@ -47,11 +47,11 @@ test("index.ts registers an 'artifact.feedback.append' handler that delegates to
 	assert.match(handlersSrc, /feedback\.add\(/, 'the entry is stored through FeedbackService.add');
 });
 
-test("index.ts registers the four s5 methods, each falling back to the daemon's INSRC_REPO or taking no repo", () => {
+test("index.ts registers the four s5 methods: add takes its repo from the call (the repo gate), list falls back to the session's INSRC_REPO, the others take none", () => {
 	for (const method of ['artifact.feedback.add', 'artifact.feedback.list', 'identity.show', 'identity.declare']) {
 		assert.match(indexSrc, new RegExp(`'${method.replace('.', '\\.')}':\\s*async`), `${method} is registered`);
 	}
-	assert.match(indexSrc, /handleFeedbackAdd\(params, process\.env\['INSRC_REPO'\]\)/);
+	assert.match(indexSrc, /handleFeedbackAdd\(params, undefined\)/);
 	assert.match(indexSrc, /handleFeedbackList\(params, process\.env\['INSRC_REPO'\]\)/);
 	assert.match(indexSrc, /handleIdentityShow\(\)/);
 	assert.match(indexSrc, /handleIdentityDeclare\(params\)/);

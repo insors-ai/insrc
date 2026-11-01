@@ -127,3 +127,29 @@ export async function gateRepoCall(method: string, params: unknown, load: () => 
 /** Whether the audit puts `method` in the table. */
 export const isFileModifying = (method: string): boolean => Object.prototype.hasOwnProperty.call(FILE_MODIFYING_METHODS, method);
 
+
+
+type AnyHandler = (params: unknown, ...rest: unknown[]) => unknown;
+
+/**
+ * Put the repo gate in front of every handler in `handlers` whose name is in the table (`skip` names those gated elsewhere). A refused
+ * `rpc` call answers `{ error, code }`, as the daemon's other refusals do; a refused `stream` call throws, which the server sends as an
+ * error frame. The handler receives the checked repo and the rewritten params. Returns the names it wrapped.
+ */
+export function gateHandlers(handlers: Record<string, AnyHandler | undefined>, kind: 'rpc' | 'stream', load: () => Promise<ReadonlySet<string>>, skip: ReadonlySet<string> = new Set()): string[] {
+	const wrapped: string[] = [];
+	for (const method of Object.keys(handlers)) {
+		const inner = handlers[method];
+		if (inner === undefined || skip.has(method) || !isFileModifying(method)) continue;
+		handlers[method] = async (params, ...rest) => {
+			const checked = await gateRepoCall(method, params, load);
+			if (!checked.ok) {
+				if (kind === 'stream') throw new Error(`${checked.message} [${checked.code}]`);
+				return { error: checked.message, code: checked.code };
+			}
+			return inner(checked.params, ...rest);
+		};
+		wrapped.push(method);
+	}
+	return wrapped;
+}

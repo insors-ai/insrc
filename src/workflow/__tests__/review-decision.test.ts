@@ -489,7 +489,7 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 	const decision = handlerSource(src, 'workflow.reviewDecision');
 	assert.match(decision, /await import\('\.\.\/workflow\/review-decision\.js'\)/);
 	assert.match(decision, /return handleReviewDecision\(/);
-	assert.match(decision, /process\.env\['INSRC_REPO'\]/);
+	assert.ok(!/INSRC_REPO/.test(decision), 'the repo gate names the repo; the daemon\'s INSRC_REPO is not read');
 	assert.match(decision, /feedbackFor: repoPath => \{/, 'the comments are saved through the registry\'s FeedbackService');
 	assert.match(decision, /feedback: entry\.feedback/);
 	assert.match(decision, /followOn: approveFollowOn\(db, true\)/, 'the follow-on of an approval is the one workflow.approve runs');
@@ -512,7 +512,7 @@ test('daemon handlers: \'workflow.reviewDecision\' is registered and delegates t
 		`\t\t\tconst { handleResolveComment } = await import('../workflow/resolve-comment.js');`,
 		`\t\t\treturn handleResolveComment(`,
 		`\t\t\t\tparams as Parameters<typeof handleResolveComment>[0],`,
-		`\t\t\t\tprocess.env['INSRC_REPO'],`,
+		`\t\t\t\tundefined,`,
 		`\t\t\t);`,
 	].join('\n'));
 	// s5 re-pointed the handler at the feedback service; it stays a one-call delegate and does not go through the new call.

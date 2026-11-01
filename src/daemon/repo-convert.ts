@@ -34,7 +34,7 @@ const MIGRATION_ACTOR: Actor = { id: 'insrc:migration', kind: 'system', properti
 export async function handleRepoConvert(params: unknown, repoEnv: string | undefined): Promise<ConversionReport | { error: string }> {
 	const p = (params ?? {}) as RepoConvertParams;
 	const repoPath = p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv;
-	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required (or set INSRC_REPO)' };
+	if (repoPath === undefined || repoPath.length === 0) return { error: 'repo is required' };
 	const mode = p.mode ?? 'preview';
 	if (mode !== 'preview' && mode !== 'apply') return { error: `unknown mode ${String(mode)}: use 'preview' or 'apply'` };
 	if (!existsSync(repoPath) || !statSync(repoPath).isDirectory()) return { error: `${repoPath} is not a repository directory` };

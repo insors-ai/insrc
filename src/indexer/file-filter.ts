@@ -199,10 +199,12 @@ function addPrefixed(ig: Ignore, lines: readonly string[], dirRelPath: string): 
 		if (prefix === '') { ig.add(line); continue; }
 		const negated = line.startsWith('!');
 		const body = negated ? line.slice(1) : line;
-		// A pattern already anchored to the repo root (leading `/`) still
-		// only ever meant "anchored to ITS OWN directory" in a nested
-		// .gitignore, so the leading slash is dropped before prefixing.
-		const anchored = body.startsWith('/') ? body.slice(1) : body;
+		// git: a pattern with a separator at its start or in its middle is
+		// relative to its own .gitignore's directory (a leading `/` is dropped
+		// before prefixing); one with none -- a trailing `/` does not count --
+		// matches at any level below that directory, so it gets `**/`.
+		const relativeToDir = body.replace(/\/$/, '').includes('/');
+		const anchored = body.startsWith('/') ? body.slice(1) : relativeToDir ? body : `**/${body}`;
 		ig.add(`${negated ? '!' : ''}${prefix}${anchored}`);
 	}
 }

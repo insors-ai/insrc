@@ -115,10 +115,6 @@
 		"class": "per-thread",
 		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
 	},
-	"src/analyze/explore/concept-resolve.ts#IGNORE_DIRS": {
-		"class": "per-thread",
-		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
-	},
 	"src/analyze/explore/concept-resolve.ts#STOPWORDS": {
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
@@ -152,10 +148,6 @@
 		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
 	},
 	"src/analyze/explore/manifests-locate.ts#WHOLE_FILE_ENTITY_KINDS": {
-		"class": "per-thread",
-		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
-	},
-	"src/analyze/explore/module-profile.ts#IGNORE_DIRS": {
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	},
@@ -280,10 +272,6 @@
 	"src/analyze/runtimes/data/_shared.ts#poolSource": {
 		"class": "per-thread",
 		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
-	},
-	"src/analyze/runtimes/infra/_shared.ts#SKIP_DIRS": {
-		"class": "per-thread",
-		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."
 	},
 	"src/analyze/runtimes/infra/inventory-ci.ts#GITLAB_RESERVED": {
 		"class": "per-thread",
@@ -1205,5 +1193,9 @@
 		"class": "one-owner",
 		"owner": "main",
 		"reason": "Main-daemon shutdown sets this admission fence while draining the same main-owned Saved roots. Startup and v2 capability initialization run on main; worker-local copies are never used for management admission."
+	},
+	"src/indexer/file-filter.ts#stateByFilter": {
+		"class": "per-thread",
+		"reason": "A WeakMap/WeakSet keyed by object identity; objects never cross a worker channel, so each thread's entries concern only its own objects and a per-thread copy is correct."
 	}
 }

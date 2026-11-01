@@ -122,3 +122,24 @@ execution exists. In that case the observer reports **explicit recovery required
 and stops polling; it does not invent failed task feedback, overwrite the
 checkpoint or automatically retrigger. Cancellation closes the observation RPC
 socket immediately and suppresses late updates; it does not cancel review work.
+
+## Mandatory review and optional execution
+
+Every review must inspect all in-scope changed code/modules, requirements and
+acceptance checks, and relevant test coverage. Time, size, missing access or
+another difficulty does not justify silently skipping a module. Missing
+mandatory inspection or an unassessed coverage question belongs in `limitations`
+and requires `incomplete`, with supported findings retained.
+
+Running tests, integration checks, typecheck and builds is optional. The reviewer
+may execute them when useful, but not running or rerunning them alone cannot
+block a completed review. Record these disclosures in the existing nonblocking
+`advice` section, prefixed `Optional execution:`; retain actual execution results
+in `executedTests`. Never claim a builder-reported execution as the reviewer's.
+
+`testCoverage.assessment: verified` means the evidence-based coverage assessment
+is complete, not that the reviewer ran tests. Demonstrated missing or incorrect
+tests are findings; missing coverage inspection remains incomplete. Reports label
+review limitations as blocking and optional verification/advice as nonblocking.
+The stored result shape and pinned historical assessments remain unchanged;
+explicit historical `incomplete` results are not automatically promoted.

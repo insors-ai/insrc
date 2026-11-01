@@ -33,8 +33,8 @@ export function validateTaskResult(input: unknown, scope: TaskResultScope): Task
  const blocking = result.findings.some(f => f.severity === 'HIGH' || f.severity === 'MED');
  if (result.status === 'passed' || result.status === 'changes_requested') {
   requireReview(result.inspectedReferences.length > 0, 'inspectedReferences', 'A completed assessment needs source evidence');
-  requireReview(result.limitations.length === 0, 'limitations', 'Required unresolved evidence must remain incomplete');
-  requireReview(result.testCoverage.assessment === 'verified' && result.testCoverage.evidenceReferences.length > 0, 'testCoverage', 'Unverified coverage cannot establish a completed assessment');
+  requireReview(result.limitations.length === 0, 'limitations', 'Required unresolved review evidence must remain incomplete');
+  requireReview(result.testCoverage.assessment === 'verified' && result.testCoverage.evidenceReferences.length > 0, 'testCoverage', 'Unverified coverage review cannot establish a completed assessment');
   requireReview((result.status === 'changes_requested') === blocking, 'status', 'Status must match demonstrated HIGH/MED findings');
  }
  requireReview(result.status !== 'failed' || Boolean(result.error), 'error', 'Failed execution needs an actionable error');
@@ -48,6 +48,9 @@ export function aggregateTaskStatus(results: readonly TaskReviewResult[]): TaskR
 }
 
 /** Derive conservative completion status without discarding otherwise valid feedback.
+ * limitations contains mandatory review omissions only; optional execution notes
+ * belong in advice and never change completion status. No text-based guessing or
+ * automatic promotion of a reviewer's explicit incomplete result is performed.
  * A model's optimistic status is not a transport failure. Unknown required evidence
  * remains incomplete, with all supported findings/advice preserved. Never promote
  * an explicit failed/incomplete assessment to a completed one. */

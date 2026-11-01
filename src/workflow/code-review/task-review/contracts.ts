@@ -23,8 +23,9 @@ export const TaskResultSchema = object({ taskId: text,
  status: Type.Union((['passed', 'changes_requested', 'incomplete', 'failed'] as const).map(s => Type.Literal(s))), summary: text,
  findings: Type.Array(object({ severity: Type.Union((['HIGH', 'MED', 'LOW'] as const).map(s => Type.Literal(s))), location: text,
   message: text, rationale: text, evidenceReferences: Type.Array(text, { minItems: 1, maxItems: 10000 }) }), { maxItems: 10000 }),
- testCoverage: object({ assessment: Type.Union((['verified', 'partial', 'unverified', 'unsupported'] as const).map(s => Type.Literal(s))), explanation: text, evidenceReferences: strings }),
- limitations: strings, advice: strings, inspectedReferences: strings, executedTests: Type.Array(TestDetailSchema, { maxItems: 10000 }), error: Type.Optional(text) });
+ testCoverage: Type.Object({ assessment: Type.Union((['verified', 'partial', 'unverified', 'unsupported'] as const).map(s => Type.Literal(s))), explanation: text, evidenceReferences: strings }, { additionalProperties: false, description: 'Mandatory evidence-backed review of relevant test coverage. Verified means this assessment is complete, not that tests were executed. Report demonstrated coverage defects in findings.' }),
+ limitations: Type.Array(text, { maxItems: 10000, description: 'Blocking omissions of mandatory code/module, requirements or test-coverage review only. Any skipped required review scope means incomplete. Do not put skipped optional execution here.' }),
+ advice: Type.Array(text, { maxItems: 10000, description: 'Nonblocking optional execution disclosures (integration checks, tests, typecheck or build not run) and optional improvements. Prefix execution disclosures with Optional execution:.' }), inspectedReferences: strings, executedTests: Type.Array(TestDetailSchema, { maxItems: 10000 }), error: Type.Optional(text) });
 export const TaskOriginSchema = object({ taskId: text, sourceAttempt: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }), reason: text });
 export type TaskResultOrigin = Static<typeof TaskOriginSchema>;
 export const ReviewRequestSchema = object({ reviewId: text, attempt: Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }),

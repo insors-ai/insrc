@@ -76,8 +76,8 @@ export function renderTaskReview(bodyInput: unknown): string {
    }
    lines.push('', `### ${task.taskId}: ${task.status}`, '', task.summary, '', `Coverage: **${task.testCoverage.assessment}** — ${task.testCoverage.explanation}`, '');
    for (const finding of task.findings) lines.push(`- **${finding.severity}** \`${finding.location}\`: ${finding.message}`, `  ${finding.rationale}`, `  Evidence: ${finding.evidenceReferences.map(ref=>`\`${ref}\``).join(', ')}`);
-   if (task.limitations.length) lines.push('', 'Limitations:', '', ...task.limitations.map(note=>`- ${note}`));
-   if (task.advice.length) lines.push('', 'Advice:', '', ...task.advice.map(note=>`- ${note}`));
+   if (task.limitations.length) lines.push('', 'Review limitations (blocking):', '', ...task.limitations.map(note=>`- ${note}`));
+   if (task.advice.length) lines.push('', 'Optional verification and advice (nonblocking):', '', ...task.advice.map(note=>`- ${note}`));
    lines.push('', 'Inspected references:', '', ...task.inspectedReferences.map(ref=>`- \`${ref}\``));
    for (const test of task.executedTests) lines.push('', `Test: \`${test.command}\` — ${test.result}`, test.executionDetails);
   }

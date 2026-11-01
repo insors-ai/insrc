@@ -37,6 +37,7 @@ export const gitLogTool = {
     grep: Type.Optional(Type.String({ description: 'Filter by commit message substring (git --grep=).' })),
     since: Type.Optional(Type.String({ description: 'ISO date -- only commits after this time (git --since=).' })),
     until: Type.Optional(Type.String({ description: 'ISO date -- only commits before this time (git --until=).' })),
+    firstParent: Type.Optional(Type.Boolean({ description: 'Follow only the first parent of merges (--first-parent).' })),
   }, { additionalProperties: false }),
   outputSchema: GitLogDataSchema,
 
@@ -63,6 +64,7 @@ export const gitLogTool = {
     if (grep)   { argv.push(`--grep=${grep}`); }
     if (since)  { argv.push(`--since=${since}`); }
     if (until)  { argv.push(`--until=${until}`); }
+    if (input['firstParent'] === true) { argv.push('--first-parent'); }
     argv.push(ref);
     if (path)   { argv.push('--', path); }
 

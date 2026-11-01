@@ -154,6 +154,17 @@ export function parseLsTree(raw: string): GitTreeEntry[] {
 }
 
 /** rev-list: one full object name per line. */
+/** `git rev-list --parents`: one line per commit, the commit then its parents, all object names. */
+export function parseRevListParents(raw: string): { sha: string; parents: string[] }[] {
+  if (raw === '') { return []; }
+  if (!raw.endsWith('\n')) { throw new ParseError('the last line is not newline-terminated'); }
+  return raw.slice(0, -1).split('\n').map(line => {
+    const [sha = '', ...parents] = line.split(' ');
+    for (const name of [sha, ...parents]) { if (!SHA.test(name)) { throw new ParseError(`not an object name: ${JSON.stringify(line)}`); } }
+    return { sha, parents };
+  });
+}
+
 export function parseRevList(raw: string): string[] {
   if (raw === '') { return []; }
   if (!raw.endsWith('\n')) { throw new ParseError('the last line is not newline-terminated'); }

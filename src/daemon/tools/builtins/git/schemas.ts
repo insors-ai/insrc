@@ -70,7 +70,7 @@ export const GitDiffFileStatSchema = Type.Object({
 export type GitDiffFileStat = Static<typeof GitDiffFileStatSchema>;
 
 export const GitDiffDataSchema = Type.Object({
-  /** Resolved mode label: 'unstaged' | 'staged' | 'range' | 'commit'. */
+  /** Resolved mode label: 'unstaged' | 'staged' | 'range' | 'commit' | 'worktree'. */
   mode: Type.String(),
   /** Git revision pair actually diffed (e.g. "HEAD -- worktree"). */
   range: Type.String(),
@@ -338,7 +338,7 @@ export const GitRevParseDataSchema = Type.Object({ values: Type.Array(Type.Strin
 export type GitRevParseData = Static<typeof GitRevParseDataSchema>;
 
 export const GitRevListDataSchema = Type.Union([
-  Type.Object({ commits: Type.Array(Type.String()) }),
+  Type.Object({ commits: Type.Array(Type.String()), parents: Type.Optional(Type.Array(Type.Array(Type.String(), { description: 'The parent shas of the commit at the same index.' }))) }),
   Type.Object({ count: Type.Number() }),
 ]);
 export type GitRevListData = Static<typeof GitRevListDataSchema>;

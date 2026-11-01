@@ -167,12 +167,12 @@ This list is final. A gap found later is a plan amendment, not part of t2.
 | g2 | `git_merge_tree` | a new read-only tool | story-commits |
 | g3 | `git_hash_object` | an optional `type` input | story-commits |
 | g4 | `git_rev_parse` | an optional `gitPath` input | story-commits `mergeInProgress` |
-| g5 | `git_status` | optional `paths` and `untrackedFiles` ('all') inputs | handoff, convert plan |
-| g6 | `git_ls_tree` | an optional `fullTree` input | policy-reader |
-| g7 | `git_log` | an optional `firstParent` input | story-commits |
-| g8 | `git_rev_list` | an optional `parents` input | story-commits |
-| g9 | `git_worktree` | an optional `startPoint` input for `add` | handoff park |
-| g10 | `git_diff` | an optional `againstWorktree` input (`git diff <from>`) | validation-checks |
+| g5 | `git_status` | optional `paths` and `untrackedFiles` ('all') inputs, built by t24 | handoff, convert plan |
+| g6 | `git_ls_tree` | an optional `fullTree` input, built by t24 | policy-reader |
+| g7 | `git_log` | an optional `firstParent` input, built by t24 | story-commits |
+| g8 | `git_rev_list` | an optional `parents` input (the data gains `parents`), built by t24 | story-commits |
+| g9 | `git_worktree` | an optional `startPoint` input for `add`, built by t24 | handoff park |
+| g10 | `git_diff` | an optional `againstWorktree` input (`git diff <from>`), built by t24 | validation-checks |
 
 Not gaps: the `signal` that `git_log`, `git_diff`, `git_status`, `git_rev_list`, `git_for_each_ref`, `git_ls_files` and `git_path_history` do not pass to
 their process. The refresh uses only `git_ls_remote` and `git_fetch_refs`, which do; the other sites have no abort requirement.

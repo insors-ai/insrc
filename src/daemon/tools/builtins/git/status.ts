@@ -11,7 +11,7 @@ import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import { runShell } from '../../shell-helper.js';
 import type { ToolInput, ToolResult } from '../../types.js';
-import { fail, spawnFail } from './helpers.js';
+import { assertSafeArg, fail, spawnFail } from './helpers.js';
 import { parseOutput, parseStatusV2 } from './parsers.js';
 import { GitStatusDataSchema } from './schemas.js';
 import type { GitStatusData } from './schemas.js';
@@ -33,6 +33,8 @@ export const gitStatusTool = {
     cwd: Type.Optional(Type.String({
       description: 'Repository root to run status in. Defaults to the daemon\'s current working directory.',
     })),
+    paths: Type.Optional(Type.Array(Type.String({ minLength: 1 }), { minItems: 1, description: 'Limit the status to these paths (pathspecs are literal).' })),
+    untrackedFiles: Type.Optional(Type.String({ enum: ['all'], description: 'all: list every untracked file, not a directory that holds only untracked files (--untracked-files=all).' })),
   }, { additionalProperties: false }),
   outputSchema: GitStatusDataSchema,
 
@@ -41,10 +43,12 @@ export const gitStatusTool = {
       ? input['cwd']
       : process.cwd();
 
-    const result = await runShell(
-      ['git', 'status', '--porcelain=v2', '--branch', '--null'],
-      { cwd, timeoutMs: 15_000 },
-    );
+    const paths = Array.isArray(input['paths']) ? (input['paths'] as unknown[]).map(String) : [];
+    for (const p of paths) { assertSafeArg(p, 'path'); }
+    const argv = ['git', ...(paths.length > 0 ? ['--literal-pathspecs'] : []), 'status', '--porcelain=v2', '--branch', '--null'];
+    if (input['untrackedFiles'] === 'all') { argv.push('--untracked-files=all'); }
+    if (paths.length > 0) { argv.push('--', ...paths); }
+    const result = await runShell(argv, { cwd, timeoutMs: 15_000 });
 
     if (result.spawnError) {
       return spawnFail('git:status', result.stderr);

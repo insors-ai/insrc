@@ -6,7 +6,7 @@ import type { TypedTool } from '../../call-tool.js';
 import { Type } from '@sinclair/typebox';
 import type { ToolInput, ToolResult } from '../../types.js';
 import { assertSafeArg, readGit, rejectInput, str } from './helpers.js';
-import { parseOutput, parseRevList } from './parsers.js';
+import { parseOutput, parseRevList, parseRevListParents } from './parsers.js';
 import { GitRevListDataSchema } from './schemas.js';
 import type { GitRevListData } from './schemas.js';
 
@@ -20,6 +20,7 @@ export const gitRevListTool = {
     maxParents: Type.Optional(Type.Number({ description: 'Only commits with at most this many parents (--max-parents); 0 gives root commits.', minimum: 0 })),
     firstParent: Type.Optional(Type.Boolean({ description: 'Follow only the first parent of merges (--first-parent).' })),
     limit: Type.Optional(Type.Number({ description: 'At most this many commits (--max-count).', minimum: 1 })),
+    parents: Type.Optional(Type.Boolean({ description: 'Also return the parent shas of each commit (--parents); not with count.' })),
   }, { additionalProperties: false }),
   outputSchema: GitRevListDataSchema,
 
@@ -33,6 +34,9 @@ export const gitRevListTool = {
     if (typeof input['maxParents'] === 'number') { argv.push(`--max-parents=${Math.floor(input['maxParents'])}`); }
     if (input['firstParent'] === true) { argv.push('--first-parent'); }
     if (typeof input['limit'] === 'number') { argv.push(`--max-count=${Math.floor(input['limit'])}`); }
+    const withParents = input['parents'] === true;
+    if (withParents && input['count'] === true) { return rejectInput('git_rev_list', 'parents cannot be combined with count'); }
+    if (withParents) { argv.push('--parents'); }
     argv.push(rev);
 
     const read = await readGit('git_rev_list', argv, cwd, 30_000);
@@ -43,6 +47,12 @@ export const gitRevListTool = {
       if (!Number.isInteger(count) || count < 0) { return rejectInput('git_rev_list', `could not parse the count: ${JSON.stringify(read.r.stdout.trim())}`); }
       const data: GitRevListData = { count };
       return { output: String(count), format: 'text', success: true, data };
+    }
+    if (withParents) {
+      const lines = parseOutput('git_rev_list', read.r, parseRevListParents);
+      if (!lines.ok) { return lines.failure; }
+      const data: GitRevListData = { commits: lines.value.map(l => l.sha), parents: lines.value.map(l => l.parents) };
+      return { output: lines.value.map(l => [l.sha, ...l.parents].join(' ')).join('\n') || '(no commits)', format: 'text', success: true, data };
     }
     const parsed = parseOutput('git_rev_list', read.r, parseRevList);
     if (!parsed.ok) { return parsed.failure; }

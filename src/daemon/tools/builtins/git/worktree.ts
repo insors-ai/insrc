@@ -24,6 +24,7 @@ export const gitWorktreeTool = {
     branch: Type.Optional(Type.String({ description: 'For add: branch to check out (or create).' })),
     createBranch: Type.Optional(Type.Boolean({ description: 'For add: create the branch (-b).' })),
     detach: Type.Optional(Type.Boolean({ description: 'For add: detach HEAD instead of checking out a branch.' })),
+    startPoint: Type.Optional(Type.String({ description: 'For add with createBranch or detach: the commit the new branch or the detached HEAD starts at. Default HEAD.' })),
     force: Type.Optional(Type.Boolean({ description: 'For remove / prune: -f.' })),
     newPath: Type.Optional(Type.String({ description: 'For move.' })),
   }, { additionalProperties: false }),
@@ -93,6 +94,12 @@ export const gitWorktreeTool = {
       argv.push('--', path);
       if (branch && input['createBranch'] !== true && input['detach'] !== true) {
         argv.push(branch);
+      }
+      const startPoint = str(input, 'startPoint');
+      if (startPoint !== undefined) {
+        if (input['createBranch'] !== true && input['detach'] !== true) { return rejectInput('git_worktree', 'startPoint needs createBranch or detach'); }
+        assertSafeArg(startPoint, 'ref');
+        argv.push(startPoint);
       }
       const r = await runShell(argv, { cwd, timeoutMs: 60_000 });
       if (r.spawnError) { return spawnFail('git_worktree', r.stderr); }

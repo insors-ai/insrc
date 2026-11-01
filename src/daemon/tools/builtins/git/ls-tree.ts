@@ -19,6 +19,7 @@ export const gitLsTreeTool = {
     paths: Type.Optional(Type.Array(Type.String({ minLength: 1 }), { description: 'Limit to these paths.' })),
     nameOnly: Type.Optional(Type.Boolean({ description: 'Return only the names (--name-only).' })),
     recursive: Type.Optional(Type.Boolean({ description: 'Recurse into subtrees (-r).' })),
+    fullTree: Type.Optional(Type.Boolean({ description: 'List from the root of the tree whatever cwd is, and read the paths from there (--full-tree).' })),
   }, { additionalProperties: false }),
   outputSchema: GitLsTreeDataSchema,
 
@@ -34,6 +35,7 @@ export const gitLsTreeTool = {
     const argv = ['git', '--literal-pathspecs', 'ls-tree', '-z'];
     if (input['recursive'] === true) { argv.push('-r'); }
     if (nameOnly) { argv.push('--name-only'); }
+    if (input['fullTree'] === true) { argv.push('--full-tree'); }
     argv.push(rev);
     if (paths.length > 0) { argv.push('--', ...paths); }
 

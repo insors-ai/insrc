@@ -54,6 +54,7 @@ export const gitDiffTool = {
     staged: Type.Optional(Type.Boolean({ description: 'When true, diff index vs HEAD (what `git commit` would record).' })),
     from: Type.Optional(Type.String({ description: 'Starting ref for a range diff (commit SHA, branch, tag, "HEAD~3").' })),
     to: Type.Optional(Type.String({ description: 'Ending ref. When omitted with `from`, defaults to HEAD.' })),
+    againstWorktree: Type.Optional(Type.Boolean({ description: 'With `from` and without `to`: diff `from` against the working tree (git diff <from>), tracked files only.' })),
     path: Type.Optional(Type.String({ description: 'Restrict the diff to this file or directory.' })),
     paths: Type.Optional(Type.Array(Type.String({ minLength: 1 }), {
       minItems: 1,
@@ -78,6 +79,15 @@ export const gitDiffTool = {
     const from = strInput(input, 'from');
     const to = strInput(input, 'to');
     const path = strInput(input, 'path');
+    const againstWorktree = input['againstWorktree'] === true;
+    if (againstWorktree && (from === undefined || to !== undefined || staged)) {
+      return withFailure({
+        output: '[git:diff] invalid-input: `againstWorktree` needs `from` and cannot be combined with `to` or `staged`',
+        format: 'text',
+        success: false,
+        error: 'invalid-input',
+      }, 'rejected');
+    }
     for (const ref of [from, to]) { if (ref !== undefined) { assertSafeArg(ref, 'ref'); } }
     if (path !== undefined) { assertSafeArg(path, 'path'); }
     // Validated BEFORE git runs: a malformed list must not degrade into "no
@@ -110,14 +120,14 @@ export const gitDiffTool = {
       MAX_MAX_BYTES,
     );
 
-    const diffOpts: DiffOpts = { staged, ignoreWhitespace };
+    const diffOpts: DiffOpts = { staged, ignoreWhitespace, ...(againstWorktree ? { againstWorktree } : {}) };
     if (from !== undefined) { diffOpts.from = from; }
     if (to !== undefined) { diffOpts.to = to; }
     if (path !== undefined) { diffOpts.path = path; }
     if (rawPaths !== undefined) { diffOpts.paths = rawPaths; }
     if (exclude.length > 0) { diffOpts.exclude = exclude; }
     if (context !== undefined) { diffOpts.context = context; }
-    const statOpts: DiffOpts = { staged };
+    const statOpts: DiffOpts = { staged, ...(againstWorktree ? { againstWorktree } : {}) };
     if (from !== undefined) { statOpts.from = from; }
     if (to !== undefined) { statOpts.to = to; }
     if (path !== undefined) { statOpts.path = path; }
@@ -196,6 +206,8 @@ export const gitDiffTool = {
 
 export interface DiffOpts {
   staged?: boolean;
+  /** With `from` and no `to`: `git diff <from>`, that revision against the working tree. */
+  againstWorktree?: boolean;
   from?: string;
   to?: string;
   path?: string;
@@ -243,6 +255,10 @@ export function buildDiffArgv(o: DiffOpts): { argv: string[]; mode: string; rang
     base.push('--cached');
     mode = 'staged';
     range = 'HEAD -- index';
+  } else if (o.from && o.againstWorktree) {
+    base.push(o.from);
+    mode = 'worktree';
+    range = `${o.from} -- worktree`;
   } else if (o.from) {
     const end = o.to ?? 'HEAD';
     base.push(`${o.from}..${end}`);
@@ -262,6 +278,7 @@ export function buildStatArgv(o: DiffOpts): string[] {
   // `dir/{a => b}/file` rename display (ISSUE-b97752e9).
   const base = ['git', 'diff', '--no-color', '--numstat', '-z'];
   if (o.staged) { base.push('--cached'); }
+  else if (o.from && o.againstWorktree) { base.push(o.from); }
   else if (o.from) { base.push(`${o.from}..${o.to ?? 'HEAD'}`); }
   base.push(...pathspecArgs(o));
   return base;

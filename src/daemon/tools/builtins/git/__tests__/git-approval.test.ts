@@ -24,6 +24,9 @@ const GIT_IDS = ['git_status', 'git_log', 'git_diff', 'git_show', 'git_blame', '
 	'git_push', 'git_pull', 'git_fetch', 'git_checkout', 'git_merge', 'git_rebase', 'git_stash', 'git_reset', 'git_revert',
 	'git:cherry-pick', 'git_tag', 'git_remote', 'git_worktree'];
 
+/** Optional inputs the s9 audit added after the snapshot (Story s9, task t24); the snapshot stays pinned. */
+const ADDED_BY_S9 = new Map([['git_status', ['paths', 'untrackedFiles']], ['git_log', ['firstParent']], ['git_diff', ['againstWorktree']], ['git_worktree', ['startPoint']]]);
+
 test('every typebox input schema serialises to the same JSON as the schema it replaced', () => {
 	registerForTests();
 	const live = new Map(listTools().map(t => [t.id, t]));
@@ -33,6 +36,7 @@ test('every typebox input schema serialises to the same JSON as the schema it re
 		// git_push gained the optional configured input after the snapshot (Story s10); the snapshot stays pinned
 		const schema = JSON.parse(JSON.stringify(live.get(id)?.inputSchema)) as { properties: Record<string, unknown> };
 		if (id === 'git_push') { delete schema.properties['configured']; }
+		for (const added of ADDED_BY_S9.get(id) ?? []) { delete schema.properties[added]; }
 		assert.deepEqual(schema, before.inputSchema, id);
 	}
 });
@@ -65,7 +69,9 @@ test('git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are
 		// the schemas themselves did not move
 		const live = new Map(listTools().map(t => [t.id, t]));
 		for (const id of ['git_log', 'git_diff', 'git_show', 'git_status', 'git_blame']) {
-			assert.deepEqual(JSON.parse(JSON.stringify(live.get(id)?.inputSchema)), snapshot.find(s => s.id === id)?.inputSchema, id);
+			const schema = JSON.parse(JSON.stringify(live.get(id)?.inputSchema)) as { properties: Record<string, unknown> };
+			for (const added of ADDED_BY_S9.get(id) ?? []) { delete schema.properties[added]; }
+			assert.deepEqual(schema, snapshot.find(s => s.id === id)?.inputSchema, id);
 		}
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

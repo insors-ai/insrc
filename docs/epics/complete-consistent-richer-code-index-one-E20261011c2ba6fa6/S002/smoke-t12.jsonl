@@ -1,0 +1,5 @@
+{"at":"2026-11-01T16:44:45.988Z","phase":"backfill","unembedded":0,"complete":true,"reasons":[],"pendingJobs":0}
+{"at":"2026-11-01T16:44:45.991Z","phase":"backfill","result":"pass","seconds":1}
+{"at":"2026-11-01T16:44:48.650Z","phase":"refresh","firstIndexedMs":2598}
+{"at":"2026-11-01T16:44:55.051Z","phase":"refresh","polls":27781,"empty":0,"mixed":0,"versionsSeen":6,"lastVersionSeen":true,"result":"pass"}
+{"at":"2026-11-01T16:44:55.260Z","phase":"delete","polls":1072,"fullBefore":1071,"empty":1,"partial":0,"goneMs":206,"result":"pass"}

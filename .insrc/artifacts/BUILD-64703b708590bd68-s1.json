@@ -1,0 +1,348 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "ff6fee811147f3a4e62d4e8360a3eeb77980b5ff34032cc693a498d698a6b806",
+        "at": "2026-11-01T20:51:06.407Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-23568cb4-0c87-4e43-9552-00614744b831",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T19:44:06.175Z",
+    "epicCreatedAt": "2026-11-01T19:21:31.612Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "64703b708590bd68",
+    "storyId": "s1",
+    "revision": 9,
+    "updatedAt": "2026-11-01T20:49:15.075Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "reject-file-modifying-daemon-calls-do"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "Full sweep run once (1141 files, four at a time) and compared by test name with the tree before the fix (e87df83c2): 167 failures are in both trees, nine failed only under load (three shutdown files pass alone; indexing-port daemon.status fails alone in the old tree too), no new skipped test. The outcome (deviations, scope decision, installed daemon, open items) is docs/plans/repo-gate-outcome.md; repo-gate-sweep-record.test.ts pins it. The sweep itself cannot be a test.",
+    "testRecord": {
+      "md": "docs/standalone/reject-file-modifying-daemon-calls-do-E2026110164703b70/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/repo-call-audit.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-call-audit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-call-audit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-call-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-call-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-call-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/cli-sends-repo.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/cli-services-daemon-errors.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/cli-services-no-spawn.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/workflow-approve-versioning.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/workflow.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/approve-absolute-repo.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/fixtures/tool-surface.golden.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/forward-step.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/approve-repo-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/lifecycle-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-approve-followon.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-approve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/approve-pipeline.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/review-decision.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/artifact-feedback-handler-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-gate-dispatch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-convert.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tracker-attach.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tracker-sync-comments.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/workflow-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/feedback-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/feedback-handlers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/step-repo-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/mcp-process-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/daemon-doc-repo-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/repo-gate-outcome.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-gate-sweep-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:49:15.075Z"
+      }
+    ],
+    "commit": "832d2c690"
+  },
+  "citations": []
+}

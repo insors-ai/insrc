@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -172,3 +172,22 @@ Run at 2026-11-01T15:13:36.050Z on commit `d9fe9ff86`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/file-refresh.test.ts` | 0 | 3 | 1.1 s |  |
 | `src/indexer/__tests__/reconcile.test.ts` | 0 | 20 | 4.1 s |  |
+
+## t9
+
+Run at 2026-11-01T15:20:26.985Z on commit `4741a5bb6`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: IndexerService.reembed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and never delays a file job queued after it; its lane is published | `src/daemon/__tests__/queue-lanes.test.ts` |
+| pass | each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it | `src/daemon/__tests__/queue-lanes.test.ts` |
+| pass | codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor | `src/daemon/__tests__/queue-code-index-work.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/queue-code-index-work.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/daemon/__tests__/queue-lanes.test.ts` | 0 | 8 | 0.5 s |  |

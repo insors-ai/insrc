@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T15:13:36.050Z",
+    "updatedAt": "2026-11-01T15:20:26.985Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -719,6 +719,97 @@
               },
               {
                 "title": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "4741a5bb6",
+        "ranAt": "2026-11-01T15:20:26.985Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "IndexerService.reembed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and never delays a file job queued after it; its lane is published",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 599,
+            "titles": [
+              {
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              },
+              {
+                "title": "codeIndexWorkFor clears the in-flight job when the processor throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/queue-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 491,
+            "titles": [
+              {
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "title": "each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              },
+              {
+                "title": "waitForIndexIdle resolves at once when the index lane is idle, after its code work otherwise, and on stop(); a summary lane waiting for code work ends on stop()",
+                "result": "pass"
+              },
+              {
+                "title": "a summary never starts after a code job was queued: with the index lane idle at start it starts at once, and a code job queued just after runs beside that one summary only",
+                "result": "pass"
+              },
+              {
+                "title": "Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and never delays a file job queued after it; its lane is published",
                 "result": "pass"
               }
             ],

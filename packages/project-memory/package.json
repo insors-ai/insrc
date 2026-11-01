@@ -31,5 +31,8 @@
     "@types/node": "^22.20.5",
     "tsx": "^4.21.0",
     "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "fs-ext": "2.1.1"
   }
 }

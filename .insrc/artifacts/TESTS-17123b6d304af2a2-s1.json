@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s1",
+    "createdAt": "2026-11-01T18:52:29.474Z",
+    "updatedAt": "2026-11-01T18:52:29.474Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "00b9cc308",
+        "ranAt": "2026-11-01T18:52:29.474Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "public-v1-types-and-emitted-boundary",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pure-public-import-without-native-or-daemon",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1401,
+            "titles": [
+              {
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

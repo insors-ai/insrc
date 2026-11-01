@@ -248,6 +248,13 @@
         "choice": "(c) The backfill (reembed) moves to its own queue lane, like the document-summary lane: it runs beside the index lane, so file / full / reconcile jobs are never queued behind it and need no yield points in the backfill.",
         "rationale": "User decision 2026-11-01: per-batch yielding inside the index lane (option a) complicates job sequencing; a separate lane keeps the index lane's order simple. Accepted cost: the backfill's embedding calls may run while the index lane embeds a refreshed file, i.e. some contention on the local embedding model.",
         "resolvedAt": "2026-11-01T13:05:16.641Z"
+      },
+      "q957956d1": {
+        "question": "OPEN (s8 sbdry3, HLD performance note): 'Story s2's design measures [the vector upsert] on this repository'. Proposed: record, as a smoke result in the Story's test record, the time of writeEntityEmbeddings (upsert) vs addEntityEmbeddings for this repository's vector table at a refresh-sized batch and at a backfill-sized batch, before choosing the backfill's batch size.",
+        "status": "resolved",
+        "choice": "Two-point smoke (as proposed)",
+        "rationale": "User decision 2026-11-01: time writeEntityEmbeddings (upsert) vs addEntityEmbeddings on this repository's vector table at a refresh-sized and a backfill-sized batch, record both as a smoke result in the Story's test record, and choose the backfill batch size from them.",
+        "resolvedAt": "2026-11-01T13:08:10.475Z"
       }
     }
   },

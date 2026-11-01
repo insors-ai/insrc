@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8ba223c4-7ae4-4efd-b87f-cc1384878d58",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.582Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Handoff onto the tools",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "ff949ee5ef320991e7b4f888bad775941a16c68e200e89b72f30df0092c11b70",
+        "at": "2026-11-01T12:34:37.141Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.583Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Handoff onto the tools",
+    "summary": "Move handoff.ts (unitDraftFiles, committedAtHead, parkPlan, repositoryIdOf, resumeCheck, and its git() runner built on runGitAsync with PARK_GIT_MS) onto git-calls and the Deadline; the functions become async where they were sync and the workflow-step park and resume phases and the daemon handoff rpc await them.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "the existing handoff, park and resume tests pass with awaits added",
+      "team-policy-registry.test.ts covers the draft listing, the park plan and the resume check against real repositories and the old results",
+      "no runGit or runGitAsync call remains in handoff.ts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "team-policy-registry.test.ts: the handoff drafts, park plan and resume checks run through the registry and equal the old results"
+      },
+      {
+        "level": "integration",
+        "name": "team-policy-parity.test.ts: the handoff git reads equal the old functions on the same repositories"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

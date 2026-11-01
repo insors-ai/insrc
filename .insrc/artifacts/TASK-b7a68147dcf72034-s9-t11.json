@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-afcc49c1-d6dd-47b6-b323-ad71ed4ff481",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.584Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Build range base, standalone record and the gate's head sha",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "1e9fee282bec34689b98803e203e83fb703c20879cb573246f0483d9e3a03710",
+        "at": "2026-11-01T12:34:37.141Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.584Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Build range base, standalone record and the gate's head sha",
+    "summary": "Move range-base.ts (commitExists, headFullSha, introducingCommit, resolveStoryRangeEnd, readBuildStart, stampBuildStart, resolveStoryRangeBase), standalone-record.ts (headShortSha, priorCommit) and gates.ts headFullSha onto git-calls, make them async and fix their callers (validate.ts, implement.ts, completion-record.ts and the code-review subject code).",
+    "size": "L",
+    "order": 12,
+    "acceptanceChecks": [
+      "build-runners-registry.test.ts runs each function through the registry on real repositories",
+      "build-runners-parity.test.ts shows the same values and the same written records as the old functions",
+      "no execFileSync call remains in range-base.ts, standalone-record.ts and gates.ts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-runners-registry.test.ts: resolveStoryRangeBase, stampBuildStart, readBuildStart, resolveStoryRangeEnd, headFullSha, headShortSha and priorCommit run through the registry on real repositories"
+      },
+      {
+        "level": "integration",
+        "name": "build-runners-parity.test.ts: range base, build start stamp and standalone record return the old values and write the same records"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

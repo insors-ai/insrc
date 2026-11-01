@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a0b29887-87cd-4877-812f-f04b0320d265",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.588Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Ignore filter, companion header and convert plan",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "6d3b20a969569daf4f6e297be26f19db41b47a76fbc966f73df90bd56044947f",
+        "at": "2026-11-01T12:34:37.144Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.589Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Ignore filter, companion header and convert plan",
+    "summary": "Move createRepoIgnoreFilter (git_ls_files cached and others, degrading to the permissive filter on any ordinary failure), defaultGitUserName (git_config) and convert/plan.ts git reads onto git-calls and make them and their callers async.",
+    "size": "M",
+    "order": 15,
+    "acceptanceChecks": [
+      "ignore-filter-header-plan-registry.test.ts covers file names with spaces and newlines, a non-git directory and a git failure for the filter, the OS-user fallback for the header, and the convert plan's reads",
+      "no execFileSync call remains in the three files"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "ignore-filter-header-plan-registry.test.ts: createRepoIgnoreFilter, defaultGitUserName and the convert plan reads run through the registry, with names containing spaces and newlines, a non-git directory and a git failure"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

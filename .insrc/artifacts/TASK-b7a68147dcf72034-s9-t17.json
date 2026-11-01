@@ -1,0 +1,127 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d3c130ae-1317-41e7-84d4-11b64c06b503",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.593Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Denial across the moved sites",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "2dffac1053dae284830b09ee4c93bd4c3d73c2f47e2cc7f7b3eaced9e39a8701",
+        "at": "2026-11-01T12:34:37.147Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.594Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Denial across the moved sites",
+    "summary": "Add registry-denial-s9.test.ts: for each group of moved sites (team policy, refresh, signoff, handoff, build runners, validation checks, ignore filter and header and plan, corpus reader, identity) and each denial reason (declined, timed-out, no-client, cancelled) the stage fails with the denial and no later git call is made.",
+    "size": "M",
+    "order": 18,
+    "acceptanceChecks": [
+      "registry-denial-s9.test.ts passes for every group and reason",
+      "a destructive-class call with no client is denied on a moved site"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "registry-denial-s9.test.ts: for each group of sites and each denial reason (declined, timed-out, no-client, cancelled) the stage fails with the denial and no later git call is made"
+      },
+      {
+        "level": "integration",
+        "name": "registry-denial-s9.test.ts: a destructive-class call with no client is denied on a moved site"
+      }
+    ],
+    "planTaskId": "t17"
+  },
+  "citations": []
+}

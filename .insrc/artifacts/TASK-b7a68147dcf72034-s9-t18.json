@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e74b57d9-108a-40e0-a1a5-2b7c5b397ae2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.594Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Move the tracker tests off the exec seam and legacy table",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "80d783f4e19fc2004188401282b170c980650d3de20a1952c3585a6a46a4e01c",
+        "at": "2026-11-01T12:34:37.148Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.595Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Move the tracker tests off the exec seam and legacy table",
+    "summary": "Move the test files under src/workflow/tracker (and any other tracker-area files) that import _setTrackerExecForTests or the legacy table onto the stand-in git and gh binaries (installStandInBin, installFakeGh) or injected fakes, each file's assertions unchanged; add the small stand-in gh helper for tests that replaces the legacy table. The injected PolicyReader fakes owned by this area become async.",
+    "size": "M",
+    "order": 19,
+    "acceptanceChecks": [
+      "none of the files in this area imports the exec seam or the legacy table",
+      "every file in this area passes",
+      "the PolicyReader fakes in this area are async"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the migrated tracker test files pass on the stand-in binaries and none imports the exec seam or the legacy table"
+      }
+    ],
+    "planTaskId": "t18"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7d9d546a-172b-4cf5-97d3-dcda5c387ac2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.600Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Migration record and scans",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t21",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "6605ffb4b023684ee4ce2dcce8ca8bb417daf188db7befc55e99a66a1c8ff8ff",
+        "at": "2026-11-01T12:34:37.151Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.601Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Migration record and scans",
+    "summary": "Regenerate docs/plans/tool-registry-migration-record.md with section 5 (one row per s9 site and tool op), extend site-list.test.ts and no-floating-promises.test.ts to the git-calls helpers and moved functions, and add migration-record.test.ts.",
+    "size": "M",
+    "order": 23,
+    "acceptanceChecks": [
+      "migration-record.test.ts: the record lists every table row and every moved site with its test",
+      "site-list.test.ts finds every site of the scan history with a row, a table entry and a registry test",
+      "the no-floating-promises scan passes over the new helpers"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "migration-record.test.ts: docs/plans/tool-registry-migration-record.md lists every table row and every moved site with its test"
+      },
+      {
+        "level": "unit",
+        "name": "site-list.test.ts: every site of the replacement table is a row with a tool and a registry test, and the scan finds none outside the exemptions"
+      },
+      {
+        "level": "unit",
+        "name": "no-floating-promises.test.ts: the git-calls helpers and the moved functions are awaited"
+      }
+    ],
+    "planTaskId": "t22"
+  },
+  "citations": []
+}

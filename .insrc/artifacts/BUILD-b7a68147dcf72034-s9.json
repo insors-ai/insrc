@@ -1,0 +1,1627 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 34,
+        "contentHash": "b00950ce4aa63882a63870a2fec14c783efd8df4b1d24cdd2e8558dc4e4595b6",
+        "at": "2026-11-01T19:18:49.104Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 34,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T19:19:05.379Z",
+        "override": {
+          "reason": "self-review by the controller (docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S009/SELF-REVIEW.md); the daemon review framework is not functional (user decision 2026-11-01)"
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-e01c7468-9a1d-4c5c-9bb5-b42e398bba3a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:56:43.323Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "revision": 34,
+    "updatedAt": "2026-11-01T16:57:06.958Z",
+    "authoredBy": "controller",
+    "epicSlug": "one-tool-registry-git-gh-jira"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t24",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
+      },
+      {
+        "id": "t14",
+        "passed": true
+      },
+      {
+        "id": "t15",
+        "passed": true
+      },
+      {
+        "id": "t16",
+        "passed": true
+      },
+      {
+        "id": "t17",
+        "passed": true
+      },
+      {
+        "id": "t18",
+        "passed": true
+      },
+      {
+        "id": "t19",
+        "passed": true
+      },
+      {
+        "id": "t20",
+        "passed": true
+      },
+      {
+        "id": "t21",
+        "passed": true
+      },
+      {
+        "id": "t22",
+        "passed": true
+      },
+      {
+        "id": "t23",
+        "passed": true
+      }
+    ],
+    "summary": "Inventory fixture regenerated from the final tree (digest of read-only-tool-loop.ts refreshed after the sweep fix); sweep and outcome sections written; s9-sweep-record.test.ts pins the sweep record.",
+    "testRecord": {
+      "md": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S009/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/plans/tool-registry-migration-record.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/audit-rows.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-diff-against-worktree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-log-first-parent.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-ls-tree-full-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-rev-list-parents.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-status-paths.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-worktree-start-point.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/diff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/log.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/ls-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/parsers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/rev-list.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/schemas.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/status.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/worktree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-added-inputs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-diff-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-merge-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/definitions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/diff-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/hash-object.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/merge-tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/rev-parse.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/git-calls.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/git-calls.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/deadline.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/sighting-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/git-async.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/sighting-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-settings.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/signoff-hold.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/draft-issues.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-hold.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-hook.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/signoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker-auto.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/no-floating-promises.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/implement.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/phases/validate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/changed-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/completion-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validation-checks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/validation-checks.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/build-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/story-commits-trailer.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/story-commits.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/story-commits.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/artifact-content.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/review-decision.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-content.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/header.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/header.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/delivery/__tests__/handlers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review-decision.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/standalone-record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/team-service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/anchor-finder.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/branch-resolution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/fixtures/policy-scenarios.expected.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/helpers/new-policy-api.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/helpers/policy-scenarios.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/policy-reader.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/policy-refresh.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/team-policy-parity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/team-policy-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/anchor-finder.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/handoff.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/policy-reader.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/policy-refresh.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/refresh-abort.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/refresh-deadline.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/branch-resolution.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/refresh-git.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/fixtures/signoff-scenarios.expected.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/helpers/new-signoff-api.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/helpers/signoff-scenarios.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/park-offer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-stage-force.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/stage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/fixtures/handoff-scenarios.expected.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/handoff-park.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/handoff-pure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/handoff-resume-check.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/helpers/handoff-scenarios.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/helpers/new-handoff-api.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-start.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/build-step.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/build-runners-parity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/build-runners-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/changed-files.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/fixtures/build-scenarios.expected.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/helpers/build-scenarios.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/helpers/new-build-api.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/range-base.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/standalone-record-commit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/range-base.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/fixtures/story-scenarios.expected.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/helpers/new-story-api.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/__tests__/helpers/story-scenarios.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/show.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/repo-ignore-filter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/repo-ignore-filter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/ignore-filter-header-plan-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/convert-preview.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/plan.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/__tests__/corpus-reader-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/git-reader.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/identity-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/identity-tools.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/identity.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/registry-denial-s9.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tracker-setup-service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-settings.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/sync-plan-tasks-denial.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/tasks-sync-async.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-approve-followon.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/workflow-approve-pipeline.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-attach.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-fallback-issues.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/approve-fallback-kit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/bugfix-tracker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/draft-issues.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/exec-stand-in.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/meta-only-body-unchanged.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/migrated-test-files.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/questions.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/redraft-preserves-tracker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/tracker-auto.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/tracker-tasks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tasks/__tests__/task-set-approve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-comments.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-signoff-revise.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/github-signoff.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/issue-title-guard.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/port-post-comment.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/port.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/setup-plan.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/setup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/tasks.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/title-token.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/tracker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/gate-refusal-output.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/team-claim-release.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/team-park-resume.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-resolve-daemon.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/team-settle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/build-step/__tests__/gate-call-sites.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/__tests__/gate-call-sites.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/__tests__/handoff-ownership.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/__tests__/plan-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/anchor-missing-producers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/gate-approve.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/identity/__tests__/gate-identity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/identity/__tests__/identity-draft-denial.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/author-gate-revise.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/handoff-park-plan.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/helpers/handoff-world.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/park-offer.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/review-fix-decision.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-registration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-revise.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/snapshot-upstream.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/team-gates-async.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/team-gates-denial.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/binding-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/unit-issue-bind-failures.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/unit-issue-binding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/signoff-revise-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/build-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/shell-helper-bytes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/__tests__/acceptance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/__tests__/git-reader.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/design/corpus/sources/__tests__/reader-limits.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/git.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/starter-policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/_legacy-table.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/commit-and-push-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/legacy-exec.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/old-paths-removed.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/old-paths-unchanged.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/site-list.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/github.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/registry-table.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/setup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/migration-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/read-only-tool-loop.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-op-table-qs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/gh/__tests__/gh-tracker-family.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/tool-registry.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/s9-sweep-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S009/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:18:40.953Z"
+      }
+    ],
+    "commit": "a7c50728d"
+  },
+  "citations": []
+}

@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-291f56d9-6804-438c-8267-9232457f6fef",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.596Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Move the workflow tests off the exec seam and legacy table",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "10ded7a6940297f505bb32c5e66272c4382186c8652aab4c8e7e540eade863b0",
+        "at": "2026-11-01T12:34:37.149Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.596Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Move the workflow tests off the exec seam and legacy table",
+    "summary": "Move the workflow-area test files (build runners, team, gates, convert, companion, workflow-step and the like) that import the exec seam or the legacy table onto stand-in binaries or injected fakes, one commit per sub-area, each file's assertions unchanged. The PolicyReader fakes owned by this area become async.",
+    "size": "L",
+    "order": 20,
+    "acceptanceChecks": [
+      "none of the files in this area imports the exec seam or the legacy table",
+      "every file in this area passes",
+      "the PolicyReader fakes in this area are async"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the migrated workflow test files pass on the stand-in binaries and none imports the exec seam or the legacy table"
+      }
+    ],
+    "planTaskId": "t19"
+  },
+  "citations": []
+}

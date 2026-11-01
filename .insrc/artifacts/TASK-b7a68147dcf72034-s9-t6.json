@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d2820d63-a33c-452c-8ff9-6f4587996a75",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.576Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Widen the callers of the synchronous runners",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "294e054003a50938a6ec79a9a680bafed212af850df4bd20268a83927f3a427f",
+        "at": "2026-11-01T12:34:37.137Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.577Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Widen the callers of the synchronous runners",
+    "summary": "While the producers are still synchronous, make the call sites of range-base, story-commits, standalone-record, validation-checks, repo-ignore-filter, the companion header, the convert plan and gates accept a Promise (await at each caller), so the later moves can flip each function to async without breaking the tree.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "tsc is clean and the existing tests of the touched modules pass unchanged",
+      "the compiler-API no-floating-promises scan passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "no-floating-promises.test.ts: the callers of the runners await the widened return"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

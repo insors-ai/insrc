@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4d01ef3c-208d-46de-84d9-d011dd21d12b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.575Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Widen PolicyReader and await it at its readers",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "478c04d7e871ede2d63f0c336dc92b07e30b1a2e34808423f480346eec1c5546",
+        "at": "2026-11-01T12:34:37.136Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.575Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Widen PolicyReader and await it at its readers",
+    "summary": "While the producers are still synchronous, widen PolicyReader to return a value or a Promise and add awaits at its seven production readers (gate.ts, signoff.ts, tracker-auto.ts, draft-issues.ts, daemon/repo-settings.ts and the two in gate.ts). Audit the callers of PolicyReader for use of opts.signal and record whether it stays. Awaiting a plain value is harmless, so the tree stays green.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "tsc is clean and the existing tests of the touched modules pass unchanged",
+      "the audit of opts.signal is written in the commit message and the type keeps or drops it accordingly",
+      "the compiler-API no-floating-promises scan passes"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "no-floating-promises.test.ts: the PolicyReader readers await the widened return"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

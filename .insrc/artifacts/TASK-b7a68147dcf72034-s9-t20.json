@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5f27a58b-3a7a-4164-8472-496bf04e14b6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.597Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Move the daemon and cli tests off the exec seam and legacy table",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t16",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t18",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t19",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "15ca23738c37b92c243ff114f28cdf3b53107a439bf7aa08eefa08cbb5c2ccaa",
+        "at": "2026-11-01T12:34:37.149Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.598Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Move the daemon and cli tests off the exec seam and legacy table",
+    "summary": "Move the daemon, cli, mcp and understanding test files that import the exec seam or the legacy table onto stand-in binaries or injected fakes, each file's assertions unchanged; the PolicyReader fakes owned by this area become async and the PolicyReader type is narrowed to Promise once all areas are done.",
+    "size": "M",
+    "order": 21,
+    "acceptanceChecks": [
+      "none of the 32 files across t18, t19 and t20 imports the exec seam or the legacy table",
+      "every one of the 32 files passes",
+      "the PolicyReader type is narrowed to Promise and all 44 fakes are async"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "the migrated daemon and cli test files pass on the stand-in binaries and none of the 32 files imports the exec seam or the legacy table"
+      }
+    ],
+    "planTaskId": "t20"
+  },
+  "citations": []
+}

@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1ebecb83-5092-47d5-b720-0e41b12afaf6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.568Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Audit every replacement row against the live tool input schemas",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e9da83d6c6871c9c02961912acdbce60aab9bb3ef078b2c8e3a84eff5b72286b",
+        "at": "2026-11-01T11:53:36.568Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.569Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Audit every replacement row against the live tool input schemas",
+    "summary": "For each site in the LLD's replacement table read the git or gh tool's input and output schema and record whether the op carries every option the site uses. Write the result as the first draft of section 5 of docs/plans/tool-registry-migration-record.md (site, tool, op, gap or none). The audit covers all rows, not only the known gaps (git_diff_tree, git_merge_tree, git_hash_object type, git_rev_parse gitPath, git_status path filter, the diff name-only forms), and settles how each site that needs a path list gets it. The gap list it produces is final.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "a table with one row per site names its tool and op and says 'covered' or names the missing input",
+      "every gap is either in the list of tools t2 builds or is covered by deriving the value from an existing result, with the reason",
+      "the audit is checked by reading the tool definitions, not from memory",
+      "the gap list is stated as final; any gap beyond the four known additions becomes a further task inserted before t3 by a plan amendment, not growth of t2"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "audit-rows.test.ts: every replacement row names its tool and op and says covered or names the missing input"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

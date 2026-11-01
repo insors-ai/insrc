@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a5ae439c-2368-4fd3-96b2-04ab4a23b95b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.591Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Identity lookup",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "b1ad5f4f7720c638b04118bc70de59cd2fe05c8899f84c17c6cfb286f8ec06dc",
+        "at": "2026-11-01T12:34:37.146Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.592Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Identity lookup",
+    "summary": "Move src/understanding/identity.ts onto gh_auth (status and hosts), gh_tracker (user_by_host) and git_config, keeping the multi-host and multi-account results and the recorded older-gh behaviour; a denial is thrown, not an 'unavailable' provider.",
+    "size": "M",
+    "order": 17,
+    "acceptanceChecks": [
+      "identity-registry.test.ts: multi-host and multi-account results, public options and error codes equal the old lookup, and the older-gh case gives the recorded behaviour",
+      "no runShell call remains in identity.ts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "identity-registry.test.ts: multi-host and multi-account results, public options and error codes equal the old lookup, and on a gh without auth status --json the recorded behaviour holds"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

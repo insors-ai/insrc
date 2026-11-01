@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6c4395b2-255d-4848-8992-5d9c177ca520",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T12:34:37.154Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Build the six additive git inputs found by the audit (g5 to g10)",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c11efb8ba76c387085cb64b9f575745a768d64a21c3e5c8d78bad6523ff1228b",
+        "at": "2026-11-01T12:34:37.154Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:34:37.155Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the six additive git inputs found by the audit (g5 to g10)",
+    "summary": "Add the optional inputs the t1 audit found missing, each leaving existing calls unchanged, with approval class unchanged and its own test, flagged for the tool owner: git_status `paths` and `untrackedFiles` (all); git_ls_tree `fullTree`; git_log `firstParent`; git_rev_list `parents` (the data gains the parent shas of each commit); git_worktree add `startPoint`; git_diff `againstWorktree` (git diff <from>). Plan amendment of 2026-11-01, made because the audit found six gaps beyond the four t2 builds.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "each of g5 to g10 is an optional input; every existing call of the six tools returns what it returned before and the snapshot-compat and approval-class tests pass unchanged",
+      "each input is covered by a test against a real temporary repository",
+      "section 5 of the migration record marks g5 to g10 as built by t24"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "git-status-paths.test.ts: git_status limits its result to the given paths and lists each untracked file with untrackedFiles all"
+      },
+      {
+        "level": "integration",
+        "name": "git-ls-tree-full-tree.test.ts: git_ls_tree fullTree lists from the repository root when cwd is a subdirectory"
+      },
+      {
+        "level": "integration",
+        "name": "git-log-first-parent.test.ts: git_log firstParent leaves out the commits merged in from a side branch"
+      },
+      {
+        "level": "integration",
+        "name": "git-rev-list-parents.test.ts: git_rev_list parents returns each commit with its parent shas"
+      },
+      {
+        "level": "integration",
+        "name": "git-worktree-start-point.test.ts: git_worktree add with createBranch starts the new branch at startPoint"
+      },
+      {
+        "level": "integration",
+        "name": "git-diff-against-worktree.test.ts: git_diff againstWorktree compares a rev with the working tree"
+      }
+    ],
+    "planTaskId": "t24"
+  },
+  "citations": []
+}

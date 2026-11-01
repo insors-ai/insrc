@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-872b6fd5-9d2d-49c1-a5a4-55f46d216e5f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.602Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Session source inventory, full sweep and outcome record",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t22",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "e18175101618ca608725c28d1d9c68b2890fe71f8d39189d9f87e29ed12a3a37",
+        "at": "2026-11-01T12:34:37.153Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.602Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Session source inventory, full sweep and outcome record",
+    "summary": "Regenerate the session source inventory fixture from the final tree, run the full sweep once in foreground per area with --test-force-exit and compare by test name with the tree before s9, and write the 's9 outcome' section in docs/plans/tool-registry.md.",
+    "size": "M",
+    "order": 24,
+    "acceptanceChecks": [
+      "session-source-inventory.test.ts passes against the regenerated fixture",
+      "the sweep shows no new failure and no new skipped test against the tree before s9, with the pre-existing failures listed",
+      "the 's9 outcome' section is written in docs/plans/tool-registry.md with the deviations and the open items"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "session-source-inventory.test.ts passes against the regenerated fixture"
+      },
+      {
+        "level": "integration",
+        "name": "the full sweep (foreground, per area, --test-force-exit) compared by test name with the checkout before s9: no new failure and no new skipped test"
+      }
+    ],
+    "planTaskId": "t23"
+  },
+  "citations": []
+}

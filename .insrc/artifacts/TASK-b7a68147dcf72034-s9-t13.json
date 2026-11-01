@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b23ec9db-5c2f-4dc9-b122-43ca655cbf55",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.586Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Validation checks",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "79e41ff9e54718094cb1103e5ebcf95277f01f90de6be1699d6c2e3938a05ffd",
+        "at": "2026-11-01T12:34:37.144Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.587Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Validation checks",
+    "summary": "Move validation-checks.ts trackedFiles, changedFiles and trivialCheckPlan onto git_ls_files and git_diff (with the path list derived from the result as t1 decided) and make them and their callers async.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "validation-checks-registry.test.ts runs the three functions on real repositories and returns the old file lists, including deleted files and untracked files",
+      "no execFileSync call remains in validation-checks.ts for git"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

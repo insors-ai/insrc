@@ -1,0 +1,949 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793532723484-1uir88",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:38:28.199Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 381608,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "storyId": "s9",
+    "lldRunId": "wf-1793530094046-gzr6ly",
+    "lldEffectiveHash": "9fcc90f081df65b507e5577cd48e5b35fcc82ed0c2e4dec4fff032589b24aba3",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "241669a5f714e504a981cd264f9f240d8984bfe7506820474cf2306c03de7f9b",
+        "at": "2026-11-01T12:18:03.145Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T12:34:36.529Z"
+      }
+    },
+    "rangeBase": "9681073691af1e38a5e2d3fe9943c09a3594e522"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Story s9 moves the remaining 24 direct git, gh and shell call sites in 17 files onto the one tool registry, so every call is approved, signalled and recorded through callTool. The work first audits the replacement table against the live tool schemas and builds the few missing read-only git tools and inputs, then adds one git-calls helper module and flips the team policy, refresh, signoff, handoff, build-runner, validation, ignore-filter, corpus and identity sites to it, widening their consumers first so the tree stays green. It ends by moving 32 test files off the exec seam, deleting the old runners and seams, turning the forbidden-spawn scan into a failing build step, and running the full sweep once."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Audit every replacement row against the live tool input schemas",
+        "summary": "For each site in the LLD's replacement table read the git or gh tool's input and output schema and record whether the op carries every option the site uses. Write the result as the first draft of section 5 of docs/plans/tool-registry-migration-record.md (site, tool, op, gap or none). The audit covers all rows, not only the known gaps (git_diff_tree, git_merge_tree, git_hash_object type, git_rev_parse gitPath, git_status path filter, the diff name-only forms), and settles how each site that needs a path list gets it. The gap list it produces is final.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a table with one row per site names its tool and op and says 'covered' or names the missing input",
+          "every gap is either in the list of tools t2 builds or is covered by deriving the value from an existing result, with the reason",
+          "the audit is checked by reading the tool definitions, not from memory",
+          "the gap list is stated as final; any gap beyond the four known additions becomes a further task inserted before t3 by a plan amendment, not growth of t2"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "audit-rows.test.ts: every replacement row names its tool and op and says covered or names the missing input"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Build the missing git tools and inputs",
+        "summary": "Add the read-only tools git_diff_tree and git_merge_tree, an optional type input on git_hash_object, an optional gitPath input on git_rev_parse, each with output schemas, approval class none, tests and an entry in the tool definitions list; update the coverage table so the s8 slots for diff-tree and merge-tree are marked built by s9. Existing calls of these tools are unchanged. Gaps beyond these four found by t1 are separate tasks, not part of t2.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "git_diff_tree and git_merge_tree are registered, typed (satisfies TypedTool) and run against real temporary repositories in their tests",
+          "the added inputs are optional and the existing snapshot-compat and approval-class tests pass unchanged",
+          "coverage.ts marks diff-tree and merge-tree as built by s9"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "git-diff-tree.test.ts: git_diff_tree lists the changed paths of a commit in a real temporary repository"
+          },
+          {
+            "level": "integration",
+            "name": "git-merge-tree.test.ts: git_merge_tree reports a clean and a conflicting merge in a real temporary repository"
+          },
+          {
+            "level": "unit",
+            "name": "git-added-inputs.test.ts: the optional type of git_hash_object and gitPath of git_rev_parse leave existing calls unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t24",
+        "order": 3,
+        "size": "M",
+        "dependsOn": [
+          "t1"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "title": "Build the six additive git inputs found by the audit (g5 to g10)",
+        "summary": "Add the optional inputs the t1 audit found missing, each leaving existing calls unchanged, with approval class unchanged and its own test, flagged for the tool owner: git_status `paths` and `untrackedFiles` (all); git_ls_tree `fullTree`; git_log `firstParent`; git_rev_list `parents` (the data gains the parent shas of each commit); git_worktree add `startPoint`; git_diff `againstWorktree` (git diff <from>). Plan amendment of 2026-11-01, made because the audit found six gaps beyond the four t2 builds.",
+        "acceptanceChecks": [
+          "each of g5 to g10 is an optional input; every existing call of the six tools returns what it returned before and the snapshot-compat and approval-class tests pass unchanged",
+          "each input is covered by a test against a real temporary repository",
+          "section 5 of the migration record marks g5 to g10 as built by t24"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "git-status-paths.test.ts: git_status limits its result to the given paths and lists each untracked file with untrackedFiles all"
+          },
+          {
+            "level": "integration",
+            "name": "git-ls-tree-full-tree.test.ts: git_ls_tree fullTree lists from the repository root when cwd is a subdirectory"
+          },
+          {
+            "level": "integration",
+            "name": "git-log-first-parent.test.ts: git_log firstParent leaves out the commits merged in from a side branch"
+          },
+          {
+            "level": "integration",
+            "name": "git-rev-list-parents.test.ts: git_rev_list parents returns each commit with its parent shas"
+          },
+          {
+            "level": "integration",
+            "name": "git-worktree-start-point.test.ts: git_worktree add with createBranch starts the new branch at startPoint"
+          },
+          {
+            "level": "integration",
+            "name": "git-diff-against-worktree.test.ts: git_diff againstWorktree compares a rev with the working tree"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "The git-calls helper module",
+        "summary": "Add src/workflow/git-calls.ts with the helpers the sites use (revParse, catFileExists, lsFiles, pathHistory, configGet, lsRemote, fetchRefs, forEachRef, remoteUrl, statusPaths, rootCommits and those t1 adds) built on run/must/soft and workflowToolDeps of src/workflow/tracker/registry-table.ts, plus GitCallFailed. Each helper takes the site's cwd, signal, timeout and approval mode and returns the plain value the old code used; a denial is thrown as ToolDenied and a schema or conversion failure is thrown, never a fallback.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t24"
+        ],
+        "acceptanceChecks": [
+          "each helper calls its tool through callTool with the caller 'workflow' and the site's signal and approval mode",
+          "each tool failure kind maps to the site fallback or to GitCallFailed as the LLD's error paths say; a denial with each reason is thrown as ToolDenied",
+          "no helper has a catch that swallows ToolDenied"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "git-calls.test.ts: each helper calls its tool through callTool with the caller 'workflow', the site's signal and approval mode"
+          },
+          {
+            "level": "unit",
+            "name": "git-calls.test.ts: each failure kind maps to the site fallback or GitCallFailed and a denial with each reason is thrown as ToolDenied"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Deadline with an abort signal",
+        "summary": "Give the Deadline of the refresh an AbortSignal and dispose(), moving createDeadline next to REFRESH_DEADLINE_MS in src/workflow/team/sighting-store.ts while the old runGitAsync still exists. The signal aborts when the budget is spent; remainingMs() and the 10 second default are unchanged.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the signal aborts at the budget and dispose clears the timer",
+          "REFRESH_DEADLINE_MS is still 10 seconds and the sighting-store lock tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "deadline.test.ts: createDeadline aborts its signal at the budget and dispose clears the timer"
+          },
+          {
+            "level": "unit",
+            "name": "sighting-store.test.ts: the lock-lifetime reasoning still holds (the lock lifetime is greater than REFRESH_DEADLINE_MS plus the stop time)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Widen PolicyReader and await it at its readers",
+        "summary": "While the producers are still synchronous, widen PolicyReader to return a value or a Promise and add awaits at its seven production readers (gate.ts, signoff.ts, tracker-auto.ts, draft-issues.ts, daemon/repo-settings.ts and the two in gate.ts). Audit the callers of PolicyReader for use of opts.signal and record whether it stays. Awaiting a plain value is harmless, so the tree stays green.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "tsc is clean and the existing tests of the touched modules pass unchanged",
+          "the audit of opts.signal is written in the commit message and the type keeps or drops it accordingly",
+          "the compiler-API no-floating-promises scan passes"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "no-floating-promises.test.ts: the PolicyReader readers await the widened return"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Widen the callers of the synchronous runners",
+        "summary": "While the producers are still synchronous, make the call sites of range-base, story-commits, standalone-record, validation-checks, repo-ignore-filter, the companion header, the convert plan and gates accept a Promise (await at each caller), so the later moves can flip each function to async without breaking the tree.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "tsc is clean and the existing tests of the touched modules pass unchanged",
+          "the compiler-API no-floating-promises scan passes"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "no-floating-promises.test.ts: the callers of the runners await the widened return"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Team policy reader, anchor finder and sighting store onto the tools",
+        "summary": "Move policyReader (probeGitRepo, probeRemote, probeRemoteHead, resolveRev, readAt, scanForPolicy), findAnchor (git_rev_parse isShallow and git_path_history) and resolveRepoIdentity onto git-calls; PolicyReader and findAnchor become async. Results and failure texts equal the old ones on the same repository.",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "team-policy-registry.test.ts runs the reader and the anchor finder through the registry on real temporary repositories (not a repo, no remote, detached HEAD, shallow, valid and invalid policy)",
+          "team-policy-parity.test.ts shows the new results equal the old functions' results on the same repositories",
+          "no runGit call remains in policy-reader.ts, anchor-finder.ts and sighting-store.ts"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "team-policy-registry.test.ts: policyReader and findAnchor run through the registry on not a repo, no remote, detached HEAD, shallow, valid policy and invalid policy"
+          },
+          {
+            "level": "integration",
+            "name": "team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Refresh onto the tools with the deadline signal",
+        "summary": "Move refreshPolicy (ls-remote and fetch or fetch-refs, defaultLocalGit) onto git_ls_remote and git_fetch under one Deadline: each call takes timeoutMs from remainingMs() and the deadline signal, no call starts after the budget is spent, an outer opts.signal is combined, and a denial or cancellation ends the refresh at the first call. The injectable git seam of RefreshOptions receives the Deadline.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "refresh-deadline.test.ts: a stand-in git that sleeps makes the refresh fail with the deadline message at 10 seconds, no later call starts, and the running call's process group is gone within 2 seconds",
+          "refresh-abort.test.ts: an aborted outer signal ends the refresh at the first aborted call with a cancelled denial",
+          "sighting-store.test.ts: the lock-lifetime reasoning still holds"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "refresh-deadline.test.ts: with a stand-in git that sleeps, the refresh fails with the deadline message at 10 s, starts no call after it, and the process group of the running call is gone within 2 s"
+          },
+          {
+            "level": "integration",
+            "name": "refresh-abort.test.ts: an aborted outer signal ends the refresh at the first aborted call with a cancelled denial and starts no later call"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Signoff and branch resolution onto the tools",
+        "summary": "Move signoff.ts currentBranchOf and branch-resolution.ts (default git seam) onto git-calls; the functions become async where they were sync and their callers (the gate) await.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "the existing signoff and branch-resolution tests pass with awaits added",
+          "team-policy-registry.test.ts covers the branch checks against real repositories and the old results",
+          "no runGit call remains in signoff.ts and branch-resolution.ts"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "team-policy-registry.test.ts: the signoff branch checks run through the registry and equal the old results"
+          },
+          {
+            "level": "integration",
+            "name": "team-policy-parity.test.ts: signoff currentBranchOf and branch-resolution equal the old functions on the same repositories"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Handoff onto the tools",
+        "summary": "Move handoff.ts (unitDraftFiles, committedAtHead, parkPlan, repositoryIdOf, resumeCheck, and its git() runner built on runGitAsync with PARK_GIT_MS) onto git-calls and the Deadline; the functions become async where they were sync and the workflow-step park and resume phases and the daemon handoff rpc await them.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "the existing handoff, park and resume tests pass with awaits added",
+          "team-policy-registry.test.ts covers the draft listing, the park plan and the resume check against real repositories and the old results",
+          "no runGit or runGitAsync call remains in handoff.ts"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "team-policy-registry.test.ts: the handoff drafts, park plan and resume checks run through the registry and equal the old results"
+          },
+          {
+            "level": "integration",
+            "name": "team-policy-parity.test.ts: the handoff git reads equal the old functions on the same repositories"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Build range base, standalone record and the gate's head sha",
+        "summary": "Move range-base.ts (commitExists, headFullSha, introducingCommit, resolveStoryRangeEnd, readBuildStart, stampBuildStart, resolveStoryRangeBase), standalone-record.ts (headShortSha, priorCommit) and gates.ts headFullSha onto git-calls, make them async and fix their callers (validate.ts, implement.ts, completion-record.ts and the code-review subject code).",
+        "size": "L",
+        "order": 12,
+        "dependsOn": [
+          "t3",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "build-runners-registry.test.ts runs each function through the registry on real repositories",
+          "build-runners-parity.test.ts shows the same values and the same written records as the old functions",
+          "no execFileSync call remains in range-base.ts, standalone-record.ts and gates.ts"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "build-runners-registry.test.ts: resolveStoryRangeBase, stampBuildStart, readBuildStart, resolveStoryRangeEnd, headFullSha, headShortSha and priorCommit run through the registry on real repositories"
+          },
+          {
+            "level": "integration",
+            "name": "build-runners-parity.test.ts: range base, build start stamp and standalone record return the old values and write the same records"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Story commits and changed files",
+        "summary": "Move story-commits.ts (git(), scanTrailers, newestStoryCommit, storyChangeSet, mergeInProgress) onto git_log, git_rev_list, git_rev_parse, git_hash_object, git_diff_tree, git_diff, git_merge_tree and the gitPath input built in t2, and change changed-files.ts collectDiff to callTool(gitDiffTool, ...) instead of execute. The functions become async and their callers await.",
+        "size": "L",
+        "order": 13,
+        "dependsOn": [
+          "t2",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "build-runners-registry.test.ts covers the Story change set on real repositories including a merge commit, a squash and an empty Story",
+          "build-runners-parity.test.ts shows storyChangeSet and mergeInProgress equal the old results",
+          "collectDiff runs through the executor (a declined approval fails the stage)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "build-runners-registry.test.ts: storyChangeSet, newestStoryCommit, mergeInProgress and collectDiff run through the registry including a merge commit, a squash and an empty Story"
+          },
+          {
+            "level": "integration",
+            "name": "build-runners-parity.test.ts: storyChangeSet and mergeInProgress equal the old results"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Validation checks",
+        "summary": "Move validation-checks.ts trackedFiles, changedFiles and trivialCheckPlan onto git_ls_files and git_diff (with the path list derived from the result as t1 decided) and make them and their callers async.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t3",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "validation-checks-registry.test.ts runs the three functions on real repositories and returns the old file lists, including deleted files and untracked files",
+          "no execFileSync call remains in validation-checks.ts for git"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Ignore filter, companion header and convert plan",
+        "summary": "Move createRepoIgnoreFilter (git_ls_files cached and others, degrading to the permissive filter on any ordinary failure), defaultGitUserName (git_config) and convert/plan.ts git reads onto git-calls and make them and their callers async.",
+        "size": "M",
+        "order": 15,
+        "dependsOn": [
+          "t3",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "ignore-filter-header-plan-registry.test.ts covers file names with spaces and newlines, a non-git directory and a git failure for the filter, the OS-user fallback for the header, and the convert plan's reads",
+          "no execFileSync call remains in the three files"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "ignore-filter-header-plan-registry.test.ts: createRepoIgnoreFilter, defaultGitUserName and the convert plan reads run through the registry, with names containing spaces and newlines, a non-git directory and a git failure"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Design corpus reader",
+        "summary": "Replace createGitRunner and runGitBinary in src/design/corpus/sources/git-reader.ts with git_cat_file revs, git_ls_tree and git_show, keeping the reader's public options, validation results and error codes.",
+        "size": "M",
+        "order": 16,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "corpus-reader-registry.test.ts: options, validation results and error codes equal the old reader, including a missing rev in a batch and a binary file",
+          "createGitRunner and runGitBinary are no longer used by the reader"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "corpus-reader-registry.test.ts: options, validation results and error codes equal the old reader, including a missing rev in a batch and a binary file"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Identity lookup",
+        "summary": "Move src/understanding/identity.ts onto gh_auth (status and hosts), gh_tracker (user_by_host) and git_config, keeping the multi-host and multi-account results and the recorded older-gh behaviour; a denial is thrown, not an 'unavailable' provider.",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "identity-registry.test.ts: multi-host and multi-account results, public options and error codes equal the old lookup, and the older-gh case gives the recorded behaviour",
+          "no runShell call remains in identity.ts"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "identity-registry.test.ts: multi-host and multi-account results, public options and error codes equal the old lookup, and on a gh without auth status --json the recorded behaviour holds"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Denial across the moved sites",
+        "summary": "Add registry-denial-s9.test.ts: for each group of moved sites (team policy, refresh, signoff, handoff, build runners, validation checks, ignore filter and header and plan, corpus reader, identity) and each denial reason (declined, timed-out, no-client, cancelled) the stage fails with the denial and no later git call is made.",
+        "size": "M",
+        "order": 18,
+        "dependsOn": [
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t11",
+          "t12",
+          "t13",
+          "t14",
+          "t15",
+          "t16"
+        ],
+        "acceptanceChecks": [
+          "registry-denial-s9.test.ts passes for every group and reason",
+          "a destructive-class call with no client is denied on a moved site"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "registry-denial-s9.test.ts: for each group of sites and each denial reason (declined, timed-out, no-client, cancelled) the stage fails with the denial and no later git call is made"
+          },
+          {
+            "level": "integration",
+            "name": "registry-denial-s9.test.ts: a destructive-class call with no client is denied on a moved site"
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Move the tracker tests off the exec seam and legacy table",
+        "summary": "Move the test files under src/workflow/tracker (and any other tracker-area files) that import _setTrackerExecForTests or the legacy table onto the stand-in git and gh binaries (installStandInBin, installFakeGh) or injected fakes, each file's assertions unchanged; add the small stand-in gh helper for tests that replaces the legacy table. The injected PolicyReader fakes owned by this area become async.",
+        "size": "M",
+        "order": 19,
+        "dependsOn": [
+          "t7",
+          "t8",
+          "t9",
+          "t10",
+          "t14",
+          "t16"
+        ],
+        "acceptanceChecks": [
+          "none of the files in this area imports the exec seam or the legacy table",
+          "every file in this area passes",
+          "the PolicyReader fakes in this area are async"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the migrated tracker test files pass on the stand-in binaries and none imports the exec seam or the legacy table"
+          }
+        ]
+      },
+      {
+        "id": "t19",
+        "title": "Move the workflow tests off the exec seam and legacy table",
+        "summary": "Move the workflow-area test files (build runners, team, gates, convert, companion, workflow-step and the like) that import the exec seam or the legacy table onto stand-in binaries or injected fakes, one commit per sub-area, each file's assertions unchanged. The PolicyReader fakes owned by this area become async.",
+        "size": "L",
+        "order": 20,
+        "dependsOn": [
+          "t8",
+          "t9",
+          "t10",
+          "t11",
+          "t12",
+          "t13",
+          "t14",
+          "t15"
+        ],
+        "acceptanceChecks": [
+          "none of the files in this area imports the exec seam or the legacy table",
+          "every file in this area passes",
+          "the PolicyReader fakes in this area are async"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the migrated workflow test files pass on the stand-in binaries and none imports the exec seam or the legacy table"
+          }
+        ]
+      },
+      {
+        "id": "t20",
+        "title": "Move the daemon and cli tests off the exec seam and legacy table",
+        "summary": "Move the daemon, cli, mcp and understanding test files that import the exec seam or the legacy table onto stand-in binaries or injected fakes, each file's assertions unchanged; the PolicyReader fakes owned by this area become async and the PolicyReader type is narrowed to Promise once all areas are done.",
+        "size": "M",
+        "order": 21,
+        "dependsOn": [
+          "t16",
+          "t18",
+          "t19"
+        ],
+        "acceptanceChecks": [
+          "none of the 32 files across t18, t19 and t20 imports the exec seam or the legacy table",
+          "every one of the 32 files passes",
+          "the PolicyReader type is narrowed to Promise and all 44 fakes are async"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "the migrated daemon and cli test files pass on the stand-in binaries and none of the 32 files imports the exec seam or the legacy table"
+          }
+        ]
+      },
+      {
+        "id": "t21",
+        "title": "Delete the old paths and make the scan fail the build",
+        "summary": "First grep the whole tree for the old exports as a findings pass. Then delete runGit and team/git.ts, runGitAsync and git-async.ts, runGh, commitAndPushArtifacts and the other github.ts wrappers (keep GhCommandError, parseGithubRemoteUrl and the types the table uses in a small module), createGitRunner and runGitBinary, _setTrackerExecForTests, _legacy-table.ts, _setRegistryTableFactoryForTests and _setWorkflowToolDepsForTests; replace old-paths-unchanged.test.ts with old-paths-removed.test.ts; make package.json run the scan with --fail.",
+        "size": "M",
+        "order": 22,
+        "dependsOn": [
+          "t17",
+          "t20"
+        ],
+        "acceptanceChecks": [
+          "a grep for the old exports over the whole tree is run before deleting and any caller outside the listed sites is recorded as a finding and fixed first",
+          "old-paths-removed.test.ts asserts the old exports and files are gone",
+          "node scripts/forbidden-spawn-scan.mjs --fail exits 0 on the whole tree, with only the three exemptions",
+          "package.json build runs the scan with --fail and tsc is clean"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "old-paths-removed.test.ts: runGit, runGitAsync, runGh, commitAndPushArtifacts, the github.ts wrappers, createGitRunner, runGitBinary and _setTrackerExecForTests are not exported and the files are gone"
+          },
+          {
+            "level": "unit",
+            "name": "build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --fail and the scan finds nothing outside the exemptions"
+          }
+        ]
+      },
+      {
+        "id": "t22",
+        "title": "Migration record and scans",
+        "summary": "Regenerate docs/plans/tool-registry-migration-record.md with section 5 (one row per s9 site and tool op), extend site-list.test.ts and no-floating-promises.test.ts to the git-calls helpers and moved functions, and add migration-record.test.ts.",
+        "size": "M",
+        "order": 23,
+        "dependsOn": [
+          "t21"
+        ],
+        "acceptanceChecks": [
+          "migration-record.test.ts: the record lists every table row and every moved site with its test",
+          "site-list.test.ts finds every site of the scan history with a row, a table entry and a registry test",
+          "the no-floating-promises scan passes over the new helpers"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "migration-record.test.ts: docs/plans/tool-registry-migration-record.md lists every table row and every moved site with its test"
+          },
+          {
+            "level": "unit",
+            "name": "site-list.test.ts: every site of the replacement table is a row with a tool and a registry test, and the scan finds none outside the exemptions"
+          },
+          {
+            "level": "unit",
+            "name": "no-floating-promises.test.ts: the git-calls helpers and the moved functions are awaited"
+          }
+        ]
+      },
+      {
+        "id": "t23",
+        "title": "Session source inventory, full sweep and outcome record",
+        "summary": "Regenerate the session source inventory fixture from the final tree, run the full sweep once in foreground per area with --test-force-exit and compare by test name with the tree before s9, and write the 's9 outcome' section in docs/plans/tool-registry.md.",
+        "size": "M",
+        "order": 24,
+        "dependsOn": [
+          "t22"
+        ],
+        "acceptanceChecks": [
+          "session-source-inventory.test.ts passes against the regenerated fixture",
+          "the sweep shows no new failure and no new skipped test against the tree before s9, with the pre-existing failures listed",
+          "the 's9 outcome' section is written in docs/plans/tool-registry.md with the deviations and the open items"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "session-source-inventory.test.ts passes against the regenerated fixture"
+          },
+          {
+            "level": "integration",
+            "name": "the full sweep (foreground, per area, --test-force-exit) compared by test name with the checkout before s9: no new failure and no new skipped test"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/workflow/git-calls.ts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "createDeadline with its signal and dispose",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the failure mapping of GitCallFailed and ToolDenied",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "policyReader and its seven probes (not a repo, no remote, detached HEAD, shallow, valid policy, invalid policy)",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "findAnchor",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "refreshPolicy with the 10 s deadline, an aborted signal and a denied ls-remote or fetch",
+        "coveredByTaskIds": [
+          "t8",
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "the signoff branch checks, handoff drafts, park plan and resume checks",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolveStoryRangeBase, stampBuildStart, readBuildStart, resolveStoryRangeEnd, storyChangeSet, newestStoryCommit, mergeInProgress",
+        "coveredByTaskIds": [
+          "t11",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "validation-checks trackedFiles, changedFiles, trivialCheckPlan",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "createRepoIgnoreFilter, defaultGitUserName, convert plan git reads, headFullSha, headShortSha, priorCommit, collectDiff",
+        "coveredByTaskIds": [
+          "t11",
+          "t12",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "the design corpus reader through git_cat_file revs, git_ls_tree and git_show",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "the identity lookup through gh_auth, gh_tracker and git_config including the older-gh case",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "the compiler-API no-floating-promises scan extended to the git-calls helpers and the moved functions",
+        "coveredByTaskIds": [
+          "t5",
+          "t6",
+          "t22"
+        ]
+      },
+      {
+        "lldStrategyItem": "the site-list test (one table row and one registry test per site, the record lists the rows)",
+        "coveredByTaskIds": [
+          "t22"
+        ]
+      },
+      {
+        "lldStrategyItem": "the old-paths test inverted: the old exports no longer exist",
+        "coveredByTaskIds": [
+          "t21"
+        ]
+      },
+      {
+        "lldStrategyItem": "node scripts/forbidden-spawn-scan.mjs --fail on the whole tree",
+        "coveredByTaskIds": [
+          "t21"
+        ]
+      },
+      {
+        "lldStrategyItem": "the package.json build script runs the scan with --fail",
+        "coveredByTaskIds": [
+          "t21"
+        ]
+      },
+      {
+        "lldStrategyItem": "registry-denial tests per group of sites (team policy, build runners, validation, corpus reader, identity): declined, timed-out, no-client, cancelled",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "the tracker, workflow, daemon and cli tests listed in the migration record",
+        "coveredByTaskIds": [
+          "t18",
+          "t19",
+          "t20"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/db/__tests__/session-source-inventory.test.ts after regeneration",
+        "coveredByTaskIds": [
+          "t23"
+        ]
+      },
+      {
+        "lldStrategyItem": "the added inputs of the git tools (g5 to g10 of the audit)",
+        "coveredByTaskIds": [
+          "t24"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD b7a68147dcf72034 s9 contract: git-calls helpers, new tools, PolicyReader and Deadline signatures, replacement table"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD b7a68147dcf72034 s9 data model: sites, return types, async signature changes and their callers"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD b7a68147dcf72034 s9 error paths: failure kinds, ToolDenied, deadline and abort behaviour"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD b7a68147dcf72034 s9 test strategy and acceptance mapping"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD b7a68147dcf72034 s9 migration: order of moves, deletion of old paths, scan in failing mode"
+    }
+  ]
+}

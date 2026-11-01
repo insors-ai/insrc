@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-75bfab1b-b8d3-489e-8748-0bbf44a781b8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.590Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Design corpus reader",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "fd756bbb5a62ee6d468d2c1a7334b2bf64649ffda5880459a943ddbc28763d66",
+        "at": "2026-11-01T12:34:37.145Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.590Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Design corpus reader",
+    "summary": "Replace createGitRunner and runGitBinary in src/design/corpus/sources/git-reader.ts with git_cat_file revs, git_ls_tree and git_show, keeping the reader's public options, validation results and error codes.",
+    "size": "M",
+    "order": 16,
+    "acceptanceChecks": [
+      "corpus-reader-registry.test.ts: options, validation results and error codes equal the old reader, including a missing rev in a batch and a binary file",
+      "createGitRunner and runGitBinary are no longer used by the reader"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "corpus-reader-registry.test.ts: options, validation results and error codes equal the old reader, including a missing rev in a batch and a binary file"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

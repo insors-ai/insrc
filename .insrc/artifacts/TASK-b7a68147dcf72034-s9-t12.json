@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-be9c7b61-32ec-4f08-a6f3-de2727d6d8b0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.585Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Story commits and changed files",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "fc850611cbdfc4153e109de16a0d9e981ea0fba07804fb3d6e91f492b0a257a3",
+        "at": "2026-11-01T12:34:37.143Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.586Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Story commits and changed files",
+    "summary": "Move story-commits.ts (git(), scanTrailers, newestStoryCommit, storyChangeSet, mergeInProgress) onto git_log, git_rev_list, git_rev_parse, git_hash_object, git_diff_tree, git_diff, git_merge_tree and the gitPath input built in t2, and change changed-files.ts collectDiff to callTool(gitDiffTool, ...) instead of execute. The functions become async and their callers await.",
+    "size": "L",
+    "order": 13,
+    "acceptanceChecks": [
+      "build-runners-registry.test.ts covers the Story change set on real repositories including a merge commit, a squash and an empty Story",
+      "build-runners-parity.test.ts shows storyChangeSet and mergeInProgress equal the old results",
+      "collectDiff runs through the executor (a declined approval fails the stage)"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "build-runners-registry.test.ts: storyChangeSet, newestStoryCommit, mergeInProgress and collectDiff run through the registry including a merge commit, a squash and an empty Story"
+      },
+      {
+        "level": "integration",
+        "name": "build-runners-parity.test.ts: storyChangeSet and mergeInProgress equal the old results"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9019ce2d-91b1-4c84-9e12-1d03d5641b29",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.573Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Deadline with an abort signal",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "a4670187aac7375b198ed3b6321033096841f1439d38d9a3f832254f55612726",
+        "at": "2026-11-01T12:34:37.136Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.574Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Deadline with an abort signal",
+    "summary": "Give the Deadline of the refresh an AbortSignal and dispose(), moving createDeadline next to REFRESH_DEADLINE_MS in src/workflow/team/sighting-store.ts while the old runGitAsync still exists. The signal aborts when the budget is spent; remainingMs() and the 10 second default are unchanged.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "the signal aborts at the budget and dispose clears the timer",
+      "REFRESH_DEADLINE_MS is still 10 seconds and the sighting-store lock tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "deadline.test.ts: createDeadline aborts its signal at the budget and dispose clears the timer"
+      },
+      {
+        "level": "unit",
+        "name": "sighting-store.test.ts: the lock-lifetime reasoning still holds (the lock lifetime is greater than REFRESH_DEADLINE_MS plus the stop time)"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

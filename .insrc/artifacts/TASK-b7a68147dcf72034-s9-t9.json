@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8168e898-76ee-4ab3-b19f-1e12bca53d3a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.581Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Signoff and branch resolution onto the tools",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "bd35108e19038e4dbee1d50190f12ccf59344e434179137df8081a1326107c96",
+        "at": "2026-11-01T12:34:37.140Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.581Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Signoff and branch resolution onto the tools",
+    "summary": "Move signoff.ts currentBranchOf and branch-resolution.ts (default git seam) onto git-calls; the functions become async where they were sync and their callers (the gate) await.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "the existing signoff and branch-resolution tests pass with awaits added",
+      "team-policy-registry.test.ts covers the branch checks against real repositories and the old results",
+      "no runGit call remains in signoff.ts and branch-resolution.ts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "team-policy-registry.test.ts: the signoff branch checks run through the registry and equal the old results"
+      },
+      {
+        "level": "integration",
+        "name": "team-policy-parity.test.ts: signoff currentBranchOf and branch-resolution equal the old functions on the same repositories"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

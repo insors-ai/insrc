@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3038e0a3-0dad-48ce-8337-5d10cf38a4c1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.578Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Team policy reader, anchor finder and sighting store onto the tools",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "f33690cfbd77cce4e41a8b37af038ae44280732726e429cbe4441ba820a793c6",
+        "at": "2026-11-01T12:34:37.138Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.578Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Team policy reader, anchor finder and sighting store onto the tools",
+    "summary": "Move policyReader (probeGitRepo, probeRemote, probeRemoteHead, resolveRev, readAt, scanForPolicy), findAnchor (git_rev_parse isShallow and git_path_history) and resolveRepoIdentity onto git-calls; PolicyReader and findAnchor become async. Results and failure texts equal the old ones on the same repository.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "team-policy-registry.test.ts runs the reader and the anchor finder through the registry on real temporary repositories (not a repo, no remote, detached HEAD, shallow, valid and invalid policy)",
+      "team-policy-parity.test.ts shows the new results equal the old functions' results on the same repositories",
+      "no runGit call remains in policy-reader.ts, anchor-finder.ts and sighting-store.ts"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "team-policy-registry.test.ts: policyReader and findAnchor run through the registry on not a repo, no remote, detached HEAD, shallow, valid policy and invalid policy"
+      },
+      {
+        "level": "integration",
+        "name": "team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

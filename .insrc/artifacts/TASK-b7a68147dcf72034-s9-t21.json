@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cc679a91-cd99-4533-ae64-a15b7924aea1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.599Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Delete the old paths and make the scan fail the build",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t20",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "672fed4f9b4ab7a38b3676ed748fcf35d7697fe88329e75f2cf8febd40e86b28",
+        "at": "2026-11-01T12:34:37.150Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.599Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Delete the old paths and make the scan fail the build",
+    "summary": "First grep the whole tree for the old exports as a findings pass. Then delete runGit and team/git.ts, runGitAsync and git-async.ts, runGh, commitAndPushArtifacts and the other github.ts wrappers (keep GhCommandError, parseGithubRemoteUrl and the types the table uses in a small module), createGitRunner and runGitBinary, _setTrackerExecForTests, _legacy-table.ts, _setRegistryTableFactoryForTests and _setWorkflowToolDepsForTests; replace old-paths-unchanged.test.ts with old-paths-removed.test.ts; make package.json run the scan with --fail.",
+    "size": "M",
+    "order": 22,
+    "acceptanceChecks": [
+      "a grep for the old exports over the whole tree is run before deleting and any caller outside the listed sites is recorded as a finding and fixed first",
+      "old-paths-removed.test.ts asserts the old exports and files are gone",
+      "node scripts/forbidden-spawn-scan.mjs --fail exits 0 on the whole tree, with only the three exemptions",
+      "package.json build runs the scan with --fail and tsc is clean"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "old-paths-removed.test.ts: runGit, runGitAsync, runGh, commitAndPushArtifacts, the github.ts wrappers, createGitRunner, runGitBinary and _setTrackerExecForTests are not exported and the files are gone"
+      },
+      {
+        "level": "unit",
+        "name": "build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --fail and the scan finds nothing outside the exemptions"
+      }
+    ],
+    "planTaskId": "t21"
+  },
+  "citations": []
+}

@@ -1,0 +1,1590 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 37,
+        "contentHash": "75fa290c9715d9366c02c8e1612c2df387d9d73f55a66d5acf86b79afc01fbe9",
+        "at": "2026-11-01T16:57:07.146Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "createdAt": "2026-11-01T11:56:43.323Z",
+    "updatedAt": "2026-11-01T16:57:06.958Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 37
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e437559bc",
+        "ranAt": "2026-11-01T12:40:10.502Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "audit-rows.test.ts: every replacement row names its tool and op and says covered or names the missing input",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/audit-rows.test.ts",
+                "title": "audit-rows.test.ts: every replacement row names its tool and op and says covered or names the missing input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/audit-rows.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 436,
+            "titles": [
+              {
+                "title": "audit-rows.test.ts: every replacement row names its tool and op and says covered or names the missing input",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t24",
+        "commit": "8c86a2e60",
+        "ranAt": "2026-11-01T12:48:01.265Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "git-status-paths.test.ts: git_status limits its result to the given paths and lists each untracked file with untrackedFiles all",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-status-paths.test.ts",
+                "title": "git-status-paths.test.ts: git_status limits its result to the given paths and lists each untracked file with untrackedFiles all",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-ls-tree-full-tree.test.ts: git_ls_tree fullTree lists from the repository root when cwd is a subdirectory",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-ls-tree-full-tree.test.ts",
+                "title": "git-ls-tree-full-tree.test.ts: git_ls_tree fullTree lists from the repository root when cwd is a subdirectory",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-log-first-parent.test.ts: git_log firstParent leaves out the commits merged in from a side branch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-log-first-parent.test.ts",
+                "title": "git-log-first-parent.test.ts: git_log firstParent leaves out the commits merged in from a side branch",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-rev-list-parents.test.ts: git_rev_list parents returns each commit with its parent shas",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-rev-list-parents.test.ts",
+                "title": "git-rev-list-parents.test.ts: git_rev_list parents returns each commit with its parent shas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-worktree-start-point.test.ts: git_worktree add with createBranch starts the new branch at startPoint",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-worktree-start-point.test.ts",
+                "title": "git-worktree-start-point.test.ts: git_worktree add with createBranch starts the new branch at startPoint",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-diff-against-worktree.test.ts: git_diff againstWorktree compares a rev with the working tree",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-diff-against-worktree.test.ts",
+                "title": "git-diff-against-worktree.test.ts: git_diff againstWorktree compares a rev with the working tree",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-diff-against-worktree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 654,
+            "titles": [
+              {
+                "title": "git-diff-against-worktree.test.ts: git_diff againstWorktree compares a rev with the working tree",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-log-first-parent.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 711,
+            "titles": [
+              {
+                "title": "git-log-first-parent.test.ts: git_log firstParent leaves out the commits merged in from a side branch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-ls-tree-full-tree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 676,
+            "titles": [
+              {
+                "title": "git-ls-tree-full-tree.test.ts: git_ls_tree fullTree lists from the repository root when cwd is a subdirectory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-rev-list-parents.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 689,
+            "titles": [
+              {
+                "title": "git-rev-list-parents.test.ts: git_rev_list parents returns each commit with its parent shas",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-status-paths.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 667,
+            "titles": [
+              {
+                "title": "git-status-paths.test.ts: git_status limits its result to the given paths and lists each untracked file with untrackedFiles all",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-worktree-start-point.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 674,
+            "titles": [
+              {
+                "title": "git-worktree-start-point.test.ts: git_worktree add with createBranch starts the new branch at startPoint",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1ca21ac6e",
+        "ranAt": "2026-11-01T12:53:33.134Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "git-diff-tree.test.ts: git_diff_tree lists the changed paths of a commit in a real temporary repository",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-diff-tree.test.ts",
+                "title": "git-diff-tree.test.ts: git_diff_tree lists the changed paths of a commit in a real temporary repository",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-merge-tree.test.ts: git_merge_tree reports a clean and a conflicting merge in a real temporary repository",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-merge-tree.test.ts",
+                "title": "git-merge-tree.test.ts: git_merge_tree reports a clean and a conflicting merge in a real temporary repository",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-added-inputs.test.ts: the optional type of git_hash_object and gitPath of git_rev_parse leave existing calls unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-added-inputs.test.ts",
+                "title": "git-added-inputs.test.ts: the optional type of git_hash_object and gitPath of git_rev_parse leave existing calls unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-added-inputs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 667,
+            "titles": [
+              {
+                "title": "git-added-inputs.test.ts: the optional type of git_hash_object and gitPath of git_rev_parse leave existing calls unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-diff-tree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 657,
+            "titles": [
+              {
+                "title": "git-diff-tree.test.ts: git_diff_tree lists the changed paths of a commit in a real temporary repository",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-merge-tree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 673,
+            "titles": [
+              {
+                "title": "git-merge-tree.test.ts: git_merge_tree reports a clean and a conflicting merge in a real temporary repository",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "641fa4769",
+        "ranAt": "2026-11-01T12:57:55.413Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "git-calls.test.ts: each helper calls its tool through callTool with the caller 'workflow', the site's signal and approval mode",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/git-calls.test.ts",
+                "title": "git-calls.test.ts: each helper calls its tool through callTool with the caller 'workflow', the site's signal and approval mode",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "git-calls.test.ts: each failure kind maps to the site fallback or GitCallFailed and a denial with each reason is thrown as ToolDenied",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/git-calls.test.ts",
+                "title": "git-calls.test.ts: each failure kind maps to the site fallback or GitCallFailed and a denial with each reason is thrown as ToolDenied",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/git-calls.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 805,
+            "titles": [
+              {
+                "title": "git-calls.test.ts: each helper calls its tool through callTool with the caller 'workflow', the site's signal and approval mode",
+                "result": "pass"
+              },
+              {
+                "title": "git-calls.test.ts: each failure kind maps to the site fallback or GitCallFailed and a denial with each reason is thrown as ToolDenied",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b869864a0",
+        "ranAt": "2026-11-01T13:00:38.299Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "deadline.test.ts: createDeadline aborts its signal at the budget and dispose clears the timer",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/deadline.test.ts",
+                "title": "deadline.test.ts: createDeadline aborts its signal at the budget and dispose clears the timer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sighting-store.test.ts: the lock-lifetime reasoning still holds (the lock lifetime is greater than REFRESH_DEADLINE_MS plus the stop time)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+                "title": "sighting-store.test.ts: the lock-lifetime reasoning still holds (the lock lifetime is greater than REFRESH_DEADLINE_MS plus the stop time)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/deadline.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 541,
+            "titles": [
+              {
+                "title": "deadline.test.ts: createDeadline aborts its signal at the budget and dispose clears the timer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/sighting-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "the sighting key comes from the real path so repositories and symlinks are distinct",
+                "result": "pass"
+              },
+              {
+                "title": "a damaged sighting reads as damaged evidence, branchSource remote or user is validated",
+                "result": "pass"
+              },
+              {
+                "title": "create-only publish never overwrites an existing or damaged sighting",
+                "result": "pass"
+              },
+              {
+                "title": "a known anchor is never replaced by an unknown one and an unknown one is replaced by a known one",
+                "result": "pass"
+              },
+              {
+                "title": "the lock refuses a second holder and takes over a lock older than 30 seconds",
+                "result": "pass"
+              },
+              {
+                "title": "safe ref names accept what git accepts and refuse what could be read as an option or break a ref",
+                "result": "pass"
+              },
+              {
+                "title": "a subdirectory of a repository shares the repository root's sighting key and lock",
+                "result": "pass"
+              },
+              {
+                "title": "a lock that fails while being initialised is removed, not left behind",
+                "result": "pass"
+              },
+              {
+                "title": "sighting-store.test.ts: the lock-lifetime reasoning still holds (the lock lifetime is greater than REFRESH_DEADLINE_MS plus the stop time)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "36580350e",
+        "ranAt": "2026-11-01T13:16:09.530Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "no-floating-promises.test.ts: the PolicyReader readers await the widened return",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/no-floating-promises.test.ts",
+                "title": "no-floating-promises.test.ts: the PolicyReader readers await the widened return",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/no-floating-promises.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9250,
+            "titles": [
+              {
+                "title": "no-floating-promises.test.ts: the compiler-API scan finds no unawaited TrackerPort, IssueOps, CloseIssue or loader call",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the scan reports a dropped port call, a dropped issue-op call and a dropped CloseIssue or loader, and accepts the awaited and returned forms",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the PolicyReader readers await the widened return",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "edbfd36f8",
+        "ranAt": "2026-11-01T13:50:18.072Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "no-floating-promises.test.ts: the callers of the runners await the widened return",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/no-floating-promises.test.ts",
+                "title": "no-floating-promises.test.ts: the callers of the runners await the widened return",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/no-floating-promises.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10822,
+            "titles": [
+              {
+                "title": "no-floating-promises.test.ts: the compiler-API scan finds no unawaited TrackerPort, IssueOps, CloseIssue or loader call",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the scan reports a dropped port call, a dropped issue-op call and a dropped CloseIssue or loader, and accepts the awaited and returned forms",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the PolicyReader readers await the widened return",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the callers of the runners await the widened return",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "3090ca220",
+        "ranAt": "2026-11-01T14:00:19.986Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "team-policy-registry.test.ts: policyReader and findAnchor run through the registry on not a repo, no remote, detached HEAD, shallow, valid policy and invalid policy",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/team-policy-registry.test.ts",
+                "title": "team-policy-registry.test.ts: policyReader and findAnchor run through the registry on not a repo, no remote, detached HEAD, shallow, valid policy and invalid policy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/team-policy-parity.test.ts",
+                "title": "team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/team-policy-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1459,
+            "titles": [
+              {
+                "title": "team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/team-policy-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1497,
+            "titles": [
+              {
+                "title": "team-policy-registry.test.ts: policyReader and findAnchor run through the registry on not a repo, no remote, detached HEAD, shallow, valid policy and invalid policy",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: no runGit call remains in policy-reader.ts, anchor-finder.ts and sighting-store.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "aa19d9697",
+        "ranAt": "2026-11-01T14:07:11.524Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "refresh-deadline.test.ts: with a stand-in git that sleeps, the refresh fails with the deadline message at 10 s, starts no call after it, and the process group of the running call is gone within 2 s",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/refresh-deadline.test.ts",
+                "title": "refresh-deadline.test.ts: with a stand-in git that sleeps, the refresh fails with the deadline message at 10 s, starts no call after it, and the process group of the running call is gone within 2 s",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "refresh-abort.test.ts: an aborted outer signal ends the refresh at the first aborted call with a cancelled denial and starts no later call",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/refresh-abort.test.ts",
+                "title": "refresh-abort.test.ts: an aborted outer signal ends the refresh at the first aborted call with a cancelled denial and starts no later call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/refresh-abort.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1233,
+            "titles": [
+              {
+                "title": "refresh-abort.test.ts: an aborted outer signal ends the refresh at the first aborted call with a cancelled denial and starts no later call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/refresh-deadline.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12638,
+            "titles": [
+              {
+                "title": "refresh-deadline.test.ts: with a stand-in git that sleeps, the refresh fails with the deadline message at 10 s, starts no call after it, and the process group of the running call is gone within 2 s",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "68e7b6fcb",
+        "ranAt": "2026-11-01T14:12:13.673Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "team-policy-registry.test.ts: the signoff branch checks run through the registry and equal the old results",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/team-policy-registry.test.ts",
+                "title": "team-policy-registry.test.ts: the signoff branch checks run through the registry and equal the old results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "team-policy-parity.test.ts: signoff currentBranchOf and branch-resolution equal the old functions on the same repositories",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/team-policy-parity.test.ts",
+                "title": "team-policy-parity.test.ts: signoff currentBranchOf and branch-resolution equal the old functions on the same repositories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/team-policy-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2163,
+            "titles": [
+              {
+                "title": "team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-parity.test.ts: signoff currentBranchOf and branch-resolution equal the old functions on the same repositories",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/team-policy-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2174,
+            "titles": [
+              {
+                "title": "team-policy-registry.test.ts: policyReader and findAnchor run through the registry on not a repo, no remote, detached HEAD, shallow, valid policy and invalid policy",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: no runGit call remains in policy-reader.ts, anchor-finder.ts and sighting-store.ts",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: the signoff branch checks run through the registry and equal the old results",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: no runGit call remains in signoff.ts and branch-resolution.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "07437c08a",
+        "ranAt": "2026-11-01T14:22:52.694Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "team-policy-registry.test.ts: the handoff drafts, park plan and resume checks run through the registry and equal the old results",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/team-policy-registry.test.ts",
+                "title": "team-policy-registry.test.ts: the handoff drafts, park plan and resume checks run through the registry and equal the old results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "team-policy-parity.test.ts: the handoff git reads equal the old functions on the same repositories",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/team-policy-parity.test.ts",
+                "title": "team-policy-parity.test.ts: the handoff git reads equal the old functions on the same repositories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/team-policy-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2338,
+            "titles": [
+              {
+                "title": "team-policy-parity.test.ts: policyReader and findAnchor equal the old functions on the same repositories",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-parity.test.ts: signoff currentBranchOf and branch-resolution equal the old functions on the same repositories",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-parity.test.ts: the handoff git reads equal the old functions on the same repositories",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/team-policy-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2350,
+            "titles": [
+              {
+                "title": "team-policy-registry.test.ts: policyReader and findAnchor run through the registry on not a repo, no remote, detached HEAD, shallow, valid policy and invalid policy",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: no runGit call remains in policy-reader.ts, anchor-finder.ts and sighting-store.ts",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: the signoff branch checks run through the registry and equal the old results",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: no runGit call remains in signoff.ts and branch-resolution.ts",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: the handoff drafts, park plan and resume checks run through the registry and equal the old results",
+                "result": "pass"
+              },
+              {
+                "title": "team-policy-registry.test.ts: no runGit or runGitAsync call remains in handoff.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "9419ae51b",
+        "ranAt": "2026-11-01T14:37:11.307Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "build-runners-registry.test.ts: resolveStoryRangeBase, stampBuildStart, readBuildStart, resolveStoryRangeEnd, headFullSha, headShortSha and priorCommit run through the registry on real repositories",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/build-runners-registry.test.ts",
+                "title": "build-runners-registry.test.ts: resolveStoryRangeBase, stampBuildStart, readBuildStart, resolveStoryRangeEnd, headFullSha, headShortSha and priorCommit run through the registry on real repositories",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "build-runners-parity.test.ts: range base, build start stamp and standalone record return the old values and write the same records",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/build-runners-parity.test.ts",
+                "title": "build-runners-parity.test.ts: range base, build start stamp and standalone record return the old values and write the same records",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/build-runners-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 889,
+            "titles": [
+              {
+                "title": "build-runners-parity.test.ts: range base, build start stamp and standalone record return the old values and write the same records",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/build-runners-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 863,
+            "titles": [
+              {
+                "title": "build-runners-registry.test.ts: resolveStoryRangeBase, stampBuildStart, readBuildStart, resolveStoryRangeEnd, headFullSha, headShortSha and priorCommit run through the registry on real repositories",
+                "result": "pass"
+              },
+              {
+                "title": "build-runners-registry.test.ts: no execFileSync call remains in range-base.ts, standalone-record.ts and gates.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "c9b9c6c5e",
+        "ranAt": "2026-11-01T14:43:30.952Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "build-runners-registry.test.ts: storyChangeSet, newestStoryCommit, mergeInProgress and collectDiff run through the registry including a merge commit, a squash and an empty Story",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/build-runners-registry.test.ts",
+                "title": "build-runners-registry.test.ts: storyChangeSet, newestStoryCommit, mergeInProgress and collectDiff run through the registry including a merge commit, a squash and an empty Story",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "build-runners-parity.test.ts: storyChangeSet and mergeInProgress equal the old results",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/runners/build/__tests__/build-runners-parity.test.ts",
+                "title": "build-runners-parity.test.ts: storyChangeSet and mergeInProgress equal the old results",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/runners/build/__tests__/build-runners-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1795,
+            "titles": [
+              {
+                "title": "build-runners-parity.test.ts: range base, build start stamp and standalone record return the old values and write the same records",
+                "result": "pass"
+              },
+              {
+                "title": "build-runners-parity.test.ts: storyChangeSet and mergeInProgress equal the old results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/runners/build/__tests__/build-runners-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2004,
+            "titles": [
+              {
+                "title": "build-runners-registry.test.ts: resolveStoryRangeBase, stampBuildStart, readBuildStart, resolveStoryRangeEnd, headFullSha, headShortSha and priorCommit run through the registry on real repositories",
+                "result": "pass"
+              },
+              {
+                "title": "build-runners-registry.test.ts: no execFileSync call remains in range-base.ts, standalone-record.ts and gates.ts",
+                "result": "pass"
+              },
+              {
+                "title": "build-runners-registry.test.ts: storyChangeSet, newestStoryCommit, mergeInProgress and collectDiff run through the registry including a merge commit, a squash and an empty Story",
+                "result": "pass"
+              },
+              {
+                "title": "build-runners-registry.test.ts: collectDiff runs through the executor and a denied call fails the derivation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "8c0e4cab8",
+        "ranAt": "2026-11-01T14:48:27.441Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts",
+                "title": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/build-step/__tests__/validation-checks-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 670,
+            "titles": [
+              {
+                "title": "validation-checks-registry.test.ts: trackedFiles, changedFiles and trivialCheckPlan return the old file lists including deleted and untracked files",
+                "result": "pass"
+              },
+              {
+                "title": "validation-checks-registry.test.ts: no execFileSync call remains in validation-checks.ts for git",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "ddc09371e",
+        "ranAt": "2026-11-01T15:04:01.774Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ignore-filter-header-plan-registry.test.ts: createRepoIgnoreFilter, defaultGitUserName and the convert plan reads run through the registry, with names containing spaces and newlines, a non-git directory and a git failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/ignore-filter-header-plan-registry.test.ts",
+                "title": "ignore-filter-header-plan-registry.test.ts: createRepoIgnoreFilter, defaultGitUserName and the convert plan reads run through the registry, with names containing spaces and newlines, a non-git directory and a git failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/ignore-filter-header-plan-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 736,
+            "titles": [
+              {
+                "title": "ignore-filter-header-plan-registry.test.ts: createRepoIgnoreFilter, defaultGitUserName and the convert plan reads run through the registry, with names containing spaces and newlines, a non-git directory and a git failure",
+                "result": "pass"
+              },
+              {
+                "title": "ignore-filter-header-plan-registry.test.ts: no execFileSync call remains in repo-ignore-filter.ts, header.ts and plan.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "f0f589ca1",
+        "ranAt": "2026-11-01T15:08:03.291Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "corpus-reader-registry.test.ts: options, validation results and error codes equal the old reader, including a missing rev in a batch and a binary file",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/design/corpus/sources/__tests__/corpus-reader-registry.test.ts",
+                "title": "corpus-reader-registry.test.ts: options, validation results and error codes equal the old reader, including a missing rev in a batch and a binary file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/design/corpus/sources/__tests__/corpus-reader-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 882,
+            "titles": [
+              {
+                "title": "corpus-reader-registry.test.ts: options, validation results and error codes equal the old reader, including a missing rev in a batch and a binary file",
+                "result": "pass"
+              },
+              {
+                "title": "corpus-reader-registry.test.ts: limits, cancellation and a denied call behave as before",
+                "result": "pass"
+              },
+              {
+                "title": "corpus-reader-registry.test.ts: createGitRunner and runGitBinary are no longer used by the reader",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "00639c47e",
+        "ranAt": "2026-11-01T15:11:34.556Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "identity-registry.test.ts: multi-host and multi-account results, public options and error codes equal the old lookup, and on a gh without auth status --json the recorded behaviour holds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/understanding/__tests__/identity-registry.test.ts",
+                "title": "identity-registry.test.ts: multi-host and multi-account results, public options and error codes equal the old lookup, and on a gh without auth status --json the recorded behaviour holds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/understanding/__tests__/identity-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 649,
+            "titles": [
+              {
+                "title": "identity-registry.test.ts: multi-host and multi-account results, public options and error codes equal the old lookup, and on a gh without auth status --json the recorded behaviour holds",
+                "result": "pass"
+              },
+              {
+                "title": "identity-registry.test.ts: no runShell call remains in identity.ts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "1aa0d0e4e",
+        "ranAt": "2026-11-01T15:15:11.147Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "registry-denial-s9.test.ts: for each group of sites and each denial reason (declined, timed-out, no-client, cancelled) the stage fails with the denial and no later git call is made",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/registry-denial-s9.test.ts",
+                "title": "registry-denial-s9.test.ts: for each group of sites and each denial reason (declined, timed-out, no-client, cancelled) the stage fails with the denial and no later git call is made",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "registry-denial-s9.test.ts: a destructive-class call with no client is denied on a moved site",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/registry-denial-s9.test.ts",
+                "title": "registry-denial-s9.test.ts: a destructive-class call with no client is denied on a moved site",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/registry-denial-s9.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3309,
+            "titles": [
+              {
+                "title": "registry-denial-s9.test.ts: for each group of sites and each denial reason (declined, timed-out, no-client, cancelled) the stage fails with the denial and no later git call is made",
+                "result": "pass"
+              },
+              {
+                "title": "registry-denial-s9.test.ts: a destructive-class call with no client is denied on a moved site",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "06743cc43",
+        "ranAt": "2026-11-01T16:01:20.988Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the migrated tracker test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrated-test-files.test.ts",
+                "title": "the migrated tracker test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrated-test-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 367,
+            "titles": [
+              {
+                "title": "the migrated tracker test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              },
+              {
+                "title": "the migrated workflow test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              },
+              {
+                "title": "the migrated daemon and cli test files pass on the stand-in binaries and none of the 32 files imports the exec seam or the legacy table",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "f359be1c3",
+        "ranAt": "2026-11-01T16:15:13.794Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the migrated workflow test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrated-test-files.test.ts",
+                "title": "the migrated workflow test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrated-test-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23420,
+            "titles": [
+              {
+                "title": "the migrated tracker test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              },
+              {
+                "title": "the migrated workflow test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              },
+              {
+                "title": "the migrated daemon and cli test files pass on the stand-in binaries and none of the 32 files imports the exec seam or the legacy table",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t20",
+        "commit": "f359be1c3",
+        "ranAt": "2026-11-01T16:18:37.462Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "the migrated daemon and cli test files pass on the stand-in binaries and none of the 32 files imports the exec seam or the legacy table",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/migrated-test-files.test.ts",
+                "title": "the migrated daemon and cli test files pass on the stand-in binaries and none of the 32 files imports the exec seam or the legacy table",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/migrated-test-files.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23044,
+            "titles": [
+              {
+                "title": "the migrated tracker test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              },
+              {
+                "title": "the migrated workflow test files pass on the stand-in binaries and none imports the exec seam or the legacy table",
+                "result": "pass"
+              },
+              {
+                "title": "the migrated daemon and cli test files pass on the stand-in binaries and none of the 32 files imports the exec seam or the legacy table",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t21",
+        "commit": "3d4187d8b",
+        "ranAt": "2026-11-01T16:28:03.119Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "old-paths-removed.test.ts: runGit, runGitAsync, runGh, commitAndPushArtifacts, the github.ts wrappers, createGitRunner, runGitBinary and _setTrackerExecForTests are not exported and the files are gone",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/old-paths-removed.test.ts",
+                "title": "old-paths-removed.test.ts: runGit, runGitAsync, runGh, commitAndPushArtifacts, the github.ts wrappers, createGitRunner, runGitBinary and _setTrackerExecForTests are not exported and the files are gone",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --fail and the scan finds nothing outside the exemptions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/build-script.test.ts",
+                "title": "build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --fail and the scan finds nothing outside the exemptions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/build-script.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3412,
+            "titles": [
+              {
+                "title": "build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --fail and the scan finds nothing outside the exemptions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/old-paths-removed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 584,
+            "titles": [
+              {
+                "title": "old-paths-removed.test.ts: runGit, runGitAsync, runGh, commitAndPushArtifacts, the github.ts wrappers, createGitRunner, runGitBinary and _setTrackerExecForTests are not exported and the files are gone",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t22",
+        "commit": "11fa643c1",
+        "ranAt": "2026-11-01T16:31:08.430Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "migration-record.test.ts: docs/plans/tool-registry-migration-record.md lists every table row and every moved site with its test",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/migration-record.test.ts",
+                "title": "migration-record.test.ts: docs/plans/tool-registry-migration-record.md lists every table row and every moved site with its test",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "site-list.test.ts: every site of the replacement table is a row with a tool and a registry test, and the scan finds none outside the exemptions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/site-list.test.ts",
+                "title": "site-list.test.ts: every site of the replacement table is a row with a tool and a registry test, and the scan finds none outside the exemptions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "no-floating-promises.test.ts: the git-calls helpers and the moved functions are awaited",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/no-floating-promises.test.ts",
+                "title": "no-floating-promises.test.ts: the git-calls helpers and the moved functions are awaited",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/migration-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 626,
+            "titles": [
+              {
+                "title": "migration-record.test.ts: docs/plans/tool-registry-migration-record.md lists every table row and every moved site with its test",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/no-floating-promises.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12612,
+            "titles": [
+              {
+                "title": "no-floating-promises.test.ts: the compiler-API scan finds no unawaited TrackerPort, IssueOps, CloseIssue or loader call",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the scan reports a dropped port call, a dropped issue-op call and a dropped CloseIssue or loader, and accepts the awaited and returned forms",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the PolicyReader readers await the widened return",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the callers of the runners await the widened return",
+                "result": "pass"
+              },
+              {
+                "title": "no-floating-promises.test.ts: the git-calls helpers and the moved functions are awaited",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/site-list.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3670,
+            "titles": [
+              {
+                "title": "site-list.test.ts: every site of the replacement table is a row with a tool and a registry test, and the scan finds none outside the exemptions",
+                "result": "pass"
+              },
+              {
+                "title": "site-list.test.ts: every site named in the migration record exists, and no production file outside github.ts calls a wrapper",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "077508d23",
+        "ranAt": "2026-11-01T16:57:06.958Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "session-source-inventory.test.ts passes against the regenerated fixture",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "the full sweep (foreground, per area, --test-force-exit) compared by test name with the checkout before s9: no new failure and no new skipped test",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/s9-sweep-record.test.ts",
+                "title": "the full sweep (foreground, per area, --test-force-exit) compared by test name with the checkout before s9: no new failure and no new skipped test",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15184,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/s9-sweep-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 401,
+            "titles": [
+              {
+                "title": "the full sweep (foreground, per area, --test-force-exit) compared by test name with the checkout before s9: no new failure and no new skipped test",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

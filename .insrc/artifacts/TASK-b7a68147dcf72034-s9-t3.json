@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9f1a59d7-a5bf-4a07-8a56-fc41f252c6c5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.572Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "The git-calls helper module",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t24",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "b704277e482b5051e2f7f54ee40c516cdcb9de6a10466a64ae5e1e648f1a90c8",
+        "at": "2026-11-01T12:34:37.135Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.572Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "The git-calls helper module",
+    "summary": "Add src/workflow/git-calls.ts with the helpers the sites use (revParse, catFileExists, lsFiles, pathHistory, configGet, lsRemote, fetchRefs, forEachRef, remoteUrl, statusPaths, rootCommits and those t1 adds) built on run/must/soft and workflowToolDeps of src/workflow/tracker/registry-table.ts, plus GitCallFailed. Each helper takes the site's cwd, signal, timeout and approval mode and returns the plain value the old code used; a denial is thrown as ToolDenied and a schema or conversion failure is thrown, never a fallback.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "each helper calls its tool through callTool with the caller 'workflow' and the site's signal and approval mode",
+      "each tool failure kind maps to the site fallback or to GitCallFailed as the LLD's error paths say; a denial with each reason is thrown as ToolDenied",
+      "no helper has a catch that swallows ToolDenied"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "git-calls.test.ts: each helper calls its tool through callTool with the caller 'workflow', the site's signal and approval mode"
+      },
+      {
+        "level": "unit",
+        "name": "git-calls.test.ts: each failure kind maps to the site fallback or GitCallFailed and a denial with each reason is thrown as ToolDenied"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

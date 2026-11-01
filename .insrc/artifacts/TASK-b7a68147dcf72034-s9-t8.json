@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b010a47f-8eae-40b9-ba8c-c2a79646b4fd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-01T11:53:36.579Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Refresh onto the tools with the deadline signal",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s9-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "4bf7d50ee418df7043849cbfc2d781046672c44786c00ba755ee968e2499449a",
+        "at": "2026-11-01T12:34:37.139Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-01T11:53:36.580Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Refresh onto the tools with the deadline signal",
+    "summary": "Move refreshPolicy (ls-remote and fetch or fetch-refs, defaultLocalGit) onto git_ls_remote and git_fetch under one Deadline: each call takes timeoutMs from remainingMs() and the deadline signal, no call starts after the budget is spent, an outer opts.signal is combined, and a denial or cancellation ends the refresh at the first call. The injectable git seam of RefreshOptions receives the Deadline.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "refresh-deadline.test.ts: a stand-in git that sleeps makes the refresh fail with the deadline message at 10 seconds, no later call starts, and the running call's process group is gone within 2 seconds",
+      "refresh-abort.test.ts: an aborted outer signal ends the refresh at the first aborted call with a cancelled denial",
+      "sighting-store.test.ts: the lock-lifetime reasoning still holds"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "refresh-deadline.test.ts: with a stand-in git that sleeps, the refresh fails with the deadline message at 10 s, starts no call after it, and the process group of the running call is gone within 2 s"
+      },
+      {
+        "level": "integration",
+        "name": "refresh-abort.test.ts: an aborted outer signal ends the refresh at the first aborted call with a cancelled denial and starts no later call"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

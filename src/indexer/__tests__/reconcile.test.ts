@@ -652,8 +652,9 @@ test('a ready repository gets a clean-up job at daemon start, one that gets a fu
 	await finishFullIndexState(repoA, false);
 	await svc.start([registered(repoA, 'ready', future), registered(repoC, 'pending')]);
 
-	assert.deepEqual(queue.of(repoA), ['reconcile'], 'no changed file, and still one clean-up job');
-	assert.deepEqual(queue.of(repoC), ['full'], 'the full index cleans up itself: no separate job');
+	// Each repository also gets the vector backfill, in its own lane (Epic c2ba6fa6 s2).
+	assert.deepEqual(queue.of(repoA), ['reconcile', 'reembed'], 'no changed file, and still one clean-up job');
+	assert.deepEqual(queue.of(repoC), ['full', 'reembed'], 'the full index cleans up itself: no separate job');
 
 	// A full index of a repository that holds a stale stored file.
 	const stale = ent(repoA, join(repoA, 'src', 'gone.ts'), 'function', 'gone');

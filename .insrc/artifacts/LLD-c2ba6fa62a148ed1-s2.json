@@ -31,7 +31,216 @@
       "AMD-c2ba6fa62a148ed1-9",
       "AMD-c2ba6fa62a148ed1-10"
     ],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's commitFile/FileCommit/FileCommitResult contract faithfully implements the HLD's sc2 FileCommit sketch (§5.2) that this Story (s2) owns, with no field added that contradicts the sketch and no scope silently dropped.",
+          "evidence": "HLD.md §5.2 defines interface RelationWrite/FileCommit/FileCommitResult with fields repoPath, filePath, contentHash, entities, relations and a result carrying generation, entitiesWritten/Removed, relationsStored/Pending/Unwritable/ReturnedToPending. The LLD §2.1 commitFile(commit: FileCommit): Promise<FileCommitResult> reproduces exactly these fields and only adds vectorsOutstanding, which is additive and consistent with the HLD's own note that vectors are written after the commit.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Acceptance criteria ac1-ac4 given to this Story are each covered by a design postcondition/error path and a named proving test, and adjacent-scope items owned by other stories (s1's pending/unwritable classification, s3's by-file index, s7's evidence byte, etc.) are consumed/deferred rather than re-implemented here.",
+          "evidence": "§6 Error paths and §7 Test strategy map ac1 (rollback leaves prior rows), ac2 (atomic read), ac3 (vector-failure/backfill), ac4 (contentHash-null removal) each to at least one named test; §3.1 explicitly defers evidence to Story s7 ('accepted and ignored until Story s7 stores it') and §2.6 explicitly defers the by-repo index to Story s3.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "reindexFile exists today, is unused (no non-test caller), and writes entities only (no relationship or IndexState handling), matching §8 'State before'.",
+          "evidence": "Read src/db/entities.ts:362-519: reindexFile does entity snapshot/upsert/tombstone and Lance vector dispatch only, no relation or IndexState writes. A repo-wide grep for `reindexFile(` found callers only in test files (src/db/__tests__/reindex-file-lmdb.test.ts etc.) and in docs, none in production indexer code. [files: src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The indexer's current refresh path does three separate deletes before parsing, then embeds, then upserts entities and relationships in further separate transactions; and updateEmbedding sets the LMDB embedding marker before the Lance vector write (the order the design says it reverses).",
+          "evidence": "src/indexer/index.ts:1113-1150 indexFile: cleanFirst branch calls deleteRelationsForFile/deleteEntitiesForFile/deleteUnresolvedForFile (lines 1120-1122), then embedEntities (1146), then separate upsertEntities/upsertRelations (1149-1150). src/db/entities.ts:962-1016 updateEmbedding: putEntityRowInTxn sets embeddingModel inside withWriteTxn (LMDB) before the later Lance writer call -- marker precedes vector, as the LLD's §3.2 'Today' description states. [files: src/indexer/index.ts, src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "commitFile is genuinely new (no such function/type exists in the store layer today) and is built by growing reindexFile, which exists with exactly the entity-replacement shape the design describes as its starting point.",
+          "evidence": "No `commitFile` or `FileCommit` symbol found outside this epic's artifacts/docs and the LLD itself; reindexFile's real body (src/db/entities.ts:362-519) matches the design's description of its current behaviour (snapshot existing entities by file, upsert with module-stub and unchanged-row short circuits, tombstone the rest), confirming it is a true reuse base, not a mischaracterized existing function. [files: src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "upsertResolvedRelations and upsertUnresolvedRelations exist today and already run their own self-contained withWriteTxn, confirming the design's claim that they can be 'split into transaction-taking bodies called by the existing functions unchanged' without redesigning s1's owned classification rule.",
+          "evidence": "src/db/relations.ts:107-176: upsertRelations (116-127) dispatches to upsertResolvedRelations, which wraps its whole write (stored edge / pending-row-awaiting-id / counted-unwritable logic) inside one `await withWriteTxn(s => {...})` block -- exactly the shape that can be extracted into an InTxn body callable from a larger transaction without changing the classification logic itself. [files: src/db/relations.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The cited call site src/indexer/index.ts:1146-1150, used to justify 'exactly one commitFile call; no deleteEntitiesForFile / upsertEntities / upsertRelations calls remain on this path', correctly identifies the two separate persistence calls (embed, then upsertEntities+upsertRelations) that must collapse into one commitFile call.",
+          "evidence": "Read src/indexer/index.ts:1093-1157: embedEntities is called at line 1146, upsertEntities at 1149, upsertRelations at 1150 -- line numbers in the LLD are accurate to within the function's real layout and correctly bracket the exact two calls the design says become one. [files: src/indexer/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The §3.2 embedding-marker call sites (src/indexer/embedder.ts:187,216 and src/db/entities.ts:304-330,962-1010) all currently set/persist the marker ahead of the vector write, as the invariant-change claims.",
+          "evidence": "embedder.ts:187 and :216 set entity.embeddingModel in memory before any store write; entities.ts:962-1016 (updateEmbedding) persists the marker via putEntityRowInTxn inside withWriteTxn before calling the Lance writer; entities.ts:260-332 (upsertEntities' Lance-write tail, overlapping the cited 304-330 range) contains the comment 'Lance failure is non-fatal: the LMDB row's embeddingModel already reflects the intent' confirming the row (with marker set) is committed before the Lance call at line 307 onward. [files: src/indexer/embedder.ts, src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'No stored key, value form or kind byte changes' is consistent with the real schema: EntityRow's embeddingModel field and IndexState's unembedded/embeddingAvailable fields already exist in the codec, so the described changes are invariant-only, not schema additions.",
+          "evidence": "src/db/graph/codec.ts:262-264 already defines unembedded: number and embeddingAvailable: boolean on the IndexState row shape; no new field is introduced by this design for those two. The embeddingModel marker field is likewise already part of EntityRow (used throughout entities.ts/embedder.ts) with no new byte added. [files: src/db/graph/codec.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RelationWrite.target mapping onto existing Relation.resolved/meta fields (so 'no stored form changes') is plausible because Relation already carries resolved and meta.",
+          "evidence": "src/shared/types.ts:672,679-687 defines Relation with resolved?: boolean and meta?: Record<string, unknown>, the two fields the LLD says RelationWrite.target ({stored:id} / {pending:UnresolvedRef}) maps onto unchanged. [files: src/shared/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This Story does not redesign Story s1's owned relationship-classification rule (sc1-adjacent): it only extracts a transaction-taking body from the existing resolved/unresolved writers and reuses the rule's outcome unchanged, which is what s1's own boundary note anticipates ('Until Story s2 lands, s1 applies its rule inside the existing separate writes').",
+          "evidence": "§5 interaction table states relationship writes 'reuse s1's in-transaction pending/unwritable counting unchanged'; the real upsertResolvedRelations body (src/db/relations.ts:136-176) that must be split already contains that exact classification logic self-contained in one withWriteTxn, so extraction does not require altering the rule itself. [files: src/db/relations.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This Story does not implement Story s7's owned evidence byte-encoding (sc3) or Story s3's owned by-file/by-repository index (sc4-adjacent): both are explicitly deferred/consumed rather than redesigned.",
+          "evidence": "§3.1 states 'RelationWrite.evidence is accepted and ignored (\"unknown\") until Story s7 stores it'; §2.6 listUnembeddedEntities postcondition says it 'reads the repository's entities through Story s3's by-repository index instead of the whole entity table' -- both correctly phrased as depending on, not redesigning, the other Stories' owned contracts. Cross-checked against HLD.md §5.2 'Consumed by: s7, s9, s10' for sc2, confirming the direction of dependency. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'withWriteTxn's childTransaction rejects; lmdb-js aborts a child transaction whose callback throws' is true of the real code, and is pinned by the named test.",
+          "evidence": "src/db/graph/store.ts:1272-1297 withWriteTxn runs its callback via `store.root.childTransaction(run)`. A prior verified investigation (recorded in project memory, PROVEN 2026-10-16) found lmdb-js root.transaction commits a throwing callback's writes but childTransaction aborts on throw, fixed under ISSUE-5437d6e5 and pinned by src/db/graph/__tests__/lmdb-txn-semantics.test.ts, which exists in the repo. [files: src/db/graph/store.ts, src/db/graph/__tests__/lmdb-txn-semantics.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'The commit itself makes no model call; model calls (embedding) stay serial' matches the real indexer sequencing, where embedding happens before the persistence calls that commitFile will replace.",
+          "evidence": "src/indexer/index.ts:1093-1157 indexFile calls `await embedEntities(result.entities)` at line 1146 strictly before `await upsertEntities(...)` / `await upsertRelations(...)` at 1149-1150 -- the two calls commitFile subsumes -- so no embedding call occurs inside the persistence step, consistent with the project rule (CLAUDE.md) that LLM/embedding calls are always awaited serially, never inside a store transaction. [files: src/indexer/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The invariant 'reindexFile's entity-replacement behaviour ... stays as its tests pin it' names a real, substantial existing test file that actually exercises that behaviour.",
+          "evidence": "src/db/__tests__/reindex-file-lmdb.test.ts exists and contains dozens of reindexFile(...) calls exercising dedupe/last-wins, module-stub ensure-exists, unchanged-row short-circuit, and repoPath-shape rejection -- matching the specific behaviours §6's invariants list says must be preserved. [files: src/db/__tests__/reindex-file-lmdb.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test-strategy fixtures named (setGraphStorePath on a temp LMDB, useTemporaryLance, and the ProbeService pattern of src/indexer/__tests__/reconcile.test.ts) are real, existing helpers the new tests can actually use.",
+          "evidence": "src/db/graph/store.ts:342 exports setGraphStorePath; src/db/lance/__tests__/helpers/temp-lance.ts:21 exports useTemporaryLance; src/indexer/__tests__/reconcile.test.ts:99 defines `class ProbeService extends IndexerService` used by its own tests -- all three fixtures cited in §7 exist as named. [files: src/db/graph/store.ts, src/db/lance/__tests__/helpers/temp-lance.ts, src/indexer/__tests__/reconcile.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T12:49:54.553Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

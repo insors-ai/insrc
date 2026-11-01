@@ -386,3 +386,21 @@ The indexer embeds, writes the vectors (upsert) and only then calls a commitFile
 - OPEN (s8 sbdry3, s2's own HLD boundary item not yet in the contract): the queue rule 'index jobs go ahead of other jobs and a long job yields between its units, so that a commit is not held behind a model pass'. Proposed: the backfill (reembed) embeds and writes in batches (the embedder's batch size) and, between batches, returns control to the index lane so queued file / full / reconcile jobs run first, then continues. Confirm or choose another rule before the plan.
 - OPEN (s8 sbdry3, HLD performance note): 'Story s2's design measures [the vector upsert] on this repository'. Proposed: record, as a smoke result in the Story's test record, the time of writeEntityEmbeddings (upsert) vs addEntityEmbeddings for this repository's vector table at a refresh-sized batch and at a backfill-sized batch, before choosing the backfill's batch size.
 - NOTE (s8 alt2 partial): alternatives a3 and a4 were not scored against Epic constraints k2 and k4; both lose on acceptance criteria already, so the choice of a1 does not depend on it.
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-11-01T12:49:54.553Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

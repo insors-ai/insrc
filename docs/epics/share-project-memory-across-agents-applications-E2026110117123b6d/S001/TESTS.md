@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -69,13 +69,14 @@ Run at 2026-11-01T19:08:08.085Z on commit `a9ef96ecd`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-01T19:13:38.568Z on commit `b611b51b1`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T20:40:55.125Z on commit `0521cc933`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: exclusive-descriptor-and-owned-bootstrap**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | exclusive-descriptor-and-owned-bootstrap | `packages/project-memory/src/__tests__/ownership.test.ts` |
+| pass | layout-state-is-decided-under-ownership-after-one-preflight | `packages/project-memory/src/__tests__/ownership.test.ts` |
 
 **integration: native-callback-cleanup-and-inode-faults**
 
@@ -87,7 +88,7 @@ Run at 2026-11-01T19:13:38.568Z on commit `b611b51b1`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/ownership.test.ts` | 0 | 2 | 1.5 s |  |
+| `packages/project-memory/src/__tests__/ownership.test.ts` | 0 | 3 | 0.5 s |  |
 
 ## t5
 

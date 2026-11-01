@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T20:10:39.454Z",
+    "updatedAt": "2026-11-01T20:40:55.125Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -163,8 +163,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "b611b51b1",
-        "ranAt": "2026-11-01T19:13:38.568Z",
+        "commit": "0521cc933",
+        "ranAt": "2026-11-01T20:40:55.125Z",
         "testsPassed": true,
         "tests": [
           {
@@ -175,6 +175,11 @@
               {
                 "file": "packages/project-memory/src/__tests__/ownership.test.ts",
                 "title": "exclusive-descriptor-and-owned-bootstrap",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/ownership.test.ts",
+                "title": "layout-state-is-decided-under-ownership-after-one-preflight",
                 "result": "pass"
               }
             ],
@@ -199,7 +204,7 @@
             "file": "packages/project-memory/src/__tests__/ownership.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1450,
+            "durationMs": 535,
             "titles": [
               {
                 "title": "exclusive-descriptor-and-owned-bootstrap",
@@ -207,6 +212,10 @@
               },
               {
                 "title": "native-callback-cleanup-and-inode-faults",
+                "result": "pass"
+              },
+              {
+                "title": "layout-state-is-decided-under-ownership-after-one-preflight",
                 "result": "pass"
               }
             ],

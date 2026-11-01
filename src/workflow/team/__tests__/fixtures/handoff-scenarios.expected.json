@@ -1,0 +1,52 @@
+{
+ "draft files of a unit": {
+  "clean": [],
+  "deleted": [
+   ".insrc/artifacts/LLD-<id>f3a4-s1.json"
+  ],
+  "modified": [
+   ".insrc/artifacts/LLD-<id>f3a4-s1.json"
+  ],
+  "renamed": [],
+  "staged": [
+   ".insrc/artifacts/LLD-<id>f3a4-s1.json",
+   ".insrc/artifacts/PLAN-<id>f3a4-s1.json"
+  ],
+  "untracked": [
+   ".insrc/artifacts/LLD-<id>f3a4-s1.json",
+   ".insrc/artifacts/PLAN-<id>f3a4-s1.json"
+  ]
+ },
+ "not a repository": {
+  "files": [],
+  "stage": "design.story"
+ },
+ "the receiving repository": {
+  "anyId": {
+   "ok": true
+  },
+  "differs": {
+   "ok": false,
+   "reason": "<tmp> is a different repository from the one the draft was parked from (its first commit is <id>, the checkpoint's is <id>)"
+  },
+  "noHistory": {
+   "ok": false,
+   "reason": "<tmp> is not a git repository with history, so it cannot be the repository a draft was parked from"
+  },
+  "same": {
+   "ok": true
+  },
+  "unregistered": {
+   "ok": false,
+   "reason": "<tmp> is not a repository registered with the daemon: register it first (insrc repo add)"
+  }
+ },
+ "the stage inferred from the committed artifacts": {
+  "epic0": "design.epic",
+  "epic1": "complete",
+  "story0": "design.story",
+  "story1": "plan",
+  "story2": "complete",
+  "uncommitted": "design.story"
+ }
+}

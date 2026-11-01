@@ -18,10 +18,10 @@ import { listStates } from './state-store.js';
 const sameLogin = (a: string | undefined, b: string): boolean => a !== undefined && a.toLowerCase() === b.toLowerCase();
 
 /** True when the actor owns a live run for the unit or has an uncommitted draft artifact of it. Never throws. */
-export function hasUnparkedWork(repo: string, unit: UnitRef, actor: string): boolean {
+export async function hasUnparkedWork(repo: string, unit: UnitRef, actor: string): Promise<boolean> {
 	try {
 		if (listStates().some(e => sameLogin(e.meta?.owner, actor) && runIsForUnit(e.payload.intent, { ...unit, repoPath: repo }))) return true;
-		return draftParkOffer(repo, unit);
+		return await draftParkOffer(repo, unit);
 	} catch { return false; }
 }
 

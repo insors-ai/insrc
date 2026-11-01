@@ -25,7 +25,7 @@ const GIT_IDS = ['git_status', 'git_log', 'git_diff', 'git_show', 'git_blame', '
 	'git:cherry-pick', 'git_tag', 'git_remote', 'git_worktree'];
 
 /** Optional inputs the s9 audit added after the snapshot (Story s9, task t24); the snapshot stays pinned. */
-const ADDED_BY_S9 = new Map([['git_status', ['paths', 'untrackedFiles']], ['git_log', ['firstParent']], ['git_diff', ['againstWorktree']], ['git_worktree', ['startPoint']]]);
+const ADDED_BY_S9 = new Map([['git_status', ['paths', 'untrackedFiles']], ['git_log', ['firstParent']], ['git_diff', ['againstWorktree']], ['git_worktree', ['startPoint']], ['git_stage', ['force']]]);
 
 test('every typebox input schema serialises to the same JSON as the schema it replaced', () => {
 	registerForTests();

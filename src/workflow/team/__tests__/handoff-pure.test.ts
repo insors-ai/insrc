@@ -127,7 +127,7 @@ test("checkpoint validation rejects an unknown schemaVersion or kind, a unit mis
 	assert.match(reason(runCheckpoint({ stage: 'awaiting_plan', executor: undefined, stepOutputs: {} })), /must not carry stepOutputs/);
 });
 
-test('rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, resets startedAtMs and leaves no parker path, for all three stages, and inferStageWorkflow follows the committed artifact chain', () => {
+test('rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, resets startedAtMs and leaves no parker path, for all three stages, and inferStageWorkflow follows the committed artifact chain', async () => {
 	const binding = { repoPath: '/Users/bob/clone', repoIndexedAt: 12345, now: 999 };
 	const asRun = (over: Record<string, unknown>): RunCheckpoint => {
 		const v = validateCheckpoint(runCheckpoint(over), STORY);
@@ -228,18 +228,18 @@ test('rebindCheckpoint replaces repoPath and repoIndexedAt in both intents, rese
 		};
 		const story = { ...STORY, repoPath: repo, unit: 'story' as const };
 		const epic = { ...EPIC, repoPath: repo, unit: 'epic' as const };
-		assert.equal(inferStageWorkflow(repo, epic), 'design.epic');
-		assert.equal(inferStageWorkflow(repo, story), 'design.story');
+		assert.equal((await inferStageWorkflow(repo, epic)), 'design.epic');
+		assert.equal((await inferStageWorkflow(repo, story)), 'design.story');
 		put(hldArtifactId(HASH), false);
-		assert.equal(inferStageWorkflow(repo, epic), 'design.epic', 'an HLD that is only a local draft is not a committed stage');
+		assert.equal((await inferStageWorkflow(repo, epic)), 'design.epic', 'an HLD that is only a local draft is not a committed stage');
 		git('add', '-A'); git('commit', '-qm', 'hld');
-		assert.equal(inferStageWorkflow(repo, epic), 'complete');
-		assert.equal(inferStageWorkflow(repo, story), 'design.story', 'the Epic being complete says nothing about the Story');
+		assert.equal((await inferStageWorkflow(repo, epic)), 'complete');
+		assert.equal((await inferStageWorkflow(repo, story)), 'design.story', 'the Epic being complete says nothing about the Story');
 		put(lldArtifactId(HASH, 's1'), true);
-		assert.equal(inferStageWorkflow(repo, story), 'plan', 'a committed LLD does not hide an unfinished plan');
+		assert.equal((await inferStageWorkflow(repo, story)), 'plan', 'a committed LLD does not hide an unfinished plan');
 		put(planArtifactId(HASH, 's1'), false);
-		assert.equal(inferStageWorkflow(repo, story), 'plan', 'an uncommitted PLAN is a draft, not a completed stage');
+		assert.equal((await inferStageWorkflow(repo, story)), 'plan', 'an uncommitted PLAN is a draft, not a completed stage');
 		git('add', '-A'); git('commit', '-qm', 'plan');
-		assert.equal(inferStageWorkflow(repo, story), 'complete');
+		assert.equal((await inferStageWorkflow(repo, story)), 'complete');
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });

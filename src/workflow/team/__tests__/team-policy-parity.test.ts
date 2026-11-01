@@ -13,7 +13,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { newApi } from './helpers/new-policy-api.js';
+import { newHandoffApi } from './helpers/new-handoff-api.js';
 import { newSignoffApi } from './helpers/new-signoff-api.js';
+import { runHandoffScenarios } from './helpers/handoff-scenarios.js';
 import { runSignoffScenarios } from './helpers/signoff-scenarios.js';
 import { runPolicyScenarios } from './helpers/policy-scenarios.js';
 
@@ -31,4 +33,12 @@ test('team-policy-parity.test.ts: signoff currentBranchOf and branch-resolution 
 	const actual = await runSignoffScenarios(newSignoffApi);
 	assert.deepEqual(Object.keys(actual).sort(), Object.keys(signoffExpected).sort());
 	for (const name of Object.keys(signoffExpected)) assert.deepEqual(actual[name], signoffExpected[name], name);
+});
+
+const handoffExpected = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'handoff-scenarios.expected.json'), 'utf8')) as Record<string, unknown>;
+
+test('team-policy-parity.test.ts: the handoff git reads equal the old functions on the same repositories', async () => {
+	const actual = await runHandoffScenarios(newHandoffApi);
+	assert.deepEqual(Object.keys(actual).sort(), Object.keys(handoffExpected).sort());
+	for (const name of Object.keys(handoffExpected)) assert.deepEqual(actual[name], handoffExpected[name], name);
 });

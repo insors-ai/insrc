@@ -105,16 +105,16 @@ let insideHook = false;
 export function registerCompletionHook(hook: CompletionHook | undefined): void { registeredHook = hook; }
 
 /** Says whether the acting user has unparked work for a unit (a live run or an uncommitted draft), so a refusal can offer to park it. */
-export type ParkOfferProvider = (repo: string, unit: UnitRef, actor: string) => boolean;
+export type ParkOfferProvider = (repo: string, unit: UnitRef, actor: string) => boolean | Promise<boolean>;
 
 let parkOfferProvider: ParkOfferProvider | undefined;
 /** Register the park-offer provider (sc4 amendment AMD-315d510cb28100e2-13); none registered means offerPark is always false. */
 export function registerParkOfferProvider(provider: ParkOfferProvider | undefined): void { parkOfferProvider = provider; }
 
 /** The held-by-other outcome, with offerPark from the provider; a provider that throws counts as false. */
-function heldByOther(repo: string, unit: UnitRef, holder: string, actor: string): GateOutcome {
+async function heldByOther(repo: string, unit: UnitRef, holder: string, actor: string): Promise<GateOutcome> {
 	let offerPark = false;
-	try { offerPark = parkOfferProvider?.(repo, unit, actor) === true; }
+	try { offerPark = (await parkOfferProvider?.(repo, unit, actor)) === true; }
 	catch (err) { log.warn({ unit: unitKey(unit), err: errorText(err) }, 'park-offer provider failed; no offer'); }
 	return { kind: 'held-by-other', holder, offerPark };
 }
@@ -253,7 +253,7 @@ async function decideOnHolder(
 	repo: string, unit: UnitRef, action: GuardedAction | 'claim', ctx: Extract<TeamContext, { team: true }>, holder: string | null,
 	words: { readonly failed: string; readonly contested: string; readonly implicit: boolean },
 ): Promise<GateOutcome> {
-	if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, action, heldByOther(repo, unit, holder, ctx.who));
+	if (holder !== null) return sameLogin(holder, ctx.who) ? allowed() : logOutcome(unit, action, await heldByOther(repo, unit, holder, ctx.who));
 	const added = await ctx.port.addAssignee(ctx.issue, ctx.who);
 	if (!added.ok) return logOutcome(unit, action, refused(`${words.failed} (${added.kind}): ${added.reason}; the stage state is unknown, read it again before acting`));
 	if (added.value.length > 1) return logOutcome(unit, action, refused(`the claim is contested: ${added.value.join(', ')} are all assigned; ${words.contested}`));

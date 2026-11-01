@@ -124,8 +124,10 @@ section.
 | `src/workflow/team/handoff.ts` `parkPlan` remote lookup | `git_ls_remote` `heads`, `patterns` | covered | |
 | `src/workflow/team/handoff.ts` `parkPlan` fetch of the handoff branch | `git_fetch_refs` into a temporary ref, then `git_rev_parse` | derived | the tool takes explicit `src:dst` pairs, so the branch is fetched into a temporary ref (as the resume check already does) and that ref is read and deleted with `git_update_ref`; the sha is the same one `FETCH_HEAD` held |
 | `src/workflow/team/handoff.ts` `parkPlan` temporary worktree | `git_worktree` `add` | gap | g9: `startPoint` |
-| `src/workflow/team/handoff.ts` cleanup | `git_worktree` `remove`, `prune`; `git_branch` `delete` force; `git_update_ref` | covered | |
-| `src/workflow/team/handoff.ts` cleanup checks | `git_worktree` `list`, `git_branch` `list` | derived | `branch --list <name>` is the branch list filtered by name |
+| `src/workflow/team/handoff.ts` `parkPlan` stage, commit and push in the temporary worktree | `git_stage` `force`, `git_commit` `allowEmpty` `allowDetached`, `git_push` `ref` HEAD:refs/heads/<branch> | gap | g11: `force` on `git_stage` (`git add -f`), found while moving the park in t10 |
+| `src/workflow/team/handoff.ts` `parkPlan` deleted drafts | the work tree file removed, then `git_stage` | derived | the old `git rm --ignore-unmatch` is not needed: the file is deleted in the temporary worktree and `git add` stages the deletion (`git_rm` always asks, so it is not used) |
+| `src/workflow/team/handoff.ts` cleanup | the worktree directory deleted, then `git_worktree` `prune` | derived | the temporary worktree is detached, so no temporary branch is made and none is deleted; `git_branch` delete, `git_update_ref` and a forced `git_worktree` remove are destructive and would ask every time |
+| `src/workflow/team/handoff.ts` cleanup checks | `git_worktree` `list` | covered | |
 | `src/workflow/team/handoff.ts` `resumeCheck` url and fetch | `git_remote` `list`, `git_fetch_refs` | derived | the fetch URL is `fetchUrl` of the listed remote |
 | `src/workflow/team/handoff.ts` `resumeCheck` reads | `git_cat_file` `rev`, `path` | derived | the bytes of `<tmpRef>:<path>` |
 | `src/workflow/team/handoff.ts` `resumeCheck` dirty check | `git_status` | gap | g5: `paths` and `untrackedFiles` all |
@@ -173,6 +175,8 @@ This list is final. A gap found later is a plan amendment, not part of t2.
 | g8 | `git_rev_list` | an optional `parents` input (the data gains `parents`), built by t24 | story-commits |
 | g9 | `git_worktree` | an optional `startPoint` input for `add`, built by t24 | handoff park |
 | g10 | `git_diff` | an optional `againstWorktree` input (`git diff <from>`), built by t24 | validation-checks |
+
+| g11 | `git_stage` | an optional `force` input (`git add -f`), found while moving the handoff park in t10 and built there | handoff park (`.insrc/handoff` files) |
 
 Not gaps: the `signal` that `git_log`, `git_diff`, `git_status`, `git_rev_list`, `git_for_each_ref`, `git_ls_files` and `git_path_history` do not pass to
 their process. The refresh uses only `git_ls_remote` and `git_fetch_refs`, which do; the other sites have no abort requirement.

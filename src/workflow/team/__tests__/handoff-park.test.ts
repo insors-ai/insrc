@@ -225,23 +225,18 @@ test('a git failure cleans up the worktree and local branch, a failed note retur
 		assertClean(env);
 
 		// cleanup that cannot finish is reported, never silent: on a park that worked, and added to the reason of one that did not
-		// 'branch -D' failing alone is not a leftover: the branch is dropped another way
-		writeFileSync(env.draft, '{"draft":4.5}\n');
-		const fallback = must(await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: args => (args[0] === 'branch' && args[1] === '-D' ? 'cannot delete the branch' : undefined) })));
-		assert.equal(fallback.cleanupWarning, undefined);
-		assertClean(env);
-		// both ways failing leaves it, and says so
-		const keepBranch = (args: readonly string[]): string | undefined => ((args[0] === 'branch' && args[1] === '-D') || args[0] === 'update-ref' ? 'cannot delete the branch' : undefined);
+		// the temporary worktree is ours: its directory is deleted and git is told to forget it. If that cannot be done the entry is a leftover
+		const keepWorktree = (args: readonly string[]): string | undefined => (args[0] === 'worktree' && args[1] === 'prune' ? 'cannot prune the worktrees' : undefined);
 		writeFileSync(env.draft, '{"draft":5}\n');
-		const dirty = must(await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: keepBranch })));
-		assert.match(dirty.cleanupWarning ?? '', /the temporary branch insrc-park-tmp-\w+ could not be removed; remove it by hand/);
-		env.git('branch', '-D', env.git('branch', '--list', 'insrc-park-tmp-*').replace(/^[*+ ]+/, ''));
+		const dirty = must(await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: keepWorktree })));
+		assert.match(dirty.cleanupWarning ?? '', /the temporary worktree \S+ could not be removed; remove it by hand/);
+		env.git('worktree', 'prune');
 		assertClean(env);
 		writeFileSync(env.draft, '{"draft":6}\n');
-		const both = await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: args => (args[0] === 'push' ? 'push exploded' : keepBranch(args)) }));
+		const both = await parkDraft(env.repo, env.unit, {}, deps(env, { failGit: args => (args[0] === 'push' ? 'push exploded' : keepWorktree(args)) }));
 		assert.equal(both.ok, false);
-		assert.match(both.ok ? '' : both.reason, /park failed at pushing the handoff branch: push exploded; cleanup also failed: the temporary branch insrc-park-tmp-\w+ could not be removed/);
-		env.git('branch', '-D', env.git('branch', '--list', 'insrc-park-tmp-*').replace(/^[*+ ]+/, ''));
+		assert.match(both.ok ? '' : both.reason, /park failed at pushing the handoff branch: push exploded; cleanup also failed: the temporary worktree \S+ could not be removed/);
+		env.git('worktree', 'prune');
 		assertClean(env);
 
 		// a repository with no remote cannot park

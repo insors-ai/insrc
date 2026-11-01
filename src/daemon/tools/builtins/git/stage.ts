@@ -24,6 +24,7 @@ export const gitStageTool = {
     op: Type.String({ enum: ['stage', 'unstage'], description: 'stage=`git add`, unstage=`git restore --staged`.' }),
     paths: Type.Array(Type.String(), { description: 'Paths relative to the repo root. Use ["."] to affect the whole tree.', minItems: 1 }),
     update: Type.Optional(Type.Boolean({ description: 'Stage-only: pass `-u` so only already-tracked files are staged (skip untracked).' })),
+    force: Type.Optional(Type.Boolean({ description: 'Stage-only: pass `-f` so a file that a .gitignore rule matches is staged too.' })),
   }, { additionalProperties: false }),
   outputSchema: GitStageDataSchema,
   approval: 'common',
@@ -67,7 +68,7 @@ export const gitStageTool = {
     const update = input['update'] === true;
 
     const argv = op === 'stage'
-      ? ['git', 'add', ...(update ? ['-u'] : []), '--', ...paths]
+      ? ['git', 'add', ...(update ? ['-u'] : []), ...(input['force'] === true ? ['-f'] : []), '--', ...paths]
       : ['git', 'restore', '--staged', '--', ...paths];
 
     const result = await runShell(argv, { cwd, timeoutMs: 20_000 });

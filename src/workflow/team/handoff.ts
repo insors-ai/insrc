@@ -26,10 +26,20 @@ import type { UnitRef } from '../tracker/refs.js';
 import type { ExecutorState, WorkflowIntent } from '../types.js';
 import { authorUnitOf } from './author-gate.js';
 import { claimsEnforcedFor, describeOutcome, readHolder, teamContext, teamGate, TeamGateRefusedError, type GateOutcome } from './gate.js';
-import { createDeadline, runGitAsync } from './git-async.js';
-import { runGit } from './git.js';
+import { catFileExists, catFileText, fetchRefs, gitCall, GitCallFailed, lsRemote, revParse, rootCommits, statusPaths } from '../git-calls.js';
+import type { GitCallOptions } from '../git-calls.js';
+import { gitCommitTool } from '../../daemon/tools/builtins/git/commit.js';
+import { gitPushTool } from '../../daemon/tools/builtins/git/push.js';
+import { gitStageTool } from '../../daemon/tools/builtins/git/stage.js';
+import { gitWorktreeTool } from '../../daemon/tools/builtins/git/worktree.js';
 import { pickRemote } from './policy-reader.js';
 import type { UpstreamRevision } from './run-meta.js';
+import { orFallback } from '../git-calls.js';
+
+/** The time a local git read of the handoff may take. */
+const LOCAL_GIT_MS = 5_000;
+
+const orFalse = (call: Promise<boolean>): Promise<boolean> => orFallback(call, false);
 
 /** The branch pattern used when the repo sets none. */
 export const DEFAULT_BRANCH_PATTERN = 'insrc/handoff/{type}-{id}';
@@ -285,32 +295,25 @@ export function buildRunCheckpoint(input: RunCheckpointInput): RunCheckpoint {
  * The unit's own artifact files that differ from HEAD in the working tree (changed, staged or untracked): its draft, as
  * repo-relative paths. A repo that is not a git repository, or a git failure, has none.
  */
-export function unitDraftFiles(repoPath: string, unit: HandoffUnit): readonly string[] {
-	const status = runGit(repoPath, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--', '.insrc/artifacts', 'docs']);
-	if (!status.ok) return [];
-	const files: string[] = [];
-	const entries = status.stdout.split('\0').filter(e => e.length > 3);
-	for (let i = 0; i < entries.length; i++) {
-		const entry = entries[i] as string;
-		const code = entry.slice(0, 2);
-		const path = entry.slice(3);
-		if (code[0] === 'R' || code[0] === 'C') i += 1;   // a rename or copy entry is followed by its source path
-		if (isUnitArtifactPath(unit, path)) files.push(path);
-	}
-	return files;
+export async function unitDraftFiles(repoPath: string, unit: HandoffUnit): Promise<readonly string[]> {
+	let status: Awaited<ReturnType<typeof statusPaths>>;
+	try { status = await statusPaths(repoPath, { paths: ['.insrc/artifacts', 'docs'], untrackedFiles: 'all' }, { timeoutMs: LOCAL_GIT_MS }); }
+	catch (err) { if (err instanceof GitCallFailed) return []; throw err; }
+	const changed = [...status.staged, ...status.unstaged, ...status.conflicts].map(e => e.path);
+	return [...new Set([...changed, ...status.untracked])].filter(path => isUnitArtifactPath(unit, path));
 }
 
 /**
  * The park offer a process can make from the working tree alone: the unit (an Epic or a Story) has a draft artifact that is not
  * committed. The daemon adds the live runs it holds; the terminal, which has no run store, uses this. Never throws.
  */
-export function draftParkOffer(repoPath: string, unit: { readonly unit: string } & HandoffUnit): boolean {
-	try { return unit.unit !== 'task' && unitDraftFiles(repoPath, unit).length > 0; } catch { return false; }
+export async function draftParkOffer(repoPath: string, unit: { readonly unit: string } & HandoffUnit): Promise<boolean> {
+	try { return unit.unit !== 'task' && (await unitDraftFiles(repoPath, unit)).length > 0; } catch (err) { if (isToolDenied(err)) throw err; return false; }
 }
 
 /** Is this file committed at HEAD? (A file only in the working tree, such as a local draft, is not.) */
-function committedAtHead(repoPath: string, artifactId: string): boolean {
-	return runGit(repoPath, ['cat-file', '-e', `HEAD:${relative(repoPath, artifactJsonPath(repoPath, artifactId)).split('\\').join('/')}`]).ok;
+async function committedAtHead(repoPath: string, artifactId: string): Promise<boolean> {
+	return orFalse(catFileExists(repoPath, `HEAD:${relative(repoPath, artifactJsonPath(repoPath, artifactId)).split('\\').join('/')}`, { timeoutMs: LOCAL_GIT_MS }));
 }
 
 /**
@@ -318,11 +321,11 @@ function committedAtHead(repoPath: string, artifactId: string): boolean {
  * count): an Epic with no HLD needs design.epic; a Story with no LLD needs design.story, with an LLD and no PLAN needs plan (a
  * committed LLD never hides an unfinished plan), with both is complete.
  */
-export function inferStageWorkflow(repoPath: string, unit: UnitRef | (HandoffUnit & { readonly repoPath: string })): 'design.epic' | 'design.story' | 'plan' | 'complete' {
-	const has = (id: string): boolean => committedAtHead(repoPath, id);
-	if (unit.storyId === undefined) return has(hldArtifactId(unit.epicHash)) ? 'complete' : 'design.epic';
-	if (!has(lldArtifactId(unit.epicHash, unit.storyId))) return 'design.story';
-	return has(planArtifactId(unit.epicHash, unit.storyId)) ? 'complete' : 'plan';
+export async function inferStageWorkflow(repoPath: string, unit: UnitRef | (HandoffUnit & { readonly repoPath: string })): Promise<'design.epic' | 'design.story' | 'plan' | 'complete'> {
+	const has = (id: string): Promise<boolean> => committedAtHead(repoPath, id);
+	if (unit.storyId === undefined) return (await has(hldArtifactId(unit.epicHash))) ? 'complete' : 'design.epic';
+	if (!(await has(lldArtifactId(unit.epicHash, unit.storyId)))) return 'design.story';
+	return (await has(planArtifactId(unit.epicHash, unit.storyId))) ? 'complete' : 'plan';
 }
 
 // ---------------------------------------------------------------------------
@@ -416,16 +419,22 @@ export async function parkPlan(repo: string, unit: UnitRef, opts: { readonly run
 		} else {
 			chosen = listStates().find(mine);   // newest touch first
 		}
-		const files = unitDraftFiles(repo, unit);
+		const files = await unitDraftFiles(repo, unit);
 		if (chosen === undefined && files.length === 0) return refuse('no draft or run to hand over');
 
 		// the checkpoint
-		const head = runGit(repo, ['rev-parse', 'HEAD']);
-		const roots = runGit(repo, ['rev-list', '--max-parents=0', 'HEAD']);
-		if (!head.ok || !roots.ok) return refuse(`cannot read the repository's history: ${head.ok ? (roots as { stderr: string }).stderr : head.stderr}`);
-		const repositoryId = roots.stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0).sort()[0];
+		let roots: string[];
+		let headSha: string;
+		try {
+			headSha = await revParse(repo, 'HEAD', {}, { timeoutMs: LOCAL_GIT_MS });
+			roots = await rootCommits(repo, 'HEAD', { timeoutMs: LOCAL_GIT_MS });
+		} catch (err) {
+			if (!(err instanceof GitCallFailed)) throw err;
+			return refuse(`cannot read the repository's history: ${err.message}`);
+		}
+		const repositoryId = roots.map(l => l.trim()).filter(l => l.length > 0).sort()[0];
 		if (repositoryId === undefined) return refuse('the repository has no commits to park from');
-		const common = { unit: { epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) }, parkedBy: actor, parkedAt: (deps.now ?? (() => new Date().toISOString()))(), sourceHead: head.stdout.trim(), repositoryId, artifactPaths: files };
+		const common = { unit: { epicHash: unit.epicHash, ...(unit.storyId !== undefined ? { storyId: unit.storyId } : {}) }, parkedBy: actor, parkedAt: (deps.now ?? (() => new Date().toISOString()))(), sourceHead: headSha.trim(), repositoryId, artifactPaths: files };
 		const meta: RunEntryMeta | undefined = chosen?.meta;
 		const checkpoint: HandoffCheckpoint = chosen !== undefined
 			? buildRunCheckpoint({ ...common, payload: chosen.payload, owner: actor, upstream: meta?.upstream ?? [] })
@@ -467,12 +476,61 @@ export const checkpointPath = (unit: HandoffUnit): string => `.insrc/handoff/${u
 /** The time one git call of a park may take; the commands that talk to the remote can be slow, so none of them blocks the daemon. */
 const PARK_GIT_MS = 60_000;
 
-/** Run git without blocking the daemon: the same {ok, stdout} / {ok:false, stderr} shape as runGit. */
-async function git(cwd: string, args: readonly string[], deps: ParkDeps = {}): Promise<{ ok: true; stdout: string } | { ok: false; stderr: string }> {
+/** The outcome of one git call of a park or a resume check: its text, or why it failed. */
+type GitText = { ok: true; stdout: string } | { ok: false; stderr: string };
+
+/**
+ * One git call of a park or a resume check, over the tool registry. `args` names the call as git's argv would read (the `failGit` test seam
+ * is given it); `run` makes the call with the time limit. An ordinary failure is a value; a denied call is thrown.
+ */
+async function git(args: readonly string[], deps: ParkDeps, run: (o: GitCallOptions) => Promise<string>): Promise<GitText> {
 	const injected = deps.failGit?.(args);
 	if (injected !== undefined) return { ok: false, stderr: injected };
-	const r = await runGitAsync(cwd, args, createDeadline(PARK_GIT_MS));
-	return r.ok ? r : { ok: false, stderr: r.timedOut ? `git ${args[0] ?? ''} did not finish within ${PARK_GIT_MS / 1000} s` : r.stderr };
+	try { return { ok: true, stdout: await run({ timeoutMs: PARK_GIT_MS }) }; }
+	catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { ok: false, stderr: err.kind === 'timed-out' ? `git ${args[0] ?? ''} did not finish within ${PARK_GIT_MS / 1000} s` : err.message };
+	}
+}
+
+/** `git ls-remote --heads` of one branch, as text: one `<sha>\t<ref>` line per match. */
+const lsRemoteHeads = (repo: string, remote: string, branch: string, deps: ParkDeps): Promise<GitText> =>
+	git(['ls-remote', '--heads', remote, `refs/heads/${branch}`], deps, async o => (await lsRemote(repo, { remote, heads: true, patterns: [`refs/heads/${branch}`] }, o)).entries.map(e => `${e.objectId}\t${e.ref}`).join('\n'));
+
+/**
+ * The ref the handoff branch is fetched into, and read from, by a park and a resume check. It is one fixed ref per branch under a private
+ * remote-tracking namespace: a forced fetch into a remote-tracking ref needs no approval, and a fixed name means the ref is updated, never
+ * piled up. (The refs a check used to make and delete would have needed the approval of a destructive call each time.) No FETCH_HEAD is
+ * written and no ref of the remote's own tracking namespace is touched.
+ */
+export const handoffFetchRef = (branch: string): string => `refs/remotes/insrc-handoff/${branch}`;
+
+/** Fetch the branch into its handoff fetch ref (forced); the text is the commit it now names. */
+const fetchBranch = (repo: string, remote: string, branch: string, deps: ParkDeps): Promise<GitText> =>
+	git(['fetch', '--quiet', '--no-write-fetch-head', remote, `refs/heads/${branch}`], deps, async o => {
+		const ref = handoffFetchRef(branch);
+		await fetchRefs(repo, { remote, refspecs: [`+refs/heads/${branch}:${ref}`], noTags: true, noWriteFetchHead: true, refmap: '' }, o);
+		return (await revParse(repo, `${ref}^{commit}`, { verify: true }, o)).trim();
+	});
+
+/** The text of `<rev>:<path>`: its content, or why it cannot be read (a path that is not in the tree is a failure). */
+const showAt = (repo: string, rev: string, path: string, deps: ParkDeps): Promise<GitText> =>
+	git(['show', `${rev}:${path}`], deps, async o => {
+		const text = await catFileText(repo, rev, path, o);
+		if (text === undefined) throw new GitCallFailed('git_cat_file', 'rejected', `fatal: path '${path}' does not exist in '${rev}'`);
+		return text;
+	});
+
+/** The paths of `paths` that have local changes (changed, staged, conflicted or untracked), one `XX <path>` line each, as `git status --porcelain` lists them. */
+async function changedPaths(repo: string, paths: readonly string[]): Promise<GitText> {
+	try {
+		const status = await statusPaths(repo, { paths, untrackedFiles: 'all' }, { timeoutMs: LOCAL_GIT_MS });
+		const changed = [...new Set([...status.staged, ...status.unstaged, ...status.conflicts].map(e => e.path).concat(status.untracked))].sort();
+		return { ok: true, stdout: changed.map(p => `?? ${p}`).join('\n') };
+	} catch (err) {
+		if (!(err instanceof GitCallFailed)) throw err;
+		return { ok: false, stderr: err.message };
+	}
 }
 
 /** The note added to the unit's issue, with a marker so it can be told from other comments. */
@@ -503,20 +561,18 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 	const fail = (step: string, detail: string): ParkResult => ({ ok: false, reason: `park failed at ${step}: ${detail}` });
 
 	const base = await (async (): Promise<{ ok: true; sha: string } | { ok: false; result: ParkResult }> => {
-		const listed = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${branch}`], deps);
+		const listed = await lsRemoteHeads(repo, remote, branch, deps);
 		if (!listed.ok) return { ok: false, result: fail('looking for the handoff branch', `remote '${remote}' could not be reached: ${listed.stderr}`) };
 		if (listed.stdout.trim().length === 0) return { ok: true, sha: plan.checkpoint.sourceHead };
-		const fetched = await git(repo, ['fetch', '--quiet', remote, `refs/heads/${branch}`], deps);
-		if (!fetched.ok) return { ok: false, result: fail('fetching the handoff branch', fetched.stderr) };
-		const sha = await git(repo, ['rev-parse', 'FETCH_HEAD'], deps);
-		return sha.ok ? { ok: true, sha: sha.stdout.trim() } : { ok: false, result: fail('reading the handoff branch', sha.stderr) };
+		const fetched = await fetchBranch(repo, remote, branch, deps);
+		return fetched.ok ? { ok: true, sha: fetched.stdout.trim() } : { ok: false, result: fail('fetching the handoff branch', fetched.stderr) };
 	})();
 	if (!base.ok) return base.result;
 
 	const dir = mkdtempSync(join(deps.tmpRoot ?? tmpdir(), 'insrc-park-'));
-	const tmpBranch = `insrc-park-tmp-${Math.random().toString(36).slice(2, 10)}`;
 	const attempt = async (): Promise<ParkResult> => {
-		const added = await git(repo, ['worktree', 'add', '-q', '-b', tmpBranch, dir, base.sha], deps);
+		// a detached worktree: no temporary branch is made, so none has to be deleted afterwards
+		const added = await git(['worktree', 'add', '-q', '--detach', dir, base.sha], deps, async o => { await gitCall(gitWorktreeTool, { op: 'add', path: dir, detach: true, startPoint: base.sha }, repo, o); return ''; });
 		if (!added.ok) return fail('making the temporary worktree', added.stderr);   // the finally below removes whatever git did make
 
 		// the draft files, copied as they are in the working tree (a deleted draft is deleted on the branch)
@@ -525,23 +581,27 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 			const src = join(repo, f);
 			if (existsSync(src)) { mkdirSync(dirname(join(dir, f)), { recursive: true }); copyFileSync(src, join(dir, f)); paths.push(f); }
 			else {
-				const removed = await git(dir, ['rm', '-q', '--ignore-unmatch', '--', f], deps);
+				// a deleted draft is deleted on the branch: take it out of the temporary worktree and stage the deletion with the rest
+				const onBranch = existsSync(join(dir, f));   // a draft the branch never had needs nothing removed
+				const removed = await git(['rm', '-q', '--ignore-unmatch', '--', f], deps, async () => { rmSync(join(dir, f), { force: true }); return ''; });
 				if (!removed.ok) return fail('removing a deleted draft file', removed.stderr);
+				if (onBranch) paths.push(f);
 			}
 		}
 		const cp = checkpointPath(plan.unit);
 		mkdirSync(dirname(join(dir, cp)), { recursive: true });
 		writeFileSync(join(dir, cp), JSON.stringify(plan.checkpoint, null, 2) + '\n', 'utf8');
-		const staged = await git(dir, ['add', '-f', '--', cp, ...paths], deps);
+		const staged = await git(['add', '-f', '--', cp, ...paths], deps, async o => { await gitCall(gitStageTool, { op: 'stage', paths: [cp, ...paths], force: true }, dir, o); return ''; });
 		if (!staged.ok) return fail('staging the draft', staged.stderr);
-		const committed = await git(dir, ['commit', '-q', '--allow-empty', '-m', `park: ${plan.variant === 'run' ? 'run and draft' : 'draft'} of ${plan.unit.unit} ${plan.unit.epicHash}${plan.unit.storyId !== undefined ? `/${plan.unit.storyId}` : ''} from ${plan.actor} (now held by ${plan.holder})`], deps);
+		const message = `park: ${plan.variant === 'run' ? 'run and draft' : 'draft'} of ${plan.unit.unit} ${plan.unit.epicHash}${plan.unit.storyId !== undefined ? `/${plan.unit.storyId}` : ''} from ${plan.actor} (now held by ${plan.holder})`;
+		const committed = await git(['commit', '-q', '--allow-empty', '-m', message], deps, async o => { await gitCall(gitCommitTool, { message, allowEmpty: true, allowDetached: true }, dir, o); return ''; });
 		if (!committed.ok) return fail('committing the draft', committed.stderr);
-		const head = await git(dir, ['rev-parse', 'HEAD'], deps);
+		const head = await git(['rev-parse', 'HEAD'], deps, o => revParse(dir, 'HEAD', {}, o));
 		if (!head.ok) return fail('reading the commit', head.stderr);
 		const commit = head.stdout.trim();
 
 		deps.beforePush?.();
-		const pushed = await git(dir, ['push', '-q', remote, `${tmpBranch}:refs/heads/${branch}`], deps);
+		const pushed = await git(['push', '-q', remote, `HEAD:refs/heads/${branch}`], deps, async o => { await gitCall(gitPushTool, { remote, ref: `HEAD:refs/heads/${branch}` }, dir, o); return ''; });
 		if (!pushed.ok) {
 			return /non-fast-forward|fetch first|\(already exists\)|stale info/.test(pushed.stderr)
 				? { ok: false, reason: `park failed at pushing: someone else parked first: the handoff branch '${branch}' moved while you were parking; resume from it or park again` }
@@ -561,23 +621,24 @@ export async function executePark(plan: ParkPlan, deps: ParkDeps = {}): Promise<
 	try { result = await attempt(); }
 	catch (err) { result = fail('parking', err instanceof Error ? err.message : String(err)); }
 
-	// Always, and in this order: even a worktree that git half-made (a hook failed after the branch and directory existed) is removed.
-	// Each step is harmless when there is nothing to remove; afterwards what is still there is reported, never silently left.
-	await git(repo, ['worktree', 'remove', '--force', dir], deps);
+	// Always: even a worktree that git half-made (a hook failed after the directory existed) is removed. The temporary worktree is ours, so its
+	// directory is deleted and git is told to forget it (prune); no branch was made, so none has to be deleted. Afterwards what is still
+	// there is reported, never silently left. A denied call does not stop the other steps: it is thrown once they have run.
+	let denied: unknown;
+	const guarded = async (call: () => Promise<GitText>): Promise<GitText> => {
+		try { return await call(); } catch (err) { if (!isToolDenied(err)) throw err; denied ??= err; return { ok: false, stderr: 'denied' }; }
+	};
 	rmSync(dir, { recursive: true, force: true });
-	await git(repo, ['worktree', 'prune'], deps);
-	const deleted = await git(repo, ['branch', '-D', tmpBranch], deps);
-	if (!deleted.ok) await git(repo, ['update-ref', '-d', `refs/heads/${tmpBranch}`], deps);   // a second way to drop the branch
+	await guarded(() => git(['worktree', 'prune'], deps, async o => { await gitCall(gitWorktreeTool, { op: 'prune' }, repo, o); return ''; }));
 	const left: string[] = [];
-	const worktrees = await git(repo, ['worktree', 'list', '--porcelain']);
+	const worktrees = await guarded(() => git(['worktree', 'list', '--porcelain'], { ...deps, failGit: undefined }, async o => ((await gitCall(gitWorktreeTool, { op: 'list' }, repo, o)).worktrees ?? []).map(w => w.path).join('\n')));
 	if (!worktrees.ok || worktrees.stdout.includes(dir)) left.push(`the temporary worktree ${dir}`);
-	const branches = await git(repo, ['branch', '--list', tmpBranch]);
-	if (!branches.ok || branches.stdout.trim().length > 0) left.push(`the temporary branch ${tmpBranch}`);
 	if (existsSync(dir)) left.push(`the directory ${dir}`);
 	if (left.length > 0) {
-		const warning = `${left.join(' and ')} could not be removed; remove ${left.length > 1 ? 'them' : 'it'} by hand (git worktree remove --force, git branch -D)`;
+		const warning = `${left.join(' and ')} could not be removed; remove ${left.length > 1 ? 'them' : 'it'} by hand (git worktree remove --force)`;
 		result = result.ok ? { ...result, cleanupWarning: warning } : { ok: false, reason: `${result.reason}; cleanup also failed: ${warning}` };
 	}
+	if (denied !== undefined) throw denied;
 	return result;
 }
 
@@ -623,9 +684,9 @@ const refused = (reason: string): ResumeCheck => ({ kind: 'refused', reason });
 const STAGE_WORKFLOWS: ReadonlySet<string> = new Set<StageWorkflow>(['design.epic', 'design.story', 'plan']);
 
 /** The root commit id of a repository (the first when there are several), or undefined when git cannot say. */
-function repositoryIdOf(repoPath: string): string | undefined {
-	const roots = runGit(repoPath, ['rev-list', '--max-parents=0', 'HEAD']);
-	return roots.ok ? roots.stdout.split('\n').map(l => l.trim()).filter(l => l.length > 0).sort()[0] : undefined;
+async function repositoryIdOf(repoPath: string): Promise<string | undefined> {
+	const roots = await orFallback(rootCommits(repoPath, 'HEAD', { timeoutMs: LOCAL_GIT_MS }), undefined);
+	return roots?.map(l => l.trim()).filter(l => l.length > 0).sort()[0];
 }
 
 /** Is the path registered with the daemon, and (when an id is given) is it the same repository? */
@@ -635,7 +696,7 @@ export async function verifyReceivingRepo(repoPath: string, repositoryId: string
 	catch (err) { return { ok: false, reason: `the daemon's repository registry could not be read: ${err instanceof Error ? err.message : String(err)}` }; }
 	if (!registered.some(r => resolve(r.path) === resolve(repoPath))) return { ok: false, reason: `${repoPath} is not a repository registered with the daemon: register it first (insrc repo add)` };
 	// the repository must have an identity at all (history), whatever it is compared with
-	const mine = repositoryIdOf(repoPath);
+	const mine = await repositoryIdOf(repoPath);
 	if (mine === undefined) return { ok: false, reason: `${repoPath} is not a git repository with history, so it cannot be the repository a draft was parked from` };
 	if (repositoryId === undefined) return { ok: true };
 	return mine === repositoryId ? { ok: true } : { ok: false, reason: `${repoPath} is a different repository from the one the draft was parked from (its first commit is ${mine.slice(0, 12)}, the checkpoint's is ${repositoryId.slice(0, 12)})` };
@@ -649,7 +710,7 @@ const sameSnapshot = (a: readonly UpstreamRevision[], b: readonly UpstreamRevisi
 };
 
 /** Is this file committed (and so on the clone) already as the unit's stage artifact? */
-function stageArtifactCommitted(repoPath: string, unit: HandoffUnit, workflow: StageWorkflow): boolean {
+async function stageArtifactCommitted(repoPath: string, unit: HandoffUnit, workflow: StageWorkflow): Promise<boolean> {
 	const id = workflow === 'design.epic' ? hldArtifactId(unit.epicHash) : workflow === 'design.story' ? lldArtifactId(unit.epicHash, unit.storyId ?? '') : planArtifactId(unit.epicHash, unit.storyId ?? '');
 	return committedAtHead(repoPath, id);
 }
@@ -679,10 +740,10 @@ export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly 
 			if (!STAGE_WORKFLOWS.has(opts.workflow)) return refused(`'${opts.workflow}' is not a stage that can be resumed: use design.epic, design.story or plan`);
 			workflow = opts.workflow as StageWorkflow;
 			if ((workflow === 'design.epic') !== (unit.storyId === undefined)) return refused(`the stage ${workflow} does not belong to this ${unit.unit}`);
-			if (workflow === 'plan' && !stageArtifactCommitted(repo, unit, 'design.story')) return refused('the plan cannot be resumed: the Story has no committed LLD yet, so design.story comes first');
-			if (stageArtifactCommitted(repo, unit, workflow)) return { kind: 'nothing-to-resume', reason: `the ${workflow} stage of this ${unit.unit} is already committed` };
+			if (workflow === 'plan' && !(await stageArtifactCommitted(repo, unit, 'design.story'))) return refused('the plan cannot be resumed: the Story has no committed LLD yet, so design.story comes first');
+			if (await stageArtifactCommitted(repo, unit, workflow)) return { kind: 'nothing-to-resume', reason: `the ${workflow} stage of this ${unit.unit} is already committed` };
 		} else {
-			const inferred = inferStageWorkflow(repo, unit);
+			const inferred = await inferStageWorkflow(repo, unit);
 			if (inferred === 'complete') return { kind: 'nothing-to-resume', reason: `every stage of this ${unit.unit} that can be resumed is already committed` };
 			workflow = inferred;
 		}
@@ -701,20 +762,17 @@ export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly 
 		const branch = named.name;
 		const remote = await pickRemote(repo);
 		if (remote === undefined) return restart('this repository has no git remote, so there is no parked branch: start the stage afresh on the committed artifacts');
-		const listed = await git(repo, ['ls-remote', '--heads', remote, `refs/heads/${branch}`], deps);
+		const listed = await lsRemoteHeads(repo, remote, branch, deps);
 		if (!listed.ok) return refused(`the remote '${remote}' could not be reached to look for the handoff branch: ${listed.stderr}`);
 		if (listed.stdout.trim().length === 0) return restart(`nothing was parked: there is no branch '${branch}' on '${remote}'; start the stage afresh on the committed artifacts`);
 
-		// fetch it to a temporary ref, read and check the checkpoint, then drop the ref
-		const tmpRef = `refs/insrc/resume/${Math.random().toString(36).slice(2, 10)}`;
-		// fetched by URL with no FETCH_HEAD, so no remote-tracking ref is created or moved besides the temporary one
-		const url = runGit(repo, ['remote', 'get-url', remote]);
-		if (!url.ok) return refused(`the URL of remote '${remote}' could not be read: ${url.stderr}`);
-		const fetched = await git(repo, ['fetch', '--quiet', '--no-write-fetch-head', url.stdout.trim(), `refs/heads/${branch}:${tmpRef}`], deps);
+		// fetch it into the handoff fetch ref (no FETCH_HEAD, the remote's own tracking refs untouched), then read and check the checkpoint from it
+		const tracking = handoffFetchRef(branch);
+		const fetched = await fetchBranch(repo, remote, branch, deps);
 		if (!fetched.ok) return refused(`the handoff branch '${branch}' could not be fetched: ${fetched.stderr}`);
-		try {
+		{
 			const cpPath = checkpointPath(handoff);
-			const shown = await git(repo, ['show', `${tmpRef}:${cpPath}`], deps);
+			const shown = await showAt(repo, tracking, cpPath, deps);
 			if (!shown.ok) return refused(`the handoff branch '${branch}' has no checkpoint at ${cpPath}: ${shown.stderr}`);
 			let raw: unknown;
 			try { raw = JSON.parse(shown.stdout); } catch { return refused(`the checkpoint at ${cpPath} on '${branch}' is not valid JSON`); }
@@ -732,20 +790,18 @@ export async function resumeCheck(repo: string, unit: UnitRef, opts: { readonly 
 			}
 
 			// the files to put back: none may have local changes, and their content is read from the branch now
-			const dirty = checkpoint.artifactPaths.length === 0 ? { ok: true as const, stdout: '' } : runGit(repo, ['status', '--porcelain', '--untracked-files=all', '--', ...checkpoint.artifactPaths]);
+			const dirty = checkpoint.artifactPaths.length === 0 ? { ok: true as const, stdout: '' } : await changedPaths(repo, checkpoint.artifactPaths);
 			if (!dirty.ok) return refused(`the working tree could not be checked: ${dirty.stderr}`);
 			if (dirty.stdout.trim().length > 0) return refused(`these files have local changes that a resume would overwrite: ${dirty.stdout.split('\n').filter(l => l.length > 3).map(l => l.slice(3)).join(', ')}; commit or stash them first`);
 			const files: { path: string; content: string }[] = [];
 			for (const path of checkpoint.artifactPaths) {
-				const file = await git(repo, ['show', `${tmpRef}:${path}`], deps);
+				const file = await showAt(repo, tracking, path, deps);
 				if (file.ok) files.push({ path, content: file.stdout });   // a path the parker deleted is not on the branch: nothing to restore
 			}
 
 			const plan: ResumePlan = { repo, unit, workflow, branch, checkpoint, files };
 			if (checkpoint.kind === 'run') return { kind: 'resume', plan: plan as ResumePlan & { checkpoint: RunCheckpoint } };
 			return restart(`the parked draft carries no run: its files are restored and the stage restarts on them`, plan);
-		} finally {
-			await git(repo, ['update-ref', '-d', tmpRef], deps);
 		}
 	} catch (err) {
 		if (err instanceof TeamGateRefusedError || isToolDenied(err)) throw err;

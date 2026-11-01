@@ -92,7 +92,8 @@ const depsFor = (w: World, repos?: string[]): ResumeDeps => ({ branchPattern: ()
 const check = (w: World, over: { repo?: string; unit?: UnitRef; workflow?: string; deps?: ResumeDeps } = {}): Promise<ResumeCheck> =>
 	resumeCheck(over.repo ?? w.recv, over.unit ?? w.unit(over.repo ?? w.recv), over.workflow !== undefined ? { workflow: over.workflow } : {}, over.deps ?? depsFor(w));
 const reason = (r: ResumeCheck): string => (r.kind === 'refused' || r.kind === 'nothing-to-resume' || r.kind === 'restart' ? r.reason : r.kind);
-const untouched = (dir: string): { refs: string; status: string; fetchHead: boolean } => ({ refs: git(dir, 'for-each-ref'), status: git(dir, 'status', '--porcelain', '--untracked-files=all'), fetchHead: existsSync(join(dir, '.git', 'FETCH_HEAD')) });
+/** What a check must leave as it was: the refs (but for the one private ref the handoff branch is fetched into), the status and FETCH_HEAD. */
+const untouched = (dir: string): { refs: string; status: string; fetchHead: boolean } => ({ refs: git(dir, 'for-each-ref').split('\n').filter(l => !l.includes('refs/remotes/insrc-handoff/')).join('\n'), status: git(dir, 'status', '--porcelain', '--untracked-files=all'), fetchHead: existsSync(join(dir, '.git', 'FETCH_HEAD')) });
 
 test('resumeCheck refuses an unregistered receiving path and a clone of a different repository before restoring anything, and refuses a moved upstream including the effective HLD and the Define', async () => {
 	const w = mkWorld();

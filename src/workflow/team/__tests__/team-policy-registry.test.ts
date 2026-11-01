@@ -14,17 +14,20 @@ import { _resetToolHooksForTests, registerToolHook } from '../../../daemon/tools
 import { _resetRegistryForTests } from '../../../daemon/tools/registry.js';
 import { runPolicyScenarios } from './helpers/policy-scenarios.js';
 import { newApi } from './helpers/new-policy-api.js';
+import { newHandoffApi } from './helpers/new-handoff-api.js';
 import { newSignoffApi } from './helpers/new-signoff-api.js';
+import { runHandoffScenarios } from './helpers/handoff-scenarios.js';
 import { runSignoffScenarios } from './helpers/signoff-scenarios.js';
 
 const SIGNOFF_TOOLS = ['git_rev_parse', 'git_rev_list', 'git_ls_remote'];
+const HANDOFF_TOOLS = ['git_status', 'git_cat_file', 'git_rev_list'];
 const GIT_TOOLS = ['git_rev_parse', 'git_remote', 'git_symbolic_ref', 'git_cat_file', 'git_ls_tree', 'git_for_each_ref', 'git_path_history'];
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 const calls: Array<{ tool: string; caller: string | undefined }> = [];
 beforeEach(() => {
 	_resetRegistryForTests(); _resetToolHooksForTests(); calls.length = 0;
-	for (const tool of new Set([...GIT_TOOLS, ...SIGNOFF_TOOLS, 'git_stage', 'git_commit', 'git_push', 'git_status', 'git_diff', 'git_log'])) registerToolHook({ id: `spy-${tool}`, toolId: tool, async run(ctx) { calls.push({ tool: ctx.toolId, caller: ctx.caller }); } });
+	for (const tool of new Set([...GIT_TOOLS, ...SIGNOFF_TOOLS, ...HANDOFF_TOOLS, 'git_stage', 'git_commit', 'git_push', 'git_status', 'git_diff', 'git_log'])) registerToolHook({ id: `spy-${tool}`, toolId: tool, async run(ctx) { calls.push({ tool: ctx.toolId, caller: ctx.caller }); } });
 });
 afterEach(() => { _resetToolHooksForTests(); });
 
@@ -76,4 +79,22 @@ test('team-policy-registry.test.ts: no runGit call remains in signoff.ts and bra
 		assert.ok(!/\brunGit(Async)?\(/.test(text), `${file} calls no runGit`);
 		assert.ok(!/execFileSync|execFile\(/.test(text), `${file} spawns nothing itself`);
 	}
+});
+
+test('team-policy-registry.test.ts: the handoff drafts, park plan and resume checks run through the registry and equal the old results', async () => {
+	const out = await runHandoffScenarios(newHandoffApi) as Record<string, any>;
+	const used = new Set(calls.map(c => c.tool));
+	for (const tool of HANDOFF_TOOLS) assert.ok(used.has(tool), `${tool} was called`);
+	assert.ok(calls.every(c => c.caller === 'workflow'), "the caller of every call is 'workflow'");
+	assert.deepEqual(out['the stage inferred from the committed artifacts'], { story0: 'design.story', epic0: 'design.epic', story1: 'plan', story2: 'complete', epic1: 'complete', uncommitted: 'design.story' });
+	assert.equal(out['draft files of a unit'].clean.length, 0);
+	assert.equal(out['draft files of a unit'].untracked.length, 2, "only the unit's own files, not another unit's or a note");
+	assert.equal(out['the receiving repository'].same.ok, true);
+	assert.equal(out['the receiving repository'].differs.ok, false);
+});
+
+test('team-policy-registry.test.ts: no runGit or runGitAsync call remains in handoff.ts', () => {
+	const text = readFileSync(join(SRC, 'handoff.ts'), 'utf8');
+	assert.ok(!/\brunGit(Async)?\(/.test(text), 'handoff.ts calls no runGit');
+	assert.ok(!/execFileSync|execFile\(|git-async/.test(text), 'handoff.ts spawns nothing itself and imports no async runner');
 });

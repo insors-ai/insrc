@@ -18,6 +18,7 @@ import type { MessagePort } from 'node:worker_threads';
 import { ConfigStore } from '../../config/store.js';
 import { getDb } from '../../db/client.js';
 import { listRepos } from '../../db/repos.js';
+import { cheapTierIgnoreModel } from '../../indexer/ignore-proposal-model.js';
 import { IndexerService } from '../../indexer/index.js';
 import { onIndexRunsChanged } from '../../indexer/run-record.js';
 import type { IndexRunView } from '../../indexer/run-record.js';
@@ -63,7 +64,8 @@ hub.onPush(SUMMARY_PORT_OP, port => {
 	if (summaries !== undefined) summaries.rebind(port as MessagePort);
 	else summaries = summaryRunner(port as MessagePort);
 });
-indexer = new IndexerService(db, queue, watcher, configStore);
+// A repository added with no root ignore file gets one from the cheap tier (Epic c2ba6fa6 s6/ac6).
+indexer = new IndexerService(db, queue, watcher, configStore, undefined, undefined, cheapTierIgnoreModel());
 // The running full indexes, for the under-index refusals answered on other threads.
 // A full index's status and completeness change as it starts (status 'indexing',
 // then its state unfinished before it counts its files) and as it ends, so the

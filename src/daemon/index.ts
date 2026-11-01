@@ -39,6 +39,7 @@ import { closeDuckDB } from './db/duckdb-pool.js';
 import { listRepos } from '../db/repos.js';
 import { Watcher } from '../indexer/watcher.js';
 import { IndexQueue } from './queue.js';
+import { cheapTierIgnoreModel } from '../indexer/ignore-proposal-model.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer, directDispatch } from './server.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
@@ -342,7 +343,7 @@ async function main(): Promise<void> {
 		const repos = await listRepos(db);
 		const watcher = new Watcher();
 		const indexQueue = new IndexQueue();
-		const indexerService = new IndexerService(db, indexQueue, watcher, configStore);
+		const indexerService = new IndexerService(db, indexQueue, watcher, configStore, undefined, undefined, cheapTierIgnoreModel());
 		await indexerService.start(repos);
 		queue = indexQueue;
 		indexer = indexerService;

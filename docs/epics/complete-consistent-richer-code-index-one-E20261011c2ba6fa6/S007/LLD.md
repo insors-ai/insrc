@@ -415,6 +415,8 @@ A new LMDB sub-database edge_evidence keyed like out_edge holds the byte; the tw
   - **resolved**: A. Confirm narrow: evidence only on find*/neighbour reads — User decision 2026-11-02: keep the reading. Walks (closure, unreachable, SCC, the repository closure) return entity sets with no single relationship per result; multi-hop callers already carry evidence per hop through findCallers. A best-chain rule for reachability can be added later as its own change on the stored data. _(2026-11-01T18:59:34.757Z)_
 - `q93e30dab` — NOTE (s8 cd3 partial): no new error type is introduced; an invalid evidence value is stored empty (reads 'unknown') and logged, never refused, following s1's never-drop rule.
   - **resolved**: Store-empty + log (as noted, complete the partial) — The approved LLD's behaviour: an invalid evidence value is stored empty (reads 'unknown') and logged at warn, never refused (s1's never-drop rule); no new error type. Default stated to the user 2026-11-02. _(2026-11-01T19:00:21.905Z)_
+- `q805d3c6a` — NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc1-sc3; the Epic constraints k1, k5 and k6 are the ones those criteria operationalize and were not scored separately.
+  - **resolved**: Accept as documented (note-only) — k1 is operationalized by ac1, ac2, ac4 and k5/k6 by ac3 (the DEF's own 'operationalizes' fields); a1 and a2 tie on every criterion, so scoring k1/k5/k6 separately cannot change the choice. Default stated to the user 2026-11-02, as for the same note on s2. _(2026-11-01T19:00:40.894Z)_
 
 ## Citations
 

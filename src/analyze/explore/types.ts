@@ -7,6 +7,7 @@ import type { Completeness, PartialFinding } from '../completeness.js';
 import type { ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+import type { RelationEvidence } from '../../shared/types.js';
 
 /**
  * Exploration types -- the vocabulary the decomposer emits and the
@@ -208,13 +209,21 @@ export interface SymbolLocateOutput {
 }
 
 /** Import-graph summary for a module or file. */
+/** A file on the other side of the target's imports: its edge count and how
+ *  many of those edges rest on each kind of evidence (Epic c2ba6fa6 s7). */
+export interface ImportGraphPeer {
+	readonly file:     string;
+	readonly edges:    number;
+	readonly evidence: Readonly<Partial<Record<RelationEvidence, number>>>;
+}
+
 export interface ImportGraphSummary {
 	readonly target:      string;
 	/** Top-K importers (files that import from `target`), ranked by
 	 *  edge count. */
-	readonly topImporters:   readonly { file: string; edges: number }[];
+	readonly topImporters:   readonly ImportGraphPeer[];
 	/** Top-K importees (files `target` imports from). */
-	readonly topImportees:   readonly { file: string; edges: number }[];
+	readonly topImportees:   readonly ImportGraphPeer[];
 	readonly totalInDegree:  number;
 	readonly totalOutDegree: number;
 }
@@ -304,6 +313,15 @@ export interface UsageExampleHit {
 	readonly startLine: number;
 	readonly endLine:   number;
 	readonly signature?: string;
+	/** How the CALLS relationship from this caller was established (Epic c2ba6fa6 s7). */
+	readonly evidence:  RelationEvidence;
+}
+
+/** How many listed relationships rest on each kind of evidence, and the
+ *  sentence an answer quotes (Epic c2ba6fa6 s7, ac4). */
+export interface EvidenceOrigin {
+	readonly counts: Readonly<Partial<Record<RelationEvidence, number>>>;
+	readonly note:   string;
 }
 
 export interface UsageExampleOutput {
@@ -318,6 +336,8 @@ export interface UsageExampleOutput {
 	 *  the runner couldn't uniquely resolve a name to an id. */
 	readonly targetEntityId?: string;
 	readonly callers:    readonly UsageExampleHit[];
+	/** How the listed callers' relationships were established (Epic c2ba6fa6 s7). */
+	readonly origin:     EvidenceOrigin;
 }
 
 /** Class-hierarchy record: one class + its supertypes / subtypes /
@@ -328,29 +348,33 @@ export interface ClassHierarchyNode {
 	readonly kind:      string;
 	readonly file:      string;
 	readonly startLine: number;
-	/** Direct supertypes (INHERITS out). */
+	/** Direct supertypes (INHERITS out). Each item carries how its relationship was established (s7). */
 	readonly extendsList:    readonly {
 		readonly entityId?: string;
 		readonly name:      string;
 		readonly file?:     string;
+		readonly evidence?: RelationEvidence;
 	}[];
 	/** Direct interfaces / mixins (IMPLEMENTS out). */
 	readonly implementsList: readonly {
 		readonly entityId?: string;
 		readonly name:      string;
 		readonly file?:     string;
+		readonly evidence?: RelationEvidence;
 	}[];
 	/** Direct subclasses (INHERITS in). */
 	readonly subclasses:     readonly {
 		readonly entityId:  string;
 		readonly name:      string;
 		readonly file:      string;
+		readonly evidence?: RelationEvidence;
 	}[];
 	/** Direct implementers (IMPLEMENTS in). */
 	readonly implementers:   readonly {
 		readonly entityId:  string;
 		readonly name:      string;
 		readonly file:      string;
+		readonly evidence?: RelationEvidence;
 	}[];
 }
 

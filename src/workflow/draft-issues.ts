@@ -106,7 +106,7 @@ export async function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = 
 		const noTasks = meta.workflow === 'plan' && tasksOf().length === 0;
 
 		const repoPath = meta.repoPath as string;
-		const policy = (deps.readPolicy ?? policyReader)(repoPath);
+		const policy = await (deps.readPolicy ?? policyReader)(repoPath);
 		if (!policy.ok) return notReady(unitKey(units[0]!), 'policy-unreadable', true, `the team policy cannot be read: ${policy.reason}`, []);
 		if (policy.value === 'none' || !policy.value.teamMode) return { status: 'not-applicable', reason: 'no-team-policy' };
 

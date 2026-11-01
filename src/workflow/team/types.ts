@@ -49,7 +49,14 @@ export interface TeamPolicy extends PolicyFile {
 	};
 }
 
-export type PolicyReader = (repo: string) => PolicyResult<TeamPolicy | 'none'>;
+/**
+ * What a reader may be given. No production caller passes a signal yet (the audit of Story s9 task t5), so it stays optional;
+ * a reader that has none ignores it.
+ */
+export interface PolicyReadOptions { readonly signal?: AbortSignal | undefined }
+
+/** A value or a Promise: the production reader answers asynchronously (Story s9), a test fake may answer at once. */
+export type PolicyReader = (repo: string, opts?: PolicyReadOptions) => PolicyResult<TeamPolicy | 'none'> | Promise<PolicyResult<TeamPolicy | 'none'>>;
 
 /** What a successful refresh found on the default branch. */
 export type PolicyRefreshOutcome =

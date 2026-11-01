@@ -116,7 +116,7 @@ test('settleSignoff completes the Story and its Epic once signed-off is recorded
 
 		// the BUILD is approved and held; it is submitted for signoff, which keeps the Story open
 		await approveBuild(k, svc);
-		assert.equal(signoffHoldsCompletion(k.repo, STORY), true);
+		assert.equal((await signoffHoldsCompletion(k.repo, STORY)), true);
 		await svc.apply(BUILD, 'open-signoff', bob, { request: signoffReferenceOf({ ref: 'acme/demo#9' }) });
 		assert.equal((await k.store.read(BUILD)).lifecycle.status, 'in-signoff');
 		assert.equal((await k.store.read(STORY)).lifecycle.status, 'draft');

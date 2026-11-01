@@ -40,7 +40,7 @@ const head = (status: string, over: { revision?: number; approvedAt?: string; si
 	},
 });
 
-test('signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule', () => {
+test('signoffRecordsOf derives sc5 records from lifecycle facts, groups by the ref read from entityId, and grandfathers by the shared rule', async () => {
 	const heads = {
 		'LLD-a3f4b8c9d1e2f3a4-s1': head('signed-off', { signoffs: [signoff(1, 'acme/demo#9', 'completed', '2026-07-02T00:00:00Z')] }),
 		'BUILD-a3f4b8c9d1e2f3a4-s1': head('signed-off', { signoffs: [signoff(1, 'acme/demo#9', 'completed', '2026-07-03T00:00:00Z')] }),
@@ -48,7 +48,7 @@ test('signoffRecordsOf derives sc5 records from lifecycle facts, groups by the r
 	const read = (_repo: string, id: string): unknown => (heads as Record<string, unknown>)[id];
 	const readPolicy: PolicyReader = () => ({ ok: true, value: policy() });
 
-	const records = signoffRecordsOf('/repo', STORY, { readPolicy, readHead: read });
+	const records = (await signoffRecordsOf('/repo', STORY, { readPolicy, readHead: read }));
 	assert.equal(records.length, 1, 'one request covers both artifacts');
 	assert.deepEqual(records[0]?.request, { ref: 'acme/demo#9' });
 	assert.deepEqual(records[0]?.artifacts.map(a => a.artifactId).sort(), ['BUILD-a3f4b8c9d1e2f3a4-s1', 'LLD-a3f4b8c9d1e2f3a4-s1']);
@@ -71,7 +71,7 @@ test('signoffRecordsOf derives sc5 records from lifecycle facts, groups by the r
 	assert.deepEqual(signoffRecordsFromHeads(policy({ anchorKnown: false }), [old]), []);
 
 	// no policy, or no team mode: no records
-	assert.deepEqual(signoffRecordsOf('/repo', STORY, { readPolicy: () => ({ ok: true, value: 'none' }), readHead: read }), []);
+	assert.deepEqual((await signoffRecordsOf('/repo', STORY, { readPolicy: () => ({ ok: true, value: 'none' }), readHead: read })), []);
 });
 
 test('the request Reference round trip keeps the ref and never changes the Reference type', () => {

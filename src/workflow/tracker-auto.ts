@@ -130,20 +130,20 @@ export function _setAutoPushDepsForTests(deps: AutoPushDeps = {}): void { testDe
 type Mode = 'individual' | 'team' | { readonly failed: string };
 
 /** Team mode when the repo's policy turns it on, else individual mode. The two share one push path; they differ only in how Task issues are chosen. */
-function pickMode(repoPath: string, deps: AutoPushDeps): Mode {
-	const p = (deps.policy ?? policyReader)(repoPath);
+async function pickMode(repoPath: string, deps: AutoPushDeps): Promise<Mode> {
+	const p = await (deps.policy ?? policyReader)(repoPath);
 	if (!p.ok) return { failed: `the team policy cannot be read: ${p.reason}` };
 	return p.value !== 'none' && p.value.teamMode ? 'team' : 'individual';
 }
 
-function modeFor(meta: MetaShape, deps: AutoPushDeps): Mode {
+async function modeFor(meta: MetaShape, deps: AutoPushDeps): Promise<Mode> {
 	return typeof meta.repoPath === 'string' ? pickMode(meta.repoPath, deps) : 'individual';
 }
 
 export async function autoPushEpicOnHld(hldJsonPath: string): Promise<AutoPushResult> {
 	const deps = testDeps;
 	const meta = readMeta(hldJsonPath);
-	const mode = modeFor(meta, deps);
+	const mode = await modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
 	return await guardedPush(async () => await pushEpic(hldJsonPath, meta, deps));
 }
@@ -151,7 +151,7 @@ export async function autoPushEpicOnHld(hldJsonPath: string): Promise<AutoPushRe
 export async function autoPushStoryOnLld(lldJsonPath: string): Promise<AutoPushResult> {
 	const deps = testDeps;
 	const meta = readMeta(lldJsonPath);
-	const mode = modeFor(meta, deps);
+	const mode = await modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
 	return await guardedPush(async () => await pushStory(lldJsonPath, meta, deps));
 }
@@ -159,7 +159,7 @@ export async function autoPushStoryOnLld(lldJsonPath: string): Promise<AutoPushR
 export async function autoPushTasksOnPlan(planJsonPath: string): Promise<AutoPushResult> {
 	const deps = testDeps;
 	const meta = readMeta(planJsonPath);
-	const mode = modeFor(meta, deps);
+	const mode = await modeFor(meta, deps);
 	if (typeof mode === 'object') return { status: 'failed', reason: mode.failed };
 	return await guardedPush(async () => await pushTasks(planJsonPath, meta, deps, mode));
 }

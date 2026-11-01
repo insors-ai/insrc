@@ -37,7 +37,7 @@ function inject(p: TeamPolicy | 'none', heads: Record<string, unknown>): void {
 	_setSignoffDepsForTests({ readPolicy: () => ({ ok: true, value: p }), readHead: (_repo, id) => heads[id] });
 }
 
-test('signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed', () => {
+test('signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is not signed off and for an Epic whose listed DEF or HLD is not, false for a grandfathered pre-anchor member when anchorKnown is true, true for it when anchorKnown is false, and false outside team mode, with no policy, or with no member stage listed', async () => {
 	const lld = `LLD-${EPIC}-s1`;
 	const build = `BUILD-${EPIC}-s1`;
 	const def = `DEF-${EPIC}`;
@@ -45,39 +45,39 @@ test('signoffHoldsCompletion is true for a Story whose listed LLD or BUILD is no
 
 	// a Story: the BUILD is approved and not signed off
 	inject(policy(), { [lld]: head('signed-off'), [build]: head('approved') });
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), true, 'a listed BUILD that is not signed off holds the Story');
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), true, 'a listed BUILD that is not signed off holds the Story');
 	inject(policy(), { [lld]: head('approved'), [build]: head('signed-off') });
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), true, 'a listed LLD that is not signed off holds the Story');
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), true, 'a listed LLD that is not signed off holds the Story');
 	inject(policy(), { [lld]: head('signed-off'), [build]: head('signed-off') });
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), false, 'every listed member is signed off');
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), false, 'every listed member is signed off');
 
 	// an Epic: DEF and HLD
 	inject(policy(), { [def]: head('signed-off'), [hld]: head('approved') });
-	assert.equal(signoffHoldsCompletion('/repo', EPIC_ID), true);
+	assert.equal((await signoffHoldsCompletion('/repo', EPIC_ID)), true);
 	inject(policy(), { [def]: head('signed-off'), [hld]: head('signed-off') });
-	assert.equal(signoffHoldsCompletion('/repo', EPIC_ID), false);
+	assert.equal((await signoffHoldsCompletion('/repo', EPIC_ID)), false);
 
 	// a pre-anchor member: grandfathered when the anchor is known, held when it is not
 	const old = { [lld]: head('approved', '2026-05-01T00:00:00Z'), [build]: head('signed-off') };
 	inject(policy({ anchorKnown: true }), old);
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), false);
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), false);
 	inject(policy({ anchorKnown: false }), old);
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), true);
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), true);
 
 	// outside team mode, with no policy, or with no member stage listed
 	const unsigned = { [lld]: head('approved'), [build]: head('approved') };
 	inject(policy({ teamMode: false }), unsigned);
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), false);
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), false);
 	inject(policy({ claimsEnforced: false }), unsigned);
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), false);
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), false);
 	inject('none', unsigned);
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), false);
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), false);
 	inject(policy({ signoffStages: ['DEF', 'HLD'] }), unsigned);
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), false, 'LLD and BUILD are not listed');
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), false, 'LLD and BUILD are not listed');
 
 	// a member with no artifact yet, and a unit that is neither a Story nor an Epic
 	inject(policy(), {});
-	assert.equal(signoffHoldsCompletion('/repo', STORY_ID), false);
-	assert.equal(signoffHoldsCompletion('/repo', `TASK-${EPIC}-s1-t1`), false);
-	assert.equal(signoffHoldsCompletion('/repo', 'not-an-id'), false);
+	assert.equal((await signoffHoldsCompletion('/repo', STORY_ID)), false);
+	assert.equal((await signoffHoldsCompletion('/repo', `TASK-${EPIC}-s1-t1`)), false);
+	assert.equal((await signoffHoldsCompletion('/repo', 'not-an-id')), false);
 });

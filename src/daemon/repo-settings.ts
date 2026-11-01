@@ -106,10 +106,10 @@ export async function mapSignin(read: () => PortResult<string> | Promise<PortRes
 	return { state: result.kind, reason: result.reason };
 }
 
-function mapPolicy(read: PolicyReader, repo: string): PolicyRows {
-	let result: ReturnType<PolicyReader>;
+async function mapPolicy(read: PolicyReader, repo: string): Promise<PolicyRows> {
+	let result: Awaited<ReturnType<PolicyReader>>;
 	try {
-		result = read(repo);
+		result = await read(repo);
 	} catch (e) {
 		return { ok: false, reason: (e as Error).message };
 	}
@@ -181,7 +181,7 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 		const signin: SigninStatus = resolved.type === 'github'
 			? await mapSignin(() => makeTracker(resolved.owner ?? '', resolved.repo ?? '').whoAmI())
 			: { state: 'disabled', reason: 'the tracker is off for this repo' };
-		return { ok: true, payload: { repo, values: ownValues(read.entry), resolved, signin, policy: mapPolicy(readPolicy, repo) } };
+		return { ok: true, payload: { repo, values: ownValues(read.entry), resolved, signin, policy: await mapPolicy(readPolicy, repo) } };
 	}
 
 	const asData = (r: WriteResult | { ok: false; error: RepoSettingsError }): { ok: false; error: RepoSettingsError } | null =>

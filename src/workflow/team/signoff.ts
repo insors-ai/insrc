@@ -30,7 +30,7 @@ import { resolveUnitIssueLocal } from '../tracker/unit-issue.js';
 import { registerCompletionHook, TeamGateRefusedError, type GateOutcome, type GuardedAction } from './gate.js';
 import { runGit } from './git.js';
 import { pickRemote, policyReader, remoteHeadBranch } from './policy-reader.js';
-import type { PolicyResult, SignoffStage, TeamPolicy } from './types.js';
+import type { PolicyReader, PolicyResult, SignoffStage, TeamPolicy } from './types.js';
 
 const log = getLogger('team-signoff');
 
@@ -207,7 +207,7 @@ export function stageArtifactId(unit: UnitRef, stage: SignoffStage): string | un
 
 /** What reading a unit's heads and the policy needs, injectable for tests. */
 export interface SignoffDeps {
-	readonly readPolicy?: ((repo: string) => PolicyResult<TeamPolicy | 'none'>) | undefined;
+	readonly readPolicy?: PolicyReader | undefined;
 	readonly readHead?:   ((repo: string, artifactId: string) => unknown | undefined) | undefined;
 	readonly loadTracker?:   ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort>) | undefined;
 	/** The issue recorded for a unit, or null. */
@@ -271,8 +271,8 @@ export function headsOfUnit(repo: string, unit: UnitRef, deps: SignoffDeps = {})
 }
 
 /** The SignoffRecords of a unit's heads (none outside team mode or with no policy). */
-export function signoffRecordsOf(repo: string, unit: UnitRef, deps: SignoffDeps = {}): SignoffRecord[] {
-	const policy = (deps.readPolicy ?? testDeps.readPolicy ?? policyReader)(repo);
+export async function signoffRecordsOf(repo: string, unit: UnitRef, deps: SignoffDeps = {}): Promise<SignoffRecord[]> {
+	const policy = await (deps.readPolicy ?? testDeps.readPolicy ?? policyReader)(repo);
 	if (!policy.ok || policy.value === 'none') return [];
 	return signoffRecordsFromHeads(policy.value, headsOfUnit(repo, unit, deps));
 }
@@ -282,8 +282,8 @@ export function signoffRecordsOf(repo: string, unit: UnitRef, deps: SignoffDeps 
 // ---------------------------------------------------------------------------
 
 /** The team policy when signoff applies at all: team mode with claims enforced; undefined otherwise or when the policy cannot be read. */
-function teamPolicyOf(repo: string, deps: SignoffDeps): TeamPolicy | undefined {
-	const policy = (deps.readPolicy ?? testDeps.readPolicy ?? policyReader)(repo);
+async function teamPolicyOf(repo: string, deps: SignoffDeps): Promise<TeamPolicy | undefined> {
+	const policy = await (deps.readPolicy ?? testDeps.readPolicy ?? policyReader)(repo);
 	if (!policy.ok || policy.value === 'none' || !policy.value.teamMode || !policy.value.claimsEnforced) return undefined;
 	return policy.value;
 }
@@ -296,10 +296,10 @@ const refused = (reason: string): GateOutcome => ({ kind: 'refused', reason });
  * null when nothing blocks (no policy, a stage the policy does not list, no artifact yet, or a head that is signed off or
  * grandfathered). It reads the policy and the followed stage's head and never writes or touches a tracker.
  */
-export function blockedBySignoff(repo: string, unit: UnitRef, action: GuardedAction, authoring?: string, deps: SignoffDeps = {}): GateOutcome | null {
+export async function blockedBySignoff(repo: string, unit: UnitRef, action: GuardedAction, authoring?: string, deps: SignoffDeps = {}): Promise<GateOutcome | null> {
 	const followed = followedStageOf(action, authoring, unit);
 	if (followed === null) return null;
-	const policy = teamPolicyOf(repo, deps);
+	const policy = await teamPolicyOf(repo, deps);
 	if (policy === undefined || !policy.signoffStages.includes(followed.stage)) return null;
 	const artifactId = stageArtifactId(followed.unit, followed.stage);
 	if (artifactId === undefined) return null;
@@ -322,9 +322,9 @@ export function blockedBySignoff(repo: string, unit: UnitRef, action: GuardedAct
  * The sc4 completion hook: the blockedBySignoff answer for author and build; open-signoff, revise and release always continue,
  * so a submission and its retry never meet the hook's own refusal. The tracker port is not used: the decision is read-only.
  */
-export function signoffCompletionHook(repo: string, unit: UnitRef, _port: unknown, action: GuardedAction, authoring?: string): GateOutcome | 'continue' {
+export async function signoffCompletionHook(repo: string, unit: UnitRef, _port: unknown, action: GuardedAction, authoring?: string): Promise<GateOutcome | 'continue'> {
 	if (action !== 'author' && action !== 'build') return 'continue';
-	return blockedBySignoff(repo, unit, action, authoring) ?? 'continue';
+	return (await blockedBySignoff(repo, unit, action, authoring)) ?? 'continue';
 }
 
 /** Register the signoff hook in this process; the daemon and the terminal each run the gate, so each registers it. */
@@ -340,10 +340,10 @@ function listedHeads(repo: string, unit: UnitRef, policy: TeamPolicy, deps: Sign
  * Does signoff hold this unit's completion? True for a Story whose listed LLD or BUILD, or an Epic whose listed DEF or HLD, is
  * neither signed off nor grandfathered. Always false outside team mode, with no policy or for another unit. Reads only.
  */
-export function signoffHoldsCompletion(repo: string, unitId: string, deps: SignoffDeps = {}): boolean {
+export async function signoffHoldsCompletion(repo: string, unitId: string, deps: SignoffDeps = {}): Promise<boolean> {
 	const key = ArtifactIds.parse(unitId);
 	if (key === undefined || (key.kind !== 'STORY' && key.kind !== 'EPIC')) return false;
-	const policy = teamPolicyOf(repo, deps);
+	const policy = await teamPolicyOf(repo, deps);
 	if (policy === undefined) return false;
 	const unit: UnitRef = key.kind === 'STORY' && key.story !== undefined
 		? { unit: 'story', repoPath: repo, epicHash: key.epicHash, storyId: key.story }
@@ -451,7 +451,7 @@ function prerequisiteFailure(repo: string, unit: UnitRef, artifactId: string, st
  */
 export async function openSignoff(repo: string, unit: UnitRef, artifactIds: readonly string[], deps: SignoffDeps = {}): Promise<PortResult<SignoffRequestRef>> {
 	const d: SignoffDeps = { ...testDeps, ...deps };
-	const policy = teamPolicyOf(repo, d);
+	const policy = await teamPolicyOf(repo, d);
 	if (policy === undefined) return rejected('this repository does not use team signoff (no team policy, or team mode and claims are not enforced)');
 	const artifacts = submissionArtifacts(repo, unit, artifactIds, policy, d);
 	if (!artifacts.ok) return artifacts;
@@ -637,7 +637,7 @@ function completionIdOf(unit: UnitRef): string | undefined {
  */
 export async function settleSignoff(repo: string, unit: UnitRef, deps: SignoffDeps = {}): Promise<readonly string[]> {
 	const d: SignoffDeps = { ...testDeps, ...deps };
-	const policy = teamPolicyOf(repo, d);
+	const policy = await teamPolicyOf(repo, d);
 	if (policy === undefined) return [];
 	const service = (d.lifecycleFor ?? lifecycleProvider ?? ((r: string) => createRepoLifecycle(r).service))(repo);
 	const problems: string[] = [];
@@ -717,6 +717,6 @@ export async function settleForAttempt(repo: string, unit: UnitRef, action: Guar
 	const followed = followedStageOf(action, authoring, unit);
 	if (followed === null) return;
 	await settleSignoff(repo, followed.unit, deps);
-	const blocked = blockedBySignoff(repo, unit, action, authoring, deps);
+	const blocked = await blockedBySignoff(repo, unit, action, authoring, deps);
 	if (blocked !== null && blocked.kind !== 'allowed') throw new TeamGateRefusedError(blocked);
 }

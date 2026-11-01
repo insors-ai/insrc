@@ -168,7 +168,7 @@ export type TeamContext =
  */
 export async function claimsEnforcedFor(repo: string): Promise<'yes' | 'no' | string> {
 	try {
-		const policy = (testDeps.readPolicy ?? policyReader)(repo);
+		const policy = await (testDeps.readPolicy ?? policyReader)(repo);
 		if (!policy.ok) return `the team policy cannot be read: ${policy.reason}`;
 		return policy.value !== 'none' && policy.value.teamMode && policy.value.claimsEnforced ? 'yes' : 'no';
 	} catch (err) { return `the team policy cannot be read: ${errorText(err)}`; }
@@ -215,7 +215,7 @@ function authoredArtifactExists(unit: UnitRef, authoring: string | undefined): b
  * created (the gate's usual behaviour) unless `createIssue` is false, for a read that must not write to the tracker.
  */
 export async function teamContext(repo: string, unit: UnitRef, opts: { readonly createIssue?: boolean | undefined } = {}): Promise<TeamContext> {
-	const policy = (testDeps.readPolicy ?? policyReader)(repo);
+	const policy = await (testDeps.readPolicy ?? policyReader)(repo);
 	if (!policy.ok) return { ok: false, outcome: refused(`the team policy cannot be read: ${policy.reason}`) };
 	if (policy.value === 'none' || !policy.value.teamMode || !policy.value.claimsEnforced) return { ok: true, team: false };
 

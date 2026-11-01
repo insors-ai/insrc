@@ -16,7 +16,7 @@ import {
 	repoConfigPath,
 	resolveRepoIgnore,
 } from '../repo-ignore-config.js';
-import { IGNORE_DIRS } from '../watcher.js';
+import { IGNORE_DIRS } from '../repo-ignore-config.js';
 
 function withRepo(fn: (dir: string) => void): void {
 	const dir = mkdtempSync(join(tmpdir(), 'insrc-ign-'));

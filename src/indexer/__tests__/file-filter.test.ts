@@ -287,6 +287,18 @@ test('ac8: proposeIgnoreFile given a repo whose root ignore file already exists 
 	}
 });
 
+test('includes() answers false (not a throw) for a path outside repoPath, e.g. one reported under a different symlink resolution of a temp dir', () => {
+	const repo = mkdtempSync(join(tmpdir(), 'file-filter-outside-'));
+	try {
+		writeFileSync(join(repo, 'a.ts'), 'x', 'utf8');
+		const f = createFileFilter(repo);
+		assert.doesNotThrow(() => f.includes('/some/completely/unrelated/path.ts'));
+		assert.equal(f.includes('/some/completely/unrelated/path.ts'), false);
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
 // ---------------------------------------------------------------------------
 // Error path 3 — git ls-files fails: tracked-file override degrades to
 // empty, filter still works from ignore-file rules alone

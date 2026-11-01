@@ -26,8 +26,15 @@ import { join } from 'node:path';
 import { getLogger } from '../shared/logger.js';
 import { projectConfigBase } from '../config/paths.js';
 import { writeAtomic } from '../workflow/storage.js';
-import { IGNORE_DIRS } from './watcher.js';
 import { detectRepoType, repoTypeIgnoreDirs } from './repo-type.js';
+
+/** Retired by Epic c2ba6fa6 s6/t7 from `watcher.ts` (FileFilter is the one
+ *  rule now); kept here, local to this module, only because this whole
+ *  file is itself removed in Story s6/t9. */
+export const IGNORE_DIRS = [
+	'node_modules', '.git', 'dist', 'build', 'out', '__pycache__',
+	'.venv', 'venv', '.env', '.next', '.nuxt', 'vendor', 'target', '.insrc',
+];
 
 const log = getLogger('repo-ignore-config');
 

@@ -65,10 +65,10 @@ import { BOUNDARY_RELATION_KINDS, zeroPending } from '../db/graph/pending-class.
 import type { PendingClass } from '../db/graph/codec.js';
 import { readIndexState } from '../db/index-state.js';
 import type { SourceRoots } from './source-roots.js';
-import { selectFile } from './file-selection.js';
+import { selectFile, type FileSelection } from './file-selection.js';
 import { resolveImportPath } from './resolver.js';
 import { listExportNames } from '../db/export-names.js';
-import { resolveRepoIgnore } from './repo-ignore-config.js';
+import { createFileFilter } from './file-filter.js';
 
 const log = getLogger('cross-file-resolver');
 
@@ -233,13 +233,17 @@ async function runPass0(opts: CrossFileResolveOpts, mode: CrossFileMode, index: 
  * 'full' mode classes the repository's rows, 'settle' mode the committed files'.
  */
 async function classifyFileTargets(opts: CrossFileResolveOpts, mode: CrossFileMode): Promise<void> {
-  const ignore = resolveRepoIgnore(opts.repoRoot);
+  // FileFilter is the one rule now (Epic c2ba6fa6 s6); selectFile's own
+  // ignore check is bypassed here (empty list) so the ignore decision
+  // below comes from the same filter the full walk and file event use.
+  const filter = createFileFilter(opts.repoRoot);
   const updates: { id: string; meta: Record<string, unknown> }[] = [];
   for (const row of await rowsInScope({ ...opts, scopeFile: undefined }, mode)) {
     const target = row.meta['targetFile'];
     if (row.meta['awaitsId'] !== true || typeof target !== 'string') continue;
     if (await entityU64ForId(row.rawTo) !== undefined) continue;
-    const selection = selectFile(target, opts.repoRoot, ignore);
+    const rawSelection = selectFile(target, opts.repoRoot, []);
+    const selection: FileSelection = rawSelection === 'not-code' ? 'not-code' : (filter.includes(target) ? 'selected' : 'excluded-by-ignore');
     const meta = selection === 'not-code'
       ? { class: 'no-candidate', reason: 'target-not-code' }
       : { class: 'awaiting-target', reason: selection === 'excluded-by-ignore' ? 'target-excluded-by-ignore' : 'target-not-committed' };

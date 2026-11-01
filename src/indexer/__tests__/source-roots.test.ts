@@ -200,6 +200,28 @@ describe('detectSourceRoots -- Python with src/ layout', () => {
 	});
 });
 
+describe('detectSourceRoots -- ac2: a package directory named like an old built-in bare name is no longer hidden', () => {
+	let repo: string;
+
+	before(() => {
+		repo = mkRepo('py-target');
+		// 'target' was in source-roots.ts's own old PY_IGNORE bare-name list
+		// (Epic c2ba6fa6 s6). No .gitignore names it, so FileFilter includes
+		// it (ac2) and detection walks into it like any other directory.
+		writeFile(repo, 'target/mypkg/__init__.py');
+	});
+
+	after(() => {
+		try { rmSync(repo, { recursive: true, force: true }); } catch { /* ignore */ }
+	});
+
+	it("walks into a 'target' directory FileFilter includes and finds the package under it", () => {
+		const roots = detectSourceRoots(repo);
+		assert.ok(roots.python.some(r => r.endsWith('/target')),
+			`expected <repo>/target in: ${roots.python.join(', ')}`);
+	});
+});
+
 // ---------------------------------------------------------------------------
 // Go -- go.mod module declaration
 // ---------------------------------------------------------------------------

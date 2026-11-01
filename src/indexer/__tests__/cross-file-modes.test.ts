@@ -171,6 +171,10 @@ test('the pass after an index clean-up changes neither fullIndexFinished nor the
 });
 
 test('after a full index, rows awaiting a file are classed by the selection rule: not code is no-candidate, an ignored source file and a source file not stored stay awaiting with their reason', async () => {
+	// Epic c2ba6fa6 s6: FileFilter is the one rule now, taken from the
+	// repo's real ignore files -- name the rule this test exercises instead
+	// of relying on the retired universal bare-name default.
+	write('.gitignore', '/build/\n');
 	write('assets/logo.png', 'png');
 	write('vendor/lib.min.js', 'var a=1;');
 	write('data/big.json', `{"a":"${'x'.repeat(256 * 1024 + 1)}"}`);

@@ -317,6 +317,10 @@ export function createFileFilter(repoPath: string): FileFilter {
 			try { isDir = statSync(abs).isDirectory(); } catch { /* path may not exist yet */ }
 			if (isDir) return false;   // not tracked, no recorded included descendant: empty of included content
 			const rel = relative(absRepo, abs).split(sep).join('/');
+			// A path outside repoPath (e.g. a watcher event reported under a
+			// different resolution of a symlinked temp dir than absRepo) is
+			// never included -- `ignore` throws on a `..`-escaping pathname.
+			if (rel === '' || rel.startsWith('../') || rel.startsWith('..\\')) return false;
 			return !state.ig.ignores(rel);
 		},
 		listFiles(): string[] {

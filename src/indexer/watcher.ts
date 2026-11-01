@@ -5,17 +5,6 @@ export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
 export type EventHandler = (events: FileEvent[]) => void;
 
-/** Directories to ignore during watching and file-walking.
- *  `out` is a build-output dir (insrc itself builds to `out/`, alongside the
- *  common `dist`/`build`), and `.insrc` holds daemon-managed per-repo artifacts
- *  (LLD/review markdown, config, index state). Neither is source — indexing +
- *  watching them re-triggers doc-summarisation on every build / workflow-run,
- *  which floods the queue. See the doc-summariser churn diagnosis. */
-export const IGNORE_DIRS = [
-  'node_modules', '.git', 'dist', 'build', 'out', '__pycache__',
-  '.venv', 'venv', '.env', '.next', '.nuxt', 'vendor', 'target', '.insrc',
-];
-
 const DEBOUNCE_MS = 200;
 
 /**
@@ -40,11 +29,11 @@ export class Watcher {
   }
 
   /** Start watching a repo directory. Idempotent. `filter` (Epic c2ba6fa6
-   *  s6) is the repo's FileFilter — every emitted event is checked against
-   *  it before reaching a handler, so the watcher agrees with the full walk
-   *  and the single file event. A config dir (no FileFilter: it is not an
-   *  indexed repository) keeps the universal `IGNORE_DIRS` native-ignore
-   *  guard instead, unfiltered otherwise. */
+   *  s6) is the repo's FileFilter — the one rule for what the index holds;
+   *  every emitted event is checked against it before reaching a handler,
+   *  so the watcher agrees with the full walk and the single file event. A
+   *  config dir (no FileFilter: it is not an indexed repository, and is
+   *  small and daemon-managed) is unfiltered. */
   async addRepo(repoPath: string, filter?: FileFilter): Promise<void> {
     if (this.subscriptions.has(repoPath)) return;
 
@@ -60,7 +49,7 @@ export class Watcher {
         }
         this.scheduleDrain();
       },
-      { ignore: filter === undefined ? [...IGNORE_DIRS] : [] },
+      { ignore: [] },
     );
 
     this.subscriptions.set(repoPath, sub);

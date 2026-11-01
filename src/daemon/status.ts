@@ -68,7 +68,9 @@ export function queueStatusFromBoard(indexing: IndexingStatus): { queueDepth: nu
 			{
 				index: { depth: indexing.index.depth, running: indexing.index.processing },
 				summary: { depth: indexing.summary.depth, running: indexing.summary.processing },
-				...(indexing.backfill !== undefined && { backfill: { depth: indexing.backfill.depth, running: indexing.backfill.processing } }),
+				// This daemon always has the backfill lane: idle until the worker first
+				// publishes it, as the single-thread queue's laneStatus reports it.
+				backfill: { depth: indexing.backfill?.depth ?? 0, running: indexing.backfill?.processing ?? false },
 			},
 			indexing.sweep,
 		),

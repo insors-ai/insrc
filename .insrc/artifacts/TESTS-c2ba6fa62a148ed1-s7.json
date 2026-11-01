@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s7",
+    "createdAt": "2026-11-01T19:07:14.344Z",
+    "updatedAt": "2026-11-01T19:07:14.344Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "71b4348d2",
+        "ranAt": "2026-11-01T19:07:14.344Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "evidence codec round-trip and unknown decoding",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/evidence-codec.test.ts",
+                "title": "s7 t1: every evidence value round-trips through the edge-row codec; unknown is the empty value and the others are one distinct byte",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/evidence-codec.test.ts",
+                "title": "s7 t1: an empty value, 0x00 and a byte no value uses decode to unknown; a string that is not a value encodes empty and is reported invalid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/evidence-codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 499,
+            "titles": [
+              {
+                "title": "s7 t1: every evidence value round-trips through the edge-row codec; unknown is the empty value and the others are one distinct byte",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t1: an empty value, 0x00 and a byte no value uses decode to unknown; a string that is not a value encodes empty and is reported invalid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

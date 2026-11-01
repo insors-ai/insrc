@@ -21789,6 +21789,10 @@
    "sites": [
     [
      "storage-call",
+     "(await import('./lance/entity-vec.js')).listEntityVecIds"
+    ],
+    [
+     "storage-call",
      "activeEmbeddingModel"
     ],
     [
@@ -22121,10 +22125,6 @@
     ],
     [
      "storage-call",
-     "deleteEntityVecsByIds"
-    ],
-    [
-     "storage-call",
      "deleteEntityVecsForRepo"
     ],
     [
@@ -22134,6 +22134,22 @@
     [
      "storage-call",
      "deleteUnresolvedForFileCascade"
+    ],
+    [
+     "storage-call",
+     "deleteVectorsInChunks"
+    ],
+    [
+     "storage-call",
+     "deleteVectorsInChunks"
+    ],
+    [
+     "storage-call",
+     "deleteVectorsInChunks"
+    ],
+    [
+     "storage-call",
+     "deleteVectorsInChunks"
     ],
     [
      "storage-call",
@@ -22576,10 +22592,6 @@
      "import"
     ],
     [
-     "unresolved-call",
-     "import"
-    ],
-    [
      "storage-call",
      "incomingEdgesInTxn"
     ],
@@ -22624,10 +22636,6 @@
      "lance.deleteEntityVecsByIds"
     ],
     [
-     "storage-call",
-     "lance.listEntityVecIds"
-    ],
-    [
      "serialization",
      "lance.writeEntityEmbedding"
     ],
@@ -22646,6 +22654,14 @@
     [
      "diagnostic",
      "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
     ],
     [
      "diagnostic",
@@ -23337,6 +23353,14 @@
     ],
     [
      "storage-call",
+     "vectorWriter"
+    ],
+    [
+     "storage-call",
+     "vectorWriter"
+    ],
+    [
+     "storage-call",
      "withReadTxn"
     ],
     [
@@ -23396,9 +23420,9 @@
      "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 402,
-   "sitesDigest": "f8a92f5ba59194b3f5b5909ec94051fb218400872ba01e420c61462e0fd7bd49",
-   "sourceDigest": "b8e5f64f268d13f5eb8c91d20aae02d5efe3a3765ae45334c15078bd51a40453",
+   "siteCount": 408,
+   "sitesDigest": "8c69ab1c9255ecc4476121efad230f11af2e410e1a5e92f3a32a3cf566045e6b",
+   "sourceDigest": "7e67619b51b456fe4998a6ba01846b0b73cdca7caae6ff299f656f7365766016",
    "boundaries": [
     "diagnostic",
     "serialization",

@@ -293,11 +293,19 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 }
 
 /** The vector writes this module makes; a test puts a failing one in front of the real table. */
-type VectorWriter = Pick<typeof import('./lance/entity-vec.js'), 'addEntityEmbeddings' | 'writeEntityEmbeddings' | 'writeEntityEmbedding'>;
-let vectorWriterForTest: VectorWriter | undefined;
-/** Test seam: the vector writer commitFile, upsertEntities and updateEmbedding use (undefined: the real table). */
-export function _setVectorWriterForTest(writer: VectorWriter | undefined): void { vectorWriterForTest = writer; }
-async function vectorWriter(): Promise<VectorWriter> { return vectorWriterForTest ?? await import('./lance/entity-vec.js'); }
+type VectorWriter = Pick<typeof import('./lance/entity-vec.js'), 'addEntityEmbeddings' | 'writeEntityEmbeddings' | 'writeEntityEmbedding' | 'deleteEntityVecsByIds'>;
+let vectorWriterForTest: Partial<VectorWriter> | undefined;
+/** Test seam: the vector writes and deletes commitFile, upsertEntities, updateEmbedding and the reconciliation use; the methods given replace the real table's (undefined: the real table). */
+export function _setVectorWriterForTest(writer: Partial<VectorWriter> | undefined): void { vectorWriterForTest = writer; }
+async function vectorWriter(): Promise<VectorWriter> {
+	const real = await import('./lance/entity-vec.js');
+	return vectorWriterForTest === undefined ? real : { ...real, ...vectorWriterForTest };
+}
+/** Ids per vector delete: a long IN-list stalls Lance's predicate planner (see writeEntityEmbeddings). */
+const VECTOR_DELETE_CHUNK = 500;
+async function deleteVectorsInChunks(lance: VectorWriter, ids: readonly string[]): Promise<void> {
+	for (let i = 0; i < ids.length; i += VECTOR_DELETE_CHUNK) await lance.deleteEntityVecsByIds(ids.slice(i, i + VECTOR_DELETE_CHUNK));
+}
 
 /** One entity whose vector is written after its row commits. */
 interface VectorWrite {
@@ -332,7 +340,13 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 	try {
 		const adds    = writes.filter(w => w.isNew).map(w => rowOf(w.entity));
 		const upserts = writes.filter(w => !w.isNew).map(w => rowOf(w.entity));
-		if (adds.length > 0)    await lance.addEntityEmbeddings(adds);
+		// The plain add needs the ids to have no row: a vector can outlive its
+		// entity (a failed removal delete, a backfill write racing a removal), so
+		// any rows stored for these ids go first (ISSUE-8c7d75b0). One row per id.
+		if (adds.length > 0) {
+			await deleteVectorsInChunks(lance, adds.map(r => r.id));
+			await lance.addEntityEmbeddings(adds);
+		}
 		if (upserts.length > 0) await lance.writeEntityEmbeddings(upserts);
 	} catch (err) {
 		log.warn(
@@ -342,11 +356,13 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 		return writes.length;
 	}
 	const model = activeEmbeddingModel();
+	const gone: string[] = [];
 	try {
 		await withWriteTxn(s => {
+			gone.length = 0;
 			for (const w of writes) {
 				const u64 = lookupU64ByStringId(s, w.entity.id);
-				if (u64 === undefined) continue;
+				if (u64 === undefined) { gone.push(w.entity.id); continue; }
 				const row = readEntityRowSync(s, u64);
 				if (row === null || row.embeddingModel !== '') continue;
 				putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: model });
@@ -359,10 +375,20 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 		);
 		return writes.length;
 	}
+	// A vector written for an entity no longer stored (removed by the index lane
+	// while the backfill embedded it) is deleted, so it cannot become an orphan
+	// that a later add of the same id would sit beside (ISSUE-8c7d75b0).
+	if (gone.length > 0) {
+		try {
+			await deleteVectorsInChunks(lance, gone);
+		} catch (err) {
+			log.warn({ count: gone.length, err: err instanceof Error ? err.message : String(err) },
+				`${who}: deleting vectors of entities removed meanwhile failed -- the start-time reconciliation deletes them`);
+		}
+	}
 	return 0;
 }
 
-/** The model a stored marker names: the configured embedding model. */
 /**
  * The backfill's write (Epic c2ba6fa6 s2): one batch's vectors in ONE upsert
  * (an entity with an empty marker may still have a vector from an interrupted
@@ -376,6 +402,7 @@ export async function writeBackfillVectors(entities: readonly Entity[]): Promise
 	return writeVectorsThenMarkers(entities.filter(e => e.embedding.length > 0).map(entity => ({ entity, isNew: false })), 'backfill');
 }
 
+/** The model a stored marker names: the configured embedding model. */
 function activeEmbeddingModel(): string {
 	return loadLocalProviderConfig().embeddingModel;
 }
@@ -568,9 +595,16 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 		}).generation;
 	});
 	// After LMDB commits, drop Lance rows for the removed entities.
+	// A failure is logged, not thrown: the graph commit stands, a later add of
+	// these ids deletes any row first, and the start-time reconciliation deletes
+	// the orphans (ISSUE-8c7d75b0).
 	if (toLanceDelete.length > 0) {
-		const { deleteEntityVecsByIds } = await import('./lance/entity-vec.js');
-		await deleteEntityVecsByIds(toLanceDelete);
+		try {
+			await deleteVectorsInChunks(await vectorWriter(), toLanceDelete);
+		} catch (err) {
+			log.warn({ count: toLanceDelete.length, file: filePath, err: err instanceof Error ? err.message : String(err) },
+				'commitFile: vector delete for removed entities failed after the graph commit -- left for the start-time reconciliation');
+		}
 	}
 	// The vectors of the written entities, then their markers.
 	const vectorsOutstanding = await writeVectorsThenMarkers(vectorWrites, 'commitFile');
@@ -593,32 +627,40 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
  * a later plain add for a re-allocated id cannot meet it; an entity whose
  * marker says embedded but whose vector is missing (a store written before
  * the marker order changed, or a vector store reset) has its marker cleared,
- * which counts it unembedded for the backfill.
+ * which counts it unembedded for the backfill. An id stored more than once
+ * (ISSUE-8c7d75b0) has every row deleted and its entity's marker cleared, so
+ * the backfill writes exactly one row for it.
  */
-export async function reconcileEntityVectors(): Promise<{ orphanVectorsDeleted: number; markersCleared: number }> {
+export async function reconcileEntityVectors(): Promise<{ orphanVectorsDeleted: number; markersCleared: number; duplicateIdsRepaired: number }> {
 	assertNoSessionPersistence();
-	const lance = await import('./lance/entity-vec.js');
-	const vectorIds = new Set(await lance.listEntityVecIds());
+	const lance = await vectorWriter();
+	const rowsPerId = new Map<string, number>();
+	for (const id of await (await import('./lance/entity-vec.js')).listEntityVecIds()) rowsPerId.set(id, (rowsPerId.get(id) ?? 0) + 1);
 	const storedIds = new Set<string>();
 	let markersCleared = 0;
+	const duplicated: string[] = [];
 	await withWriteTxn(s => {
+		markersCleared = 0;
+		duplicated.length = 0;
 		for (const { key, value } of s.entity.getRange()) {
 			const u64 = decodeKeyU64(key as Buffer);
 			const id = lookupStringIdByU64(s, u64);
 			if (id === undefined) continue;
 			storedIds.add(id);
+			const rows = rowsPerId.get(id) ?? 0;
+			if (rows > 1) duplicated.push(id);
 			const row = decodeEntityRow(value as Buffer);
-			if (row.embeddingModel === '' || vectorIds.has(id)) continue;
+			if (row.embeddingModel === '' || rows === 1) continue;
 			putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: '' });
-			markersCleared++;
+			if (rows === 0) markersCleared++;
 		}
 	});
-	const orphans = [...vectorIds].filter(id => !storedIds.has(id));
-	for (let i = 0; i < orphans.length; i += 500) await lance.deleteEntityVecsByIds(orphans.slice(i, i + 500));
-	if (orphans.length > 0 || markersCleared > 0) {
-		log.info({ orphanVectorsDeleted: orphans.length, markersCleared }, 'graph and vector table reconciled');
+	const orphans = [...rowsPerId.keys()].filter(id => !storedIds.has(id));
+	await deleteVectorsInChunks(lance, [...orphans, ...duplicated]);
+	if (orphans.length > 0 || markersCleared > 0 || duplicated.length > 0) {
+		log.info({ orphanVectorsDeleted: orphans.length, markersCleared, duplicateIdsRepaired: duplicated.length }, 'graph and vector table reconciled');
 	}
-	return { orphanVectorsDeleted: orphans.length, markersCleared };
+	return { orphanVectorsDeleted: orphans.length, markersCleared, duplicateIdsRepaired: duplicated.length };
 }
 
 export async function deleteEntitiesForFile(_db: DbClient, filePath: string): Promise<void> {

@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1793564577215-c37otb",
+    "runId": "cr-1793565797848-rpqljr",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-01T20:22:51.345Z",
+    "createdAt": "2026-11-01T20:43:11.889Z",
     "model": "claude:claude-sonnet-5",
-    "elapsedMs": 219511,
+    "elapsedMs": 266483,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "17123b6d304af2a2",
@@ -17,11 +17,11 @@
       "epicHash": "17123b6d304af2a2",
       "storyId": "s1",
       "author": "controller",
-      "sourceDigest": "c506ca893081be2bd4daf29d87e71fa2b52d2b54b0fd1c9dd25fcb08de67cd5a",
+      "sourceDigest": "a550063163ad3b1d237e5c1094e4da233173a278f510fd2769f83bbb263d941d",
       "contractDigest": "48835960b6ce54069c92a0c2f16120135503b016262bfb2dacb9eb24401a338d",
-      "buildDigest": "132b7c699a1f083ed0fc695125c64f174a25a546aa14dc1a62ca8070315c312f",
-      "testsDigest": "c3960bc54867e4df8eb79c6fe1f5ce9fd25b7dd1c59180e254c1536c571f9732",
-      "digest": "89b8ac579f73deeb9e48582e38f0900aa2ad4b5dff8be69d99067988f2bc4c95"
+      "buildDigest": "69a7c1f07f11a47a431eb5ca4a651a4778870d78cfe6b14df76a0b71264e6fc0",
+      "testsDigest": "4bc2425e9cd2cd9dd3051d15366d8e47d21918fa11c331373f3d91cfa8333574",
+      "digest": "10f996db5a7ec55ed0086ecb5719767c929dd6ee4b91fe6f331f3364b16541b5"
     },
     "reviewInputSchemaVersion": 1,
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
@@ -72,7 +72,15 @@
     "dimensions": [
       {
         "dimension": "adherence",
-        "findings": []
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "packages/project-memory/src/index.ts",
+            "message": "index.ts declares its own `interface MemoryFactory` (entity 841094) distinct from the `MemoryFactory` interface already owned by sc1/sc2 in types.ts (entity 840897). The LLD specifies sc1/sc2 as ONE versioned public type model owned by this Story, with 'Public signature names follow the HLD; pure import and supplied-resource ownership are preserved' — the public entry should re-export/import the single types.ts-defined MemoryFactory, not redeclare a second interface of the same name. If the two declarations diverge (e.g. index.ts's version omitting or changing the `open` signature), consumers importing from the package root vs internal modules could observe incompatible shapes, undermining the single-source-of-truth contract for sc1.",
+            "expectationRef": "hldContextSlice.ownedContracts[0] (sc1) interactionWithShared howDetails: 'Owns public host types... Public signature names follow the HLD; pure import and supplied-resource ownership are preserved.'"
+          }
+        ]
       },
       {
         "dimension": "conventions",
@@ -88,15 +96,16 @@
           {
             "dimension": "quality",
             "severity": "MED",
-            "location": "packages/project-memory/src/ownership.ts:1001",
-            "message": "acquireOwnership fans out to 7 distinct callees (loadNative, errno, classifyLayout, assertFile, checkIdentity, initializeLayout, closeDescriptor) — far more than any other function in the changed set. It mixes native-lock acquisition, layout branching (new vs existing), two different validation paths, and fd cleanup in one routine, making it hard to reason about which cleanup/error path runs for each branch. Consider splitting the new-layout and existing-layout branches into separate helpers so each path's error handling is locally verifiable.",
+            "location": "packages/project-memory/src/ownership.ts",
+            "message": "lockDescriptor calls assertRoot and assertFile directly and then also calls checkIdentity, which itself calls assertRoot and assertFile internally — the same root/file validation pair is performed twice per lock attempt instead of lockDescriptor simply delegating to checkIdentity.",
+            "counterpartRef": "checkIdentity",
             "confidence": "observation"
           },
           {
             "dimension": "quality",
-            "severity": "MED",
-            "location": "packages/project-memory/src/host-node.ts:1",
-            "message": "host-node.ts calls prepareRoot(options) and then acquireOwnership(root, ...) as two separate top-level steps, but both independently call classifyLayout on the same root. Between the two calls another process could initialize the layout (classifyLayout is also reached from ownership.test.ts's initializeLayout/acquireOwnership paths), so the 'new' vs 'existing' decision prepareRoot's caller relies on can disagree with the one acquireOwnership re-derives moments later, and the redundant stat/metadata read is also wasted work on the happy path.",
+            "severity": "LOW",
+            "location": "packages/project-memory/src/model-dispatcher.ts",
+            "message": "Queue/timeout/abort handling is spread across 8 interacting private methods on two classes (ModelDispatcher#kick/#enqueue/#cancelQueued and ModelCall#arm/#cleanup/#fail/cancel/start), with two independent paths into #fail (via cancel() from stop()/arm(), and directly from start()); this is hard to verify as correct from the signatures alone and is a candidate for simplifying into a single failure path.",
             "confidence": "observation"
           }
         ]
@@ -110,7 +119,7 @@
     "counts": {
       "high": 0,
       "med": 2,
-      "low": 0
+      "low": 1
     }
   }
 }

@@ -7,7 +7,7 @@
 > tsc -p tsconfig.json
 
 [check-model-definitions] model definitions v1 valid (/Users/subhagho/work/projects/insors/insrc/src/assets/models)
-[20:36:21] INFO: [daemon:model-catalog] model definitions validated
+[20:51:21] INFO: [daemon:model-catalog] model definitions validated
     module: "daemon:model-catalog"
     dir: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
     version: 1

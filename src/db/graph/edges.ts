@@ -14,13 +14,23 @@
 import {
 	encodeOutEdgePrefix,
 	encodeInEdgePrefix,
+	kindByteToName,
 	prefixSuccessor,
 	RELATION_KIND_BYTE,
 	type RelationKind,
 } from './keys.js';
+import { decodeEvidence } from './codec.js';
+import type { RelationEvidence } from '../../shared/types.js';
 import { getGraphStore, type GraphStore } from './store.js';
 
 export type EdgeDirection = 'out' | 'in';
+
+/** One stored relationship as the withEvidence neighbour reads return it (Epic c2ba6fa6 s7). */
+export interface NeighborRelation {
+	readonly u64:      bigint;
+	readonly kind:     RelationKind;
+	readonly evidence: RelationEvidence;
+}
 
 export interface NeighborOpts {
 	/**
@@ -79,37 +89,50 @@ export function compileKindFilter(
 
 /**
  * Materialise the 1-hop outgoing neighbours of `from` as a deduped
- * array of u64 IDs, optionally filtered by relation kind.
+ * array of u64 IDs, optionally filtered by relation kind. With
+ * `withEvidence: true` it returns instead one row per stored relationship
+ * (not deduped across kinds) with its kind and the evidence its row holds
+ * (Epic c2ba6fa6 s7).
  *
  * For traversals (BFS / DFS / closure / SCC) prefer the iterator from
  * `neighborsSync` so per-step memory stays bounded.
  */
-export async function outNeighbors(
-	from: bigint,
-	opts: NeighborOpts = {},
-): Promise<bigint[]> {
-	const store = await getGraphStore();
-	const kinds = compileKindFilter(opts.kindFilter);
-	const seen = new Set<bigint>();
-	const out: bigint[] = [];
-	for (const n of neighborsSync(store, from, 'out', kinds)) {
-		if (seen.has(n)) continue;
-		seen.add(n);
-		out.push(n);
-	}
-	return out;
+export async function outNeighbors(from: bigint, opts?: NeighborOpts): Promise<bigint[]>;
+export async function outNeighbors(from: bigint, opts: NeighborOpts & { readonly withEvidence: true }): Promise<NeighborRelation[]>;
+export async function outNeighbors(from: bigint, opts: NeighborOpts & { readonly withEvidence?: boolean } = {}): Promise<bigint[] | NeighborRelation[]> {
+	return neighbors(from, 'out', opts);
 }
 
 /** Mirror of `outNeighbors` for incoming edges. */
-export async function inNeighbors(
-	to: bigint,
-	opts: NeighborOpts = {},
-): Promise<bigint[]> {
+export async function inNeighbors(to: bigint, opts?: NeighborOpts): Promise<bigint[]>;
+export async function inNeighbors(to: bigint, opts: NeighborOpts & { readonly withEvidence: true }): Promise<NeighborRelation[]>;
+export async function inNeighbors(to: bigint, opts: NeighborOpts & { readonly withEvidence?: boolean } = {}): Promise<bigint[] | NeighborRelation[]> {
+	return neighbors(to, 'in', opts);
+}
+
+async function neighbors(
+	at: bigint,
+	direction: EdgeDirection,
+	opts: NeighborOpts & { readonly withEvidence?: boolean },
+): Promise<bigint[] | NeighborRelation[]> {
 	const store = await getGraphStore();
 	const kinds = compileKindFilter(opts.kindFilter);
+	if (opts.withEvidence === true) {
+		const prefix = direction === 'out' ? encodeOutEdgePrefix(at) : encodeInEdgePrefix(at);
+		const db = direction === 'out' ? store.outEdge : store.inEdge;
+		const rows: NeighborRelation[] = [];
+		for (const { key, value } of db.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+			const k = key as Buffer;
+			const kind = k.readUInt8(8);
+			if (kinds !== null && !kinds.has(kind)) continue;
+			// Both rows of a relationship hold the same evidence byte (s7).
+			rows.push({ u64: k.readBigUInt64BE(9), kind: kindByteToName(kind), evidence: decodeEvidence(value as Buffer) });
+		}
+		return rows;
+	}
 	const seen = new Set<bigint>();
 	const out: bigint[] = [];
-	for (const n of neighborsSync(store, to, 'in', kinds)) {
+	for (const n of neighborsSync(store, at, direction, kinds)) {
 		if (seen.has(n)) continue;
 		seen.add(n);
 		out.push(n);

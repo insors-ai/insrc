@@ -24047,7 +24047,7 @@
     ],
     [
      "storage-call",
-     "compileKindFilter"
+     "db.getRange"
     ],
     [
      "storage-call",
@@ -24055,6 +24055,22 @@
     ],
     [
      "serialization",
+     "decodeEvidence"
+    ],
+    [
+     "storage-call",
+     "decodeEvidence"
+    ],
+    [
+     "serialization",
+     "encodeInEdgePrefix"
+    ],
+    [
+     "serialization",
+     "encodeInEdgePrefix"
+    ],
+    [
+     "storage-call",
      "encodeInEdgePrefix"
     ],
     [
@@ -24066,6 +24082,14 @@
      "encodeOutEdgePrefix"
     ],
     [
+     "serialization",
+     "encodeOutEdgePrefix"
+    ],
+    [
+     "storage-call",
+     "encodeOutEdgePrefix"
+    ],
+    [
      "storage-call",
      "encodeOutEdgePrefix"
     ],
@@ -24075,11 +24099,15 @@
     ],
     [
      "storage-call",
-     "getGraphStore"
+     "kindByteToName"
     ],
     [
      "storage-call",
-     "neighborsSync"
+     "neighbors"
+    ],
+    [
+     "storage-call",
+     "neighbors"
     ],
     [
      "storage-call",
@@ -24088,11 +24116,15 @@
     [
      "storage-call",
      "prefixSuccessor"
+    ],
+    [
+     "storage-call",
+     "prefixSuccessor"
     ]
    ],
-   "siteCount": 12,
-   "sitesDigest": "91a8c2f6e9e146379f810a08ccdbd9081f337bcab4aa102bd52f41f5cfe95e71",
-   "sourceDigest": "c60322391fe46f100611c656ea61e87304edc967086121dbb112e8750b4f2ff1",
+   "siteCount": 20,
+   "sitesDigest": "5b6aa5dd80f2fc06fdd7a3edfc445e82c0cc4ab3d86af1ac6dfdcfcd22427fcc",
+   "sourceDigest": "2c2732a916f4b470ac391d0fbc89ba3c56399a09c331b5239e5292e035a36f71",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -29164,7 +29196,7 @@
    ],
    "siteCount": 39,
    "sitesDigest": "35ad3cbc1c8618434791d5ad1e47e4b7aa240f6fd0ebda3eaba36a0cc1aa4d00",
-   "sourceDigest": "84dd540981fb65e65a076c58c6b291414e5d3cc36c2c8be7c7be5b43d0ad41a7",
+   "sourceDigest": "04f7ec38b51d71616859b6e6e988dabc07594d22ba1581b50322907b73f5189a",
    "boundaries": [
     "diagnostic",
     "storage-call",

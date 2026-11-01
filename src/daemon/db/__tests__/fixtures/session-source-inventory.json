@@ -23217,6 +23217,14 @@
     ],
     [
      "storage-call",
+     "trackUnembeddedInTxn"
+    ],
+    [
+     "storage-call",
+     "trackUnembeddedInTxn"
+    ],
+    [
+     "storage-call",
      "UnregisteredRepoError"
     ],
     [
@@ -23296,9 +23304,9 @@
      "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 377,
-   "sitesDigest": "fb14f9c250bbc3a8f3d6f41a5a15b4d27dc4999f377a2a9b8b6603545bf9736f",
-   "sourceDigest": "2b6e89c75b37c007c0f832b0a6dd75aefe53e8321d614483dfb10f57c910135a",
+   "siteCount": 379,
+   "sitesDigest": "df6d4511b68bbda45328e012bce21ba885a67c894d8df25c36e8fcdd6bf61f85",
+   "sourceDigest": "fa34a9365dca8a47b7297d0e798041042f5ca89cbf199a94a3a7cca13cdc9c24",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -23989,6 +23997,14 @@
     ],
     [
      "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "storage-call",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
      "decodeIndexStateRow"
     ],
     [
@@ -24045,6 +24061,30 @@
     ],
     [
      "storage-call",
+     "isUnembeddedRow"
+    ],
+    [
+     "storage-call",
+     "isUnembeddedRow"
+    ],
+    [
+     "storage-call",
+     "isUnembeddedRow"
+    ],
+    [
+     "storage-call",
+     "isUnembeddedRow"
+    ],
+    [
+     "storage-call",
+     "isUnembeddedRow"
+    ],
+    [
+     "storage-call",
+     "putIndexStateRowInTxn"
+    ],
+    [
+     "storage-call",
      "putIndexStateRowInTxn"
     ],
     [
@@ -24054,6 +24094,14 @@
     [
      "storage-call",
      "recountPending"
+    ],
+    [
+     "storage-call",
+     "recountUnembedded"
+    ],
+    [
+     "storage-call",
+     "s.entity.getRange"
     ],
     [
      "storage-call",
@@ -24109,12 +24157,24 @@
     ],
     [
      "storage-call",
+     "updateIndexStateRowInTxn"
+    ],
+    [
+     "storage-call",
+     "updateIndexStateRowInTxn"
+    ],
+    [
+     "storage-call",
+     "updateIndexStateRowInTxn"
+    ],
+    [
+     "storage-call",
      "zeroPending"
     ]
    ],
-   "siteCount": 36,
-   "sitesDigest": "16cbebbf78028fcb7e3cca2b10d49a340842e7a19d64de1e7988949cfee4c852",
-   "sourceDigest": "205559e9a9a80f117dd41481a0be6cfd9cc452e67641025472ff78f5227d371b",
+   "siteCount": 49,
+   "sitesDigest": "ea133e7068b11b2f3ee1ae162507fae5e6a313b13eba564c96b399fc20497f30",
+   "sourceDigest": "d6b65cced386dea1130ad858ae66f978677deea315c938ee84fecc6b0fbc45c9",
    "boundaries": [
     "serialization",
     "storage-call"

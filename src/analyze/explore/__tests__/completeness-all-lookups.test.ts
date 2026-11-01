@@ -606,8 +606,9 @@ test('s1/t16: the five relationship lookups report notEstablished with the reaso
 
 test('s1/t16: the executor sets the repository completeness at all three context constructions (executePlan, and stepPlan for a narrow and a deterministic lookup); none for an unregistered repository', async () => {
 	// Make the repository's index complete, so the context carries a record a lookup can tell from an absent one.
+	// No embedding backend runs in this test: say so, as the backfill records it (Epic c2ba6fa6 s2).
 	const repoId = (await lookupRepoId(REPO))!;
-	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, row => { row.fullIndexFinished = true; }); });
+	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, row => { row.fullIndexFinished = true; row.embeddingAvailable = false; }); });
 	const expected = completenessOf(await readIndexState(REPO));
 	assert.equal(expected.complete, true);
 

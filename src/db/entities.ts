@@ -72,7 +72,7 @@ import {
 	SHARED_MODULES_NAMESPACE_BY_LANG,
 	SHARED_MODULES_REPO_ID,
 } from '../shared/repo-namespaces.js';
-import { updateIndexStateRowInTxn } from './graph/index-state-rows.js';
+import { trackUnembeddedInTxn, updateIndexStateRowInTxn } from './graph/index-state-rows.js';
 import { loadLocalProviderConfig } from '../config/local.js';
 import { carryDocSummariesInTxn, deleteCarriedDocSummariesInTxn, deleteDocSummaryInTxn } from './doc-summaries.js';
 
@@ -1144,6 +1144,7 @@ export function putEntityRowInTxn(
 	s.entity.put(encodeEntityKey(u64), encodeEntityRow(next));
 	rewireNameIndexInTxn(s, u64, prev, next);
 	rewireEntityByFileInTxn(s, u64, prev, next);
+	trackUnembeddedInTxn(s, prev, next);
 }
 
 /**
@@ -1158,6 +1159,7 @@ export function removeEntityRowInTxn(s: GraphStore, u64: bigint, row: EntityRow)
 	);
 	s.entityByFile.remove(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
 	s.entity.remove(encodeEntityKey(u64));
+	trackUnembeddedInTxn(s, row, null);
 }
 
 // GUARD-TEST-BOUNDARY: entity-row write path ends.

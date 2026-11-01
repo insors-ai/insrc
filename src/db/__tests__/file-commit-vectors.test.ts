@@ -17,7 +17,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
-import { closeGraphStore, setGraphStorePath } from '../graph/store.js';
+import { closeGraphStore, getGraphStore, setGraphStorePath, withWriteTxn } from '../graph/store.js';
+import { updateIndexStateRowInTxn } from '../graph/index-state-rows.js';
+import { completenessOf, readIndexState } from '../index-state.js';
+import { lookupRepoId } from '../repos.js';
 import { _setVectorWriterForTest, commitFile, getEntity, updateEmbedding } from '../entities.js';
 import { searchEntityVecs } from '../lance/entity-vec.js';
 import { addRepo } from '../repos.js';
@@ -115,3 +118,52 @@ test('t5: updateEmbedding writes the vector before the marker: a refused vector 
 	assert.equal(await marker(a.id), MODEL);
 	assert.equal(await vectorRows(a.id, vec(8)), 1);
 });
+
+// ---------------------------------------------------------------------------
+// t6: the unembedded count
+// ---------------------------------------------------------------------------
+
+async function finishedState(): Promise<void> {
+	const repoId = (await lookupRepoId(REPO))!;
+	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, row => { row.fullIndexFinished = true; }); });
+}
+
+test('t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero', async () => {
+	await finishedState();
+	const [a, b] = [entity('a', { vector: vec(11) }), entity('b', { vector: vec(12) })];
+	await withRefusedVectorWrites(() => commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [a, b], relations: [] }));
+
+	let state = await readIndexState(REPO);
+	assert.equal(state?.unembedded, 2);
+	assert.equal(completenessOf(state).complete, false);
+	assert.ok(completenessOf(state).reasons.includes('2 entities have no vector'), completenessOf(state).reasons.join('; '));
+
+	await updateEmbedding(null, a.id, vec(11), MODEL);
+	await updateEmbedding(null, b.id, vec(12), MODEL);
+	state = await readIndexState(REPO);
+	assert.equal(state?.unembedded, 0);
+	assert.equal(completenessOf(state).complete, true, completenessOf(state).reasons.join('; '));
+});
+
+test('t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted', async () => {
+	const endpoint = { ...entity('endpoint'), body: '' };
+	const coded = entity('coded');   // a body, no vector yet
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [endpoint, coded], relations: [] });
+	assert.equal((await readIndexState(REPO))?.unembedded, 1);
+
+	// Removing the file takes its counted entity out of the count again.
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: null, entities: [], relations: [] });
+	assert.equal((await readIndexState(REPO))?.unembedded, 0);
+});
+
+test('t6: the recount when the store opens corrects a wrong stored count', async () => {
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [entity('a'), entity('b')], relations: [] });
+	const repoId = (await lookupRepoId(REPO))!;
+	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, row => { row.unembedded = 7; }); });
+
+	await closeGraphStore();
+	setGraphStorePath(join(dir, 'graph.lmdb'));
+	await getGraphStore();
+	assert.equal((await readIndexState(REPO))?.unembedded, 2);
+});
+

@@ -1,7 +1,6 @@
 import type { MemoryFactory as FactoryContract, MemoryOptions } from './types.js';
 import { MemoryError } from './errors.js';
-import { validateOptions, validateRuntime, prepareRoot } from './configuration.js';
-import { loadNative } from './native.js';
+import { validateOptions } from './configuration.js';
 import { acquireOwnership } from './ownership.js';
 import { ModelDispatcher } from './model-dispatcher.js';
 import { EmbeddedMemoryService } from './runtime.js';
@@ -9,10 +8,7 @@ import { EmbeddedMemoryService } from './runtime.js';
 export const MemoryFactory: FactoryContract = Object.freeze({
   async open(options: MemoryOptions) {
     const config = validateOptions(options);
-    validateRuntime();
-    const root = await prepareRoot(config);
-    const native = await loadNative();
-    const owner = await acquireOwnership(root, native);
+    const owner = await acquireOwnership(config);
     try { return new EmbeddedMemoryService(owner, new ModelDispatcher(config.models, config.limits.modelTimeoutMs), config.logger); }
     catch {
       // A cleanup failure takes priority: ownership release is then unverified.

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T15:20:26.985Z",
+    "updatedAt": "2026-11-01T15:27:13.358Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -810,6 +810,77 @@
               },
               {
                 "title": "Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and never delays a file job queued after it; its lane is published",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "6c2a9620d",
+        "ranAt": "2026-11-01T15:27:13.358Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "IndexerService.reembed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10 (ac3): after a commit whose vector write failed, the backfill queued at start writes the vectors, sets the markers and the repository reads complete",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10: a backend that returns no vectors records embeddingAvailable false and the job does not fail",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10: the backfill is queued after a full index and after a clean-up",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "listUnembeddedEntities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10: listUnembeddedEntities selects the repository's entities with a body and no marker -- never an empty body, an embedded entity or another repository's",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/backfill.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1344,
+            "titles": [
+              {
+                "title": "t10 (ac3): after a commit whose vector write failed, the backfill queued at start writes the vectors, sets the markers and the repository reads complete",
+                "result": "pass"
+              },
+              {
+                "title": "t10: a backend that returns no vectors records embeddingAvailable false and the job does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "t10: the backfill is queued after a full index and after a clean-up",
+                "result": "pass"
+              },
+              {
+                "title": "t10: listUnembeddedEntities selects the repository's entities with a body and no marker -- never an empty body, an embedded entity or another repository's",
                 "result": "pass"
               }
             ],

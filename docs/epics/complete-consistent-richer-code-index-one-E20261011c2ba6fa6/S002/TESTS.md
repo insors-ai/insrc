@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -191,3 +191,27 @@ Run at 2026-11-01T15:20:26.985Z on commit `4741a5bb6`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/__tests__/queue-code-index-work.test.ts` | 0 | 2 | 0.6 s |  |
 | `src/daemon/__tests__/queue-lanes.test.ts` | 0 | 8 | 0.5 s |  |
+
+## t10
+
+Run at 2026-11-01T15:27:13.358Z on commit `6c2a9620d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: IndexerService.reembed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t10 (ac3): after a commit whose vector write failed, the backfill queued at start writes the vectors, sets the markers and the repository reads complete | `src/indexer/__tests__/backfill.test.ts` |
+| pass | t10: a backend that returns no vectors records embeddingAvailable false and the job does not fail | `src/indexer/__tests__/backfill.test.ts` |
+| pass | t10: the backfill is queued after a full index and after a clean-up | `src/indexer/__tests__/backfill.test.ts` |
+
+**integration: listUnembeddedEntities**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t10: listUnembeddedEntities selects the repository's entities with a body and no marker -- never an empty body, an embedded entity or another repository's | `src/indexer/__tests__/backfill.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/backfill.test.ts` | 0 | 4 | 1.3 s |  |

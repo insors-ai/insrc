@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T15:20:26.985Z",
+    "updatedAt": "2026-11-01T15:27:13.358Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -46,9 +46,13 @@
       {
         "id": "t9",
         "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
       }
     ],
-    "summary": "reembed jobs run in a third IndexQueue lane ('backfill') beside the index lane (user decision); the lane is published on the status board as an optional backfill slot and counted in daemon.status queue depth / idle and the indexing port. Queue, thread and status suites pass.",
+    "summary": "reembed becomes the vector backfill: by-repo selection of non-empty-body rows with an empty marker, batched embed, vector-then-marker writes under the active model, embeddingAvailable recorded; queued at start, after a full index and after a clean-up.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
     },
@@ -58,191 +62,198 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-types.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/entities.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-vectors.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/indexer/embedder.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/graph/index-state-rows.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/cross-file-modes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/full-index-rebuild.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/lance/entity-vec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/delete-entities-by-id.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/db/index-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/file-refresh.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/reconcile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/queue-lanes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/daemon/status.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/indexing-port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/status-board.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T15:20:26.985Z"
+        "timestamp": "2026-11-01T15:27:13.358Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/backfill.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T15:27:13.358Z"
       }
     ],
-    "commit": "4741a5bb6"
+    "commit": "6c2a9620d"
   }
 }

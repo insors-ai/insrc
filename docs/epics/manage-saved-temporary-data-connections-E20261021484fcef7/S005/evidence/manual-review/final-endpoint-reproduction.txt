@@ -1,0 +1,10 @@
+https:user:pw@host/ => Kotlin-equivalent=true
+https:///user:pw@host => Kotlin-equivalent=true
+https:\\user:pw@host => Kotlin-equivalent=true
+https://host/#a#b => Kotlin-equivalent=false
+https://host/?q=  => Kotlin-equivalent=false
+"https:user:pw@host/" TypeScript=rejected
+"https:///user:pw@host" TypeScript=rejected
+"https:\\\\user:pw@host" TypeScript=rejected
+"https://host/#a#b" TypeScript=accepted
+"https://host/?q= " TypeScript=accepted

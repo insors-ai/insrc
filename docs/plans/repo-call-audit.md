@@ -43,7 +43,7 @@ The rule covers writes under a user repository. `config.*`, `keys.*`, `session.*
 | `workflow.approvePipeline` | `repo` | `artifactPath` |  | approve-pipeline.ts runs the approval, the task reconciliation and the follow-ons (publish, attach, check-in) in the repository; repo from handler-runtime.ts:456 falls back to INSRC_REPO |
 | `workflow.resolveComment` | `repo` | — |  | resolve-comment.ts:134-165 records resolutions in the artifact JSON found by artifactJsonPath(repoPath, artifactId); repo falls back to INSRC_REPO |
 | `workflow.resolveFinding` | `repoPath` | — |  | team-review-handlers.ts:87 resolves a review finding on an artifact; today it answers reviewUnavailable, the contract is kept |
-| `workflow.review` | `repo` | `artifactPath` |  | workflow-review-rpc.ts reviews an existing design artifact and stamps meta.review; the daemon review is unavailable today, the contract is kept |
+| `workflow.review` | `repo` | `artifactPath` |  | workflow-review-rpc.ts reviews an existing design artifact and records the review in its lifecycle; the daemon review is unavailable today, the contract is kept |
 | `workflow.reviewArtifact` | `repoPath` | `artifactPath` |  | team-review-handlers.ts:81-84 reviews and stamps an artifact; today it answers reviewUnavailable, the contract is kept |
 | `workflow.reviewDecision` | `repo` | `mdPath` |  | review-decision.ts:65-70 records a decision and feedback entries through the repository's services; repo falls back to INSRC_REPO |
 | `workflow.run` | `repo` | — |  | workflow-rpc.ts:376,418-420 runs a workflow end to end and writes its artifacts into the repository; repo falls back to INSRC_REPO |

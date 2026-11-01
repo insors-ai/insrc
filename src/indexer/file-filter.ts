@@ -34,12 +34,14 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import ignore from 'ignore';
 
 import { getLogger } from '../shared/logger.js';
+import type { CompletionOpts, LLMMessage, LLMResponse } from '../shared/types.js';
+import { detectRepoType, repoTypeIgnoreDirs } from './repo-type.js';
 
 type Ignore = ReturnType<typeof ignore>;
 
@@ -350,3 +352,87 @@ export function refreshFileFilter(filter: FileFilter, changedIgnoreFile: string)
 }
 
 export { walk as _walkForFileFilter, trackedSetsFor as _trackedSetsFor };
+
+// ---------------------------------------------------------------------------
+// proposeIgnoreFile
+// ---------------------------------------------------------------------------
+
+/** The narrow slice of `LLMProvider` (`shared/types.ts`) `proposeIgnoreFile`
+ *  needs — any real cheap-tier provider satisfies this structurally, with
+ *  no adapter. */
+export interface CheapTierModel {
+	complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>;
+}
+
+export interface IgnoreFileProposal {
+	readonly written: boolean;
+	readonly source: 'model' | 'fallback';
+	readonly reason?: string;
+}
+
+/** The universal base entries every repo gets, written when a repo has no
+ *  root ignore file and the model proposal is unavailable or unusable. */
+function fallbackIgnoreContent(repoPath: string): string {
+	const base = new Set(['node_modules', '.git', 'dist', 'build', 'out', '.insrc']);
+	for (const d of repoTypeIgnoreDirs(detectRepoType(repoPath))) base.add(d);
+	return [...base].sort().map(d => `${d}/`).join('\n') + '\n';
+}
+
+/** Non-empty, line-based: at least one non-blank, non-comment line, and no
+ *  line that looks like prose rather than a gitignore entry (a line with
+ *  whitespace in it is not a valid gitignore pattern). */
+function looksLikeIgnoreFile(text: string): boolean {
+	const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0 && !l.startsWith('#'));
+	if (lines.length === 0) return false;
+	return lines.every(l => !/\s/.test(l));
+}
+
+/**
+ * Proposes a root ignore file for `repoPath` when none exists, asking
+ * `model` (the cheap tier) for entries fit to the repo's detected
+ * languages/tools. Never touches an existing root ignore file (ac8) and
+ * never throws: a model failure, timeout, or malformed response falls
+ * back to a plain universal-base ignore file instead (ac7, lc2) — the
+ * repository add this gates is never failed by it.
+ */
+export async function proposeIgnoreFile(repoPath: string, model: CheapTierModel): Promise<IgnoreFileProposal> {
+	const rootIgnorePath = join(repoPath, '.gitignore');
+	if (existsSync(rootIgnorePath)) {
+		return { written: false, source: 'fallback', reason: 'a root ignore file already exists' };
+	}
+
+	const types = detectRepoType(repoPath);
+	let modelText: string | undefined;
+	try {
+		const response = await model.complete([
+			{
+				role: 'system',
+				content: 'You write .gitignore files. Reply with ONLY the file content: one pattern per line, no prose, no markdown fences.',
+			},
+			{
+				role: 'user',
+				content: `Propose a .gitignore for a repository at "${repoPath}"${types.length > 0 ? ` detected as: ${types.join(', ')}` : ''}. Cover build output, dependency, and cache directories typical for these languages/tools.`,
+			},
+		]);
+		modelText = response.text;
+	} catch (err) {
+		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'proposeIgnoreFile: model call failed; writing fallback ignore file');
+	}
+
+	const usable = modelText !== undefined && looksLikeIgnoreFile(modelText);
+	const content = usable ? `${modelText!.trimEnd()}\n` : fallbackIgnoreContent(repoPath);
+	const source: IgnoreFileProposal['source'] = usable ? 'model' : 'fallback';
+	const reason = usable ? undefined : (modelText === undefined ? 'the model call failed' : 'the model response was not usable ignore-file content');
+
+	try {
+		writeFileSync(rootIgnorePath, content, 'utf8');
+	} catch (err) {
+		// A write failure must not fail the repo add -- the filter still
+		// works without a root ignore file (sources[0].ruleFiles simply
+		// has nothing to read), just as a non-git folder does.
+		log.warn({ repoPath, err: err instanceof Error ? err.message : String(err) }, 'proposeIgnoreFile: could not write the ignore file');
+		return { written: false, source, reason: reason ?? 'the ignore file could not be written' };
+	}
+
+	return reason === undefined ? { written: true, source } : { written: true, source, reason };
+}

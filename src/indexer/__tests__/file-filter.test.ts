@@ -14,7 +14,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-import { createFileFilter, refreshFileFilter } from '../file-filter.js';
+import { createFileFilter, proposeIgnoreFile, refreshFileFilter, type CheapTierModel } from '../file-filter.js';
+import { readFileSync } from 'node:fs';
 
 function makeGitRepo(prefix: string): string {
 	const dir = mkdtempSync(join(tmpdir(), `${prefix}-`));
@@ -217,6 +218,72 @@ test('ac5: refreshFileFilter, given an ignore file that gained one rule and lost
 		assert.equal(f.includes(join(repo, 'keep.ts')), true, 'untouched file is unaffected');
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+// ---------------------------------------------------------------------------
+// proposeIgnoreFile
+// ---------------------------------------------------------------------------
+
+function modelStub(reply: string | Error): CheapTierModel {
+	return {
+		complete: async () => {
+			if (reply instanceof Error) throw reply;
+			return { text: reply, stopReason: 'end_turn' };
+		},
+	};
+}
+
+test('ac6: proposeIgnoreFile, given a repo with no root ignore file and a model stub that succeeds, writes the model-sourced file and returns {written:true, source:"model"}', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'file-filter-propose-ok-'));
+	try {
+		const result = await proposeIgnoreFile(dir, modelStub('node_modules/\ndist/\n'));
+		assert.deepEqual(result, { written: true, source: 'model' });
+		assert.equal(readFileSync(join(dir, '.gitignore'), 'utf8'), 'node_modules/\ndist/\n');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('ac7/lc2: proposeIgnoreFile, given a model stub that throws, still writes a fallback ignore file and returns {written:true, source:"fallback", reason} without throwing', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'file-filter-propose-throw-'));
+	try {
+		const result = await proposeIgnoreFile(dir, modelStub(new Error('model unavailable')));
+		assert.equal(result.written, true);
+		assert.equal(result.source, 'fallback');
+		assert.ok(result.reason !== undefined && result.reason.length > 0);
+		const written = readFileSync(join(dir, '.gitignore'), 'utf8');
+		assert.ok(written.includes('node_modules/'));
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('a malformed (prose) model response is treated as unusable and falls back, without throwing', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'file-filter-propose-malformed-'));
+	try {
+		const result = await proposeIgnoreFile(dir, modelStub('Sure! Here is a .gitignore for your project, hope that helps.'));
+		assert.equal(result.written, true);
+		assert.equal(result.source, 'fallback');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('ac8: proposeIgnoreFile given a repo whose root ignore file already exists leaves its bytes unchanged and never invokes the model', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'file-filter-propose-existing-'));
+	try {
+		const existing = '# my own rules\n/foo/\n';
+		writeFileSync(join(dir, '.gitignore'), existing, 'utf8');
+		let modelCalled = false;
+		const model: CheapTierModel = { complete: async () => { modelCalled = true; return { text: 'x', stopReason: 'end_turn' }; } };
+
+		const result = await proposeIgnoreFile(dir, model);
+		assert.equal(result.written, false);
+		assert.equal(modelCalled, false, 'the model must never be invoked when a root ignore file already exists');
+		assert.equal(readFileSync(join(dir, '.gitignore'), 'utf8'), existing, 'the existing file is byte-for-byte unchanged');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
 	}
 });
 

@@ -25,7 +25,7 @@ function passed(file: string, count: number, names: string[]) {
 test('manual-linux-ext4-node22-native-and-lifecycle', () => {
   const platform = qualified();
   assert.match(platform, /Linux/); assert.match(platform, /"node":"22\.22\.1"/); assert.match(platform, /"modules":"127"/); assert.match(platform, /ext4/);
-  passed('native-lifecycle.tap', 10, ['node22-fs-ext-abi-and-separate-descriptor-probe', 'same-process-package-copy-thread-process-contention', 'killed-owner-release-stopped-owner-exclusion-and-aliases', 'foundation-data-methods-return-not-ready']);
+  passed('native-lifecycle.tap', 11, ['node22-fs-ext-abi-and-separate-descriptor-probe', 'same-process-package-copy-thread-process-contention', 'killed-owner-release-stopped-owner-exclusion-and-aliases', 'foundation-data-methods-return-not-ready']);
 });
 test('manual-linux-packed-consumer-and-natural-exit', () => {
   qualified();

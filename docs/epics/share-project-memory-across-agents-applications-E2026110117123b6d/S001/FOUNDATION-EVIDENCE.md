@@ -6,12 +6,12 @@ The standalone `@insrc/project-memory` foundation is implemented in `packages/pr
 
 | Check | Actual result | Evidence |
 | --- | --- | --- |
-| Combined package suite | 18 passed; 0 failed/skipped/cancelled/todo; natural exit | [macOS TAP](evidence/macos-combined.tap) |
+| Combined package suite | 19 passed; 0 failed/skipped/cancelled/todo; natural exit | [macOS TAP](evidence/macos-combined.tap) |
 | Independent TS/ESM tarball consumer | Public typecheck, explicit open/ready/drain/close and host-resource preservation passed | `packed-isolated-node22-consumer` in the combined TAP |
 | Missing native dependency | Pure import succeeds; explicit open rejects NOT_READY | `packed-native-missing-import-versus-open` |
 | Native contention and recovery | Same process, duplicate package copies, worker threads, child process, aliases, stopped owner, killed owner and worker termination passed | `contention.test.ts`, `ownership.test.ts`, combined TAP |
 | Model serialization and lifecycle | Completion/embedding serialization, bounded overload, queued cancellation, ignored abort, incomplete drain and idempotent close passed | `model-dispatcher.test.ts`, `runtime.test.ts`, combined TAP |
-| Linux/ext4 qualification | Node 22.22.1, ABI 127; 10 native/lifecycle and 3 packed tests passed, no skips | [Successful run](https://github.com/insors-ai/insrc/actions/runs/41343486195), [run identity](evidence/linux/run.json), [platform](evidence/linux/platform.log), [native TAP](evidence/linux/native-lifecycle.tap), [packed TAP](evidence/linux/packed-consumer.tap) |
+| Linux/ext4 qualification | Node 22.22.1, ABI 127; 11 native/lifecycle and 3 packed tests passed, no skips | [Successful run](https://github.com/insors-ai/insrc/actions/runs/41345031980), [run identity](evidence/linux/run.json), [platform](evidence/linux/platform.log), [native TAP](evidence/linux/native-lifecycle.tap), [packed TAP](evidence/linux/packed-consumer.tap) |
 | Root package-first build | Exit 0; package tsc precedes backend tsc, model validation and asset copying | [build output](evidence/root-build.txt) |
 
 Commands: `npm test --workspace @insrc/project-memory` and `npm run build`, with `/opt/homebrew/opt/node@22/bin` first on PATH. Local executable resolved to `/opt/homebrew/Cellar/node@22/22.23.2/bin/node`, Node 22.23.2, ABI 127; project and temporary roots both reported APFS statfs type 26. Root native headers target 22.22.1 per the existing .npmrc. Resolved dependency: fs-ext 2.1.1 / nan 2.30.0. External consumers rebuilt the native dependency independently with documented CXXFLAGS=-std=c++17 rather than inheriting backend npm configuration.
@@ -21,7 +21,7 @@ Commands: `npm test --workspace @insrc/project-memory` and `npm run build`, with
 - **ac1:** `contracts.test.ts` checks strict public declarations, pure import and emitted local dependency boundaries. `packed.test.ts` installs a real tarball into an independent directory, compiles its public consumer, checks the export/asset allowlist and tests honest native-load failure. Root build evidence preserves backend output and steps.
 - **ac2:** `configuration.test.ts`, `ownership.test.ts`, `contention.test.ts` and `runtime.test.ts` prove canonical identity, one real kernel owner, independent roots, host-resource preservation, crash release, stopped-owner exclusion and safe cleanup. Linux qualification independently repeats the real native and lifecycle checks. The archived-evidence test verifies zero skips and that the current source/workflow equals the qualified revision.
 
-The nine source modules import only package-local modules, Node built-ins, and lazily loaded fs-ext. The public entry does no filesystem/provider/native startup on import. There are no imports of backend src, daemon, config, shared paths/logger/types, index graph or vector stores. Models/policy/logger are supplied by the host and remain host-owned. Source/declaration closure and packed allowlisting passed the combined contract tests.
+The ten source modules import only package-local modules, Node built-ins, and lazily loaded fs-ext. The public entry does no filesystem/provider/native startup on import. There are no imports of backend src, daemon, config, shared paths/logger/types, index graph or vector stores. Models/policy/logger are supplied by the host and remain host-owned. Source/declaration closure and packed allowlisting passed the combined contract tests.
 
 S1 persists only layout.json and the persistent ownership file. Durable journal, LanceDB memory store, semantic normalization/dedupe/compression, recall, IPC executable, agent adapters and daemon integration remain later-story work. All five data methods reject NOT_READY; foundation readiness is not data-capability readiness. The package exports only its main contract and explicit Node host, with no unfinished IPC export.
 
@@ -36,3 +36,15 @@ The first root-build attempt and t9 validation overlapped incomplete changes in 
 Filesystem qualification is local APFS/macOS and ext4/Linux only. ext-family statfs magic alone does not identify an exact Linux subtype, so deployment retains the documented ext4 precondition. Uncooperative external mutation of a live directory and overlapping external cleanup roots remain unsupported host-precondition violations. Native compilation requires the documented toolchain. No tests invoke real LLMs or cloud REST.
 
 No full repository test sweep was run per task. S1 runs focused package checks and the preserved root build; broader feature testing remains sequenced after the feature's remaining stories. No npm publish occurred.
+
+## First independent review corrections
+
+The [first review](evidence/review-round-1.md) blocked on native loading preceding root/filesystem qualification and identified cleanup/readability issues. Corrections are committed in de4da9d4c:
+
+- Root and filesystem preparation now precede native loading. The missing-native packed test also supplies an invalid existing layout and proves INVALID_REQUEST wins before any attempted addon load.
+- Failed construction returns sanitized NOT_READY only after verified ownership release; failed cleanup explicitly takes priority as STORE_UNAVAILABLE.
+- Per-call timeout, cancellation and settlement live in ModelCall; ModelDispatcher owns only FIFO admission/lane bookkeeping. Ignored abort still retains the lane until underlying settlement.
+- All already-quiescent participants get cleanup attempted in dependency order. Any failure retains ownership and rejects close. A new multi-participant regression verifies both attempts and retained ownership. A failed quiescence barrier still prevents resource release.
+- A shared private-file predicate now validates regular/single-link/uid/private-permission requirements in both layout and ownership paths.
+
+Refreshed evidence: combined package 19/19, root build exit 0, Linux 11 native/lifecycle plus 3 packed tests, no skips. The qualified Linux revision d16c4cb4669fa68a0da3e811eaff982ffb93894d has identical current package source and qualification workflow. Review round 2 follows these results.

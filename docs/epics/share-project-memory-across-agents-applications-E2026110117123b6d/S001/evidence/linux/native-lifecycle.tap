@@ -2,69 +2,75 @@ TAP version 13
 # Subtest: options-fail-before-side-effects
 ok 1 - options-fail-before-side-effects
   ---
-  duration_ms: 21.953313
+  duration_ms: 9.887319
   type: 'test'
   ...
 # Subtest: canonical-root-and-readonly-layout-validation
 ok 2 - canonical-root-and-readonly-layout-validation
   ---
-  duration_ms: 32.583751
+  duration_ms: 23.854363
   type: 'test'
   ...
 # Subtest: same-process-package-copy-thread-process-contention
 ok 3 - same-process-package-copy-thread-process-contention
   ---
-  duration_ms: 372.652798
+  duration_ms: 387.230591
   type: 'test'
   ...
 # Subtest: killed-owner-release-stopped-owner-exclusion-and-aliases
 ok 4 - killed-owner-release-stopped-owner-exclusion-and-aliases
   ---
-  duration_ms: 167.506642
+  duration_ms: 51.743572
   type: 'test'
   ...
 # Subtest: node22-fs-ext-abi-and-separate-descriptor-probe
 ok 5 - node22-fs-ext-abi-and-separate-descriptor-probe
   ---
-  duration_ms: 24.16595
+  duration_ms: 17.473682
   type: 'test'
   ...
 # Subtest: native-load-failure-is-not-ready
 ok 6 - native-load-failure-is-not-ready
   ---
-  duration_ms: 0.653966
+  duration_ms: 0.455879
   type: 'test'
   ...
 # Subtest: exclusive-descriptor-and-owned-bootstrap
 ok 7 - exclusive-descriptor-and-owned-bootstrap
   ---
-  duration_ms: 38.329798
+  duration_ms: 71.359191
   type: 'test'
   ...
 # Subtest: native-callback-cleanup-and-inode-faults
 ok 8 - native-callback-cleanup-and-inode-faults
   ---
-  duration_ms: 15.097654
+  duration_ms: 5.468713
   type: 'test'
   ...
 # Subtest: idempotent-drain-close-and-provider-ownership
 ok 9 - idempotent-drain-close-and-provider-ownership
   ---
-  duration_ms: 13.366706
+  duration_ms: 8.903613
   type: 'test'
   ...
 # Subtest: foundation-data-methods-return-not-ready
 ok 10 - foundation-data-methods-return-not-ready
   ---
-  duration_ms: 81.483009
+  duration_ms: 60.606144
   type: 'test'
   ...
-1..10
-# tests 10
+# Subtest: all-quiescent-participants-close-before-unverified-ownership-is-retained
+ok 11 - all-quiescent-participants-close-before-unverified-ownership-is-retained
+  ---
+  duration_ms: 0.831466
+  type: 'test'
+  ...
+1..11
+# tests 11
 # suites 0
-# pass 10
+# pass 11
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 940.804395
+# duration_ms 700.306959

@@ -155,6 +155,11 @@
       "reviewedAt": "2026-11-01T12:02:05.859Z",
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T12:35:55.142Z",
+    "reviewOverride": {
+      "reason": "User explicitly approved DEF and the review override in chat. The independent review gathered truncated repository-wide evidence from unrelated epics; exact-target verification is recorded in docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/definition-verification.md. It confirms nine stories, valid dependencies, k1-k6 coverage and correct c1/c2 references. Override accepts the evidence-scoping failure, not any implementation or runtime qualification.",
+      "at": "2026-11-01T12:35:55.138Z"
     }
   },
   "body": {

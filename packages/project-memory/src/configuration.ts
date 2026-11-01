@@ -70,7 +70,7 @@ export async function assertRoot(root: RootIdentity): Promise<void> {
 }
 
 async function metadata(path: string): Promise<string> {
-  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {
     const value = await handle.stat();
     if (!value.isFile() || value.nlink !== 1 || value.uid !== process.getuid!() || (value.mode & 0o077) !== 0 || value.size > 1024) invalid('Memory layout metadata is unsafe.');

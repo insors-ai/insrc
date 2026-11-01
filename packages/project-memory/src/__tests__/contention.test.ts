@@ -31,7 +31,7 @@ function watch(peer: EventEmitter, send: (message: string) => void) {
     });
   } };
 }
-const sourceEntry = new URL('../index.ts', import.meta.url).href;
+const sourceEntry = new URL('../../dist/index.js', import.meta.url).href;
 const helper = new URL('./fixtures/owner-peer.mjs', import.meta.url);
 
 nativeTest(import.meta.url, 'same-process-package-copy-thread-process-contention', async () => {
@@ -57,7 +57,7 @@ nativeTest(import.meta.url, 'same-process-package-copy-thread-process-contention
     const threadRoot = join(dir, 'threads');
     const peers = [];
     for (let i = 0; i < 2; i++) {
-      const worker = new Worker(helper, { workerData: { path: threadRoot, entry: sourceEntry }, execArgv: ['--import', 'tsx'], trackUnmanagedFds: true });
+      const worker = new Worker(helper, { workerData: { path: threadRoot, entry: sourceEntry }, execArgv: [], trackUnmanagedFds: true });
       workers.push(worker); const peer = watch(worker, message => worker.postMessage(message)); peers.push(peer); await peer.next('booted');
     }
     for (const peer of peers) peer.send('open');
@@ -79,7 +79,7 @@ nativeTest(import.meta.url, 'killed-owner-release-stopped-owner-exclusion-and-al
   const dir = await mkdtemp(join(tmpdir(), 'memory-process-'));
   const root = join(dir, 'data');
   const env = { ...process.env }; delete env['NODE_TEST_CONTEXT'];
-  const child = fork(fileURLToPath(helper), [root, sourceEntry], { execArgv: ['--import', 'tsx'], env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
+  const child = fork(fileURLToPath(helper), [root, sourceEntry], { execArgv: [], env, stdio: ['ignore', 'ignore', 'pipe', 'ipc'] });
   const exited = new Promise<void>(resolve => child.once('exit', () => resolve()));
   const peer = watch(child, message => child.send(message));
   try {

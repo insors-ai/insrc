@@ -39,7 +39,7 @@
     "src/daemon/db/management-state.ts": "fe16b12c4bc2eeb69f20373fcfd4e30b10f28bc980b98fda74c3e9673ee76436",
     "src/daemon/db/draft-test.ts": "02ab82a15da246b04e5dffdc94001ede1117eb2aab3d6156eeb6b2d83952f051",
     "src/daemon/connection-management-rpc.ts": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3",
-    "src/daemon/index.ts": "fdbd345eac8d9eac28136747f5fea41a18c860758c88398f34a26a204ae7663d",
+    "src/daemon/index.ts": "093080bb71e13b22b873dab141e44e646d7fc0f4636df6e628a05b28e7cd44f4",
     "vscode-plugin/src/connections/datasource-icons.ts": "7b3327a8f5fc83e4bcbf2ea0de88583018d649a403779c913fbe243f64a0db27",
     "vscode-plugin/src/connections/messages.ts": "51a64f0946afb3a1321f8dd2b5bcbc3bb9fbc2b495b1804d9792c6d17cdcea06",
     "vscode-plugin/media/datasources/sources.json": "a1b86e1f37cff6b94ea0f5850b1f4fc6fe572f640bda6e12f89c2e31a70c00b4",

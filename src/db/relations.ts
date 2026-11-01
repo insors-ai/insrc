@@ -305,7 +305,9 @@ export function upsertUnresolvedRelationsInTxn(s: GraphStore, relations: readonl
 			fromFile,
 			kind:        r.kind,
 			rawTo:       r.to,
-			meta,
+			// A pending relationship keeps the evidence its writer decided, for the
+			// promotion that completes it (Epic c2ba6fa6 s7).
+			meta:        withEvidence(meta, r.evidence) ?? meta,
 			attemptedAt,
 		};
 		tupleById.set(id, { id, row, repoPath: repo });

@@ -99,6 +99,9 @@ test('s7 t6: graph_callers and graph_callees include the evidence in each short 
 	const results = (callers.data as { results: Array<Record<string, unknown>> }).results;
 	assert.deepEqual(results.map(r => `${String(r['name'])}: ${String(r['evidence'])}`).sort(), ['a: extracted', 'b: inferred']);
 	assert.deepEqual(Object.keys(results[0]!).sort(), ['endLine', 'evidence', 'file', 'id', 'kind', 'name', 'repo', 'signature', 'startLine'].sort());
+	// The markdown an agent reads says it too (s7 review).
+	assert.match(callers.output, /`a`.*— extracted/);
+	assert.match(callers.output, /`b`.*— inferred/);
 
 	const callees = await graph.graphCalleesTool.execute({ entityId: d.id }, deps);
 	assert.deepEqual((callees.data as { results: Array<Record<string, unknown>> }).results.map(r => `${String(r['name'])}: ${String(r['evidence'])}`), ['a: unknown']);

@@ -22,7 +22,7 @@ import { decodeEvidence } from '../graph/codec.js';
 import { encodeInEdgeKey, encodeOutEdgeKey, RELATION_KIND_BYTE } from '../graph/keys.js';
 import { commitFile, entityU64ForId } from '../entities.js';
 import { addRepo } from '../repos.js';
-import { listUnresolvedRelations, promoteResolvedBatch, upsertResolvedRelationsInTxn } from '../relations.js';
+import { listUnresolvedRelations, promoteResolvedBatch, upsertResolvedRelationsInTxn, upsertUnresolvedRelationsInTxn } from '../relations.js';
 import { getLogger } from '../../shared/logger.js';
 import type { Entity, Relation, RelationEvidence } from '../../shared/types.js';
 import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
@@ -136,4 +136,16 @@ test('s7 t2: an edge returned to pending when its target is removed keeps its ev
 	await commitFile({ repoPath: REPO, filePath: B, contentHash: 'h2', entities: [b], relations: [] });
 	await promoteResolvedBatch(null, [{ unresolved: returned!, targetEntityId: b.id }]);
 	assert.deepEqual(await rows(a, b), { out: 'inferred', in: 'inferred', outBytes: 1, inBytes: 1 });
+});
+
+test('s7 review: a pending write keeps its evidence on the pending row, and the promotion that completes it stores it', async () => {
+	const [a, b] = [entity(A, 'a'), entity(B, 'b')];
+	await commitFile({ repoPath: REPO, filePath: B, contentHash: 'h', entities: [b], relations: [] });
+	await commitFile({ repoPath: REPO, filePath: A, contentHash: 'h', entities: [a], relations: [] });
+	await withWriteTxn(s => { upsertUnresolvedRelationsInTxn(s, [{ kind: 'CALLS', from: a.id, to: 'b', resolved: false, meta: { repo: REPO, file: A }, evidence: 'extracted' }]); });
+
+	const [row] = await listUnresolvedRelations(null, REPO);
+	assert.equal(row?.meta['evidence'], 'extracted');
+	await promoteResolvedBatch(null, [{ unresolved: row!, targetEntityId: b.id }]);
+	assert.deepEqual(await rows(a, b), { out: 'extracted', in: 'extracted', outBytes: 1, inBytes: 1 });
 });

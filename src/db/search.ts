@@ -20,8 +20,6 @@
 import type { DbClient } from './client.js';
 import type { Entity, EntityKind, RelationEvidence } from '../shared/types.js';
 
-/** An entity reached through one relationship, with that relationship's evidence (Epic c2ba6fa6 s7). */
-export type EntityWithEvidence = Entity & { readonly evidence: RelationEvidence };
 import {
 	entityU64ForId,
 	entityIdsByU64s,
@@ -36,6 +34,9 @@ import {
 	type TraversalOpts,
 } from './graph/traversal.js';
 import { getLogger } from '../shared/logger.js';
+
+/** An entity reached through one relationship, with that relationship's evidence (Epic c2ba6fa6 s7). */
+export type EntityWithEvidence = Entity & { readonly evidence: RelationEvidence };
 
 const log = getLogger('search');
 
@@ -315,18 +316,6 @@ export async function sccEntities(
 	return out;
 }
 
-/**
- * Internal: 1-hop neighbour query that returns hydrated `Entity` rows.
- * Pipeline:
- *   string id → u64 → outNeighbors / inNeighbors (kind-filtered)
- *   → bulk reverse lookup u64 → string ids
- *   → hydrate via getEntitiesByIds
- *
- * If the source entity isn't known to LMDB, returns []. If a neighbor
- * u64 has no corresponding string id (shouldn't happen under normal
- * cascade rules but possible if a write was partial), it's silently
- * dropped during reverse-mapping.
- */
 /**
  * The entities one kind of relationship reaches from `entityId`, each with the
  * evidence its relationship holds (Epic c2ba6fa6 s7). One kind is read, and an

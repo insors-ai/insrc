@@ -67,15 +67,18 @@ function shortEntity(e: Entity): Record<string, unknown> {
     endLine: e.endLine,
     repo: e.repo,
     signature: e.signature,
-    // How the relationship that reached it was established, on the caller /
-    // callee results (Epic c2ba6fa6 s7); absent on other entity lists.
+    // How the relationship that reached it was established (Epic c2ba6fa6 s7):
+    // present on every result read through one relationship (callers, callees,
+    // defined_in, imports); absent on entity lookups and searches.
     ...('evidence' in e && { evidence: (e as Entity & { evidence: RelationEvidence }).evidence }),
   };
 }
 
 function renderEntity(e: Entity, includeBody: boolean): string {
   const loc = `${e.file}:${e.startLine}${e.endLine > e.startLine ? '-' + e.endLine : ''}`;
-  const header = `**${e.kind}** \`${e.name}\`  (${loc})`;
+  // A result reached through a relationship says how it was established (s7).
+  const evidence = 'evidence' in e ? `  — ${(e as Entity & { evidence: RelationEvidence }).evidence}` : '';
+  const header = `**${e.kind}** \`${e.name}\`  (${loc})${evidence}`;
   if (!includeBody) { return header + (e.signature ? `\n  \`${e.signature}\`` : ''); }
   return [
     header,

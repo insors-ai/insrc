@@ -208,7 +208,6 @@ export interface SymbolLocateOutput {
 	readonly hits:  readonly SymbolHit[];
 }
 
-/** Import-graph summary for a module or file. */
 /** A file on the other side of the target's imports: its edge count and how
  *  many of those edges rest on each kind of evidence (Epic c2ba6fa6 s7). */
 export interface ImportGraphPeer {
@@ -217,6 +216,7 @@ export interface ImportGraphPeer {
 	readonly evidence: Readonly<Partial<Record<RelationEvidence, number>>>;
 }
 
+/** Import-graph summary for a module or file. */
 export interface ImportGraphSummary {
 	readonly target:      string;
 	/** Top-K importers (files that import from `target`), ranked by

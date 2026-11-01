@@ -180,13 +180,15 @@ export const encodeEntityRow = (r: EntityRow): Buffer => encode(r);
 export const decodeEntityRow = (b: Buffer): EntityRow => decode(b);
 
 // ---------------------------------------------------------------------------
-// Edge properties -- value of `out_edge` sub-DB (key: (u64 from, u8 kind, u64 to))
+// Edge properties -- DEPRECATED, never written
 // ---------------------------------------------------------------------------
 
 /**
- * Most edges have empty payload. CALLS, READS, WRITES, IMPORTS carry
- * structured props. The encoder is per-kind; callers know which
- * shape to expect for which kind.
+ * @deprecated No edge row holds msgpack props: since Epic c2ba6fa6 s7 the value
+ * of an out_edge / in_edge row is the one-byte relationship evidence (empty =
+ * 'unknown'), read with decodeEvidence below. These props codecs were never
+ * wired to a writer; decoding an edge row with them misreads the evidence byte
+ * (0x01 decodes as the number 1). Kept only for their own codec test.
  */
 
 export interface CallsEdgeProps  { siteCount: number }

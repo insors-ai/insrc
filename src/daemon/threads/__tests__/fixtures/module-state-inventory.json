@@ -1210,6 +1210,10 @@
 		"class": "per-thread",
 		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
 	},
+	"src/db/graph/edges.ts#KIND_NAME_OF_BYTE": {
+		"class": "per-thread",
+		"reason": "The fixed byte-to-relation-kind table of the withEvidence neighbour reads (Epic c2ba6fa6 s7), built once from a constant and never written, so a per-thread copy is correct."
+	},
 	"src/db/graph/codec.ts#EVIDENCE_OF_BYTE": {
 		"class": "per-thread",
 		"reason": "The fixed byte-to-evidence table of the edge-row codec (Epic c2ba6fa6 s7), built once from a constant and never written, so a per-thread copy is correct."

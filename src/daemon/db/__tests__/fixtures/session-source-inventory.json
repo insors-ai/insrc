@@ -18905,7 +18905,7 @@
    ],
    "siteCount": 14,
    "sitesDigest": "63f68ae6dd6c777466d111bc52e3ea6e82f06553d8e3db047e2762fa17d79e30",
-   "sourceDigest": "75d6c55e7bb5fdeb6ba2381ec40396a587c041e58993e7a5545d1fd4c7a2b314",
+   "sourceDigest": "d4ab1231cecd962956205e875a9f63bd5bd083aac8e70e491ebf739e0271a52e",
    "boundaries": [
     "provider-adapter",
     "provider-use",
@@ -24031,7 +24031,7 @@
    ],
    "siteCount": 67,
    "sitesDigest": "b7fe29222ea54c1e609e803c7d1968a792e2d261855e72e388a8222a1d167f26",
-   "sourceDigest": "a8152cc1fdbb27a77f1e33ab641ff6439462b48c1dbe83899e7373efa6291811",
+   "sourceDigest": "b16768b24dff66e82b48eb74ad497c68dd4d553cb74970742724c720385016de",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -24099,10 +24099,6 @@
     ],
     [
      "storage-call",
-     "kindByteToName"
-    ],
-    [
-     "storage-call",
      "neighbors"
     ],
     [
@@ -24122,9 +24118,9 @@
      "prefixSuccessor"
     ]
    ],
-   "siteCount": 20,
-   "sitesDigest": "5b6aa5dd80f2fc06fdd7a3edfc445e82c0cc4ab3d86af1ac6dfdcfcd22427fcc",
-   "sourceDigest": "2c2732a916f4b470ac391d0fbc89ba3c56399a09c331b5239e5292e035a36f71",
+   "siteCount": 19,
+   "sitesDigest": "408fb198ae42ab4454799aedb0bf09596f5d8bb416c2100817b8ea980e811b17",
+   "sourceDigest": "193d25ce91516adace8027acfcd8583a663d31dd27bdf2e3281d75284b22b129",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -28698,6 +28694,10 @@
     ],
     [
      "storage-call",
+     "withEvidence"
+    ],
+    [
+     "storage-call",
      "withWriteTxn"
     ],
     [
@@ -28765,9 +28765,9 @@
      "writePendingRowInTxn"
     ]
    ],
-   "siteCount": 203,
-   "sitesDigest": "8fba03c3a30665f907db0c51d9c37bb4af0c75f0be0d231ffb5c2e07ea7d440d",
-   "sourceDigest": "1211d7d0713303f614aac38694bd9925f9121c12ab6a98914163f8dd1e194375",
+   "siteCount": 204,
+   "sitesDigest": "21eeedf741212450cdab85ab068f59556be7834cd267be00e0c2e7b3eacb8c3b",
+   "sourceDigest": "710e1b46819245d2df1da906cb75c58355776fe328a73a0864ce4c8201f3d17e",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -29196,7 +29196,7 @@
    ],
    "siteCount": 39,
    "sitesDigest": "35ad3cbc1c8618434791d5ad1e47e4b7aa240f6fd0ebda3eaba36a0cc1aa4d00",
-   "sourceDigest": "04f7ec38b51d71616859b6e6e988dabc07594d22ba1581b50322907b73f5189a",
+   "sourceDigest": "4697188af3b5c877f6d9675f3a86b46bb2e248a4d88b42c71e38b3a9aae33a50",
    "boundaries": [
     "diagnostic",
     "storage-call",

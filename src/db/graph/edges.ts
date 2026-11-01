@@ -14,7 +14,6 @@
 import {
 	encodeOutEdgePrefix,
 	encodeInEdgePrefix,
-	kindByteToName,
 	prefixSuccessor,
 	RELATION_KIND_BYTE,
 	type RelationKind,
@@ -24,6 +23,11 @@ import type { RelationEvidence } from '../../shared/types.js';
 import { getGraphStore, type GraphStore } from './store.js';
 
 export type EdgeDirection = 'out' | 'in';
+
+/** Relation kind by its key byte, for the withEvidence reads. */
+const KIND_NAME_OF_BYTE: ReadonlyMap<number, RelationKind> = new Map(
+	Object.entries(RELATION_KIND_BYTE).map(([name, byte]) => [byte, name as RelationKind]),
+);
 
 /** One stored relationship as the withEvidence neighbour reads return it (Epic c2ba6fa6 s7). */
 export interface NeighborRelation {
@@ -125,8 +129,12 @@ async function neighbors(
 			const k = key as Buffer;
 			const kind = k.readUInt8(8);
 			if (kinds !== null && !kinds.has(kind)) continue;
+			// A kind byte this build does not know (a row from a newer daemon) is
+			// skipped, as the id-only form never fails a read on it.
+			const kindName = KIND_NAME_OF_BYTE.get(kind);
+			if (kindName === undefined) continue;
 			// Both rows of a relationship hold the same evidence byte (s7).
-			rows.push({ u64: k.readBigUInt64BE(9), kind: kindByteToName(kind), evidence: decodeEvidence(value as Buffer) });
+			rows.push({ u64: k.readBigUInt64BE(9), kind: kindName, evidence: decodeEvidence(value as Buffer) });
 		}
 		return rows;
 	}

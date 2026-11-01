@@ -112,3 +112,14 @@ test('s7 t5: a transitive closure is the same whatever evidence its edges hold',
 	assert.equal(before.length, 4);
 	assert.deepEqual(after, before);
 });
+
+test('s7 review: a withEvidence read skips a row whose kind byte this build does not know, instead of failing the read', async () => {
+	const [a, b, c] = [entity('a'), entity('b'), entity('c')];
+	await upsertEntities(null, [a, b, c]);
+	await write(rel('CALLS', a, b, 'inferred'));
+	const [fa, fc] = [(await entityU64ForId(a.id))!, (await entityU64ForId(c.id))!];
+	await withWriteTxn(s => { s.outEdge.put(encodeOutEdgeKey(fa, 250, fc), Buffer.from([0x01])); });   // a kind from a newer daemon
+
+	const out = await outNeighbors(fa, { withEvidence: true });
+	assert.deepEqual(out.map(r => `${r.kind}: ${r.evidence}`), ['CALLS: inferred']);
+});

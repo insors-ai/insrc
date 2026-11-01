@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { userInfo } from 'node:os';
-import { runShell } from '../daemon/tools/shell-helper.js';
+import type { runShell } from '../daemon/tools/shell-helper.js';
+import { toolIdentityCommand } from './identity-tools.js';
 
 export type ProviderSource = 'github' | 'gitlab' | 'jira';
 export interface ProviderIdentity {
@@ -107,7 +108,7 @@ function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid provider response');
   return value as Record<string, unknown>;
 }
-export async function githubIdentities(run: IdentityCommand = runShell): Promise<IdentityLookup> {
+export async function githubIdentities(run: IdentityCommand = toolIdentityCommand): Promise<IdentityLookup> {
   const source = 'github';
   const status = await run(['gh', 'auth', 'status', '--json', 'hosts'], { timeoutMs: 15_000, maxBytes: 256 * 1024 });
   if (status.spawnError) return { source, status: 'missing-integration', identities: [] };
@@ -136,7 +137,7 @@ export async function githubIdentities(run: IdentityCommand = runShell): Promise
   } catch { return { source, status: 'unavailable', identities: [] }; }
 }
 
-export function localIdentityDeps(hostId: string, run: IdentityCommand = runShell): IdentityDeps {
+export function localIdentityDeps(hostId: string, run: IdentityCommand = toolIdentityCommand): IdentityDeps {
   return {
     hostId,
     providers: [{ source: 'github', lookup: () => githubIdentities(run) }],

@@ -1,0 +1,785 @@
+{
+  "kind": "manual-independent-review-not-canonical-cr",
+  "head": "90404ac88fe6c3f424d9cc80352bf6dac5f49085",
+  "rangeBase": "29a6252793d18d75a48187091ef35710dd6eeb11",
+  "fingerprint": {
+    "schemaVersion": 1,
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s5",
+    "author": "controller",
+    "sourceDigest": "96f620da4d9872d7c6cfd6eafba1ecd8cd28ba90cfc77654afb59d24870fb38c",
+    "contractDigest": "1f33ebff159b209f5f2525f3a6a4aeeb4193459d3d7ef3e0bd0393829f28380e",
+    "buildDigest": "d12e0ee1504f7fee5e5dac04a381b7bce5c5bc58c93e11f2e348c36588074e65",
+    "testsDigest": "b2444e2a1af30da46f7e816fe026edefaccfa38e4ac62df6b447ab43ad64c478",
+    "digest": "7acdfa3347a3674cd3895ef5116516bae0e25a59eee5302b392420392a524807"
+  },
+  "packets": [
+    {
+      "id": "01-transport-01",
+      "files": [
+        "src/shared/__tests__/connection-manager-wire.test.ts",
+        "src/shared/connection-manager/wire.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt"
+      ],
+      "obligations": [
+        "lld:contract:1",
+        "lld:data-model:4",
+        "lld:data-model:8",
+        "lld:error:3",
+        "lld:invariant:3",
+        "lld:shared:6",
+        "lld:backward-compat",
+        "plan:t2",
+        "plan:t5",
+        "plan:t15",
+        "plan:t22",
+        "plan:t28"
+      ],
+      "inputChars": 74508,
+      "sha256": "89e1450e511554eb22ab9c9a286705ad815202309f5c63fe76b95bea327e0e89"
+    },
+    {
+      "id": "01-transport-02",
+      "files": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
+        "src/shared/__tests__/ipc-lane.test.ts",
+        "src/shared/ipc-client.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+      ],
+      "obligations": [
+        "lld:data-model:1",
+        "lld:data-model:5",
+        "lld:data-model:9",
+        "lld:error:7",
+        "lld:shared:2",
+        "lld:migration:2",
+        "lld:scope",
+        "plan:t3",
+        "plan:t9",
+        "plan:t20",
+        "plan:t23",
+        "plan:t31"
+      ],
+      "inputChars": 82603,
+      "sha256": "d71db7d940b26c23ba294deee55e285f2240aa8061d644d59b0068930b100299"
+    },
+    {
+      "id": "01-transport-03",
+      "files": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLaneTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-transport.test.ts"
+      ],
+      "obligations": [
+        "lld:data-model:2",
+        "lld:data-model:6",
+        "lld:error:2",
+        "lld:error:9",
+        "lld:shared:3",
+        "lld:migration:4",
+        "plan:t1",
+        "plan:t4",
+        "plan:t14",
+        "plan:t21",
+        "plan:t24"
+      ],
+      "inputChars": 37064,
+      "sha256": "3da60249469c4c9f945be56e2ee73a682a4239fc933b631ec844c549551b8460"
+    },
+    {
+      "id": "02-state-draft-01",
+      "files": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCorpusTest.kt",
+        "src/shared/__tests__/connection-manager-corpus.test.ts",
+        "src/shared/__tests__/fixtures/connection-corpus.ts",
+        "test-fixtures/connection-management/v1/corpus.json",
+        "src/shared/__tests__/connection-manager-model.test.ts",
+        "src/shared/connection-manager/model.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModel.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-model.test.ts",
+        "src/shared/__tests__/connection-manager-draft.test.ts"
+      ],
+      "obligations": [
+        "lld:contract:1",
+        "lld:data-model:2",
+        "lld:data-model:4",
+        "lld:data-model:6",
+        "lld:data-model:8",
+        "lld:error:2",
+        "lld:error:8",
+        "lld:edge:3",
+        "lld:edge:7",
+        "lld:shared:1",
+        "lld:migration:2",
+        "plan:t1",
+        "plan:t6",
+        "plan:t8",
+        "plan:t11",
+        "plan:t15",
+        "plan:t18",
+        "plan:t26",
+        "plan:t31"
+      ],
+      "inputChars": 84162,
+      "sha256": "789ee3d73b24f7cabd3d972c13d2abaa15097caf53d1f5d17bda1051ccdc3c8b"
+    },
+    {
+      "id": "02-state-draft-02",
+      "files": [
+        "src/shared/connection-manager/draft.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraft.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-draft.test.ts"
+      ],
+      "obligations": [
+        "lld:data-model:1",
+        "lld:data-model:3",
+        "lld:data-model:5",
+        "lld:data-model:7",
+        "lld:data-model:9",
+        "lld:error:5",
+        "lld:edge:2",
+        "lld:edge:4",
+        "lld:invariant:1",
+        "lld:shared:5",
+        "lld:scope",
+        "plan:t3",
+        "plan:t7",
+        "plan:t10",
+        "plan:t14",
+        "plan:t16",
+        "plan:t19",
+        "plan:t27"
+      ],
+      "inputChars": 86449,
+      "sha256": "b832f730935e51bd2d908d228ec7f1eaac3f6f59502f20f43a46cf6679dfb56a"
+    },
+    {
+      "id": "03-mutations-01",
+      "files": [
+        "src/shared/connection-manager/controller.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationGateway.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationBackend.kt"
+      ],
+      "obligations": [
+        "lld:contract:1",
+        "lld:data-model:5",
+        "lld:data-model:8",
+        "lld:error:2",
+        "lld:error:6",
+        "lld:edge:5",
+        "lld:shared:5",
+        "lld:migration:7",
+        "plan:t4",
+        "plan:t11",
+        "plan:t14",
+        "plan:t17",
+        "plan:t25",
+        "plan:t28"
+      ],
+      "inputChars": 73682,
+      "sha256": "57013caaef8e8f80e6f1f0c28ff2e75b9d10dfe5b8d8d6db626e3d6e12cf063a"
+    },
+    {
+      "id": "03-mutations-02",
+      "files": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
+        "src/shared/__tests__/fixtures/connection-mutation-server.ts",
+        "src/shared/connection-manager/test-controller.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionTestBackend.kt",
+        "src/shared/__tests__/connection-manager-kotlin-test.test.ts"
+      ],
+      "obligations": [
+        "lld:contract:2",
+        "lld:data-model:6",
+        "lld:data-model:9",
+        "lld:error:3",
+        "lld:error:8",
+        "lld:invariant:4",
+        "lld:shared:7",
+        "lld:scope",
+        "plan:t5",
+        "plan:t12",
+        "plan:t15",
+        "plan:t21",
+        "plan:t26",
+        "plan:t29"
+      ],
+      "inputChars": 95733,
+      "sha256": "d9b1fee011ef48256f6154eff005f4104a796b87a3f5faae19383b9a743544ac"
+    },
+    {
+      "id": "03-mutations-03",
+      "files": [
+        "src/shared/__tests__/fixtures/connection-test-server.ts",
+        "src/shared/connection-manager/removal.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovals.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-removal.test.ts"
+      ],
+      "obligations": [
+        "lld:data-model:4",
+        "lld:data-model:7",
+        "lld:error:1",
+        "lld:error:5",
+        "lld:edge:4",
+        "lld:shared:3",
+        "lld:migration:6",
+        "plan:t2",
+        "plan:t10",
+        "plan:t13",
+        "plan:t16",
+        "plan:t24",
+        "plan:t27"
+      ],
+      "inputChars": 52817,
+      "sha256": "737a70691b9c9d4db089fc222170c1c8e7f1fbd9a971f5256d55c6e3ddcbff08"
+    },
+    {
+      "id": "04-vscode-lifecycle-01",
+      "files": [
+        "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+        "vscode-plugin/src/connections/session-owner.ts",
+        "vscode-plugin/src/extension.ts",
+        "vscode-plugin/src/connections/gateway.ts",
+        "vscode-plugin/src/connections/__tests__/isolation.test.ts"
+      ],
+      "obligations": [
+        "lld:contract:1",
+        "lld:data-model:3",
+        "lld:data-model:5",
+        "lld:data-model:8",
+        "lld:error:1",
+        "lld:error:4",
+        "lld:error:7",
+        "lld:error:9",
+        "lld:edge:6",
+        "lld:shared:4",
+        "lld:migration:3",
+        "lld:migration:7",
+        "lld:state-after",
+        "plan:t1",
+        "plan:t3",
+        "plan:t8",
+        "plan:t13",
+        "plan:t18",
+        "plan:t21",
+        "plan:t23",
+        "plan:t27",
+        "plan:t30"
+      ],
+      "inputChars": 89934,
+      "sha256": "2d13ee0d99bcb871ecb3c6bdca3709cfc3e14af6b310932dada30fe6903b66aa"
+    },
+    {
+      "id": "04-vscode-lifecycle-02",
+      "files": [
+        "vscode-plugin/src/connections/__tests__/privacy.test.ts",
+        "vscode-plugin/src/connections/__tests__/compatibility.test.ts"
+      ],
+      "obligations": [
+        "lld:data-model:2",
+        "lld:data-model:4",
+        "lld:data-model:6",
+        "lld:data-model:9",
+        "lld:error:3",
+        "lld:error:6",
+        "lld:error:8",
+        "lld:edge:3",
+        "lld:invariant:3",
+        "lld:shared:6",
+        "lld:migration:5",
+        "lld:backward-compat",
+        "lld:scope",
+        "plan:t2",
+        "plan:t6",
+        "plan:t9",
+        "plan:t14",
+        "plan:t19",
+        "plan:t22",
+        "plan:t24",
+        "plan:t28"
+      ],
+      "inputChars": 69611,
+      "sha256": "56aec4380cf4ffce27597e6745a0e75609c83b9a79f8716274ca56ea70218e6a"
+    },
+    {
+      "id": "05-vscode-host-01",
+      "files": [
+        "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+        "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+        "vscode-plugin/src/connections/__tests__/fixtures/management.ts",
+        "vscode-plugin/src/connections/__tests__/removal.test.ts"
+      ],
+      "obligations": [
+        "lld:contract:1",
+        "lld:data-model:4",
+        "lld:data-model:9",
+        "lld:invariant:3",
+        "plan:t3",
+        "plan:t9",
+        "plan:t17",
+        "plan:t25"
+      ],
+      "inputChars": 69501,
+      "sha256": "6dd7818608b57e77a728aae448339012b2631ec5ae7edaec458e8a644d3d740e"
+    },
+    {
+      "id": "05-vscode-host-02",
+      "files": [
+        "vscode-plugin/src/connections/__tests__/host.test.ts",
+        "vscode-plugin/src/connections/host.ts"
+      ],
+      "obligations": [
+        "lld:data-model:2",
+        "lld:data-model:5",
+        "lld:error:7",
+        "lld:shared:1",
+        "plan:t5",
+        "plan:t12",
+        "plan:t18",
+        "plan:t26"
+      ],
+      "inputChars": 76356,
+      "sha256": "29bd09b5b33a4121e776636896cd96ced2af49561f50d49c3616e96a79a5d8ad"
+    },
+    {
+      "id": "05-vscode-host-03",
+      "files": [
+        "vscode-plugin/src/connections/__tests__/entry.test.ts",
+        "vscode-plugin/src/connections/wiring.ts"
+      ],
+      "obligations": [
+        "lld:data-model:3",
+        "lld:data-model:8",
+        "lld:edge:1",
+        "lld:backward-compat",
+        "plan:t8",
+        "plan:t13",
+        "plan:t22"
+      ],
+      "inputChars": 27464,
+      "sha256": "9add76bd15b9d77139fd15a9f1223f7ff14100bfd7c0cebedc3cdc54bc1e8df5"
+    },
+    {
+      "id": "06-vscode-renderer-01",
+      "files": [
+        "vscode-plugin/src/connections/__tests__/fixtures/renderer.ts",
+        "vscode-plugin/src/connections/renderer.ts",
+        "vscode-plugin/src/connections/types.ts"
+      ],
+      "obligations": [
+        "lld:contract:1",
+        "lld:data-model:5",
+        "lld:data-model:8",
+        "lld:error:2",
+        "lld:edge:8",
+        "lld:shared:6",
+        "lld:migration:4",
+        "lld:scope",
+        "plan:t19",
+        "plan:t26",
+        "plan:t29",
+        "plan:t32"
+      ],
+      "inputChars": 94326,
+      "sha256": "2bc75630096c0738088415f136c8dc80ec686db83075af8465f67e07429c5742"
+    },
+    {
+      "id": "06-vscode-renderer-02",
+      "files": [
+        "vscode-plugin/src/connections/__tests__/feedback.test.ts",
+        "vscode-plugin/src/connections/messages.ts"
+      ],
+      "obligations": [
+        "lld:data-model:2",
+        "lld:data-model:7",
+        "lld:data-model:9",
+        "lld:edge:4",
+        "lld:shared:1",
+        "lld:shared:8",
+        "lld:migration:5",
+        "plan:t18",
+        "plan:t20",
+        "plan:t28",
+        "plan:t30"
+      ],
+      "inputChars": 36338,
+      "sha256": "aef466bcd42031cbc2f01b25a9ad4e9219f088a93b69b23d0e0fb5593f96fd39"
+    },
+    {
+      "id": "07-jetbrains-lifecycle-01",
+      "files": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt"
+      ],
+      "obligations": [
+        "lld:contract:1",
+        "lld:data-model:3",
+        "lld:data-model:6",
+        "lld:data-model:8",
+        "lld:error:7",
+        "lld:invariant:3",
+        "lld:migration:5",
+        "lld:state-after",
+        "plan:t3",
+        "plan:t5",
+        "plan:t8",
+        "plan:t13",
+        "plan:t19",
+        "plan:t22",
+        "plan:t27",
+        "plan:t29"
+      ],
+      "inputChars": 81097,
+      "sha256": "ff6c693eb5fbcfddd83636657b203b01ed7741957f683bba8ac2d8ecd845bea8"
+    },
+    {
+      "id": "07-jetbrains-lifecycle-02",
+      "files": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsPrivacyTest.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCapabilities.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsCompatibilityTest.kt"
+      ],
+      "obligations": [
+        "lld:data-model:2",
+        "lld:data-model:4",
+        "lld:data-model:7",
+        "lld:data-model:9",
+        "lld:edge:6",
+        "lld:migration:3",
+        "lld:migration:7",
+        "lld:scope",
+        "plan:t4",
+        "plan:t7",
+        "plan:t9",
+        "plan:t15",
+        "plan:t21",
+        "plan:t25",
+        "plan:t28",
+        "plan:t32"
+      ],
+      "inputChars": 68471,
+      "sha256": "ac5d856aa7603500e33f5a202baeff26898573739b29f074663274eb929da57b"
+    },
+    {
+      "id": "08-jetbrains-ui-01",
+      "files": [
+        "jetbrains-plugin/build.gradle.kts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionFieldsPanel.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt"
+      ],
+      "obligations": [
+        "lld:data-model:1",
+        "lld:data-model:3",
+        "lld:data-model:5",
+        "lld:data-model:9",
+        "lld:edge:6",
+        "lld:migration:1",
+        "lld:migration:3",
+        "lld:migration:6",
+        "lld:state-after",
+        "plan:t3",
+        "plan:t7",
+        "plan:t9",
+        "plan:t13",
+        "plan:t17",
+        "plan:t20",
+        "plan:t22",
+        "plan:t24",
+        "plan:t26",
+        "plan:t28",
+        "plan:t31"
+      ],
+      "inputChars": 90755,
+      "sha256": "bba1ad5e72798b2e6ae02aedeb01e3355b250df6236ed08f498b73d405857782"
+    },
+    {
+      "id": "08-jetbrains-ui-02",
+      "files": [
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/ManageConnectionsAction.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryPanel.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ConnectionsConfigurable.kt",
+        "jetbrains-plugin/src/main/resources/META-INF/plugin.xml",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/NestedOpsPagesTest.kt"
+      ],
+      "obligations": [
+        "lld:data-model:2",
+        "lld:data-model:4",
+        "lld:data-model:8",
+        "lld:error:9",
+        "lld:invariant:3",
+        "lld:migration:2",
+        "lld:migration:4",
+        "lld:backward-compat",
+        "lld:scope",
+        "plan:t5",
+        "plan:t8",
+        "plan:t11",
+        "plan:t15",
+        "plan:t19",
+        "plan:t21",
+        "plan:t23",
+        "plan:t25",
+        "plan:t27",
+        "plan:t30",
+        "plan:t32"
+      ],
+      "inputChars": 83588,
+      "sha256": "6fbdc5c60ad2fd98a69c8dd7a19f5ef36087ecc16618980a65d1512dcb533376"
+    },
+    {
+      "id": "09-daemon-policy-01",
+      "files": [
+        "src/daemon/connection-management-rpc.ts",
+        "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+        "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+        "src/daemon/db/__tests__/draft-test-routes.test.ts",
+        "src/daemon/db/__tests__/fixtures/connection-source-inventory.json",
+        "src/daemon/db/__tests__/fixtures/session-namespace-child.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/db/__tests__/management-defaults.test.ts",
+        "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+        "src/daemon/db/__tests__/removal-production-affinity.test.ts",
+        "src/daemon/db/__tests__/session-release-gate.test.ts",
+        "src/daemon/db/draft-test.ts",
+        "src/daemon/db/management-defaults.ts",
+        "src/daemon/db/management-enablement.ts"
+      ],
+      "obligations": [
+        "lld:data-model:3",
+        "lld:edge:3",
+        "lld:scope",
+        "plan:t30",
+        "plan:t32"
+      ],
+      "inputChars": 83780,
+      "sha256": "1c4e4721c9ef36de6d873fcc46b210ac7daf10b2b955c476ce204007e163bde7"
+    },
+    {
+      "id": "09-daemon-policy-02",
+      "files": [
+        "src/daemon/db/management-state.ts",
+        "src/daemon/index.ts",
+        "src/daemon/threads/__tests__/fixtures/module-state-inventory.json",
+        "src/daemon/db/__tests__/runtime-config.test.ts",
+        "src/daemon/db/runtime-config.ts"
+      ],
+      "obligations": [
+        "lld:data-model:4",
+        "lld:shared:8",
+        "plan:t2",
+        "plan:t31"
+      ],
+      "inputChars": 43735,
+      "sha256": "0e45408f462ffd1b0c35d0c9af9af0adccd49ef442e5b5521666b041a6745e56"
+    },
+    {
+      "id": "10-assets-packaging-01",
+      "files": [
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/vscode.d.ts",
+        "vscode-plugin/src/__tests__/packaging.test.ts",
+        "vscode-plugin/src/__tests__/activation.test.ts",
+        "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+        "vscode-plugin/media/connections-icon-dark.svg",
+        "vscode-plugin/media/connections-icon.svg",
+        "vscode-plugin/package-lock.json",
+        "vscode-plugin/src/connections/datasource-icons.ts",
+        "scripts/generate-connection-datasource-icons.py",
+        "vscode-plugin/media/datasources/README.md",
+        "vscode-plugin/media/datasources/apache-2.0-LICENSE.txt",
+        "vscode-plugin/media/datasources/apachearrow.svg",
+        "vscode-plugin/media/datasources/apacheavro.svg",
+        "vscode-plugin/media/datasources/apachecassandra.svg",
+        "vscode-plugin/media/datasources/apacheparquet.svg",
+        "vscode-plugin/media/datasources/clickhouse.svg",
+        "vscode-plugin/media/datasources/cockroachlabs.svg",
+        "vscode-plugin/media/datasources/csv.svg",
+        "vscode-plugin/media/datasources/devicon-LICENSE.txt",
+        "vscode-plugin/media/datasources/dynamodb.svg",
+        "vscode-plugin/media/datasources/etcd.svg",
+        "vscode-plugin/media/datasources/excel.svg",
+        "vscode-plugin/media/datasources/json_official.svg",
+        "vscode-plugin/media/datasources/keydb.svg",
+        "vscode-plugin/media/datasources/logos-LICENSE.txt",
+        "vscode-plugin/media/datasources/mariadb.svg",
+        "vscode-plugin/media/datasources/memcached.svg",
+        "vscode-plugin/media/datasources/microsoftsqlserver.svg",
+        "vscode-plugin/media/datasources/mongodb.svg",
+        "vscode-plugin/media/datasources/mysql.svg"
+      ],
+      "obligations": [],
+      "inputChars": 66642,
+      "sha256": "4b572bae3ea6b3cc090d422978cf2d1911642a099e407c85c3074c6c2663e58c"
+    },
+    {
+      "id": "10-assets-packaging-02",
+      "files": [
+        "vscode-plugin/media/datasources/natsdotio.svg",
+        "vscode-plugin/media/datasources/oracle.svg",
+        "vscode-plugin/media/datasources/postgresql.svg",
+        "vscode-plugin/media/datasources/redis.svg",
+        "vscode-plugin/media/datasources/simple-icons-LICENSE.txt",
+        "vscode-plugin/media/datasources/sources.json",
+        "vscode-plugin/media/datasources/sqlite.svg",
+        "vscode-plugin/media/datasources/text.svg",
+        "vscode-plugin/media/datasources/valkey.svg",
+        "vscode-plugin/media/datasources/vscode-icons-LICENSE.txt"
+      ],
+      "obligations": [],
+      "inputChars": 36672,
+      "sha256": "da253ca1457f18e379a73dea0b93d9664d94f910ca10bfb33bf8197925c058c4"
+    },
+    {
+      "id": "11-coverage-contracts-01",
+      "files": [
+        "test-fixtures/connection-management/.gitattributes",
+        "test-fixtures/connection-management/v1/manifest.json",
+        "src/shared/__tests__/fixtures/connection-junit.ts",
+        "src/shared/__tests__/connection-manager-kotlin-owner.test.ts",
+        "src/shared/__tests__/fixtures/connection-project-server.ts",
+        "src/shared/__tests__/connection-manager-kotlin-render.test.ts",
+        "src/shared/__tests__/connection-manager-kotlin-entry.test.ts",
+        "src/shared/__tests__/connection-manager-isolation.test.ts",
+        "src/shared/__tests__/connection-manager-parity.test.ts",
+        "src/shared/__tests__/connection-manager-privacy.test.ts",
+        "src/shared/__tests__/connection-manager-compatibility.test.ts",
+        "src/shared/connection-manager/capabilities.ts",
+        "scripts/render-connection-manager-implementation.ts",
+        "src/shared/__tests__/connection-manager-release.test.ts",
+        "src/shared/__tests__/connection-manager-packaging.test.ts",
+        "test-fixtures/connection-management/v1/manual-orders.parquet",
+        "src/shared/__tests__/connection-management.test.ts"
+      ],
+      "obligations": [
+        "lld:invariant:2",
+        "lld:invariant:5"
+      ],
+      "inputChars": 47001,
+      "sha256": "d15c3aa3ba9279f78eec36317a7efc8365a3520343ce89adebd13437f0dd51d7"
+    },
+    {
+      "id": "12-recorded-coverage-01",
+      "files": [],
+      "obligations": [],
+      "inputChars": 90129,
+      "sha256": "4cd00553b04b92fb45d234bf77b225d5dd5dba3fcdf4192b0fc1095644b9e590"
+    },
+    {
+      "id": "13-implementation-artifacts-01",
+      "files": [],
+      "obligations": [],
+      "inputChars": 44096,
+      "sha256": "545ad8940442b4553da49e600d30e96283523a0dc7e2d6ba44ae03d54b5f1bb1"
+    },
+    {
+      "id": "14-integration-expiry",
+      "files": [
+        "src/shared/connection-manager/controller.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt",
+        "vscode-plugin/src/connections/gateway.ts"
+      ],
+      "obligations": [
+        "03-mutations-01:1"
+      ],
+      "inputChars": 54285,
+      "sha256": "fe4be0fd07f758caaa0578e265a89707ca4eaa66251bafdfd7f324b0b0866687"
+    },
+    {
+      "id": "15-integration-lifecycle",
+      "files": [
+        "vscode-plugin/src/connections/session-owner.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt",
+        "vscode-plugin/src/connections/gateway.ts"
+      ],
+      "obligations": [
+        "04-vscode-lifecycle-01:1",
+        "07-jetbrains-lifecycle-01:1"
+      ],
+      "inputChars": 73534,
+      "sha256": "151691b2380dccbeccd756670f830b7303ccd0ee4573398f0f1ded3b1d768090"
+    },
+    {
+      "id": "16-integration-native-ui",
+      "files": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionFieldsPanel.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt"
+      ],
+      "obligations": [
+        "08-jetbrains-ui-01:1",
+        "08-jetbrains-ui-01:2"
+      ],
+      "inputChars": 72850,
+      "sha256": "0fffaba562870dd4b17210431278e978dc87c3ec3ac0f7be487eba47cae66d74"
+    },
+    {
+      "id": "17-fix-review-privacy-cache",
+      "files": [
+        "src/shared/connection-manager/draft.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt",
+        "src/shared/__tests__/connection-manager-draft.test.ts",
+        "src/shared/__tests__/connection-manager-wire.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-test.test.ts",
+        "vscode-plugin/package-lock.json"
+      ],
+      "obligations": [
+        "01-transport-01:1",
+        "02-state-draft-02:1",
+        "03-mutations-02:1",
+        "10-assets-packaging-01:1"
+      ],
+      "inputChars": 77739,
+      "sha256": "e7e1269f03c559f5a275ddbe918a40fd81c3b02b38669c6e6ada1e4fbdd6d78d"
+    },
+    {
+      "id": "18-fix-review-expiry",
+      "files": [
+        "src/shared/connection-manager/controller.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt",
+        "vscode-plugin/src/connections/messages.ts",
+        "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt",
+        "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt",
+        "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/implementation-definitions.json"
+      ],
+      "obligations": [
+        "03-mutations-01:1"
+      ],
+      "inputChars": 88098,
+      "sha256": "c7d24d911ab6cd779815d1a3578053d23ab9f8251c4f3a2ef3eb0e56c83c5d94"
+    },
+    {
+      "id": "19-final-fix-verification",
+      "files": [
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt",
+        "src/shared/__tests__/connection-manager-wire.test.ts",
+        "vscode-plugin/src/connections/messages.ts"
+      ],
+      "obligations": [
+        "17-fix-review-privacy-cache:1",
+        "18-fix-review-expiry:1"
+      ],
+      "inputChars": 75354,
+      "sha256": "c64c96aa5641fb80d5516c0002a35e9cfce9c1d6545f4460063ab84c11c5abbf"
+    }
+  ],
+  "binaryAndSvgLimit": "Binary fixture bytes and individual SVG visuals are inventoried/hashes only; source manifest/generator and recorded tests assessed. Native UI validation per user statuses."
+}

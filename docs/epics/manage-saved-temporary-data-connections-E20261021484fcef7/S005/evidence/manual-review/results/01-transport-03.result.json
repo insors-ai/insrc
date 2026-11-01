@@ -1,0 +1,89 @@
+{
+  "id": "01-transport-03",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:30:57.122Z",
+  "finished": "2026-11-01T04:31:31.913Z",
+  "inputChars": 37064,
+  "inputSha256": "3da60249469c4c9f945be56e2ee73a682a4239fc933b631ec844c549551b8460",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the two supplied changed files found no concrete, reachable defect. Both are test-only: PersistentDaemonLaneTest.kt (Kotlin) and connection-manager-kotlin-transport.test.ts (a Node wrapper that runs the JUnit classes). The production code under test was not supplied. That includes PersistentDaemonLane, ConnectionLaneCall, UnixSocketDaemonRpc, src/shared/ipc-client.ts, the fixtures, the manager model/controller, the VS Code and JetBrains wiring, and plugin.xml. Every assigned obligation therefore depends on evidence that is not in the batch, so I mark all of them could-not-verify. A few observations from the tests only:\n- The Node wrapper runs 10 tests for PersistentDaemonLaneTest, and the class contains exactly 10 @Test methods.\n- The tests exercise partial writes and split UTF-8 frames. They also cover cancel and late-reply aliasing, queued cancellation and capacity, deadline and write-failure uncertainty, malformed and oversized frames, ID exhaustion, and per-lane socket independence.\n- The tests also exercise aggregate request-size capacity, a blocked-write watchdog, and a production Unix socket factory alongside the original one-shot UnixSocketDaemonRpc call.\n- Tests that reach this code assert fixed safe error text and the written/unwritten distinction. That is consistent with the plan t4/t5 acceptance checks on write outcome, bounds and disposal. Whether the implementation meets them is unverified.\n- This is not native or live acceptance and not release evidence.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:2",
+        "status": "could-not-verify",
+        "evidence": "No connection-manager model/controller/wire, extension.ts, InsrcSettingsConfigurable.kt or Kotlin connections package was supplied. Only transport lane tests are in the batch."
+      },
+      {
+        "key": "lld:data-model:6",
+        "status": "could-not-verify",
+        "evidence": "OperationTicket and the connection-management/removal sources are not supplied. The lane tests only show written=true/false classification on timeout, cancel and close, which supports unknown-outcome handling at the transport layer but not the ticket and retry invariants."
+      },
+      {
+        "key": "lld:error:2",
+        "status": "could-not-verify",
+        "evidence": "No decoder, view-state or stale-marking code is supplied. The lane tests show malformed, duplicate-key, unsolicited, invalid-UTF8, deeply nested and oversized frames closing the lane with a fixed safe message, but render and last-good behaviour is unseen."
+      },
+      {
+        "key": "lld:error:9",
+        "status": "could-not-verify",
+        "evidence": "The shared fixture corpus, its digest and the Kotlin DTO decoders are not supplied. The Node wrapper only launches JUnit classes (runConnectionJUnit is not shown) and does not itself prove version/digest parity."
+      },
+      {
+        "key": "lld:shared:3",
+        "status": "could-not-verify",
+        "evidence": "sc2 signed operation/status and activation consumers are not in the batch."
+      },
+      {
+        "key": "lld:migration:4",
+        "status": "could-not-verify",
+        "evidence": "plugin.xml, ConnectionsConfigurable, ManageConnectionsAction and VS Code command wiring are not supplied."
+      },
+      {
+        "key": "plan:t1",
+        "status": "could-not-verify",
+        "evidence": "The language-neutral fixture corpus, coverage index and digest checks are not supplied. Neither changed file loads the corpus."
+      },
+      {
+        "key": "plan:t4",
+        "status": "could-not-verify",
+        "evidence": "src/shared/ipc-client.ts and its TypeScript persistent-lane tests are not supplied. The changed files cover the Kotlin lane (t5), not the TypeScript lane."
+      },
+      {
+        "key": "plan:t14",
+        "status": "could-not-verify",
+        "evidence": "No TypeScript draft-test controller or tests are supplied."
+      },
+      {
+        "key": "plan:t21",
+        "status": "could-not-verify",
+        "evidence": "No JetBrains Settings or action wiring and no CM-S5-ENTRY-KT test are supplied."
+      },
+      {
+        "key": "plan:t24",
+        "status": "could-not-verify",
+        "evidence": "No privacy sink-poisoning tests or adapters are supplied. The lane test only checks that a private IOException message does not appear in the lane error message."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLaneTest.kt",
+      "src/shared/__tests__/connection-manager-kotlin-transport.test.ts"
+    ],
+    "limitations": [
+      "The production PersistentDaemonLane and ConnectionLaneCall/ConnectionLaneException sources were not supplied. The tests' expected codes, MAX_BYTES, MAX_ID, the 64-pending bound and the 16384-char string and aggregate limits could not be checked against the implementation.",
+      "UnixSocketDaemonRpcParseTest and the fixtures/connection-junit.js helper were not supplied. The expected counts of 10 and 13 are only partly checked: 10 matches the visible @Test count, 13 is unverified.",
+      "No test results were supplied. Timing-sensitive tests (150ms/200ms deadlines, watchdog) cannot be assessed for flakiness.",
+      "The Unix-socket test needs a JDK with Unix-domain channel support (16+) and a temp path under the macOS sun_path limit. The build's JDK target was not supplied, so no defect is raised.",
+      "All other files in the assigned obligations (TypeScript sources, fixtures, UI and wiring) are unassessed because they are not among the changed evidence."
+    ],
+    "evidenceRequests": [
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLane.kt, including the ConnectionLaneCall/ConnectionLaneException definitions, the constants and the open() factory",
+      "src/shared/__tests__/fixtures/connection-junit.ts, to confirm the helper's count semantics and whether it fails on skipped or missing tests",
+      "src/shared/ipc-client.ts and its CM-S5-TRANSPORT-TS tests, for plan t4",
+      "The shared fixture corpus with version/digest and the Node and JUnit consumers, for plan t1 and lld:error:9",
+      "The connection-manager model/controller, VS Code and JetBrains wiring, and plugin.xml, for the data-model, entry-point and privacy obligations"
+    ]
+  }
+}

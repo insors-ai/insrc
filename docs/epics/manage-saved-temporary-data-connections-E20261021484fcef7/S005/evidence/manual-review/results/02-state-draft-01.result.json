@@ -1,0 +1,134 @@
+{
+  "id": "02-state-draft-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:31:31.915Z",
+  "finished": "2026-11-01T04:33:03.204Z",
+  "inputChars": 84162,
+  "inputSha256": "789ee3d73b24f7cabd3d972c13d2abaa15097caf53d1f5d17bda1051ccdc3c8b",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the supplied batch (corpus loaders and tests, the TS and Kotlin pure sc7 manager models, and the TS draft test). I found no concrete, reachable defect in the supplied current code, so there are no findings. Most assigned obligations can't be verified from this batch. They depend on files that weren't supplied: wire.ts, draft.ts, controller.ts, ConnectionProtocol.kt, the Kotlin draft model, host and session code, and the JUnit runner. Only plan:t6 is marked holds, from reading the model; I did not run any tests. This is not a canonical CR and does not approve BUILD.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:contract:1",
+        "status": "could-not-verify",
+        "evidence": "The list-state, count and generation parts hold in src/shared/connection-manager/model.ts and ConnectionsManagerModel.kt. The eight list states are distinct. Counts and rows come from one decoded snapshot. A decode failure gives read-error without an empty fallback. The projection carries no capability or credential. The model state has no draftRevision, dirty, mutationOperationId or refreshError fields, so the dirty and mutation parts would sit in controller.ts or draft.ts. Those files weren't supplied."
+      },
+      {
+        "key": "lld:data-model:2",
+        "status": "could-not-verify",
+        "evidence": "Both models are pure: the Kotlin test asserts there is no com.intellij, PersistentStateComponent or java.io, and the corpus carries the version/digest check. controller.ts, wire.ts, vscode connections/*, the Kotlin counterpart wiring and the Settings call sites weren't supplied. The corpus bytes weren't reviewed. Whether Node and JUnit read identical bytes depends on Gradle resource mapping, which wasn't supplied."
+      },
+      {
+        "key": "lld:data-model:4",
+        "status": "could-not-verify",
+        "evidence": "Only the consumers of the safe decoders appear (decodeSafeConnectionList, ConnectionProtocol.list). The draft test exercises hostile getters, secret-bearing endpoints, fixed identity and unknown-schema read-only handling. The decoders, ConnectionProtocol.kt, DaemonGatewayService and UnixSocketDaemonRpc weren't supplied."
+      },
+      {
+        "key": "lld:data-model:6",
+        "status": "could-not-verify",
+        "evidence": "No operation-ticket, attempt, unknown-state or reconciliation code is in the supplied batch."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "could-not-verify",
+        "evidence": "No session owner, persistent lane, heartbeat or service-disposal code was supplied. The model only has epoch and temporary-ended events that invalidate view generations."
+      },
+      {
+        "key": "lld:error:2",
+        "status": "could-not-verify",
+        "evidence": "In the TS model a decode failure keeps the last-good rows, sets read-error, gives stale=true and canMutate=false, and does not reset counts. The Kotlin model catches only ConnectionReplyException around ConnectionProtocol.list. I couldn't confirm that the Kotlin decoder never throws another exception type on a hostile payload."
+      },
+      {
+        "key": "lld:error:8",
+        "status": "could-not-verify",
+        "evidence": "The list-reply tuple of repoRoot, viewGeneration and daemonEpoch, plus awaitingRead, is checked identically in both models. The tuple includes no key or revision, which only matters for draft-test replies. Test-reply handling and draft-test cancellation weren't supplied."
+      },
+      {
+        "key": "lld:edge:3",
+        "status": "could-not-verify",
+        "evidence": "The reveal waits for an authoritative list-result and then sets the selection, filter and search. Whether this matches the 'scope/All adjustment' wording is determined by corpus.json, which wasn't reviewed. The Saved default scope and the lifecycle copy are in UI code that wasn't supplied."
+      },
+      {
+        "key": "lld:edge:7",
+        "status": "could-not-verify",
+        "evidence": "No temporary resource-limit or unsupported-file-type handling was supplied."
+      },
+      {
+        "key": "lld:shared:1",
+        "status": "could-not-verify",
+        "evidence": "The pure model parts hold: counts, distinct list states, retained explicit repoRoot, generation guards. The TS draft test covers dirty navigation with Discard/Cancel for eight targets. The generation-bound tests and truthful effects of the host and mutation layers weren't supplied."
+      },
+      {
+        "key": "lld:migration:2",
+        "status": "could-not-verify",
+        "evidence": "The corpus and the TS and Kotlin models are present. The persistent multiplexing in ipc-client.ts and UnixSocketDaemonRpc.kt, and the preservation of the one-shot APIs, weren't supplied."
+      },
+      {
+        "key": "plan:t1",
+        "status": "could-not-verify",
+        "evidence": "Version and digest drift tests exist in TS and Kotlin: a byte change, a manifest version bump, and a self-consistent version-2 corpus all fail. The coverage index, with acceptance 'pending' and the fixture-evidence-only flag, is asserted. The raw corpus wasn't reviewed for secrets or real configuration, and the Gradle resource mapping and connection-junit.ts weren't supplied."
+      },
+      {
+        "key": "plan:t6",
+        "status": "holds",
+        "evidence": "model.ts has the eight distinct list states. Rows are cleared on a root switch and marked non-actionable (canMutate=false) while stale. The root is selected explicitly rather than taken from an editor. Reads for an old root, view generation or epoch are ignored. Counts and search matching are computed from one snapshot. A committed reveal runs a refresh and applies only after a matching key and revision appears in an authoritative list-result. The tests cover these. Assessed by static reading only; wire.ts and the corpus weren't supplied."
+      },
+      {
+        "key": "plan:t8",
+        "status": "could-not-verify",
+        "evidence": "No workbench owner code or CM-S5-OWNER-TS test was supplied."
+      },
+      {
+        "key": "plan:t11",
+        "status": "could-not-verify",
+        "evidence": "Only the TS draft test was supplied. Neither the Kotlin draft model nor CM-S5-FORM-KT was in the batch."
+      },
+      {
+        "key": "plan:t15",
+        "status": "could-not-verify",
+        "evidence": "No Kotlin draft-test code or CM-S5-TEST-KT was supplied."
+      },
+      {
+        "key": "plan:t18",
+        "status": "could-not-verify",
+        "evidence": "No renderer, host or webview code was supplied."
+      },
+      {
+        "key": "plan:t26",
+        "status": "could-not-verify",
+        "evidence": "The supplied batch contains no live UI evidence. The user reports manual 0.5.23 testing but individual cases aren't documented here, so I don't treat it as passed."
+      },
+      {
+        "key": "plan:t31",
+        "status": "could-not-verify",
+        "evidence": "No packaging, bundle or smoke evidence was supplied."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCorpusTest.kt",
+      "src/shared/__tests__/connection-manager-corpus.test.ts",
+      "src/shared/__tests__/fixtures/connection-corpus.ts",
+      "src/shared/__tests__/connection-manager-model.test.ts",
+      "src/shared/connection-manager/model.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModel.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt",
+      "src/shared/__tests__/connection-manager-kotlin-model.test.ts",
+      "src/shared/__tests__/connection-manager-draft.test.ts"
+    ],
+    "limitations": [
+      "test-fixtures/connection-management/v1/corpus.json was supplied only as metadata (size, sha256, top-level keys). I did not assess its contents: the manager scenarios, draft scenarios and wire cases that define the expected state and effects.",
+      "The files below weren't supplied, so they were not assessed: src/shared/connection-manager/wire.ts, draft.ts and controller.ts, the Kotlin ConnectionProtocol.kt and draft model, the TS fixtures/connection-junit.ts runner, manifest.json, the Gradle resource configuration, and all host, session, transport, renderer and Settings files.",
+      "I did not run any tests. Pass or fail claims, such as the 16 Kotlin scenarios versus the TS check of at least 14, are from static reading only.",
+      "I did not treat the known non-green automated sweep as evidence of a defect. I did not reopen the authorized product decisions or call any deferred or user-reported coverage passed."
+    ],
+    "evidenceRequests": [
+      "src/shared/connection-manager/controller.ts and draft.ts, to verify the draftRevision, dirty, mutationOperationId and refreshError projection fields and the dirty/mutation reconciliation gates.",
+      "ConnectionProtocol.kt list/decoder exception types, to confirm every hostile payload maps to ConnectionReplyException so that ConnectionsManagerModel.kt:~86 degrades to read-error like the TS catch-all.",
+      "The manager scenarios in corpus.json for: Unavailable or Epoch events with no selected repoRoot (both models yield 'no-repository' rather than offline or upgrade-required); the reveal filter adjustment; and a pendingReveal that is never cleared when its revision doesn't appear in a successful list-result.",
+      "connection-junit.ts and the Gradle test-resource mapping, to confirm that Node and JUnit read byte-identical corpus files from test-fixtures/connection-management/v1."
+    ]
+  }
+}

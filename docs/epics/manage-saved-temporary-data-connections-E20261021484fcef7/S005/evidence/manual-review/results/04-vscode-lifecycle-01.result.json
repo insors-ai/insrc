@@ -1,0 +1,157 @@
+{
+  "id": "04-vscode-lifecycle-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:39:27.503Z",
+  "finished": "2026-11-01T04:42:09.783Z",
+  "inputChars": 89934,
+  "inputSha256": "2d13ee0d99bcb871ecb3c6bdca3709cfc3e14af6b310932dada30fe6903b66aa",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the VS Code workbench owner (session-owner.ts), the gateway, the extension.ts wiring and the two supplied test files found one low-severity defect. Any daemon `remote-error` during connect, open, resume, delegate or attach is classified as `upgrade-required`. That classification tears down the whole workbench session and erases every root's temporary overlay inputs. The rest of the owner holds up against the VS Code half of the assigned lifecycle obligations: one owner per workbench, 30s heartbeat with a 90s lease, root A→B→A retention, view-independent lifecycle, no capability leakage in the public view, forged-field refusal before send, and bounded disposal. The JetBrains half and the host, wiring, shared controller, package.json and daemon code were not supplied, so many obligations stay could-not-verify. This is not a canonical CR and does not approve BUILD.",
+    "findings": [
+      {
+        "severity": "LOW",
+        "file": "vscode-plugin/src/connections/session-owner.ts",
+        "line": 163,
+        "trigger": "A session is live with temporary overlays on root A. The user selects root B, or a reconnect runs, and any daemon handler for `capabilities`, `session.open`, `session.resume`, `session.delegate` or `session.attach` replies with an ordinary RPC error (`IpcLaneError` code `remote-error`) instead of a structured `status:'rejected'` reply. An example is an internal failure while checking whether the root is registered.",
+        "defect": "The catch block in `#ensure` treats every `remote-error` (and every non-`IpcLaneError`) as proof that the daemon lacks the feature. It calls `#invalidate('upgrade-required')` and throws `upgrade-required`. That cancels timers, drops all data lanes, disposes the control lane, nulls the resume credentials, clears all feature metadata and fires the temporary-invalidation listeners. A failure scoped to one root or one call therefore destroys the whole workbench session and erases root A's retained overlays and drafts. The user is then told to upgrade. The LLD only classifies unknown-method replies as upgrade-required, and it requires root A→B→A to retain overlays.",
+        "evidence": "session-owner.ts:163-165: `if(!(error instanceof IpcLaneError)||error.code==='remote-error'){ this.#invalidate('upgrade-required'); throw new ConnectionOwnerError('upgrade-required'); }`. `#invalidate` (lines 69-77) runs the invalidation listeners, clears `#features`, disposes the control lane and sets `#resume=null`. The visible tests cover only the globally disabled-feature case (`setEnabled(false)`), not a transient `remote-error` on a live session. I could not see `ipc-client.ts`, so I did not confirm whether `remote-error` carries a distinguishable unknown-method code. I also did not confirm which daemon paths throw rather than return a rejected status.",
+        "remedy": "Treat only a missing required feature or an unknown-method reply as `upgrade-required`. Map other remote or decode errors to a transient `offline` or error outcome that disposes only the failing lane and keeps the session, resume credentials and overlays. Add a test that injects a one-off `remote-error` on `delegate` for root B and asserts that root A's overlay and the temporary-invalidation count are unchanged."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "lld:contract:1",
+        "status": "could-not-verify",
+        "evidence": "The ConnectionManagerState projection, list-state machine, dirty guards and draftRevision live in the shared manager model and host. Those files were not supplied. The owner's public view (`status`, `repoRoot`, `daemonEpoch`, `generation`) carries no capability or transport (session-owner.ts:16-19, 54)."
+      },
+      {
+        "key": "lld:data-model:3",
+        "status": "could-not-verify",
+        "evidence": "package.json, the host, `registerConnectionCommands` and the JetBrains Settings/plugin.xml were not supplied. The extension.ts hunk constructs `ConnectionsManagerHost` and registers the commands, but the command IDs and the root picker are not visible."
+      },
+      {
+        "key": "lld:data-model:5",
+        "status": "could-not-verify",
+        "evidence": "`draftTestSource` pins Test and cancel to one captured lane, never reconnects, and checks capability support, epoch and expiry before each run (session-owner.ts:~190-212). The draft serializer, requestId/revision matching and drain handling are in `test-controller.ts`, which was not supplied."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "holds",
+        "evidence": "VS Code half only; the JetBrains service was not supplied. extension.ts constructs one `ConnectionsWorkbenchOwner` and registers it in `context.subscriptions`, and the test regex asserts this. The owner has a control lane, per-root data lanes and unclaimed Saved lanes. Heartbeat is 30000ms and lease is 90000ms, enforced in `resumeReply`/`#beat`. The test shows root A→B→A reuses the same overlay and a single `session.open`. Manager close disposes only the subscription and sends no `session.end`. Disposal ends the session once and closes all lanes. Epoch change erases temporary state and never resumes. See the LOW finding for an over-broad invalidation path."
+      },
+      {
+        "key": "lld:error:1",
+        "status": "could-not-verify",
+        "evidence": "The owner maps missing base features to `upgrade-required`, and a test shows no Saved fallback through a claimed lane. `requestSaved` does not itself check advertised read features, and per-control gating sits in the host and shared capability helpers, which were not supplied. The LOW finding shows over-broad upgrade-required classification."
+      },
+      {
+        "key": "lld:error:4",
+        "status": "could-not-verify",
+        "evidence": "gateway.ts supplies `refresh` and activation call ports and keeps refresh retryable for an offscreen root. The commit, activation and refresh phase handling and the credential clearing are in the shared `ConnectionMutationController`, which was not supplied."
+      },
+      {
+        "key": "lld:error:7",
+        "status": "holds",
+        "evidence": "VS Code half only. Tests show a stale generation gives `stale-view`, a mismatched `repoRoot` gives `invalid-request`, and forged `capability`, `sessionHandle`, `projectId` and `windowId` are refused. The method count is unchanged, so refusal happens before the socket send. isolation.test.ts shows two real owners with the same IDs and lane counters stay isolated, and one owner's disposal leaves the other usable. JetBrains was not supplied."
+      },
+      {
+        "key": "lld:error:9",
+        "status": "could-not-verify",
+        "evidence": "The cross-language fixtures and corpus tests, and the Kotlin consumer, were not supplied. isolation.test.ts loads `loadConnectionCorpus()`, which is a TS-side use only."
+      },
+      {
+        "key": "lld:edge:6",
+        "status": "holds",
+        "evidence": "VS Code half only. The test covers root A→B→A with the same overlay handle, one `session.open`, retained overlays, `onChange` subscription disposal with no `session.end`, and a second owner isolated from the first owner's disposal. JetBrains was not supplied."
+      },
+      {
+        "key": "lld:shared:4",
+        "status": "holds",
+        "evidence": "VS Code client side. The client sends only owner-held session lanes. `#params` rejects caller-supplied `sessionHandle`, `capability`, `daemonEpoch` and `projectId`, and enforces a root and scope match on `key`/`ticket`. Authority, leases and busy enforcement are left to the daemon."
+      },
+      {
+        "key": "lld:migration:3",
+        "status": "could-not-verify",
+        "evidence": "The VS Code owner and the two-owner isolation test exist. Neither the JetBrains project service nor the ordering relative to temporary UI was supplied."
+      },
+      {
+        "key": "lld:migration:7",
+        "status": "could-not-verify",
+        "evidence": "The owner ends on actual disposal only. Whether `upgrade-required` invalidation (session-owner.ts:74 clears features) still allows reconciliation and cleanup of an unknown mutation depends on `connectionMutationSupported`, which was not supplied."
+      },
+      {
+        "key": "lld:state-after",
+        "status": "could-not-verify",
+        "evidence": "Only the VS Code owner and gateway were reviewed, and the Kotlin implementation was not supplied. Native sc7 behaviour in both clients cannot be confirmed."
+      },
+      {
+        "key": "plan:t1",
+        "status": "could-not-verify",
+        "evidence": "The fixture corpus and drift tests were not supplied; the supplied tests only consume them."
+      },
+      {
+        "key": "plan:t3",
+        "status": "could-not-verify",
+        "evidence": "No Kotlin files were supplied."
+      },
+      {
+        "key": "plan:t8",
+        "status": "holds",
+        "evidence": "Single extension-host owner with explicit control, root-data and Saved lanes. 30s heartbeat. Local 90s expiry, with same-epoch resume that is not credited as a lease extension until a heartbeat confirms it. Disposal stops admission, erases temporary inputs, sends a best-effort `session.end` and bounds the wait with a 1s timer. The view has no capability field, and `JSON.stringify(owner)` is `{}`. Whether the webview, memento and logs stay free of capabilities depends on the host, which was not supplied."
+      },
+      {
+        "key": "plan:t13",
+        "status": "could-not-verify",
+        "evidence": "This is the Kotlin task and no Kotlin was supplied."
+      },
+      {
+        "key": "plan:t18",
+        "status": "could-not-verify",
+        "evidence": "The renderer, host and CSP code were not supplied. The extension.ts panel hunk uses `webviewChannel(panel)`, and its definition is outside the supplied hunks."
+      },
+      {
+        "key": "plan:t21",
+        "status": "could-not-verify",
+        "evidence": "JetBrains plugin.xml and Settings files were not supplied."
+      },
+      {
+        "key": "plan:t23",
+        "status": "could-not-verify",
+        "evidence": "No cross-language transcript runner was supplied. Live and UI acceptance remain pending per the user."
+      },
+      {
+        "key": "plan:t27",
+        "status": "could-not-verify",
+        "evidence": "JetBrains live UI acceptance is deferred by the user. No evidence was supplied."
+      },
+      {
+        "key": "plan:t30",
+        "status": "could-not-verify",
+        "evidence": "No artifact, inventory or gate evidence was supplied. Nothing in the reviewed diffs enables release admission."
+      }
+    ],
+    "inspectedFiles": [
+      "vscode-plugin/src/connections/session-owner.ts",
+      "vscode-plugin/src/connections/gateway.ts",
+      "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+      "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+      "vscode-plugin/src/extension.ts (connection-related hunks only)"
+    ],
+    "limitations": [
+      "extension.ts also carries unrelated hunks (model tiers, provider registration, delivery board, host env, run-config definitions). These were not assessed beyond checking they don't touch connection ownership.",
+      "`host.ts`, `wiring.ts`, `package.json`, the shared `connection-manager/*` modules, `ipc-client.ts` and the daemon `connection-session-rpc` and `server` code were not supplied. Behaviour that depends on them is unverified: lane timeouts, `remote-error` semantics, `connectionMutationSupported`, `setRegisteredRoots` call sites, and `webviewChannel` definition.",
+      "No Kotlin or JetBrains files were supplied, so all JetBrains halves are unassessed.",
+      "No tests were run. Timing assertions in the supplied tests, such as lane close notifications being synchronous after `dispose()`, were not checked.",
+      "Per user direction, I did not count manual VS Code 0.5.23 testing as independent evidence, and I did not treat the non-green automated sweep as proof of a defect."
+    ],
+    "evidenceRequests": [
+      "src/shared/ipc-client.ts `openIpcLane`/`PersistentIpcLane`: `IpcLaneError` codes, per-rpc timeout, and how an unknown-method reply is distinguished from other `remote-error` replies.",
+      "vscode-plugin/src/connections/host.ts and wiring.ts: where `setRegisteredRoots` is called, how the host tracks its visible root against `owner.view.repoRoot`, and whether webview state excludes capabilities.",
+      "src/shared/connection-manager/controller.ts and capabilities.ts: whether automatic or timed reconciliation of an unknown offscreen mutation calls `status` through gateway.ts:28. That call retargets the owner's visible root via `selectRoot` while the manager shows another root. Also whether `connectionMutationSupported` still permits status/removal-recovery calls after `upgrade-required` clears features.",
+      "src/daemon/connection-session-rpc.ts: which failures throw (a `remote-error`) versus return `status:'rejected'` for `capabilities`, `delegate`, `attach` and an unregistered root.",
+      "The definition of `webviewChannel` in extension.ts, which the new createPanel hunk uses, to confirm it is in scope at that line."
+    ]
+  }
+}

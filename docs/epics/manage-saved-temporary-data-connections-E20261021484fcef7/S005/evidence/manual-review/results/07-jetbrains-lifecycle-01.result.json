@@ -1,0 +1,122 @@
+{
+  "id": "07-jetbrains-lifecycle-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:47:43.678Z",
+  "finished": "2026-11-01T04:49:42.829Z",
+  "inputChars": 81097,
+  "inputSha256": "ff6c693eb5fbcfddd83636657b203b01ed7741957f683bba8ac2d8ecd845bea8",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the three supplied JetBrains files: ConnectionsSessionService.kt, ConnectionsSessionServiceTest.kt and ConnectionsIsolationTest.kt. I found one concrete defect, MED severity. A reply timeout, or any other non-lane exception, during session setup in `ensure()` is classified as `upgrade-required`. That destroys the live session and its temporary overlay. Project ownership, forged-hint refusal, lease/heartbeat handling and disposal otherwise look sound in the visible code. Most assigned obligations depend on files outside this batch (decoders, the transport lane, the mutation, removal and test controllers, the manager panel, VS Code) and the batch includes no execution results, so I could not verify them. This is a manual review only and does not approve BUILD.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt",
+        "line": 273,
+        "trigger": "A daemon reply to `capabilities`, `session.open`, `session.resume`, `session.delegate` or `session.attach` takes longer than 16 seconds during `selectRoot`. For example, the daemon is busy or a lane is stalled. `rpc()` (lines 209-211) then throws `TimeoutException` from `.get(16,SECONDS)`.",
+        "defect": "The `ensure()` catch treats every exception that is not a `ConnectionLaneException` as a protocol or version mismatch (`if(e !is ConnectionLaneException||e.code==\"remote-error\")`). A timeout is therefore reported as `upgrade-required`, and `invalidate(\"upgrade-required\")` runs. That call clears `authority`, closes the control lane and all data lanes, and clears feature snapshots. It also fires the temporary-invalidation listeners, which erase temporary drafts and attempts. A transient slowness is turned into a permanent-looking upgrade error. The daemon-side session and its temporary overlays are abandoned without `session.end`. The next `selectRoot` opens a fresh session instead of resuming. Any `TimeoutException` or `InterruptedException` that is not a lane exception takes the same path.",
+        "evidence": "Lines 209-211: `lane.request(...).result.toCompletableFuture().get(16,TimeUnit.SECONDS)` with only `ExecutionException` unwrapped. Line 273: `if(e !is ConnectionLaneException||e.code==\"remote-error\"){invalidate(\"upgrade-required\");throw ConnectionOwnerException(\"upgrade-required\")}`. Lines 274-275: only a `ConnectionLaneException` reaches the offline path that preserves the authority for same-epoch resume. No test in the supplied files exercises a reply timeout.",
+        "remedy": "Handle `TimeoutException` and `InterruptedException` before the upgrade-required branch. Close the control lane and call `lost(lane)` so the status becomes offline and the authority is kept for same-epoch resume, then throw `ConnectionOwnerException(\"offline\")`. Reserve `invalidate(\"upgrade-required\")` for decode or validation failures and `remote-error`. Add a test where the fixture delays a capabilities or delegate reply beyond the timeout and then asserts the status is offline, the authority is retained and the next `selectRoot` resumes."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "lld:contract:1",
+        "status": "could-not-verify",
+        "evidence": "The ConnectionManagerState model, filter/list states, dirty guards and counts are not in this batch. The owner exposes only status, repoRoot, epoch and generation, and `SessionAuthority.toString` is redacted, so no capability reaches the public view. The upgrade-required and offline states exist but are misassigned on timeout (finding at line 273)."
+      },
+      {
+        "key": "lld:data-model:3",
+        "status": "could-not-verify",
+        "evidence": "ConnectionListState, the Settings configurable, plugin.xml and the chooser are not supplied. The default `managerRoots` reads the daemon-registered roots through `DaemonGatewayService.registeredRepos()` and throws offline when they are unavailable."
+      },
+      {
+        "key": "lld:data-model:6",
+        "status": "could-not-verify",
+        "evidence": "Ticket/attempt retention lives in `ConnectionMutationController`, which is not supplied. This file only creates it lazily per project, closes it on dispose, and `testActualProjects...Isolation` submits through it. Saved lanes are separate from the owner-bound temporary lane."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "could-not-verify",
+        "evidence": "The JetBrains side is visible. There is one `@Service(PROJECT)` Disposable per project. It uses a dedicated control lane, a 30s heartbeat and an exact 90s lease check. It resumes the same epoch with `session.resume`, delegates per root with the `workbench-ui` audience, and retains data lanes across root switches. View-subscription close does not end the session, and project disposal sends `session.end` and drains lanes. The VS Code owner, `UnixSocketDaemonRpc.kt` and the shared TS transport are not supplied. The timeout finding qualifies the reconnect behavior."
+      },
+      {
+        "key": "lld:error:7",
+        "status": "holds",
+        "evidence": "The service is obtained from the actual `Project`. `params()` rejects `sessionHandle`, `capability`, `daemonEpoch`, `projectId`, `windowId` and `trustedContext`. It also rejects a mismatched `repoRoot`, key or ticket root/scope, and methods outside the allow-list. `request()` rejects a stale view generation, epoch or root before any lane send. `ConnectionsIsolationTest` asserts that forged or wrong-root requests do not increase the fixture's list count. This was not run here."
+      },
+      {
+        "key": "lld:invariant:3",
+        "status": "holds",
+        "evidence": "All new session state is in the project-level service and `ConnectionsSessionOwner`. The only use of the app `DaemonGatewayService` in this file is the stateless `registeredRepos()` call. The isolation test asserts that `DaemonGatewayService` has no capability field and no `ConnectionsSessionService` field. The `DaemonGatewayService` source was not supplied."
+      },
+      {
+        "key": "lld:migration:5",
+        "status": "could-not-verify",
+        "evidence": "Test files are present for the project service and isolation, but the batch contains no run results. The user states that the full sweep has known failures, and JetBrains live UI is deferred."
+      },
+      {
+        "key": "lld:state-after",
+        "status": "could-not-verify",
+        "evidence": "Only the JetBrains session-owner part is visible. The native manager panel, TS controllers and VS Code owner are outside this batch."
+      },
+      {
+        "key": "plan:t3",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionProtocol.kt` and its DTO decoders are not supplied. Only calls to them are visible: `capabilities`, `requestData` and `list`."
+      },
+      {
+        "key": "plan:t5",
+        "status": "could-not-verify",
+        "evidence": "The `PersistentDaemonLane` implementation (framing, partial writes, cancel/close, written-unknown) is not supplied. The tests only assert that `written` is true on cancel and on close after a write."
+      },
+      {
+        "key": "plan:t8",
+        "status": "could-not-verify",
+        "evidence": "This is the VS Code workbench owner. The batch contains only the JetBrains project-service analogue."
+      },
+      {
+        "key": "plan:t13",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin mutation gateway and recovery effects are not supplied. The service only wires `createProjectMutationOwner`."
+      },
+      {
+        "key": "plan:t19",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionsManagerPanel.kt` is not supplied. The service delivers listener callbacks on the EDT with project-disposal and generation guards."
+      },
+      {
+        "key": "plan:t22",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionsIsolationTest` and `ConnectionsSessionServiceTest` cover two real projects with the same root and ID, forged-hint refusal, root A→B→A retention and one-owner disposal. No execution evidence was supplied. The production-route refusal for global Saved affinity is not visible. The `ConnectionMutationBackend` fixture is not supplied."
+      },
+      {
+        "key": "plan:t27",
+        "status": "could-not-verify",
+        "evidence": "Live JetBrains UI is deferred-user. Nothing in this batch exercises the sandbox IDE, Settings or the chooser."
+      },
+      {
+        "key": "plan:t29",
+        "status": "could-not-verify",
+        "evidence": "Real SQL/KV/file source-preservation flows are not in the supplied files."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionServiceTest.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsIsolationTest.kt"
+    ],
+    "limitations": [
+      "Only these three files were supplied. These dependencies were not inspected: PersistentDaemonLane/UnixSocketDaemonRpc, ConnectionProtocol, ConnectionMutationController and createProjectMutationOwner, ConnectionRemovals, ConnectionDraftTests, ConnectionsManagerGateway, ConnectionMutationBackend, the fixture server, DaemonGatewayService, plugin.xml, the Settings configurable and the manager panel.",
+      "No test or run output was supplied, so I could not tell whether the tests pass. Some assertions look timing-sensitive. For example, `testBackgroundHeartbeat...` asserts `offline` immediately after `lane.close()`, which depends on whether `onClose` fires synchronously, and I could not verify that.",
+      "The VS Code side and the shared TS transport were not in the batch, so cross-language parity (t1, t2, t23) and mixed-version behavior were not assessed.",
+      "Nothing in the visible code reconnects automatically after the control lane is lost. Recovery appears to need a later `selectRoot` call. I could not confirm whether the UI layer drives that, so I did not raise it as a defect."
+    ],
+    "evidenceRequests": [
+      "PersistentDaemonLane.kt: `onClose` timing relative to `isClosed`, and how `request()` classifies written versus unwritten failures.",
+      "The fixture connection-project-server.ts and ConnectionMutationBackend, to confirm whether any test delays a session reply beyond 16 seconds.",
+      "The manager gateway and panel code that calls `selectRoot`, to confirm what triggers reconnect after `offline`."
+    ]
+  }
+}

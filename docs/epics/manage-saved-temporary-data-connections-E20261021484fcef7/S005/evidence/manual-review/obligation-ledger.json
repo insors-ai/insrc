@@ -1,0 +1,2325 @@
+{
+  "note": "Baseline per-batch observations only. A holds observation in one bounded batch is not proof of complete global verification; unresolved evidence remains visible. Fix-review results are recorded separately.",
+  "counts": {
+    "could-not-verify": 66,
+    "does-not-hold": 1,
+    "holds": 16
+  },
+  "obligations": [
+    {
+      "key": "lld:contract:1",
+      "text": "LLD contract 1: ConnectionManagerState",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "lld:contract:1",
+          "status": "could-not-verify",
+          "evidence": "ConnectionManagerState (sc7 model, dirty/draft/list-state transitions) is not in the supplied files. wire.ts and ConnectionProtocol.kt only supply strict decoders; read-error is a thrown fixed-message error with no empty-list fallback."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:contract:1",
+          "status": "could-not-verify",
+          "evidence": "The list-state, count and generation parts hold in src/shared/connection-manager/model.ts and ConnectionsManagerModel.kt. The eight list states are distinct. Counts and rows come from one decoded snapshot. A decode failure gives read-error without an empty fallback. The projection carries no capability or credential. The model state has no draftRevision, dirty, mutationOperationId or refreshError fields, so the dirty and mutation parts would sit in controller.ts or draft.ts. Those files weren't supplied."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:contract:1",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionManagerState` and the list/filter/dirty projection are not in the supplied files. The controller partly enforces the unknown-state-blocks-mutation postcondition (`isBlocked`/`blocking` set), but the finding shows `reconciliation-required` can never be exited."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:contract:1",
+          "status": "could-not-verify",
+          "evidence": "The ConnectionManagerState projection, list-state machine, dirty guards and draftRevision live in the shared manager model and host. Those files were not supplied. The owner's public view (`status`, `repoRoot`, `daemonEpoch`, `generation`) carries no capability or transport (session-owner.ts:16-19, 54)."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "lld:contract:1",
+          "status": "could-not-verify",
+          "evidence": "The tests exercise the mutation, unknown-state reconcile, and busy refusal paths. For example, a second submit of the same target rejects with `busy`, and a refresh failure keeps `refresh:'failed'` with no empty-list fallback. They also cover replay gating and root switch A\u2192B\u2192A. The ConnectionManagerState projection itself (listState values, filter, draftRevision, dirty) and the manager model source were not supplied, so I could not check them."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:contract:1",
+          "status": "could-not-verify",
+          "evidence": "renderer.ts renders all eight listState values with fixed text. Stale or offline state shows a stale flag, and row buttons are disabled when list.canMutate is false. types.ts carries the projection fields. The model, controller and snapshot logic that produce counts, dirty and mutationOperationId were not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:contract:1",
+          "status": "could-not-verify",
+          "evidence": "The ConnectionManagerState model, filter/list states, dirty guards and counts are not in this batch. The owner exposes only status, repoRoot, epoch and generation, and `SessionAuthority.toString` is redacted, so no capability reaches the public view. The upgrade-required and offline states exist but are misassigned on timeout (finding at line 273)."
+        }
+      ]
+    },
+    {
+      "key": "lld:contract:2",
+      "text": "LLD contract 2: removalConfirmation",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:contract:2",
+          "status": "could-not-verify",
+          "evidence": "No removalConfirmation implementation or Delete/Discard confirmation code is in the supplied files. The mutation fixture only records the remove request field set, the original ticket and ticket-only cleanup calls, and none of the removal tests are in the evidence."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:1",
+      "text": "LLD data-model change 1: Current client delivery scope",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "lld:data-model:1",
+          "status": "could-not-verify",
+          "evidence": "The changed files (`src/shared/ipc-client.ts`, `UnixSocketDaemonRpc.kt` and tests) are inside the VS Code, JetBrains and shared-core scope. They show no fork or external-checkout edits. The named call sites, `vscode-plugin/src/extension.ts` and `InsrcSettingsConfigurable.kt`, were not supplied. The scope correction therefore cannot be confirmed end to end."
+        },
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:data-model:1",
+          "status": "could-not-verify",
+          "evidence": "The scope-correction call sites (`vscode-plugin/src/extension.ts`, `InsrcSettingsConfigurable.kt`) were not supplied. The supplied files stay within `src/shared` and `jetbrains-plugin` and add no deprecated-fork dependency."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:data-model:1",
+          "status": "could-not-verify",
+          "evidence": "The supplied sources are only under jetbrains-plugin/ and contain no deprecated-fork references. The call sites (vscode-plugin/src/extension.ts, InsrcSettingsConfigurable.kt) and the scope-update document were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:2",
+      "text": "LLD data-model change 2: ConnectionManagerState",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "lld:data-model:2",
+          "status": "could-not-verify",
+          "evidence": "No connection-manager model/controller/wire, extension.ts, InsrcSettingsConfigurable.kt or Kotlin connections package was supplied. Only transport lane tests are in the batch."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:data-model:2",
+          "status": "could-not-verify",
+          "evidence": "Both models are pure: the Kotlin test asserts there is no com.intellij, PersistentStateComponent or java.io, and the corpus carries the version/digest check. controller.ts, wire.ts, vscode connections/*, the Kotlin counterpart wiring and the Settings call sites weren't supplied. The corpus bytes weren't reviewed. Whether Node and JUnit read identical bytes depends on Gradle resource mapping, which wasn't supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:data-model:2",
+          "status": "could-not-verify",
+          "evidence": "The model.ts, controller.ts and wire.ts cores, the Kotlin counterpart, the fixture-corpus digest check and the extension.ts and Configurable wiring were not supplied. The tests drive a real host and fake panel through list states (empty-registry, ready, upgrade-required), root choice, and the draft and dirty confirmation. The privacy test's bundle-import check bans fs, vscode, keytar and telemetry imports from host.ts. The Kotlin parity and 'identical reducers' claims have no evidence here."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "lld:data-model:2",
+          "status": "could-not-verify",
+          "evidence": "host.ts supports it. Draft, credential and attempt state are memory-only private fields. Only pure shared modules are imported. The renderer gets a projected view and `ready` posts only a safe projection. The test greps the posted messages for credential canaries. The test also asserts there is no setState, localStorage or fetch in the renderer script. Not verifiable here: the Kotlin counterpart, the fixture-corpus version/digest check, reducer parity, session-owner.ts, types.ts and renderer.ts."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "lld:data-model:2",
+          "status": "could-not-verify",
+          "evidence": "The shared model, controller, wire and Kotlin counterpart were not supplied. The test (feedback.test.ts:50-52, 82) only indirectly shows that messages are host-authoritative, that the renderer makes no sink calls (`dom.sinkCalls.length===0`), and that the synthetic renderer message projection is not accepted. Memory-only and no-persistence properties are not demonstrated beyond that."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:data-model:2",
+          "status": "could-not-verify",
+          "evidence": "ConnectionManagerState and the TypeScript/Kotlin reducers, the fixture corpus digest and the extension wiring were not supplied. The privacy test asserts that ConnectionsSessionService is not a PersistentStateComponent. It also asserts that the session service, manager gateway and mutations serialize to \"{}\" through Gson. Neither check shows state parity or webview/memento absence."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:data-model:2",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin ConnectionManagerState/reducer/controller and the TypeScript shared model, controller and wire modules are not in the supplied diff. Only entry wiring and tests are visible. The tests do exercise a gateway snapshot, dirty state, filter and counts, and they assert that the snapshot JSON excludes secrets and that the gateway serializes to {}. Node/JUnit fixture-digest parity cannot be judged from this evidence."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:3",
+      "text": "LLD data-model change 3: ConnectionListState",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:data-model:3",
+          "status": "could-not-verify",
+          "evidence": "This covers ConnectionListState, the Settings and command entry points, and plugin.xml. None of those files, and no list-state code, were supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:data-model:3",
+          "status": "could-not-verify",
+          "evidence": "package.json, the host, `registerConnectionCommands` and the JetBrains Settings/plugin.xml were not supplied. The extension.ts hunk constructs `ConnectionsManagerHost` and registers the commands, but the command IDs and the root picker are not visible."
+        },
+        {
+          "packet": "05-vscode-host-03",
+          "key": "lld:data-model:3",
+          "status": "could-not-verify",
+          "evidence": "wiring.ts registers insrc.openDataSources plus add/edit/test/remove IDs through one host. The test checks the Settings link `[Manage Connections](command:insrc.openDataSources)`, unique manifest command IDs, and the absence of `insrc.connections.*` settings keys. The state model, stale rows, scope/search counts, add-reveal, JetBrains configurable and plugin.xml, and project choice were not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:data-model:3",
+          "status": "could-not-verify",
+          "evidence": "ConnectionListState, the Settings configurable, plugin.xml and the chooser are not supplied. The default `managerRoots` reads the daemon-registered roots through `DaemonGatewayService.registeredRepos()` and throws offline when they are unavailable."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:data-model:3",
+          "status": "could-not-verify",
+          "evidence": "The panel and gateway derive list state, counts and search from `ConnectionsManagerModel.project`, and the root picker has a placeholder entry. plugin.xml, the Configurable, the Manage Connections action, package.json and the model itself were not supplied. Whether a single root is auto-selected, and the Settings project-choice flow, cannot be assessed."
+        },
+        {
+          "packet": "09-daemon-policy-01",
+          "key": "lld:data-model:3",
+          "status": "could-not-verify",
+          "evidence": "The ConnectionListState call sites are package.json, InsrcSettingsConfigurable.kt and plugin.xml, and none were supplied. The daemon diff only changes capability advertisement, so list-state distinctions, stale-row handling, scope and search counts, the project and root picker, and reveal-after-add cannot be assessed."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:4",
+      "text": "LLD data-model change 4: SafeConnection",
+      "baselineAggregate": "does-not-hold",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "lld:data-model:4",
+          "status": "does-not-hold",
+          "evidence": "The TS and Kotlin decoders are otherwise exact and bounded, with fixed messages and no raw JSON editing. The Kotlin endpoint-credential check (ConnectionProtocol.kt ~217) is weaker than the TS check, so strict safe-read validation is not equivalent across clients (see finding). DaemonGatewayService and UnixSocketDaemonRpc.kt were not supplied."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:data-model:4",
+          "status": "could-not-verify",
+          "evidence": "Only the consumers of the safe decoders appear (decodeSafeConnectionList, ConnectionProtocol.list). The draft test exercises hostile getters, secret-bearing endpoints, fixed identity and unknown-schema read-only handling. The decoders, ConnectionProtocol.kt, DaemonGatewayService and UnixSocketDaemonRpc weren't supplied."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "lld:data-model:4",
+          "status": "could-not-verify",
+          "evidence": "TS removal.ts calls decodeSafeConnection(row) before use. Kotlin removals take an already-typed SafeConnection. The strict decoders (wire.ts, ConnectionProtocol.kt), DaemonGatewayService statelessness, descriptor-driven drafts and the credential Keep/Replace/Clear behavior are not in the supplied evidence."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:data-model:4",
+          "status": "could-not-verify",
+          "evidence": "The strict decoders, Kotlin DTOs and DaemonGatewayService were not supplied. The compatibility test covers missing, old, future, malformed and base-incomplete capabilities, which show upgrade-required with zero ticket or mutate calls and zero legacy writes. It also covers a read-only pinned-family row where the draft is read-only, Save is disabled and Remove is enabled. The test fixture, not production decoding code, produces these inputs."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "lld:data-model:4",
+          "status": "could-not-verify",
+          "evidence": "The TS-side behaviour is consistent with the SafeConnection invariants. Tests assert that credentials are not echoed (`fixture-only-private` and `signature` absent from records). They also assert that cleanup requests send `{ticket}` only, and that the remove request keys are exactly expectedRevision/key/mode/operationId/ticket. The Kotlin DTOs/decoders and DaemonGatewayService/UnixSocketDaemonRpc were not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:data-model:4",
+          "status": "could-not-verify",
+          "evidence": "ConnectionCapabilities.kt gates actions on exact feature lists. mutation() refuses any method outside db.connections.v2.* and unknown modes, so there is no legacy upsert/delete fallback. The compatibility test asserts upgrade-required, a disabled Add button and zero tickets, mutations and legacyMutations for missing/old/future/malformed/base-incomplete capabilities. The strict DTO decoders, ConnectionProtocol.kt and the credential keep/replace/clear handling were not supplied. The tests have no supplied execution result."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:data-model:4",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin DTOs/decoders and DaemonGatewayService are not supplied. The panel test iterates 29 corpus descriptors and checks that no JTextArea exists and that password fields render blank. That is partial evidence for typed fields and no raw JSON editing, but strict decoding and the keep/replace/clear patches are not visible."
+        },
+        {
+          "packet": "09-daemon-policy-02",
+          "key": "lld:data-model:4",
+          "status": "could-not-verify",
+          "evidence": "The assigned call sites (src/shared/connection-management.ts, DaemonGatewayService.kt, UnixSocketDaemonRpc.kt) and the Kotlin DTO/decoder file are not in the changed evidence. The only related change is runtime-config.ts. There, path, URL and schema-source failures now throw a fixed ManagementInputError with no raw exception text. That is consistent with the 'no raw error' and 'no error-to-empty fallback' intent. Decoders and descriptor handling cannot be assessed from this batch."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:5",
+      "text": "LLD data-model change 5: DraftTestRequest",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "lld:data-model:5",
+          "status": "could-not-verify",
+          "evidence": "Only the transport support is visible. `AbortSignal` cancellation, a safe fixed `IpcLaneError` message, and a late reply to a canceled request being ignored on the real socket are shown in `ipc-lane.test.ts`. Kotlin has `ConnectionLaneCall.cancel()`. The draft serializer, the single in-flight probe rule, and the matching of requestId, draftRevision, root, epoch and view generation are in unsupplied files (`connection-management.ts`, `extension.ts`, the JetBrains panel)."
+        },
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:data-model:5",
+          "status": "could-not-verify",
+          "evidence": "The shared serializer is present in `serialize()` for TS and Kotlin and is memory-only, with a `draftRevision` increment on every edit. Test/cancel/in-flight/stale-result identity wiring and `extension.ts` were not supplied."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:data-model:5",
+          "status": "could-not-verify",
+          "evidence": "The draft-test request, probe cancellation and result-identity code is not in the changed evidence. The controller handles Save/remove only. It reuses `draft.serialize()` (TS) and `draft.serialize()` (Kotlin) for Save, but their definitions were not supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:data-model:5",
+          "status": "could-not-verify",
+          "evidence": "`draftTestSource` pins Test and cancel to one captured lane, never reconnects, and checks capability support, epoch and expiry before each run (session-owner.ts:~190-212). The draft serializer, requestId/revision matching and drain handling are in `test-controller.ts`, which was not supplied."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "lld:data-model:5",
+          "status": "could-not-verify",
+          "evidence": "Host side: Test and Save both use `#validationMessages` and `draft.serialize()`. Test requires a daemon epoch and passes key, epoch and viewGeneration. `#bump` re-keys or clears the test view on hide, close, root, selection, scope and kind changes. Save calls `tests.cancel()` first. Not verifiable here: the test-controller (requestId/draftRevision matching, cancellation on field edit, source-controller drain retention, fixed local messages), because only the host call sites were supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:data-model:5",
+          "status": "could-not-verify",
+          "evidence": "Test and Cancel test send fixed-shape intents, and the script posts cancel-test when the document is hidden. Test and Save share one draft in the UI. Test-controller matching on requestId, draftRevision, repoRoot, epoch and view-generation, the elapsed duration, and source-controller drain are in files not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:data-model:5",
+          "status": "could-not-verify",
+          "evidence": "Partial evidence: the gateway binds a probe identity (key, epoch, uiGeneration), cancels the probe on Save and on detach, and `test()` is one probe. Finding 1 shows draft/UI divergence on hide. The DraftTest core, the shared serializer and src/shared/connection-management.ts were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:6",
+      "text": "LLD data-model change 6: OperationTicket",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "lld:data-model:6",
+          "status": "could-not-verify",
+          "evidence": "OperationTicket and the connection-management/removal sources are not supplied. The lane tests only show written=true/false classification on timeout, cancel and close, which supports unknown-outcome handling at the transport layer but not the ticket and retry invariants."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:data-model:6",
+          "status": "could-not-verify",
+          "evidence": "No operation-ticket, attempt, unknown-state or reconciliation code is in the supplied batch."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:data-model:6",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin ConnectionMutationControllerTest and the mutation fixture exercise frozen-attempt, same-ticket replay, expiry and lost-reply unknown behaviour, including no repeated create via ticket and mutation counters. The controllers (TypeScript and Kotlin) and the Kotlin record store are not supplied, and no test was run."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:data-model:6",
+          "status": "could-not-verify",
+          "evidence": "The ticket and attempt implementation was not supplied. The compatibility test injects an 'after' fault and gets phase 'unknown'. After capability loss and recovery, reconcile reaches 'committed' with exactly one 'mutate' and one 'ticket' call, which is consistent with same-ticket reconciliation without a fresh mutation. Pending polling, not-seen replay rules, workbench-loss behavior and the dirty-close/hide behavior of an unknown mutation are not evidenced."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:data-model:6",
+          "status": "could-not-verify",
+          "evidence": "Ticket/attempt retention lives in `ConnectionMutationController`, which is not supplied. This file only creates it lazily per project, closes it on dispose, and `testActualProjects...Isolation` submits through it. Saved lanes are separate from the owner-bound temporary lane."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:7",
+      "text": "LLD data-model change 7: RemovalState",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:data-model:7",
+          "status": "could-not-verify",
+          "evidence": "Removal state and `connection-removal.ts` were not supplied. The draft layer only models a `remove` navigation target that is guarded by the dirty check."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "lld:data-model:7",
+          "status": "holds",
+          "evidence": "Shown code matches the clauses it covers. Confirmation carries repo+scope+ID+revision and the source-data-preserved text (Kotlin removalConfirmation). Cancel and Discard send nothing (decide('cancel') returns null/undefined). Busy and conflict states are mapped by projectRemovalRejection. A removed-cleanup-pending card carries separate credentialCleanup and resourceCleanup. Unknown comes only from non-committed status, never from an absent row. Ticket-only retry and same-ID recreation safety are asserted only in the JUnit test, which I could not run, and the controller is not supplied. Rendering and keyboard evidence are not supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "lld:data-model:7",
+          "status": "could-not-verify",
+          "evidence": "The test (feedback.test.ts:58-76) shows these removal behaviors. Dirty cancel and confirm-cancel send zero requests. The confirmation names the target row. A stale remove-row intent is refused with the confirmation staying null. A `method` field is rejected by `parseConnectionIntent`. The removal module (`ConnectionRemovals`) was not supplied. The cleanup-phase status card, ticket-only retry and conflict reconfirmation were not evidenced."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:data-model:7",
+          "status": "could-not-verify",
+          "evidence": "The removal controller, confirmation text and cleanup-phase projection were not supplied. The compatibility test shows saved remove is disabled and gateway.remove() creates no confirmation when saved-remove is absent. Temporary remove still works in that case. The unknown-operation test shows reconcile reuses the original ticket (tickets=1, mutations=1). Neither covers the removed-cleanup-pending state card or retry {ticket}."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:8",
+      "text": "LLD data-model change 8: Workbench session client ownership",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "lld:data-model:8",
+          "status": "could-not-verify",
+          "evidence": "The session owner, ipc-client.ts, extension.ts, ConnectionsSessionService.kt and the Kotlin persistent lane were not supplied. Only the decoders were."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:data-model:8",
+          "status": "could-not-verify",
+          "evidence": "No session owner, persistent lane, heartbeat or service-disposal code was supplied. The model only has epoch and temporary-ended events that invalidate view generations."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:data-model:8",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin gateway shows a per-owner temporary stamp (`daemonEpoch:lifetime`) revoked via `onTemporaryInvalidated`, and Saved routed separately with no stamp. The owner service, `ipc-client.ts`, `UnixSocketDaemonRpc.kt`, the TS workbench owner and lifecycle disposal were not supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:data-model:8",
+          "status": "holds",
+          "evidence": "VS Code half only; the JetBrains service was not supplied. extension.ts constructs one `ConnectionsWorkbenchOwner` and registers it in `context.subscriptions`, and the test regex asserts this. The owner has a control lane, per-root data lanes and unclaimed Saved lanes. Heartbeat is 30000ms and lease is 90000ms, enforced in `resumeReply`/`#beat`. The test shows root A\u2192B\u2192A reuses the same overlay and a single `session.open`. Manager close disposes only the subscription and sends no `session.end`. Disposal ends the session once and closes all lanes. Epoch change erases temporary state and never resumes. See the LOW finding for an over-broad invalidation path."
+        },
+        {
+          "packet": "05-vscode-host-03",
+          "key": "lld:data-model:8",
+          "status": "could-not-verify",
+          "evidence": "The test only shows that all commands reach one ConnectionsManagerHost built on a single owner/controller. Heartbeat, lease/epoch, shared IPC lanes, extension disposal and the JetBrains service are in files that were not supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:data-model:8",
+          "status": "could-not-verify",
+          "evidence": "Session ownership, heartbeat and resume live in the shared IPC client, extension.ts and the JetBrains files, none of which were supplied. The renderer only exposes generation-stamped intents."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:data-model:8",
+          "status": "could-not-verify",
+          "evidence": "The JetBrains side is visible. There is one `@Service(PROJECT)` Disposable per project. It uses a dedicated control lane, a 30s heartbeat and an exact 90s lease check. It resumes the same epoch with `session.resume`, delegates per root with the `workbench-ui` audience, and retains data lanes across root switches. View-subscription close does not end the session, and project disposal sends `session.end` and drains lanes. The VS Code owner, `UnixSocketDaemonRpc.kt` and the shared TS transport are not supplied. The timeout finding qualifies the reconnect behavior."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:data-model:8",
+          "status": "could-not-verify",
+          "evidence": "ConnectionsSessionService and UnixSocketDaemonRpc are not supplied. Tests use project.service<ConnectionsSessionService>() and assert that the same gateway survives panel close. Draft retention is asserted across panel reopen, and project close is asserted to clear the draft and mark the list closed. The entry code never calls session end on view or Settings close. Heartbeat, lease and epoch behavior are not visible."
+        }
+      ]
+    },
+    {
+      "key": "lld:data-model:9",
+      "text": "LLD data-model change 9: JetBrains native manager and project isolation",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin lane is a standalone class. It has no static or shared state, per-instance pending and abandoned maps, and its own reader, writer and timer threads that terminate and join in bounded fashion. The existing `UnixSocketDaemonRpc` and `DaemonGatewayService` code is not modified; the diff only appends and adds imports. The project-level service, panel, `plugin.xml`, disposal and EDT behaviour are not in the supplied evidence."
+        },
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "The project-scoped service, panel, plugin.xml and EDT/disposal guards were not supplied. `ConnectionDraft.kt` is pure Gson/JDK code with no IntelliJ SDK, global project or PersistentStateComponent use, and its fields are @Transient."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "Tests show project-service ownership, project disposal and a fresh project with no inherited records. The service, panel, configurable, plugin.xml and gateway code are not supplied. The test backend asserts lane opening happens off the dispatch thread."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "No Kotlin file or plugin.xml was supplied. Both changed files are VS Code tests, so JetBrains project isolation, background-executor use and disposal are unassessed. The privacy test does check isolation between two forked VS Code owners (otherPanel receives no canaries)."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "No JetBrains files (ConnectionsSessionService, Gateway, Panel, Configurable, plugin.xml, action) were supplied. The VS Code fixture `forkOwner` creates separate owners with separate lanes, but that does not cover the JetBrains project isolation. Live JetBrains UI is deferred-user."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "No Kotlin or JetBrains files were supplied. VS Code only."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "The tests create real Projects with ProjectManager.createProject and use project.service<ConnectionsSessionService>(). They close the Project and await whenDisposed(). A second project with the same root is checked to see none of the first project's private canaries. ConnectionsSessionService, plugin.xml, the EDT/background discipline and the gateway statelessness were not supplied, and no execution result was provided."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:data-model:9",
+          "status": "could-not-verify",
+          "evidence": "Observed: the panel takes a Project, uses `project.service<ConnectionsSessionService>().manager()`, runs registry reads on a bounded single-thread worker, renders on the EDT and checks generation and `project.isDisposed`. Panel `dispose` closes only the view subscription and attachment. Not supplied: ConnectionsSessionService, plugin.xml, the Configurable and ManageConnectionsAction, so project-service disposal, socket isolation, and whether `manager()` returns a shared or per-call gateway (and who closes it) are unverified."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:1",
+      "text": "LLD error case 1: Unavailable or mixed capability/version/release evidence",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-03",
+          "key": "lld:error:1",
+          "status": "could-not-verify",
+          "evidence": "No capability decoder, upgrade-required classification or control-disabling code in the supplied files. The fixture server advertises a capabilities reply for tests only."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:error:1",
+          "status": "could-not-verify",
+          "evidence": "The owner maps missing base features to `upgrade-required`, and a test shows no Saved fallback through a claimed lane. `requestSaved` does not itself check advertised read features, and per-control gating sits in the host and shared capability helpers, which were not supplied. The LOW finding shows over-broad upgrade-required classification."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:2",
+      "text": "LLD error case 2: List/driver/read failure or malicious descriptor",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "lld:error:2",
+          "status": "could-not-verify",
+          "evidence": "No decoder, view-state or stale-marking code is supplied. The lane tests show malformed, duplicate-key, unsolicited, invalid-UTF8, deeply nested and oversized frames closing the lane with a fixed safe message, but render and last-good behaviour is unseen."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:error:2",
+          "status": "could-not-verify",
+          "evidence": "In the TS model a decode failure keeps the last-good rows, sets read-error, gives stale=true and canMutate=false, and does not reset counts. The Kotlin model catches only ConnectionReplyException around ConnectionProtocol.list. I couldn't confirm that the Kotlin decoder never throws another exception type on a hostile payload."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:error:2",
+          "status": "could-not-verify",
+          "evidence": "Controller refresh failure sets `refresh='failed'` and keeps committed truth, with no empty-list fallback. List decoding is in `wire.ts`/`ConnectionProtocol`, and last-good stale rendering is in the view layer. Neither was supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:error:2",
+          "status": "could-not-verify",
+          "evidence": "The renderer side is consistent: read-error and offline show stale-row text and disable row selection. Retry is a read-only refresh intent. A render exception shows a fixed local message. Strict decoding and last-good preservation happen in the decoder and controller, which were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:3",
+      "text": "LLD error case 3: Mutation reply lost or timed out after possible write",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "lld:error:3",
+          "status": "could-not-verify",
+          "evidence": "No transport or recovery-effect code for written-unanswered state, freezing ticket+payload or same-ticket replay was supplied. Decoders do tie operationId, key and mode to the expectation, which helps replay matching."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:error:3",
+          "status": "could-not-verify",
+          "evidence": "Tests for before, after, pending and malformed lost-reply faults expect unknown, then reconcile via status or identical same-ticket replay, with no second ticket and no changed payload. The production controller is not supplied and the tests were not run."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:error:3",
+          "status": "could-not-verify",
+          "evidence": "The controller source was not supplied. The compatibility test shows an unknown attempt retaining its record and reconciling via status. It shows no second ticket or mutate call, and a reconcile intent is refused while the operation-status feature is absent. Timeout and malformed-outcome variants were not seen."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:4",
+      "text": "LLD error case 4: Committed save but activation or authoritative refresh failed",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:error:4",
+          "status": "could-not-verify",
+          "evidence": "gateway.ts supplies `refresh` and activation call ports and keeps refresh retryable for an offscreen root. The commit, activation and refresh phase handling and the credential clearing are in the shared `ConnectionMutationController`, which was not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:5",
+      "text": "LLD error case 5: Busy/stale removal or concurrent edit",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:error:5",
+          "status": "could-not-verify",
+          "evidence": "`serialize()` carries `expectedRevision` on update. Busy/conflict handling, reconfirm and the retained operation card were not supplied."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "lld:error:5",
+          "status": "holds",
+          "evidence": "The shown classes keep the confirmation, row and draft state out of busy/conflict handling. begin() throws 'busy' locally if controller.isBlocked. decide() sends only {key, expectedRevision} via controller.remove. The Kotlin test asserts busy/conflict keep the row and form serialization unchanged, and that stale revisions need a fresh begin. The controller (ticket-only retry) is not supplied and the tests were not run, so this is source-level only."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:6",
+      "text": "LLD error case 6: Temporary lease loss/new daemon epoch",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:error:6",
+          "status": "could-not-verify",
+          "evidence": "Supporting evidence: `endTemporary()` in both clients clears ticket/outcome/input and sets `session-ended`/`session-expired`. In Kotlin it is invoked on owner invalidation and on authenticated `session-expired`. Probe cancellation, view-generation invalidation and the resume logic are not in the supplied files."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:error:6",
+          "status": "could-not-verify",
+          "evidence": "The session source was not supplied. The privacy test advances the owner clock by 90000 ms, gets an authenticated rejection, and the view status becomes 'expired'. After reselecting the root the status is 'ready', and registry writes, credential sets and deletes are unchanged. It does not directly show cleared temporary inputs, cancelled tests or a daemon-epoch change, and the client has not been shown to avoid silent recreation."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:7",
+      "text": "LLD error case 7: Cross-project or stale manager effect",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "lld:error:7",
+          "status": "could-not-verify",
+          "evidence": "At transport level, replies can only resolve requests on the same lane, and an unknown or duplicate id closes that lane. The refuse-before-send routing by actual project or workbench object is service-level code that was not supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:error:7",
+          "status": "holds",
+          "evidence": "VS Code half only. Tests show a stale generation gives `stale-view`, a mismatched `repoRoot` gives `invalid-request`, and forged `capability`, `sessionHandle`, `projectId` and `windowId` are refused. The method count is unchanged, so refusal happens before the socket send. isolation.test.ts shows two real owners with the same IDs and lane counters stay isolated, and one owner's disposal leaves the other usable. JetBrains was not supplied."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "lld:error:7",
+          "status": "could-not-verify",
+          "evidence": "Host side: messages are accepted only from the actual panel object for the current viewId and generation, and unparsed raw messages such as generic RPC are dropped. Tests cover a stale old-panel save and a generic `rpc` intent causing no calls. Refusal before socket send, and non-routing from caller-supplied project/window IDs, belong to session-owner and transport code that was not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:error:7",
+          "status": "holds",
+          "evidence": "The service is obtained from the actual `Project`. `params()` rejects `sessionHandle`, `capability`, `daemonEpoch`, `projectId`, `windowId` and `trustedContext`. It also rejects a mismatched `repoRoot`, key or ticket root/scope, and methods outside the allow-list. `request()` rejects a stale view generation, epoch or root before any lane send. `ConnectionsIsolationTest` asserts that forged or wrong-root requests do not increase the fixture's list count. This was not run here."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:8",
+      "text": "LLD error case 8: Late test/list reply after editing or navigation",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:error:8",
+          "status": "could-not-verify",
+          "evidence": "The list-reply tuple of repoRoot, viewGeneration and daemonEpoch, plus awaitingRead, is checked identically in both models. The tuple includes no key or revision, which only matters for draft-test replies. Test-reply handling and draft-test cancellation weren't supplied."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:error:8",
+          "status": "could-not-verify",
+          "evidence": "For draft tests, test-controller.ts and ConnectionDraftTests.kt check key, epoch, view generation and draft revision before publishing, and retain the reservation and source until a reachable reply. List-reply staleness is not in the supplied files. The one defect found is the Kotlin rejection-handling gap."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:error:8",
+          "status": "could-not-verify",
+          "evidence": "The privacy test emits stale and detached private events after a rebuild, and no further posts or draft changes occur. Late test replies and list replies against the (request, root, key, revision, generation, epoch) tuple are not directly exercised in the supplied files."
+        }
+      ]
+    },
+    {
+      "key": "lld:error:9",
+      "text": "LLD error case 9: Cross-language contract/fixture drift",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "lld:error:9",
+          "status": "could-not-verify",
+          "evidence": "The shared fixture corpus, its digest and the Kotlin DTO decoders are not supplied. The Node wrapper only launches JUnit classes (runConnectionJUnit is not shown) and does not itself prove version/digest parity."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:error:9",
+          "status": "could-not-verify",
+          "evidence": "The cross-language fixtures and corpus tests, and the Kotlin consumer, were not supplied. isolation.test.ts loads `loadConnectionCorpus()`, which is a TS-side use only."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:error:9",
+          "status": "could-not-verify",
+          "evidence": "The parity corpus, digest checks and the Node-side consumers are not supplied. ConnectionsManagerPanelTest loads ConnectionCorpus, but no cross-language drift detection is shown."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:1",
+      "text": "LLD edge case 1: No registered roots or multiple registered roots",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "05-vscode-host-03",
+          "key": "lld:edge:1",
+          "status": "could-not-verify",
+          "evidence": "The test supports this edge case for VS Code. With no roots the list state is 'no-repository' and roots is []. With two roots it stays 'no-repository' with repoRoot null until `choose('root', \u2026)`, and the selection is then retained across all five commands with forged `repoRoot` arguments. The host's picker logic and active-file behaviour were not visible, and JetBrains was not covered."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:2",
+      "text": "LLD edge case 2: Empty registry versus all rows excluded by scope/search",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:edge:2",
+          "status": "could-not-verify",
+          "evidence": "List, filter and count state were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:3",
+      "text": "LLD edge case 3: Add Temporary while Saved filter selected",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:edge:3",
+          "status": "could-not-verify",
+          "evidence": "The reveal waits for an authoritative list-result and then sets the selection, filter and search. Whether this matches the 'scope/All adjustment' wording is determined by corpus.json, which wasn't reviewed. The Saved default scope and the lifecycle copy are in UI code that wasn't supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:edge:3",
+          "status": "could-not-verify",
+          "evidence": "No supplied test adds a Temporary entry while the Saved filter is selected, so the filter adjustment after refresh and the lifecycle copy before adding are not shown. The tests only show a temporary add and later a switch to filter-all."
+        },
+        {
+          "packet": "09-daemon-policy-01",
+          "key": "lld:edge:3",
+          "status": "could-not-verify",
+          "evidence": "This case depends on client manager logic: default Saved filter, filter adjustment after a successful refresh, and lifecycle copy shown before adding. No client code or tests were supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:4",
+      "text": "LLD edge case 4: Dirty navigation, root/filter/row/scope change, removal or panelclose",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:edge:4",
+          "status": "could-not-verify",
+          "evidence": "At the draft layer this holds. `requestExit` stores a pending target when the draft is dirty. A Cancel clears it with no effect and leaves the values and revision unchanged. A Discard clears only the unsaved inputs and returns the navigate effect. The Kotlin test covers eight target types. Wiring in the manager and panel-close handling was not supplied."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "lld:edge:4",
+          "status": "holds",
+          "evidence": "begin() calls draft.requestExit({type:'remove'}) for a dirty draft and hides the confirmation until resolveDirty. Cancel clears the confirmation with zero ticket effects. Discard keeps the confirmation and discards only the draft. cancel() and dispose() on view close send nothing and leave operation cards in the controller. Root/filter/scope navigation guards are in draft.ts, which is not supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "lld:edge:4",
+          "status": "could-not-verify",
+          "evidence": "The test covers one case: a per-row Delete on a dirty draft prompts, and Cancel keeps the draft and the focused row with zero requests (feedback.test.ts:67-68). Root, filter and scope change, panel close and unknown-operation retention were not evidenced."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:5",
+      "text": "LLD edge case 5: Read-only legacy pinned family or unknown private fields",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:edge:5",
+          "status": "could-not-verify",
+          "evidence": "Read-only legacy and pinned-family handling is not in the supplied files."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:6",
+      "text": "LLD edge case 6: Manager closed then reopened, root A\u2192B\u2192A, or second window",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:edge:6",
+          "status": "holds",
+          "evidence": "VS Code half only. The test covers root A\u2192B\u2192A with the same overlay handle, one `session.open`, retained overlays, `onChange` subscription disposal with no `session.end`, and a second owner isolated from the first owner's disposal. JetBrains was not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:edge:6",
+          "status": "could-not-verify",
+          "evidence": "The privacy test covers a root re-select after expiry (selectRoot) and a second Project with its own service. Manager close/reopen and root A\u2192B\u2192A overlay retention are not exercised in the supplied files. No end-on-view-close assertion is visible."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:edge:6",
+          "status": "could-not-verify",
+          "evidence": "Closing a view releases only the subscription and attachment; the gateway close path and draft/overlay retention are in the gateway. The sharing semantics of `manager()` and the session service were not supplied. Finding 1 touches secret-field behaviour across hide/show."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:7",
+      "text": "LLD edge case 7: Temporary resource-limit/unsupported file type",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:edge:7",
+          "status": "could-not-verify",
+          "evidence": "No temporary resource-limit or unsupported-file-type handling was supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:edge:8",
+      "text": "LLD edge case 8: Dark/light/high contrast and keyboard only",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:edge:8",
+          "status": "could-not-verify",
+          "evidence": "Code-level support exists: VS Code theme variables, :focus-visible, forced-colors media query, label/for associations, aria-label on icon buttons, role=status live regions, focus restoration to the initiating row, a dialog focus trap, and password inputs with autocomplete new-password. #error, #notice and #test-status are static hidden spans that are never un-hidden, so status and errors rely on the footer messages channel. I could not confirm that the host routes test results and errors into messages. The VS Code live run is user-reported only."
+        }
+      ]
+    },
+    {
+      "key": "lld:invariant:1",
+      "text": "LLD invariant 1: Daemon remains authority for configs, credentials, atomic operation receipts and revision leases; client core imports only pure shared modules. Grounded by s1 symbol/data-model bundles.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:invariant:1",
+          "status": "could-not-verify",
+          "evidence": "`draft.ts` imports only Ajv and shared pure modules, and the Kotlin draft is likewise pure. The rest of the client core was not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:invariant:2",
+      "text": "LLD invariant 2: Existing thin shared IPC one-shot public API remains compatible; persistent workbench lane extends the same boundary, not a new backend/storage path. Grounded by s1 source supplement.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "11-coverage-contracts-01",
+          "key": "lld:invariant:2",
+          "status": "could-not-verify",
+          "evidence": "The supplied tests point toward compatibility but cannot show it. connection-manager-compatibility.test.ts runs the legacy-facing JUnit classes Sc2DaemonGatewayTest (3 tests) and UnixSocketDaemonRpcParseTest (13 tests) plus the TypeScript compatibility cases. connection-project-server.ts uses the existing IpcServer and directDispatch, with no new storage path. The sources for the one-shot IPC API and the Kotlin transport were not supplied, so I cannot confirm that the public signatures are unchanged or that the persistent lane sits on the same boundary. The JUnit tests were not run, and I did not read their pass results."
+        },
+        {
+          "packet": "12-recorded-coverage-01",
+          "key": "lld:invariant:2",
+          "status": "could-not-verify",
+          "evidence": "The IPC client and lane source was not supplied, so I could not confirm that the one-shot exports are unchanged or that the persistent lane reuses the same socket/daemon boundary. Supportive records: t4 `ipc-lane.test.ts` passed, and its first case names \"one-shot compatibility\". t5 (`connection-manager-kotlin-transport.test.ts`) passed with Kotlin one-shot compatibility. t3 and t9 cover the preserved legacy gateway types and the APP gateway staying independent of the PROJECT owner. The t23 parity test passed on \"client bundle inputs exclude daemon storage and provider implementations\", which supports \"no new backend/storage path\". The matrix lists `ipc-client.test.ts` as the TRANSPORT consumer test and as executed and passed, but no task record in TESTS shows that file. The matrix's JetBrains file `PersistentDaemonLaneTest.kt` is not recorded as executed either. Those are record gaps, not demonstrated defects."
+        },
+        {
+          "packet": "13-implementation-artifacts-01",
+          "key": "lld:invariant:2",
+          "status": "could-not-verify",
+          "evidence": "Inventory lists src/shared/ipc-client.ts (hash a06f7a2c\u2026), vscode-plugin/src/connections/session-owner.ts and gateway.ts. The component definition says 'Persistent TypeScript lanes preserve one-shot API' and 'APP gateway remains unclaimed/stateless'. No source or diff was supplied, so I could not check that the exported one-shot signatures are unchanged. I also could not check that the persistent lane reuses the same socket and backend path rather than adding a new backend or storage path. The Kotlin transport boundary file is not in the inventory at all. No existing-API compatibility test output was supplied. The design text agrees with the invariant, but it is not proof."
+        }
+      ]
+    },
+    {
+      "key": "lld:invariant:3",
+      "text": "LLD invariant 3: Existing JetBrains application-wide DaemonGatewayService remains stateless for explicit-root legacy callers; new session state is project-scoped. Analyzer located APP annotation and source confirms delegation to one-shot transport.",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "lld:invariant:3",
+          "status": "could-not-verify",
+          "evidence": "ConnectionProtocol.kt adds no state to a gateway and is a separate object. DaemonGatewayService.kt itself was not supplied, so statelessness is not verifiable."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:invariant:3",
+          "status": "could-not-verify",
+          "evidence": "DaemonGatewayService and the Kotlin session service were not supplied. The compatibility test confirms that legacy listing from the VS Code side shows only the Saved entry and that there are no legacy writes. That says nothing about the JetBrains application-wide gateway."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "lld:invariant:3",
+          "status": "could-not-verify",
+          "evidence": "There is no Kotlin evidence. DaemonGatewayService and its tests were not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:invariant:3",
+          "status": "holds",
+          "evidence": "All new session state is in the project-level service and `ConnectionsSessionOwner`. The only use of the app `DaemonGatewayService` in this file is the stateless `registeredRepos()` call. The isolation test asserts that `DaemonGatewayService` has no capability field and no `ConnectionsSessionService` field. The `DaemonGatewayService` source was not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:invariant:3",
+          "status": "could-not-verify",
+          "evidence": "Session state is accessed through project.service<ConnectionsSessionService>() in the supplied entry and tests, which is consistent with project scoping. DaemonGatewayService.kt is not in the changed evidence, so its statelessness is not confirmed."
+        }
+      ]
+    },
+    {
+      "key": "lld:invariant:4",
+      "text": "LLD invariant 4: S004 source-preservation, exact ticket/revision retry and independent cleanup phases remain unchanged. Grounded by s1 removal usage and handoff.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:invariant:4",
+          "status": "could-not-verify",
+          "evidence": "The fixture checks that removeState and retryCleanup receive only the original ticket. The removal production code and the tests that assert source preservation are not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:invariant:5",
+      "text": "LLD invariant 5: Production release gate stays disabled until genuine both-client and backend prerequisites are verified; no test fixture is product acceptance.",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "11-coverage-contracts-01",
+          "key": "lld:invariant:5",
+          "status": "holds",
+          "evidence": "connection-manager-release.test.ts (CM-S5-GATE) asserts inventory and acceptance matrix releaseEnabled=false. It also asserts runtimeEnabled=true, matching the authorized correction. External prerequisites other than the two live-UI items must match /^pending/. VSCodeLiveUI is 'completed-user-reported' (0.5.23) and JetBrainsLiveUI is 'deferred-user'. A forged gates.json claiming ready=true with all scopes is rejected by verifyConnectionManagementRelease, so consumer coverage cannot stand in for the producer proofs. The parity test asserts corpus.releaseEnabled=false and corpus.fixturesAreAcceptance=false. Limitation: management-enablement.ts was not supplied, so the gate logic itself was not inspected. The test-run results were not seen."
+        },
+        {
+          "packet": "12-recorded-coverage-01",
+          "key": "lld:invariant:5",
+          "status": "could-not-verify",
+          "evidence": "The gate and policy source was not supplied. Under the user-authorized correction, runtime management is enabled by default and `releaseEnabled` stays false. The matrix states `releaseEnabled:false`, `fixturesAreAcceptance:false`, `runtimeEnabled:true`, and `releaseAuditStatus` pending. Every subject's `acceptance` is \"pending\". The t30 tests passed (`connection-manager-release.test.ts` and `management-defaults.test.ts`), including \"default runtime policy preserves authorization and independent release-audit evidence\". These records fit the invariant as corrected. I did not inspect the code that sets or consumes the release flag, so I cannot confirm that nothing treats fixture or test-positive evidence as release acceptance. BUILD flags t26, t30 and t32 are false. The t30 flag is attributed to the legacy validator applying the superseded fail-closed requirement. t26 and t32 are not product-defect evidence."
+        },
+        {
+          "packet": "13-implementation-artifacts-01",
+          "key": "lld:invariant:5",
+          "status": "could-not-verify",
+          "evidence": "The inventory records releaseEnabled=false, releaseAuditStatus 'pending; independent of runtime availability', and S001, providerService, positiveSavedWorkerAffinity and SQLServer all 'pending'. JetBrainsLiveUI is 'deferred-user' and VSCodeLiveUI is 'completed-user-reported'. This is consistent with the release gate staying disabled. The user explicitly authorized runtime enablement by default (runtimeEnabled=true), and I did not reopen that decision. I could not read src/daemon/db/management-enablement.ts (hash 6869dcd2\u2026), index.ts or the capabilities code. So I could not confirm that releaseEnabled is false in code, that runtime enablement is separate from the release gate, or that no test fixture is treated as acceptance. 'producerPolicyModified: true' also needs source to review."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:1",
+      "text": "LLD shared contract sc7 (implements)",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:shared:1",
+          "status": "could-not-verify",
+          "evidence": "The pure model parts hold: counts, distinct list states, retained explicit repoRoot, generation guards. The TS draft test covers dirty navigation with Discard/Cancel for eight targets. The generation-bound tests and truthful effects of the host and mutation layers weren't supplied."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "lld:shared:1",
+          "status": "could-not-verify",
+          "evidence": "The host consumes projectConnectionManager/reduceConnectionManager from the shared pure model and renders list state, counts, repo root, filter and dirty navigation independently. Tests cover the distinct list states, retained repo, empty-filter versus empty-registry, and dirty confirmation. The reducer itself, the fixture corpus and the Kotlin parity were not supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "lld:shared:1",
+          "status": "could-not-verify",
+          "evidence": "The pure model and reducer were not supplied. The tests only touch host and renderer behavior such as list state 'empty-registry', row selection and the confirmation state."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:2",
+      "text": "LLD shared contract sc1 (consumes)",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "lld:shared:2",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionProtocolTest.kt` exercises strict decoding: duplicate fields, depth, size, coercion, private-field refusal, correlation, and descriptor fail-closed behaviour. The implementation `ConnectionProtocol.kt`, the corpus loader and the TypeScript decoders are not in the supplied diff, so strictness and parity with sc1 cannot be confirmed."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:3",
+      "text": "LLD shared contract sc2 (consumes)",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "lld:shared:3",
+          "status": "could-not-verify",
+          "evidence": "sc2 signed operation/status and activation consumers are not in the batch."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "lld:shared:3",
+          "status": "could-not-verify",
+          "evidence": "The removal classes only consume sc2 through the controller's remove/reconcile/retryCleanup. The shown Kotlin projectRemovalState validates operationId, registration=removed and activation=not-applicable on committed outcomes. Immutable same-ticket retry is implemented in the unseen controller."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:4",
+      "text": "LLD shared contract sc3 (consumes)",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:shared:4",
+          "status": "holds",
+          "evidence": "VS Code client side. The client sends only owner-held session lanes. `#params` rejects caller-supplied `sessionHandle`, `capability`, `daemonEpoch` and `projectId`, and enforces a root and scope match on `key`/`ticket`. Authority, leases and busy enforcement are left to the daemon."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:5",
+      "text": "LLD shared contract sc4 (consumes)",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:shared:5",
+          "status": "could-not-verify",
+          "evidence": "The draft serializer shape is consistent with sc4 inputs (key, expectedRevision, publicPatch, credentials). The IPC and daemon side were not supplied."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:shared:5",
+          "status": "could-not-verify",
+          "evidence": "Draft-test serializer/cancel/result-identity code is not in the supplied files."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:6",
+      "text": "LLD shared contract sc5 (consumes)",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "lld:shared:6",
+          "status": "could-not-verify",
+          "evidence": "Workbench control-owner, delegated-lane and 90s lease code were not supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:shared:6",
+          "status": "could-not-verify",
+          "evidence": "The sc5 workbench owner and transport source was not supplied. The privacy test exercises a manual-clock 90-second lease expiry, resume and owner disposal via f.owner.dispose() and whenDisposed(). The control and delegated data lane mechanics were not seen."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:shared:6",
+          "status": "could-not-verify",
+          "evidence": "The renderer contains no session or lease logic. Workbench ownership, per-root lanes and the 90s lifetime are outside the supplied files."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:7",
+      "text": "LLD shared contract sc6 (consumes)",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:shared:7",
+          "status": "could-not-verify",
+          "evidence": "There is no sc6 consumer code in the evidence. The fixture exposes removal handlers and a sourcePreserved stat, but the removal consumer and its tests are absent."
+        }
+      ]
+    },
+    {
+      "key": "lld:shared:8",
+      "text": "LLD shared contract sc8 (consumes)",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "lld:shared:8",
+          "status": "could-not-verify",
+          "evidence": "No unsupported-file or resource-limit handling was in the supplied files."
+        },
+        {
+          "packet": "09-daemon-policy-02",
+          "key": "lld:shared:8",
+          "status": "could-not-verify",
+          "evidence": "No client code consuming unsupported or resource-limit messages is supplied. Nothing in the diffs adds a local conversion, cache or spill fallback. runtime-config.ts only validates and resolves paths in the daemon."
+        }
+      ]
+    },
+    {
+      "key": "lld:migration:1",
+      "text": "LLD migration step 1: Record user scope correction and source manifests for vscode-plugin/ and jetbrains-plugin/ in this repository. Preserve approved upstream JSON bodies as history; scope correction supersedes fork requirements.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:migration:1",
+          "status": "could-not-verify",
+          "evidence": "No manifests or scope-update documents were supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:migration:2",
+      "text": "LLD migration step 2: Add canonical wire/state/effect JSON fixtures and native TypeScript/Kotlin models/decoders; extend existing TypeScript and Kotlin transport boundaries with persistent multiplexing while preserving one-shot APIs.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "lld:migration:2",
+          "status": "could-not-verify",
+          "evidence": "Persistent multiplexing is added in both languages. The TypeScript lane is tested against real and fake sockets, and `rpc()` keeps its signature and default connect behaviour via `connectToDaemon`. The Kotlin lane has no test in the supplied evidence. The fixtures and the TypeScript decoders are not in this batch."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "lld:migration:2",
+          "status": "could-not-verify",
+          "evidence": "The corpus and the TS and Kotlin models are present. The persistent multiplexing in ipc-client.ts and UnixSocketDaemonRpc.kt, and the preservation of the one-shot APIs, weren't supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:migration:2",
+          "status": "could-not-verify",
+          "evidence": "The persistent transport lanes, fixtures and decoders are outside the supplied changed files."
+        }
+      ]
+    },
+    {
+      "key": "lld:migration:3",
+      "text": "LLD migration step 3: Add extension workbench owner and JetBrains project-level Disposable session service with explicit root-data and Saved lanes; prove two-owner isolation and view-independent lifecycle before temporary UI.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:migration:3",
+          "status": "could-not-verify",
+          "evidence": "The VS Code owner and the two-owner isolation test exist. Neither the JetBrains project service nor the ordering relative to temporary UI was supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:migration:3",
+          "status": "could-not-verify",
+          "evidence": "The Project-level service is exercised through project.service<...>() and Project disposal in the tests. The VS Code workbench owner and the explicit root-data and Saved lanes were not supplied. Two-owner isolation is only partly visible, in the second-project privacy check."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:migration:3",
+          "status": "could-not-verify",
+          "evidence": "Only the manager-side consumer of the session service was supplied. Project service implementation and two-owner isolation tests were not."
+        }
+      ]
+    },
+    {
+      "key": "lld:migration:4",
+      "text": "LLD migration step 4: Wire VSCode Settings/commands/dedicated webview and JetBrains ConnectionsConfigurable/ManageConnectionsAction/native panel via plugin.xml, keeping global config Apply/reset separate from immediate connection operations.",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "lld:migration:4",
+          "status": "could-not-verify",
+          "evidence": "plugin.xml, ConnectionsConfigurable, ManageConnectionsAction and VS Code command wiring are not supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:migration:4",
+          "status": "could-not-verify",
+          "evidence": "The Settings, command and plugin.xml wiring was not supplied. The dedicated webview document and intent protocol are present and are separate from global config Apply/reset."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:migration:4",
+          "status": "holds",
+          "evidence": "plugin.xml registers an applicationConfigurable 'Connections' (id ai.insors.insrc.connections) under the existing parent, with instance settings.ConnectionsConfigurable. It also registers the ManageConnections action in ToolsMenu, and ShowOrRegisterRepo is retained. ConnectionsConfigurable has isModified=false and no-op apply/reset, and disposeUIResources only disposes the view. ConnectionsEntryTest asserts that apply/reset leave the ticket count unchanged and retain the draft. NestedOpsPagesTest was updated to 4 children. This is source-level only; the test was not run."
+        }
+      ]
+    },
+    {
+      "key": "lld:migration:5",
+      "text": "LLD migration step 5: Run focused tests per implementation task, actual both-client native UI/service/file/privacy/lifecycle evidence, then frozen Node/backend+extension and Gradle suites. Manual post-build review per user instruction; retain original failures/skips.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:migration:5",
+          "status": "could-not-verify",
+          "evidence": "Only two test files were supplied. The task instruction, not this review, records that VS Code 0.5.23 manual testing is user-reported and that JetBrains live UI is deferred. Gradle and full-sweep results were not supplied and are not treated as proof either way."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "lld:migration:5",
+          "status": "could-not-verify",
+          "evidence": "No test run results, sweep records or manual evidence were supplied. The focused test file exists. User-reported VS Code manual testing is not independently documented here."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:migration:5",
+          "status": "could-not-verify",
+          "evidence": "Test files are present for the project service and isolation, but the batch contains no run results. The user states that the full sweep has known failures, and JetBrains live UI is deferred."
+        }
+      ]
+    },
+    {
+      "key": "lld:migration:6",
+      "text": "LLD migration step 6: Keep mutation/temporary production admission gated until real current S001/provider/worker-affinity/SQLServer and live VSCode+JetBrains acceptance is approved. No deprecated-fork dependency, no fixture-only activation.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-03",
+          "key": "lld:migration:6",
+          "status": "could-not-verify",
+          "evidence": "No release-gate or admission code in the changed files. The fixture server's capabilities handler is test-only and is registered in a fixture file, not production."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:migration:6",
+          "status": "could-not-verify",
+          "evidence": "The gateway gates Save/Test/Remove via `ConnectionActions.supported(features,...)`, which is consistent with capability gating. The release flag and the gate implementation were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:migration:7",
+      "text": "LLD migration step 7: User Saved changes/deletes cannot be undone by UI rollback. Disable new admission first, keep reconciliation/cleanup available while live; end owners on actual workbench/project disposal, never downgrade backend receipt/secret compatibility.",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-01",
+          "key": "lld:migration:7",
+          "status": "could-not-verify",
+          "evidence": "Supporting evidence: both controllers end only on `dispose()`/`close()`, and Kotlin `close()` shuts down its worker and scheduler. TS `dispose()` clears timers. The admission-gate-first sequencing and the actual disposal wiring are not in the supplied files."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:migration:7",
+          "status": "could-not-verify",
+          "evidence": "The owner ends on actual disposal only. Whether `upgrade-required` invalidation (session-owner.ts:74 clears features) still allows reconciliation and cleanup of an unknown mutation depends on `connectionMutationSupported`, which was not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:migration:7",
+          "status": "could-not-verify",
+          "evidence": "The tests show the owner ends on actual Project disposal (closeAndDispose followed by whenDisposed()). Admission-first disablement and the release gate being false were not visible in the supplied files."
+        }
+      ]
+    },
+    {
+      "key": "lld:backward-compat",
+      "text": "LLD backward compatibility",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "lld:backward-compat",
+          "status": "could-not-verify",
+          "evidence": "New decoders are additive in new files. Preservation of the one-shot IpcClient and the Kotlin gateway cannot be confirmed without the transport diffs."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:backward-compat",
+          "status": "could-not-verify",
+          "evidence": "The compatibility tests assert that an old, missing, future, malformed or base-incomplete daemon gives an upgrade state, no ticket or mutate calls, zero legacy writes, and unchanged legacy Saved projection. The production code that enforces this and the application-wide Kotlin gateway were not supplied."
+        },
+        {
+          "packet": "05-vscode-host-03",
+          "key": "lld:backward-compat",
+          "status": "could-not-verify",
+          "evidence": "The command IDs are checked against the manifest and registered once, with no persisted setting added. Strict-v2 and upgrade-required behaviour, the one-shot IpcClient/Kotlin gateway compatibility and the absence of new storage depend on files that were not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:backward-compat",
+          "status": "could-not-verify",
+          "evidence": "Only additive plugin.xml entries and the Settings/action wiring are visible. Legacy gateway projections and the old-daemon upgrade-required refusal are not in the supplied evidence."
+        }
+      ]
+    },
+    {
+      "key": "lld:state-after",
+      "text": "LLD state after the change",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "lld:state-after",
+          "status": "could-not-verify",
+          "evidence": "Only the VS Code owner and gateway were reviewed, and the Kotlin implementation was not supplied. Native sc7 behaviour in both clients cannot be confirmed."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "lld:state-after",
+          "status": "could-not-verify",
+          "evidence": "Only the JetBrains session-owner part is visible. The native manager panel, TS controllers and VS Code owner are outside this batch."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "lld:state-after",
+          "status": "could-not-verify",
+          "evidence": "The native Kotlin manager exists in the supplied files. Shared-scenario parity and the VS Code side were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "lld:scope",
+      "text": "LLD scope: the change stays within its Story's boundary and consumes the contracts adjacent Stories own, never re-implementing them",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "lld:scope",
+          "status": "holds",
+          "evidence": "The supplied changes are limited to the shared transport (`ipc-client.ts`), the Kotlin transport and protocol tests, and the wrapper test. They re-implement no backend contract, and the existing one-shot `rpc` and `UnixSocketDaemonRpc` bodies are untouched."
+        },
+        {
+          "packet": "02-state-draft-02",
+          "key": "lld:scope",
+          "status": "could-not-verify",
+          "evidence": "The supplied files show no re-implementation of backend contracts. The full change set was not supplied."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "lld:scope",
+          "status": "could-not-verify",
+          "evidence": "Supplied files are client controllers, tests and fixtures only. The fixture imports daemon modules, but only as a test peer. The full diff, and whether any adjacent-story contract is reimplemented, cannot be judged."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "lld:scope",
+          "status": "could-not-verify",
+          "evidence": "The test files import shared removal, capabilities and the corpus loader without reimplementing them, which is consistent with consuming adjacent contracts. Scope adherence of the production source was not supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "lld:scope",
+          "status": "holds",
+          "evidence": "For the supplied files only. types.ts states that the intent set cannot name an RPC method, capability or ticket. The shared model, draft, controller, wire and removal modules are imported as types or parsers rather than re-implemented."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "lld:scope",
+          "status": "could-not-verify",
+          "evidence": "The supplied files only consume capability feature names and the v2 method namespace, and do not re-implement daemon logic. The full diff boundary was not supplied. Whether the 41 shared capabilityCases are exercised identically in the TypeScript tests could not be checked."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "lld:scope",
+          "status": "could-not-verify",
+          "evidence": "The supplied changes stay in the JetBrains entry, Settings and action wiring and tests. That is within S005's client-side boundary, and no daemon or other-story re-implementation is visible. Full-scope adherence cannot be judged from this batch alone."
+        },
+        {
+          "packet": "09-daemon-policy-01",
+          "key": "lld:scope",
+          "status": "could-not-verify",
+          "evidence": "The daemon changes (default enablement, the `management-defaults.ts` initializer, the capabilities hook) are outside the S005 client boundary, and the diff includes other streams. No client source was supplied, so I could not check whether S005 re-implements consumed contracts. What I did see is that the sc1\u2013sc6 consumed-contract wire types and `parseDraftTestRequest`/`parseMutationRequest` are still imported from shared modules rather than redefined. That covers only the daemon side."
+        }
+      ]
+    },
+    {
+      "key": "plan:t1",
+      "text": "PLAN task t1: Define versioned cross-client wire and state fixtures",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "plan:t1",
+          "status": "could-not-verify",
+          "evidence": "The language-neutral fixture corpus, coverage index and digest checks are not supplied. Neither changed file loads the corpus."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t1",
+          "status": "could-not-verify",
+          "evidence": "Version and digest drift tests exist in TS and Kotlin: a byte change, a manifest version bump, and a self-consistent version-2 corpus all fail. The coverage index, with acceptance 'pending' and the fixture-evidence-only flag, is asserted. The raw corpus wasn't reviewed for secrets or real configuration, and the Gradle resource mapping and connection-junit.ts weren't supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t1",
+          "status": "could-not-verify",
+          "evidence": "The fixture corpus and drift tests were not supplied; the supplied tests only consume them."
+        }
+      ]
+    },
+    {
+      "key": "plan:t2",
+      "text": "PLAN task t2: Implement TypeScript strict v2 reply decoders",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "plan:t2",
+          "status": "holds",
+          "evidence": "wire.ts copies data descriptors only (no accessors, prototypes, symbols, sparse or cyclic data) with byte, depth, node, string and item limits. It validates exact discriminated shapes, expected key/operation/epoch/mode, disables unknown descriptor schemas, and emits fixed error text. It imports no daemon runtime (the test imports the daemon, which is fine). The shared parsers in connection-management-wire.ts were not seen, and tests were not run."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "plan:t2",
+          "status": "could-not-verify",
+          "evidence": "wire.ts is not supplied. removal.ts only calls decodeSafeConnection."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t2",
+          "status": "could-not-verify",
+          "evidence": "wire.ts and CM-S5-WIRE-TS were not supplied. Only indirect effects via malformed capability fixtures are visible."
+        },
+        {
+          "packet": "09-daemon-policy-02",
+          "key": "plan:t2",
+          "status": "could-not-verify",
+          "evidence": "The proposed src/shared/connection-manager/wire.ts validators and the CM-S5-WIRE-TS test are not in the supplied evidence. The daemon's runtime-config.ts imports ManagementInputError from src/shared/connection-management-wire.js, whose definition, including the 'invalid-input' code the test asserts, is not shown. The decoder acceptance checks cannot be verified."
+        }
+      ]
+    },
+    {
+      "key": "plan:t3",
+      "text": "PLAN task t3: Implement Kotlin typed v2 protocol decoders",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "plan:t3",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin test covers the shared corpus, the strict boundary and the privacy cases. Six `@Test` methods match the wrapper's expected count of 6. `ConnectionProtocol.kt` and `ConnectionCorpus` are not supplied. The existing gateway return shapes appear unchanged in the visible hunk, but the decoders cannot be reviewed."
+        },
+        {
+          "packet": "02-state-draft-02",
+          "key": "plan:t3",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionProtocol.kt` and its decoder tests were not supplied. `ConnectionDraft.kt` only consumes `ConnectionProtocol.publicPatch`, `requestData`, `decodePublicPercent` and the descriptors."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t3",
+          "status": "could-not-verify",
+          "evidence": "No Kotlin files were supplied."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "plan:t3",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin ConnectionProtocol.kt and its CM-S5-WIRE-KT test were not supplied. The TS tests load the shared corpus through `loadConnectionCorpus()`, but Kotlin parity cannot be judged from them."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t3",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionProtocol.kt` and its DTO decoders are not supplied. Only calls to them are visible: `capabilities`, `requestData` and `list`."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t3",
+          "status": "could-not-verify",
+          "evidence": "The gateway calls `ConnectionProtocol.descriptors(value)`, but ConnectionProtocol.kt and the fixture corpus were not supplied. build.gradle.kts adds ../test-fixtures as a test resource directory, which is consistent with a shared corpus."
+        }
+      ]
+    },
+    {
+      "key": "plan:t4",
+      "text": "PLAN task t4: Extend shared TypeScript IPC with persistent lanes",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "plan:t4",
+          "status": "could-not-verify",
+          "evidence": "src/shared/ipc-client.ts and its TypeScript persistent-lane tests are not supplied. The changed files cover the Kotlin lane (t5), not the TypeScript lane."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "plan:t4",
+          "status": "could-not-verify",
+          "evidence": "The persistent IPC lane code (`ipc-client.ts`, `UnixSocketDaemonRpc.kt`) and its transport tests were not supplied. Only the fixture backend opens `PersistentDaemonLane`."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t4",
+          "status": "could-not-verify",
+          "evidence": "src/shared/ipc-client.ts and its transport tests were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t5",
+      "text": "PLAN task t5: Add Kotlin persistent socket lane at existing boundary",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "plan:t5",
+          "status": "could-not-verify",
+          "evidence": "No Kotlin persistent lane code or transport tests (UnixSocketDaemonRpc.kt) were supplied. ConnectionProtocol.requestData and parseData are only helper boundaries."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "plan:t5",
+          "status": "could-not-verify",
+          "evidence": "PersistentDaemonLane and UnixSocketDaemonRpc.kt are not supplied. The tests only use PersistentDaemonLane.open/request/close/awaitClosed/isClosed, with no framing or partial-write tests in the evidence."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "plan:t5",
+          "status": "could-not-verify",
+          "evidence": "This is a Kotlin task. No Kotlin transport files are in the changed evidence for this batch."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t5",
+          "status": "could-not-verify",
+          "evidence": "The `PersistentDaemonLane` implementation (framing, partial writes, cancel/close, written-unknown) is not supplied. The tests only assert that `written` is true on cancel and on close after a write."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t5",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin socket lane and its transport tests are not in the supplied changed files."
+        }
+      ]
+    },
+    {
+      "key": "plan:t6",
+      "text": "PLAN task t6: Implement pure TypeScript sc7 manager model",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t6",
+          "status": "holds",
+          "evidence": "model.ts has the eight distinct list states. Rows are cleared on a root switch and marked non-actionable (canMutate=false) while stale. The root is selected explicitly rather than taken from an editor. Reads for an old root, view generation or epoch are ignored. Counts and search matching are computed from one snapshot. A committed reveal runs a refresh and applies only after a matching key and revision appears in an authoritative list-result. The tests cover these. Assessed by static reading only; wire.ts and the corpus weren't supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t6",
+          "status": "could-not-verify",
+          "evidence": "The pure model and CM-S5-STATE-TS were not supplied. The supplied tests touch counts, list states, filter-all and a read-only row only incidentally."
+        }
+      ]
+    },
+    {
+      "key": "plan:t7",
+      "text": "PLAN task t7: Implement native Kotlin sc7 manager model",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "plan:t7",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionsManagerModel.kt` and the state transcripts were not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t7",
+          "status": "could-not-verify",
+          "evidence": "ConnectionsManagerModel.kt and the common transcripts were not supplied. The tests use a Swing panel and the gateway, not the pure model."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t7",
+          "status": "could-not-verify",
+          "evidence": "The gateway uses `ConnectionsManagerModel.create/reduce/project` with events and effects, but the model source was not supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t8",
+      "text": "PLAN task t8: Implement VS Code workbench session owner",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t8",
+          "status": "could-not-verify",
+          "evidence": "No workbench owner code or CM-S5-OWNER-TS test was supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t8",
+          "status": "holds",
+          "evidence": "Single extension-host owner with explicit control, root-data and Saved lanes. 30s heartbeat. Local 90s expiry, with same-epoch resume that is not credited as a lease extension until a heartbeat confirms it. Disposal stops admission, erases temporary inputs, sends a best-effort `session.end` and bounds the wait with a 1s timer. The view has no capability field, and `JSON.stringify(owner)` is `{}`. Whether the webview, memento and logs stay free of capabilities depends on the host, which was not supplied."
+        },
+        {
+          "packet": "05-vscode-host-03",
+          "key": "plan:t8",
+          "status": "could-not-verify",
+          "evidence": "The owner implementation, heartbeat, resume and disposal were not supplied. This test only exercises the host and command entry through the f.owner fixture. It checks that the draft and root are retained across repeated open() calls, that `registrations.dispose()` empties the callbacks, and that `host.dispose()`, `probes.dispose()` and `removals.dispose()` run."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t8",
+          "status": "could-not-verify",
+          "evidence": "This is the VS Code workbench owner. The batch contains only the JetBrains project-service analogue."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t8",
+          "status": "could-not-verify",
+          "evidence": "This is the VS Code owner. No VS Code files were supplied in this batch."
+        }
+      ]
+    },
+    {
+      "key": "plan:t9",
+      "text": "PLAN task t9: Implement JetBrains project-owned session service",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "plan:t9",
+          "status": "could-not-verify",
+          "evidence": "No `ConnectionsSessionService`, `plugin.xml` or project Disposable code was supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t9",
+          "status": "could-not-verify",
+          "evidence": "The JetBrains ConnectionsSessionService and CM-S5-OWNER-KT were not supplied."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "plan:t9",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin PROJECT Disposable session service and the CM-S5-OWNER-KT test were not supplied. Only the VS Code ConnectionsWorkbenchOwner is exercised, indirectly."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t9",
+          "status": "could-not-verify",
+          "evidence": "The ConnectionsSessionService source was not supplied. The tests show the Disposable lifecycle through whenDisposed(), a separate service per Project, and installFixturePorts per project. Heartbeat and EDT behavior was not visible."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t9",
+          "status": "could-not-verify",
+          "evidence": "ConnectionsSessionService was not supplied. The gateway's use of `session.selectRoot/requestSaved/requestTemporary` and the panel's project-service lookup are consistent with a project-scoped owner."
+        }
+      ]
+    },
+    {
+      "key": "plan:t10",
+      "text": "PLAN task t10: Implement TypeScript safe descriptor draft and dirty guards",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "plan:t10",
+          "status": "could-not-verify",
+          "evidence": "`draft.ts` implements all three acceptance checks. `connectionDriverChoices` enables or disables each kind with guidance. Identity is fixed on edit. Credential intents are Keep/Replace/Clear and masked. A dirty exit needs Discard or Cancel. The CM-S5-FORM-TS test file was not among the supplied files. The LOW validator-cache finding applies to this file."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "plan:t10",
+          "status": "could-not-verify",
+          "evidence": "draft.ts and the Kotlin draft are not supplied. Only the removal-side requestExit/decideDiscard integration is visible."
+        }
+      ]
+    },
+    {
+      "key": "plan:t11",
+      "text": "PLAN task t11: Implement Kotlin safe descriptor draft and dirty guards",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t11",
+          "status": "could-not-verify",
+          "evidence": "Only the TS draft test was supplied. Neither the Kotlin draft model nor CM-S5-FORM-KT was in the batch."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "plan:t11",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin draft/form model and its tests were not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t11",
+          "status": "could-not-verify",
+          "evidence": "ConnectionDraft and the dirty-guard model are not supplied. Panel tests exercise dirty-cancel with zero ticket calls, '${secret:...}' invalid-input handling, and a label containing HTML kept as literal text. Parity and serializer behavior are not visible."
+        }
+      ]
+    },
+    {
+      "key": "plan:t12",
+      "text": "PLAN task t12: Implement TypeScript signed mutation and recovery effects",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-02",
+          "key": "plan:t12",
+          "status": "could-not-verify",
+          "evidence": "The TypeScript signed mutation gateway is not supplied, and CM-S5-OUTCOME-TS is not in the evidence. Only the Kotlin outcome test wrapper and fixture are visible."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "plan:t12",
+          "status": "could-not-verify",
+          "evidence": "host.ts only calls mutations.submit/reconcile/replay/retryActivation/retryCleanup/retryRefresh/dismiss and observeRefresh. The signed attempts, same-ticket replay and phase-separated recovery live in gateway/controller files that were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t13",
+      "text": "PLAN task t13: Implement Kotlin signed mutation and recovery effects",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-03",
+          "key": "plan:t13",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin controller, gateway and session service are not supplied. ConnectionRemovals only delegates to controller.remove."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t13",
+          "status": "could-not-verify",
+          "evidence": "This is the Kotlin task and no Kotlin was supplied."
+        },
+        {
+          "packet": "05-vscode-host-03",
+          "key": "plan:t13",
+          "status": "could-not-verify",
+          "evidence": "This is a Kotlin task, and no Kotlin evidence was supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t13",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin mutation gateway and recovery effects are not supplied. The service only wires `createProjectMutationOwner`."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t13",
+          "status": "could-not-verify",
+          "evidence": "The gateway delegates to mutation cores (`mutations.submit/reconcile/replay/retryActivation/retryCleanup/retryRefresh`) and observes refresh. The mutation core and the transport were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t14",
+      "text": "PLAN task t14: Implement TypeScript transient draft testing",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "plan:t14",
+          "status": "could-not-verify",
+          "evidence": "No TypeScript draft-test controller or tests are supplied."
+        },
+        {
+          "packet": "02-state-draft-02",
+          "key": "plan:t14",
+          "status": "could-not-verify",
+          "evidence": "Test/cancel wiring, one-in-flight probe and stale-result suppression were not supplied."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "plan:t14",
+          "status": "could-not-verify",
+          "evidence": "The TS draft-test implementation and tests were not supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t14",
+          "status": "could-not-verify",
+          "evidence": "gateway.ts, draft-test.ts and CM-S5-TEST-TS were not supplied. The compatibility test shows that Test is gated independently (Save enabled, Test disabled, Test click gives an Upgrade message and Save still succeeds). The privacy test runs a Test against an unreachable endpoint until the supervisor's activeCount is 0."
+        }
+      ]
+    },
+    {
+      "key": "plan:t15",
+      "text": "PLAN task t15: Implement Kotlin transient draft testing",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "plan:t15",
+          "status": "could-not-verify",
+          "evidence": "Kotlin Test/cancel wiring and EDT delivery were not supplied. Only the testResult decoder was."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t15",
+          "status": "could-not-verify",
+          "evidence": "No Kotlin draft-test code or CM-S5-TEST-KT was supplied."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "plan:t15",
+          "status": "could-not-verify",
+          "evidence": "ConnectionDraftTests.kt and its tests cover stale tuples, cancel on view change, disposal suppression and EDT-delivery tests. The Kotlin rejected-outcome handling does not match TypeScript, see the finding. Session-service wiring and execution results are absent."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t15",
+          "status": "could-not-verify",
+          "evidence": "The privacy test clicks Test and waits for a terminal status and for probeActive==0. It checks nothing on cancel-on-draft-change, stale-result identity or EDT delivery guards. The Kotlin test-identity source was not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t15",
+          "status": "could-not-verify",
+          "evidence": "The test-cancel/identity implementation is not supplied. testNativeManagerUpdatesInsideSettingsModality drives Test under modal entry and awaits a terminal status, but the stale-tuple and cancel semantics are not visible."
+        }
+      ]
+    },
+    {
+      "key": "plan:t16",
+      "text": "PLAN task t16: Implement TypeScript Delete and Discard presentation",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "plan:t16",
+          "status": "could-not-verify",
+          "evidence": "Delete/Discard presentation and ticket-only retry were not supplied."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "plan:t16",
+          "status": "holds",
+          "evidence": "Shown TS removal.ts implements the t16 items it is responsible for: dirty draft resolved first, exact-selection confirmation, Cancel with zero calls, busy/conflict keeping state, and ticket-only retry delegated to the controller. The integration test CM-S5-REMOVE-TS is not in the supplied evidence, and the ticket-only retry check is not directly visible."
+        }
+      ]
+    },
+    {
+      "key": "plan:t17",
+      "text": "PLAN task t17: Implement Kotlin Delete and Discard presentation",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-01",
+          "key": "plan:t17",
+          "status": "could-not-verify",
+          "evidence": "Supporting evidence: Kotlin `remove` sends only `{key,mode,expectedRevision}` plus the ticket, and cleanup retry sends only `{ticket}`. `RemovalCard`, `projectRemovalState`, UI copy and the S004 snapshot tests were not supplied. The `reconciliation-required` dead end applies to removals as well."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "plan:t17",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin Delete/Discard presentation and tests were not supplied. The TS counterpart test removal.test.ts is consistent with the requirements. It covers zero-effect Cancel, busy/conflict/unknown states, and ticket-only independent cleanup. Cleanup stays tied to the original ticket after same-ID recreation, and source file bytes are unchanged. It also covers 20 sc6 snapshots, and Discard for temporary rows. This is TS evidence only."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t17",
+          "status": "could-not-verify",
+          "evidence": "The gateway wires the removal prompt through `removals.begin/decide` and `requireAction`. The panel shows Delete/Discard with confirmation. The removal core and S004 snapshots were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t18",
+      "text": "PLAN task t18: Build VS Code themed manager renderer and view host",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t18",
+          "status": "could-not-verify",
+          "evidence": "No renderer, host or webview code was supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t18",
+          "status": "could-not-verify",
+          "evidence": "The renderer, host and CSP code were not supplied. The extension.ts panel hunk uses `webviewChannel(panel)`, and its definition is outside the supplied hunks."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "plan:t18",
+          "status": "could-not-verify",
+          "evidence": "host.test.ts exercises strict intent parsing, CSP and escaping, all list states, masked blank credentials, view-only close with a retained draft, and the file picker. The host supports these. renderer.ts, types.ts and the harness fixtures were not supplied, and test execution results were not supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "plan:t18",
+          "status": "could-not-verify",
+          "evidence": "The tests exercise a fake-panel injected host, a masked and disabled kind field, escaped message text (the `<img onerror>` payload yields zero img elements), the dialog focus return, and the picker's ARIA roles. The renderer, CSP and host source were not supplied. Strict-message and CSP acceptance cannot be confirmed."
+        }
+      ]
+    },
+    {
+      "key": "plan:t19",
+      "text": "PLAN task t19: Build JetBrains native manager panel",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "plan:t19",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionsManagerPanel.kt` was not supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t19",
+          "status": "could-not-verify",
+          "evidence": "The Swing panel and CM-S5-RENDER-KT were not supplied. VS Code renderer-side behavior in these tests does not stand in for it."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "plan:t19",
+          "status": "could-not-verify",
+          "evidence": "This is a JetBrains task. No Kotlin files were supplied in this batch, and JetBrains live UI is deferred by the user."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t19",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionsManagerPanel.kt` is not supplied. The service delivers listener callbacks on the EDT with project-disposal and generation guards."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t19",
+          "status": "could-not-verify",
+          "evidence": "ConnectionsManagerPanel.kt source is not supplied. ConnectionsManagerPanelTest is added and asserts labelFor associations, html.disable on labels, JBPasswordField use, EDT rendering, queued update rejection after project close, and Add disabled for unavailable list states. It was not executed here."
+        }
+      ]
+    },
+    {
+      "key": "plan:t20",
+      "text": "PLAN task t20: Wire VS Code Settings and command entry points",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "plan:t20",
+          "status": "could-not-verify",
+          "evidence": "No VS Code manifest or `extension.ts` changes were supplied."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "plan:t20",
+          "status": "could-not-verify",
+          "evidence": "No `extension.ts`, manifest or command wiring was supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t20",
+          "status": "could-not-verify",
+          "evidence": "The VS Code files (extension.ts, package.json) were not supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t21",
+      "text": "PLAN task t21: Wire JetBrains Settings and Manage Connections action",
+      "baselineAggregate": "holds",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "plan:t21",
+          "status": "could-not-verify",
+          "evidence": "No JetBrains Settings or action wiring and no CM-S5-ENTRY-KT test are supplied."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "plan:t21",
+          "status": "could-not-verify",
+          "evidence": "No plugin.xml, ConnectionsConfigurable or ManageConnectionsAction is in the supplied files."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t21",
+          "status": "could-not-verify",
+          "evidence": "JetBrains plugin.xml and Settings files were not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t21",
+          "status": "could-not-verify",
+          "evidence": "ConnectionsConfigurable, ManageConnectionsAction, plugin.xml and the CM-S5-ENTRY-KT test were not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t21",
+          "status": "holds",
+          "evidence": "ConnectionsEntryPanel starts with a project chooser, and the first item is null so there is no implicit selection. With no open project it shows 'No open project\u2026 no temporary session has been created'. Open requires a live non-default project that is still in the current projects list. ManageConnectionsAction passes e.project only if it is not disposed or default. The Configurable apply/reset are no-ops and dispose does not end the session. ConnectionsEntryTest covers no-project, cancel, the default project, stale and closed-project buttons, and same-gateway retention. These are source-level observations; the tests were not run."
+        }
+      ]
+    },
+    {
+      "key": "plan:t22",
+      "text": "PLAN task t22: Prove actual two-owner scoped transport isolation",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "plan:t22",
+          "status": "could-not-verify",
+          "evidence": "No two-owner isolation implementation or tests were supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t22",
+          "status": "could-not-verify",
+          "evidence": "The privacy test uses two forked VS Code owners with the same root and checks that the second panel never receives the first panel's canaries. The Kotlin owners, overlapping RPC IDs and root A\u2192B\u2192A retention are not evidenced, and the fixture's forkOwner implementation was not supplied."
+        },
+        {
+          "packet": "05-vscode-host-03",
+          "key": "plan:t22",
+          "status": "could-not-verify",
+          "evidence": "The entry test uses a single owner fixture. Two-owner isolation (CM-S5-WINDOW) and Kotlin project isolation were not supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t22",
+          "status": "could-not-verify",
+          "evidence": "`ConnectionsIsolationTest` and `ConnectionsSessionServiceTest` cover two real projects with the same root and ID, forged-hint refusal, root A\u2192B\u2192A retention and one-owner disposal. No execution evidence was supplied. The production-route refusal for global Saved affinity is not visible. The `ConnectionMutationBackend` fixture is not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t22",
+          "status": "could-not-verify",
+          "evidence": "No isolation tests or transport sources were supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t23",
+      "text": "PLAN task t23: Run cross-language parity and recovery matrix",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "plan:t23",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin test can write `wire.json` when `insrc.parity.dir` is set. The TypeScript counterpart and the comparison harness were not supplied."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t23",
+          "status": "could-not-verify",
+          "evidence": "No cross-language transcript runner was supplied. Live and UI acceptance remain pending per the user."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t23",
+          "status": "could-not-verify",
+          "evidence": "No TypeScript/Kotlin transcript parity harness is in the supplied evidence."
+        }
+      ]
+    },
+    {
+      "key": "plan:t24",
+      "text": "PLAN task t24: Prove client privacy and temporary no-persistence",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-03",
+          "key": "plan:t24",
+          "status": "could-not-verify",
+          "evidence": "No privacy sink-poisoning tests or adapters are supplied. The lane test only checks that a private IOException message does not appear in the lane error message."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "plan:t24",
+          "status": "could-not-verify",
+          "evidence": "No privacy-sink test or adapter was supplied. The Kotlin removal test only asserts that serialized records omit the fixture secret and 'signature', and that the object serializes to '{}'."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t24",
+          "status": "could-not-verify",
+          "evidence": "The VS Code privacy tests poison fs, fs.promises and console writes, check that registry writes, credential sets and deletes stay unchanged for temporary operations, and inspect the bundle imports. The Kotlin persistence side, telemetry, memento, webview state, artifact and Settings sinks beyond fs and console, and the screenshots are not evidenced. The Kotlin half of the obligation and this client's real adapters are unassessed."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t24",
+          "status": "could-not-verify",
+          "evidence": "The code clears password documents and zeroes char arrays, and the render path does not echo secrets. The `String(it)` conversion cannot be zeroed. Finding 1 shows draft/UI divergence. No privacy tests or sinks were supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t25",
+      "text": "PLAN task t25: Verify mixed-version and legacy compatibility",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-01",
+          "key": "plan:t25",
+          "status": "could-not-verify",
+          "evidence": "The Kotlin gateway refuses with `upgrade-required` via `ConnectionActions.mutation` when a capability is missing, with no legacy fallback visible. The TS side, legacy projections and CM-S5-COMPAT tests were not supplied."
+        },
+        {
+          "packet": "05-vscode-host-01",
+          "key": "plan:t25",
+          "status": "could-not-verify",
+          "evidence": "The fixture has capability modes (missing/old/future/malformed, omitted features). It also has legacy `db.saveConnection`/`db.deleteConnection` traps with a `legacyWrites()` counter, plus `legacyList`. The compat test that asserts on them was not in the supplied batch. Kotlin-side compat was not supplied either."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t25",
+          "status": "could-not-verify",
+          "evidence": "ConnectionsCompatibilityTest covers missing/old/future/malformed/base-incomplete capabilities. It also covers partial saved-feature gating, pinned read-only rows, and a real legacy db.listConnections projection of {id,kind,family} for the saved scope only. It asserts legacyMutations==0 throughout. No execution results were supplied, and the TypeScript side of the compatibility test was not supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t25",
+          "status": "could-not-verify",
+          "evidence": "Mixed-version and legacy compatibility tests are not supplied. The panel test only covers rendering the upgrade-required list state."
+        }
+      ]
+    },
+    {
+      "key": "plan:t26",
+      "text": "PLAN task t26: Execute real VS Code UI and keyboard acceptance",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t26",
+          "status": "could-not-verify",
+          "evidence": "The supplied batch contains no live UI evidence. The user reports manual 0.5.23 testing but individual cases aren't documented here, so I don't treat it as passed."
+        },
+        {
+          "packet": "03-mutations-02",
+          "key": "plan:t26",
+          "status": "could-not-verify",
+          "evidence": "No VS Code UI evidence is supplied. The fixture has a test-only live-ui mode, but no screenshots or results are in the evidence. The user states manual 0.5.23 testing was done but not individually documented, so I do not treat it as proven."
+        },
+        {
+          "packet": "05-vscode-host-02",
+          "key": "plan:t26",
+          "status": "could-not-verify",
+          "evidence": "The user reports VS Code 0.5.23 manual testing as completed, with individual cases not independently documented. No screenshots, action logs or live-run evidence were supplied. This is not treated as passed or failed."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "plan:t26",
+          "status": "could-not-verify",
+          "evidence": "Live VS Code acceptance is user-reported and not independently documented in the supplied evidence. The harness fixture does not parse the HTML hidden attribute, so it cannot detect visibility regressions."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t26",
+          "status": "could-not-verify",
+          "evidence": "This is VS Code UI acceptance. Per the user, 0.5.23 manual testing is user-reported. Nothing was supplied."
+        }
+      ]
+    },
+    {
+      "key": "plan:t27",
+      "text": "PLAN task t27: Execute real JetBrains UI and keyboard acceptance",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "02-state-draft-02",
+          "key": "plan:t27",
+          "status": "could-not-verify",
+          "evidence": "Live JetBrains UI acceptance is deferred by the user and there was no evidence to review."
+        },
+        {
+          "packet": "03-mutations-03",
+          "key": "plan:t27",
+          "status": "could-not-verify",
+          "evidence": "Live JetBrains UI and keyboard acceptance is deferred by the user and not in the supplied evidence."
+        },
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t27",
+          "status": "could-not-verify",
+          "evidence": "JetBrains live UI acceptance is deferred by the user. No evidence was supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t27",
+          "status": "could-not-verify",
+          "evidence": "Live JetBrains UI is deferred-user. Nothing in this batch exercises the sandbox IDE, Settings or the chooser."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t27",
+          "status": "could-not-verify",
+          "evidence": "JetBrains live sandbox UI acceptance is deferred by user decision. Only headless BasePlatformTestCase tests are present."
+        }
+      ]
+    },
+    {
+      "key": "plan:t28",
+      "text": "PLAN task t28: Verify both-client temporary lifecycle end to end",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-01",
+          "key": "plan:t28",
+          "status": "could-not-verify",
+          "evidence": "Live lifecycle verification is out of scope of the supplied static files. Per the user, JetBrains live UI is deferred."
+        },
+        {
+          "packet": "03-mutations-01",
+          "key": "plan:t28",
+          "status": "could-not-verify",
+          "evidence": "This is a live both-client acceptance task. The user states JetBrains live UI is deferred. No live evidence was supplied. The fixture backend only provides a test subprocess."
+        },
+        {
+          "packet": "04-vscode-lifecycle-02",
+          "key": "plan:t28",
+          "status": "could-not-verify",
+          "evidence": "This is a live both-client acceptance task. The supplied tests are fixture-based unit/integration tests, not live evidence. The task instruction records JetBrains live UI as deferred and VS Code manual testing as user-reported, so it is not asserted as passed."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "plan:t28",
+          "status": "could-not-verify",
+          "evidence": "The tests show that message history survives a manager reopen (feedback.test.ts:50-52). No live lifecycle, lease, disposal or drain evidence was supplied."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t28",
+          "status": "could-not-verify",
+          "evidence": "A live both-client lifecycle test was not supplied. The privacy test only provides fixture-backed expiry (fixture.clock at 90000, status expired) and Project-disposal checks. It is not live evidence, and the user's note says JetBrains live UI is deferred."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t28",
+          "status": "could-not-verify",
+          "evidence": "This is live lifecycle acceptance; no evidence was supplied. The JetBrains live UI is deferred by the user."
+        }
+      ]
+    },
+    {
+      "key": "plan:t29",
+      "text": "PLAN task t29: Verify real SQL KV and file source preservation through both clients",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "03-mutations-02",
+          "key": "plan:t29",
+          "status": "could-not-verify",
+          "evidence": "The fixture byte-compares a source CSV (sourcePreserved) for the mutation/removal flows. No SQL, KV or both-client live evidence is supplied, and SQL Server is pending by user authorization."
+        },
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "plan:t29",
+          "status": "could-not-verify",
+          "evidence": "This is a live source-preservation task covering both clients. It is not evidenced by the supplied files, and SQL Server is pending by user authorization."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-01",
+          "key": "plan:t29",
+          "status": "could-not-verify",
+          "evidence": "Real SQL/KV/file source-preservation flows are not in the supplied files."
+        }
+      ]
+    },
+    {
+      "key": "plan:t30",
+      "text": "PLAN task t30: Align artifacts and preserve current release prerequisites",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "04-vscode-lifecycle-01",
+          "key": "plan:t30",
+          "status": "could-not-verify",
+          "evidence": "No artifact, inventory or gate evidence was supplied. Nothing in the reviewed diffs enables release admission."
+        },
+        {
+          "packet": "06-vscode-renderer-02",
+          "key": "plan:t30",
+          "status": "could-not-verify",
+          "evidence": "No artifacts, gate or inventory files were supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t30",
+          "status": "could-not-verify",
+          "evidence": "No artifact or inventory files were supplied. plugin.xml and the code supplied do not enable release."
+        },
+        {
+          "packet": "09-daemon-policy-01",
+          "key": "plan:t30",
+          "status": "could-not-verify",
+          "evidence": "No UX or interaction definitions, regenerated companions, client inventory or evidence records, or CM-S5-GATE/CM-S5-ARTIFACTS tests were supplied. What the diff does show: `verifyConnectionManagementRelease` is retained unchanged in behavior, the shipped gate assertions still expect `ready=false` with empty scopes, and the new `management-defaults.test.ts` asserts the release audit stays false ('pending audit is retained'). Two fixture inventories were supplied only as metadata and were not reviewed record by record."
+        }
+      ]
+    },
+    {
+      "key": "plan:t31",
+      "text": "PLAN task t31: Validate targeted packaging and runtime smoke",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "01-transport-02",
+          "key": "plan:t31",
+          "status": "could-not-verify",
+          "evidence": "No packaging or build output was supplied. `ipc-client.ts` adds no new module imports. The Kotlin daemon package now imports `connections.ConnectionProtocol`, and that dependency was not checked."
+        },
+        {
+          "packet": "02-state-draft-01",
+          "key": "plan:t31",
+          "status": "could-not-verify",
+          "evidence": "No packaging, bundle or smoke evidence was supplied."
+        },
+        {
+          "packet": "08-jetbrains-ui-01",
+          "key": "plan:t31",
+          "status": "could-not-verify",
+          "evidence": "Only the build.gradle.kts test-property and test-resource changes were supplied; they look consistent. No packaging or smoke output was supplied."
+        },
+        {
+          "packet": "09-daemon-policy-02",
+          "key": "plan:t31",
+          "status": "could-not-verify",
+          "evidence": "No packaging, bundle, Gradle or smoke evidence is supplied. runtime-config.ts adds a daemon-to-shared import. That is a daemon-side dependency, and bundle contents cannot be checked from the diff."
+        }
+      ]
+    },
+    {
+      "key": "plan:t32",
+      "text": "PLAN task t32: Run final frozen builds full sweeps and acceptance matrix",
+      "baselineAggregate": "could-not-verify",
+      "assessments": [
+        {
+          "packet": "06-vscode-renderer-01",
+          "key": "plan:t32",
+          "status": "could-not-verify",
+          "evidence": "No sweep manifest or results were supplied. The user states the sweep has known recorded failures and timeouts."
+        },
+        {
+          "packet": "07-jetbrains-lifecycle-02",
+          "key": "plan:t32",
+          "status": "could-not-verify",
+          "evidence": "No sweep manifest or results were supplied. The user states the sweep has known recorded failures, so it is not treated as proof of a defect."
+        },
+        {
+          "packet": "08-jetbrains-ui-02",
+          "key": "plan:t32",
+          "status": "could-not-verify",
+          "evidence": "No sweep manifest or results were supplied. The user states that the sweep has recorded failures and timeouts, and that does not by itself show a defect in the supplied code."
+        },
+        {
+          "packet": "09-daemon-policy-01",
+          "key": "plan:t32",
+          "status": "could-not-verify",
+          "evidence": "No frozen manifest, Node22/JDK21 sweep results, verifyPlugin output, or acceptance matrix was supplied. The user states that the automated sweep has recorded failures and timeouts, and I did not treat that as proof of a defect. I cannot confirm that raw results are retained."
+        }
+      ]
+    }
+  ]
+}

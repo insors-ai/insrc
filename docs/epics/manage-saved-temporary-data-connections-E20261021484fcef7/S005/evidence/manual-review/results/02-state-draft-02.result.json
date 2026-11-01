@@ -1,0 +1,133 @@
+{
+  "id": "02-state-draft-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:33:03.206Z",
+  "finished": "2026-11-01T04:34:34.431Z",
+  "inputChars": 86449,
+  "inputSha256": "b832f730935e51bd2d908d228ec7f1eaac3f6f59502f20f43a46cf6679dfb56a",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the draft/dirty-guard slice only: `src/shared/connection-manager/draft.ts`, the Kotlin `ConnectionDraft.kt`, `ConnectionDraftTest.kt` and the Kotlin-draft parity test. I found one LOW defect: the TypeScript draft leaks compiled Ajv validators. I found no reachable correctness, privacy, or dirty-guard defect in the supplied code. The TS and Kotlin drafts mirror each other for identity fixing, Keep/Replace/Clear credential intents, reset-to-baseline, unsafe-field rejection, and a Cancel that has zero effect. Discard clears only the unsaved draft. Most assigned obligations cover files that were not supplied (extension.ts, the Settings configurable, plugin.xml, the manager models/panels, the IPC lanes, removal, test wiring), so they are `could-not-verify`. This is not a canonical CR and does not approve BUILD.",
+    "findings": [
+      {
+        "severity": "LOW",
+        "file": "src/shared/connection-manager/draft.ts",
+        "line": 58,
+        "trigger": "Open Create or Edit forms repeatedly, or re-render the kind list, in a long-lived VS Code workbench.",
+        "defect": "`validators()` calls `ajv.compile()` on freshly built schema objects every time, using a single module-level `Ajv` instance. The constructor deep-copies the descriptor with `data(descriptor)`, and `editingSchema()` builds a new object on every call. I believe Ajv caches compiled schemas by schema-object identity in a strong internal Map. If so, no call ever hits the cache, and every `new ConnectionDraft` and every `connectionDriverChoices` call leaves compiled validators in the shared instance. `connectionDriverChoices` compiles two validators for each of about 29 descriptors per call.",
+        "evidence": "Line 29 creates one module-level `ajv`. Line 58 compiles `descriptor.publicInputSchema` and `editingSchema(descriptor.publicInputSchema)`. The constructor passes `freeze(data(descriptor))` to `validators`, so its schema objects are new on every call. Nothing calls `ajv.removeSchema` or keys validators by kind. The Ajv cache behaviour is my knowledge of the library, not shown in the supplied evidence.",
+        "remedy": "Cache the `{full, editing}` pair by a stable key (kind plus JSON of the schema) in a bounded Map. Alternatively, remove the compiled schema with `ajv.removeSchema(schema)` after use, or use a short-lived `Ajv` per draft."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "lld:data-model:1",
+        "status": "could-not-verify",
+        "evidence": "The scope-correction call sites (`vscode-plugin/src/extension.ts`, `InsrcSettingsConfigurable.kt`) were not supplied. The supplied files stay within `src/shared` and `jetbrains-plugin` and add no deprecated-fork dependency."
+      },
+      {
+        "key": "lld:data-model:3",
+        "status": "could-not-verify",
+        "evidence": "This covers ConnectionListState, the Settings and command entry points, and plugin.xml. None of those files, and no list-state code, were supplied."
+      },
+      {
+        "key": "lld:data-model:5",
+        "status": "could-not-verify",
+        "evidence": "The shared serializer is present in `serialize()` for TS and Kotlin and is memory-only, with a `draftRevision` increment on every edit. Test/cancel/in-flight/stale-result identity wiring and `extension.ts` were not supplied."
+      },
+      {
+        "key": "lld:data-model:7",
+        "status": "could-not-verify",
+        "evidence": "Removal state and `connection-removal.ts` were not supplied. The draft layer only models a `remove` navigation target that is guarded by the dirty check."
+      },
+      {
+        "key": "lld:data-model:9",
+        "status": "could-not-verify",
+        "evidence": "The project-scoped service, panel, plugin.xml and EDT/disposal guards were not supplied. `ConnectionDraft.kt` is pure Gson/JDK code with no IntelliJ SDK, global project or PersistentStateComponent use, and its fields are @Transient."
+      },
+      {
+        "key": "lld:error:5",
+        "status": "could-not-verify",
+        "evidence": "`serialize()` carries `expectedRevision` on update. Busy/conflict handling, reconfirm and the retained operation card were not supplied."
+      },
+      {
+        "key": "lld:edge:2",
+        "status": "could-not-verify",
+        "evidence": "List, filter and count state were not supplied."
+      },
+      {
+        "key": "lld:edge:4",
+        "status": "could-not-verify",
+        "evidence": "At the draft layer this holds. `requestExit` stores a pending target when the draft is dirty. A Cancel clears it with no effect and leaves the values and revision unchanged. A Discard clears only the unsaved inputs and returns the navigate effect. The Kotlin test covers eight target types. Wiring in the manager and panel-close handling was not supplied."
+      },
+      {
+        "key": "lld:invariant:1",
+        "status": "could-not-verify",
+        "evidence": "`draft.ts` imports only Ajv and shared pure modules, and the Kotlin draft is likewise pure. The rest of the client core was not supplied."
+      },
+      {
+        "key": "lld:shared:5",
+        "status": "could-not-verify",
+        "evidence": "The draft serializer shape is consistent with sc4 inputs (key, expectedRevision, publicPatch, credentials). The IPC and daemon side were not supplied."
+      },
+      {
+        "key": "lld:scope",
+        "status": "could-not-verify",
+        "evidence": "The supplied files show no re-implementation of backend contracts. The full change set was not supplied."
+      },
+      {
+        "key": "plan:t3",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionProtocol.kt` and its decoder tests were not supplied. `ConnectionDraft.kt` only consumes `ConnectionProtocol.publicPatch`, `requestData`, `decodePublicPercent` and the descriptors."
+      },
+      {
+        "key": "plan:t7",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionsManagerModel.kt` and the state transcripts were not supplied."
+      },
+      {
+        "key": "plan:t10",
+        "status": "could-not-verify",
+        "evidence": "`draft.ts` implements all three acceptance checks. `connectionDriverChoices` enables or disables each kind with guidance. Identity is fixed on edit. Credential intents are Keep/Replace/Clear and masked. A dirty exit needs Discard or Cancel. The CM-S5-FORM-TS test file was not among the supplied files. The LOW validator-cache finding applies to this file."
+      },
+      {
+        "key": "plan:t14",
+        "status": "could-not-verify",
+        "evidence": "Test/cancel wiring, one-in-flight probe and stale-result suppression were not supplied."
+      },
+      {
+        "key": "plan:t16",
+        "status": "could-not-verify",
+        "evidence": "Delete/Discard presentation and ticket-only retry were not supplied."
+      },
+      {
+        "key": "plan:t19",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionsManagerPanel.kt` was not supplied."
+      },
+      {
+        "key": "plan:t27",
+        "status": "could-not-verify",
+        "evidence": "Live JetBrains UI acceptance is deferred by the user and there was no evidence to review."
+      }
+    ],
+    "inspectedFiles": [
+      "src/shared/connection-manager/draft.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraft.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTest.kt",
+      "src/shared/__tests__/connection-manager-kotlin-draft.test.ts"
+    ],
+    "limitations": [
+      "Only the four files listed were supplied. I did not see wire.ts, connection-management-wire.ts, ConnectionProtocol.kt, the corpus fixtures, or the callers of the draft.",
+      "The TS and Kotlin schema validators may differ for descriptors that omit additionalProperties:false. Kotlin always rejects undeclared keys, and Ajv allows them. I could not confirm this from the supplied descriptors, so I did not raise it as a defect.",
+      "The Kotlin draft invokes `onChange` listeners while holding its object lock. I saw no listener implementation, so I could not tell whether a deadlock is reachable.",
+      "I did not run any tests, so the claimed 4 JUnit tests and the 29-descriptor assertion are unverified.",
+      "The LOW finding relies on how Ajv caches compiled schemas internally, which was not in the supplied evidence."
+    ],
+    "evidenceRequests": [
+      "connection-manager/wire.ts and ConnectionProtocol.kt, to confirm decoder parity, strict percent decoding and the descriptor shape guarantees (a nested `properties` is always present).",
+      "The ConnectionDraft call sites in the manager host and panel (listener threading, how Test uses `serialize`)."
+    ]
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "id": "03-mutations-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:37:32.847Z",
+  "finished": "2026-11-01T04:38:44.634Z",
+  "inputChars": 95733,
+  "inputSha256": "d9b1fee011ef48256f6154eff005f4104a796b87a3f5faae19383b9a743544ac",
+  "missingObligations": [],
+  "result": {
+    "summary": "The supplied evidence is mostly tests, fixtures and the draft-test controllers. The production mutation controllers, removal confirmation, session service and transport lane are absent, so most assigned obligations are could-not-verify. I found one low-severity defect: the Kotlin draft test has no handling for a rejected-outcome reply. TypeScript shows a specific failure message in that case, while Kotlin falls through to a misleading \"unavailable / retry after cleanup\" state. Nothing was executed. Stale-tuple and drain-ownership logic in the supplied draft-test controllers looks consistent across both languages.",
+    "findings": [
+      {
+        "severity": "LOW",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt",
+        "line": 79,
+        "trigger": "The daemon returns a MutationOutcome-shaped rejection for a draft test (e.g. invalid-input for a file path outside the repository, conflict, not-found, secret-unavailable) and the user presses Test in the JetBrains manager.",
+        "defect": "Kotlin has no rejected-outcome branch. The reply goes through ConnectionProtocol.testResult, which expects a DraftTestResult carrying requestId/draftRevision/daemonEpoch. A rejection therefore parses to null and is published as 'unavailable' with cleanupUnverified=true. The reservation also stays in the map, which counts toward the 128 limit. TypeScript decodes the rejection, shows a code-specific message, and drops the reservation when the rejection is not uncertain. The Kotlin result is a misleading 'Retry after cleanup completes.' message for a permanent input error, which breaks parity with TypeScript (plan t15 requires the same Test behaviour as TypeScript).",
+        "evidence": "test-controller.ts decodes via decodeMutationOutcome and rejectedMessages, then deletes the slot when !uncertain. ConnectionDraftTests.kt:79 uses only runCatching{ConnectionProtocol.testResult(...)}.getOrNull(), and line 84 maps parsed==null to publish(\"unavailable\",true). ConnectionDraftTestsTest corrupts only requestId/draftRevision/repoRoot/daemonEpoch/safeMessage and never sends a rejected outcome. ConnectionProtocol itself is not supplied, so I assumed testResult rejects the rejection shape.",
+        "remedy": "Decode MutationOutcome rejections in the Kotlin controller using the same code-to-message table and uncertain/busy rules as TypeScript. Remove the reservation when the rejection is fresh and not busy. Add a Kotlin test that sends rejected invalid-input and busy replies."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "lld:contract:2",
+        "status": "could-not-verify",
+        "evidence": "No removalConfirmation implementation or Delete/Discard confirmation code is in the supplied files. The mutation fixture only records the remove request field set, the original ticket and ticket-only cleanup calls, and none of the removal tests are in the evidence."
+      },
+      {
+        "key": "lld:data-model:6",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin ConnectionMutationControllerTest and the mutation fixture exercise frozen-attempt, same-ticket replay, expiry and lost-reply unknown behaviour, including no repeated create via ticket and mutation counters. The controllers (TypeScript and Kotlin) and the Kotlin record store are not supplied, and no test was run."
+      },
+      {
+        "key": "lld:data-model:9",
+        "status": "could-not-verify",
+        "evidence": "Tests show project-service ownership, project disposal and a fresh project with no inherited records. The service, panel, configurable, plugin.xml and gateway code are not supplied. The test backend asserts lane opening happens off the dispatch thread."
+      },
+      {
+        "key": "lld:error:3",
+        "status": "could-not-verify",
+        "evidence": "Tests for before, after, pending and malformed lost-reply faults expect unknown, then reconcile via status or identical same-ticket replay, with no second ticket and no changed payload. The production controller is not supplied and the tests were not run."
+      },
+      {
+        "key": "lld:error:8",
+        "status": "could-not-verify",
+        "evidence": "For draft tests, test-controller.ts and ConnectionDraftTests.kt check key, epoch, view generation and draft revision before publishing, and retain the reservation and source until a reachable reply. List-reply staleness is not in the supplied files. The one defect found is the Kotlin rejection-handling gap."
+      },
+      {
+        "key": "lld:invariant:4",
+        "status": "could-not-verify",
+        "evidence": "The fixture checks that removeState and retryCleanup receive only the original ticket. The removal production code and the tests that assert source preservation are not supplied."
+      },
+      {
+        "key": "lld:shared:7",
+        "status": "could-not-verify",
+        "evidence": "There is no sc6 consumer code in the evidence. The fixture exposes removal handlers and a sourcePreserved stat, but the removal consumer and its tests are absent."
+      },
+      {
+        "key": "lld:scope",
+        "status": "could-not-verify",
+        "evidence": "Supplied files are client controllers, tests and fixtures only. The fixture imports daemon modules, but only as a test peer. The full diff, and whether any adjacent-story contract is reimplemented, cannot be judged."
+      },
+      {
+        "key": "plan:t5",
+        "status": "could-not-verify",
+        "evidence": "PersistentDaemonLane and UnixSocketDaemonRpc.kt are not supplied. The tests only use PersistentDaemonLane.open/request/close/awaitClosed/isClosed, with no framing or partial-write tests in the evidence."
+      },
+      {
+        "key": "plan:t12",
+        "status": "could-not-verify",
+        "evidence": "The TypeScript signed mutation gateway is not supplied, and CM-S5-OUTCOME-TS is not in the evidence. Only the Kotlin outcome test wrapper and fixture are visible."
+      },
+      {
+        "key": "plan:t15",
+        "status": "could-not-verify",
+        "evidence": "ConnectionDraftTests.kt and its tests cover stale tuples, cancel on view change, disposal suppression and EDT-delivery tests. The Kotlin rejected-outcome handling does not match TypeScript, see the finding. Session-service wiring and execution results are absent."
+      },
+      {
+        "key": "plan:t21",
+        "status": "could-not-verify",
+        "evidence": "No plugin.xml, ConnectionsConfigurable or ManageConnectionsAction is in the supplied files."
+      },
+      {
+        "key": "plan:t26",
+        "status": "could-not-verify",
+        "evidence": "No VS Code UI evidence is supplied. The fixture has a test-only live-ui mode, but no screenshots or results are in the evidence. The user states manual 0.5.23 testing was done but not individually documented, so I do not treat it as proven."
+      },
+      {
+        "key": "plan:t29",
+        "status": "could-not-verify",
+        "evidence": "The fixture byte-compares a source CSV (sourcePreserved) for the mutation/removal flows. No SQL, KV or both-client live evidence is supplied, and SQL Server is pending by user authorization."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt",
+      "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
+      "src/shared/__tests__/fixtures/connection-mutation-server.ts",
+      "src/shared/connection-manager/test-controller.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionTestBackend.kt",
+      "src/shared/__tests__/connection-manager-kotlin-test.test.ts"
+    ],
+    "limitations": [
+      "Only the supplied diff fragments were reviewed. Production mutation/removal controllers, ConnectionsSessionService, ConnectionDraft, ConnectionProtocol, PersistentDaemonLane, the TypeScript wire decoders and mutation gateway, plugin.xml and the UI panels were not supplied.",
+      "No tests or builds were run, so I treated nothing as passing.",
+      "Not assessed: ConnectionMutationBackend.kt and connection-test-server.ts (referenced by tests, not in the evidence), and fixtures/connection-junit.js beyond its call sites.",
+      "A possible lock-order inversion between ConnectionDraftTests.stop (lock, then r, then subscription.close) and the draft's own monitor cannot be judged without the ConnectionDraft source. I did not raise it as a defect.",
+      "The user's recorded decisions (VS Code and JetBrains only, runtime management default-on with releaseEnabled false, manual and deferred test statuses) were not reopened."
+    ],
+    "evidenceRequests": [
+      "jetbrains-plugin/.../connections/ConnectionProtocol.kt (testResult and rejected-outcome decoding) to settle the Kotlin rejection finding.",
+      "jetbrains-plugin/.../connections/ConnectionDraft.kt, to check the lock order of onChange subscription close against edit callbacks.",
+      "Kotlin and TypeScript removal/mutation controllers (including removalConfirmation and the OperationTicket record store) for the unverified removal and ticket obligations.",
+      "jetbrains-plugin/.../daemon/PersistentDaemonLane.kt and UnixSocketDaemonRpc.kt, with their transport tests, for plan t5.",
+      "plugin.xml, ConnectionsConfigurable and ManageConnectionsAction, with the entry tests, for plan t21."
+    ]
+  }
+}

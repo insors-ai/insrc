@@ -1,0 +1,58 @@
+{
+  "id": "09-daemon-policy-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:54:33.041Z",
+  "finished": "2026-11-01T04:55:01.033Z",
+  "inputChars": 43735,
+  "inputSha256": "0e45408f462ffd1b0c35d0c9af9af0adccd49ef442e5b5521666b041a6745e56",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the 5 supplied daemon-side files found no concrete, reachable defects. The management-state schema change, the default-managed-root boot wiring, and the runtime-config error normalization are internally consistent in the supplied diffs. This batch does not touch the assigned client-side artifacts (src/shared/connection-manager/wire.ts, Kotlin ConnectionProtocol.kt, packaging). All four assigned obligations are therefore could-not-verify, not holds. This is not a canonical CR and does not approve BUILD.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:4",
+        "status": "could-not-verify",
+        "evidence": "The assigned call sites (src/shared/connection-management.ts, DaemonGatewayService.kt, UnixSocketDaemonRpc.kt) and the Kotlin DTO/decoder file are not in the changed evidence. The only related change is runtime-config.ts. There, path, URL and schema-source failures now throw a fixed ManagementInputError with no raw exception text. That is consistent with the 'no raw error' and 'no error-to-empty fallback' intent. Decoders and descriptor handling cannot be assessed from this batch."
+      },
+      {
+        "key": "lld:shared:8",
+        "status": "could-not-verify",
+        "evidence": "No client code consuming unsupported or resource-limit messages is supplied. Nothing in the diffs adds a local conversion, cache or spill fallback. runtime-config.ts only validates and resolves paths in the daemon."
+      },
+      {
+        "key": "plan:t2",
+        "status": "could-not-verify",
+        "evidence": "The proposed src/shared/connection-manager/wire.ts validators and the CM-S5-WIRE-TS test are not in the supplied evidence. The daemon's runtime-config.ts imports ManagementInputError from src/shared/connection-management-wire.js, whose definition, including the 'invalid-input' code the test asserts, is not shown. The decoder acceptance checks cannot be verified."
+      },
+      {
+        "key": "plan:t31",
+        "status": "could-not-verify",
+        "evidence": "No packaging, bundle, Gradle or smoke evidence is supplied. runtime-config.ts adds a daemon-to-shared import. That is a daemon-side dependency, and bundle contents cannot be checked from the diff."
+      }
+    ],
+    "inspectedFiles": [
+      "src/daemon/db/management-state.ts",
+      "src/daemon/index.ts",
+      "src/daemon/db/runtime-config.ts",
+      "src/daemon/db/__tests__/runtime-config.test.ts",
+      "src/daemon/threads/__tests__/fixtures/module-state-inventory.json (shape/key list only; raw records not semantically reviewed)"
+    ],
+    "limitations": [
+      "src/daemon/db/management-defaults.ts (ensureDefaultManagedRoot, closeDefaultManagedRoots) is not supplied. Its idempotency, error handling, close ordering and handling of repos registered after boot cannot be assessed.",
+      "In src/daemon/index.ts, the removed imports (openManagedRoot, managementMarkerExists, connectionsPath) were not checked for other uses in the file, so a possible dangling reference or unused-import issue is unverified.",
+      "Consumers of ManagementState.oldDaemon, which is now optional, are not supplied. Whether they handle the fresh-initialization case, where initializedBy replaces oldDaemon, is unverified. The diff validation itself requires exactly one of the two, baseline.missing true, and an empty rollback for initializedBy.",
+      "The module-state-inventory.json fixture lists the two new management-defaults entries after the alphabetically sorted block. If a test enforces ordering, that would matter. No ordering test is supplied, and the fixture was not semantically reviewed.",
+      "The runtime-config.test.ts assertion on the unreadable file (mode 000) relies on non-root execution. This behavior was already present and is not a new defect.",
+      "No packaging, Kotlin or client evidence was supplied, so the client-facing obligations are unassessed. The full-sweep failures recorded by the user were not treated as proof of any defect."
+    ],
+    "evidenceRequests": [
+      "src/daemon/db/management-defaults.ts and its tests, to confirm default-on managed-root open/close lifecycle, idempotency and failure handling.",
+      "src/shared/connection-management-wire.ts, to confirm the ManagementInputError definition and its 'invalid-input' code.",
+      "src/shared/connection-manager/wire.ts and the CM-S5-WIRE-TS test, for plan:t2.",
+      "jetbrains-plugin ConnectionProtocol.kt and DaemonGatewayService.kt diffs, for lld:data-model:4.",
+      "Packaging/bundle-content smoke output, for plan:t31."
+    ]
+  }
+}

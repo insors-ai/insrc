@@ -1,0 +1,49 @@
+{
+  "id": "12-recorded-coverage-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:56:22.315Z",
+  "finished": "2026-11-01T04:56:46.322Z",
+  "inputChars": 90129,
+  "inputSha256": "4cd00553b04b92fb45d234bf77b225d5dd5dba3fcdf4192b0fc1095644b9e590",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual workaround review of batch 11-coverage-contracts-1. No source files, diffs or line-addressable code were supplied, only test records, an acceptance matrix, manual-acceptance text and mechanical-check summaries. I can't demonstrate a concrete defect at an exact file:line, so I report no findings. Both assigned obligations are could-not-verify. The records are consistent with each obligation, but a record is not an inspection of the current code. This is not a canonical CR and does not approve BUILD.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:invariant:2",
+        "status": "could-not-verify",
+        "evidence": "The IPC client and lane source was not supplied, so I could not confirm that the one-shot exports are unchanged or that the persistent lane reuses the same socket/daemon boundary. Supportive records: t4 `ipc-lane.test.ts` passed, and its first case names \"one-shot compatibility\". t5 (`connection-manager-kotlin-transport.test.ts`) passed with Kotlin one-shot compatibility. t3 and t9 cover the preserved legacy gateway types and the APP gateway staying independent of the PROJECT owner. The t23 parity test passed on \"client bundle inputs exclude daemon storage and provider implementations\", which supports \"no new backend/storage path\". The matrix lists `ipc-client.test.ts` as the TRANSPORT consumer test and as executed and passed, but no task record in TESTS shows that file. The matrix's JetBrains file `PersistentDaemonLaneTest.kt` is not recorded as executed either. Those are record gaps, not demonstrated defects."
+      },
+      {
+        "key": "lld:invariant:5",
+        "status": "could-not-verify",
+        "evidence": "The gate and policy source was not supplied. Under the user-authorized correction, runtime management is enabled by default and `releaseEnabled` stays false. The matrix states `releaseEnabled:false`, `fixturesAreAcceptance:false`, `runtimeEnabled:true`, and `releaseAuditStatus` pending. Every subject's `acceptance` is \"pending\". The t30 tests passed (`connection-manager-release.test.ts` and `management-defaults.test.ts`), including \"default runtime policy preserves authorization and independent release-audit evidence\". These records fit the invariant as corrected. I did not inspect the code that sets or consumes the release flag, so I cannot confirm that nothing treats fixture or test-positive evidence as release acceptance. BUILD flags t26, t30 and t32 are false. The t30 flag is attributed to the legacy validator applying the superseded fail-closed requirement. t26 and t32 are not product-defect evidence."
+      }
+    ],
+    "inspectedFiles": [
+      "TESTS record (tasks t1–t32)",
+      "BUILD task flags",
+      "LLD test strategy",
+      "Manual acceptance statement",
+      "Acceptance matrix",
+      "Local mechanical checks"
+    ],
+    "limitations": [
+      "No source files or diffs were supplied. None of the 155 changed paths was assessed as code: the IPC client and lane, Kotlin transport, session owners, hosts and renderers, daemon management and defaults, and the release-gate code are all unreviewed.",
+      "Correctness, adherence, compatibility, privacy, lifecycle, concurrency, test quality and conventions could not be reviewed at code level. Pass results in the records are taken as reported, not independently confirmed.",
+      "t26 (live UI) failed, t32 (full sweep) failed, and the t30 flag is false (legacy validator versus the superseded requirement). These are recorded external or known failures, so I treated them as non-evidence of a defect. The matrix marks CM-S5-BUILD and CM-S5-SWEEP \"failed\" automatedVerification; I did not treat that as a new defect.",
+      "VS Code manual testing is user-reported complete and not itemized. JetBrains live UI is deferred. SQL Server, provider-service and positive worker-affinity coverage are pending. I did not count any of these as passed.",
+      "The matrix cites `src/shared/__tests__/ipc-client.test.ts` and several JetBrains Kotlin test files (for example `PersistentDaemonLaneTest.kt`) as consumer tests. The TESTS task records do not show them executed. Whether they exist or ran is unverified.",
+      "The independent approval review has not started, per the local mechanical checks."
+    ],
+    "evidenceRequests": [
+      "Source of the shared IPC client and persistent lane (src/shared ipc module): current exported one-shot function signatures and the lane's socket path, with the diff against the pre-change API.",
+      "Kotlin `UnixSocketDaemonRpc` and `DaemonGatewayService`, showing the legacy one-shot delegation is unchanged.",
+      "The release and runtime policy code that defines `releaseEnabled` and `runtimeEnabled`, plus every consumer of the release flag in the daemon and in both clients.",
+      "`src/daemon/db/__tests__/management-defaults.test.ts` and `src/shared/__tests__/connection-manager-release.test.ts`, to see what they actually assert about the release flag.",
+      "Raw run output for `src/shared/__tests__/ipc-client.test.ts` and the JetBrains `PersistentDaemonLaneTest.kt` from evidence/t32."
+    ]
+  }
+}

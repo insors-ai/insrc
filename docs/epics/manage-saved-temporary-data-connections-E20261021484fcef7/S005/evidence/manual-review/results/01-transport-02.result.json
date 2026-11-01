@@ -1,0 +1,98 @@
+{
+  "id": "01-transport-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:29:08.753Z",
+  "finished": "2026-11-01T04:30:57.121Z",
+  "inputChars": 82606,
+  "inputSha256": "d71db7d940b26c23ba294deee55e285f2240aa8061d644d59b0068930b100299",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the transport batch found no concrete, reproducible defects in the supplied code. This is not a canonical CR and does not approve BUILD.\n\nThe TypeScript lane in `src/shared/ipc-client.ts` and the Kotlin `PersistentDaemonLane` were checked for ownership of pending replies, framing, write-outcome truth, cancellation and timeout, and teardown. They are consistent with each other and with the supplied tests. Each lane instance keeps its own socket, pending map and abandoned set, and the one-shot `rpc` default is behaviour-preserving.\n\nI could not confirm any assigned obligation that depends on code outside this batch. That includes `ConnectionProtocol.kt`, the Kotlin lane tests, the project session service, manager UI and entry-point wiring, parity artifacts and packaging. Those are marked could-not-verify.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:1",
+        "status": "could-not-verify",
+        "evidence": "The changed files (`src/shared/ipc-client.ts`, `UnixSocketDaemonRpc.kt` and tests) are inside the VS Code, JetBrains and shared-core scope. They show no fork or external-checkout edits. The named call sites, `vscode-plugin/src/extension.ts` and `InsrcSettingsConfigurable.kt`, were not supplied. The scope correction therefore cannot be confirmed end to end."
+      },
+      {
+        "key": "lld:data-model:5",
+        "status": "could-not-verify",
+        "evidence": "Only the transport support is visible. `AbortSignal` cancellation, a safe fixed `IpcLaneError` message, and a late reply to a canceled request being ignored on the real socket are shown in `ipc-lane.test.ts`. Kotlin has `ConnectionLaneCall.cancel()`. The draft serializer, the single in-flight probe rule, and the matching of requestId, draftRevision, root, epoch and view generation are in unsupplied files (`connection-management.ts`, `extension.ts`, the JetBrains panel)."
+      },
+      {
+        "key": "lld:data-model:9",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin lane is a standalone class. It has no static or shared state, per-instance pending and abandoned maps, and its own reader, writer and timer threads that terminate and join in bounded fashion. The existing `UnixSocketDaemonRpc` and `DaemonGatewayService` code is not modified; the diff only appends and adds imports. The project-level service, panel, `plugin.xml`, disposal and EDT behaviour are not in the supplied evidence."
+      },
+      {
+        "key": "lld:error:7",
+        "status": "could-not-verify",
+        "evidence": "At transport level, replies can only resolve requests on the same lane, and an unknown or duplicate id closes that lane. The refuse-before-send routing by actual project or workbench object is service-level code that was not supplied."
+      },
+      {
+        "key": "lld:shared:2",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionProtocolTest.kt` exercises strict decoding: duplicate fields, depth, size, coercion, private-field refusal, correlation, and descriptor fail-closed behaviour. The implementation `ConnectionProtocol.kt`, the corpus loader and the TypeScript decoders are not in the supplied diff, so strictness and parity with sc1 cannot be confirmed."
+      },
+      {
+        "key": "lld:migration:2",
+        "status": "could-not-verify",
+        "evidence": "Persistent multiplexing is added in both languages. The TypeScript lane is tested against real and fake sockets, and `rpc()` keeps its signature and default connect behaviour via `connectToDaemon`. The Kotlin lane has no test in the supplied evidence. The fixtures and the TypeScript decoders are not in this batch."
+      },
+      {
+        "key": "lld:scope",
+        "status": "holds",
+        "evidence": "The supplied changes are limited to the shared transport (`ipc-client.ts`), the Kotlin transport and protocol tests, and the wrapper test. They re-implement no backend contract, and the existing one-shot `rpc` and `UnixSocketDaemonRpc` bodies are untouched."
+      },
+      {
+        "key": "plan:t3",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin test covers the shared corpus, the strict boundary and the privacy cases. Six `@Test` methods match the wrapper's expected count of 6. `ConnectionProtocol.kt` and `ConnectionCorpus` are not supplied. The existing gateway return shapes appear unchanged in the visible hunk, but the decoders cannot be reviewed."
+      },
+      {
+        "key": "plan:t9",
+        "status": "could-not-verify",
+        "evidence": "No `ConnectionsSessionService`, `plugin.xml` or project Disposable code was supplied."
+      },
+      {
+        "key": "plan:t20",
+        "status": "could-not-verify",
+        "evidence": "No VS Code manifest or `extension.ts` changes were supplied."
+      },
+      {
+        "key": "plan:t23",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin test can write `wire.json` when `insrc.parity.dir` is set. The TypeScript counterpart and the comparison harness were not supplied."
+      },
+      {
+        "key": "plan:t31",
+        "status": "could-not-verify",
+        "evidence": "No packaging or build output was supplied. `ipc-client.ts` adds no new module imports. The Kotlin daemon package now imports `connections.ConnectionProtocol`, and that dependency was not checked."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt",
+      "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
+      "src/shared/__tests__/ipc-lane.test.ts",
+      "src/shared/ipc-client.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+    ],
+    "limitations": [
+      "All five changed files were assessed from the diff hunks only. No tool calls were made, and nothing was executed.",
+      "`ConnectionProtocol.kt`, `ConnectionCorpus`, `fixtures/connection-junit.ts`, the corpus JSON, the session service, the manager panel and the entry-point wiring were not supplied.",
+      "No Kotlin test for `PersistentDaemonLane` appears in the supplied evidence.",
+      "The remainder of the legacy `rpc()` body was not visible, so the TypeScript lane's hard-coded `client` label and pid envelope could not be compared with it.",
+      "Neither the TypeScript nor the Kotlin `ConnectionProtocol` limits were visible. The TypeScript lane allows a 16 MiB frame and 131072 nodes. The Kotlin `parseData` limits, `MAX_STRING` and `MAX_ITEMS`, are not visible, so cross-language parity of limits is unconfirmed.",
+      "The user-reported manual testing and the deferred live JetBrains UI were not treated as proof or as defects."
+    ],
+    "evidenceRequests": [
+      "`jetbrains-plugin/.../connections/ConnectionProtocol.kt`, especially `parseData`, `requestData`, `MAX_STRING`, `MAX_ITEMS` and depth limits, to compare with the TypeScript lane limits (16 MiB frame, 131072 nodes, depth 32).",
+      "Any Kotlin test that exercises `PersistentDaemonLane`: framing, cancel and timeout write truth, the write watchdog, abandoned-id cap, and `awaitClosed`.",
+      "The legacy `rpc()` body in `src/shared/ipc-client.ts` and the daemon's handling of the `client` identity field, to confirm the lane's hard-coded `label:'cli'` is intended for extension use.",
+      "`src/shared/__tests__/fixtures/connection-junit.ts` and the corpus loader, to confirm the JUnit runner enforces the expected test count and fails on skips.",
+      "`ConnectionsSessionService.kt`, `plugin.xml`, and `extension.ts` / manifest changes, for the project-isolation, entry-point and error:7 obligations."
+    ]
+  }
+}

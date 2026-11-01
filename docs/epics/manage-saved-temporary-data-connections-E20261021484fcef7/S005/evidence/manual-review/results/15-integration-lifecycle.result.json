@@ -1,0 +1,42 @@
+{
+  "id": "15-integration-lifecycle",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:58:01.859Z",
+  "finished": "2026-11-01T04:58:44.117Z",
+  "inputChars": 73534,
+  "inputSha256": "151691b2380dccbeccd756670f830b7303ccd0ee4573398f0f1ded3b1d768090",
+  "missingObligations": [],
+  "result": {
+    "summary": "Both candidates rejected with source counterevidence. VS Code: daemon session and management handlers convert thrown errors into structured rejections, so remote-error effectively means unknown method or protocol mismatch, and the client cannot distinguish it anyway (IpcLaneError drops the payload). JetBrains: lane's own 15s deadline fires a ConnectionLaneException('timeout') before the 16s get(), which takes the offline/resume path. No new concrete defects found.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "04-vscode-lifecycle-01:1",
+        "status": "does-not-hold",
+        "evidence": "Daemon connection-session-rpc.ts call() wraps everything in try/catch returning managementRejection (lines 82-128), and connection-management-rpc.ts handles capabilities inside a function-level try/catch (catch at line 184), so per-call internal failures arrive as structured rejections, which sessionData maps to offline/expired/upgrade-required without reaching line 163. ipc-client.ts line 295 emits remote-error only for a raw error frame (practically unknown method or unwrapped dispatcher failure), and IpcLaneError carries no payload so unknown-method cannot be distinguished; mapping it to offline would mask real old-daemon mismatch. Candidate's trigger is not shown by evidence. Residual: dispatcher-level throw outside these wrappers unseen."
+      },
+      {
+        "key": "07-jetbrains-lifecycle-01:1",
+        "status": "does-not-hold",
+        "evidence": "PersistentDaemonLane default deadlineMillis=15000 schedules abandon(entry,'timeout') (UnixSocketDaemonRpc.kt lines 203, 240), completing the response with ConnectionLaneException('timeout',written) at 15s, before rpc()'s 16s get() (line 211). rpc unwraps ExecutionException to that lane exception, so ensure() line 274 is not taken and line 275 closes the lane, calls lost(lane), keeps authority for same-epoch resume, and throws offline. The raw TimeoutException is only a backstop for a stalled timer thread; InterruptedException follows disposal, where the disposed check at line 271 runs first."
+      }
+    ],
+    "inspectedFiles": [
+      "vscode-plugin/src/connections/session-owner.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt",
+      "vscode-plugin/src/connections/gateway.ts",
+      "src/daemon/connection-session-rpc.ts (80-131)",
+      "src/daemon/connection-management-rpc.ts (76-110, 180-240)",
+      "src/shared/ipc-client.ts (165-180, 283-299)",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt (170-267)"
+    ],
+    "limitations": [
+      "Did not see the daemon RPC dispatcher, so whether a handler throw outside the connection wrappers yields a raw error frame is unverified.",
+      "Did not see managementRejection's mapping of unknown errors.",
+      "Did not see the rest of PersistentDaemonLane (readLoop, terminate remainder) or ConnectionLaneException definition beyond usage.",
+      "Native JetBrains UI, external service coverage and release audit are out of scope for this packet."
+    ],
+    "evidenceRequests": []
+  }
+}

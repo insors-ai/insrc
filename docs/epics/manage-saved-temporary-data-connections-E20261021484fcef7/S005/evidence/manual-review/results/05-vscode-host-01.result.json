@@ -1,0 +1,74 @@
+{
+  "id": "05-vscode-host-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:42:47.201Z",
+  "finished": "2026-11-01T04:43:07.851Z",
+  "inputChars": 69501,
+  "inputSha256": "6dd7818608b57e77a728aae448339012b2631ec5ae7edaec458e8a644d3d740e",
+  "missingObligations": [],
+  "result": {
+    "summary": "I reviewed only the four supplied VS Code test and fixture files. I found no concrete, reachable defect in them. The assigned obligations are mostly about the JetBrains/Kotlin side and about production sources that were not supplied. Those sources include the Kotlin files, gateway.ts, session-owner.ts, and the shared controllers under src/shared/connection-manager. For that reason, no obligation can be shown to hold or not hold from this batch. This is a manual workaround review, not a canonical CR, and it does not approve BUILD.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:contract:1",
+        "status": "could-not-verify",
+        "evidence": "The tests exercise the mutation, unknown-state reconcile, and busy refusal paths. For example, a second submit of the same target rejects with `busy`, and a refresh failure keeps `refresh:'failed'` with no empty-list fallback. They also cover replay gating and root switch A→B→A. The ConnectionManagerState projection itself (listState values, filter, draftRevision, dirty) and the manager model source were not supplied, so I could not check them."
+      },
+      {
+        "key": "lld:data-model:4",
+        "status": "could-not-verify",
+        "evidence": "The TS-side behaviour is consistent with the SafeConnection invariants. Tests assert that credentials are not echoed (`fixture-only-private` and `signature` absent from records). They also assert that cleanup requests send `{ticket}` only, and that the remove request keys are exactly expectedRevision/key/mode/operationId/ticket. The Kotlin DTOs/decoders and DaemonGatewayService/UnixSocketDaemonRpc were not supplied."
+      },
+      {
+        "key": "lld:data-model:9",
+        "status": "could-not-verify",
+        "evidence": "No JetBrains files (ConnectionsSessionService, Gateway, Panel, Configurable, plugin.xml, action) were supplied. The VS Code fixture `forkOwner` creates separate owners with separate lanes, but that does not cover the JetBrains project isolation. Live JetBrains UI is deferred-user."
+      },
+      {
+        "key": "lld:invariant:3",
+        "status": "could-not-verify",
+        "evidence": "There is no Kotlin evidence. DaemonGatewayService and its tests were not supplied."
+      },
+      {
+        "key": "plan:t3",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin ConnectionProtocol.kt and its CM-S5-WIRE-KT test were not supplied. The TS tests load the shared corpus through `loadConnectionCorpus()`, but Kotlin parity cannot be judged from them."
+      },
+      {
+        "key": "plan:t9",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin PROJECT Disposable session service and the CM-S5-OWNER-KT test were not supplied. Only the VS Code ConnectionsWorkbenchOwner is exercised, indirectly."
+      },
+      {
+        "key": "plan:t17",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin Delete/Discard presentation and tests were not supplied. The TS counterpart test removal.test.ts is consistent with the requirements. It covers zero-effect Cancel, busy/conflict/unknown states, and ticket-only independent cleanup. Cleanup stays tied to the original ticket after same-ID recreation, and source file bytes are unchanged. It also covers 20 sc6 snapshots, and Discard for temporary rows. This is TS evidence only."
+      },
+      {
+        "key": "plan:t25",
+        "status": "could-not-verify",
+        "evidence": "The fixture has capability modes (missing/old/future/malformed, omitted features). It also has legacy `db.saveConnection`/`db.deleteConnection` traps with a `legacyWrites()` counter, plus `legacyList`. The compat test that asserts on them was not in the supplied batch. Kotlin-side compat was not supplied either."
+      }
+    ],
+    "inspectedFiles": [
+      "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+      "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+      "vscode-plugin/src/connections/__tests__/fixtures/management.ts",
+      "vscode-plugin/src/connections/__tests__/removal.test.ts"
+    ],
+    "limitations": [
+      "Only test and fixture files were supplied. The production sources they exercise (connections/gateway.ts, session-owner.ts, src/shared/connection-manager/*, the daemon RPC) were not included.",
+      "No JetBrains/Kotlin evidence was supplied, so three of the assigned obligations (data-model:9, invariant:3, and the Kotlin plan tasks) cannot be assessed here.",
+      "I did not run the tests, per the no-tool-calls instruction. The recorded VS Code 0.5.23 manual testing is user-reported, and the JetBrains live UI is deferred. I did not treat either as a pass.",
+      "No supplied changed file was left unassessed, but each was only read statically."
+    ],
+    "evidenceRequests": [
+      "jetbrains-plugin connections/*.kt (ConnectionProtocol, ConnectionsSessionService, ConnectionsManagerGateway, ConnectionsManagerModel) and their Kotlin tests (CM-S5-WIRE-KT, CM-S5-OWNER-KT, CM-S5-REMOVE-KT)",
+      "The unchanged DaemonGatewayService.kt and UnixSocketDaemonRpc.kt, to confirm the stateless application-wide invariant",
+      "vscode-plugin/src/connections/gateway.ts and session-owner.ts, plus the CM-S5-COMPAT test that uses the fixture's legacyWrites()/setCapabilities()",
+      "plugin.xml registrations for the Configurable and the Manage Connections action"
+    ]
+  }
+}

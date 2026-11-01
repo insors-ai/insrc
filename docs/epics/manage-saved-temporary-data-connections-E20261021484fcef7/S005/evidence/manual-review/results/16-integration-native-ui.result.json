@@ -1,0 +1,39 @@
+{
+  "id": "16-integration-native-ui",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:58:44.119Z",
+  "finished": "2026-11-01T04:59:20.406Z",
+  "inputChars": 72850,
+  "inputSha256": "0fffaba562870dd4b17210431278e978dc87c3ec3ac0f7be487eba47cae66d74",
+  "missingObligations": [],
+  "result": {
+    "summary": "Both candidates rejected; no remaining defects. Candidate 1: blank replace fields with a retained draft after hide/show is the disclosed and tested retention behavior (panel text 'Replace starts blank. Entered values stay only in Project memory and are never echoed back'; test line 60 asserts blank field with retained draft after reopen). Erase runs under updating=true so it cannot corrupt the draft. Candidate 2: premise that bump() does not emit is false; bump -> bindProbe -> probes.setView(null) always reaches publish(\"idle\") (the equality early-return applies only to non-null next), firing probes.onChange{emit()} subscribed at gateway line 50, so a render follows the draft removal and the null-draft path resets the form and renderedGeneration.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "08-jetbrains-ui-01:1",
+        "status": "does-not-hold",
+        "evidence": "Hide erases fields via erase() under updating=true, so no draft mutation. Retained draft with blank replace field is the disclosed policy (ConnectionFieldsPanel line 102 text; Panel test line 60 asserts empty password field while the draft is retained after dispose/reopen). Save submits only the user's own earlier-entered value held in Project memory; no leak, ownership or scope violation. Candidate remedy would contradict approved retention."
+      },
+      {
+        "key": "08-jetbrains-ui-01:2",
+        "status": "does-not-hold",
+        "evidence": "Gateway lines 83/81-82: bump() calls bindProbe(), which calls probes.setView(null) when the draft is null. ConnectionDraftTests line 49-50: with next==null the early return is skipped; cancel(); identity=null; publish('idle') runs unconditionally, firing listeners. Gateway line 50 subscribes probes.onChange{emit()}. So an emit always follows the draft removal at line 94 (unless disposed, in which case live() is false anyway). Panel re-renders with null draft; fields.render form==null branch clears the form and formId; renderedGeneration updates, so the action guard is not stuck."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionFieldsPanel.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerGateway.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt (lines 25-52)"
+    ],
+    "limitations": [
+      "ConnectionDraft.clear() and the rest of ConnectionDraftTests.kt were not supplied; rejection of candidate 2 relies on the visible setView/publish code and the gateway line-50 subscription.",
+      "Native JetBrains UI behavior not runtime-verified (acceptance deferred by user).",
+      "External service coverage pending; no runtime execution performed."
+    ],
+    "evidenceRequests": []
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "id": "13-implementation-artifacts-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:56:46.324Z",
+  "finished": "2026-11-01T04:57:03.026Z",
+  "inputChars": 44096,
+  "inputSha256": "545ad8940442b4553da49e600d30e96283523a0dc7e2d6ba44ae03d54b5f1bb1",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review, not a canonical CR and not BUILD approval. The input had no source text, diffs or test output. It had only file hashes, an audit inventory and UX/sequence/component definitions. So I could not check either assigned obligation against code, and I raised no defects. Both obligations are could-not-verify. The supplied metadata is consistent with both, but metadata is not evidence of the code.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:invariant:2",
+        "status": "could-not-verify",
+        "evidence": "Inventory lists src/shared/ipc-client.ts (hash a06f7a2c…), vscode-plugin/src/connections/session-owner.ts and gateway.ts. The component definition says 'Persistent TypeScript lanes preserve one-shot API' and 'APP gateway remains unclaimed/stateless'. No source or diff was supplied, so I could not check that the exported one-shot signatures are unchanged. I also could not check that the persistent lane reuses the same socket and backend path rather than adding a new backend or storage path. The Kotlin transport boundary file is not in the inventory at all. No existing-API compatibility test output was supplied. The design text agrees with the invariant, but it is not proof."
+      },
+      {
+        "key": "lld:invariant:5",
+        "status": "could-not-verify",
+        "evidence": "The inventory records releaseEnabled=false, releaseAuditStatus 'pending; independent of runtime availability', and S001, providerService, positiveSavedWorkerAffinity and SQLServer all 'pending'. JetBrainsLiveUI is 'deferred-user' and VSCodeLiveUI is 'completed-user-reported'. This is consistent with the release gate staying disabled. The user explicitly authorized runtime enablement by default (runtimeEnabled=true), and I did not reopen that decision. I could not read src/daemon/db/management-enablement.ts (hash 6869dcd2…), index.ts or the capabilities code. So I could not confirm that releaseEnabled is false in code, that runtime enablement is separate from the release gate, or that no test fixture is treated as acceptance. 'producerPolicyModified: true' also needs source to review."
+      }
+    ],
+    "inspectedFiles": [
+      "Implementation definitions (UX, sequence, component dependency) — metadata only",
+      "Consumer audit inventory — hashes and statuses only"
+    ],
+    "limitations": [
+      "No file contents or diffs were supplied. None of the changed files in the inventory were assessed, including src/shared/ipc-client.ts, src/shared/connection-manager/*, src/daemon/db/management-*.ts, src/daemon/connection-management-rpc.ts, src/daemon/index.ts, vscode-plugin/src/connections/*, vscode-plugin/src/extension.ts, the media assets and all jetbrains-plugin connections/settings/actions files.",
+      "The Kotlin persistent transport lane and DaemonGatewayService are not listed in the inventory, so I could not check them for the one-shot compatibility invariant.",
+      "No test output was supplied, so I treated no test as evidence. The known sweep failures (S003: 8 failed, S004: 21 failed) are recorded but not tied to these obligations.",
+      "Live UI, SQL Server, provider-service and worker-affinity coverage are pending or deferred. I did not count any of them as passed.",
+      "Hashes cannot be tied to the review HEAD 90404ac8 because the inventory's sourceCommit is f5f0eafd0."
+    ],
+    "evidenceRequests": [
+      "Source of src/shared/ipc-client.ts at HEAD, with its diff against the pre-change version, to compare the exported one-shot function signatures and behavior with the new persistent-lane additions.",
+      "Tests that exercise the one-shot IPC API (existing callers and the legacy JetBrains DaemonGatewayService one-shot delegation), and the Kotlin transport file containing the persistent lane.",
+      "src/daemon/db/management-enablement.ts and the capability and handshake code that computes releaseEnabled and runtime capabilities, to confirm the release gate is false and separate from runtime enablement.",
+      "Any test or config that sets releaseEnabled=true, to confirm it is fixture-only and unreachable in production."
+    ]
+  }
+}

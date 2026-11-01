@@ -1,0 +1,54 @@
+{
+  "id": "18-fix-review-expiry",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T05:05:34.590Z",
+  "finished": "2026-11-01T05:06:07.898Z",
+  "inputChars": 88098,
+  "inputSha256": "c7d24d911ab6cd779815d1a3578053d23ab9f8251c4f3a2ef3eb0e56c83c5d94",
+  "missingObligations": [],
+  "result": {
+    "summary": "The expired-on-receipt (no mutation sent) part of 03-mutations-01:1 is fixed in both controllers. TS line 92 and Kotlin lines 146-149 now end the attempt as `ticket-error` with `ticket-expired` and release the request. `ticket-error` is not in `blocking`, and `canDismiss` is true for it. `canReplay` is false, so no replay is possible. The draft stays intact and a fresh submit works after dismiss. The new TS and Kotlin tests assert each of these, including zero `mutate` calls. The user-facing text for `ticket-expired` was added to VS Code `messages.ts` and the JetBrains panel. The second trigger in the original candidate is not fixed: a post-send `not-seen` attempt whose ticket later expires. That path still ends in `reconciliation-required` (TS lines 166 and 180, Kotlin lines 261 and 279). That phase has no dismiss and no exit short of `dispose()` or a reload. The controller states this scope deliberately. It is still a concrete part of the original candidate, so I report it as a remaining finding. No native or live UI acceptance is evidenced. JetBrains is deferred to the user and VS Code is user-reported at 0.5.23. Those remain deferred and are not passes.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "src/shared/connection-manager/controller.ts",
+        "line": 166,
+        "trigger": "A mutation was sent and Reconcile returned `not-seen`, or the reply was lost. The user waits until the ticket expires, then presses Replay (line 180) or Reconcile (line 166).",
+        "defect": "The post-send component of the original candidate is not fixed. After expiry the phase becomes `reconciliation-required`, which is in `blocking`. `canDismiss` is false, `canReplay` is false and the request is retained but unusable. Reconcile maps back to the same phase, because the daemon returns `reconciliation-required` for an expired ticket with no receipt, and `#status` then sets the same phase again. The connection key rejects every later submit and remove with `busy` until `dispose()` or a workbench/project reload. Kotlin has the same path at lines 261 and 279. The fix comment and docs say this is intentional (original-ticket recovery). No in-session resolution step exists, so the stated recovery cannot finish.",
+        "evidence": "The controller.ts source (line 43 `blocking`, line 62 `canDismiss`, lines 166 and 180). The Kotlin source (lines 59, 261, 279). The existing test 'not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation' asserts the dead end: after expiry, `submit` throws `busy` and Reconcile stays `reconciliation-required`. Nothing in the supplied diff changes this path. The earlier independent assessment (14-integration-expiry) suggested an explicit acknowledge or dismiss step as an option, conditional on policy.",
+        "remedy": "Make a product decision and record it in the LLD. The first option is to offer an explicit, user-confirmed dismiss for `reconciliation-required` records whose ticket has expired. It would be offered only after daemon `status` reports no receipt and the authoritative list refresh succeeds, and it would never replay. The second option is to document the reload-only exit as intended and surface a fixed message telling the user to reload. Whichever is chosen, apply it to both clients and add a parity test."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "03-mutations-01:1",
+        "status": "holds",
+        "evidence": "This covers the expired-on-receipt branch only. TS line 92 and Kotlin lines 146-149 set `ticket-error` with `ticket-expired` and call `#release`, and no mutation is sent. Neither `canReplay` nor the blocking set applies. `canDismiss` is true. The new TS test and the new Kotlin test (`testExpiredTicketBeforeSubmitIsDismissibleWithoutMutationOrReplay`) assert zero mutations, no replay (`invalid-state`), dismissible, not blocked, draft not discarded, and a fresh submit after dismiss. The Kotlin suite count was raised to 7 and passed. The controller output shows that suite and the root TS suite passing, and `tsc --noEmit` passing for root and extension. The post-send not-seen-then-expired path (the second trigger of the original candidate) is still a dead end, reported as a separate finding. The validated defect holds as corrected for the no-send case, and the overall candidate is not fully closed because of that unfixed trigger."
+      }
+    ],
+    "inspectedFiles": [
+      "src/shared/connection-manager/controller.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt",
+      "vscode-plugin/src/connections/messages.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt (diff)",
+      "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt (diff)",
+      "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts (diff)",
+      "S005/implementation-definitions.json (diff)",
+      "controller test output"
+    ],
+    "limitations": [
+      "The visible test output starts mid-stream and shows the root TS suite (42 tests, CM-S5-OWNER-TS) and the Kotlin wrapper. I cannot see from it that the new vscode-plugin `mutation.test.ts` ran. Only the `tsc --noEmit` pass is stated for the extension.",
+      "I could not verify the VS Code webview or gateway rendering of `ticket-expired` or the Dismiss action for `ticket-error`. I also could not verify that the JetBrains `controls.operations[...]` includes 'dismiss' for such a record. The JetBrains button reads 'Dismiss completed card' on a failed card, which is cosmetic. The `messages.ts` entry and the JetBrains panel text are not exercised by any supplied test.",
+      "JetBrains native UI acceptance is deferred to the user and VS Code is user-reported at 0.5.23. Neither is evidenced here, and deferred evidence is not a pass.",
+      "I did not re-verify the daemon status behavior for expired tickets. I relied on the prior integration assessment (management.ts:416).",
+      "I did not see the full Kotlin test file or the fixture helpers used by the new Kotlin test (`draft.view.discarded`, `failed`)."
+    ],
+    "evidenceRequests": [
+      "The VS Code mutation test run output showing the new 'expired ticket received before submit' test passing.",
+      "The view-layer or gateway code that renders `ticket-error` and its Dismiss action in both clients.",
+      "A product or LLD decision on whether a post-send expired `reconciliation-required` record may be dismissed in-session."
+    ]
+  }
+}

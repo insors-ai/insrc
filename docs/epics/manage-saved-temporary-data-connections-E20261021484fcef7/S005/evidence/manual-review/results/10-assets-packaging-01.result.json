@@ -1,0 +1,51 @@
+{
+  "id": "10-assets-packaging-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:55:01.035Z",
+  "finished": "2026-11-01T04:55:26.757Z",
+  "inputChars": 66642,
+  "inputSha256": "4b572bae3ea6b3cc090d422978cf2d1911642a099e407c85c3074c6c2663e58c",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of batch 10-assets-packaging-1 (non-canonical, does not approve BUILD). I found one concrete but low-severity defect: the package-lock root version is stale. The VS Code manifest and command wiring, the packaging and truthful-sync test updates, the vscode.d.ts typings and the icon generator and README showed no reachable defects in the supplied text. The bundled SVGs and the generated datasource-icons.ts were supplied only as hashes or summaries, so I did not assess their content. No obligations were assigned.",
+    "findings": [
+      {
+        "severity": "LOW",
+        "file": "vscode-plugin/package-lock.json",
+        "line": 3,
+        "trigger": "Any build, package or release step that reads package.json (version 0.5.24) alongside package-lock.json (root version 0.5.23). The next `npm install` also rewrites the lock.",
+        "defect": "The lockfile root version, at lines 3 and 9, is 0.5.23. package.json was bumped to 0.5.24 in this same batch. The two files disagree, so the lock is stale and the next npm install produces a diff.",
+        "evidence": "package.json diff: \"version\": \"0.5.16\" → \"0.5.24\". package-lock.json diff: \"version\": \"0.5.16\" → \"0.5.23\", on both the top-level entry and packages[\"\"].",
+        "remedy": "Regenerate the lock, for example with `npm install --package-lock-only`, so both root version fields read 0.5.24. Alternatively, if 0.5.23 is the intended released version, align package.json to it."
+      }
+    ],
+    "obligations": [],
+    "inspectedFiles": [
+      "vscode-plugin/package.json",
+      "vscode-plugin/src/vscode.d.ts",
+      "vscode-plugin/src/__tests__/packaging.test.ts",
+      "vscode-plugin/src/__tests__/activation.test.ts",
+      "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+      "vscode-plugin/package-lock.json",
+      "scripts/generate-connection-datasource-icons.py",
+      "vscode-plugin/media/datasources/README.md",
+      "vscode-plugin/media/datasources/apache-2.0-LICENSE.txt",
+      "vscode-plugin/media/datasources/devicon-LICENSE.txt",
+      "vscode-plugin/media/datasources/logos-LICENSE.txt"
+    ],
+    "limitations": [
+      "These files were supplied only as hash/byte summaries, so their content was not assessed: vscode-plugin/media/connections-icon.svg, vscode-plugin/media/connections-icon-dark.svg, and all the datasources/*.svg files (apachearrow, apacheavro, apachecassandra, apacheparquet, clickhouse, cockroachlabs, csv, dynamodb, etcd, excel, json_official, keydb, mariadb, memcached, microsoftsqlserver, mongodb, mysql).",
+      "vscode-plugin/src/connections/datasource-icons.ts is a generated module supplied only as a summary. I did not verify that it matches the generator output.",
+      "sources.json, the vscode-icons MIT license text and the Simple Icons license text were not supplied. I could not check the README claims about pinned revisions, byte hashes and per-collection licenses.",
+      "The generator does not itself verify the SVG sha256 values against sources.json. I could not confirm that a separate check does, such as the deterministic regeneration check mentioned in the evidence.",
+      "I could not tell whether `typescript` resolves as a dependency for the vscode-plugin test import `import ts from 'typescript'`, or whether the vscode.d.ts type changes compile against all existing test fakes. The supplied diffs did not include package devDependencies or the build output.",
+      "I did not review the command handlers for the new insrc.connections.* and insrc.openDataSources commands, the menus or the activation events. They are outside this batch's supplied evidence."
+    ],
+    "evidenceRequests": [
+      "vscode-plugin/media/datasources/sources.json plus the vscode-icons and Simple Icons license files, to confirm the attribution and hash claims in the README.",
+      "The output of a deterministic regeneration check: run scripts/generate-connection-datasource-icons.py and confirm there is no diff in vscode-plugin/src/connections/datasource-icons.ts.",
+      "The version-bump intent: whether 0.5.24 or 0.5.23 is the release candidate, and the result of the vsce package or lockfile consistency check."
+    ]
+  }
+}

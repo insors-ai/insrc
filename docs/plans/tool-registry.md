@@ -503,3 +503,33 @@ Consequence, settled with the user on 2026-10-27 (DEF revision 6 approved; optio
 Also found while preparing the s9 second draft: a client reaching `refreshPolicy` is not a `tools.call` (that request runs one registry tool); it needs a daemon method for the team refresh, which is s10's design.
 
 Done on the way (all approved, not pushed): `gh_auth` op `hosts` (`BUILD-b135647ed951c0c1-s1`, commit 55d4a00c6), `git_ls_files` optional `maxBytes` plus a cut-capture failure in `git_rev_parse` and `git_hash_object` (`BUILD-733042d2e435fabd-s1`, commits e105150fb, 5e2420e41, 2c9fd8c38). The s9 LLD round 1 findings that remain to fix in its second draft: the `resolveStoryRangeBase` description, the missing async inventory (`resolveCodeReviewSubject`, `readBuildStart`, `stampBuildStart`), the corpus reader's `cat-file --batch` adapter, the real failure kinds (denial reasons declined, timed-out, no-client, cancelled; no `cancelled` ToolFailure kind; `GitRun` has no `timedOut`), the refresh's per-call failure handling, and the replacement table with a test per site.
+
+## s9 full sweep (2026-11-01)
+
+Run once after t22, in foreground chunks: every `*.test.ts` under `src` and `scripts` (1129 files, four at a time, one `npx tsx --test-force-exit` per file, TAP output). Compared by test name with the tree before s9 (`968107369`, a separate worktree) for every file that had a failing, skipped or unloadable test.
+
+- 7482 test results: 7167 pass, 173 fail, 134 skipped, 1 timeout.
+- 168 of the failing results are in the baseline too (72 files): the "PENDING REVIEW RE-IMPLEMENTATION" tests (approve-*, gates-lifecycle-*, build-record, signoff-hold, other-party-review-gate), `mcp` review and schema tests, `pipeline-outcome`, `typecheck-config`, `team-settle`, `signoff-e2e`, `team-gate-callers`, `gate-guarded-entry-points`, and the others listed at s7. s9 changes none of them.
+- Six files failed only in the s9 tree. Three were real and are fixed: `git_status.paths` (added in t24) was not classified for the read-only tool loop (`NOT_FILESYSTEM_ARGS`), and `gh-op-table-qs.test.ts` and `gh-tracker-family.test.ts` compared against the deleted tracker wrappers (now fixed expectations). Three (`shutdown-bounded`, `shutdown-lifecycle-evidence`, `shutdown-watchdog`) and one skip (`asset-validator`, needs the built `out/`) fail only when files run in parallel and pass alone.
+- No new skipped test, other than the `asset-validator` one above. The three wrapper-only `runGh` tests were deleted with `runGh`, not skipped.
+- `session-source-inventory.test.ts` failed at baseline (35 files added and 22 or more removed by other stories). t23 regenerated the fixture from the final tree; new files took the classification of their nearest classified sibling, and no existing classification changed.
+
+## s9 outcome (2026-11-01)
+
+Built on `v2`, not pushed. The 24 remaining git, gh and shell call sites in 17 files now call the tool registry; the old paths are deleted and `scripts/forbidden-spawn-scan.mjs --fail` runs in the build with only the three exemptions (`cli/services/maintenance.ts`, `daemon/installed-commit.ts`, `indexer/index.ts`). The record is `docs/plans/tool-registry-migration-record.md` sections 5 and 6.
+
+### Deviations from the approved LLD and PLAN, and why
+
+- **Extra tool inputs (g5 to g12)**: `git_status` `paths` and `untrackedFiles`, `git_ls_tree` `fullTree`, `git_log` `firstParent`, `git_rev_list` `parents`, `git_worktree` `startPoint`, `git_diff` `againstWorktree` and `excludeDeleted`, `git_show` `excludeDeleted`, `git_hash_object` `type`, `git_rev_parse` `gitPath` and `git_stage` `force`, plus the new tools `git_diff_tree` and `git_merge_tree`. g5 to g10 went in through the t24 plan amendment; g11 and g12 were found in t10 and t13.
+- **Park and resume**: `git_rm`, `git_update_ref`, `git_branch` delete and a forced `git_worktree` remove always ask the user, so the handoff park uses a detached temporary worktree (removed with `worktree prune`) and the resume fetches the handoff branch into one fixed private ref, `refs/remotes/insrc-handoff/<branch>`. No temporary branch is made.
+- **`_setWorkflowToolDepsForTests` kept**: the plan listed it for deletion, but seven tests set `approvalMode` through it. It is a test seam, not an old path.
+- **Wrapper-only tests deleted**: three `runGh` tests in `github-adapter.test.ts` tested the deleted synchronous wrapper, and the oracle halves of the corpus reader, `commit-and-push-registry`, `gh-op-table-qs` and `gh-tracker-family` tests compared against deleted code; they now pin fixed expectations.
+- **Dropped exec-option assertions**: the tests no longer assert the `execFileSync` options (`stdio`, `encoding`, `timeout`) the old seam received; the stand-in binaries cannot see them. `whoAmI` with an empty login now reports `rejected`, not `missing-signin`, because the `current_login` tool refuses it.
+- **Counts**: the plan said 32 files and 44 fakes in t18 to t20; the real counts are 29 files and about 40 fakes. Every `PolicyReader` fake is async and the type is narrowed to `Promise`.
+- **Reviews**: the daemon review framework was not working, so the design and code reviews were done by the controller (see `S009/SELF-REVIEW.md`) and approval needs an explicit override.
+
+### Open items
+
+- The review-timeout change (`REVIEW_WORK_UNIT_MS` 10 to 5 minutes) that was committed inside the s10 t16 commit `7a2fef08e` is not s9's and has not been moved out.
+- The handler-runtime key-set drift is unchanged.
+- `session-source-inventory.json` was regenerated mechanically; the classifications of the files other stories added have not been reviewed.

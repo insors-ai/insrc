@@ -50,7 +50,8 @@ export function validateFilesystem(type: number, platform: string = process.plat
   if (!((platform === 'darwin' && type === 26) || (platform === 'linux' && type === 0xef53))) invalid('An explicitly qualified local APFS or ext4 filesystem is required.');
 }
 
-async function checkFilesystem(path: string): Promise<void> {
+/** Read-only preflight: missing roots are checked through their existing ancestor. */
+async function validateNearestExistingFilesystem(path: string): Promise<void> {
   let ancestor = path;
   for (;;) {
     try { validateFilesystem((await statfs(ancestor)).type); return; }
@@ -100,9 +101,14 @@ export async function classifyLayout(root: RootIdentity): Promise<'new' | 'exist
 export async function prepareRoot(options: MemoryOptions): Promise<RootIdentity> {
   validateRuntime();
   try {
-    await checkFilesystem(options.dataDirectory);
+    // Reject an unsupported creation target before mkdir. For a missing root,
+    // this checks an ancestor, not the directory that will eventually be owned.
+    await validateNearestExistingFilesystem(options.dataDirectory);
     await mkdir(options.dataDirectory, { recursive: true, mode: 0o700 });
     const path = await realpath(options.dataDirectory);
+    // Re-read the actual canonical directory after creation/alias resolution.
+    // Its filesystem must be qualified independently of the earlier ancestor;
+    // never reuse a pre-mkdir type value as proof for this resolved target.
     validateFilesystem((await statfs(path)).type);
     const value = await stat(path, { bigint: true });
     const root = Object.freeze({ path, dev: value.dev, ino: value.ino });

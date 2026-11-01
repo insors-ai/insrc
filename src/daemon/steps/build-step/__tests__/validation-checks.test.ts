@@ -70,24 +70,24 @@ function nodePlan(over: Partial<ValidationCheckPlan>): ValidationCheckPlan {
 
 // --- resolution and plans (unit) ---------------------------------------------
 
-test("resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved", () => {
+test("resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved", async () => {
 	const repo = gitRepo(TREE);
 	try {
-		const r = resolveTaskTestFiles(repo, [
+		const r = (await resolveTaskTestFiles(repo, [
 			"notice.test.ts: 'makeNotice sorts and de-duplicates ids'",
 			"notice.test.ts: 'sortNotices gives one order'",
 			"missing.test.ts: 'not in the repo'",
 			'a name with no file at all',
-		]);
+		]));
 		assert.deepEqual(r.files, ['src/a/__tests__/notice.test.ts']);
 		assert.deepEqual(r.unresolved, ["missing.test.ts: 'not in the repo'", 'a name with no file at all']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('a base name under two __tests__ directories resolves to both files', () => {
+test('a base name under two __tests__ directories resolves to both files', async () => {
 	const repo = gitRepo(TREE);
 	try {
-		const r = resolveTaskTestFiles(repo, ["driver-unit.test.ts: 'x'"]);
+		const r = (await resolveTaskTestFiles(repo, ["driver-unit.test.ts: 'x'"]));
 		assert.deepEqual(r.files, ['src/a/__tests__/driver-unit.test.ts', 'src/b/__tests__/driver-unit.test.ts']);
 		assert.deepEqual(r.unresolved, []);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -96,20 +96,20 @@ test('a base name under two __tests__ directories resolves to both files', () =>
 test('the plan-driven, small and trivial routes each build the expected check plan', async () => {
 	const repo = gitRepo(TREE);
 	try {
-		const planDriven = planTaskCheckPlan(repo, { tests: [{ name: "notice.test.ts: 'a'" }, { name: "chain.test.ts: 'b'" }] });
+		const planDriven = (await planTaskCheckPlan(repo, { tests: [{ name: "notice.test.ts: 'a'" }, { name: "chain.test.ts: 'b'" }] }));
 		assert.deepEqual(planDriven.typecheck, TYPECHECK_ARGV);
 		assert.deepEqual(planDriven.testCommand, TEST_RUNNER_ARGV);
 		assert.ok(planDriven.testCommand.includes('--test-force-exit'));
 		assert.deepEqual(planDriven.testFiles, ['src/a/__tests__/notice.test.ts', 'src/b/__tests__/chain.test.ts']);
 		assert.equal(planDriven.noTests, undefined);
-		assert.deepEqual(planTaskCheckPlan(repo, { tests: [] }).noTests, { ok: false, note: 'the plan task names no tests' });
+		assert.deepEqual((await planTaskCheckPlan(repo, { tests: [] })).noTests, { ok: false, note: 'the plan task names no tests' });
 
-		const small = smallStandaloneCheckPlan(repo, { testLevels: [
+		const small = (await smallStandaloneCheckPlan(repo, { testLevels: [
 			{ subjects: ["chain.test.ts: 'x'", 'prose with no file'] },
 			{ subjects: ["driver-unit.test.ts: 'y'"] },
-		] });
+		] }));
 		assert.deepEqual(small.testFiles, ['src/a/__tests__/driver-unit.test.ts', 'src/b/__tests__/chain.test.ts', 'src/b/__tests__/driver-unit.test.ts']);
-		assert.deepEqual(smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] }).noTests, { ok: false, note: 'the LLD names no test file' });
+		assert.deepEqual((await smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] })).noTests, { ok: false, note: 'the LLD names no test file' });
 
 		// Trivial: the fixture commit added every file, so HEAD touched the four __tests__ files.
 		assert.deepEqual((await trivialCheckPlan(repo)).testFiles, [
@@ -152,11 +152,11 @@ test('a trivial build with a range base runs the test files touched across base.
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run', () => {
+test('a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run', async () => {
 	const repo = gitRepo(TREE);
 	try {
 		const name = 'WorkflowChainReaderTest.computeHldEffectiveHash fold (mirrors chain.test.ts hldEffectiveHash)';
-		const plan = planTaskCheckPlan(repo, { tests: [{ name }] });
+		const plan = (await planTaskCheckPlan(repo, { tests: [{ name }] }));
 		assert.deepEqual(plan.testFiles, []);
 		assert.deepEqual(plan.unresolvedTests, [name]);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
@@ -184,43 +184,43 @@ test('a plan is given the other TypeScript projects that own a file the build ch
 
 		const head = (): string => execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
 		const start = head();
-		const plan = (): ValidationCheckPlan => planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] });
+		const plan = async (): Promise<ValidationCheckPlan> => await planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] });
 		// The plan builders themselves name no project: the build's changes are added afterwards.
-		assert.equal(plan().typecheckProjects, undefined);
+		assert.equal((await plan()).typecheckProjects, undefined);
 		assert.equal((await trivialCheckPlan(repo)).typecheckProjects, undefined);
 
 		// A commit that touches only the root project: no other project, and the plan is returned as it was.
 		commit('src/b/chain.ts', 'root only');
-		const rootOnly = plan();
+		const rootOnly = await plan();
 		assert.equal((await withTypecheckProjects(repo, rootOnly, start)), rootOnly);
 		assert.equal((await withTypecheckProjects(repo, rootOnly)), rootOnly);
 
 		// A mapped test file inside the plugin names the plugin, whatever the commits touched.
-		const mapped = planTaskCheckPlan(repo, { tests: [{ name: 'the view renders' }] }, [{ name: 'the view renders', cases: [{ file: 'plugin/src/__tests__/view.test.ts', title: 't' }] }]);
+		const mapped = (await planTaskCheckPlan(repo, { tests: [{ name: 'the view renders' }] }, [{ name: 'the view renders', cases: [{ file: 'plugin/src/__tests__/view.test.ts', title: 't' }] }]));
 		assert.deepEqual((await withTypecheckProjects(repo, mapped, start)).typecheckProjects, ['plugin']);
 
 		// A commit that touches a plugin file names the plugin, on any route's plan.
 		commit('plugin/src/view.ts', 'plugin change');
-		assert.deepEqual((await withTypecheckProjects(repo, plan())).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, (await plan()))).typecheckProjects, ['plugin']);
 		assert.deepEqual((await withTypecheckProjects(repo, (await trivialCheckPlan(repo)))).typecheckProjects, ['plugin']);
-		assert.deepEqual((await withTypecheckProjects(repo, smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] }))).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, (await smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] })))).typecheckProjects, ['plugin']);
 
 		// A build of several commits: the plugin change is no longer the HEAD commit. From the
 		// build's base it is still found; from the HEAD commit alone it is not.
 		commit('src/b/chain.ts', 'root again');
-		assert.deepEqual((await withTypecheckProjects(repo, plan(), start)).typecheckProjects, ['plugin']);
-		assert.equal((await withTypecheckProjects(repo, plan())).typecheckProjects, undefined);
+		assert.deepEqual((await withTypecheckProjects(repo, (await plan()), start)).typecheckProjects, ['plugin']);
+		assert.equal((await withTypecheckProjects(repo, (await plan()))).typecheckProjects, undefined);
 		const afterPlugin = head();
 
 		// A change not yet committed counts, and so does a new file not yet tracked.
 		writeFileSync(join(repo, 'plugin/tools/inner/gen.tsx'), '// edited\n');
-		assert.deepEqual((await withTypecheckProjects(repo, plan(), afterPlugin)).typecheckProjects, ['plugin/tools/inner']);
+		assert.deepEqual((await withTypecheckProjects(repo, (await plan()), afterPlugin)).typecheckProjects, ['plugin/tools/inner']);
 		execFileSync('git', ['checkout', '-q', '--', 'plugin/tools/inner/gen.tsx'], { cwd: repo });
 		writeFileSync(join(repo, 'plugin/src/new.ts'), '');
-		assert.deepEqual((await withTypecheckProjects(repo, plan(), afterPlugin)).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, (await plan()), afterPlugin)).typecheckProjects, ['plugin']);
 
 		// A base the repository does not have: that listing is skipped and the others still count.
-		assert.deepEqual((await withTypecheckProjects(repo, plan(), '0'.repeat(40))).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, (await plan()), '0'.repeat(40))).typecheckProjects, ['plugin']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -346,14 +346,14 @@ test('a trivial build that deletes a test file does not ask to run it', async ()
 const NOTICE = 'src/a/__tests__/notice.test.ts';
 const CHAIN = 'src/b/__tests__/chain.test.ts';
 
-test("with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'", () => {
+test("with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'", async () => {
 	const repo = gitRepo(TREE);
 	try {
 		const tests = [{ level: 'unit', name: "notice.test.ts: 'a'" }, { level: 'integration', name: 'a prose name' }, { name: "driver-unit.test.ts: 'b'" }];
 		const before = (names: string[]) => resolveTaskTestFiles(repo, names);
-		const plan = planTaskCheckPlan(repo, { tests });
-		assert.deepEqual(plan.testFiles, before(tests.map(t => t.name)).files);
-		assert.deepEqual(plan.unresolvedTests, before(tests.map(t => t.name)).unresolved);
+		const plan = await planTaskCheckPlan(repo, { tests });
+		assert.deepEqual(plan.testFiles, (await before(tests.map(t => t.name))).files);
+		assert.deepEqual(plan.unresolvedTests, (await before(tests.map(t => t.name))).unresolved);
 		assert.deepEqual(plan.unresolvedTests, ['a prose name']);
 		assert.equal(plan.noTests, undefined);
 		assert.deepEqual(plan.namedTests, [
@@ -362,21 +362,21 @@ test("with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the
 			{ name: "driver-unit.test.ts: 'b'", source: 'prefix', cases: [], files: ['src/a/__tests__/driver-unit.test.ts', 'src/b/__tests__/driver-unit.test.ts'] },
 		]);
 		// An explicitly empty mapping is no mapping.
-		assert.deepEqual(planTaskCheckPlan(repo, { tests }, []), plan);
-		assert.deepEqual(planTaskCheckPlan(repo, { tests: [] }).namedTests, []);
+		assert.deepEqual((await planTaskCheckPlan(repo, { tests }, [])), plan);
+		assert.deepEqual((await planTaskCheckPlan(repo, { tests: [] })).namedTests, []);
 
-		const small = smallStandaloneCheckPlan(repo, { testLevels: [{ level: 'unit', subjects: ["chain.test.ts: 'x'", 'prose with no file'] }, { subjects: ["ghost.test.ts: 'y'"] }] });
+		const small = (await smallStandaloneCheckPlan(repo, { testLevels: [{ level: 'unit', subjects: ["chain.test.ts: 'x'", 'prose with no file'] }, { subjects: ["ghost.test.ts: 'y'"] }] }));
 		assert.deepEqual(small.testFiles, [CHAIN]);
 		assert.deepEqual(small.unresolvedTests, ["ghost.test.ts: 'y'"]);
 		assert.equal(small.noTests, undefined);
 		assert.deepEqual(small.namedTests.map(n => `${n.source} ${n.level ?? '-'} ${n.name}`), ["prefix unit chain.test.ts: 'x'", 'none unit prose with no file', "none - ghost.test.ts: 'y'"]);
-		const proseOnly = smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] });
+		const proseOnly = (await smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] }));
 		assert.deepEqual([proseOnly.testFiles, proseOnly.unresolvedTests, proseOnly.noTests], [[], [], { ok: false, note: 'the LLD names no test file' }]);
-		assert.deepEqual(smallStandaloneCheckPlan(repo, undefined).noTests, { ok: false, note: 'the LLD names no test file' });
+		assert.deepEqual((await smallStandaloneCheckPlan(repo, undefined)).noTests, { ok: false, note: 'the LLD names no test file' });
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test("with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)", () => {
+test("with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)", async () => {
 	const repo = gitRepo(TREE);
 	try {
 		const tests = [
@@ -386,11 +386,11 @@ test("with a mapping, a name with no prefix is no longer unresolved, its files a
 			{ level: 'unit', name: 'prose nobody mapped' },
 			{ level: 'live', name: 'a live run' },
 		];
-		const plan = planTaskCheckPlan(repo, { tests }, [
+		const plan = (await planTaskCheckPlan(repo, { tests }, [
 			{ name: 'a prose name', cases: [{ file: NOTICE, title: 't1' }, { file: NOTICE, title: 't2' }, { file: CHAIN, title: 't3' }] },
 			{ name: "driver-unit.test.ts: 'has a prefix AND a mapping'", cases: [{ file: NOTICE, title: 't4' }] },
 			{ name: 'a live run', reported: { result: 'pass', evidence: 'run 7' } },
-		]);
+		]));
 		// Each file once; the mapped name's own prefix (two driver-unit files) is NOT used.
 		assert.deepEqual(plan.testFiles, [NOTICE, CHAIN]);
 		assert.deepEqual(plan.unresolvedTests, ['prose nobody mapped']);
@@ -405,17 +405,17 @@ test("with a mapping, a name with no prefix is no longer unresolved, its files a
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test("smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail", () => {
+test("smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail", async () => {
 	const repo = gitRepo(TREE);
 	try {
 		const strategy = { testLevels: [{ level: 'unit', subjects: ['prose one', 'prose two'] }, { level: 'contract', subjects: ['prose three'] }] };
-		const plan = smallStandaloneCheckPlan(repo, strategy, [{ name: 'prose one', cases: [{ file: NOTICE, title: 't' }] }]);
+		const plan = (await smallStandaloneCheckPlan(repo, strategy, [{ name: 'prose one', cases: [{ file: NOTICE, title: 't' }] }]));
 		assert.equal(plan.noTests, undefined);
 		assert.deepEqual(plan.testFiles, [NOTICE]);
 		assert.deepEqual(plan.unresolvedTests, [], 'an unmapped prose subject does not fail the check');
 		assert.deepEqual(plan.namedTests.map(n => `${n.source} ${n.level} ${n.name}`), ['mapping unit prose one', 'none unit prose two', 'none contract prose three']);
 		// A mapping that carries only a reported result still counts as one.
-		const reportedOnly = smallStandaloneCheckPlan(repo, { testLevels: [{ level: 'live', subjects: ['a live one'] }] }, [{ name: 'a live one', reported: { result: 'pass', evidence: 'e' } }]);
+		const reportedOnly = (await smallStandaloneCheckPlan(repo, { testLevels: [{ level: 'live', subjects: ['a live one'] }] }, [{ name: 'a live one', reported: { result: 'pass', evidence: 'e' } }]));
 		assert.equal(reportedOnly.noTests, undefined);
 		assert.deepEqual(reportedOnly.testFiles, []);
 	} finally { rmSync(repo, { recursive: true, force: true }); }

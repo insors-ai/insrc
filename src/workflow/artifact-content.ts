@@ -165,11 +165,11 @@ export function resolveDocsMarkdown(
  * from the daemon handler so the repo/path resolution + view assembly are
  * integration-testable without a socket (like handleWorkflowPending).
  */
-export function handleArtifactContent(
+export async function handleArtifactContent(
 	params: { repo?: string; mdPath?: string } | undefined,
 	repoEnv: string | undefined,
 	deps: ReviewerDeps = {},
-): ArtifactReviewView | ArtifactContentError {
+): Promise<ArtifactReviewView | ArtifactContentError> {
 	const p = params ?? {};
 	const repoPath = (p.repo !== undefined && p.repo.length > 0 ? p.repo : repoEnv) ?? '';
 	if (repoPath.length === 0) {
@@ -243,7 +243,7 @@ export function handleArtifactContent(
 		docPath: docPathOf(repoPath, realMd),
 		contentVersion: contentVersionOf(renderedMarkdown),
 		...(feedback.length > 0 ? { feedback } : {}),
-		reviewer: resolveReviewer(repoPath, deps),
+		reviewer: await resolveReviewer(repoPath, deps),
 		state: approvalStateOf(meta),
 	};
 }

@@ -40,7 +40,7 @@ function repoWith(files: Readonly<Record<string, unknown>>): string {
 
 const store = (name: string): string => `${ARTIFACTS_DIR}/${name}`;
 
-test("resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word", () => {
+test("resolveDocsMarkdown keeps workflow.artifactContent's containment errors word for word", async () => {
 	const repo = repoWith({ 'docs/x/LLD.md': '# x\n', 'docs/x/notes.txt': 'n', 'outside.md': '# out\n' });
 	try {
 		symlinkSync(join(repo, 'outside.md'), join(repo, 'docs/x/leak.md'));
@@ -54,7 +54,7 @@ test("resolveDocsMarkdown keeps workflow.artifactContent's containment errors wo
 			const located = resolveDocsMarkdown(repo, mdPath);
 			assert.ok('reason' in located, `${mdPath} is refused`);
 			assert.equal(located.reason, reason);
-			const view = handleArtifactContent({ repo, mdPath }, undefined);
+			const view = (await handleArtifactContent({ repo, mdPath }, undefined));
 			assert.ok('error' in view);
 			assert.ok(view.error.startsWith(message), `${mdPath}: ${view.error}`);
 		}

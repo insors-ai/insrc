@@ -232,7 +232,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 		epicHash: ref.epicHash,
 		storyId:  ref.storyId,
 		taskId:   ref.taskId,
-	}, planTaskCheckPlan(repoPath, ref.task, mapping.entries), input.summary, mapping.note);
+	}, await planTaskCheckPlan(repoPath, ref.task, mapping.entries), input.summary, mapping.note);
 	if (done.next !== 'done') return done;
 	const commentSync = await runTaskCommentSync(repoPath, ref.epicHash, ref.storyId, ref.taskId);
 	return commentSync === undefined ? done : { ...done, commentSync };
@@ -358,7 +358,7 @@ async function handleStandaloneValidate(
 		const named: NamedTest[] = (testStrategy?.testLevels ?? []).flatMap(l => l.subjects.map(name => ({ name, ...(l.level !== undefined ? { level: l.level } : {}) })));
 		const mapping = await resolveMapping(repoPath, suppliedTests, named, { epicHash, storyId, taskId: storyId });
 		if (!mapping.ok) return mapping.error;
-		checks = smallStandaloneCheckPlan(repoPath, testStrategy, mapping.entries);
+		checks = await smallStandaloneCheckPlan(repoPath, testStrategy, mapping.entries);
 		mappingNote = mapping.note;
 	} else {
 		// A trivial build names no tests: `tests` is ignored, and the test files

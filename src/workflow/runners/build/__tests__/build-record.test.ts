@@ -883,11 +883,11 @@ test("a pre-trailer Story's BUILD record keeps its recorded commit through valid
 		const json = artifactJsonPath(repo, buildArtifactId(HASH, 's1'));
 
 		const mine = work('mine.ts', 'the Story, untrailed');
-		persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-10-18T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-10-18T00:00:00.000Z'));
 		assert.equal(readJson(json).body['commit'], mine);
 
 		work('later.ts', 'someone else, later, untrailed');
-		persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-10-19T00:00:00.000Z'));   // a validate rerun
+		await persistBuildRecord(repo, planRec([{ id: 't1', passed: true }], '2026-10-19T00:00:00.000Z'));   // a validate rerun
 		assert.equal(readJson(json).body['commit'], mine, 'a validate rerun keeps the recorded commit');
 		await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' });                   // the completion rewrite
 		assert.equal(readJson(json).body['commit'], mine, 'so does the completion rewrite');
@@ -895,7 +895,7 @@ test("a pre-trailer Story's BUILD record keeps its recorded commit through valid
 
 		// A trailered commit is new Story work: it advances the commit.
 		writeFileSync(join(repo, 'more.ts'), 'more\n'); git('add', 'more.ts'); git('commit', '-qm', `the Story, trailered\n\nInsrc-Story: ${HASH}/s1\n`);
-		persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-10-20T00:00:00.000Z'));
+		await persistBuildRecord(repo, planRec([{ id: 't2', passed: true }], '2026-10-20T00:00:00.000Z'));
 		assert.equal(readJson(json).body['commit'], git('rev-parse', '--short', 'HEAD'));
 	});
 });

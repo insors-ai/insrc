@@ -1621,7 +1621,7 @@ export function firstCompanionValidationFailure(body: {
 /** LLD-d9f85b3c S001/t8: the one header every companion of a finalize site
  *  shares. The companions are siblings of `mdPath`, so the source-doc link is the
  *  relative sibling filename (e.g. `./LLD.md`). Never throws. */
-function companionHeaderFor(repoPath: string, source: CompanionHeaderSource, artifactId: string, mdPath: string): CompanionHeader {
+async function companionHeaderFor(repoPath: string, source: CompanionHeaderSource, artifactId: string, mdPath: string): Promise<CompanionHeader> {
 	return resolveCompanionHeader({ repoPath, source, artifactId, sourceMdPath: mdPath }, companionHeaderDeps);
 }
 
@@ -1856,7 +1856,7 @@ async function finalizeDesignEpic(
 	// it. Runs before any render/write, so no partial artifact is produced.
 	const companionValidationFailure = firstCompanionValidationFailure(body);
 	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
-	const companionHeader = companionHeaderFor(intent.repoPath, {
+	const companionHeader = await companionHeaderFor(intent.repoPath, {
 		kind: 'HLD', epicHash, epicSlug, anchorCreatedAt: workItemAnchorCreatedAt(meta), summary: body.summary?.prose,
 	}, hldArtifactId(epicHash), hldMd);
 	const companionRef = await renderErCompanionForBody(body, joinPath(dirname(hldMd), 'er-model.html'), intent.repoPath, companionHeader);
@@ -2230,7 +2230,7 @@ async function finalizeDesignStory(
 	// it. Runs before any render/write, so no partial artifact is produced.
 	const companionValidationFailure = firstCompanionValidationFailure(body);
 	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
-	const companionHeader = companionHeaderFor(intent.repoPath, {
+	const companionHeader = await companionHeaderFor(intent.repoPath, {
 		kind: 'LLD-epic', epicHash, epicSlug, storyId, anchorCreatedAt: workItemAnchorCreatedAt(meta),
 		storyTitle: story.title, userValue: story.userValue,
 	}, lldArtifactId(epicHash, storyId), lldMd);
@@ -2416,7 +2416,7 @@ async function finalizeStandaloneLld(
 	// it. Runs before any render/write, so no partial artifact is produced.
 	const companionValidationFailure = firstCompanionValidationFailure(body);
 	if (companionValidationFailure !== undefined) return { ok: false, failure: companionValidationFailure };
-	const companionHeader = companionHeaderFor(intent.repoPath, {
+	const companionHeader = await companionHeaderFor(intent.repoPath, {
 		kind: 'LLD-standalone', epicHash, storyId, anchorCreatedAt: workItemAnchorCreatedAt(meta),
 		storyTitle: storyTitle ?? body.hldContextSlice.boundary.internal, summary: body.summary?.prose,
 	}, lldArtifactId(epicHash, storyId), lldMd);

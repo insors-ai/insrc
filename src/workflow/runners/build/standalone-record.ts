@@ -303,13 +303,13 @@ function priorCommit(repoPath: string, jsonPath: string): string | undefined {
 
 /** The Story's newest trailered commit since its range base; undefined when the
  *  base cannot be resolved or no commit carries the trailer. Never throws. */
-function storyCommit(repoPath: string, epicHash: string, storyId: string): string | undefined {
-	const base = resolveStoryRangeBase(repoPath, epicHash, storyId);
-	return base !== undefined ? newestStoryCommit(repoPath, base, `${epicHash}/${storyId}`) : undefined;
+async function storyCommit(repoPath: string, epicHash: string, storyId: string): Promise<string | undefined> {
+	const base = await resolveStoryRangeBase(repoPath, epicHash, storyId);
+	return base !== undefined ? await newestStoryCommit(repoPath, base, `${epicHash}/${storyId}`) : undefined;
 }
 
 /** The record `persistBuildRecord` would write: the new write merged on the prior one, with the commit and the folder identity. */
-function prepareBuildRecord(repoPath: string, rec: BuildRecord): { readonly jsonPath: string; readonly merged: BuildRecord; readonly intent: PathIntent } {
+async function prepareBuildRecord(repoPath: string, rec: BuildRecord): Promise<{ readonly jsonPath: string; readonly merged: BuildRecord; readonly intent: PathIntent }> {
 	// The json path is hash-flat (identity-free), so resolve + merge FIRST, then
 	// key the nested md folder on the MERGED record. mergeWithPrior preserves the
 	// original createdAt across an upsert, and for a Trivial standalone (no LLD)
@@ -328,7 +328,7 @@ function prepareBuildRecord(repoPath: string, rec: BuildRecord): { readonly json
 	// its range ends (ISSUE-b97752e9) and later HEADs are other people's work. A
 	// trailered commit advances it. A caller that knows better can supply
 	// `body.commit` explicitly and it wins for that write.
-	const commit = rec.body.commit ?? storyCommit(repoPath, rec.meta.epicHash, rec.meta.storyId) ?? priorCommit(repoPath, jsonPath) ?? headShortSha(repoPath);
+	const commit = rec.body.commit ?? await storyCommit(repoPath, rec.meta.epicHash, rec.meta.storyId) ?? await priorCommit(repoPath, jsonPath) ?? await headShortSha(repoPath);
 	const withCommit: BuildRecord = commit !== undefined
 		? { ...rec, body: { ...rec.body, commit } }
 		: rec;
@@ -343,8 +343,8 @@ function prepareBuildRecord(repoPath: string, rec: BuildRecord): { readonly json
 }
 
 /** The body `persistBuildRecord` would write for `rec`, so a caller can store it through the artifact store first. Reads only. */
-export function buildRecordBody(repoPath: string, rec: BuildRecord): BuildRecord['body'] {
-	return prepareBuildRecord(repoPath, rec).merged.body;
+export async function buildRecordBody(repoPath: string, rec: BuildRecord): Promise<BuildRecord['body']> {
+	return (await prepareBuildRecord(repoPath, rec)).merged.body;
 }
 
 /** The outcome a BUILD round carries in the change log: whether its Tasks passed. */
@@ -361,7 +361,7 @@ export function buildRoundOutcome(body: BuildRecord['body']): { readonly result:
  * the rendered markdown. A failed store fails the persist and writes nothing.
  */
 export async function persistBuildRecord(repoPath: string, rec: BuildRecord, through?: RoundWriter): Promise<{ md: string; json: string }> {
-	let prepared = prepareBuildRecord(repoPath, rec);
+	let prepared = await prepareBuildRecord(repoPath, rec);
 	if (through !== undefined) {
 		const first = prepared;
 		const id = buildArtifactId(first.merged.meta.epicHash, first.merged.meta.storyId);
@@ -369,7 +369,7 @@ export async function persistBuildRecord(repoPath: string, rec: BuildRecord, thr
 		const isFirst = !hasReadableHead(id, first.jsonPath);
 		await storeRound(through, id, first.jsonPath, first.merged.body, buildRoundOutcome(first.merged.body));
 		// The store changed the head's lifecycle, so the record the raw write refreshes is merged on the head as it is now.
-		prepared = prepareBuildRecord(repoPath, rec);
+		prepared = await prepareBuildRecord(repoPath, rec);
 		if (isFirst) {
 			// The store created the head on its own clock; the record keeps the time the build gave it (and the anchor its folder is dated by).
 			const { createdAt, epicCreatedAt } = first.merged.meta;

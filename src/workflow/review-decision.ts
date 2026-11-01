@@ -175,7 +175,7 @@ export async function handleReviewDecision(
 		try { named = approvalActorOf(p.actor); } catch (err) { return { error: `${P}: ${(err as Error).message}` }; }
 	}
 
-	const author = resolveReviewer(repoPath, deps.reviewer ?? {}).name;
+	const author = (await resolveReviewer(repoPath, deps.reviewer ?? {})).name;
 
 	// 1. The decision.
 	let outcome: ReviewDecisionOutcome;

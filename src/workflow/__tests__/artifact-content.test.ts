@@ -66,10 +66,10 @@ function asView(r: ArtifactReviewView | { error: string }): ArtifactReviewView {
 	return r as ArtifactReviewView;
 }
 
-test('handleArtifactContent: happy path — renderedMarkdown byte-equal to the .md; kind/artifactId; openQuestions; approvable', () => {
+test('handleArtifactContent: happy path — renderedMarkdown byte-equal to the .md; kind/artifactId; openQuestions; approvable', async () => {
 	const { repo, mdRel } = makeFixture();
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.equal(v.renderedMarkdown, MD_BODY);   // verbatim, no transformation (ac3/k5)
 		assert.equal(v.kind, 'LLD');
 		assert.equal(v.artifactId, ID);
@@ -91,7 +91,7 @@ test('handleArtifactContent: a standing review block-verdict -> approvable=false
 	const { repo, mdRel } = makeFixture({ json: { meta: blockedMeta({ report: reviewReference(ID, 'review-1') }), body: {} } });
 	try {
 		await recordReview(repo, ID, review, 'review-1');
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.equal(v.approvable, false);
 		assert.match(v.blockReason ?? '', /Review blocks approval — 1 HIGH, 0 MED: a load-bearing premise/);
 	} finally {
@@ -99,10 +99,10 @@ test('handleArtifactContent: a standing review block-verdict -> approvable=false
 	}
 });
 
-test('handleArtifactContent: a review whose report cannot be read blocks on the lifecycle verdict', () => {
+test('handleArtifactContent: a review whose report cannot be read blocks on the lifecycle verdict', async () => {
 	const { repo, mdRel } = makeFixture({ json: { meta: blockedMeta(), body: {} } });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.equal(v.approvable, false);
 		assert.match(v.blockReason ?? '', /Review blocks approval/);
 	} finally {
@@ -110,21 +110,21 @@ test('handleArtifactContent: a review whose report cannot be read blocks on the 
 	}
 });
 
-test('handleArtifactContent: openQuestions absent -> empty list (not an error)', () => {
+test('handleArtifactContent: openQuestions absent -> empty list (not an error)', async () => {
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: {} } });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.deepEqual(v.openQuestions, []);
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('handleArtifactContent: mdPath escaping docs/ -> { error }, and no read outside docs/', () => {
+test('handleArtifactContent: mdPath escaping docs/ -> { error }, and no read outside docs/', async () => {
 	const { repo } = makeFixture();
 	try {
 		for (const bad of ['../../etc/passwd', 'src/daemon/index.ts', '/etc/hosts']) {
-			const r = handleArtifactContent({ repo, mdPath: bad }, undefined);
+			const r = (await handleArtifactContent({ repo, mdPath: bad }, undefined));
 			assert.ok('error' in r, `expected error for ${bad}`);
 			assert.match((r as { error: string }).error, /docs\//);
 		}
@@ -133,53 +133,53 @@ test('handleArtifactContent: mdPath escaping docs/ -> { error }, and no read out
 	}
 });
 
-test('handleArtifactContent: missing/unreadable .md -> { error }', () => {
+test('handleArtifactContent: missing/unreadable .md -> { error }', async () => {
 	const { repo } = makeFixture();
 	try {
-		const r = handleArtifactContent({ repo, mdPath: `docs/epics/demo-${SEG}/S001/NOPE.md` }, undefined);
+		const r = (await handleArtifactContent({ repo, mdPath: `docs/epics/demo-${SEG}/S001/NOPE.md` }, undefined));
 		assert.ok('error' in r);
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('handleArtifactContent: missing sibling .json -> { error }', () => {
+test('handleArtifactContent: missing sibling .json -> { error }', async () => {
 	const { repo, mdRel } = makeFixture({ json: null });   // md present (with marker), json absent
 	try {
-		const r = handleArtifactContent({ repo, mdPath: mdRel }, undefined);
+		const r = (await handleArtifactContent({ repo, mdPath: mdRel }, undefined));
 		assert.ok('error' in r);
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('handleArtifactContent: malformed sibling .json -> { error }', () => {
+test('handleArtifactContent: malformed sibling .json -> { error }', async () => {
 	const { repo, mdRel } = makeFixture({ json: '{ not valid json' });
 	try {
-		const r = handleArtifactContent({ repo, mdPath: mdRel }, undefined);
+		const r = (await handleArtifactContent({ repo, mdPath: mdRel }, undefined));
 		assert.ok('error' in r);
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('handleArtifactContent: repo unresolved / empty mdPath -> { error } (never a partial view)', () => {
-	const noRepo = handleArtifactContent({ mdPath: MD_REL }, undefined);
+test('handleArtifactContent: repo unresolved / empty mdPath -> { error } (never a partial view)', async () => {
+	const noRepo = (await handleArtifactContent({ mdPath: MD_REL }, undefined));
 	assert.ok('error' in noRepo && !('artifactId' in noRepo));
 
 	const { repo } = makeFixture();
 	try {
-		const noMd = handleArtifactContent({ repo, mdPath: '' }, undefined);
+		const noMd = (await handleArtifactContent({ repo, mdPath: '' }, undefined));
 		assert.ok('error' in noMd);
 		// env fallback resolves repo
-		const viaEnv = handleArtifactContent({ mdPath: MD_REL }, repo);
+		const viaEnv = (await handleArtifactContent({ mdPath: MD_REL }, repo));
 		assert.ok('artifactId' in viaEnv);
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('handleArtifactContent: a symlink under docs/ escaping the tree -> { error }, target not read', () => {
+test('handleArtifactContent: a symlink under docs/ escaping the tree -> { error }, target not read', async () => {
 	const { repo } = makeFixture();
 	// A secret file OUTSIDE the repo, and a symlink docs/leak -> that outside dir.
 	const outside = mkdtempSync(join(tmpdir(), 'insrc-outside-'));
@@ -187,7 +187,7 @@ test('handleArtifactContent: a symlink under docs/ escaping the tree -> { error 
 	try {
 		symlinkSync(outside, join(repo, 'docs', 'leak'), 'dir');
 		// Lexically 'docs/leak/secret.md' looks under docs/, but realpath escapes.
-		const r = handleArtifactContent({ repo, mdPath: 'docs/leak/secret.md' }, undefined);
+		const r = (await handleArtifactContent({ repo, mdPath: 'docs/leak/secret.md' }, undefined));
 		assert.ok('error' in r, 'a symlink escaping docs/ must be refused');
 		assert.ok(!('renderedMarkdown' in r), 'the target must not be read');
 	} finally {
@@ -196,11 +196,11 @@ test('handleArtifactContent: a symlink under docs/ escaping the tree -> { error 
 	}
 });
 
-test('handleArtifactContent: read-only — no file created or mutated over the fixture', () => {
+test('handleArtifactContent: read-only — no file created or mutated over the fixture', async () => {
 	const { repo, mdRel } = makeFixture();
 	try {
 		const before = readdirSync(join(repo, ARTIFACTS_DIR)).sort();
-		handleArtifactContent({ repo, mdPath: mdRel }, undefined);
+		(await handleArtifactContent({ repo, mdPath: mdRel }, undefined));
 		const after = readdirSync(join(repo, ARTIFACTS_DIR)).sort();
 		assert.deepEqual(after, before);
 	} finally {
@@ -221,12 +221,12 @@ const ER = { entities: [{ name: 'Artifact', fields: [{ name: 'id', type: 'string
 const UX = { type: 'AdaptiveCard', version: '1.5', body: [{ type: 'TextBlock', text: 'mock' }] };
 const CO = [{ kind: 'ux-mock', relPath: 'docs/epics/demo/S001/ux-mock.html', title: 'UX mock' }];
 
-test('t1: handleArtifactContent projects all four structured records verbatim from an HLD body carrying them', () => {
+test('t1: handleArtifactContent projects all four structured records verbatim from an HLD body carrying them', async () => {
 	const { repo, mdRel } = makeFixture({
 		json: { meta: {}, body: { functionalDefinition: FD, erDefinition: ER, uxDefinition: UX, companions: CO } },
 	});
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		// Verbatim: deep-equal to what the body stored, not a reshaped projection.
 		assert.deepEqual(v.functionalDefinition, FD);
 		assert.deepEqual(v.erDefinition, ER);
@@ -237,10 +237,10 @@ test('t1: handleArtifactContent projects all four structured records verbatim fr
 	}
 });
 
-test('t1: an absent body field projects as ABSENT — not null, not an empty object', () => {
+test('t1: an absent body field projects as ABSENT — not null, not an empty object', async () => {
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: {} } });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		for (const k of ['functionalDefinition', 'erDefinition', 'sequenceDefinition', 'uxDefinition', 'companions'] as const) {
 			// `=== undefined` is the single absence test, so the KEY must be absent:
 			// a key present with an undefined/null/{} value would defeat it.
@@ -252,10 +252,10 @@ test('t1: an absent body field projects as ABSENT — not null, not an empty obj
 	}
 });
 
-test('t1: a DEF body projects functionalDefinition only and never companions', () => {
+test('t1: a DEF body projects functionalDefinition only and never companions', async () => {
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { functionalDefinition: FD } } });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.deepEqual(v.functionalDefinition, FD);
 		assert.equal('companions' in v, false, 'nothing is backfilled for a record the body does not carry');
 		assert.equal('erDefinition' in v, false);
@@ -266,7 +266,7 @@ test('t1: a DEF body projects functionalDefinition only and never companions', (
 	}
 });
 
-test('t1: a PLAN body\'s functionalDefinition projects too — the field is not gated on kind', () => {
+test('t1: a PLAN body\'s functionalDefinition projects too — the field is not gated on kind', async () => {
 	const planId = `PLAN-${HASH}-s1`;
 	const mdRel = `docs/epics/demo-${SEG}/S001/PLAN.md`;
 	const repo = mkdtempSync(join(tmpdir(), 'insrc-artcontent-plan-'));
@@ -278,7 +278,7 @@ test('t1: a PLAN body\'s functionalDefinition projects too — the field is not 
 		mkdirSync(dir, { recursive: true });
 		writeFileSync(join(dir, `${planId}.json`), JSON.stringify({ meta: {}, body: { functionalDefinition: FD } }));
 
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.equal(v.kind, 'PLAN');
 		assert.deepEqual(v.functionalDefinition, FD, 'a PLAN projects functionalDefinition like any other kind');
 	} finally {
@@ -286,12 +286,12 @@ test('t1: a PLAN body\'s functionalDefinition projects too — the field is not 
 	}
 });
 
-test('t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings', () => {
+test('t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings', async () => {
 	const { repo, mdRel } = makeFixture({
 		json: { meta: {}, body: { openQuestions: ['First?'], erDefinition: ER } },
 	});
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		// Widening the view must not disturb any original member.
 		assert.equal(typeof v.artifactId, 'string');
 		assert.equal(v.artifactId, ID);
@@ -316,7 +316,7 @@ test('t1: source-scan — the daemon handler map registers no new method; workfl
 	}
 });
 
-test('t1: a malformed structured record travels through rather than failing the read', () => {
+test('t1: a malformed structured record travels through rather than failing the read', async () => {
 	// Shape-invalid on every record: wrong types, unknown members, a scalar where
 	// an object belongs. The read must still succeed — a malformed record cannot
 	// refuse to open a document (the surface degrades, it does not go blank).
@@ -328,7 +328,7 @@ test('t1: a malformed structured record travels through rather than failing the 
 	};
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: junk } });
 	try {
-		const r = handleArtifactContent({ repo, mdPath: mdRel }, undefined);
+		const r = (await handleArtifactContent({ repo, mdPath: mdRel }, undefined));
 		assert.ok(!('error' in r), 'a malformed structured record must not fail the read');
 		const v = asView(r);
 		assert.equal(v.renderedMarkdown, MD_BODY, 'the body still reads verbatim');
@@ -373,11 +373,11 @@ function realLedgerSequenceDefinition(): unknown {
 	return sq;
 }
 
-test('t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S002 ledger body', () => {
+test('t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S002 ledger body', async () => {
 	const SQ = realLedgerSequenceDefinition();
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { sequenceDefinition: SQ } } });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		// Deep-equal to what the body stored, not merely present and not reshaped:
 		// the projection is a pass-through, and a producer's real record is the
 		// only input that can prove it did not quietly normalize anything.
@@ -392,11 +392,11 @@ test('t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S
 	}
 });
 
-test('t1: a body WITHOUT sequenceDefinition yields no such key — never null, never {}', () => {
+test('t1: a body WITHOUT sequenceDefinition yields no such key — never null, never {}', async () => {
 	// The dominant case: only 3 artifact bodies in the whole ledger carry one.
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { openQuestions: ['First?'] } } });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		// `'k' in v === false` is the assertion that matters: a key present with an
 		// undefined value would type-check yet defeat `=== undefined` as the single
 		// absence test under exactOptionalPropertyTypes.
@@ -407,7 +407,7 @@ test('t1: a body WITHOUT sequenceDefinition yields no such key — never null, n
 	}
 });
 
-test('t1: adding sequenceDefinition left every pre-existing projected record unchanged', () => {
+test('t1: adding sequenceDefinition left every pre-existing projected record unchanged', async () => {
 	// k7 (unchanged existing consumers) + the insrc-ide fork, which MIRRORS this
 	// IPC payload shape: the addition is safe across repos only because nothing
 	// existing moved. Asserted by projecting a body carrying all five and checking
@@ -417,7 +417,7 @@ test('t1: adding sequenceDefinition left every pre-existing projected record unc
 		json: { meta: {}, body: { functionalDefinition: FD, erDefinition: ER, sequenceDefinition: SQ, uxDefinition: UX, companions: CO } },
 	});
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.deepEqual(v.functionalDefinition, FD);
 		assert.deepEqual(v.erDefinition, ER);
 		assert.deepEqual(v.uxDefinition, UX);
@@ -434,14 +434,14 @@ test('t1: adding sequenceDefinition left every pre-existing projected record unc
 	}
 });
 
-test('t1: a malformed sequenceDefinition travels through as written — the read path validates nothing', () => {
+test('t1: a malformed sequenceDefinition travels through as written — the read path validates nothing', async () => {
 	// validateErDefinition and its peers run at ASSEMBLY, inside the generating
 	// workflow; the read path is a pass-through. S003's client renderer therefore
 	// has to shape-check before it draws, which is why this is pinned here.
 	const junk = { participants: 'not-an-array', messages: 42 };
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { sequenceDefinition: junk } } });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined)));
 		assert.deepEqual(v.sequenceDefinition as unknown, junk, 'no validation, no defaulting, no coercion');
 	} finally {
 		cleanup(repo);
@@ -452,7 +452,7 @@ test('t1: a malformed sequenceDefinition travels through as written — the read
 // Story 8d4b90c9/S001 t3 — the fields the review pane saves and shows comments with
 // ---------------------------------------------------------------------------
 
-test('review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion', () => {
+test('review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion', async () => {
 	const REVIEWER = { gitUserName: () => 'Rev Iewer\n', osUserName: () => 'rev' };
 	// the comments are Feedback lines stored beside the head; the body holds none
 	const entries = [
@@ -462,7 +462,7 @@ test('review view: docPath, contentVersion, feedback, reviewer and state are ret
 	const { repo, mdRel } = makeFixture({ json: { meta: {}, body: { openQuestions: ['First?'] } } });
 	for (const entry of entries) new FileSidecarStore(repo).appendRecordSync('feedback', { artifactId: ID, entry });
 	try {
-		const v = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER));
+		const v = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER)));
 		assert.equal(v.docPath, MD_REL);
 		assert.equal(v.contentVersion, createHash('sha256').update(MD_BODY, 'utf8').digest('hex').slice(0, 16));
 		assert.match(v.contentVersion, /^[0-9a-f]{16}$/);
@@ -478,17 +478,17 @@ test('review view: docPath, contentVersion, feedback, reviewer and state are ret
 		assert.equal('blockReason' in v, false);
 
 		// An absolute mdPath gives the same repo-relative docPath.
-		assert.equal(asView(handleArtifactContent({ repo, mdPath: join(repo, mdRel) }, undefined, REVIEWER)).docPath, MD_REL);
+		assert.equal(asView((await handleArtifactContent({ repo, mdPath: join(repo, mdRel) }, undefined, REVIEWER))).docPath, MD_REL);
 		// The reviewer falls back to the OS login, with its source.
 		assert.deepEqual(
-			asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, { ...REVIEWER, gitUserName: () => undefined })).reviewer,
+			asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined, { ...REVIEWER, gitUserName: () => undefined }))).reviewer,
 			{ name: 'rev', source: 'os' },
 		);
 
 		// A changed markdown gives a different contentVersion; the same text gives the same one.
-		assert.equal(asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER)).contentVersion, v.contentVersion);
+		assert.equal(asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER))).contentVersion, v.contentVersion);
 		writeFileSync(join(repo, mdRel), MD_BODY + 'One more line.\n');
-		const changed = asView(handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER));
+		const changed = asView((await handleArtifactContent({ repo, mdPath: mdRel }, undefined, REVIEWER)));
 		assert.notEqual(changed.contentVersion, v.contentVersion);
 		assert.equal(changed.contentVersion, createHash('sha256').update(MD_BODY + 'One more line.\n', 'utf8').digest('hex').slice(0, 16));
 	} finally {
@@ -507,7 +507,7 @@ test('review view: docPath, contentVersion, feedback, reviewer and state are ret
 	for (const [meta, state] of states) {
 		const fx = makeFixture({ json: { meta, body: {} } });
 		try {
-			const v = asView(handleArtifactContent({ repo: fx.repo, mdPath: fx.mdRel }, undefined, REVIEWER));
+			const v = asView((await handleArtifactContent({ repo: fx.repo, mdPath: fx.mdRel }, undefined, REVIEWER)));
 			assert.equal(v.state, state, JSON.stringify(meta));
 			assert.equal('feedback' in v, false, 'no stored feedback is an absent key');
 		} finally {
@@ -518,7 +518,7 @@ test('review view: docPath, contentVersion, feedback, reviewer and state are ret
 	for (const feedback of [[], 'x', null]) {
 		const fx = makeFixture({ json: { meta: {}, body: { feedback } } });
 		try {
-			assert.equal('feedback' in asView(handleArtifactContent({ repo: fx.repo, mdPath: fx.mdRel }, undefined, REVIEWER)), false);
+			assert.equal('feedback' in asView((await handleArtifactContent({ repo: fx.repo, mdPath: fx.mdRel }, undefined, REVIEWER))), false);
 		} finally {
 			cleanup(fx.repo);
 		}
@@ -548,7 +548,7 @@ test("handleArtifactContent serves a BUILD record's markdown by the path the pen
 		assert.ok(listed, 'the build record is pending');
 		assert.equal(listed.mdPath, join(repo, mdRel));
 		// and the content call serves it by that path.
-		const view = asView(handleArtifactContent({ repo, mdPath: listed.mdPath }, undefined));
+		const view = asView((await handleArtifactContent({ repo, mdPath: listed.mdPath }, undefined)));
 		assert.equal(view.artifactId, id);
 		assert.equal(view.kind, 'BUILD');
 		assert.equal(view.renderedMarkdown, text, 'its markdown, byte for byte');

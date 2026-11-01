@@ -74,17 +74,17 @@ export interface CompanionHeaderInput {
 /** Seams for the lookups that read the machine, so tests can pin them. */
 export interface CompanionHeaderDeps {
 	readonly now?:         (() => Date) | undefined;
-	readonly gitUserName?: ((repoPath: string) => string | undefined) | undefined;
+	readonly gitUserName?: ((repoPath: string) => string | undefined | Promise<string | undefined>) | undefined;
 	readonly osUserName?:  (() => string | undefined) | undefined;
 }
 
-export function resolveCompanionHeader(input: CompanionHeaderInput, deps: CompanionHeaderDeps = {}): CompanionHeader {
+export async function resolveCompanionHeader(input: CompanionHeaderInput, deps: CompanionHeaderDeps = {}): Promise<CompanionHeader> {
 	return {
 		projectName: projectName(input.repoPath),
 		workItemId:  workItemId(input.source),
 		sourceDoc:   { id: input.artifactId, href: `./${basename(input.sourceMdPath)}` },
 		date:        formatDate((deps.now ?? (() => new Date()))()),
-		user:        resolveReviewer(input.repoPath, deps).name,
+		user:        (await resolveReviewer(input.repoPath, deps)).name,
 		contextLine: contextLine(input.source),
 	};
 }
@@ -102,8 +102,8 @@ export type ReviewerDeps = Pick<CompanionHeaderDeps, 'gitUserName' | 'osUserName
  * The person a header or a saved comment is attributed to: git user.name in the
  * repo, else the OS login, else 'unknown'. Never throws.
  */
-export function resolveReviewer(repoPath: string, deps: ReviewerDeps = {}): Reviewer {
-	const git = nonEmpty((deps.gitUserName ?? defaultGitUserName)(repoPath));
+export async function resolveReviewer(repoPath: string, deps: ReviewerDeps = {}): Promise<Reviewer> {
+	const git = nonEmpty(await (deps.gitUserName ?? defaultGitUserName)(repoPath));
 	if (git !== undefined) return { name: git, source: 'git' };
 	const os = nonEmpty((deps.osUserName ?? defaultOsUserName)());
 	if (os !== undefined) return { name: os, source: 'os' };

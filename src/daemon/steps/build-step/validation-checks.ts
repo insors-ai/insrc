@@ -166,12 +166,12 @@ export function trackedFiles(repoPath: string): string[] {
  * under test. Every tracked file with that base name under a __tests__
  * directory is returned. Names that map to nothing are listed in `unresolved`.
  */
-export function resolveTaskTestFiles(
+export async function resolveTaskTestFiles(
 	repoPath: string,
 	testNames: readonly string[],
-): { readonly files: readonly string[]; readonly unresolved: readonly string[] } {
+): Promise<{ readonly files: readonly string[]; readonly unresolved: readonly string[] }> {
 	const byBase = new Map<string, string[]>();
-	for (const f of trackedFiles(repoPath)) {
+	for (const f of await trackedFiles(repoPath)) {
 		if (!f.split('/').includes('__tests__')) continue;
 		const b = basename(f);
 		const list = byBase.get(b);
@@ -274,7 +274,7 @@ export function owningTypecheckProjects(repoPath: string, files: readonly string
 export async function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string, storyKey?: string): Promise<ValidationCheckPlan> {
 	let built: string[];
 	if (storyKey === undefined) {
-		built = changedFiles(repoPath, base);
+		built = await changedFiles(repoPath, base);
 	} else {
 		try {
 			built = await storyFiles(repoPath, base, storyKey);
@@ -297,7 +297,7 @@ function filesOfCases(cases: readonly TestCaseRef[]): string[] {
  * its own leading file name resolves to, else nothing. The mapping WINS over a
  * prefix: a mapped name's prefix is not used.
  */
-function planNamedTest(repoPath: string, test: NamedTest, entry: TestMappingEntry | undefined): NamedTestPlan {
+async function planNamedTest(repoPath: string, test: NamedTest, entry: TestMappingEntry | undefined): Promise<NamedTestPlan> {
 	const level = test.level !== undefined ? { level: test.level } : {};
 	if (entry !== undefined) {
 		const cases = (entry.cases ?? []).map(c => ({ file: c.file, title: c.title }));
@@ -306,7 +306,7 @@ function planNamedTest(repoPath: string, test: NamedTest, entry: TestMappingEntr
 			...(entry.reported !== undefined ? { reported: { result: entry.reported.result, evidence: entry.reported.evidence } } : {}),
 		};
 	}
-	const { files } = resolveTaskTestFiles(repoPath, [test.name]);
+	const { files } = await resolveTaskTestFiles(repoPath, [test.name]);
 	return { name: test.name, ...level, source: files.length > 0 ? 'prefix' : 'none', cases: [], files };
 }
 
@@ -315,13 +315,14 @@ function sortedUnion(named: readonly NamedTestPlan[]): string[] {
 }
 
 /** Plan-driven build: the Task's named tests, with the builder's mapping when there is one. */
-export function planTaskCheckPlan(
+export async function planTaskCheckPlan(
 	repoPath: string,
 	task:     { readonly tests: readonly { readonly level?: string | undefined; readonly name: string }[] },
 	mapping?: readonly TestMappingEntry[],
-): ValidationCheckPlan {
+): Promise<ValidationCheckPlan> {
 	const byName = new Map((mapping ?? []).map(e => [e.name, e]));
-	const namedTests = task.tests.map(t => planNamedTest(repoPath, t, byName.get(t.name)));
+	const namedTests: NamedTestPlan[] = [];
+	for (const t of task.tests) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	return {
 		...basePlan(), testFiles: sortedUnion(namedTests),
 		unresolvedTests: namedTests.filter(n => n.source === 'none').map(n => n.name),
@@ -334,14 +335,15 @@ export function planTaskCheckPlan(
  *  the builder mapped is run through its cases; one that begins with a file name
  *  is run by that file; a prose subject with neither is listed as not mapped
  *  and, as before, does not fail the check. */
-export function smallStandaloneCheckPlan(
+export async function smallStandaloneCheckPlan(
 	repoPath: string,
 	testStrategy: { readonly testLevels: readonly { readonly level?: string | undefined; readonly subjects: readonly string[] }[] } | undefined,
 	mapping?: readonly TestMappingEntry[],
-): ValidationCheckPlan {
+): Promise<ValidationCheckPlan> {
 	const byName = new Map((mapping ?? []).map(e => [e.name, e]));
 	const subjects: NamedTest[] = (testStrategy?.testLevels ?? []).flatMap(l => l.subjects.map(name => ({ name, ...(l.level !== undefined ? { level: l.level } : {}) })));
-	const namedTests = subjects.map(t => planNamedTest(repoPath, t, byName.get(t.name)));
+	const namedTests: NamedTestPlan[] = [];
+	for (const t of subjects) namedTests.push(await planNamedTest(repoPath, t, byName.get(t.name)));
 	const runnable = namedTests.filter(n => n.source === 'mapping' || LEADING_TEST_FILE.test(n.name));
 	if (runnable.length === 0) {
 		return { ...basePlan(), testFiles: [], unresolvedTests: [], namedTests, noTests: { ok: false, note: 'the LLD names no test file' } };

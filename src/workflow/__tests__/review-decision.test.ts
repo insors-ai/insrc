@@ -181,7 +181,7 @@ test('review decision: reject records the rejection with the first whole-documen
 		assert.equal(s.meta.rejectReason, WHOLE.comment);
 		assert.equal(s.meta.approvedAt, undefined);
 		assert.ok((await entriesOf(fx)).every(e => e.kind === 'comment' && e.actor.properties['name'] === 'Rev Iewer'));
-		assert.equal(handleArtifactContentState(fx), 'rejected');
+		assert.equal((await handleArtifactContentState(fx)), 'rejected');
 	} finally { cleanup(fx.repo); }
 
 	// Inline comments only: the default reason names the reviewer.
@@ -203,8 +203,8 @@ test('review decision: reject records the rejection with the first whole-documen
 	} finally { cleanup(none.repo); }
 });
 
-function handleArtifactContentState(fx: Fixture): string {
-	const v = handleArtifactContent({ repo: fx.repo, mdPath: MD_REL }, undefined, REVIEWER);
+async function handleArtifactContentState(fx: Fixture): Promise<string> {
+	const v = (await handleArtifactContent({ repo: fx.repo, mdPath: MD_REL }, undefined, REVIEWER));
 	assert.ok(!('error' in v));
 	return (v as { state: string }).state;
 }
@@ -226,7 +226,7 @@ test('review decision: feedback saves the comments and changes no state, in any 
 			assert.equal('reason' in r, false);
 			const s = stored(fx.jsonPath);
 			assert.equal(JSON.stringify(s.meta), metaBefore, `${state}: the meta is untouched`);
-			assert.equal(handleArtifactContentState(fx), state);
+			assert.equal((await handleArtifactContentState(fx)), state);
 			assert.ok((await entriesOf(fx)).every(e => e.kind === 'revision-request'));
 		} finally { cleanup(fx.repo); }
 	}

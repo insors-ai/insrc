@@ -93,7 +93,7 @@ test('a base name under two __tests__ directories resolves to both files', () =>
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('the plan-driven, small and trivial routes each build the expected check plan', () => {
+test('the plan-driven, small and trivial routes each build the expected check plan', async () => {
 	const repo = gitRepo(TREE);
 	try {
 		const planDriven = planTaskCheckPlan(repo, { tests: [{ name: "notice.test.ts: 'a'" }, { name: "chain.test.ts: 'b'" }] });
@@ -112,7 +112,7 @@ test('the plan-driven, small and trivial routes each build the expected check pl
 		assert.deepEqual(smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] }).noTests, { ok: false, note: 'the LLD names no test file' });
 
 		// Trivial: the fixture commit added every file, so HEAD touched the four __tests__ files.
-		assert.deepEqual(trivialCheckPlan(repo).testFiles, [
+		assert.deepEqual((await trivialCheckPlan(repo)).testFiles, [
 			'src/a/__tests__/driver-unit.test.ts', 'src/a/__tests__/notice.test.ts',
 			'src/b/__tests__/chain.test.ts', 'src/b/__tests__/driver-unit.test.ts',
 		]);
@@ -120,13 +120,13 @@ test('the plan-driven, small and trivial routes each build the expected check pl
 		writeFileSync(join(repo, 'README.md'), 'x');
 		execFileSync('git', ['add', 'README.md'], { cwd: repo });
 		execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'readme'], { cwd: repo, stdio: 'ignore' });
-		const trivial = trivialCheckPlan(repo);
+		const trivial = (await trivialCheckPlan(repo));
 		assert.deepEqual(trivial.testFiles, []);
 		assert.deepEqual(trivial.noTests, { ok: true, note: 'no tests named for a trivial build' });
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit\'s (ISSUE-91640defac1b5816)', () => {
+test('a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit\'s (ISSUE-91640defac1b5816)', async () => {
 	const repo = gitRepo({ 'README.md': 'base' });
 	const git = (...args: string[]): string => execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...args], { cwd: repo, encoding: 'utf8' });
 	const commit = (rel: string, body: string, msg: string): void => {
@@ -140,12 +140,12 @@ test('a trivial build with a range base runs the test files touched across base.
 		commit('src/a/__tests__/fix.test.ts', 'x', 'the build\'s code and test');
 		commit('src/b/__tests__/other.test.ts', 'x', 'another Story');
 		commit('docs/BUILD.md', 'x', 'records');
-		assert.deepEqual(trivialCheckPlan(repo, base).testFiles, ['src/a/__tests__/fix.test.ts', 'src/b/__tests__/other.test.ts']);
+		assert.deepEqual((await trivialCheckPlan(repo, base)).testFiles, ['src/a/__tests__/fix.test.ts', 'src/b/__tests__/other.test.ts']);
 		// No base: the HEAD commit only, here a records commit with no test file.
-		assert.deepEqual(trivialCheckPlan(repo).testFiles, []);
-		assert.deepEqual(trivialCheckPlan(repo, undefined).noTests, { ok: true, note: 'no tests named for a trivial build' });
+		assert.deepEqual((await trivialCheckPlan(repo)).testFiles, []);
+		assert.deepEqual((await trivialCheckPlan(repo, undefined)).noTests, { ok: true, note: 'no tests named for a trivial build' });
 		// A listing git refuses is a failed check, not "no tests" (code review CR-91640defac1b5816-S001).
-		const failed = trivialCheckPlan(repo, 'f'.repeat(40));
+		const failed = (await trivialCheckPlan(repo, 'f'.repeat(40)));
 		assert.deepEqual(failed.testFiles, []);
 		assert.equal(failed.noTests?.ok, false);
 		assert.match(failed.noTests?.note ?? '', /^could not list the build's files: /);
@@ -162,7 +162,7 @@ test('a test name whose only *.test.ts token is not a leading prefix is unresolv
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
-test('a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none', () => {
+test('a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none', async () => {
 	const repo = gitRepo({
 		...TREE,
 		'tsconfig.json':                        '{}',
@@ -187,40 +187,40 @@ test('a plan is given the other TypeScript projects that own a file the build ch
 		const plan = (): ValidationCheckPlan => planTaskCheckPlan(repo, { tests: [{ name: "chain.test.ts: 'b'" }] });
 		// The plan builders themselves name no project: the build's changes are added afterwards.
 		assert.equal(plan().typecheckProjects, undefined);
-		assert.equal(trivialCheckPlan(repo).typecheckProjects, undefined);
+		assert.equal((await trivialCheckPlan(repo)).typecheckProjects, undefined);
 
 		// A commit that touches only the root project: no other project, and the plan is returned as it was.
 		commit('src/b/chain.ts', 'root only');
 		const rootOnly = plan();
-		assert.equal(withTypecheckProjects(repo, rootOnly, start), rootOnly);
-		assert.equal(withTypecheckProjects(repo, rootOnly), rootOnly);
+		assert.equal((await withTypecheckProjects(repo, rootOnly, start)), rootOnly);
+		assert.equal((await withTypecheckProjects(repo, rootOnly)), rootOnly);
 
 		// A mapped test file inside the plugin names the plugin, whatever the commits touched.
 		const mapped = planTaskCheckPlan(repo, { tests: [{ name: 'the view renders' }] }, [{ name: 'the view renders', cases: [{ file: 'plugin/src/__tests__/view.test.ts', title: 't' }] }]);
-		assert.deepEqual(withTypecheckProjects(repo, mapped, start).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, mapped, start)).typecheckProjects, ['plugin']);
 
 		// A commit that touches a plugin file names the plugin, on any route's plan.
 		commit('plugin/src/view.ts', 'plugin change');
-		assert.deepEqual(withTypecheckProjects(repo, plan()).typecheckProjects, ['plugin']);
-		assert.deepEqual(withTypecheckProjects(repo, trivialCheckPlan(repo)).typecheckProjects, ['plugin']);
-		assert.deepEqual(withTypecheckProjects(repo, smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] })).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, plan())).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, (await trivialCheckPlan(repo)))).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, smallStandaloneCheckPlan(repo, { testLevels: [{ subjects: ['prose only'] }] }))).typecheckProjects, ['plugin']);
 
 		// A build of several commits: the plugin change is no longer the HEAD commit. From the
 		// build's base it is still found; from the HEAD commit alone it is not.
 		commit('src/b/chain.ts', 'root again');
-		assert.deepEqual(withTypecheckProjects(repo, plan(), start).typecheckProjects, ['plugin']);
-		assert.equal(withTypecheckProjects(repo, plan()).typecheckProjects, undefined);
+		assert.deepEqual((await withTypecheckProjects(repo, plan(), start)).typecheckProjects, ['plugin']);
+		assert.equal((await withTypecheckProjects(repo, plan())).typecheckProjects, undefined);
 		const afterPlugin = head();
 
 		// A change not yet committed counts, and so does a new file not yet tracked.
 		writeFileSync(join(repo, 'plugin/tools/inner/gen.tsx'), '// edited\n');
-		assert.deepEqual(withTypecheckProjects(repo, plan(), afterPlugin).typecheckProjects, ['plugin/tools/inner']);
+		assert.deepEqual((await withTypecheckProjects(repo, plan(), afterPlugin)).typecheckProjects, ['plugin/tools/inner']);
 		execFileSync('git', ['checkout', '-q', '--', 'plugin/tools/inner/gen.tsx'], { cwd: repo });
 		writeFileSync(join(repo, 'plugin/src/new.ts'), '');
-		assert.deepEqual(withTypecheckProjects(repo, plan(), afterPlugin).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, plan(), afterPlugin)).typecheckProjects, ['plugin']);
 
 		// A base the repository does not have: that listing is skipped and the others still count.
-		assert.deepEqual(withTypecheckProjects(repo, plan(), '0'.repeat(40)).typecheckProjects, ['plugin']);
+		assert.deepEqual((await withTypecheckProjects(repo, plan(), '0'.repeat(40))).typecheckProjects, ['plugin']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -328,14 +328,14 @@ test('an unresolved test name makes tests fail with a note naming it', async () 
 	assert.equal(trivialNone.tests.note, 'no tests named for a trivial build');
 });
 
-test('a trivial build that deletes a test file does not ask to run it', () => {
+test('a trivial build that deletes a test file does not ask to run it', async () => {
 	const repo = gitRepo(TREE);
 	try {
 		execFileSync('git', ['rm', '-q', 'src/b/__tests__/chain.test.ts'], { cwd: repo });
 		writeFileSync(join(repo, 'src/a/__tests__/notice.test.ts'), '// changed');
 		execFileSync('git', ['add', '.'], { cwd: repo });
 		execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'delete one test, change another'], { cwd: repo, stdio: 'ignore' });
-		assert.deepEqual(trivialCheckPlan(repo).testFiles, ['src/a/__tests__/notice.test.ts']);
+		assert.deepEqual((await trivialCheckPlan(repo)).testFiles, ['src/a/__tests__/notice.test.ts']);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -613,7 +613,7 @@ test("a reported pass on a live test runs nothing and leaves the check's result 
 test("trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file", async () => {
 	const repo = gitRepo({ 'src/a/__tests__/one.test.ts': "import { test } from 'node:test';\ntest('first', () => {});\ntest('second', () => {});\n", 'src/a/x.ts': '' });
 	try {
-		const plan = trivialCheckPlan(repo);
+		const plan = (await trivialCheckPlan(repo));
 		assert.deepEqual(plan.namedTests, [{ name: 'src/a/__tests__/one.test.ts', source: 'touched', cases: [], files: ['src/a/__tests__/one.test.ts'] }]);
 		const r = await runValidationChecks(repo, { ...plan, typecheck: ['node', '-e', 'process.exit(0)'], testCommand: ['node', '--experimental-strip-types', '--test', '--test-force-exit'] });
 		assert.deepEqual(r.tests.files!.map(f => [f.file, f.exitCode, f.titles.map(t => `${t.result} ${t.title}`)]), [['src/a/__tests__/one.test.ts', 0, ['pass first', 'pass second']]]);
@@ -623,7 +623,7 @@ test("trivialCheckPlan marks each touched file 'touched' and the result lists ev
 		writeFileSync(join(repo, 'README.md'), 'x');
 		execFileSync('git', ['add', 'README.md'], { cwd: repo });
 		execFileSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'readme'], { cwd: repo, stdio: 'ignore' });
-		assert.deepEqual(trivialCheckPlan(repo).namedTests, []);
+		assert.deepEqual((await trivialCheckPlan(repo)).namedTests, []);
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 
@@ -776,7 +776,7 @@ function storyRepo(files: Readonly<Record<string, string>>): { repo: string; bas
 	return { repo, base, commit, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
 
-test("with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files", () => {
+test("with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files", async () => {
 	const { repo, base, commit, cleanup } = storyRepo({
 		'tsconfig.json': '{}',
 		'mine/tsconfig.json': '{}', 'mine/src/a.ts': '',
@@ -789,40 +789,40 @@ test("with a storyKey, typecheckProjects holds the Story's projects and its test
 		commit({ 'theirs/src/b.ts': '// theirs\n' }, 'feat(build): s1/t1 theirs', OTHER);
 		writeFileSync(join(repo, 'wip/src/c.ts'), '// uncommitted, unrelated\n');
 		writeFileSync(join(repo, 'wip/src/new.ts'), '// untracked, unrelated\n');
-		const plan = trivialCheckPlan(repo, base, KEY);
+		const plan = (await trivialCheckPlan(repo, base, KEY));
 		const withTest: ValidationCheckPlan = { ...plan, testFiles: ['tested/src/__tests__/t.test.ts'] };
-		assert.deepEqual(withTypecheckProjects(repo, withTest, base, KEY).typecheckProjects, ['mine', 'tested']);
+		assert.deepEqual((await withTypecheckProjects(repo, withTest, base, KEY)).typecheckProjects, ['mine', 'tested']);
 		// Without a storyKey: today's listings, so the other Story's and the unrelated projects count.
-		assert.deepEqual(withTypecheckProjects(repo, withTest, base).typecheckProjects, ['mine', 'tested', 'theirs', 'wip']);
+		assert.deepEqual((await withTypecheckProjects(repo, withTest, base)).typecheckProjects, ['mine', 'tested', 'theirs', 'wip']);
 		// With a storyKey and no base: only the test files' projects.
-		assert.deepEqual(withTypecheckProjects(repo, withTest, undefined, KEY).typecheckProjects, ['tested']);
+		assert.deepEqual((await withTypecheckProjects(repo, withTest, undefined, KEY)).typecheckProjects, ['tested']);
 	} finally { cleanup(); }
 });
 
-test("with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests", () => {
+test("with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests", async () => {
 	const { repo, base, commit, cleanup } = storyRepo({ 'README.md': 'base' });
 	try {
 		commit({ 'src/a/__tests__/mine.test.ts': 'x' }, 'feat(build): S001/t1 mine', KEY);
 		commit({ 'src/b/__tests__/theirs.test.ts': 'x' }, 'feat(build): s1/t1 theirs', OTHER);
-		const plan = trivialCheckPlan(repo, base, KEY);
+		const plan = (await trivialCheckPlan(repo, base, KEY));
 		assert.deepEqual(plan.testFiles, ['src/a/__tests__/mine.test.ts']);
 		assert.equal(plan.noTests, undefined);
 		// Without the key, today's range: both Stories' tests.
-		assert.deepEqual(trivialCheckPlan(repo, base).testFiles, ['src/a/__tests__/mine.test.ts', 'src/b/__tests__/theirs.test.ts']);
+		assert.deepEqual((await trivialCheckPlan(repo, base)).testFiles, ['src/a/__tests__/mine.test.ts', 'src/b/__tests__/theirs.test.ts']);
 
-		const noBase = trivialCheckPlan(repo, undefined, KEY);
+		const noBase = (await trivialCheckPlan(repo, undefined, KEY));
 		assert.deepEqual(noBase.testFiles, [], "not the HEAD commit's theirs.test.ts");
 		assert.equal(noBase.noTests?.ok, false, 'a failed listing fails the tests check');
 		assert.match(noBase.noTests?.note ?? '', /no range base for Story/);
 	} finally { cleanup(); }
 });
 
-test('with a storyKey, a trivial build that deletes a test file does not ask to run it', () => {
+test('with a storyKey, a trivial build that deletes a test file does not ask to run it', async () => {
 	const { repo, base, commit, cleanup } = storyRepo(TREE);
 	try {
 		commit({ 'src/b/__tests__/chain.test.ts': null, 'src/a/__tests__/notice.test.ts': '// changed' }, 'feat(build): S001/t1 delete one test, change another', KEY);
 		commit({ 'src/a/__tests__/added.test.ts': 'x' }, 'feat(build): S001/t2 add a test', KEY);
 		commit({ 'src/a/__tests__/added.test.ts': null }, 'feat(build): S001/t3 remove it again', KEY);
-		assert.deepEqual(trivialCheckPlan(repo, base, KEY).testFiles, ['src/a/__tests__/notice.test.ts']);
+		assert.deepEqual((await trivialCheckPlan(repo, base, KEY)).testFiles, ['src/a/__tests__/notice.test.ts']);
 	} finally { cleanup(); }
 });

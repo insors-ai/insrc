@@ -58,7 +58,7 @@ function snapshot(r: string): string {
 	return [git(r, 'rev-parse', 'HEAD'), git(r, 'for-each-ref'), git(r, 'status', '--porcelain'), git(r, 'ls-files', '-s')].join('\n');
 }
 
-test("storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in", () => {
+test("storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		const s1 = commit(r, { 'src/story1.ts': 'one\n' }, 'story 1');
@@ -66,7 +66,7 @@ test("storyChangeSet lists the Story's non-merge first-parent commits and leaves
 		const s2 = commit(r, { 'src/story2.ts': 'two\n' }, 'story 2');
 
 		const before = snapshot(r);
-		const set = storyChangeSet(r, base);
+		const set = (await storyChangeSet(r, base));
 		assert.equal(snapshot(r), before, 'refs, index and working tree are untouched');
 
 		assert.deepEqual(set.paths, ['src/story1.ts', 'src/story2.ts']);
@@ -78,7 +78,7 @@ test("storyChangeSet lists the Story's non-merge first-parent commits and leaves
 	} finally { cleanup(); }
 });
 
-test('storyChangeSet records Story edits folded into a merge commit as a merge-edit unit', () => {
+test('storyChangeSet records Story edits folded into a merge commit as a merge-edit unit', async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		commit(r, { 'src/story1.ts': 'one\n' }, 'story 1');
@@ -88,7 +88,7 @@ test('storyChangeSet records Story edits folded into a merge commit as a merge-e
 		git(r, 'commit', '-q', '-m', 'merge upstream (with a Story edit)');
 		const merge = git(r, 'rev-parse', 'HEAD').trim();
 
-		const set = storyChangeSet(r, base);
+		const set = (await storyChangeSet(r, base));
 		assert.deepEqual(set.paths, ['src/folded.ts', 'src/story1.ts']);
 		const edit = set.units.find(u => u.kind === 'merge-edit');
 		assert.ok(edit, 'a merge-edit unit');
@@ -100,7 +100,7 @@ test('storyChangeSet records Story edits folded into a merge commit as a merge-e
 	} finally { cleanup(); }
 });
 
-test('storyChangeSet records a hand-resolved conflict as a merge-edit unit', () => {
+test('storyChangeSet records a hand-resolved conflict as a merge-edit unit', async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		git(r, 'checkout', '-q', 'upstream');
@@ -112,7 +112,7 @@ test('storyChangeSet records a hand-resolved conflict as a merge-edit unit', () 
 		git(r, 'add', '-A');
 		git(r, 'commit', '-q', '-m', 'merge upstream (resolved)');
 
-		const set = storyChangeSet(r, base);
+		const set = (await storyChangeSet(r, base));
 		assert.deepEqual(set.paths, ['shared.txt']);
 		assert.deepEqual(set.units.map(u => u.kind), ['commit', 'merge-edit']);
 		assert.deepEqual(set.foldedPaths, ['shared.txt']);
@@ -120,18 +120,18 @@ test('storyChangeSet records a hand-resolved conflict as a merge-edit unit', () 
 	} finally { cleanup(); }
 });
 
-test("storyChangeSet includes a file the Story deleted and a root commit's files", () => {
+test("storyChangeSet includes a file the Story deleted and a root commit's files", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		git(r, 'rm', '-q', 'README.md');
 		git(r, 'commit', '-q', '-m', 'story deletes README');
-		assert.deepEqual(storyChangeSet(r, base).paths, ['README.md']);
+		assert.deepEqual((await storyChangeSet(r, base)).paths, ['README.md']);
 
 		// An unrelated history: its root commit is in `<other-base>..HEAD`.
 		git(r, 'checkout', '-q', '--orphan', 'fresh');
 		git(r, 'rm', '-rq', '--cached', '.');
 		const root = commit(r, { 'fresh/root.ts': 'root\n' }, 'root of a new history');
-		const set = storyChangeSet(r, base);
+		const set = (await storyChangeSet(r, base));
 		const rootUnit = set.units.find(u => u.ref === root);
 		assert.ok(rootUnit, 'the root commit is a unit');
 		assert.ok(rootUnit.paths.includes('fresh/root.ts'));
@@ -139,19 +139,19 @@ test("storyChangeSet includes a file the Story deleted and a root commit's files
 	} finally { cleanup(); }
 });
 
-test('storyChangeSet is empty when the range holds only a clean merge', () => {
+test('storyChangeSet is empty when the range holds only a clean merge', async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		git(r, 'merge', '-q', '--no-ff', '-m', 'merge upstream', 'upstream');
-		const set = storyChangeSet(r, base);
+		const set = (await storyChangeSet(r, base));
 		assert.deepEqual(set, { paths: [], units: [], sharedPaths: [], foldedPaths: [], attribution: 'first-parent-range', sharedWithExcluded: [], perUnit: false });
 	} finally { cleanup(); }
 });
 
-test('storyChangeSet throws NoBuildChangesError for an unresolvable base', () => {
+test('storyChangeSet throws NoBuildChangesError for an unresolvable base', async () => {
 	const { repo: r, cleanup } = repo();
 	try {
-		assert.throws(() => storyChangeSet(r, 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'), NoBuildChangesError);
+		await assert.rejects(() => storyChangeSet(r, 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'), NoBuildChangesError);
 	} finally { cleanup(); }
 });
 
@@ -177,12 +177,12 @@ test('mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MS
 	} finally { cleanup(); }
 });
 
-test('known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work', () => {
+test('known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work', async () => {
 	// Fast-forward: no merge commit, the upstream commit joins the first-parent line.
 	const ff = repo();
 	try {
 		git(ff.repo, 'merge', '-q', '--ff-only', 'upstream');
-		assert.deepEqual(storyChangeSet(ff.repo, ff.base).paths, ['up/a.ts']);
+		assert.deepEqual((await storyChangeSet(ff.repo, ff.base)).paths, ['up/a.ts']);
 	} finally { ff.cleanup(); }
 
 	// Committed squash: an ordinary commit carrying upstream's change.
@@ -190,11 +190,11 @@ test('known limit: upstream commits fast-forwarded or squash-merged into the Sto
 	try {
 		git(sq.repo, 'merge', '-q', '--squash', 'upstream');
 		git(sq.repo, 'commit', '-q', '-m', 'squash upstream');
-		assert.deepEqual(storyChangeSet(sq.repo, sq.base).paths, ['up/a.ts']);
+		assert.deepEqual((await storyChangeSet(sq.repo, sq.base)).paths, ['up/a.ts']);
 	} finally { sq.cleanup(); }
 });
 
-test('an octopus merge becomes one merge-edit unit over its whole change instead of a failure', () => {
+test('an octopus merge becomes one merge-edit unit over its whole change instead of a failure', async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		git(r, 'checkout', '-q', '-b', 'upstream2', base);
@@ -203,7 +203,7 @@ test('an octopus merge becomes one merge-edit unit over its whole change instead
 		commit(r, { 'src/story1.ts': 'one\n' }, 'story 1');
 		git(r, 'merge', '-q', '--no-ff', '-m', 'octopus', 'upstream', 'upstream2');
 
-		const set = storyChangeSet(r, base);
+		const set = (await storyChangeSet(r, base));
 		const edit = set.units.find(u => u.kind === 'merge-edit');
 		assert.ok(edit, 'one merge-edit unit');
 		assert.deepEqual(edit.paths, ['up/a.ts', 'up/b.ts']);

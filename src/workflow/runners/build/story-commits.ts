@@ -176,7 +176,7 @@ export function newestStoryCommit(repoPath: string, base: string, storyKey: stri
  * {@link NoBuildChangesError} when git fails (for example, an unresolvable base),
  * and with `strict` also when the commit messages cannot be read.
  */
-export function storyChangeSet(repoPath: string, base: string, opts: { readonly storyKey?: string | undefined; readonly strict?: boolean | undefined } = {}): AttributedStoryChangeSet {
+export async function storyChangeSet(repoPath: string, base: string, opts: { readonly storyKey?: string | undefined; readonly strict?: boolean | undefined } = {}): Promise<AttributedStoryChangeSet> {
 	// Each line: "<commit> <parent>..." along the first-parent line, oldest first.
 	const lines = git(repoPath, ['rev-list', '--first-parent', '--reverse', '--parents', `${base}..HEAD`])
 		.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -190,7 +190,7 @@ export function storyChangeSet(repoPath: string, base: string, opts: { readonly 
 	// means nothing committed yet; one off the first-parent line is ignored.
 	const afterEnd = new Set<string>();
 	if (scan !== undefined && !byTrailer && epicHash !== undefined && storyId !== undefined) {
-		const end = resolveStoryRangeEnd(repoPath, epicHash, storyId);
+		const end = await resolveStoryRangeEnd(repoPath, epicHash, storyId);
 		if (end !== undefined) {
 			const refs = lines.map(l => l.split(' ')[0] ?? '');
 			const at = refs.indexOf(end);

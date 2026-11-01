@@ -51,7 +51,7 @@ function repo(): { repo: string; base: string; cleanup: () => void } {
 	return { repo: r, base, cleanup: () => rmSync(r, { recursive: true, force: true }) };
 }
 
-test("with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not", () => {
+test("with a story key, only commits carrying the Story's trailer and merge edits are units; another Story's interleaved commits are not", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		const t1 = commit(r, { 'src/mine.ts': 'one\n', 'src/shared.ts': 'mine\n' }, 'feat(build): s1/t1 mine', STORY);
@@ -64,7 +64,7 @@ test("with a story key, only commits carrying the Story's trailer and merge edit
 		const merge = git(r, 'rev-parse', 'HEAD').trim();
 		const t2 = commit(r, { 'src/mine2.ts': 'two\n' }, 'feat(build): s1/t2 mine again', STORY);
 
-		const set = storyChangeSet(r, base, { storyKey: STORY });
+		const set = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.equal(set.attribution, 'story-trailer');
 		assert.deepEqual(set.units.map(u => [u.kind, u.ref]), [['commit', t1], ['merge-edit', merge], ['commit', t2]]);
 		assert.deepEqual(set.paths, ['src/folded.ts', 'src/mine.ts', 'src/mine2.ts', 'src/shared.ts']);
@@ -72,31 +72,31 @@ test("with a story key, only commits carrying the Story's trailer and merge edit
 	} finally { cleanup(); }
 });
 
-test("two standalone Stories both s1 are told apart by the trailer's epicHash", () => {
+test("two standalone Stories both s1 are told apart by the trailer's epicHash", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		const mine = commit(r, { 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY);
 		const theirs = commit(r, { 'src/theirs.ts': '1\n' }, 'feat(build): s1/t1 theirs', OTHER);
 
-		const a = storyChangeSet(r, base, { storyKey: STORY });
-		const b = storyChangeSet(r, base, { storyKey: OTHER });
+		const a = (await storyChangeSet(r, base, { storyKey: STORY }));
+		const b = (await storyChangeSet(r, base, { storyKey: OTHER }));
 		assert.deepEqual(a.units.map(u => u.ref), [mine]);
 		assert.deepEqual(b.units.map(u => u.ref), [theirs]);
 		assert.deepEqual([a.attribution, b.attribution], ['story-trailer', 'story-trailer']);
 	} finally { cleanup(); }
 });
 
-test("a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts", () => {
+test("a Story with no carrying commit keeps its untrailered commits and leaves out another Story's, so the range of src/a.ts and src/b.ts gives src/a.ts", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		const a = commit(r, { 'src/a.ts': '1\n' }, 'feat(build): s1/t1 untrailed');
 		commit(r, { 'src/b.ts': '1\n' }, 'feat(build): s1/t2 another Story', OTHER);
-		const today = storyChangeSet(r, base);
+		const today = (await storyChangeSet(r, base));
 		assert.equal(today.attribution, 'first-parent-range');
 		assert.deepEqual(today.paths, ['src/a.ts', 'src/b.ts'], 'without a story key nothing is filtered');
 		assert.equal(today.perUnit, false, 'an unfiltered range is read as a whole');
 
-		const none = storyChangeSet(r, base, { storyKey: STORY });
+		const none = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.equal(none.attribution, 'first-parent-range');
 		assert.deepEqual(none.units.map(u => u.ref), [a]);
 		assert.deepEqual(none.paths, ['src/a.ts']);
@@ -105,66 +105,66 @@ test("a Story with no carrying commit keeps its untrailered commits and leaves o
 	} finally { cleanup(); }
 });
 
-test("with no foreign commit, a Story with no carrying commit gets today's first-parent range, read as a whole", () => {
+test("with no foreign commit, a Story with no carrying commit gets today's first-parent range, read as a whole", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		commit(r, { 'src/a.ts': '1\n' }, 'feat(build): s1/t1 untrailed');
 		commit(r, { 'src/b.ts': '1\n' }, 'feat(build): s1/t2 untrailed');
-		const set = storyChangeSet(r, base, { storyKey: STORY });
-		assert.deepEqual(set.units, storyChangeSet(r, base).units);
+		const set = (await storyChangeSet(r, base, { storyKey: STORY }));
+		assert.deepEqual(set.units, (await storyChangeSet(r, base)).units);
 		assert.deepEqual([set.attribution, set.perUnit], ['first-parent-range', false]);
 	} finally { cleanup(); }
 });
 
-test("when reading trailers fails without strict, the set is today's first-parent range", () => {
+test("when reading trailers fails without strict, the set is today's first-parent range", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		commit(r, { 'src/a.ts': '1\n' }, 'feat(build): s1/t1 untrailed');
 		commit(r, { 'src/b.ts': '1\n' }, 'feat(build): s1/t2 another Story', OTHER);
 		commit(r, { 'src/c.ts': '1\n' }, 'feat(build): s1/t3 trailered', STORY);
-		assert.equal(storyChangeSet(r, base, { storyKey: STORY }).attribution, 'story-trailer', 'trailers read normally first');
+		assert.equal((await storyChangeSet(r, base, { storyKey: STORY })).attribution, 'story-trailer', 'trailers read normally first');
 		// A bad log.date makes `git log` (the trailer read) fail while `rev-list` still works.
 		git(r, 'config', 'log.date', 'bogus');
-		const failed = storyChangeSet(r, base, { storyKey: STORY });
+		const failed = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.equal(failed.attribution, 'first-parent-range');
-		assert.deepEqual(failed.units, storyChangeSet(r, base).units);
+		assert.deepEqual(failed.units, (await storyChangeSet(r, base)).units);
 		assert.deepEqual(failed.paths, ['src/a.ts', 'src/b.ts', 'src/c.ts']);
 	} finally { cleanup(); }
 });
 
-test('with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range', () => {
+test('with strict, a trailer scan that cannot read the commit messages throws NoBuildChangesError instead of falling back to the first-parent range', async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		commit(r, { 'src/a.ts': '1\n' }, 'feat(build): s1/t1 untrailed');
 		commit(r, { 'src/c.ts': '1\n' }, 'feat(build): s1/t2 trailered', STORY);
-		assert.equal(storyChangeSet(r, base, { storyKey: STORY, strict: true }).attribution, 'story-trailer', 'strict reads normally when git works');
+		assert.equal((await storyChangeSet(r, base, { storyKey: STORY, strict: true })).attribution, 'story-trailer', 'strict reads normally when git works');
 		git(r, 'config', 'log.date', 'bogus');
-		assert.throws(() => storyChangeSet(r, base, { storyKey: STORY, strict: true }), NoBuildChangesError);
+		await assert.rejects(() => storyChangeSet(r, base, { storyKey: STORY, strict: true }), NoBuildChangesError);
 		// newestStoryCommit keeps the lenient scan.
 		assert.equal(newestStoryCommit(r, base, STORY), undefined);
 	} finally { cleanup(); }
 });
 
-test("with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set", () => {
+test("with a storyKey and no commit carrying it, a commit carrying another Story's trailer is left out, and a range of only other Stories' commits gives an empty set", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		commit(r, { 'src/b.ts': '1\n', 'src/shared.ts': 'other\n' }, 'feat(build): s3/t1 other', OTHER);
 		commit(r, { 'src/d.ts': '1\n' }, 'feat(build): s3/t2 a third Story', 'c2ba6fa6aaaaaaaa/s3');
-		const set = storyChangeSet(r, base, { storyKey: STORY });
+		const set = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.deepEqual(set.units, []);
 		assert.deepEqual(set.paths, []);
 		assert.deepEqual(set.sharedWithExcluded, []);
 		assert.equal(set.perUnit, true);
 
 		const a = commit(r, { 'src/a.ts': '1\n', 'src/shared.ts': 'mine\n' }, 'feat(build): s1/t1 untrailed');
-		const mixed = storyChangeSet(r, base, { storyKey: STORY });
+		const mixed = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.deepEqual(mixed.units.map(u => u.ref), [a]);
 		assert.deepEqual(mixed.paths, ['src/a.ts', 'src/shared.ts']);
 		assert.deepEqual(mixed.sharedWithExcluded, ['src/shared.ts'], "the other Story's commit also changed shared.ts");
 	} finally { cleanup(); }
 });
 
-test("a commit counts as the Story's when its Insrc-Story line is in any paragraph, never when the key is only mentioned (ISSUE-f431a442)", () => {
+test("a commit counts as the Story's when its Insrc-Story line is in any paragraph, never when the key is only mentioned (ISSUE-f431a442)", async () => {
 	const { repo: r, base, cleanup } = repo();
 	const raw = (files: Readonly<Record<string, string>>, msg: string): string => {
 		for (const [f, body] of Object.entries(files)) { mkdirSync(dirname(join(r, f)), { recursive: true }); writeFileSync(join(r, f), body); }
@@ -187,7 +187,7 @@ test("a commit counts as the Story's when its Insrc-Story line is in any paragra
 		// The dropped shape is what git's own trailer parser misses.
 		assert.equal(git(r, 'log', '-1', '--format=%(trailers:key=Insrc-Story,valueonly)', own).trim(), '');
 
-		const set = storyChangeSet(r, base, { storyKey: STORY });
+		const set = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.equal(set.attribution, 'story-trailer');
 		assert.deepEqual(set.units.map(u => u.ref), [own, block, middle]);
 		assert.deepEqual(set.paths, ['src/block.ts', 'src/middle.ts', 'src/own.ts']);
@@ -213,7 +213,7 @@ function merge(r: string, branches: readonly string[], msg: string, edit?: Reado
 	return git(r, 'rev-parse', 'HEAD').trim();
 }
 
-test("a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is", () => {
+test("a merge carrying only another Story's trailer is not a unit, two-parent or octopus, with and without a commit carrying this Story's trailer, while an untrailered merge edit still is", async () => {
 	for (const carrying of [false, true]) {
 		const { repo: r, base, cleanup } = repo();
 		try {
@@ -236,7 +236,7 @@ test("a merge carrying only another Story's trailer is not a unit, two-parent or
 			git(r, 'checkout', '-q', 'main');
 			const plain = merge(r, ['up4'], 'merge up4 (no trailer)', { 'src/my-fold.ts': 'mine\n' });
 
-			const set = storyChangeSet(r, base, { storyKey: STORY });
+			const set = (await storyChangeSet(r, base, { storyKey: STORY }));
 			assert.deepEqual(set.units.map(u => [u.kind, u.ref]), [['commit', own], ['merge-edit', plain]], `carrying=${carrying}`);
 			assert.deepEqual(set.paths, ['src/mine.ts', 'src/my-fold.ts'], `carrying=${carrying}`);
 			assert.equal(set.perUnit, true, `carrying=${carrying}`);
@@ -259,61 +259,61 @@ function recordEnd(r: string, storyKey: string, commit: string): void {
 }
 
 /** Capture the warnings story-commits logs while `fn` runs. */
-function storyWarnings(fn: () => void): unknown[][] {
+async function storyWarnings(fn: () => Promise<void>): Promise<unknown[][]> {
 	const seen: unknown[][] = [];
 	const l = getLogger('workflow:build:story-commits');
 	const orig = l.warn.bind(l);
 	(l as unknown as { warn: unknown }).warn = (...a: unknown[]) => { seen.push(a); return orig(...(a as [])); };
-	try { fn(); } finally { (l as unknown as { warn: unknown }).warn = orig; }
+	try { await fn(); } finally { (l as unknown as { warn: unknown }).warn = orig; }
 	return seen;
 }
 
-test("a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored", () => {
+test("a pre-trailer Story's range ends at its BUILD record's commit: a later untrailered commit is not its unit, and an end off the first-parent line is ignored", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		const a = commit(r, { 'src/a.ts': '1\n', 'src/shared.ts': 'mine\n' }, 'feat(build): s1/t1 untrailed');
 		recordEnd(r, STORY, a.slice(0, 8));
 		commit(r, { 'src/later.ts': '1\n', 'src/shared.ts': 'later\n' }, 'docs: someone else, later, untrailed');
-		const set = storyChangeSet(r, base, { storyKey: STORY });
+		const set = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.deepEqual(set.units.map(u => u.ref), [a]);
 		assert.deepEqual(set.paths, ['src/a.ts', 'src/shared.ts']);
 		assert.deepEqual(set.sharedWithExcluded, ['src/shared.ts'], 'the later commit also changed shared.ts');
 		assert.equal(set.perUnit, true);
 		assert.equal(set.attribution, 'first-parent-range');
 		// Without a story key nothing is bounded.
-		assert.deepEqual(storyChangeSet(r, base).paths, ['src/a.ts', 'src/later.ts', 'src/shared.ts']);
+		assert.deepEqual((await storyChangeSet(r, base)).paths, ['src/a.ts', 'src/later.ts', 'src/shared.ts']);
 
 		// An end that is not on the first-parent line (here, the upstream branch) is ignored, with a warning.
 		recordEnd(r, STORY, git(r, 'rev-parse', 'upstream').trim());
-		let off: ReturnType<typeof storyChangeSet> | undefined;
-		const warned = storyWarnings(() => { off = storyChangeSet(r, base, { storyKey: STORY }); });
+		let off: Awaited<ReturnType<typeof storyChangeSet>> | undefined;
+		const warned = await storyWarnings(async () => { off = await storyChangeSet(r, base, { storyKey: STORY }); });
 		assert.deepEqual(off?.paths, ['src/a.ts', 'src/later.ts', 'src/shared.ts']);
 		assert.ok(warned.some(w => String(w[1]).includes('not on the range')), 'the ignored end is warned about');
 		// An end that does not resolve is ignored too.
 		recordEnd(r, STORY, 'f'.repeat(40));
-		assert.deepEqual(storyChangeSet(r, base, { storyKey: STORY }).paths, ['src/a.ts', 'src/later.ts', 'src/shared.ts']);
+		assert.deepEqual((await storyChangeSet(r, base, { storyKey: STORY })).paths, ['src/a.ts', 'src/later.ts', 'src/shared.ts']);
 	} finally { cleanup(); }
 });
 
-test("the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id", () => {
+test("the missing-trailer warning names only untrailered commits, never another Story's commit whose subject reads the same story id", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		commit(r, { 'src/mine.ts': '1\n' }, 'feat(build): s1/t1 mine', STORY);
 		const theirs = commit(r, { 'src/theirs.ts': '1\n' }, 'feat(build): s1/t1 theirs', OTHER);
 		const forgot = commit(r, { 'src/forgot.ts': '1\n' }, 'feat(build): s1/t2 mine, trailer forgotten');
-		const warned = storyWarnings(() => { storyChangeSet(r, base, { storyKey: STORY }); });
+		const warned = await storyWarnings(async () => { await storyChangeSet(r, base, { storyKey: STORY }); });
 		const named = warned.map(w => (w[0] as { commit?: string }).commit).filter(c => c !== undefined);
 		assert.deepEqual(named, [forgot], `only the untrailered commit is named, not ${theirs}`);
 	} finally { cleanup(); }
 });
 
-test("a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits", () => {
+test("a pre-trailer Story whose recorded end equals its base (the trivial route's first record) has an empty set, even after someone else's untrailered commits", async () => {
 	const { repo: r, base, cleanup } = repo();
 	try {
 		recordEnd(r, STORY, base);
 		commit(r, { 'src/x.ts': '1\n' }, 'docs: someone else, untrailed');
 		commit(r, { 'src/y.ts': '1\n' }, 'chore: another, untrailed');
-		const set = storyChangeSet(r, base, { storyKey: STORY });
+		const set = (await storyChangeSet(r, base, { storyKey: STORY }));
 		assert.deepEqual(set.units, []);
 		assert.deepEqual(set.paths, []);
 		assert.equal(set.perUnit, true);

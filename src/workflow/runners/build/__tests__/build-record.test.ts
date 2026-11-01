@@ -891,7 +891,7 @@ test("a pre-trailer Story's BUILD record keeps its recorded commit through valid
 		assert.equal(readJson(json).body['commit'], mine, 'a validate rerun keeps the recorded commit');
 		await ensureBuildRecordOnCompletion(repo, { epicHash: HASH, storyId: 's1' });                   // the completion rewrite
 		assert.equal(readJson(json).body['commit'], mine, 'so does the completion rewrite');
-		assert.deepEqual(storyChangeSet(repo, base, { storyKey: `${HASH}/s1` }).paths, ['mine.ts'], 'and the review after them stays bounded');
+		assert.deepEqual((await storyChangeSet(repo, base, { storyKey: `${HASH}/s1` })).paths, ['mine.ts'], 'and the review after them stays bounded');
 
 		// A trailered commit is new Story work: it advances the commit.
 		writeFileSync(join(repo, 'more.ts'), 'more\n'); git('add', 'more.ts'); git('commit', '-qm', `the Story, trailered\n\nInsrc-Story: ${HASH}/s1\n`);

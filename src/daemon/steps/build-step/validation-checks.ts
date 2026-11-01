@@ -232,9 +232,9 @@ function changedFiles(repoPath: string, base: string | undefined): string[] {
  * these files is already among them. Throws when there is no base (no Story
  * set) or when git fails.
  */
-function storyFiles(repoPath: string, base: string | undefined, storyKey: string): string[] {
+async function storyFiles(repoPath: string, base: string | undefined, storyKey: string): Promise<string[]> {
 	if (base === undefined) throw new NoStoryBaseError(storyKey);
-	return [...storyChangeSet(repoPath, base, { storyKey, strict: true }).paths];
+	return [...(await storyChangeSet(repoPath, base, { storyKey, strict: true })).paths];
 }
 
 /** No range base resolves for the Story, so its files cannot be listed. */
@@ -271,13 +271,13 @@ export function owningTypecheckProjects(repoPath: string, files: readonly string
  * project that owns only another Story's or an unrelated uncommitted file is not
  * added; with no base that leaves only the test files' projects.
  */
-export function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string, storyKey?: string): ValidationCheckPlan {
+export async function withTypecheckProjects(repoPath: string, plan: ValidationCheckPlan, base?: string, storyKey?: string): Promise<ValidationCheckPlan> {
 	let built: string[];
 	if (storyKey === undefined) {
 		built = changedFiles(repoPath, base);
 	} else {
 		try {
-			built = storyFiles(repoPath, base, storyKey);
+			built = await storyFiles(repoPath, base, storyKey);
 		} catch (err) {
 			log.warn({ repoPath, storyKey, err: err instanceof Error ? err.message : String(err) }, 'validate: could not list the Story\'s files; a project they belong to may go unchecked');
 			built = [];
@@ -362,7 +362,7 @@ export function smallStandaloneCheckPlan(
  * test files of the Story's own commits that still exist (ISSUE-b97752e9), and no
  * base fails the listing rather than running the HEAD commit's tests.
  */
-export function trivialCheckPlan(repoPath: string, base?: string | undefined, storyKey?: string | undefined): ValidationCheckPlan {
+export async function trivialCheckPlan(repoPath: string, base?: string | undefined, storyKey?: string | undefined): Promise<ValidationCheckPlan> {
 	let touched: string[] = [];
 	// A listing that failed is not "no tests": it fails the tests check rather than passing it.
 	let listError: string | undefined;
@@ -371,7 +371,7 @@ export function trivialCheckPlan(repoPath: string, base?: string | undefined, st
 		if (storyKey !== undefined) {
 			// The Story's commits list a file it deleted too: only one that still
 			// exists can be run, as --diff-filter=d keeps below.
-			touched = storyFiles(repoPath, base, storyKey).filter(f => isTest(f) && existsSync(join(repoPath, f)));
+			touched = (await storyFiles(repoPath, base, storyKey)).filter(f => isTest(f) && existsSync(join(repoPath, f)));
 		} else {
 			// --diff-filter=d leaves out files the build deleted: they no longer exist to run.
 			const args = base !== undefined

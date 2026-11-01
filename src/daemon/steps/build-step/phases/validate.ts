@@ -226,7 +226,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 
 	const ref = resolved.ref;
 	await assertMayBuild(repoPath, ref);   // team gate: before any check runs or record is written
-	const mapping = resolveMapping(repoPath, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
+	const mapping = await resolveMapping(repoPath, input.tests, ref.task.tests, { epicHash: ref.epicHash, storyId: ref.storyId, taskId: ref.taskId });
 	if (!mapping.ok) return mapping.error;
 	const done = await runValidateSession(repoPath, evidence => renderValidatePrompt(repoPath, ref, evidence), {
 		epicHash: ref.epicHash,
@@ -248,14 +248,14 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
  * on this turn: a case whose file is gone is run as it is and comes back
  * `not found`. Entries for names the Task no longer has are dropped.
  */
-function resolveMapping(
+async function resolveMapping(
 	repoPath: string,
 	supplied: readonly TestMappingEntry[] | undefined,
 	named:    readonly NamedTest[],
 	ident:    { readonly epicHash: string; readonly storyId: string; readonly taskId: string },
-): { readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined; readonly note?: string | undefined } | { readonly ok: false; readonly error: BuildStepError } {
+): Promise<{ readonly ok: true; readonly entries: readonly TestMappingEntry[] | undefined; readonly note?: string | undefined } | { readonly ok: false; readonly error: BuildStepError }> {
 	if (supplied !== undefined) {
-		const faults = checkTestMapping(supplied, named, trackedFiles(repoPath));
+		const faults = checkTestMapping(supplied, named, await trackedFiles(repoPath));
 		if (faults.length > 0) {
 			return { ok: false, error: err('invalid-test-mapping',
 				`insrc_build_step[validate]: the \`tests\` mapping is wrong, so nothing was run: ${faults.join('; ')}.`) };
@@ -274,7 +274,7 @@ function resolveMapping(
 }
 
 /** One Task's entry of the Story's test record, from the gate's results. */
-function toTestRecordTask(repoPath: string, taskId: string, ranAt: string, tests: CheckResult): TestRecordTask {
+async function toTestRecordTask(repoPath: string, taskId: string, ranAt: string, tests: CheckResult): Promise<TestRecordTask> {
 	const named = tests.namedTests ?? [];
 	const namedCases = new Set(named.flatMap(t => t.cases.map(c => `${c.file}\u0000${c.title}`)));
 	const files = (tests.files ?? []).map((f): TestRecordFile => ({
@@ -286,7 +286,7 @@ function toTestRecordTask(repoPath: string, taskId: string, ranAt: string, tests
 		otherFailures: [...new Set(f.titles.filter(t => t.result === 'fail' && !namedCases.has(`${f.file}\u0000${t.title}`)).map(t => t.title))],
 		...(f.note !== undefined ? { note: f.note } : {}),
 	}));
-	const commit = headShortSha(repoPath);
+	const commit = await headShortSha(repoPath);
 	return {
 		taskId,
 		...(commit !== undefined ? { commit } : {}),
@@ -356,7 +356,7 @@ async function handleStandaloneValidate(
 	if (producesLld) {
 		// The subjects of the design's test strategy are this route's test names.
 		const named: NamedTest[] = (testStrategy?.testLevels ?? []).flatMap(l => l.subjects.map(name => ({ name, ...(l.level !== undefined ? { level: l.level } : {}) })));
-		const mapping = resolveMapping(repoPath, suppliedTests, named, { epicHash, storyId, taskId: storyId });
+		const mapping = await resolveMapping(repoPath, suppliedTests, named, { epicHash, storyId, taskId: storyId });
 		if (!mapping.ok) return mapping.error;
 		checks = smallStandaloneCheckPlan(repoPath, testStrategy, mapping.entries);
 		mappingNote = mapping.note;
@@ -465,7 +465,7 @@ async function runValidateTurn(
 			await (testRecordWriterOverride ?? persistTestRecordTask)(
 				repoPath,
 				{ epicHash: ident.epicHash, storyId: ident.storyId, now, ...(routeFlag === true ? { standalone: true } : {}) },
-				toTestRecordTask(repoPath, ident.taskId, now, results.tests),
+				await toTestRecordTask(repoPath, ident.taskId, now, results.tests),
 				{},
 				roundWriterFor(repoPath),
 			);

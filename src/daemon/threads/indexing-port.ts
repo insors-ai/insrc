@@ -49,9 +49,13 @@ export class IndexingPortClient implements RuntimeQueue, RuntimeIndexer {
 	get depth(): number { return this.indexing.index.depth + this.indexing.summary.depth + (this.indexing.backfill?.depth ?? 0); }
 	get isProcessing(): boolean { return this.indexing.index.processing || this.indexing.summary.processing || (this.indexing.backfill?.processing ?? false); }
 
-	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } } {
-		const { index, summary } = this.indexing;
-		return { index: { depth: index.depth, running: index.processing }, summary: { depth: summary.depth, running: summary.processing } };
+	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean }; backfill?: { depth: number; running: boolean } | undefined } {
+		const { index, summary, backfill } = this.indexing;
+		return {
+			index: { depth: index.depth, running: index.processing },
+			summary: { depth: summary.depth, running: summary.processing },
+			...(backfill !== undefined && { backfill: { depth: backfill.depth, running: backfill.processing } }),
+		};
 	}
 
 	summarySweepProgress(): SummarySweepProgress | undefined { return this.indexing.sweep; }

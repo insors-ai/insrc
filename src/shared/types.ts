@@ -1114,6 +1114,8 @@ export interface ThreadView {
 export interface QueueLanes {
   index:   { depth: number; running: boolean };
   summary: { depth: number; running: boolean; sweep?: { repoPath: string; done: number; total: number } };
+  /** The vector backfill's own lane (Epic c2ba6fa6 s2); absent from a daemon that predates it. */
+  backfill?: { depth: number; running: boolean } | undefined;
 }
 
 /**

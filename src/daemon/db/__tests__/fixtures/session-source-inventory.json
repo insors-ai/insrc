@@ -13645,6 +13645,10 @@
     ],
     [
      "storage-call",
+     "listRepos"
+    ],
+    [
+     "storage-call",
      "listSessionRecords"
     ],
     [
@@ -13690,6 +13694,14 @@
     [
      "diagnostic",
      "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
     ],
     [
      "diagnostic",
@@ -13880,6 +13892,10 @@
      "validateRepoPath"
     ],
     [
+     "storage-call",
+     "validateRepoPath"
+    ],
+    [
      "filesystem-write",
      "writeFileSync"
     ],
@@ -13888,9 +13904,9 @@
      "writeFileSync"
     ]
    ],
-   "siteCount": 186,
-   "sitesDigest": "5921b4bc1eeb566312410e7ec48b1c82a34921c636b726d039ece97e61171db9",
-   "sourceDigest": "f1e94a91f7af40a4227d921f445afed815f14805cbfdf2e259b3136ce5df29c3",
+   "siteCount": 190,
+   "sitesDigest": "37a93c8e79aacbe14e585782ea2113082685f719b0488a8f982b922c4ac9a5c3",
+   "sourceDigest": "49ea57bd115abbdff62ac97093a9e36fa5b87847b5cbcf23c749e5ef8ccdfe2b",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -14643,7 +14659,7 @@
    ],
    "siteCount": 7,
    "sitesDigest": "222c57c4402fcd795fddbf35b7000985cf96368fc1e68305c66b52e4092f4fa8",
-   "sourceDigest": "524caac01098981c12c3294555eb5d67fd3a52019950fa87e31566164a74256a",
+   "sourceDigest": "7b84c83f6b2d0e1b051b2d60cc2c4c1f457deda6272004e6bb01e73797b7681a",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -14941,7 +14957,7 @@
    ],
    "siteCount": 1,
    "sitesDigest": "6fca26a42e42ecba5ef2d6a8381549249110a5bf01db6f2896057066b6b03398",
-   "sourceDigest": "2ce00709f20a46b3488afa76ffa3c529e5797c42647a75d7865c6af70aa18caf",
+   "sourceDigest": "4fb4260a073d46537ad22a4daee03f89ca5ff9129923a2887a889e19687bc69b",
    "boundaries": [
     "storage-call"
    ]
@@ -16303,7 +16319,7 @@
    ],
    "siteCount": 2,
    "sitesDigest": "52a18589fd8b753ed54b3bf6842565fb2c0b1e7f6dab43464e0106a7ecce1eb7",
-   "sourceDigest": "566a75d23ff3b68184315ac037713072c8be39df03900b62c1ce4a2af2cab848",
+   "sourceDigest": "5c8311ec722053803e3a3b4a1985af614305e1b3c90313dc83d61c4c7a8a3590",
    "boundaries": [
     "diagnostic"
    ]
@@ -22121,10 +22137,6 @@
     ],
     [
      "storage-call",
-     "deleteEntityVecsByIds"
-    ],
-    [
-     "storage-call",
      "deleteEntityVecsForRepo"
     ],
     [
@@ -22134,6 +22146,10 @@
     [
      "storage-call",
      "deleteUnresolvedForFileCascade"
+    ],
+    [
+     "storage-call",
+     "deleteVectorsInChunks"
     ],
     [
      "storage-call",
@@ -22548,12 +22564,12 @@
      "getGraphStore"
     ],
     [
-     "diagnostic",
-     "getLogger"
+     "storage-call",
+     "getGraphStore"
     ],
     [
-     "unresolved-call",
-     "import"
+     "diagnostic",
+     "getLogger"
     ],
     [
      "unresolved-call",
@@ -22684,6 +22700,10 @@
      "log.warn"
     ],
     [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
      "storage-call",
      "lookupRepoIdInTxn"
     ],
@@ -22794,6 +22814,10 @@
     [
      "storage-call",
      "lookupStringIdByU64"
+    ],
+    [
+     "storage-call",
+     "lookupU64ByStringId"
     ],
     [
      "storage-call",
@@ -22933,6 +22957,10 @@
     ],
     [
      "storage-call",
+     "readEntityRowSync"
+    ],
+    [
+     "storage-call",
      "readRepoPath"
     ],
     [
@@ -23010,6 +23038,18 @@
     [
      "storage-call",
      "rowAwaitingVector"
+    ],
+    [
+     "storage-call",
+     "rowAwaitingVector"
+    ],
+    [
+     "storage-call",
+     "rowMatches"
+    ],
+    [
+     "storage-call",
+     "rowMatches"
     ],
     [
      "storage-call",
@@ -23197,6 +23237,14 @@
     ],
     [
      "storage-call",
+     "sharedModulesRepoIdOf"
+    ],
+    [
+     "storage-call",
+     "sharedModulesRepoIdOf"
+    ],
+    [
+     "storage-call",
      "store.entity.get"
     ],
     [
@@ -23361,7 +23409,7 @@
     ],
     [
      "storage-call",
-     "withReadTxn"
+     "vectorWriter"
     ],
     [
      "storage-call",
@@ -23369,6 +23417,30 @@
     ],
     [
      "storage-call",
+     "withReadTxn"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
+    ],
+    [
+     "storage-call",
+     "withVectorLock"
+    ],
+    [
+     "storage-call",
      "withWriteTxn"
     ],
     [
@@ -23418,11 +23490,19 @@
     [
      "storage-call",
      "writeVectorsThenMarkers"
+    ],
+    [
+     "serialization",
+     "writeVectorsThenMarkersLocked"
+    ],
+    [
+     "storage-call",
+     "writeVectorsThenMarkersLocked"
     ]
    ],
-   "siteCount": 408,
-   "sitesDigest": "8c69ab1c9255ecc4476121efad230f11af2e410e1a5e92f3a32a3cf566045e6b",
-   "sourceDigest": "7e67619b51b456fe4998a6ba01846b0b73cdca7caae6ff299f656f7365766016",
+   "siteCount": 424,
+   "sitesDigest": "00fb9a0ce9d08473f713bc7c786cb44e96a6cbbfb0ee54af5c56f554e28d9f89",
+   "sourceDigest": "afdb6cf92d0cdeef12c193c633d86cdbebdcf9bdc67840cdfed871c5ec44b37e",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -31420,6 +31500,10 @@
     ],
     [
      "storage-call",
+     "commitFile"
+    ],
+    [
+     "storage-call",
      "compactEntityVecTable"
     ],
     [
@@ -31915,9 +31999,9 @@
      "writeBackfillVectors"
     ]
    ],
-   "siteCount": 129,
-   "sitesDigest": "24a6ee87f72e74609dcb51f624f64c6782e9322673e2a1bda54507d2a4d8811d",
-   "sourceDigest": "5cc3479903d38cd5f483d0bb39151a011d5f12517ff18d9b2601453a1fe94a2b",
+   "siteCount": 130,
+   "sitesDigest": "d41df134493e86b80467c9f9c75b3c06a9258a8937eba91d1cc709cff1da7995",
+   "sourceDigest": "c2f2f2ca5adc591643b75f0d99cc26962171b5274edaf63d14c6d21058da35b9",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

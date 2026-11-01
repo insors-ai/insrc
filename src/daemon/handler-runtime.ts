@@ -121,7 +121,7 @@ export interface CodeIndexWork { readonly inFlight: boolean; readonly pending: n
 export interface RuntimeQueue {
 	readonly depth: number;
 	readonly isProcessing: boolean;
-	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } };
+	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean }; backfill?: { depth: number; running: boolean } | undefined };
 	enqueue(job: IndexJob): void;
 	codeIndexWorkFor(repoPath: string): CodeIndexWork | Promise<CodeIndexWork>;
 	depthForRepo(repoPath: string): number | Promise<number>;

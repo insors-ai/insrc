@@ -188,6 +188,16 @@ export class IndexQueue {
       if (already) return;
     }
 
+    // Deduplicate backfill jobs for the same repo (Epic c2ba6fa6 s2 review) --
+    // a queued backfill lists what lacks a vector when it runs, so a second
+    // adds nothing. One already running is not a duplicate: it listed earlier.
+    if (job.kind === 'reembed') {
+      const already = queue.some(
+        j => j.kind === 'reembed' && j.repoPath === job.repoPath,
+      );
+      if (already) return;
+    }
+
     // Deduplicate file events — replace existing entry for same path
     if (job.kind === 'file') {
       const idx = queue.findIndex(

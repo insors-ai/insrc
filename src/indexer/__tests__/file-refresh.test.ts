@@ -12,13 +12,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { closeGraphStore, getGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { decodeUnresolvedRow } from '../../db/graph/codec.js';
 import { findEntitiesByFile } from '../../db/entities.js';
+import { findCallees } from '../../db/search.js';
 import { readIndexState } from '../../db/index-state.js';
 import { addRepo } from '../../db/repos.js';
 import type { DbClient } from '../../db/client.js';
@@ -65,6 +66,11 @@ async function indexer(): Promise<RefreshProbe> {
 	const svc = new RefreshProbe();
 	await svc.addRepo(repo);
 	return svc;
+}
+/** The names the file's function `name` calls, through its stored outgoing CALLS edges. */
+async function calleesOf(name: string): Promise<string[]> {
+	const fn = (await findEntitiesByFile(null, file)).find(e => e.kind === 'function' && e.name === name);
+	return fn === undefined ? [] : (await findCallees(null as unknown as DbClient, fn.id)).map(e => e.name).sort();
 }
 const functions = async (): Promise<string[]> =>
 	(await findEntitiesByFile(null, file)).filter(e => e.kind === 'function').map(e => e.name).sort();
@@ -113,9 +119,11 @@ test('t8 (ac2): a read while a refresh is held in its embed step sees the comple
 	await inEmbed;
 
 	assert.deepEqual(await functions(), ['a', 'b'], 'during the refresh: the complete old set');
+	assert.deepEqual(await calleesOf('b'), ['a'], 'during the refresh: the old outgoing relationships');
 	release();
 	await refresh;
 	assert.deepEqual(await functions(), ['a', 'c'], 'after the commit: the complete new set');
+	assert.deepEqual(await calleesOf('b'), [], 'after the commit: b and its relationships are gone');
 });
 
 test('t8 (ac4): a delete event removes the file\'s entities and pending rows together', async () => {
@@ -129,4 +137,33 @@ test('t8 (ac4): a delete event removes the file\'s entities and pending rows tog
 
 	assert.deepEqual(await findEntitiesByFile(null, file), []);
 	assert.equal(await pendingOfFile(), 0);
+});
+
+test('s2 review: an update event for a file that is gone by the read removes its rows in one commit, as the delete event would', async () => {
+	const svc = await indexer();
+	writeFileSync(file, OLD);
+	await svc.processJob({ kind: 'file', filePath: file, event: 'update' });
+	assert.ok((await functions()).length > 0);
+
+	rmSync(file);
+	await svc.processJob({ kind: 'file', filePath: file, event: 'update' });
+
+	assert.deepEqual(await findEntitiesByFile(null, file), []);
+	assert.equal(await pendingOfFile(), 0);
+});
+
+test('s2 review: an update event for a file that cannot be read keeps its rows and records it as uncommitted', { skip: process.getuid?.() === 0 ? 'root reads any file' : false }, async () => {
+	const svc = await indexer();
+	writeFileSync(file, OLD);
+	await svc.processJob({ kind: 'file', filePath: file, event: 'update' });
+
+	writeFileSync(file, NEW);
+	chmodSync(file, 0o000);
+	try {
+		await assert.rejects(svc.processJob({ kind: 'file', filePath: file, event: 'update' }), /EACCES|permission/i);
+	} finally {
+		chmodSync(file, 0o644);
+	}
+	assert.deepEqual(await functions(), ['a', 'b']);
+	assert.deepEqual((await readIndexState(repo))?.uncommittedFiles, [file]);
 });

@@ -78,8 +78,9 @@ const NO_MODEL: CheapTierModel = {
  * Entities the backfill embeds and writes per round (Epic c2ba6fa6 s2), set
  * from t11's measurement on this repository's vector table (80,043 rows, 1024
  * dims; medians of 5): an upsert of 1 row took 25 ms, of 16 rows 29 ms, of 256
- * rows 49 ms (a plain add: 11 ms and 31 ms). The write is nearly a fixed cost
- * per call, so 256 per round keeps the backfill's write time to ~0.2 ms per
+ * rows 49 ms (a plain add: 11 ms and 31 ms; a delete of 16 ids ~15 ms). The
+ * write is nearly a fixed cost per call, and a round is one delete plus one add
+ * (ISSUE-8c7d75b0), so 256 per round keeps the backfill's write time to ~0.2 ms per
  * entity while a round's embedding (16 Ollama batches) still finishes in
  * seconds, which bounds the work redone after a crash mid-round.
  */
@@ -1088,7 +1089,7 @@ export class IndexerService {
    * entity of the repository the embed step selects whose marker is empty --
    * a vector write that failed, a crash between a commit and its vectors, a
    * vector store reset -- is embedded in batches and written vector first,
-   * marker second (writeBackfillVectors: one upsert per batch). A batch the backend returns no
+   * marker second (writeBackfillVectors: one delete and one add per batch). A batch the backend returns no
    * vectors for means it cannot be reached: the repository records
    * embeddingAvailable false and the job stops; a successful run records true.
    */
@@ -1114,7 +1115,7 @@ export class IndexerService {
         log.warn({ repo: repoPath, remaining: entities.length - written }, 'backfill: the embedding backend returned no vectors; recorded as unavailable');
         return;
       }
-      // One upsert per batch, then the batch's markers (writeBackfillVectors logs a failure).
+      // One delete and one add per batch, then the batch's markers (writeBackfillVectors logs a failure).
       written += ready.length - await writeBackfillVectors(ready);
     }
     await setEmbeddingAvailable(repoPath, true);
@@ -1140,7 +1141,18 @@ export class IndexerService {
 
     let source: string;
     try { source = readFileSync(filePath, 'utf8'); }
-    catch { return false; } // file disappeared between event and read
+    catch (err) {
+      // A full index has nothing stored for the file: skip it, as before.
+      if (opts?.fresh === true) return false;
+      // Gone between the event and the read: its rows go in one commit, as
+      // the delete event's would (s2 review -- nothing is deleted first now).
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
+        return false;
+      }
+      // Unreadable: the previous rows stay, and the caller records the file as uncommitted.
+      throw err;
+    }
 
     const hash = contentHash(source);
 

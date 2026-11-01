@@ -199,6 +199,23 @@ export function unwrapEmbedding(raw: unknown): number[] {
 // Public API (signatures unchanged from the DuckDB era)
 // ---------------------------------------------------------------------------
 
+/**
+ * A module stub (kind 'module', no repo) is a shared external reference: it
+ * lives under the reserved shared-modules row of its language's namespace,
+ * never under the workspace that first imported it. Undefined for any other
+ * entity; throws for a stub whose language has no namespace.
+ */
+function sharedModulesRepoIdOf(e: Entity): number | undefined {
+	if (e.kind !== 'module' || e.repo !== '') return undefined;
+	const namespace = SHARED_MODULES_NAMESPACE_BY_LANG[e.language];
+	if (namespace === undefined) {
+		throw new UnregisteredRepoError(
+			`module entity '${e.name}' (language=${e.language}) has no shared-modules namespace mapping`,
+		);
+	}
+	return SHARED_MODULES_REPO_ID[namespace];
+}
+
 export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise<void> {
 	assertNoSessionPersistence();
 	if (entities.length === 0) return;
@@ -242,15 +259,8 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 			// from language. Modules are shared external references
 			// (no specific workspace); they live under reserved
 			// namespace-keyed rows.
-			if (e.kind === 'module' && e.repo === '') {
-				const namespace = SHARED_MODULES_NAMESPACE_BY_LANG[e.language];
-				if (namespace === undefined) {
-					throw new UnregisteredRepoError(
-						`module entity '${e.name}' (language=${e.language}) has no shared-modules namespace mapping`,
-					);
-				}
-				return SHARED_MODULES_REPO_ID[namespace];
-			}
+			const shared = sharedModulesRepoIdOf(e);
+			if (shared !== undefined) return shared;
 
 			// Workspace entities: pre-registered path required.
 			const cached = repoIdCache.get(e.repo);
@@ -274,7 +284,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 				const prevBuf = s.entity.get(encodeEntityKey(existingU64));
 				const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
 				putEntityRowInTxn(s, existingU64, prev, row);
-				if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, isNew: false });
+				if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, replace: false });
 				continue;
 			}
 
@@ -284,7 +294,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 			s.entityIdByString.put(e.id, u64);
 			s.entityStringByU64.put(encodeEntityKey(u64), e.id);
 			putEntityRowInTxn(s, u64, null, row);
-			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, isNew: true });
+			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, replace: true });
 		}
 	});
 
@@ -307,11 +317,36 @@ async function deleteVectorsInChunks(lance: VectorWriter, ids: readonly string[]
 	for (let i = 0; i < ids.length; i += VECTOR_DELETE_CHUNK) await lance.deleteEntityVecsByIds(ids.slice(i, i + VECTOR_DELETE_CHUNK));
 }
 
+/**
+ * Every sequence that changes the vector table (a write and its markers, a
+ * removal's delete, the start-time reconciliation) runs under this one lock
+ * (ISSUE-8c7d75b0 review): the backfill lane and the index lane run side by
+ * side in the indexing worker, and without it a backfill write can land
+ * between the index lane's delete and add of the same id, or delete a row the
+ * index lane has just written. Every vector writer runs in that one thread.
+ */
+let vectorLock: Promise<void> = Promise.resolve();
+function withVectorLock<T>(fn: () => Promise<T>): Promise<T> {
+	const run = vectorLock.then(fn);
+	vectorLock = run.then(() => undefined, () => undefined);
+	return run;
+}
+
 /** One entity whose vector is written after its row commits. */
 interface VectorWrite {
 	readonly entity: Entity;
-	/** First allocated in the same transaction: no vector can exist yet, so a plain add. */
-	readonly isNew:  boolean;
+	/**
+	 * Write as delete-then-add, which leaves exactly one row whatever was
+	 * stored: an entity first allocated in the same commit (a vector may have
+	 * outlived an earlier entity of that id), or a backfill write. Otherwise an
+	 * upsert of the entity's one row.
+	 */
+	readonly replace: boolean;
+}
+
+/** The embedded text's source still matches the stored row: the vector describes what is stored. */
+function rowMatches(row: EntityRow, e: Entity): boolean {
+	return row.body === e.body && row.name === e.name && (row.signature ?? '') === (e.signature ?? '');
 }
 
 /**
@@ -326,7 +361,22 @@ interface VectorWrite {
  * transaction fails, which is logged and never fails the caller's graph write;
  * their markers stay empty for the backfill to find.
  */
-async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: string): Promise<number> {
+function writeVectorsThenMarkers(all: readonly VectorWrite[], who: string): Promise<number> {
+	if (all.length === 0) return Promise.resolve(0);
+	return withVectorLock(() => writeVectorsThenMarkersLocked(all, who));
+}
+
+async function writeVectorsThenMarkersLocked(all: readonly VectorWrite[], who: string): Promise<number> {
+	// Only entities still stored as embedded here and awaiting a vector: one
+	// removed or refreshed since (the backfill embeds beside the index lane) is
+	// left to the index lane, whose own vector write for it is ordered after this
+	// one by the lock (s2 review: a stale vector must not replace a fresh one).
+	const store = await getGraphStore();
+	const writes = all.filter(w => {
+		const u64 = lookupU64ByStringId(store, w.entity.id);
+		const row = u64 === undefined ? null : readEntityRowSync(store, u64);
+		return row !== null && row.embeddingModel === '' && rowMatches(row, w.entity);
+	});
 	if (writes.length === 0) return 0;
 	const lance = await vectorWriter();
 	type Row = Parameters<VectorWriter['addEntityEmbeddings']>[0][number];
@@ -338,11 +388,11 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 		artifact:  e.artifact ?? false,
 	});
 	try {
-		const adds    = writes.filter(w => w.isNew).map(w => rowOf(w.entity));
-		const upserts = writes.filter(w => !w.isNew).map(w => rowOf(w.entity));
+		const adds    = writes.filter(w => w.replace).map(w => rowOf(w.entity));
+		const upserts = writes.filter(w => !w.replace).map(w => rowOf(w.entity));
 		// The plain add needs the ids to have no row: a vector can outlive its
-		// entity (a failed removal delete, a backfill write racing a removal), so
-		// any rows stored for these ids go first (ISSUE-8c7d75b0). One row per id.
+		// entity (a failed removal delete) or an id hold two rows, so any rows
+		// stored for these ids go first (ISSUE-8c7d75b0). One row per id.
 		if (adds.length > 0) {
 			await deleteVectorsInChunks(lance, adds.map(r => r.id));
 			await lance.addEntityEmbeddings(adds);
@@ -364,7 +414,9 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 				const u64 = lookupU64ByStringId(s, w.entity.id);
 				if (u64 === undefined) { gone.push(w.entity.id); continue; }
 				const row = readEntityRowSync(s, u64);
-				if (row === null || row.embeddingModel !== '') continue;
+				// Refreshed since the check above: the index lane writes its vector
+				// (after this, under the lock) and sets the marker; not this one.
+				if (row === null || row.embeddingModel !== '' || !rowMatches(row, w.entity)) continue;
 				putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: model });
 			}
 		});
@@ -390,16 +442,18 @@ async function writeVectorsThenMarkers(writes: readonly VectorWrite[], who: stri
 }
 
 /**
- * The backfill's write (Epic c2ba6fa6 s2): one batch's vectors in ONE upsert
- * (an entity with an empty marker may still have a vector from an interrupted
- * write, so never a plain add), then their markers in one transaction. A Lance
- * write costs ~25 ms whatever its size up to a few hundred rows (t11, measured
- * on this repository's table), so a per-entity write would dominate the job.
+ * The backfill's write (Epic c2ba6fa6 s2): one batch's vectors in ONE delete
+ * and ONE add (an entity with an empty marker may still have a vector from an
+ * interrupted write, or two rows a failed reconciliation left: the write leaves
+ * exactly one, ISSUE-8c7d75b0), then their markers in one transaction. A Lance
+ * write costs ~10-50 ms whatever its size up to a few hundred rows (t11,
+ * measured on this repository's table), so a per-entity write would dominate
+ * the job. Entities removed or refreshed since they were listed are skipped.
  * Returns how many entities were left without a marker (0 on success).
  */
 export async function writeBackfillVectors(entities: readonly Entity[]): Promise<number> {
 	assertNoSessionPersistence();
-	return writeVectorsThenMarkers(entities.filter(e => e.embedding.length > 0).map(entity => ({ entity, isNew: false })), 'backfill');
+	return writeVectorsThenMarkers(entities.filter(e => e.embedding.length > 0).map(entity => ({ entity, replace: true })), 'backfill');
 }
 
 /** The model a stored marker names: the configured embedding model. */
@@ -533,7 +587,10 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 			// the actual-bytes safety net). An unchanged row whose marker
 			// already names this vector's model (or that was not re-embedded)
 			// keeps its marker and its vector.
-			const newRow = rowAwaitingVector(e, repoId, repoPath);
+			// A module stub goes to the shared-modules rows, as upsertEntities
+			// routes it (HLD sc2), not under this workspace (s2 review).
+			const sharedRepoId = sharedModulesRepoIdOf(e);
+			const newRow = sharedRepoId === undefined ? rowAwaitingVector(e, repoId, repoPath) : rowAwaitingVector(e, sharedRepoId, e.repo);
 			if (prevBuf !== undefined) {
 				const prev = decodeEntityRow(prevBuf as Buffer);
 				const embedded = e.embedding !== undefined && e.embedding.length > 0;
@@ -551,7 +608,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 			const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
 			putEntityRowInTxn(s, u64, prev, newRow);
 			entitiesWritten++;
-			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, isNew });
+			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, replace: isNew });
 			seen.add(u64);
 		}
 
@@ -600,7 +657,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 	// the orphans (ISSUE-8c7d75b0).
 	if (toLanceDelete.length > 0) {
 		try {
-			await deleteVectorsInChunks(await vectorWriter(), toLanceDelete);
+			await withVectorLock(async () => deleteVectorsInChunks(await vectorWriter(), toLanceDelete));
 		} catch (err) {
 			log.warn({ count: toLanceDelete.length, file: filePath, err: err instanceof Error ? err.message : String(err) },
 				'commitFile: vector delete for removed entities failed after the graph commit -- left for the start-time reconciliation');
@@ -631,8 +688,12 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
  * (ISSUE-8c7d75b0) has every row deleted and its entity's marker cleared, so
  * the backfill writes exactly one row for it.
  */
-export async function reconcileEntityVectors(): Promise<{ orphanVectorsDeleted: number; markersCleared: number; duplicateIdsRepaired: number }> {
+export function reconcileEntityVectors(): Promise<{ orphanVectorsDeleted: number; markersCleared: number; duplicateIdsRepaired: number }> {
 	assertNoSessionPersistence();
+	return withVectorLock(reconcileEntityVectorsLocked);
+}
+
+async function reconcileEntityVectorsLocked(): Promise<{ orphanVectorsDeleted: number; markersCleared: number; duplicateIdsRepaired: number }> {
 	const lance = await vectorWriter();
 	const rowsPerId = new Map<string, number>();
 	for (const id of await (await import('./lance/entity-vec.js')).listEntityVecIds()) rowsPerId.set(id, (rowsPerId.get(id) ?? 0) + 1);
@@ -1117,9 +1178,10 @@ export async function updateEmbedding(
 	assertNoSessionPersistence();
 	if (embedding.length === 0) return;
 	// The vector first, the marker second (Epic c2ba6fa6 s2): a marker is set
-	// only for a vector that is stored. This is the backfill's write, for an
-	// entity whose marker is empty and that may still have a vector from an
-	// interrupted earlier write, so it is always an upsert, never a plain add.
+	// only for a vector that is stored. One entity's write, for an entity that
+	// may still have a vector from an interrupted earlier write, so an upsert,
+	// never a plain add; under the vector lock like every vector change.
+	await withVectorLock(async () => {
 	const store = await getGraphStore();
 	const u64 = lookupU64ByStringId(store, id);
 	if (u64 === undefined) return; // no-op (matches prior DuckDB UPDATE behaviour)
@@ -1139,6 +1201,7 @@ export async function updateEmbedding(
 		const current = readEntityRowSync(s, at);
 		if (current === null) return;
 		putEntityRowInTxn(s, at, current, { ...current, embeddingModel });
+	});
 	});
 }
 
@@ -1370,9 +1433,17 @@ async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], 
 		if (sid !== undefined) stringIds.push(sid);
 	}
 	await withWriteTxn(s => { before?.(s); detachDeleteEntitiesInTxn(s, u64s); });
+	// As commitFile's removal (ISSUE-8c7d75b0): chunked, under the vector lock,
+	// and a failure is logged, not thrown -- the graph change stands, a later add
+	// of these ids deletes any row first, and the start-time reconciliation
+	// deletes the orphans.
 	if (stringIds.length > 0) {
-		const { deleteEntityVecsByIds } = await import('./lance/entity-vec.js');
-		await deleteEntityVecsByIds(stringIds);
+		try {
+			await withVectorLock(async () => deleteVectorsInChunks(await vectorWriter(), stringIds));
+		} catch (err) {
+			log.warn({ count: stringIds.length, err: err instanceof Error ? err.message : String(err) },
+				'detachDeleteEntities: vector delete failed after the graph commit -- left for the start-time reconciliation');
+		}
 	}
 }
 

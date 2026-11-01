@@ -47,3 +47,15 @@ test('with no sweep running the summary lane carries no sweep, and without a lan
 	assert.equal('queueLanes' in status, false, 'a consumer that does not know the field sees no change');
 	assert.equal(status.queueDepth, 5);
 });
+
+test('Epic c2ba6fa6 s2 review: the backfill lane is published in queueLanes, from the live queue and from the status board', async () => {
+	const { queueStatusFromBoard } = await import('../status.js');
+	const lanes = composeQueueLanes({ index: { depth: 0, running: false }, summary: { depth: 0, running: false }, backfill: { depth: 1, running: true } }, undefined);
+	assert.deepEqual(lanes.backfill, { depth: 1, running: true });
+	const fromBoard = queueStatusFromBoard({
+		index: { depth: 0, processing: false }, summary: { depth: 0, processing: false }, backfill: { depth: 2, processing: true },
+	} as Parameters<typeof queueStatusFromBoard>[0]);
+	assert.deepEqual(fromBoard.queueLanes.backfill, { depth: 2, running: true });
+	assert.equal(fromBoard.queueDepth, 2);
+	assert.equal('backfill' in composeQueueLanes({ index: { depth: 0, running: false }, summary: { depth: 0, running: false } }, undefined), false);
+});

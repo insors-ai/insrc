@@ -146,7 +146,8 @@ test("daemon.status queue fields reflect the code-indexing worker's real lanes",
 	const status = await main.rpcHandlers['daemon.status']!({}) as DaemonStatus;
 	assert.equal(status.queueDepth, 5);
 	assert.deepEqual(status.queueLanes, queueStatusFromBoard(services.board.snapshot().indexing).queueLanes);
-	assert.deepEqual(status.queueLanes, { index: { depth: 3, running: true }, summary: { depth: 2, running: false, sweep: { repoPath: REPO, done: 1, total: 4 } } });
+	// The worker publishes its idle backfill lane too (Epic c2ba6fa6 s2).
+	assert.deepEqual(status.queueLanes, { index: { depth: 3, running: true }, summary: { depth: 2, running: false, sweep: { repoPath: REPO, done: 1, total: 4 } }, backfill: { depth: 0, running: false } });
 	assert.equal(port.isProcessing, true);
 	// And the worker's own publishes replace them: a real job shows, then the lanes settle idle.
 	services.board.publishLane('index', { depth: 0, processing: false });

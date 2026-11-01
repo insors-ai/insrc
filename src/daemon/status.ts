@@ -46,10 +46,14 @@ export interface DaemonStatusSources {
 
 /** The queue's per-lane state, with the running summary sweep's progress on the summary lane. */
 export function composeQueueLanes(
-	lanes: { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } },
+	lanes: { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean }; backfill?: { depth: number; running: boolean } | undefined },
 	sweep: { repoPath: string; done: number; total: number } | undefined,
 ): QueueLanes {
-	return { index: { ...lanes.index }, summary: { ...lanes.summary, ...(sweep !== undefined && { sweep: { ...sweep } }) } };
+	return {
+		index: { ...lanes.index },
+		summary: { ...lanes.summary, ...(sweep !== undefined && { sweep: { ...sweep } }) },
+		...(lanes.backfill !== undefined && { backfill: { ...lanes.backfill } }),
+	};
 }
 
 /**
@@ -61,7 +65,11 @@ export function queueStatusFromBoard(indexing: IndexingStatus): { queueDepth: nu
 	return {
 		queueDepth: indexing.index.depth + indexing.summary.depth + (indexing.backfill?.depth ?? 0),
 		queueLanes: composeQueueLanes(
-			{ index: { depth: indexing.index.depth, running: indexing.index.processing }, summary: { depth: indexing.summary.depth, running: indexing.summary.processing } },
+			{
+				index: { depth: indexing.index.depth, running: indexing.index.processing },
+				summary: { depth: indexing.summary.depth, running: indexing.summary.processing },
+				...(indexing.backfill !== undefined && { backfill: { depth: indexing.backfill.depth, running: indexing.backfill.processing } }),
+			},
 			indexing.sweep,
 		),
 	};

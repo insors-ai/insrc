@@ -144,19 +144,20 @@ test('t10: the backfill is queued after a full index and after a clean-up', asyn
 	assert.ok(svc.queued.some(j => j.kind === 'reembed' && j.repoPath === repo), `after the clean-up: ${JSON.stringify(svc.queued)}`);
 });
 
-test('t11: the backfill writes each round\'s vectors with one upsert, never one write per entity (a Lance write is ~25 ms whatever its size)', async () => {
+test('t11: the backfill writes each round\'s vectors with one delete and one add, never one write per entity (a Lance write is ~10-50 ms whatever its size)', async () => {
 	await indexedWithoutVectors();
 	const pending = (await readIndexState(repo))?.unembedded ?? 0;
 	assert.ok(pending >= 2, 'more than one entity to write');
-	const calls = { upsert: [] as number[], single: 0, add: 0 };
+	const calls = { upsert: 0, single: 0, add: [] as number[], deletes: [] as number[] };
 	_setVectorWriterForTest({
-		writeEntityEmbeddings: async rows => { calls.upsert.push(rows.length); await entityVec.writeEntityEmbeddings(rows); },
+		writeEntityEmbeddings: async rows => { calls.upsert++; await entityVec.writeEntityEmbeddings(rows); },
 		writeEntityEmbedding: async row => { calls.single++; await entityVec.writeEntityEmbedding(row); },
-		addEntityEmbeddings: async rows => { calls.add++; await entityVec.addEntityEmbeddings(rows); },
+		addEntityEmbeddings: async rows => { calls.add.push(rows.length); await entityVec.addEntityEmbeddings(rows); },
+		deleteEntityVecsByIds: async ids => { calls.deletes.push(ids.length); await entityVec.deleteEntityVecsByIds(ids); },
 	});
 	await new BackfillProbe().processJob({ kind: 'reembed', repoPath: repo });
 
-	assert.deepEqual(calls, { upsert: [pending], single: 0, add: 0 });
+	assert.deepEqual(calls, { upsert: 0, single: 0, add: [pending], deletes: [pending] });
 	assert.equal((await readIndexState(repo))?.unembedded, 0);
 });
 

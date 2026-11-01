@@ -17,9 +17,10 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 
 import { closeGraphStore, getGraphStore, setGraphStorePath } from '../graph/store.js';
-import { decodeUnresolvedRow } from '../graph/codec.js';
+import { decodeIndexStateRow, decodeUnresolvedRow } from '../graph/codec.js';
 import { encodeOutEdgeKey, RELATION_KIND_BYTE } from '../graph/keys.js';
-import { commitFile, entityU64ForId, findEntitiesByFile } from '../entities.js';
+import { commitFile, entityU64ForId, findEntitiesByFile, getEntity } from '../entities.js';
+import { SHARED_MODULES_NAMESPACE_BY_LANG, SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
 import { readIndexState, setUncommittedFiles } from '../index-state.js';
 import { addRepo } from '../repos.js';
 import type { Entity, RelationWrite } from '../../shared/types.js';
@@ -76,25 +77,38 @@ test('t3: a refresh replaces the file\'s entities in one commit, found through e
 	assert.deepEqual([result.entitiesWritten, result.entitiesRemoved], [2, 1]);
 });
 
-test('t3: a commit that throws part-way leaves every row of the file as before (read after a reopen)', async () => {
-	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [entity(FILE, 'a'), entity(FILE, 'b')], relations: [] });
+test('t3: a commit that throws at its last step leaves every row of the file as before -- entities, relationships and pending rows (read after a reopen)', async () => {
+	const [a, b] = [entity(FILE, 'a'), entity(FILE, 'b')];
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [a, b],
+		relations: [{ from: a.id, kind: 'CALLS', target: { stored: b.id, meta: { repo: REPO } }, evidence: 'unknown' },
+			{ from: a.id, kind: 'IMPORTS', target: { pending: { to: './old', meta: { repo: REPO, file: FILE } } }, evidence: 'unknown' }] });
 	const generation = (await readIndexState(REPO))!.generation;
 
-	// The index-state write is the commit's last step: it fails after the entity writes ran.
+	// The generation advance is the commit's last step (step 6): the write that
+	// carries it fails, after the entity, sweep, removal and relationship writes ran.
 	const store = await getGraphStore();
 	const put = store.indexState.put;
-	store.indexState.put = (() => { throw new Error('the index-state write fails'); }) as typeof put;
+	let failedAtLastStep = false;
+	store.indexState.put = ((key: unknown, value: Buffer, ...rest: unknown[]) => {
+		if (decodeIndexStateRow(value).generation > generation) { failedAtLastStep = true; throw new Error('the index-state write fails'); }
+		return (put as (...args: unknown[]) => unknown).call(store.indexState, key, value, ...rest);
+	}) as typeof put;
+	const c = entity(FILE, 'c');
 	try {
 		await assert.rejects(
-			commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h2', entities: [entity(FILE, 'c')], relations: [] }),
+			commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h2', entities: [c],
+				relations: [{ from: c.id, kind: 'IMPORTS', target: { pending: { to: './new', meta: { repo: REPO, file: FILE } } }, evidence: 'unknown' }] }),
 			/the index-state write fails/,
 		);
 	} finally {
 		store.indexState.put = put;
 	}
+	assert.ok(failedAtLastStep, 'the failure came from the generation advance');
 
 	await reopen();
 	assert.deepEqual(await names(FILE), ['a', 'b']);
+	assert.equal(await edge(a, b), true, 'the removed entity\'s outgoing edge is back');
+	assert.deepEqual((await pending()).map(p => p.to), ['./old'], 'the old pending row is back and the new one was not kept');
 	assert.equal((await readIndexState(REPO))!.generation, generation);
 });
 
@@ -112,6 +126,24 @@ test('t3: contentHash null removes every entity of the file in one commit; the g
 	assert.equal(state.generation, before + 1);
 	assert.equal(result.generation, state.generation);
 	assert.deepEqual(state.uncommittedFiles, [OTHER]);
+});
+
+test('t3 (s2 review): a module stub first stored by a file commit goes to the shared-modules rows, not under the workspace, and a refresh does not take it back', async () => {
+	const stub: Entity = {
+		id: createHash('sha256').update('module\x00typescript\x00some-package').digest('hex').slice(0, 32),
+		kind: 'module', name: 'some-package', language: 'typescript', repoId: 0, repo: '', file: '',
+		startLine: 0, endLine: 0, body: '', embedding: [], indexedAt: '2026-11-01T00:00:00.000Z',
+	};
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [entity(FILE, 'a'), stub], relations: [] });
+
+	const shared = SHARED_MODULES_REPO_ID[SHARED_MODULES_NAMESPACE_BY_LANG['typescript']!];
+	assert.equal((await getEntity(null, stub.id))?.repoId, shared);
+	assert.deepEqual(await names(FILE), ['a'], 'the stub is not one of the file\'s entities');
+
+	// The file's refresh (and its removal) leave the shared stub in place.
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h2', entities: [entity(FILE, 'b')], relations: [] });
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: null, entities: [], relations: [] });
+	assert.equal((await getEntity(null, stub.id))?.repoId, shared);
 });
 
 test('t3: an unregistered repository is refused and nothing is written', async () => {

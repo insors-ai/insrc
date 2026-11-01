@@ -1209,5 +1209,9 @@
 	"src/db/entities.ts#vectorWriterForTest": {
 		"class": "per-thread",
 		"reason": "A test seam: tests replace it in their own thread; production code only reads the default, so a per-thread copy is correct."
+	},
+	"src/db/entities.ts#vectorLock": {
+		"class": "per-thread",
+		"reason": "Serialises the entity vector table's changes (ISSUE-8c7d75b0): every writer of entity vectors runs in the code-indexing worker (commitFile, upsertEntities, the backfill, the reconciliation), so a lock per thread orders all of them."
 	}
 }

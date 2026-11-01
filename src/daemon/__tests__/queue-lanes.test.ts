@@ -279,3 +279,23 @@ test('Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and
 	await running;
 });
 
+
+test('Epic c2ba6fa6 s2 review: a second backfill for a repository already queued is dropped, one queued while it runs is kept, and another repository\'s is kept', async () => {
+	const ran: string[] = [];
+	const q = new IndexQueue();
+	const first = gate();
+	const running = q.start(async job => {
+		if (job.kind === 'reembed') { ran.push(job.repoPath); if (ran.length === 1) await first.wait; }
+	});
+	q.enqueue({ kind: 'reembed', repoPath: A });
+	await until(() => q.laneStatus().backfill.running, 'the first backfill to start');
+	q.enqueue({ kind: 'reembed', repoPath: A });   // queued while A's runs: kept (it listed earlier)
+	q.enqueue({ kind: 'reembed', repoPath: A });   // a duplicate of the queued one: dropped
+	q.enqueue({ kind: 'reembed', repoPath: join(A, '..', 'other') });
+	assert.equal(q.laneStatus().backfill.depth, 2);
+	first.open();
+	await until(() => ran.length === 3 && !q.isProcessing, 'the backfills to finish');
+	assert.deepEqual(ran, [A, A, join(A, '..', 'other')]);
+	q.stop();
+	await running;
+});

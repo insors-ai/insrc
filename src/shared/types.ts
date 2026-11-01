@@ -688,6 +688,56 @@ export interface Relation {
 }
 
 // ---------------------------------------------------------------------------
+// File commit (Epic c2ba6fa6 sc2) -- the one write for a file's rows
+// ---------------------------------------------------------------------------
+
+/** How a relationship is known (sc3). Story s7 adds the other values;
+ *  until then every relationship is written as 'unknown'. */
+export type RelationEvidence = 'unknown';
+
+/** A name or path reference the cross-file pass resolves later: the raw
+ *  target and the record the pending row keeps (its file and repository). */
+export interface UnresolvedRef {
+  readonly to:   string;
+  readonly meta: Record<string, unknown>;
+}
+
+/** One relationship of a file commit, from an entity of the file. */
+export interface RelationWrite {
+  readonly from:     string;
+  readonly kind:     RelationKind;
+  readonly target:
+    | { readonly stored: string; readonly meta?: Record<string, unknown> | undefined }   // id of an entity expected to be stored
+    | { readonly pending: UnresolvedRef };                                                 // name/path reference for the cross-file pass
+  readonly evidence: RelationEvidence;
+}
+
+/** A file's full new state, handed to the store's commitFile. */
+export interface FileCommit {
+  readonly repoPath:    string;
+  readonly filePath:    string;
+  /** null = the file is removed. */
+  readonly contentHash: string | null;
+  /** Empty when removed; module stubs (kind 'module', repo '') go to the shared-modules rows. */
+  readonly entities:    Entity[];
+  readonly relations:   RelationWrite[];
+}
+
+/** What one file commit did. */
+export interface FileCommitResult {
+  readonly generation:                 number;
+  readonly entitiesWritten:            number;
+  readonly entitiesRemoved:            number;
+  readonly relationsStored:            number;
+  /** Includes { stored } targets found absent. */
+  readonly relationsPending:           number;
+  readonly relationsUnwritable:        number;
+  /** Incoming relationships whose target entity was removed. */
+  readonly relationsReturnedToPending: number;
+  readonly vectorsOutstanding:         number;
+}
+
+// ---------------------------------------------------------------------------
 // Repo registry
 // ---------------------------------------------------------------------------
 

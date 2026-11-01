@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -40,3 +40,32 @@ Run at 2026-11-01T13:19:10.308Z on commit `2d50d4479`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/file-commit-types.test.ts` | 0 | 1 | 0.6 s |  |
+
+## t3
+
+Run at 2026-11-01T13:27:03.535Z on commit `5135e9d55`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: commitFile**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t3: a refresh replaces the file's entities in one commit, found through entity_by_file and not a scan of the entity table, and leaves other files alone | `src/db/__tests__/file-commit.test.ts` |
+| pass | t3: a commit that throws part-way leaves every row of the file as before (read after a reopen) | `src/db/__tests__/file-commit.test.ts` |
+| pass | t3: contentHash null removes every entity of the file in one commit; the generation advances and the file leaves uncommittedFiles | `src/db/__tests__/file-commit.test.ts` |
+| pass | t3: an unregistered repository is refused and nothing is written | `src/db/__tests__/file-commit.test.ts` |
+
+**unit: reindexFile**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | reindexFile: removing an entity tombstones it + keeps the rest | `src/db/__tests__/reindex-file-lmdb.test.ts` |
+| pass | reindexFile preserves module stubs that already exist | `src/db/__tests__/reindex-file-lmdb.test.ts` |
+| pass | reindexFile: contentHash unchanged + body unchanged -> no row mutation | `src/db/__tests__/reindex-file-lmdb.test.ts` |
+| pass | reindexFile only touches entities of the specified file | `src/db/__tests__/reindex-file-lmdb.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/file-commit.test.ts` | 0 | 4 | 1.5 s |  |
+| `src/db/__tests__/reindex-file-lmdb.test.ts` | 0 | 14 | 2.6 s |  |

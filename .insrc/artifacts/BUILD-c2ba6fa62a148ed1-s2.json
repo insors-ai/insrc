@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T13:19:10.308Z",
+    "updatedAt": "2026-11-01T13:27:03.535Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "FileCommit, FileCommitResult, RelationWrite, UnresolvedRef and RelationEvidence ('unknown' until s7) added to src/shared/types.ts per the HLD sc2 sketch; relationOfWrite in src/db/file-commit.ts maps a RelationWrite onto the existing Relation shape.",
+    "summary": "commitFile grown from reindexFile: one withWriteTxn reads the file's previous entities through entity_by_file, upserts the parsed ones, removes those no longer parsed, advances the generation and drops the file from uncommittedFiles; contentHash null removes the file's entities; reindexFile is a thin wrapper whose 14 existing tests pass. src/db suites: 635/635 pass.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
     },
@@ -30,44 +34,58 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:19:10.308Z"
+        "timestamp": "2026-11-01T13:27:03.535Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-in-txn.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:19:10.308Z"
+        "timestamp": "2026-11-01T13:27:03.535Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:19:10.308Z"
+        "timestamp": "2026-11-01T13:27:03.535Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/file-commit-types.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:19:10.308Z"
+        "timestamp": "2026-11-01T13:27:03.535Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:19:10.308Z"
+        "timestamp": "2026-11-01T13:27:03.535Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T13:19:10.308Z"
+        "timestamp": "2026-11-01T13:27:03.535Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:27:03.535Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T13:27:03.535Z"
       }
     ],
-    "commit": "2d50d4479"
+    "commit": "5135e9d55"
   }
 }

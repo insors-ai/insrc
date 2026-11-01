@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T13:19:10.308Z",
+    "updatedAt": "2026-11-01T13:27:03.535Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -114,6 +114,162 @@
             "titles": [
               {
                 "title": "a RelationWrite with a stored target maps to a resolved Relation, and one with a pending target to an unresolved Relation with the same meta",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5135e9d55",
+        "ranAt": "2026-11-01T13:27:03.535Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: a refresh replaces the file's entities in one commit, found through entity_by_file and not a scan of the entity table, and leaves other files alone",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: a commit that throws part-way leaves every row of the file as before (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: contentHash null removes every entity of the file in one commit; the generation advances and the file leaves uncommittedFiles",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: an unregistered repository is refused and nothing is written",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reindexFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile: removing an entity tombstones it + keeps the rest",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile preserves module stubs that already exist",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile: contentHash unchanged + body unchanged -> no row mutation",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile only touches entities of the specified file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1541,
+            "titles": [
+              {
+                "title": "t3: a refresh replaces the file's entities in one commit, found through entity_by_file and not a scan of the entity table, and leaves other files alone",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a commit that throws part-way leaves every row of the file as before (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: contentHash null removes every entity of the file in one commit; the generation advances and the file leaves uncommittedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an unregistered repository is refused and nothing is written",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2565,
+            "titles": [
+              {
+                "title": "reindexFile on empty store creates entity rows",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile on empty parsed list with no existing is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: identical re-parse is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: adding an entity inserts the new + preserves existing",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: removing an entity tombstones it + keeps the rest",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: replacing all entities tombstones the original set",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: changed body updates the row",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: tombstoning a referenced entity clears incident edges",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile preserves module stubs that already exist",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile is idempotent: same parse twice produces the same row set",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: contentHash unchanged + body unchanged -> no row mutation",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile auto-allocates a repoId on first sighting",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile only touches entities of the specified file",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile result survives close + reopen",
                 "result": "pass"
               }
             ],

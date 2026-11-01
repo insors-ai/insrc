@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 6,
-        "contentHash": "b8af5213af79d183d99babc0bc2162efe3ce81078edc918a3f51794169e88d2d",
-        "at": "2026-11-01T13:12:02.179Z",
+        "number": 8,
+        "contentHash": "e70ee846bb847439d23d1f496d92d4f16b22f127721a36c21fc9e22ffbe05f0a",
+        "at": "2026-11-01T13:48:50.662Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "e6ddcdcb3d9cf330",
     "storyId": "s4",
     "createdAt": "2026-11-01T12:43:37.467Z",
-    "updatedAt": "2026-11-01T13:12:02.063Z",
+    "updatedAt": "2026-11-01T13:48:50.546Z",
     "epicCreatedAt": "2026-10-30T18:42:58.122Z",
     "epicSlug": "review-committed-work-task-checkpoints",
-    "revision": 6
+    "revision": 8
   },
   "body": {
     "tasks": [
@@ -191,8 +191,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "75a04c620",
-        "ranAt": "2026-11-01T13:01:53.363Z",
+        "commit": "31f711098",
+        "ranAt": "2026-11-01T13:48:50.546Z",
         "testsPassed": true,
         "tests": [
           {
@@ -203,6 +203,11 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
                 "title": "Read-only progress IPC validates scope and never invokes providers",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "title": "Inactive execution stops polling without rewriting saved task status or restarting review",
                 "result": "pass"
               }
             ],
@@ -217,6 +222,11 @@
                 "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
                 "title": "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "title": "Cancellation closes the real observation socket before its RPC deadline",
+                "result": "pass"
               }
             ],
             "files": []
@@ -227,7 +237,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 747,
+            "durationMs": 822,
             "titles": [
               {
                 "title": "Read-only progress IPC validates scope and never invokes providers",
@@ -235,6 +245,14 @@
               },
               {
                 "title": "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+                "result": "pass"
+              },
+              {
+                "title": "Inactive execution stops polling without rewriting saved task status or restarting review",
+                "result": "pass"
+              },
+              {
+                "title": "Cancellation closes the real observation socket before its RPC deadline",
                 "result": "pass"
               }
             ],

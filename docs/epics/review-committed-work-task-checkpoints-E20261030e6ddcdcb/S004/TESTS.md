@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -74,25 +74,27 @@ Run at 2026-11-01T12:56:52.082Z on commit `1ca21ac6e`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-01T13:01:53.363Z on commit `75a04c620`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T13:48:50.546Z on commit `31f711098`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: Read-only progress IPC validates scope and never invokes providers**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | Read-only progress IPC validates scope and never invokes providers | `src/workflow/code-review/task-review/__tests__/progress-client.test.ts` |
+| pass | Inactive execution stops polling without rewriting saved task status or restarting review | `src/workflow/code-review/task-review/__tests__/progress-client.test.ts` |
 
 **unit: Polling helper emits immediate transitions and45sec updates and cancels cleanly**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | Polling helper emits immediate transitions and45sec updates and cancels cleanly | `src/workflow/code-review/task-review/__tests__/progress-client.test.ts` |
+| pass | Cancellation closes the real observation socket before its RPC deadline | `src/workflow/code-review/task-review/__tests__/progress-client.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/progress-client.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/workflow/code-review/task-review/__tests__/progress-client.test.ts` | 0 | 4 | 0.8 s |  |
 
 ## t5
 

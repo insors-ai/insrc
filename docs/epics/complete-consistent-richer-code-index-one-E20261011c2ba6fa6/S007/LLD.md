@@ -409,20 +409,21 @@ A new LMDB sub-database edge_evidence keyed like out_edge holds the byte; the tw
 - NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc1-sc3; the Epic constraints k1, k5 and k6 are the ones those criteria operationalize and were not scored separately.
 - NOTE (s8 sbdry3 interpretation): the HLD's 'carrying of evidence through the store's traversal reads' is read as the reads that return relationships (the single-kind find* reads and the opt-in neighbour form with evidence); closure/BFS/SCC traversals return entity sets and stay id-only. Confirm or widen before the plan.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q7d661945` — NOTE (s8 sbdry3 interpretation): the HLD's 'carrying of evidence through the store's traversal reads' is read as the reads that return relationships (the single-kind find* reads and the opt-in neighbour form with evidence); closure/BFS/SCC traversals return entity sets and stay id-only. Confirm or widen before the plan.
+  - **resolved**: A. Confirm narrow: evidence only on find*/neighbour reads — User decision 2026-11-02: keep the reading. Walks (closure, unreachable, SCC, the repository closure) return entity sets with no single relationship per result; multi-hop callers already carry evidence per hop through findCallers. A best-chain rule for reachability can be added later as its own change on the stored data. _(2026-11-01T18:59:34.757Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 13 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-11-01T18:47:36.942Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `analyze-bundle` `s1 symbol.locate: the stored relationship row and its value` — "A stored relationship is a pair of LMDB keys (out_edge from|kind|to, in_edge to|kind|from); its value is written as an empty buffer at exactly two sites, both in src/db/relations.ts: upsertResolvedRel"
+- **[[c2]]** `analyze-bundle` `s1 symbol.locate: the evidence type as it stands` — "src/shared/types.ts:696 declares `type RelationEvidence = 'unknown'` (added by Story s2 t2) and RelationWrite carries `readonly evidence: RelationEvidence` (src/shared/types.ts:712). src/db/file-commi"
+- **[[c3]]** `analyze-bundle` `s1 usage.example: where a relationship is decided read-from-source` — "resolveRelations (src/indexer/resolver.ts:63-118) is the per-file resolver: a relation the parser already marked resolved (DEFINES, CONTAINS, external-module IMPORTS) passes through; a CALLS whose cal"
+- **[[c4]]** `analyze-bundle` `s1 usage.example: where a relationship is decided by resolution across files` — "The cross-file pass (src/indexer/cross-file-resolver.ts) writes stored relationships in four places: Pass 0 runPass0 (:204, promoteResolvedBatch at :221) completes rows whose awaited target is now sto"
+- **[[c5]]** `analyze-bundle` `s1 data-model.trace: pending rows and the return of an edge to pending` — "A pending row (UnresolvedRow, src/db/graph/codec.ts:225-240) has a free-form meta record. A resolved relationship whose target is not stored is kept as an awaiting row built from the relation's meta ("
+- **[[c6]]** `analyze-bundle` `s1 symbol.locate: where relationships are read` — "neighborsSync (src/db/graph/edges.ts:41-60) iterates the edge keys and yields neighbour u64s only; outNeighbors/inNeighbors (src/db/graph/edges.ts:87-117) dedupe them. findCallers/findCallees/findDefi"
+- **[[c7]]** `analyze-bundle` `s1 test.locate: tests to extend` — "Relationship writers: src/db/__tests__/relations-lmdb.test.ts, relations-in-txn.test.ts, relations-awaiting-target.test.ts, relations-pending-upkeep.test.ts; the file commit: src/db/__tests__/file-com"
+- **[[c8]]** `prior-artifact` `HLD-c2ba6fa62a148ed1 sc3 RelationEvidence and the s7 boundary`
+- **[[c9]]** `prior-artifact` `DEF-c2ba6fa62a148ed1 Story s7 acceptance criteria ac1-ac4 and lc1`
+- **[[c10]]** `step-output` `s3 alternatives.judge: a1 chosen`
+- **[[c11]]** `step-output` `s8 checklist.verify: cd3 partial, alt2 partial, sbdry3 interpretation note`

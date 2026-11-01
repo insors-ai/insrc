@@ -204,6 +204,16 @@
       "reviewedAt": "2026-11-01T18:47:36.942Z",
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T18:58:12.594Z",
+    "questionResolutions": {
+      "q7d661945": {
+        "question": "NOTE (s8 sbdry3 interpretation): the HLD's 'carrying of evidence through the store's traversal reads' is read as the reads that return relationships (the single-kind find* reads and the opt-in neighbour form with evidence); closure/BFS/SCC traversals return entity sets and stay id-only. Confirm or widen before the plan.",
+        "status": "resolved",
+        "choice": "A. Confirm narrow: evidence only on find*/neighbour reads",
+        "rationale": "User decision 2026-11-02: keep the reading. Walks (closure, unreachable, SCC, the repository closure) return entity sets with no single relationship per result; multi-hop callers already carry evidence per hop through findCallers. A best-chain rule for reachability can be added later as its own change on the stored data.",
+        "resolvedAt": "2026-11-01T18:59:34.757Z"
+      }
     }
   },
   "body": {

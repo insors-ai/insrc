@@ -1,0 +1,162 @@
+{
+  "kind": "manual-evidence-not-approval",
+  "sourceCommit": "7a2e67d4e",
+  "finalIndependentReview": {
+    "cycle": 2,
+    "round": 3,
+    "findings": 0
+  },
+  "currentChecks": {
+    "wireProducerRelease": {
+      "pass": 18,
+      "fail": 0,
+      "log": "producer-round3-final.txt"
+    },
+    "rootTypecheck": {
+      "exitCode": 0,
+      "log": "typecheck-round3.txt"
+    },
+    "crossLanguageParity": {
+      "pass": 3,
+      "fail": 0,
+      "endpointVectors": 77,
+      "verdictsPerLanguage": 308,
+      "log": "parity-round3.txt"
+    }
+  },
+  "limits": [
+    "Global83obligation coverage remains incomplete",
+    "No new full sweep",
+    "JetBrains UI deferred-user",
+    "VS Code acceptance historical0.5.23",
+    "External services and SQLServer pending",
+    "No canonicalCR or BUILD approval"
+  ],
+  "taskGates": {
+    "finalSource": [
+      {
+        "task": "t1",
+        "passed": true,
+        "file": "final-gate-t1.json"
+      },
+      {
+        "task": "t10",
+        "passed": true,
+        "file": "final-gate-t10.json"
+      },
+      {
+        "task": "t18",
+        "passed": true,
+        "file": "final-gate-t18.json"
+      },
+      {
+        "task": "t19",
+        "passed": true,
+        "file": "final-gate-t19.json"
+      },
+      {
+        "task": "t2",
+        "passed": true,
+        "file": "final-gate-t2.json"
+      },
+      {
+        "task": "t23",
+        "passed": true,
+        "file": "final-gate-t23.json"
+      },
+      {
+        "task": "t3",
+        "passed": true,
+        "file": "final-gate-t3.json"
+      },
+      {
+        "task": "t30",
+        "passed": true,
+        "file": "final-gate-t30.json"
+      },
+      {
+        "task": "t31",
+        "passed": true,
+        "file": "final-gate-t31.json"
+      }
+    ],
+    "priorCorrectionsUnchanged": [
+      {
+        "task": "t12",
+        "sourceCommit": "244aec78e",
+        "passed": true,
+        "file": "gate-t12.json"
+      },
+      {
+        "task": "t13",
+        "sourceCommit": "244aec78e",
+        "passed": true,
+        "file": "gate-t13.json"
+      },
+      {
+        "task": "t15",
+        "sourceCommit": "244aec78e",
+        "passed": true,
+        "file": "gate-t15.json"
+      }
+    ],
+    "transientFailure": "gate-t18-transient-root-error.json; unrelated graph typecheck error, successful current t18 rerun retained"
+  },
+  "files": {
+    "gate-t18-transient-root-error.json": "8cb9f6472a584e7fca6fdd13dddaafeafe083cc540a32e60ff20ca3790e30ff6",
+    "native-parity.txt": "0322976307797e32552af280ac38724a44352bcab830639f37529594d627caff",
+    "shared-tests.txt": "3c95efe96993facddb28ecff6763d76d4048fdf228421fb4e568968ca13aa7b1",
+    "final-gate-t1.json": "41d63439cc49fbd99c235683feff72128d1c96ce9411474b007e174d2adc21d0",
+    "producer-round3-final.txt": "ad091e8a615a783d3117c83b5baa1e2eaf38a4fa645ccafc30bf33ea485f8a25",
+    "round2-result.json": "6f5dcdd9059701f6919e7b29e8d1c09618a86a3eed25ca786787e67a6d87734c",
+    "parity-round3.txt": "6741cfff3cf39e696ba53e7008ca097f02e193d400bad158f5758ac727673791",
+    "connections-tests.txt": "daae5cc53c02ec0ea1f9e03217d8c1607de6e7163032413b9e0da12c6b16e545",
+    "shared-tests-round2.txt": "ddb1a83a306d6688ad0b84e15f3349279a60f73d2d85d9459e74bd7bfdf8f2a9",
+    "gate-t3-source244aec78e.json": "c271b26708053da37b2b447b79f5dc4069953711b2ad16d48d8264869554d5f6",
+    "final-gate-t19.json": "a5f374412e5ef1e7569993b1d37f448ae560de3b3143919c2c43d299ebf10156",
+    "final-gate-t23.json": "829ca5554d7525f0ac3c3edd14a0a5fc2986469b5ae91fe706babb321cad5b41",
+    "root-typecheck-retry.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "gate-t10-source244aec78e.json": "adee3a035e1b60ce618546d446bbcc35ed34f174def59b10800aa3830759f354",
+    "round1-result.json": "c9a9c37743f63162386eca98c6c3e6db28d059c8a6a782ac051d4c910aa79aec",
+    "typecheck-round3.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "gate-t2-source244aec78e.json": "f1b494ddd14da152106fe706706cc02a8c3f1bcfceb36eeb2d2cef336f1e6861",
+    "final-gate-t18.json": "7d4c83431531eebf1df97780333347a97324893a16cb0023ee5b454a6950b79d",
+    "gate-t15.json": "0c2666525393ceb6b4d9909929493aec3acda78ba560cf57162f29cff9fc29be",
+    "packet-manifest.json": "0d3f86016be9c107617873c2e378eab3c10e7f5c39f6bf780226390bd1ef6df0",
+    "gate-t1-source244aec78e.json": "6c1783fe07563caf013861fca2443e5895461850d2b8bdf1623319d0fc04c6e6",
+    "round3-result.json": "690594dbe4ce5cde76c9b91cd835b810dc19e98753ad7e97f1eafd7198eb7bb4",
+    "companions.txt": "189022ce0c0345df1d85c9e7ed8cc886768f77542a67e4b0ef8455a245a52693",
+    "backend-build.txt": "2d0deba5e7c9c6666b82076eb47d5a55728543e325e51f424b6c728341745594",
+    "native-parity-round2.txt": "198396bbb314cb0ed95ed9917adfee9d241b1d85a4f1166aa250df95d70abe5c",
+    "final-gate-t3.json": "635e9c5a041e1544d8dab86ef99434c6296f2d8fae68c861ff44b830beeb5e06",
+    "release-tests-round2.txt": "1abaf83a496d7b6dcf2a00e1d4413cc049c85fe4d217cf428e73e6e57f32b272",
+    "final-gate-t31.json": "d923bd12099a8d8881dde8968e3bfc277793443d414586feea6f7996f95a77f4",
+    "gate-t13.json": "c4b21b5005ac9395ac9b4f4d79926ca5553b27989b595ba012c6ee98daff0a65",
+    "gate-t12.json": "b0b86dd0b734ac228aecf9b2c8221d7a2d3f12920b09b48cb670e5a98cbbde22",
+    "producer-round3.txt": "ddbab3686361efd12a5349ca64e1868db421f5b3488012c1183d4ae99ab33aa1",
+    "final-gate-t30.json": "bb94ba267a1a6321947f070a6e2ebaa60aab35dd744940c59a89a59c2f52b753",
+    "final-gate-t10.json": "85da83abb7347585bf83005be053eeced49a988b4b44a756594c688235e11f8e",
+    "extension-bundle.txt": "2677b22c86be11b7523085d9a4bd0a32e5c910cf216e190ab32bd81d5c704e33",
+    "final-gate-t2.json": "2350acdf69aa3673bf20d0c3935674e7454e77a96cc29ebd21b9cb63a1f8e38a"
+  },
+  "packaging": {
+    "passed": true,
+    "evidence": "final-gate-t31.json",
+    "scope": "fresh Node22 root and extension checks, bundle,11 extension runtime/dependency smoke tests, JDK21 assemble and native descriptor JUnit; no new full sweep"
+  },
+  "sourceFiles": {
+    "src/shared/connection-manager/endpoint.ts": "cfb50e3eb80ad89674806ab59e9a62fb6aca9ab1918f8748d0a66d1173e14bec",
+    "src/shared/connection-manager/wire.ts": "62522bdccd99ba4503068e977a88cb874e553ae78c53df799154387a2839c9f8",
+    "src/daemon/db/driver-profiles.ts": "b32034b1fc4f0ff0fb560509997ce1b447ded1f9091c357a6528d6fc0d123b6e",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt": "5a0b0b848d8b764461bc1382ed82f40308e06a0045e73f453867bce1b8687158",
+    "test-fixtures/connection-management/v1/corpus.json": "296a4f0da417030c74215d958c44df49dd5900bdda4e9461565175311653cfcb"
+  },
+  "inventoryExceptions": [
+    {
+      "file": "vscode-plugin/src/extension.ts",
+      "recordedHash": "29a8bb0206245e68b1b3c64582a3638ac6b6707cb2453dbb2ad2f5aade65d7b1",
+      "currentHash": "c24d9ff429bb3e13bda837968716d518f68ccd1b089f76b6ca3ae4ab497331b5",
+      "reason": "Existing parallel-stream entry-point change; this cycle refreshed only owned source entries. Full inventory/release certification remains pending."
+    }
+  ]
+}

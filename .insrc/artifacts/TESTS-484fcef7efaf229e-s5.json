@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s5",
     "createdAt": "2026-10-29T14:41:37.350Z",
-    "updatedAt": "2026-11-01T05:49:41.967Z",
+    "updatedAt": "2026-11-01T06:48:38.214Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "244aec78e",
-        "ranAt": "2026-11-01T05:35:03.382Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:37:13.370Z",
         "testsPassed": true,
         "tests": [
           {
@@ -40,7 +40,7 @@
             "file": "src/shared/__tests__/connection-manager-corpus.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 12527,
+            "durationMs": 12344,
             "titles": [
               {
                 "title": "CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index",
@@ -57,8 +57,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "244aec78e",
-        "ranAt": "2026-11-01T05:36:58.747Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:31:38.849Z",
         "testsPassed": true,
         "tests": [
           {
@@ -90,6 +90,16 @@
                 "file": "src/shared/__tests__/connection-manager-wire.test.ts",
                 "title": "CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries",
                 "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection",
+                "result": "pass"
               }
             ],
             "files": []
@@ -100,10 +110,18 @@
             "file": "src/shared/__tests__/connection-manager-wire.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1867,
+            "durationMs": 1103,
             "titles": [
               {
                 "title": "CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection",
                 "result": "pass"
               },
               {
@@ -129,8 +147,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "244aec78e",
-        "ranAt": "2026-11-01T05:38:38.026Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:38:42.339Z",
         "testsPassed": true,
         "tests": [
           {
@@ -152,7 +170,7 @@
             "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 16881,
+            "durationMs": 23232,
             "titles": [
               {
                 "title": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
@@ -453,8 +471,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "244aec78e",
-        "ranAt": "2026-11-01T05:40:32.974Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:33:40.176Z",
         "testsPassed": true,
         "tests": [
           {
@@ -486,7 +504,7 @@
             "file": "src/shared/__tests__/connection-manager-draft.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 851,
+            "durationMs": 1099,
             "titles": [
               {
                 "title": "CM-S5-FORM-TS: repeated driver rendering reuses validators without a global compiler cache",
@@ -862,8 +880,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "244aec78e",
-        "ranAt": "2026-11-01T05:49:41.967Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:35:12.881Z",
         "testsPassed": true,
         "tests": [
           {
@@ -890,7 +908,7 @@
             "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2815,
+            "durationMs": 2350,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: product icons cover every driver and the icon picker supports selection and keyboard navigation",
@@ -911,7 +929,7 @@
             "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3491,
+            "durationMs": 3171,
             "titles": [
               {
                 "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
@@ -964,8 +982,8 @@
       },
       {
         "taskId": "t19",
-        "commit": "f59019245",
-        "ranAt": "2026-10-29T19:25:47.753Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:40:22.862Z",
         "testsPassed": true,
         "tests": [
           {
@@ -987,7 +1005,7 @@
             "file": "src/shared/__tests__/connection-manager-kotlin-render.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 27907,
+            "durationMs": 22577,
             "titles": [
               {
                 "title": "CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation",
@@ -1126,8 +1144,8 @@
       },
       {
         "taskId": "t23",
-        "commit": "dd12ef1c8",
-        "ranAt": "2026-10-29T20:05:05.638Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:43:19.741Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1174,7 +1192,7 @@
             "file": "src/shared/__tests__/connection-manager-parity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 90124,
+            "durationMs": 64420,
             "titles": [
               {
                 "title": "CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail",
@@ -1195,8 +1213,12 @@
             "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3032,
+            "durationMs": 2902,
             "titles": [
+              {
+                "title": "CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay",
+                "result": "pass"
+              },
               {
                 "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
                 "result": "pass"
@@ -1232,7 +1254,7 @@
             "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1245,
+            "durationMs": 1343,
             "titles": [
               {
                 "title": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
@@ -1346,8 +1368,8 @@
       },
       {
         "taskId": "t30",
-        "commit": "19e6110fd",
-        "ranAt": "2026-10-30T15:46:04.211Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:44:53.050Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1392,7 +1414,7 @@
             "file": "src/daemon/db/__tests__/management-defaults.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2669,
+            "durationMs": 2112,
             "titles": [
               {
                 "title": "CM-DEFAULT: runtime is enabled independently of unverified release evidence",
@@ -1413,7 +1435,7 @@
             "file": "src/shared/__tests__/connection-manager-release.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 406,
+            "durationMs": 393,
             "titles": [
               {
                 "title": "CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
@@ -1430,8 +1452,8 @@
       },
       {
         "taskId": "t31",
-        "commit": "2c35eb1aa",
-        "ranAt": "2026-10-30T04:33:47.080Z",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:48:38.214Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1453,7 +1475,7 @@
             "file": "src/shared/__tests__/connection-manager-packaging.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 36281,
+            "durationMs": 38096,
             "titles": [
               {
                 "title": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite",

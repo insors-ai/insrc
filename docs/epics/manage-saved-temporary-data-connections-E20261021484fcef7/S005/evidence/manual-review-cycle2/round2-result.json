@@ -1,0 +1,79 @@
+{
+  "kind": "manual-review-not-canonical-CR",
+  "cycle": 2,
+  "round": 2,
+  "sourceCommit": "b0411102b",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T06:24:31.653Z",
+  "finished": "2026-11-01T06:26:54.119Z",
+  "inputChars": 39290,
+  "inputSha256": "8c51100f4c8ab06bc5ab2f6bad87388e76b24e1f42304ce782c7ce7124215c0d",
+  "result": {
+    "summary": "The two original fixes and the opaque-prefix fix hold for the client guards. For `jdbc:postgresql://u:p@h/db` and the other opaque/nested prefixes (vectors 62-68), both clients refuse because the remainder after `scheme:` must begin with `//`. For userinfo `@` in the authority, both refuse plain and percent-encoded forms; the 8-pass bounded decode covers the encoded ones. TS and Kotlin grammars match on every point I traced. I found two concrete gaps and one weaker one. (1) The producer's `uri()` and `address()` can emit endpoint text that the client grammar rejects, and that rejection fails the entire list decode. This depends on `clean()`, which I wasn't given. (2) The client authority grammar is much looser than the producer's `hostPort` regex. It accepts `;`-style dialects and a `jdbc://postgresql://u:p@h/db` nesting that the producer refuses, and no vector covers them. (3) Public URL-bearing option fields other than `endpoint` get no endpoint screening on the patch path. This is not full story closure.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "src/daemon/db/driver-profiles.ts",
+        "line": 177,
+        "trigger": "Saved config such as `postgres://host/db\\x` (backslash in path), `mysql://host/a%ff`, DEL/C1 characters or a lone surrogate in the path, or `postgres://host/db?application_name=%E9`. The same applies to `address()` for DynamoDB `options.endpoint`, e.g. `http://localhost:8000/a%ff`.",
+        "defect": "The producer's endpoint projection is weaker than the client grammar, so supported producer output can be refused by the client. `uri()` rejects only `[\\u0000- ]` in the raw string, checks the `hostPort` regex, and rejects `;` before the first `?`. The path and query in `match[3]` are copied through unchecked. `address()` is the same, with `valid(text)` forbidding only C0. The client refuses `\\`, DEL/C1, lone surrogates and any malformed UTF-8 percent sequence anywhere in the endpoint string. `representedQuery` decodes leniently through `searchParams`, so `%E9` can pass the allowlist, and the endpoint that `uri()` returns keeps the raw `%E9` text. `decodeSafeConnectionList` and Kotlin `list` fail the whole list on one bad row, so a single saved connection with such a path can make every connection in that repo unreadable. This is the case you said would make the correction a regression.",
+        "evidence": "`uri()`: raw rejection is `/[\\u0000- ]/` and `endpoint = match[1] + ... + match[3]`. `projected()` line 292 uses `uri(...).endpoint` guarded only by `clean(endpoint)`. Client `safeEndpoint` refuses `\\`, `\\u007f-\\u009f` and surrogates, and `safePublicFields` throws on `decodeURIComponent` failure. Vectors 39, 40, 41, 59, 69 and 70 are all declared invalid. `decodeSafeConnectionList` has no per-row fallback. `clean()` was not supplied, so it may already reject some of these characters. The producer regression covers only opaque PostgreSQL/Oracle, not these inputs.",
+        "remedy": "In `projected()`, run the endpoint through the same grammar as the client before exposing it. Cheapest is to have `uri()` and `address()` reject `\\`, DEL/C1, lone surrogates and malformed percent sequences. On failure, set readonly and omit the endpoint, as the opaque case already does. Add a producer-to-client round-trip test over producer-valid URLs, not only the client corpus. Optionally make the list decoder degrade a bad row to an error placeholder instead of throwing."
+      },
+      {
+        "severity": "MED",
+        "file": "src/shared/connection-manager/wire.ts",
+        "line": 106,
+        "trigger": "Endpoint `jdbc://postgresql://u:p@h/db` (authority `postgresql:`, credentials in the path). Also `sqlserver://host;password=x;user=y/db` and other authority text with `;`, `=`, `,`, `!` or a non-numeric port. Kotlin `safeEndpoint` (line 201) behaves the same way.",
+        "defect": "Both clients screen only an unsafe-character set in the authority and do not enforce host[:port] shape. Hierarchical prefixes such as `jdbc://postgresql://u:p@h/db` therefore get through: the authority is `postgresql:`, and `@` in the path is deliberately allowed (vector 16). `;`-delimited property dialects get through in the authority. The producer refuses both: its `hostPort` regex requires `host(:digits)?` and rejects `;`. This is the same nested-credential class as the prior slip, reached through `//` instead of an opaque prefix. On the read path the producer never emits these, so exposure is limited to the public-patch path. There it relies on the daemon to refuse them, and that path wasn't supplied.",
+        "evidence": "`rest.startsWith('//')` passes. The authority is `postgresql:`. The forbidden-character class has no `;`, `=`, `,` or `:`-shape rule, and the decode loop returns on a stable value. None of the 77 vectors contain `;`, a trailing-colon authority, or a double-nested hierarchical prefix. The producer `hostPort` regex is `^(?:\\[...\\]|[A-Za-z0-9._-]+)(?::[0-9]{1,5})?$`.",
+        "remedy": "Add a structural check on the decoded authority in both clients. It should be a comma-separated list of `host[:digits]` entries, with hosts allowing underscore, IPv6 and Unicode letters. That keeps multi-host and underscore hosts valid and refuses `;`, `=` and an empty or non-numeric port. Add vectors for `jdbc://postgresql://u:p@h/db`, `sqlserver://h;password=x`, `https://host:/` and `redis://user:pw/`, and run them in both languages through all four paths."
+      },
+      {
+        "severity": "LOW",
+        "file": "src/shared/connection-manager/wire.ts",
+        "line": 122,
+        "trigger": "Public patch `options.servers: [\"nats://u:p@h\"]`, `options.hosts`, or any URL-bearing option under a key other than `endpoint`.",
+        "defect": "`safeEndpoint` runs only for object keys literally named `endpoint`. The producer treats `options.servers`, `options.hosts` and `options.endpoint` as secret-bearing address slots (`address()` strips userinfo and sets `hasAuth`). The client public-patch guard only blocks `${secret:` and private key names for those fields, so userinfo in them passes the client boundary. This may be intended and left to the daemon.",
+        "evidence": "`safePublicFields` branches only on `k==='endpoint'`. The `projected()` secrets list includes `options.servers` and `options.hosts`. The daemon patch classification (around driver-profiles.ts line 495) was not supplied, so I can't confirm whether it rejects or reclassifies these.",
+        "remedy": "Either document that these fields are daemon-owned and add a daemon test that userinfo in public-patch `options.servers` and `options.hosts` is classified as a secret or refused. Or apply the authority screen to the URL-shaped string elements of those keys."
+      }
+    ],
+    "assessments": [
+      {
+        "id": "special-scheme-credentials",
+        "outcome": "holds",
+        "evidence": "Both clients refuse `@` in the authority, with the authority taken up to the first `/`, `?` or `#`, and after up to 8 bounded percent-decoding passes (vectors 24, 28, 29 and 72). They refuse `\\`, controls, and the missing/extra-slash spellings `https:user:pw@host/`, `https:///user:pw@host` and `https:/\\tab/...` (vectors 20-23, 25-27, 42-45). Non-`file` schemes require a nonempty authority. The TS and Kotlin regexes and decode loops are equivalent by inspection. A residual bypass exists for credential-like text in the authority without `@`, covered in finding 2."
+      },
+      {
+        "id": "uri-compatibility",
+        "outcome": "could-not-verify",
+        "evidence": "The visible producer projection (`uri`, `address`, `projected`) emits `match[3]` (path and query) without the character, backslash and percent-encoding checks the client enforces. It also omits the endpoint on readonly, which is consistent with the stated contract. Whether supported producer output is actually rejected depends on `clean()`, `schemes` and `privateSlot`, none of which were supplied (see finding 1). Direction of parity: the client is stricter than the producer on path/query characters but looser than the producer on authority shape. The client accepts multi-host mongodb and underscore hosts that the producer's `hostPort` regex refuses, which is benign."
+      },
+      {
+        "id": "opaque-nested-credentials",
+        "outcome": "does-not-hold",
+        "evidence": "The targeted opaque class is closed: vectors 5, 46, 48, 54 and 62-68 are refused by `rest.startsWith('//')` in both clients, including credential-free `jdbc:postgresql://host/db`. A hierarchical-prefix nesting is still accepted, e.g. `jdbc://postgresql://u:p@h/db` with authority `postgresql:`, along with `;`-dialect authorities. The producer refuses these via `hostPort`. The JDBC slip you named is fixed; this is the adjacent residual (finding 2)."
+      }
+    ],
+    "advice": [
+      "Add producer-output vectors to the shared corpus: run producer `uri()`/`address()` outputs for postgres, cockroachdb, mongodb, redis, mysql, mssql, oracle, clickhouse, nats and dynamodb through the safe-read path in both languages.",
+      "The grammar has no scheme allowlist, so `javascript://host/...` or `data://host` would pass as a public endpoint. Consider restricting to the producer `schemes` set, or to an alphanumeric list plus `+.-`, if endpoints are ever rendered as links.",
+      "Consider an NFKC fold of the authority before screening, to defend against fullwidth `＠` and `／`. WHATWG IDNA mapping probably makes these fail in browsers, but this guard is not a browser.",
+      "Document the permissive-versus-strict asymmetry: the client accepts multi-host `mongodb://a:1,b:2/db` (vector 4) but the producer never emits it. Add a note or test so the producer is not later widened without a matching credential-aware check.",
+      "Kotlin `decodePublicPercent` turns a lone surrogate in non-endpoint strings into `?` while the TS version leaves it unchanged. This is harmless today because the result is only used for screening, but a parity vector for generic strings would make the divergence explicit."
+    ],
+    "limitations": [
+      "I reviewed only the supplied entities. `clean()`, `schemes`, `privateSlot`, `shape()`, `valid()` and the daemon patch/`withAuth` code were not provided.",
+      "I did not run any tests. The pass claims are the controller's and are not independently verified. Behaviors such as Java regex surrogate ranges and `new URL` backslash handling are taken from reading, not execution.",
+      "I could not confirm whether the daemon refuses the finding-2 authority forms on the public-patch path.",
+      "This review does not establish end-to-end story closure."
+    ],
+    "evidenceRequests": [
+      "Source of `clean()`, `schemes`, `privateSlot()` and `shape()` in driver-profiles.ts, to settle finding 1 and to confirm that readonly opaque URLs do not throw in `privateSlot`.",
+      "Daemon patch handling around driver-profiles.ts line 495 (`withAuth` and endpoint/option patch classification), to settle findings 2 and 3 on the patch path.",
+      "A producer-output-to-client test that feeds `postgres://host/db\\x`, `mysql://host/a%ff` and `postgres://h/db?application_name=%E9` through `safeConnection` and then `decodeSafeConnectionList`, and its result."
+    ]
+  }
+}

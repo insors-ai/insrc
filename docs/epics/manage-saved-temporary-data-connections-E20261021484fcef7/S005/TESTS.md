@@ -4,11 +4,11 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 60 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 65 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-10-29T14:41:37.350Z on commit `e4b30504f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:37:13.370Z on commit `77571a318`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index**
 
@@ -21,11 +21,11 @@ Run at 2026-10-29T14:41:37.350Z on commit `e4b30504f`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-corpus.test.ts` | 0 | 2 | 10.2 s |  |
+| `src/shared/__tests__/connection-manager-corpus.test.ts` | 0 | 2 | 12.3 s |  |
 
 ## t2
 
-Run at 2026-10-29T14:54:33.596Z on commit `3af052d7d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:31:38.849Z on commit `77571a318`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal**
 
@@ -35,16 +35,19 @@ Run at 2026-10-29T14:54:33.596Z on commit `3af052d7d`. Tests check: **passed**. 
 | pass | CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters | `src/shared/__tests__/connection-manager-wire.test.ts` |
 | pass | CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use | `src/shared/__tests__/connection-manager-wire.test.ts` |
 | pass | CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy | `src/shared/__tests__/connection-manager-wire.test.ts` |
+| pass | CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries | `src/shared/__tests__/connection-manager-wire.test.ts` |
+| pass | CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata | `src/shared/__tests__/connection-manager-wire.test.ts` |
+| pass | CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection | `src/shared/__tests__/connection-manager-wire.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-wire.test.ts` | 0 | 4 | 1.3 s |  |
+| `src/shared/__tests__/connection-manager-wire.test.ts` | 0 | 7 | 1.1 s |  |
 
 ## t3
 
-Run at 2026-10-29T15:05:48.808Z on commit `acea568cf`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:38:42.339Z on commit `77571a318`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types**
 
@@ -56,7 +59,7 @@ Run at 2026-10-29T15:05:48.808Z on commit `acea568cf`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-kotlin-wire.test.ts` | 0 | 1 | 4.5 s |  |
+| `src/shared/__tests__/connection-manager-kotlin-wire.test.ts` | 0 | 1 | 23.2 s |  |
 
 ## t4
 
@@ -164,12 +167,13 @@ Run at 2026-10-29T16:14:53.729Z on commit `f5819230d`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-10-29T16:30:27.553Z on commit `79cb1e42f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:33:40.176Z on commit `77571a318`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
+| pass | CM-S5-FORM-TS: repeated driver rendering reuses validators without a global compiler cache | `src/shared/__tests__/connection-manager-draft.test.ts` |
 | pass | CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel | `src/shared/__tests__/connection-manager-draft.test.ts` |
 | pass | CM-S5-FORM-TS: unsafe input and unknown shapes refuse without changing draft or invoking getters | `src/shared/__tests__/connection-manager-draft.test.ts` |
 
@@ -177,7 +181,7 @@ Run at 2026-10-29T16:30:27.553Z on commit `79cb1e42f`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-draft.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/shared/__tests__/connection-manager-draft.test.ts` | 0 | 3 | 1.1 s |  |
 
 ## t11
 
@@ -198,7 +202,7 @@ Run at 2026-10-29T16:42:41.556Z on commit `7faf99e13`. Tests check: **passed**. 
 
 ## t12
 
-Run at 2026-10-30T04:26:43.355Z on commit `be26a144e`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T05:42:28.488Z on commit `244aec78e`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery**
 
@@ -211,16 +215,17 @@ Run at 2026-10-30T04:26:43.355Z on commit `be26a144e`. Tests check: **passed**. 
 | pass | CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
 | pass | CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
 | pass | CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
+| pass | CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay | `vscode-plugin/src/connections/__tests__/mutation.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 7 | 3 s |  |
+| `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 8 | 4.6 s |  |
 
 ## t13
 
-Run at 2026-10-30T04:28:27.227Z on commit `be26a144e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T05:44:25.280Z on commit `244aec78e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create**
 
@@ -232,7 +237,7 @@ Run at 2026-10-30T04:28:27.227Z on commit `be26a144e`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-kotlin-mutation.test.ts` | 0 | 1 | 26.2 s |  |
+| `src/shared/__tests__/connection-manager-kotlin-mutation.test.ts` | 0 | 1 | 28 s |  |
 
 ## t14
 
@@ -253,7 +258,7 @@ Run at 2026-10-30T18:05:14.854Z on commit `7bb98c890`. Tests check: **passed**. 
 
 ## t15
 
-Run at 2026-10-29T17:49:55.782Z on commit `be1ff5aed`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T05:47:13.567Z on commit `244aec78e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards**
 
@@ -265,7 +270,7 @@ Run at 2026-10-29T17:49:55.782Z on commit `be1ff5aed`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-kotlin-test.test.ts` | 0 | 1 | 4.4 s |  |
+| `src/shared/__tests__/connection-manager-kotlin-test.test.ts` | 0 | 1 | 32.3 s |  |
 
 ## t16
 
@@ -303,7 +308,7 @@ Run at 2026-10-29T18:07:35.864Z on commit `8f1861afd`. Tests check: **passed**. 
 
 ## t18
 
-Run at 2026-10-31T14:12:30.209Z on commit `b09162a00`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:35:12.881Z on commit `77571a318`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close**
 
@@ -316,12 +321,12 @@ Run at 2026-10-31T14:12:30.209Z on commit `b09162a00`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/connections/__tests__/feedback.test.ts` | 0 | 3 | 17.2 s |  |
-| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 11 | 12.4 s |  |
+| `vscode-plugin/src/connections/__tests__/feedback.test.ts` | 0 | 3 | 2.4 s |  |
+| `vscode-plugin/src/connections/__tests__/host.test.ts` | 0 | 11 | 3.2 s |  |
 
 ## t19
 
-Run at 2026-10-29T19:25:47.753Z on commit `f59019245`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:40:22.862Z on commit `77571a318`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation**
 
@@ -333,7 +338,7 @@ Run at 2026-10-29T19:25:47.753Z on commit `f59019245`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-kotlin-render.test.ts` | 0 | 1 | 27.9 s |  |
+| `src/shared/__tests__/connection-manager-kotlin-render.test.ts` | 0 | 1 | 22.6 s |  |
 
 ## t20
 
@@ -387,7 +392,7 @@ Run at 2026-10-29T19:49:45.573Z on commit `86515b7ec`. Tests check: **passed**. 
 
 ## t23
 
-Run at 2026-10-29T20:05:05.638Z on commit `dd12ef1c8`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:43:19.741Z on commit `77571a318`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-SYNC: TypeScript and Kotlin execute identical wire/sc7 recovery transcripts and divergent-consumer negative controls**
 
@@ -404,9 +409,9 @@ Run at 2026-10-29T20:05:05.638Z on commit `dd12ef1c8`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-parity.test.ts` | 0 | 3 | 90.1 s |  |
-| `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 7 | 3 s |  |
-| `vscode-plugin/src/connections/__tests__/removal.test.ts` | 0 | 3 | 1.2 s |  |
+| `src/shared/__tests__/connection-manager-parity.test.ts` | 0 | 3 | 64.4 s |  |
+| `vscode-plugin/src/connections/__tests__/mutation.test.ts` | 0 | 8 | 2.9 s |  |
+| `vscode-plugin/src/connections/__tests__/removal.test.ts` | 0 | 3 | 1.3 s |  |
 
 ## t24
 
@@ -452,7 +457,7 @@ Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/man
 
 ## t30
 
-Run at 2026-10-30T15:46:04.211Z on commit `19e6110fd`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:44:53.050Z on commit `77571a318`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission**
 
@@ -472,12 +477,12 @@ Run at 2026-10-30T15:46:04.211Z on commit `19e6110fd`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/db/__tests__/management-defaults.test.ts` | 0 | 3 | 2.7 s |  |
+| `src/daemon/db/__tests__/management-defaults.test.ts` | 0 | 3 | 2.1 s |  |
 | `src/shared/__tests__/connection-manager-release.test.ts` | 0 | 2 | 0.4 s |  |
 
 ## t31
 
-Run at 2026-10-30T04:33:47.080Z on commit `2c35eb1aa`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T06:48:38.214Z on commit `77571a318`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **smoke: CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite**
 
@@ -489,7 +494,7 @@ Run at 2026-10-30T04:33:47.080Z on commit `2c35eb1aa`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/shared/__tests__/connection-manager-packaging.test.ts` | 0 | 1 | 36.3 s |  |
+| `src/shared/__tests__/connection-manager-packaging.test.ts` | 0 | 1 | 38.1 s |  |
 
 ## t32
 

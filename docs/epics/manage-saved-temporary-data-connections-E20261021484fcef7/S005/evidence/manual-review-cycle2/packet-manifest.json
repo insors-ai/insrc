@@ -1,0 +1,35 @@
+{
+  "kind": "manual-review-workaround-not-canonical-CR",
+  "cycle": 2,
+  "cap": {
+    "maxInputChars": 128000,
+    "includes": "complete normalized provider input; isolated, no tools or inherited history"
+  },
+  "provider": "installed claude CLI through CliProvider",
+  "model": "sonnet",
+  "effort": "high",
+  "packets": [
+    {
+      "round": 1,
+      "basePacketChars": 32599,
+      "basePacketSha256": "25a56ed95eac11a0cce12ac4302e43a752dbc24d28f7ceae4d497221c8b26914",
+      "actualInputProvenance": "round1-result.json",
+      "sourceSnapshot": "244aec78e"
+    },
+    {
+      "round": 2,
+      "basePacketChars": 39290,
+      "basePacketSha256": "8c51100f4c8ab06bc5ab2f6bad87388e76b24e1f42304ce782c7ce7124215c0d",
+      "actualInputProvenance": "round2-result.json",
+      "sourceSnapshot": "b0411102b"
+    },
+    {
+      "round": 3,
+      "basePacketChars": 63235,
+      "basePacketSha256": "2dd5e62671b9a14a527bf0f5a8169156ab961d27286e58c90b2e2fb3a522782b",
+      "actualInputProvenance": "round3-result.json",
+      "sourceSnapshot": "7a2e67d4e"
+    }
+  ],
+  "note": "Round1 actual input appended status text; actual chars/hash recorded in result differ from base packet. Round2/3 exact packet text used. Prompts and structured source retained in local temp folder, source snapshots committed."
+}

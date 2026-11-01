@@ -1,0 +1,56 @@
+{
+  "kind": "manual-review-not-canonical-CR",
+  "cycle": 2,
+  "round": 1,
+  "sourceCommit": "244aec78e",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T05:55:50.402Z",
+  "finished": "2026-11-01T05:57:45.093Z",
+  "inputChars": 33023,
+  "inputSha256": "0013b49e15094b1368147b23e7ca8faf40cba712fbc22fc213d22090eeb504a1",
+  "result": {
+    "summary": "The prior special-scheme MED and the java.net.URI LOW are both closed in the supplied code. I found one new concrete credential-screening gap in the opaque (non-special) scheme path. `jdbc:postgresql://user:pw@host/db` is accepted by both clients, because the only screening is of the text before the first `/`, `?` or `#`, and for that input the text is `postgresql:`. The scoped special-scheme correction and URI compatibility hold on this evidence. This is a review of the supplied code only. I did not run anything, and I do not claim the full story is verified.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+        "line": 208,
+        "trigger": "A safe read, list row or public patch carries `endpoint` = `jdbc:postgresql://user:pw@host/db`. Any nested-URL form with an absolute outer scheme gives the same result, for example `jdbc:mysql://u:p@h/db` or `jdbc:sqlserver://u:p@h`.",
+        "defect": "For a non-network scheme whose remainder does not start with `//`, the 'opaque prefix' is the text up to the first `/`, `?` or `#`. For a nested URL that prefix is only the inner scheme (`postgresql:`), so the inner `//user:pw@host` authority is never screened. The endpoint is accepted with embedded credentials, and the text is preserved unchanged. This is the same credential-bearing-endpoint class as the closed MED, reached through the opaque-scheme branch. TS has the identical behaviour, so this is a shared screening gap rather than a parity gap. It also defeats the contract's stated 'conservative credential screening' for opaque forms.",
+        "evidence": "Trace for `jdbc:postgresql://u:p@host/db`. The control and backslash check passes. The scheme match is `jdbc:`. `rest` is `postgresql://u:p@host/db`. `network` is false and `hierarchical` is false, because `rest` does not start with `//`. Kotlin line 208 and TS line 112 compute `authority` as `rest` split at the first `[/?#]`, which gives `postgresql:`. The forbidden-character regex does not match (`:` is not in the set). `decodePublicPercent` leaves it unchanged, so the check returns as accepted. `walk(child)` then finds no `${secret:`. No shared case (endpoint-01 to 61) covers an outer-scheme-plus-nested-`//` form. Case 54 (`custom:user:pw@host`) is refused only because the `@` happens to fall before any `/`.",
+        "remedy": "For schemes that are not network schemes and do not start with `//`, screen every `//`-introduced authority segment that appears before the first `?` or `#`. For example, match `//([^/?#]*)` over the opaque prefix and run each capture through the same forbidden-character and bounded-decode check. A stricter alternative is to refuse any `@` before the first `?` or `#` in opaque forms. Apply the change identically in `wire.ts` `safeEndpoint` and the Kotlin `safeEndpoint`. Add `jdbc:postgresql://u:p@host/db` and `jdbc:postgresql://host/db` as invalid and valid cases in the shared corpus."
+      }
+    ],
+    "assessments": [
+      {
+        "id": "special-scheme-credentials",
+        "outcome": "holds",
+        "evidence": "For http, https, ws, wss, ftp and file, `//` is required, backslashes and all C0/DEL/C1 controls (TAB, LF and CR included) are refused, and the network authority must be nonempty. Cases 20-27, 38 and 43-47 are therefore refused, because `https:user:pw@host/`, `https:///user:pw@host`, the backslash forms and the control-character forms no longer reach a point where `@` is hidden. A literal `@` in the authority is refused, and `%40`, `%2540`, `%2f`, `%5c`, `%3f` and `%23` are refused after up to 8 strict decoding passes. The decoding failure path is bounded: it fails after 8 passes and on malformed UTF-8. The TS and Kotlin grammars are line-for-line equivalent for these paths. Scope note: this holds for the special-scheme correction only. The separate MED finding on nested opaque URLs such as `jdbc:` is a different branch and is unresolved."
+      },
+      {
+        "id": "uri-compatibility",
+        "outcome": "holds",
+        "evidence": "The Kotlin path no longer builds a `java.net.URI`, so repeated `#`, U+00A0, U+2028, U+3000, braces, brackets, bare `%`, non-ASCII hosts and paths, and astral characters (cases 07-17, 60 and 61) are accepted unchanged. Accepted text is never rewritten. By inspection of the regexes, the JS `/u` classes and the Java classes are equivalent: lone surrogates are caught by the first test, and `decodeURIComponent` and the strict Java UTF-8 decoder agree on malformed input, overlongs, encoded surrogates and the BOM. Both clients treat a bare `%` as a literal by the same rule. I found no TS/Kotlin verdict divergence. This relies on the supplied claim that the parity tests passed. I did not run them."
+      }
+    ],
+    "advice": [
+      "Add shared-corpus cases for nested opaque URLs (`jdbc:postgresql://u:p@h/db` invalid, `jdbc:postgresql://h/db` valid). Add the same for `custom:/u:p@h` and `custom:?u:p@h`, to document explicitly whether they are intended to be accepted.",
+      "The `endpoint` check runs only when the value of a key named `endpoint` is a string. If the daemon schema ever allows an array or an alternate key such as `url`, `baseUrl` or `connectionString`, those values get only the secret-reference check. Confirm the allowed public fields and add a corpus case such as `{endpoint:['https://u:p@h']}` if arrays are possible.",
+      "Query-borne credentials, for example `https://host/?password=x`, are outside this userinfo grammar and are accepted. Make sure that is a deliberate decision recorded in the policy.",
+      "Path and query text such as `?q=%E9` or `/%ff` is refused by the generic recursive percent-decode walk, because strict UTF-8 decoding fails. In Kotlin one such row refuses the whole `list()`. The contract text says path, query and fragment text is 'retained'. Either add a corpus case documenting this refusal or limit strict-decode failure to the authority.",
+      "Consider a corpus case with a nine-layer nested percent encoding to pin the 8-pass refusal in both clients."
+    ],
+    "limitations": [
+      "I did not run anything. TS and Kotlin equivalence is judged from the source, and the test results are the controller's reported evidence.",
+      "The definitions of `fail`, `object`, `decode`, `data`, `PUBLIC_CONNECTION_FIELDS` and `publicFieldNames` were not supplied. The depth, size and key bounds, and which public fields can carry URL strings, are unverified.",
+      "The WHATWG and JDK behaviours I rely on come from my own knowledge, not from the supplied evidence.",
+      "The daemon, UI, live JetBrains behaviour and the broader 83-clause story are out of scope and unverified."
+    ],
+    "evidenceRequests": [
+      "The definition of `PUBLIC_CONNECTION_FIELDS` and `publicFieldNames`, and the schema of any public field that can hold a URL or endpoint (string, array or nested object).",
+      "The bodies of `decode` and `data`, to confirm the bounds and copy semantics.",
+      "The corpus case list as run by the Kotlin and TS parity tests, to confirm that no nested-opaque-URL case exists beyond endpoint-01 to 61."
+    ]
+  }
+}

@@ -1,4 +1,38 @@
-# S005 independent manual review — 2026-11-01
+# S005 independent manual review — cycle 2
+
+Status: **scoped corrections closed by independent review; formal Story completion pending**. The user authorized this second cycle and the bounded private-code Claude CLI workaround. All three rounds completed. Round 3 reports no unresolved concrete defects in the supplied correction scope. This is manual evidence, not a canonical CR, BUILD approval or release certification.
+
+The corrections are committed in `244aec78e`, `b0411102b`, `bf5b6728a` and `7a2e67d4e`. The final review inspected source snapshot `7a2e67d4e`. No daemon restart or plugin installation was performed during this cycle.
+
+## Cycle 2 changes and findings
+
+- Replaced platform URL-parser differences with a documented portable boundary and 77 shared vectors. Every vector executes safe read, list, public patch and nested option patch in both languages; accepted text is preserved unchanged. Non-string endpoint fields and opaque/nested SDK prefixes are refused.
+- Round 1 confirmed the prior special-scheme and Java URI findings corrected, and found a nested opaque JDBC gap. Round 2 confirmed that direct gap closed, then identified a real producer/client mismatch for unusual saved path characters.
+- The producer and TypeScript consumer now share a pure endpoint predicate. Projection marks unsupported endpoints read-only and omits them while retaining stored configuration. This prevents one unusual saved endpoint from invalidating the whole list. Existing producer strict percent/reference checks handle malformed UTF-8 escapes.
+- Producer round-trip regressions cover eleven URL driver kinds, unsupported opaque inputs and unsafe saved-path forms. Authoritative mutation regressions verify refusal of nested JDBC/semicolon dialects and credential-bearing NATS/etcd public options. After seeing that code, round 3 rejected the remaining patch-parser candidates as defects under the explicit daemon-owned validation contract.
+- Validator retention, native draft-test rejection, known-unsent expiry and recovery-copy corrections from cycle 1 are included in `244aec78e`.
+
+## Bounded review method and evidence
+
+Each round used a fresh serial, tool-free `CliProvider.completeStructured` call through the installed Claude CLI, configured `sonnet`/`high`, with no inherited chat or MCP tools. Complete normalized input was capped at 128,000 characters including supplied context: actual round sizes were 33,023, 39,290 and 63,235 characters. No model version beyond the configured alias was captured. Structured source entities, coordinates, summaries, relations, exact shared vectors and relevant producer counterevidence were supplied instead of a whole-repository dump. Local source packets are retained in `/tmp/insrc-s5-manual-review-cycle2`; input hashes and raw results are preserved in `evidence/manual-review-cycle2/`.
+
+This cycle reviewed correction closure, not all 83 original obligations. The baseline ledger still contains 16 partial positive assessments, one historical failure and 66 `could-not-verify` entries; targeted correction evidence does not silently close those global coverage gaps.
+
+## Validation and limits
+
+The final focused wire/producer/release run passed 18 tests and the root typecheck passed. Earlier in this cycle 42 VS Code Connections tests passed, and serial native corpus/wire/recovery parity passed six Node wrapper tests against 77 endpoint vectors. The post-extraction parity rerun passed all three tests. Current task gates `t1`, `t2`, `t3`, `t10`, `t18`, `t19`, `t23`, `t30` and `t31` passed; unchanged correction gates `t12`, `t13` and `t15` passed earlier in this cycle. Final packaging passed fresh Node22 root/extension checks, bundling and eleven extension runtime/dependency smoke tests, plus JDK21 assemble and native descriptor JUnit. Raw results and source fingerprints are in `evidence/manual-review-cycle2/validation.json`.
+
+An added round-trip test initially assumed the optional editable `readOnly` field was explicitly false; the producer omits it. The assertion was corrected and the complete focused run passed. Earlier transient root typecheck failure in a parallel graph change is preserved alongside the successful retry. Historical full-sweep failures/timeouts remain recorded; no fresh full-sweep success is claimed here.
+
+VS Code live acceptance remains user-reported for 0.5.23, not current correction bytes. JetBrains live UI remains **deferred-user**. SQL Server, provider/service and positive worker-affinity evidence remain pending. Runtime default-on behavior and the independent release-audit hold remain unchanged. No canonical CR or BUILD approval was fabricated. The existing inventory hash for the parallel-stream `vscode-plugin/src/extension.ts` entry point remains stale; both hashes are recorded in the cycle validation record. Owned correction fingerprints match. This cycle does not certify the complete inventory.
+
+The original `evidence/t30/task-validation.json` is retained as a historical tool transcript from before default runtime enablement. Its `producerPolicyModified:false` and old admission-policy statements are superseded; the current inventory records `producerPolicyModified:true`, runtime enabled and independent release audit held. Use `evidence/manual-review-cycle2/final-gate-t30.json` for this cycle’s validation. The generated BUILD checklist was refreshed by the successful gate; historical files were not rewritten as current proof.
+
+The cycle 1 record below is historical; its uncommitted/remaining-finding statements describe that earlier snapshot and are superseded for these scoped corrections by cycle 2.
+
+---
+
+# Cycle 1 historical record — 2026-11-01
 
 Status: **needs another cycle**. The user authorized a manual workaround and explicitly authorized sending bounded private code batches through the installed Claude CLI. This produced independent inspection and targeted fix verification; full requirements coverage remains unverified. No current canonical CR, BUILD approval or release certification was produced.
 

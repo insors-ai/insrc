@@ -567,6 +567,41 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 	};
 }
 
+/**
+ * Bring the graph and the vector table back into agreement (Epic c2ba6fa6
+ * s2), once when the daemon starts, before any job runs: a vector whose
+ * entity is not stored is deleted (a removal whose vector delete failed), so
+ * a later plain add for a re-allocated id cannot meet it; an entity whose
+ * marker says embedded but whose vector is missing (a store written before
+ * the marker order changed, or a vector store reset) has its marker cleared,
+ * which counts it unembedded for the backfill.
+ */
+export async function reconcileEntityVectors(): Promise<{ orphanVectorsDeleted: number; markersCleared: number }> {
+	assertNoSessionPersistence();
+	const lance = await import('./lance/entity-vec.js');
+	const vectorIds = new Set(await lance.listEntityVecIds());
+	const storedIds = new Set<string>();
+	let markersCleared = 0;
+	await withWriteTxn(s => {
+		for (const { key, value } of s.entity.getRange()) {
+			const u64 = decodeKeyU64(key as Buffer);
+			const id = lookupStringIdByU64(s, u64);
+			if (id === undefined) continue;
+			storedIds.add(id);
+			const row = decodeEntityRow(value as Buffer);
+			if (row.embeddingModel === '' || vectorIds.has(id)) continue;
+			putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: '' });
+			markersCleared++;
+		}
+	});
+	const orphans = [...vectorIds].filter(id => !storedIds.has(id));
+	for (let i = 0; i < orphans.length; i += 500) await lance.deleteEntityVecsByIds(orphans.slice(i, i + 500));
+	if (orphans.length > 0 || markersCleared > 0) {
+		log.info({ orphanVectorsDeleted: orphans.length, markersCleared }, 'graph and vector table reconciled');
+	}
+	return { orphanVectorsDeleted: orphans.length, markersCleared };
+}
+
 export async function deleteEntitiesForFile(_db: DbClient, filePath: string): Promise<void> {
 	assertNoSessionPersistence();
 	const store = await getGraphStore();

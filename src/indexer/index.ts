@@ -4,7 +4,7 @@ import { join, extname, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
 import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity } from '../shared/types.js';
 import type { SummariseDocResult } from '../analyze/summariser/index.js';
-import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById, deleteEntitiesForRepo } from '../db/entities.js';
+import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById, deleteEntitiesForRepo, reconcileEntityVectors } from '../db/entities.js';
 import {
   upsertRelations,
   deleteRelationsForFile,
@@ -206,6 +206,14 @@ export class IndexerService {
    */
   async start(repos: RegisteredRepo[]): Promise<void> {
     log.info({ repos: repos.length }, 'indexer starting');
+    // Before any job runs: the graph and the vector table agree again (Epic
+    // c2ba6fa6 s2). A vector store that cannot be read must not stop the
+    // indexer; the backfill and the next start try again.
+    try {
+      await reconcileEntityVectors();
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, 'graph/vector reconciliation failed at start');
+    }
     // A live ignore-rule change: the clean-up pass removes every stored file
     // the new rules leave out -- also one indexed after the filter was last
     // rebuilt, which the refresh's own 'left' list cannot name (s6 review).

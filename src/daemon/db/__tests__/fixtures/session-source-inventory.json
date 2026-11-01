@@ -21829,6 +21829,10 @@
     ],
     [
      "serialization",
+     "assertNoSessionPersistence"
+    ],
+    [
+     "serialization",
      "b.writeUInt32BE"
     ],
     [
@@ -21928,6 +21932,14 @@
      "decodeEntityRow"
     ],
     [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "storage-call",
+     "decodeEntityRow"
+    ],
+    [
      "storage-call",
      "decodeEntityRow"
     ],
@@ -22013,6 +22025,14 @@
     ],
     [
      "serialization",
+     "decodeKeyU64"
+    ],
+    [
+     "serialization",
+     "decodeKeyU64"
+    ],
+    [
+     "storage-call",
      "decodeKeyU64"
     ],
     [
@@ -22544,6 +22564,10 @@
      "import"
     ],
     [
+     "unresolved-call",
+     "import"
+    ],
+    [
      "storage-call",
      "incomingEdgesInTxn"
     ],
@@ -22584,6 +22608,14 @@
      "lance.addEntityEmbeddings"
     ],
     [
+     "storage-call",
+     "lance.deleteEntityVecsByIds"
+    ],
+    [
+     "storage-call",
+     "lance.listEntityVecIds"
+    ],
+    [
      "serialization",
      "lance.writeEntityEmbedding"
     ],
@@ -22601,7 +22633,7 @@
     ],
     [
      "diagnostic",
-     "log.warn"
+     "log.info"
     ],
     [
      "diagnostic",
@@ -22620,6 +22652,10 @@
      "log.warn"
     ],
     [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
      "storage-call",
      "lookupRepoIdInTxn"
     ],
@@ -22690,6 +22726,10 @@
     [
      "storage-call",
      "lookupRepoPath"
+    ],
+    [
+     "storage-call",
+     "lookupStringIdByU64"
     ],
     [
      "storage-call",
@@ -22798,6 +22838,10 @@
     [
      "storage-call",
      "prefixSuccessor"
+    ],
+    [
+     "storage-call",
+     "putEntityRowInTxn"
     ],
     [
      "storage-call",
@@ -22986,6 +23030,10 @@
     [
      "storage-call",
      "s.entity.get"
+    ],
+    [
+     "storage-call",
+     "s.entity.getRange"
     ],
     [
      "storage-call",
@@ -23288,6 +23336,10 @@
      "withWriteTxn"
     ],
     [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
      "serialization",
      "writeVectorsThenMarkers"
     ],
@@ -23304,9 +23356,9 @@
      "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 379,
-   "sitesDigest": "df6d4511b68bbda45328e012bce21ba885a67c894d8df25c36e8fcdd6bf61f85",
-   "sourceDigest": "fa34a9365dca8a47b7297d0e798041042f5ca89cbf199a94a3a7cca13cdc9c24",
+   "siteCount": 392,
+   "sitesDigest": "92a5b4ff738b45a1ea2054700da189fa52f992d2d812c51090d2aa7096fa11ec",
+   "sourceDigest": "4d782c77304116e003a9780e4ac80b1f6c98cc2626e3f8b65873c6ad849e4789",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -26860,8 +26912,8 @@
      "assertNoSessionPersistence"
     ],
     [
-     "storage-call",
-     "escapeLanceString"
+     "serialization",
+     "assertNoSessionPersistence"
     ],
     [
      "storage-call",
@@ -26882,6 +26934,14 @@
     [
      "storage-call",
      "escapeLanceString"
+    ],
+    [
+     "storage-call",
+     "escapeLanceString"
+    ],
+    [
+     "storage-call",
+     "getEntityVecTable"
     ],
     [
      "storage-call",
@@ -26985,6 +27045,18 @@
     ],
     [
      "storage-call",
+     "table.query"
+    ],
+    [
+     "storage-call",
+     "table.query().select"
+    ],
+    [
+     "storage-call",
+     "table.query().select(['id']).toArray"
+    ],
+    [
+     "storage-call",
      "table.search"
     ],
     [
@@ -27004,9 +27076,9 @@
      "writeEntityEmbeddings"
     ]
    ],
-   "siteCount": 47,
-   "sitesDigest": "ae034b9f84a4f45cb6db7a3d700b566342ad5c16b5302030cbc527a9753e870e",
-   "sourceDigest": "c0a61e7f404eadec48fe87f30a5258dae29779fa2669615fde7d9fe0740e5519",
+   "siteCount": 52,
+   "sitesDigest": "036d32f1f550f97f57c1aa6ccfa87c0c47aaddede93198893ba3bf6c36dd5c3f",
+   "sourceDigest": "ecc6f5232819163cab08cfed9fb69a1868b9c843f7af9d00b4b62db4b72bcd52",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -31671,6 +31743,10 @@
      "log.warn"
     ],
     [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
      "storage-call",
      "lookupRepoId"
     ],
@@ -31709,6 +31785,10 @@
     [
      "storage-call",
      "readIndexState"
+    ],
+    [
+     "storage-call",
+     "reconcileEntityVectors"
     ],
     [
      "storage-call",
@@ -31787,9 +31867,9 @@
      "upsertRelations"
     ]
    ],
-   "siteCount": 135,
-   "sitesDigest": "93ee7357e574fa171fe79b522e25f7a5041fecd47e050b32454a0e5abd10376e",
-   "sourceDigest": "a8e47ce399145729861932c3f099372c4f00d6b7b9caf671fe3ca804431e5915",
+   "siteCount": 137,
+   "sitesDigest": "932ffefc5452ba4654ade6d082ed1a5b052ba738f7a1a969d0d48580d369b88a",
+   "sourceDigest": "cde8cbc8f643ae0b2bca311a0160929ab914260b229f8a0cfc604157fe9dfc2b",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

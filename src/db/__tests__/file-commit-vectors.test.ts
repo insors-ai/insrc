@@ -21,8 +21,12 @@ import { closeGraphStore, getGraphStore, setGraphStorePath, withWriteTxn } from 
 import { updateIndexStateRowInTxn } from '../graph/index-state-rows.js';
 import { completenessOf, readIndexState } from '../index-state.js';
 import { lookupRepoId } from '../repos.js';
-import { _setVectorWriterForTest, commitFile, getEntity, updateEmbedding } from '../entities.js';
-import { searchEntityVecs } from '../lance/entity-vec.js';
+import { _setVectorWriterForTest, commitFile, getEntity, reconcileEntityVectors, updateEmbedding } from '../entities.js';
+import { addEntityEmbeddings, deleteEntityVecsByIds, searchEntityVecs } from '../lance/entity-vec.js';
+import { IndexQueue } from '../../daemon/queue.js';
+import { IndexerService } from '../../indexer/index.js';
+import type { Watcher } from '../../indexer/watcher.js';
+import type { DbClient } from '../client.js';
 import { addRepo } from '../repos.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
 import type { Entity } from '../../shared/types.js';
@@ -165,5 +169,48 @@ test('t6: the recount when the store opens corrects a wrong stored count', async
 	setGraphStorePath(join(dir, 'graph.lmdb'));
 	await getGraphStore();
 	assert.equal((await readIndexState(REPO))?.unembedded, 2);
+});
+
+// ---------------------------------------------------------------------------
+// t7: the graph and the vector table agree again at start
+// ---------------------------------------------------------------------------
+
+test('t7: a vector whose entity is not stored is deleted, so a later first commit of that id leaves exactly one vector row', async () => {
+	const a = entity('a', { vector: vec(21) });
+	// A removal whose vector delete failed: the vector outlives its entity.
+	await addEntityEmbeddings([{ id: a.id, embedding: new Float32Array(vec(21)), repo: REPO, kind: 'function', artifact: false }]);
+	assert.equal(await vectorRows(a.id, vec(21)), 1);
+
+	// (The vector table is shared by this file's tests, each with a fresh graph: earlier tests' vectors are orphans too.)
+	const result = await reconcileEntityVectors();
+	assert.ok(result.orphanVectorsDeleted >= 1);
+	assert.equal(await vectorRows(a.id, vec(21)), 0);
+
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [a], relations: [] });   // a plain add: first allocated
+	assert.equal(await vectorRows(a.id, vec(21)), 1);
+});
+
+test('t7: an entity whose marker says embedded but whose vector is missing has its marker cleared and is counted unembedded', async () => {
+	const a = entity('a', { vector: vec(22) });
+	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h1', entities: [a], relations: [] });
+	assert.equal(await marker(a.id), MODEL);
+	await deleteEntityVecsByIds([a.id]);   // e.g. a vector store reset
+
+	const result = await reconcileEntityVectors();
+	assert.equal(result.markersCleared, 1);
+	assert.equal(await marker(a.id), '');
+	assert.equal((await readIndexState(REPO))?.unembedded, 1);
+});
+
+test('t7: the indexer reconciles the graph and the vector table when it starts, before any job', async () => {
+	const ghost = entity('ghost', { vector: vec(23) });
+	await addEntityEmbeddings([{ id: ghost.id, embedding: new Float32Array(vec(23)), repo: REPO, kind: 'function', artifact: false }]);
+	const watcher = { onEvents() {}, onFilterRefreshed() {}, async addRepo() {}, async removeRepo() {}, async addConfigDir() {}, async syncIgnores() {} } as unknown as Watcher;
+	const queue = new IndexQueue();
+	queue.enqueue = (() => {}) as typeof queue.enqueue;
+
+	await new IndexerService(null as unknown as DbClient, queue, watcher, undefined, 600_000).start([]);
+
+	assert.equal(await vectorRows(ghost.id, vec(23)), 0);
 });
 

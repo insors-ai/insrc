@@ -377,6 +377,14 @@ export async function deleteEntityVec(id: string): Promise<void> {
 	await table.delete(`id = '${escapeLanceString(id)}'`);
 }
 
+/** Every entity id with a stored vector (the seed row left out). */
+export async function listEntityVecIds(): Promise<string[]> {
+	assertNoSessionPersistence();
+	const table = await getEntityVecTable();
+	const rows = await table.query().select(['id']).toArray();
+	return rows.map(r => r['id'] as string).filter(id => id !== '_seed_entity_vec');
+}
+
 export async function deleteEntityVecsByIds(ids: readonly string[]): Promise<void> {
 	assertNoSessionPersistence();
 	if (ids.length === 0) return;

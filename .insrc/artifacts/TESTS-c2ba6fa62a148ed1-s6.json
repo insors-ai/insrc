@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s6",
     "createdAt": "2026-11-01T08:48:41.494Z",
-    "updatedAt": "2026-11-01T11:16:25.089Z",
+    "updatedAt": "2026-11-01T11:46:05.908Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -33,8 +33,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "42f077889",
-        "ranAt": "2026-11-01T09:27:24.952Z",
+        "commit": "c8a1b9942",
+        "ranAt": "2026-11-01T11:40:52.254Z",
         "testsPassed": true,
         "tests": [
           {
@@ -107,7 +107,7 @@
             "file": "src/indexer/__tests__/file-filter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1328,
+            "durationMs": 1085,
             "titles": [
               {
                 "title": "ac1: an anchored rule excludes the top-level directory it names, not a same-named directory deeper in the tree",
@@ -138,7 +138,43 @@
                 "result": "pass"
               },
               {
+                "title": "ac5: refreshFileFilter, given an ignore file that gained one rule and lost another, returns the correct left/entered sets",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: proposeIgnoreFile, given a repo with no root ignore file and a model stub that succeeds, writes the model-sourced file and returns {written:true, source:\"model\"}",
+                "result": "pass"
+              },
+              {
+                "title": "ac7/lc2: proposeIgnoreFile, given a model stub that throws, still writes a fallback ignore file and returns {written:true, source:\"fallback\", reason} without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "a malformed (prose) model response is treated as unusable and falls back, without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "ac8: proposeIgnoreFile given a repo whose root ignore file already exists leaves its bytes unchanged and never invokes the model",
+                "result": "pass"
+              },
+              {
+                "title": "includes() answers false (not a throw) for a path outside repoPath, e.g. one reported under a different symlink resolution of a temp dir",
+                "result": "pass"
+              },
+              {
                 "title": "error path: a broken .git directory degrades the tracked-file override to empty, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "a proposal wrapped in markdown fences is written without the fence lines",
+                "result": "pass"
+              },
+              {
+                "title": "a proposal with a pattern that leaves out the whole repository is not written; the plain fallback is",
+                "result": "pass"
+              },
+              {
+                "title": "a model that does not answer in time is aborted and the plain fallback is written",
                 "result": "pass"
               }
             ],
@@ -216,8 +252,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "4efa01a71",
-        "ranAt": "2026-11-01T09:45:47.053Z",
+        "commit": "c8a1b9942",
+        "ranAt": "2026-11-01T11:42:15.530Z",
         "testsPassed": true,
         "tests": [
           {
@@ -237,12 +273,27 @@
               },
               {
                 "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "ac8: proposeIgnoreFile given a repo whose root ignore file already exists leaves its bytes unchanged and never invokes the model",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
                 "title": "a malformed (prose) model response is treated as unusable and falls back, without throwing",
                 "result": "pass"
               },
               {
                 "file": "src/indexer/__tests__/file-filter.test.ts",
-                "title": "ac8: proposeIgnoreFile given a repo whose root ignore file already exists leaves its bytes unchanged and never invokes the model",
+                "title": "a proposal wrapped in markdown fences is written without the fence lines",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "a proposal with a pattern that leaves out the whole repository is not written; the plain fallback is",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter.test.ts",
+                "title": "a model that does not answer in time is aborted and the plain fallback is written",
                 "result": "pass"
               }
             ],
@@ -254,7 +305,7 @@
             "file": "src/indexer/__tests__/file-filter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1131,
+            "durationMs": 1213,
             "titles": [
               {
                 "title": "ac1: an anchored rule excludes the top-level directory it names, not a same-named directory deeper in the tree",
@@ -305,7 +356,23 @@
                 "result": "pass"
               },
               {
+                "title": "includes() answers false (not a throw) for a path outside repoPath, e.g. one reported under a different symlink resolution of a temp dir",
+                "result": "pass"
+              },
+              {
                 "title": "error path: a broken .git directory degrades the tracked-file override to empty, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "a proposal wrapped in markdown fences is written without the fence lines",
+                "result": "pass"
+              },
+              {
+                "title": "a proposal with a pattern that leaves out the whole repository is not written; the plain fallback is",
+                "result": "pass"
+              },
+              {
+                "title": "a model that does not answer in time is aborted and the plain fallback is written",
                 "result": "pass"
               }
             ],
@@ -567,8 +634,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "684b25450",
-        "ranAt": "2026-11-01T10:20:34.811Z",
+        "commit": "c8a1b9942",
+        "ranAt": "2026-11-01T11:43:23.247Z",
         "testsPassed": true,
         "tests": [
           {
@@ -616,7 +683,7 @@
             "file": "src/indexer/__tests__/cross-file-modes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1517,
+            "durationMs": 1860,
             "titles": [
               {
                 "title": "a settle that commits an awaited target promotes the rows awaiting it",
@@ -641,7 +708,7 @@
             "file": "src/indexer/__tests__/source-roots.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 585,
+            "durationMs": 569,
             "titles": [
               {
                 "title": "walks <modules> recursively + picks up each child source dir",
@@ -750,10 +817,38 @@
             "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 644,
+            "durationMs": 1404,
             "titles": [
               {
                 "title": "a watcher-emitted event for a FileFilter-excluded file never reaches a registered handler, while one for an included file does",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: an ignore-file edit that drops one rule and adds another, in one batch with edits to the files it moves, is judged by the new rules -- the newly covered file leaves, the uncovered one enters, once each",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a file the removed rule covered enters the index even when the batch carries no event for it",
+                "result": "pass"
+              },
+              {
+                "title": "a change to the clone's exclude file, which no event names, is found by its content and applied before the batch is judged",
+                "result": "pass"
+              },
+              {
+                "title": "the real watcher applies an ignore-file edit and an edit to a file it newly covers consistently in one pass",
+                "result": "pass"
+              },
+              {
+                "title": "a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh is reported, and a .gitignore a tool writes inside an ignored directory refreshes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built",
                 "result": "pass"
               }
             ],
@@ -1140,8 +1235,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "e52dd8f0f",
-        "ranAt": "2026-11-01T10:45:59.718Z",
+        "commit": "c8a1b9942",
+        "ranAt": "2026-11-01T11:44:37.506Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1173,6 +1268,16 @@
                 "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
                 "title": "a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one",
                 "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "a refresh is reported, and a .gitignore a tool writes inside an ignored directory refreshes nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
+                "title": "a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1183,7 +1288,7 @@
             "file": "src/indexer/__tests__/watcher-file-filter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1469,
+            "durationMs": 1562,
             "titles": [
               {
                 "title": "a watcher-emitted event for a FileFilter-excluded file never reaches a registered handler, while one for an included file does",
@@ -1207,6 +1312,14 @@
               },
               {
                 "title": "a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one",
+                "result": "pass"
+              },
+              {
+                "title": "a refresh is reported, and a .gitignore a tool writes inside an ignored directory refreshes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built",
                 "result": "pass"
               }
             ],
@@ -1320,8 +1433,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "7c661c378",
-        "ranAt": "2026-11-01T11:16:25.089Z",
+        "commit": "98f3aff9e",
+        "ranAt": "2026-11-01T11:46:05.908Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1345,6 +1458,26 @@
                 "result": "pass"
               },
               {
+                "file": "src/indexer/__tests__/file-filter-git-conformance.test.ts",
+                "title": "a repository registered at a subdirectory of a git working tree gets the tree's rules and tracked files, as git ls-files run there does",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter-git-conformance.test.ts",
+                "title": "a symbolic link to a file is listed as git lists it, and one to a directory is not followed",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter-git-conformance.test.ts",
+                "title": "a nested repository's files are not this repository's, as git does not list them",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-filter-git-conformance.test.ts",
+                "title": "the clone's exclude file outranks the global ignore file, as in git, and the global file is found under XDG_CONFIG_HOME",
+                "result": "pass"
+              },
+              {
                 "file": "src/indexer/__tests__/file-selection.test.ts",
                 "title": "on a mixed fixture the full index selects the files it selected before, less only the lock file and the oversized JSON the artifact parser skipped",
                 "result": "pass"
@@ -1358,7 +1491,7 @@
             "file": "src/indexer/__tests__/file-filter-git-conformance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 767,
+            "durationMs": 1206,
             "titles": [
               {
                 "title": "ac1/ac3: FileFilter lists exactly the files real git includes, over anchored, nested, negation, precedence, directory-only and globstar rules",
@@ -1371,6 +1504,22 @@
               {
                 "title": "ac9: a non-git folder holding the same tree leaves out the same files its ignore files leave out in the git repository",
                 "result": "pass"
+              },
+              {
+                "title": "a repository registered at a subdirectory of a git working tree gets the tree's rules and tracked files, as git ls-files run there does",
+                "result": "pass"
+              },
+              {
+                "title": "a symbolic link to a file is listed as git lists it, and one to a directory is not followed",
+                "result": "pass"
+              },
+              {
+                "title": "a nested repository's files are not this repository's, as git does not list them",
+                "result": "pass"
+              },
+              {
+                "title": "the clone's exclude file outranks the global ignore file, as in git, and the global file is found under XDG_CONFIG_HOME",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1379,7 +1528,7 @@
             "file": "src/indexer/__tests__/file-selection.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1387,
+            "durationMs": 1427,
             "titles": [
               {
                 "title": "the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected",

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 46 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 55 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -18,7 +18,7 @@ Reported by the builder, not run by the gate: **pass**. Evidence: package.json:5
 
 ## t2
 
-Run at 2026-11-01T09:27:24.952Z on commit `42f077889`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T11:40:52.254Z on commit `c8a1b9942`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: createFileFilter**
 
@@ -47,7 +47,7 @@ Run at 2026-11-01T09:27:24.952Z on commit `42f077889`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/file-filter.test.ts` | 0 | 8 | 1.3 s |  |
+| `src/indexer/__tests__/file-filter.test.ts` | 0 | 17 | 1.1 s |  |
 
 ## t3
 
@@ -67,7 +67,7 @@ Run at 2026-11-01T09:42:47.660Z on commit `d638e86b5`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-01T09:45:47.053Z on commit `4efa01a71`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T11:42:15.530Z on commit `c8a1b9942`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: proposeIgnoreFile**
 
@@ -75,14 +75,17 @@ Run at 2026-11-01T09:45:47.053Z on commit `4efa01a71`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | ac6: proposeIgnoreFile, given a repo with no root ignore file and a model stub that succeeds, writes the model-sourced file and returns {written:true, source:"model"} | `src/indexer/__tests__/file-filter.test.ts` |
 | pass | ac7/lc2: proposeIgnoreFile, given a model stub that throws, still writes a fallback ignore file and returns {written:true, source:"fallback", reason} without throwing | `src/indexer/__tests__/file-filter.test.ts` |
-| pass | a malformed (prose) model response is treated as unusable and falls back, without throwing | `src/indexer/__tests__/file-filter.test.ts` |
 | pass | ac8: proposeIgnoreFile given a repo whose root ignore file already exists leaves its bytes unchanged and never invokes the model | `src/indexer/__tests__/file-filter.test.ts` |
+| pass | a malformed (prose) model response is treated as unusable and falls back, without throwing | `src/indexer/__tests__/file-filter.test.ts` |
+| pass | a proposal wrapped in markdown fences is written without the fence lines | `src/indexer/__tests__/file-filter.test.ts` |
+| pass | a proposal with a pattern that leaves out the whole repository is not written; the plain fallback is | `src/indexer/__tests__/file-filter.test.ts` |
+| pass | a model that does not answer in time is aborted and the plain fallback is written | `src/indexer/__tests__/file-filter.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/file-filter.test.ts` | 0 | 13 | 1.1 s |  |
+| `src/indexer/__tests__/file-filter.test.ts` | 0 | 17 | 1.2 s |  |
 
 ## t6
 
@@ -122,7 +125,7 @@ Run at 2026-11-01T10:19:27.313Z on commit `66e0566c0`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-01T10:20:34.811Z on commit `684b25450`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T11:43:23.247Z on commit `c8a1b9942`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/watcher.ts**
 
@@ -146,9 +149,9 @@ Run at 2026-11-01T10:20:34.811Z on commit `684b25450`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/cross-file-modes.test.ts` | 0 | 4 | 1.5 s |  |
+| `src/indexer/__tests__/cross-file-modes.test.ts` | 0 | 4 | 1.9 s |  |
 | `src/indexer/__tests__/source-roots.test.ts` | 0 | 25 | 0.6 s |  |
-| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 8 | 1.4 s |  |
 
 ## t8
 
@@ -207,7 +210,7 @@ Run at 2026-11-01T10:40:49.186Z on commit `198583e88`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-11-01T10:45:59.718Z on commit `e52dd8f0f`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T11:44:37.506Z on commit `c8a1b9942`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/watcher.ts**
 
@@ -218,12 +221,14 @@ Run at 2026-11-01T10:45:59.718Z on commit `e52dd8f0f`. Tests check: **passed**. 
 | pass | a change to the clone's exclude file, which no event names, is found by its content and applied before the batch is judged | `src/indexer/__tests__/watcher-file-filter.test.ts` |
 | pass | the real watcher applies an ignore-file edit and an edit to a file it newly covers consistently in one pass | `src/indexer/__tests__/watcher-file-filter.test.ts` |
 | pass | a full index or re-registration refreshes the filter the watcher holds, in place, instead of handing out a new one | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+| pass | a refresh is reported, and a .gitignore a tool writes inside an ignored directory refreshes nothing | `src/indexer/__tests__/watcher-file-filter.test.ts` |
+| pass | a live ignore-rule change queues the clean-up pass, which removes stored files the new rules leave out -- also one indexed after the filter was built | `src/indexer/__tests__/watcher-file-filter.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 6 | 1.5 s |  |
+| `src/indexer/__tests__/watcher-file-filter.test.ts` | 0 | 8 | 1.6 s |  |
 
 ## t11
 
@@ -247,7 +252,7 @@ Run at 2026-11-01T10:49:57.271Z on commit `6a343240e`. Tests check: **passed**. 
 
 ## t12
 
-Run at 2026-11-01T11:16:25.089Z on commit `7c661c378`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-01T11:46:05.908Z on commit `98f3aff9e`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/indexer/index.ts (full walk, single file event, clean-up pass, registration)**
 
@@ -256,11 +261,15 @@ Run at 2026-11-01T11:16:25.089Z on commit `7c661c378`. Tests check: **passed**. 
 | pass | ac1/ac3: FileFilter lists exactly the files real git includes, over anchored, nested, negation, precedence, directory-only and globstar rules | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
 | pass | FileFilter.includes agrees with git check-ignore for every file of the fixture, tracked override included | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
 | pass | ac9: a non-git folder holding the same tree leaves out the same files its ignore files leave out in the git repository | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
+| pass | a repository registered at a subdirectory of a git working tree gets the tree's rules and tracked files, as git ls-files run there does | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
+| pass | a symbolic link to a file is listed as git lists it, and one to a directory is not followed | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
+| pass | a nested repository's files are not this repository's, as git does not list them | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
+| pass | the clone's exclude file outranks the global ignore file, as in git, and the global file is found under XDG_CONFIG_HOME | `src/indexer/__tests__/file-filter-git-conformance.test.ts` |
 | pass | on a mixed fixture the full index selects the files it selected before, less only the lock file and the oversized JSON the artifact parser skipped | `src/indexer/__tests__/file-selection.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/file-filter-git-conformance.test.ts` | 0 | 3 | 0.8 s |  |
+| `src/indexer/__tests__/file-filter-git-conformance.test.ts` | 0 | 7 | 1.2 s |  |
 | `src/indexer/__tests__/file-selection.test.ts` | 0 | 4 | 1.4 s |  |

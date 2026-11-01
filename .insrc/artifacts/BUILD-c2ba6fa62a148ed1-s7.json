@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s7",
     "createdAt": "2026-11-01T19:07:14.344Z",
-    "updatedAt": "2026-11-01T19:30:26.290Z",
+    "updatedAt": "2026-11-01T19:45:32.101Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -30,9 +30,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "The single-kind find* reads return each entity with its relationship's evidence; outNeighbors/inNeighbors gain an opt-in withEvidence form; pre-change rows read 'unknown'; traversals unchanged. Inventory pins: the plan's check refers to this repo's maintained guard inventories, src/daemon/db/__tests__/fixtures/session-source-inventory.json (refreshed for src/db/search.ts and src/db/graph/edges.ts in commit eab507ea0; session-source-inventory.test.ts shows only its two pre-existing CM-S3/CM-S4 failures, which name other files) and src/daemon/threads/__tests__/fixtures/module-state-inventory.json (guard 6/6 pass). src/assets/connection-management-inventory.json is the connection-management epic's frozen evidence snapshot (last written 2026-10-27, fd6b5fcc9); 112 of its 875 production-file hashes were already stale before this Story from unrelated changes, no guard of this Story reads it, and regenerating it belongs to that epic's gate, not to this Task.",
+    "summary": "The daemon's caller/callee requests (including every hop of callers_nhop) and the graph tools return each entity with its relationship evidence; existing fields unchanged; proved in process. Inventory pins: session-source fixture refreshed for graph/index.ts; module-state guard 6/6; the two CM-S3/CM-S4 failures are pre-existing and name other files.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S007/TESTS.md"
     },
@@ -42,135 +46,149 @@
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/evidence-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/relations-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/file-commit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/evidence-extracted.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/evidence-inferred.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/reexport-callers.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/cross-file-resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/external-endpoints.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/indexer/messaging-endpoints.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/graph/edges.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
       },
       {
         "target": {
           "file": "src/db/search.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-01T19:30:26.290Z"
+        "timestamp": "2026-11-01T19:45:32.101Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/search-evidence-rpc.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:45:32.101Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/graph/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T19:45:32.101Z"
       }
     ],
-    "commit": "eab507ea0"
+    "commit": "383398e2b"
   }
 }

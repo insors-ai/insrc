@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 22 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -131,3 +131,25 @@ Run at 2026-11-01T19:30:26.290Z on commit `37054280a`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/search-evidence.test.ts` | 0 | 4 | 1.3 s |  |
+
+## t6
+
+Run at 2026-11-01T19:45:32.101Z on commit `383398e2b`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: search.callers / search.callees / search.callers_nhop evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t6: search.callers, search.callees and every hop of search.callers_nhop return each entity with its relationship evidence, existing fields unchanged | `src/daemon/__tests__/search-evidence-rpc.test.ts` |
+
+**integration: graph tools evidence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s7 t6: graph_callers and graph_callees include the evidence in each short entity | `src/daemon/__tests__/search-evidence-rpc.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/__tests__/search-evidence-rpc.test.ts` | 0 | 2 | 1.1 s |  |

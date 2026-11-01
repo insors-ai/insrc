@@ -67,6 +67,13 @@
         "choice": "Analyzer-grounded call-graph trace",
         "rationale": "Accuracy first: which methods modify files is a relationship question; the first plan task builds the table from the analyzer's call closure and a static read of each handler.",
         "resolvedAt": "2026-11-01T19:32:06.373Z"
+      },
+      "q55c3b2c4": {
+        "question": "The Story has no acceptance criteria of its own; ac1 to ac4 in the test mapping stand for the four requirements of ISSUE-64703b708590bd68 (ts1, partial).",
+        "status": "resolved",
+        "choice": "Adopt issue requirements as Story AC verbatim",
+        "rationale": "ac1 to ac4 map one to one to the four requirements of ISSUE-64703b708590bd68.",
+        "resolvedAt": "2026-11-01T19:32:32.996Z"
       }
     }
   },

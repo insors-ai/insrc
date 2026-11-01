@@ -281,6 +281,8 @@ The daemon launcher unsets INSRC_REPO and starts the process in a directory that
 
 - `q533ba41e` — Which RPC methods and step phases modify files was taken from the registry listing in handler-runtime.ts and not checked method by method (sbdry4, partial); the plan stage completes and verifies the table.
   - **resolved**: Analyzer-grounded call-graph trace — Accuracy first: which methods modify files is a relationship question; the first plan task builds the table from the analyzer's call closure and a static read of each handler. _(2026-11-01T19:32:06.373Z)_
+- `q55c3b2c4` — The Story has no acceptance criteria of its own; ac1 to ac4 in the test mapping stand for the four requirements of ISSUE-64703b708590bd68 (ts1, partial).
+  - **resolved**: Adopt issue requirements as Story AC verbatim — ac1 to ac4 map one to one to the four requirements of ISSUE-64703b708590bd68. _(2026-11-01T19:32:32.996Z)_
 
 ## Citations
 

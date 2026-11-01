@@ -7,7 +7,12 @@
     "updatedAt": "2026-11-01T12:21:45.714Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
-    "epicSlug": "complete-consistent-richer-code-index-one"
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-01T12:37:03.157Z",
+    "reviewOverride": {
+      "reason": "Manual code review (interim user rule: insrc_code_review_step not used): independent reviewer agent on the s6-only patch, 2 rounds; all findings fixed (c8a1b9942, e272bcc5f) except the user-agreed deferral of live git add -f detection. User approved in chat 2026-11-01.",
+      "at": "2026-11-01T12:37:03.157Z"
+    }
   },
   "body": {
     "tasks": [

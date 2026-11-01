@@ -1,0 +1,8 @@
+import { MemoryFactory } from '@insrc/project-memory';
+import type { Scope, MemoryOptions, MemoryService, MemoryCommand, ModelPort } from '@insrc/project-memory';
+const scope: Scope = { projectId: 'project', sessionId: undefined };
+const model: ModelPort = { embeddingModel: 'local', embeddingDimension: 1, async complete() { return null; }, async embed() { return [1]; } };
+const options: MemoryOptions = { dataDirectory: '/explicit', models: model, policy: { async bind(projectId) { return { projectId, root: '/project', scopeEpoch: 'v1' }; }, async admit(_binding, event) { return event; } }, logger: { write() {} }, limits: { maxEventBytes: 1024, segmentBytes: 4096, maxPendingBytes: 8192, modelTimeoutMs: 1000 } };
+const promise: Promise<MemoryService> = MemoryFactory.open(options);
+const command: MemoryCommand = { version: 1, kind: 'capture', scope, source: { producerId: 'p', eventId: 'e', sessionId: 's', turnId: 't', sourceVersion: '1' }, payload: null, expectedRevision: undefined };
+void promise; void command;

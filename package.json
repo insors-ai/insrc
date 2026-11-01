@@ -3,7 +3,7 @@
   "version": "0.2.1",
   "private": true,
   "type": "module",
-  "description": "insrc backend — daemon, agent, indexer, graph/vector DB",
+  "description": "insrc backend \u2014 daemon, agent, indexer, graph/vector DB",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -13,9 +13,10 @@
     "insrc-migrate-docs": "./out/bin/insrc-migrate-docs.js"
   },
   "scripts": {
-    "build": "tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs",
+    "build": "npm run build --workspace @insrc/project-memory && tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs",
     "insrc": "tsx src/cli/index.tsx",
-    "test": "tsx --test src/**/__tests__/*.test.ts"
+    "test": "tsx --test src/**/__tests__/*.test.ts",
+    "test:memory": "npm test --workspace @insrc/project-memory"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -80,7 +81,8 @@
     "tree-sitter-python": "^0.25.0",
     "tree-sitter-scala": "^0.24.0",
     "tree-sitter-typescript": "^0.23.2",
-    "undici": "^7.24.0"
+    "undici": "^7.24.0",
+    "@insrc/project-memory": "0.1.0"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
@@ -90,5 +92,8 @@
     "ink-text-input": "^6.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.0"
-  }
+  },
+  "workspaces": [
+    "packages/project-memory"
+  ]
 }

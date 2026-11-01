@@ -1,0 +1,35 @@
+{
+  "name": "@insrc/project-memory",
+  "version": "0.1.0",
+  "description": "Independent embedded project-memory foundation",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.22.1 <23"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/host-node.d.ts",
+      "import": "./dist/host-node.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test src/__tests__/*.test.ts",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.0"
+  }
+}

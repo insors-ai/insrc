@@ -111,7 +111,7 @@ async function exportKeysUnder(u64: bigint): Promise<number> {
 	return [...s.exportNames.getKeys({ start, end })].length;
 }
 
-test('s1/t10: re-indexing a barrel and then deleting it leave no export_names entry under its old u64', async () => {
+test('s1/t10: re-indexing a barrel and then deleting it leave no stale export_names entry under its u64', async () => {
 	const { writeFileSync } = await import('node:fs');
 	const { IndexerService } = await import('../../indexer/index.js');
 	const { IndexQueue } = await import('../../daemon/queue.js');
@@ -133,11 +133,13 @@ test('s1/t10: re-indexing a barrel and then deleting it leave no export_names en
 	const oldU64 = (await entityU64ForId(barrelId))!;
 	assert.equal(await exportKeysUnder(oldU64), 2, 'the barrel re-exports f and g');
 
-	// Re-index the barrel (the file job deletes its entities, then writes them again).
+	// Re-index the barrel. Since Epic c2ba6fa6 s2 the file job is one file commit:
+	// the barrel's entity survives with its u64, and the commit removes its EXPORTS
+	// edges together with the export_names written with them.
 	await svc.processJob({ kind: 'file', filePath: barrel, event: 'update' });
 	const newU64 = (await entityU64ForId(barrelId))!;
-	assert.notEqual(newU64, oldU64, 'the re-indexed barrel has a new u64');
-	assert.equal(await exportKeysUnder(oldU64), 0, 'nothing is left under the old u64');
+	assert.equal(newU64, oldU64, 'the refreshed barrel keeps its u64');
+	assert.equal(await exportKeysUnder(oldU64), 0, 'nothing is left under it until the cross-file pass');
 	await runCrossFileResolver({ db: null, repoRoot: repo, sourceRoots: detectSourceRoots(repo) });
 	assert.equal(await exportKeysUnder(newU64), 2, 'the cross-file pass writes them again under the new u64');
 

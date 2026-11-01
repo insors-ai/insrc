@@ -151,6 +151,13 @@ export function setUncommittedFiles(repoPath: string, files: readonly string[]):
 	return updateState(repoPath, row => { row.uncommittedFiles = [...files]; });
 }
 
+/** A file whose refresh failed on a file event (Epic c2ba6fa6 s2): it stays in
+ *  the list until it next commits or is removed. */
+export function addUncommittedFile(repoPath: string, file: string): Promise<void> {
+	assertNoSessionPersistence();
+	return updateState(repoPath, row => { if (!row.uncommittedFiles.includes(file)) row.uncommittedFiles = [...row.uncommittedFiles, file]; });
+}
+
 /** The full index finished: its cross-file and endpoint passes ran. */
 export function finishFullIndexState(repoPath: string, endpointPassFailed: boolean): Promise<void> {
 	return updateState(repoPath, row => {

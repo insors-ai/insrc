@@ -4,15 +4,12 @@ import { join, extname, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
 import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity } from '../shared/types.js';
 import type { SummariseDocResult } from '../analyze/summariser/index.js';
-import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById, deleteEntitiesForRepo, reconcileEntityVectors } from '../db/entities.js';
+import { upsertEntities, listEntityFilesForRepo, deleteEntitiesForRepo, reconcileEntityVectors } from '../db/entities.js';
 import {
   upsertRelations,
-  deleteRelationsForFile,
-  deleteUnresolvedForFile,
-  deleteUnresolvedForRepoFile,
   deleteUnresolvedForRepo,
 } from '../db/relations.js';
-import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, readIndexState, setUncommittedFiles } from '../db/index-state.js';
+import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, addUncommittedFile, readIndexState, setUncommittedFiles } from '../db/index-state.js';
 import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
@@ -20,7 +17,8 @@ import { withBackgroundHold } from '../shared/locks/maintenance-lock.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
 import { resolveMessagingEndpoints } from './messaging-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
-import { deleteEntitiesForFile, getEntity } from '../db/entities.js';
+import { commitFile, getEntity } from '../db/entities.js';
+import { writeOfRelation } from '../db/file-commit.js';
 import { updateRepoStatus, lookupRepoId, UnregisteredRepoError } from '../db/repos.js';
 import { bumpIndexRunDone, closeIndexRun, openIndexRun, readIndexRun, setIndexRunSelected } from './run-record.js';
 import { SHARED_MODULES_REPO_ID } from '../shared/repo-namespaces.js';
@@ -584,8 +582,9 @@ export class IndexerService {
    * visited again, while entities left behind are found by the next pass.
    */
   protected async removeStoredFile(repoPath: string, file: string, ids: readonly string[]): Promise<void> {
-    await deleteUnresolvedForRepoFile(this.db, repoPath, file);
-    await deleteEntitiesById(this.db, ids);
+    // One commit: the file's entities, relationships and pending rows go together (Epic c2ba6fa6 s2).
+    void ids;
+    await commitFile({ repoPath, filePath: file, contentHash: null, entities: [], relations: [] });
   }
 
   /**
@@ -851,9 +850,8 @@ export class IndexerService {
       return;
     }
     if (event === 'delete') {
-      await deleteRelationsForFile(this.db, filePath);
-      await deleteEntitiesForFile(this.db, filePath);
-      await deleteUnresolvedForFile(this.db, filePath);
+      // One commit removes the file's entities, relationships and pending rows together (ac4).
+      await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
       log.info({ file: filePath }, 'file deleted from index');
       this.scheduleSettle(repoPath, filePath);
       return;
@@ -868,7 +866,14 @@ export class IndexerService {
       log.debug({ file: filePath, event }, 'file event skipped: excluded by the repo file filter');
       return;
     }
-    await this.indexFile(filePath, repoPath, true);
+    try {
+      await this.indexFile(filePath, repoPath, true);
+    } catch (err) {
+      // Nothing was written: the file's previous rows stand (ac1). The
+      // repository reads incomplete with the file named until it next commits.
+      await addUncommittedFile(repoPath, filePath).catch(e => log.warn({ file: filePath, err: e instanceof Error ? e.message : String(e) }, 'could not record the uncommitted file'));
+      throw err;
+    }
     this.scheduleSettle(repoPath, filePath);
     // Doc-summariser follow-up: if the touched file produced doc /
     // section entities, enqueue per-entity summarisation. Queue
@@ -1124,11 +1129,9 @@ export class IndexerService {
         log.debug({ file: filePath }, 'skipped (unchanged)');
         return false;
       }
-    } else {
-      await deleteRelationsForFile(this.db, filePath);
-      await deleteEntitiesForFile(this.db, filePath);
-      await deleteUnresolvedForFile(this.db, filePath);
     }
+    // Nothing is deleted first (Epic c2ba6fa6 s2): the file's previous rows
+    // stay readable until the one commit below replaces them (ac1, ac2).
 
     // Phase 5.x strict-contract: resolve the repoId once per file
     // and hand it to the parser. Lookup throws if the repo isn't
@@ -1151,17 +1154,22 @@ export class IndexerService {
     const resolvedCount = resolved.filter(r => r.resolved).length;
 
     // Embed entities (no-op if Ollama is unavailable)
-    await embedEntities(result.entities);
+    await this.embed(result.entities);
 
-    // Persist
-    await upsertEntities(this.db, result.entities);
-    await upsertRelations(this.db, resolved);
+    // Persist: ONE commit replaces the file's entities, relationships and pending rows.
+    await commitFile({ repoPath, filePath, contentHash: hash, entities: result.entities, relations: resolved.map(writeOfRelation) });
 
     log.debug(
       { file: filePath, entities: result.entities.length, relations: resolved.length, resolved: resolvedCount },
       'indexed',
     );
     return true;
+  }
+
+  /** The embed step of a file refresh (a test holds or fails it to see a
+   *  refresh in progress, or one that fails after the parse). */
+  protected async embed(entities: Entity[]): Promise<void> {
+    await embedEntities(entities);
   }
 
   /** The repository's own entity (kind 'repo'): the source of its DEPENDS_ON edges. */

@@ -517,7 +517,13 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 
 		// 3. The file's relationships are replaced, not merged: the outgoing
 		//    edges of EVERY previous entity of the file and the file's pending rows go.
-		for (const u64 of existing) sweepOutgoingEdges(s, u64);
+		for (const u64 of existing) {
+			sweepOutgoingEdges(s, u64);
+			// The names a file re-exports are written with its EXPORTS edges
+			// (Story s1): they go with them, and the cross-file pass writes them again.
+			const exportPrefix = encodeEntityKey(u64);
+			for (const key of [...s.exportNames.getKeys({ start: exportPrefix, end: prefixSuccessor(exportPrefix) })]) s.exportNames.remove(key);
+		}
 		rel.deletePendingRowsForFileInTxn(s, repoId, filePath);
 
 		// 4. Remove the previous entities no longer parsed (all of them for a

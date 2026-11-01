@@ -22,3 +22,12 @@ export function relationOfWrite(w: RelationWrite): Relation {
 	}
 	return { kind: w.kind, from: w.from, to: w.target.pending.to, resolved: false, meta: w.target.pending.meta };
 }
+
+/** The inverse: a resolver Relation as a file commit's RelationWrite (its meta kept as it is). */
+export function writeOfRelation(r: Relation): RelationWrite {
+	const target: RelationWrite['target'] = r.resolved
+		? { stored: r.to, ...(r.meta !== undefined ? { meta: r.meta } : {}) }
+		: { pending: { to: r.to, meta: r.meta ?? {} } };
+	return { from: r.from, kind: r.kind, target, evidence: 'unknown' };
+}
+

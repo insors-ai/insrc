@@ -393,7 +393,7 @@ test('the vector rows of a removed file are gone after the clean-up and those of
 	assert.deepEqual(await idsInVectorTable(), [keep.id]);
 });
 
-test('a kept file\'s link into a removed entity is removed with it, and the kept file\'s other links and entities stay', async () => {
+test('a kept file\'s link into a removed entity is removed with it and returns to pending awaiting it, and the kept file\'s other links and entities stay', async () => {
 	const keepFile = join(repoA, 'src', 'keep.ts');
 	const otherFile = join(repoA, 'src', 'other.ts');
 	const goneFile = join(repoA, 'src', 'gone.ts');
@@ -415,8 +415,11 @@ test('a kept file\'s link into a removed entity is removed with it, and the kept
 	assert.equal(await exists(keep), true);
 	assert.equal(await exists(keepCls), true);
 	assert.equal(await exists(other), true);
-	// The design's stated limit: no unresolved relation is put back for the lost link.
-	assert.equal((await listUnresolvedRelations(null, repoA)).length, 0);
+	// The lost link is not dropped (Epic c2ba6fa6 s2, sc2): the file commit that
+	// removes gone.ts returns keep -> gone to pending, awaiting gone's id, so the
+	// cross-file pass completes it if the entity comes back.
+	const pendingRows = await listUnresolvedRelations(null, repoA);
+	assert.deepEqual(pendingRows.map(r => [r.fromEntity, r.kind, r.rawTo]), [[keep.id, 'CALLS', gone.id]]);
 });
 
 // ---------------------------------------------------------------------------

@@ -22296,6 +22296,14 @@
      "encodeEntityKey"
     ],
     [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityKey"
+    ],
+    [
      "storage-call",
      "encodeEntityKey"
     ],
@@ -22841,6 +22849,10 @@
     ],
     [
      "storage-call",
+     "prefixSuccessor"
+    ],
+    [
+     "storage-call",
      "putEntityRowInTxn"
     ],
     [
@@ -23101,6 +23113,14 @@
     ],
     [
      "storage-call",
+     "s.exportNames.getKeys"
+    ],
+    [
+     "storage-call",
+     "s.exportNames.remove"
+    ],
+    [
+     "storage-call",
      "s.exportNames.remove"
     ],
     [
@@ -23356,9 +23376,9 @@
      "writeVectorsThenMarkers"
     ]
    ],
-   "siteCount": 392,
-   "sitesDigest": "92a5b4ff738b45a1ea2054700da189fa52f992d2d812c51090d2aa7096fa11ec",
-   "sourceDigest": "4d782c77304116e003a9780e4ac80b1f6c98cc2626e3f8b65873c6ad849e4789",
+   "siteCount": 397,
+   "sitesDigest": "9455cf025f453b10758907c3eb17c692e105acc355471187840d0e80e3465375",
+   "sourceDigest": "f6122d0c08f0fed207a897cac31a684c5310f9fda391928aabda2fe1d49e3daf",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -26136,6 +26156,10 @@
      "assertNoSessionPersistence"
     ],
     [
+     "serialization",
+     "assertNoSessionPersistence"
+    ],
+    [
      "storage-call",
      "deriveIndexState"
     ],
@@ -26221,6 +26245,10 @@
     ],
     [
      "storage-call",
+     "updateState"
+    ],
+    [
+     "storage-call",
      "withWriteTxn"
     ],
     [
@@ -26228,9 +26256,9 @@
      "zeroPending"
     ]
    ],
-   "siteCount": 27,
-   "sitesDigest": "f8464e0578c8b301a3efb060c49637b6f68e4a0e204ba48b9b8496710b09829a",
-   "sourceDigest": "737c33611a604edb0d476d06173ee072d3d8283857dfca4ef18f75fbc1449d6c",
+   "siteCount": 29,
+   "sitesDigest": "bf3a56030a14087f284467724a79cb28fa77d9c81adcd52eb066b9893762f5db",
+   "sourceDigest": "7e3afd186804444f652710066b2b0702fcb1369bdbc4f2537064143501b83b06",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -31320,7 +31348,23 @@
    "sites": [
     [
      "storage-call",
+     "addUncommittedFile"
+    ],
+    [
+     "storage-call",
      "beginFullIndexState"
+    ],
+    [
+     "storage-call",
+     "commitFile"
+    ],
+    [
+     "storage-call",
+     "commitFile"
+    ],
+    [
+     "storage-call",
+     "commitFile"
     ],
     [
      "storage-call",
@@ -31332,43 +31376,11 @@
     ],
     [
      "storage-call",
-     "deleteEntitiesById"
-    ],
-    [
-     "storage-call",
-     "deleteEntitiesForFile"
-    ],
-    [
-     "storage-call",
-     "deleteEntitiesForFile"
-    ],
-    [
-     "storage-call",
      "deleteEntitiesForRepo"
     ],
     [
      "storage-call",
-     "deleteRelationsForFile"
-    ],
-    [
-     "storage-call",
-     "deleteRelationsForFile"
-    ],
-    [
-     "storage-call",
-     "deleteUnresolvedForFile"
-    ],
-    [
-     "storage-call",
-     "deleteUnresolvedForFile"
-    ],
-    [
-     "storage-call",
      "deleteUnresolvedForRepo"
-    ],
-    [
-     "storage-call",
-     "deleteUnresolvedForRepoFile"
     ],
     [
      "provider-adapter",
@@ -31747,6 +31759,10 @@
      "log.warn"
     ],
     [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
      "storage-call",
      "lookupRepoId"
     ],
@@ -31856,20 +31872,12 @@
     ],
     [
      "storage-call",
-     "upsertEntities"
-    ],
-    [
-     "storage-call",
-     "upsertRelations"
-    ],
-    [
-     "storage-call",
      "upsertRelations"
     ]
    ],
-   "siteCount": 137,
-   "sitesDigest": "932ffefc5452ba4654ade6d082ed1a5b052ba738f7a1a969d0d48580d369b88a",
-   "sourceDigest": "cde8cbc8f643ae0b2bca311a0160929ab914260b229f8a0cfc604157fe9dfc2b",
+   "siteCount": 132,
+   "sitesDigest": "44236387f951f92197d97d52a7a1d3f32e6f407fd922c1addb2a0c79b8104ce4",
+   "sourceDigest": "5b6c1d61425e4b95cfcc541cfe5151c4a3dfb4e52a3f96eeef9637390d09b997",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

@@ -82,6 +82,13 @@
         "choice": "Full independent audit",
         "rationale": "Accuracy first: derive the gap list from every row against the live tool schemas.",
         "resolvedAt": "2026-11-01T11:30:40.599Z"
+      },
+      "qaa98b407": {
+        "question": "Does any caller of PolicyReader need the opts.signal, or can the signal be dropped from the type to keep the 44 injected fakes' signature unchanged? The default is to keep it optional.",
+        "status": "resolved",
+        "choice": "Keep optional, but audit callers first",
+        "rationale": "The approved LLD keeps opts.signal optional; the audit decides whether it can be dropped later.",
+        "resolvedAt": "2026-11-01T11:31:24.778Z"
       }
     }
   },

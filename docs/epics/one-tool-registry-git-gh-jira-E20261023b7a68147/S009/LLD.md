@@ -436,6 +436,8 @@ Add a policy snapshot store in the daemon (per repo: the resolved policy or 'non
   - **resolved**: Build-in-s9 (full ownership) — User approved the LLD on 2026-11-01 with this route recommended; follows the s7 precedent and keeps the cutover off s8's long tail. _(2026-11-01T11:29:18.716Z)_
 - `q733bd0c7` — Which exact tool ops lack an input a site needs (git_status path filter, git_log or git_path_history options for story-commits, git_config scope)? Task t1 of the plan checks every row against the tool input schemas and adds any missing optional input as an additive extension flagged for the tool's owner.
   - **resolved**: Full independent audit — Accuracy first: derive the gap list from every row against the live tool schemas. _(2026-11-01T11:30:40.599Z)_
+- `qaa98b407` — Does any caller of PolicyReader need the opts.signal, or can the signal be dropped from the type to keep the 44 injected fakes' signature unchanged? The default is to keep it optional.
+  - **resolved**: Keep optional, but audit callers first — The approved LLD keeps opts.signal optional; the audit decides whether it can be dropped later. _(2026-11-01T11:31:24.778Z)_
 
 ## Citations
 

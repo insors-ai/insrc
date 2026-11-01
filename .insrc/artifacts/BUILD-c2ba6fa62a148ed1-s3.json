@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s3",
     "createdAt": "2026-11-01T06:05:36.818Z",
-    "updatedAt": "2026-11-01T06:10:56.954Z",
+    "updatedAt": "2026-11-01T06:28:01.177Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -21,10 +21,30 @@
       },
       {
         "id": "t3",
-        "passed": false
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
       }
     ],
-    "summary": "Routed all 7 raw entity.put/entity.remove sites (entities.ts:272,289,466,974,1180; migrations.ts:267,346) through putEntityRowInTxn/removeEntityRowInTxn; existing entities.ts/migrations.ts test suites pass unmodified.",
+    "summary": "Added the MIGRATION_V5_TO_V6 step (SCHEMA_VERSION 5->6): walks the entity table once and backfills entityByFile for every row, idempotent via LMDB's no-op dupSort put of an already-present (key,value) pair.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S003/TESTS.md"
     },

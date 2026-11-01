@@ -684,7 +684,7 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	const priorBase = artifact.meta.rangeBase;
 	const rangeBase = priorBase !== undefined && priorBase.length > 0
 		? priorBase
-		: stampsRangeBase(artifact.meta) ? headFullSha(dirname(jsonPath)) : undefined;
+		: stampsRangeBase(artifact.meta) ? (await headFullSha(dirname(jsonPath))) : undefined;
 
 	let approvedAt: string;
 	if (seen !== undefined && APPROVED_OR_BEYOND.includes(seen.status)) {

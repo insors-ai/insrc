@@ -161,7 +161,7 @@ export async function changedFiles(repoPath: string, opts?: ChangedFilesOptions)
 
 	// The Story's commits first. With a storyKey the trailer scan is strict: a
 	// failed read must refuse, not widen the set to the whole first-parent range.
-	const set = storyChangeSet(repoPath, base, { storyKey: opts?.storyKey, ...(opts?.storyKey !== undefined ? { strict: true } : {}) });
+	const set = (await storyChangeSet(repoPath, base, { storyKey: opts?.storyKey, ...(opts?.storyKey !== undefined ? { strict: true } : {}) }));
 	const ranged = new Set<string>();
 	if (set.perUnit) {
 		// Each kept unit's own diff (ISSUE-b47dadc7), not the net range: a file this

@@ -83,7 +83,7 @@ export async function ensureBuildRecordOnCompletion(
 		// Same resolver the validate writer uses, so the two can never disagree
 		// about this Story's base. See range-base.ts for the precedence and for why
 		// an unresolvable base yields empty rather than a substituted range.
-		const rangeBase = resolveStoryRangeBase(repoPath, ref.epicHash, ref.storyId);
+		const rangeBase = await resolveStoryRangeBase(repoPath, ref.epicHash, ref.storyId);
 		// The Story's key scopes the set to its own commits (ISSUE-b97752e9); with no
 		// base the collector yields [] rather than the working tree.
 		const ctx = {

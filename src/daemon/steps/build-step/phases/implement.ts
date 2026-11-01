@@ -53,7 +53,7 @@ export async function handleImplement(
 	}
 	// A merge must be committed on its own before the next round of Story work
 	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
-	if (mergeInProgress(repoPath)) return mergeInProgressError('implement');
+	if (await mergeInProgress(repoPath)) return mergeInProgressError('implement');
 
 	// Standalone (no-plan) build — a triage-routed Small (LLD → build) or Trivial
 	// (build only) feature. Bypasses task/tracker resolution; the spec is the

@@ -161,7 +161,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 	// ExplorationRunnerContext so a single subprocess call to `git
 	// ls-files` powers .gitignore-aware directory filtering across
 	// the whole plan.
-	const ignoreFilter = createRepoIgnoreFilter(args.repoPath);
+	const ignoreFilter = await createRepoIgnoreFilter(args.repoPath);
 	// One read per plan execution: the relationship lookups state an incomplete index.
 	const repoCompleteness = await readRepoCompleteness(args.repoPath);
 
@@ -498,7 +498,7 @@ export async function stepPlan(
 		priorMs = args.resumeState.totalMsSoFar;
 	}
 
-	const ignoreFilter = createRepoIgnoreFilter(args.repoPath);
+	const ignoreFilter = await createRepoIgnoreFilter(args.repoPath);
 	// One read per plan execution: the relationship lookups state an incomplete index.
 	const repoCompleteness = await readRepoCompleteness(args.repoPath);
 

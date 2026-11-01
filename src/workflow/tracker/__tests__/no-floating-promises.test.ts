@@ -158,3 +158,53 @@ export function unawaited(): boolean { return policyReader('/r').ok; }
 		assert.ok(errors.some(d => /does not exist on type|Property 'ok'/.test(ts.flattenDiagnosticMessageText(d.messageText, '\n'))), 'reading .ok of an un-awaited result is a type error');
 	} finally { rmSync(dir, { recursive: true, force: true }); }
 });
+
+/** The functions of the build runners, the validation checks, the ignore filter, the companion header and the convert plan whose git reads move onto the tools (Story s9). */
+export const RUNNER_FUNCTIONS = new Set([
+	'commitExists', 'headFullSha', 'introducingCommit', 'resolveStoryRangeEnd', 'readBuildStart', 'stampBuildStart', 'resolveStoryRangeBase',
+	'headShortSha', 'priorCommit', 'newestStoryCommit', 'storyChangeSet', 'mergeInProgress', 'trackedFiles', 'changedFiles', 'trivialCheckPlan',
+	'withTypecheckProjects', 'storyFiles', 'storyCommit', 'createRepoIgnoreFilter', 'defaultGitUserName', 'prepareBuildRecord',
+]);
+
+/** The statements in `program` that call one of `names` and drop its Promise. */
+export function floatingNamedCalls(program: ts.Program, include: (file: string) => boolean, names: ReadonlySet<string>): string[] {
+	const checker = program.getTypeChecker();
+	const found: string[] = [];
+	for (const file of program.getSourceFiles()) {
+		if (file.isDeclarationFile || !include(file.fileName)) continue;
+		const visit = (node: ts.Node): void => {
+			if (ts.isExpressionStatement(node) && ts.isCallExpression(node.expression) && ts.isIdentifier(node.expression.expression) && names.has(node.expression.expression.text)) {
+				if ((checker.getTypeAtLocation(node.expression).symbol?.name ?? '') === 'Promise') {
+					const { line } = file.getLineAndCharacterOfPosition(node.getStart());
+					found.push(`${file.fileName}:${line + 1}: ${node.getText().slice(0, 80)}`);
+				}
+			}
+			ts.forEachChild(node, visit);
+		};
+		visit(file);
+	}
+	return found;
+}
+
+test('no-floating-promises.test.ts: the callers of the runners await the widened return', () => {
+	const configPath = join(ROOT, 'tsconfig.json');
+	const cfg = ts.getParsedCommandLineOfConfigFile(configPath, {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: d => { throw new Error(ts.flattenDiagnosticMessageText(d.messageText, '\n')); } })!;
+	const program = ts.createProgram(cfg.fileNames.filter(f => !/__tests__|\.test\./.test(f)), cfg.options);
+	const found = floatingNamedCalls(program, f => f.startsWith(join(ROOT, 'src')) && !/__tests__|\.test\./.test(f), RUNNER_FUNCTIONS);
+	assert.deepEqual(found.map(f => relative(ROOT, f)), []);
+
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-floating-runner-'));
+	try {
+		const file = join(dir, 'sample.ts');
+		writeFileSync(file, `
+declare function headFullSha(cwd: string): Promise<string | undefined>;
+declare function mergeInProgress(cwd: string): Promise<boolean>;
+declare function other(cwd: string): Promise<void>;
+export async function bad(): Promise<void> { headFullSha('/r'); mergeInProgress('/r'); other('/r'); }
+export async function good(): Promise<unknown> { await headFullSha('/r'); void mergeInProgress('/r'); return headFullSha('/r'); }
+`);
+		const sample = ts.createProgram([file], { strict: true, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext, noEmit: true });
+		const dropped = floatingNamedCalls(sample, f => f === file, RUNNER_FUNCTIONS);
+		assert.equal(dropped.length, 2, dropped.join('\n'));
+	} finally { rmSync(dir, { recursive: true, force: true }); }
+});

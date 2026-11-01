@@ -210,7 +210,7 @@ export async function handleValidate(input: BuildStepInputValidate): Promise<Bui
 	}
 	// A merge must be committed on its own before the next round of Story work
 	// (ISSUE-f9ced66a): refuse before doing anything else while one is open.
-	if (mergeInProgress(repoPath)) return mergeInProgressError('validate');
+	if (await mergeInProgress(repoPath)) return mergeInProgressError('validate');
 
 	// S002: standalone (no-plan) validate — a triage-routed Small story. Resolve the
 	// story identity from the standalone context (mirroring handleStandaloneImplement)
@@ -363,7 +363,7 @@ async function handleStandaloneValidate(
 	} else {
 		// A trivial build names no tests: `tests` is ignored, and the test files
 		// the build's range touched are run.
-		checks = trivialCheckPlan(repoPath, resolveStoryRangeBase(repoPath, epicHash, storyId),
+		checks = await trivialCheckPlan(repoPath, await resolveStoryRangeBase(repoPath, epicHash, storyId),
 			epicHash.length > 0 && storyId.length > 0 ? `${epicHash}/${storyId}` : undefined);
 	}
 	const prompt = (evidence: string): string => renderStandaloneValidatePrompt({ storyId, sizeClass, lldMdRel: lldMdRelPath, scope: producesLld ? undefined : ctx.focus, evidence });
@@ -420,7 +420,7 @@ async function runValidateTurn(
 	// (from its range base) or its test files belong to (ISSUE-b4b6b835).
 	// With the Story's key, only the Story's own files name a project (ISSUE-b97752e9).
 	const storyKey = ident.epicHash.length > 0 && ident.storyId.length > 0 ? `${ident.epicHash}/${ident.storyId}` : undefined;
-	const planned = withTypecheckProjects(repoPath, checks, resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId), storyKey);
+	const planned = await withTypecheckProjects(repoPath, checks, await resolveStoryRangeBase(repoPath, ident.epicHash, ident.storyId), storyKey);
 	const results = await (checkRunnerOverride ?? runValidationChecks)(repoPath, planned);
 
 	// The checks and the judge take minutes, and the claim may have moved meanwhile: ask the gate again
@@ -620,7 +620,7 @@ async function runValidateTurn(
 				// Story's own commits, plus uncommitted edits of their files
 				// (ISSUE-b97752e9). `undefined` means no base could be established,
 				// which yields an empty change set rather than the working tree.
-				const base = resolveStoryRangeBase(repoPath, epicHash, storyId);
+				const base = await resolveStoryRangeBase(repoPath, epicHash, storyId);
 				const changeLog = await collectBuildChangeLog(repoPath, {
 					author: 'insrc-build', timestamp: now, exclude, storyKey: `${epicHash}/${storyId}`,
 					...(base !== undefined ? { base } : {}),

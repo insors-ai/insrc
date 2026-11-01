@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s2",
     "createdAt": "2026-11-01T13:16:17.185Z",
-    "updatedAt": "2026-11-01T13:27:03.535Z",
+    "updatedAt": "2026-11-01T13:32:16.352Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -270,6 +270,76 @@
               },
               {
                 "title": "reindexFile result survives close + reopen",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c7a2d5762",
+        "ranAt": "2026-11-01T13:32:16.352Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t4: a refresh replaces the file's outgoing relationships and pending rows in the same commit as its entities, and a relationship to an entity not stored becomes a pending row awaiting it",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t4: relationships other files hold into surviving entities are left in place by a refresh",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t4 (ac4): contentHash null removes the file's entities, relationships and pending rows together, and returns relationships other files hold into it to pending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1708,
+            "titles": [
+              {
+                "title": "t3: a refresh replaces the file's entities in one commit, found through entity_by_file and not a scan of the entity table, and leaves other files alone",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a commit that throws part-way leaves every row of the file as before (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: contentHash null removes every entity of the file in one commit; the generation advances and the file leaves uncommittedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an unregistered repository is refused and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a refresh replaces the file's outgoing relationships and pending rows in the same commit as its entities, and a relationship to an entity not stored becomes a pending row awaiting it",
+                "result": "pass"
+              },
+              {
+                "title": "t4: relationships other files hold into surviving entities are left in place by a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (ac4): contentHash null removes the file's entities, relationships and pending rows together, and returns relationships other files hold into it to pending",
                 "result": "pass"
               }
             ],

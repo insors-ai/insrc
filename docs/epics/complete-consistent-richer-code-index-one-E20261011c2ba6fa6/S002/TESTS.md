@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -69,3 +69,21 @@ Run at 2026-11-01T13:27:03.535Z on commit `5135e9d55`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/db/__tests__/file-commit.test.ts` | 0 | 4 | 1.5 s |  |
 | `src/db/__tests__/reindex-file-lmdb.test.ts` | 0 | 14 | 2.6 s |  |
+
+## t4
+
+Run at 2026-11-01T13:32:16.352Z on commit `c7a2d5762`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: commitFile**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | t4: a refresh replaces the file's outgoing relationships and pending rows in the same commit as its entities, and a relationship to an entity not stored becomes a pending row awaiting it | `src/db/__tests__/file-commit.test.ts` |
+| pass | t4: relationships other files hold into surviving entities are left in place by a refresh | `src/db/__tests__/file-commit.test.ts` |
+| pass | t4 (ac4): contentHash null removes the file's entities, relationships and pending rows together, and returns relationships other files hold into it to pending | `src/db/__tests__/file-commit.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/db/__tests__/file-commit.test.ts` | 0 | 7 | 1.7 s |  |

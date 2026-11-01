@@ -12,6 +12,9 @@ implementation plan see
 for the architecture see
 [`docs/plans/meta-workflow-framework.md`](plans/meta-workflow-framework.md).
 
+For the explicit task-review execution policy and controller activity protocol,
+see [Task review execution](task-review-execution.md).
+
 ## Concepts
 
 The framework models software authoring as **Epic → Story →

@@ -1,0 +1,986 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793609472505-f09fso",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T08:55:54.416Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 281902,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s8",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "hldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "hldAmendmentsApplied": [
+      "AMD-c2ba6fa62a148ed1-1",
+      "AMD-c2ba6fa62a148ed1-2",
+      "AMD-c2ba6fa62a148ed1-7",
+      "AMD-c2ba6fa62a148ed1-8",
+      "AMD-c2ba6fa62a148ed1-9",
+      "AMD-c2ba6fa62a148ed1-10"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's five acceptance criteria (ac1-ac5), its three functional requirements (FR001-FR003), and its 'depends on s1, s7' are each designed by a contract or test, and none is a non-goal.",
+          "evidence": "DEF.md §6.8 (lines 293-311) states FR001-FR003, ac1-ac5 and local constraint lc1 verbatim-matching the LLD's § 2 contracts, § 5 'consumes sc1/sc3' table and § 7 acceptance-mapping table (ac1->index.subsystems test, ac2->groupSubsystems determinism test, ac3->analyzer context test, ac4->one-at-a-time summariser test, ac5->incomplete-graph note test); 'Depends on: s1, s7' in DEF.md matches the LLD's consumption of sc1 (IndexState) and sc3 (RelationEvidence) with no other contract touched. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "action": "none — coverage confirmed against the upstream DEF",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "SCHEMA_VERSION is currently 7 (not already 8), the migration chain runs V1->V6 today, and doc-summarise-repo is enqueued at the end of a full index exactly as the LLD's migration/current-behaviour section and citation c3 state.",
+          "evidence": "src/db/graph/store.ts:142 `export const SCHEMA_VERSION = 7;`; src/db/graph/migrations.ts exports MIGRATION_V1_TO_V2 ... MIGRATION_V6_TO_V7 (no V7_TO_V8 yet); src/indexer/index.ts:848 `this.queue.enqueue({ kind: 'doc-summarise-repo', repoPath });` matches citation c3 exactly. [files: src/db/graph/store.ts, src/db/graph/migrations.ts, src/indexer/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The analyzer bundle has exactly seven string layers today (no subsystem block), repo.stats is classed 'indexing' in methodClasses, and the summary lane starts only while the index lane is idle — all 'current behaviour' claims the LLD rests on.",
+          "evidence": "src/analyze/context/types.ts:40-115 defines AnalyzeContextBundle with exactly system/focus/summary/structure/surface/artefacts/upstream (BundleLayerName union at :108, matching citation c9); src/daemon/threads/method-class.ts:46 `['repo.stats', 'indexing', false]` matches citation c6; src/daemon/queue.ts:33-41 comments confirm the summary lane 'run in their own lane' / isSummaryJob gating consistent with the memory note on index-lane-idle gating. [files: src/analyze/context/types.ts, src/daemon/threads/method-class.ts, src/daemon/queue.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No deterministic file-graph grouping / modularity / subsystem capability already exists in the codebase — groupSubsystems, runSubsystemPass, index.subsystems, readSubsystems and withSubsystemContext are genuinely new.",
+          "evidence": "Grep for 'subsystem|Louvain|modularity' across src/ returns only unrelated hits (concept-resolve.ts, steering-block.md, classify.ts, triage types, etc.) — none implement file grouping or modularity clustering. [files: src/analyze/explore/concept-resolve.ts, src/workflow/triage/classify.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused functions the design leans on exist with exactly the stated shape: readIndexState(repoPath): Promise<IndexState|undefined>, outNeighbors(from, {withEvidence:true}): Promise<NeighborRelation[]>, and buildSummariserProvider(cfg, overrides?, execution?): LLMProvider.",
+          "evidence": "src/db/index-state.ts:44 `export async function readIndexState(repoPath: string): Promise<IndexState | undefined>`; src/db/graph/edges.ts:105 `export async function outNeighbors(from: bigint, opts: NeighborOpts & { readonly withEvidence: true }): Promise<NeighborRelation[]>;`; src/analyze/context/shaper-provider.ts:366 matches signature verbatim. [files: src/db/index-state.ts, src/db/graph/edges.ts, src/analyze/context/shaper-provider.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "All five RelationKind values the pass weights (IMPORTS, CALLS, INHERITS, IMPLEMENTS, REFERENCES) exist in the RelationKind union, so groupSubsystems' weighting table is complete against real kinds.",
+          "evidence": "src/shared/types.ts:592-598 lists 'IMPORTS' | 'CALLS' | 'INHERITS' | 'IMPLEMENTS' | ... | 'REFERENCES' among the RelationKind members. [files: src/shared/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "IndexJob is a single flat discriminated union in shared/types.ts, and the new `{ kind: 'subsystems'; repoPath: string }` variant follows the exact shape of existing variants (full, reembed, reconcile, doc-summarise-repo), so adding it is a complete, consistent change site.",
+          "evidence": "src/shared/types.ts:870-899 shows IndexJob as one union with members like `{ kind: 'reembed'; repoPath: string }` and `{ kind: 'doc-summarise-repo'; repoPath: string }`, the same shape the LLD proposes for 'subsystems'. [files: src/shared/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "withSubsystemContext's three claimed insertion points (cache hit, pipeline path after writeBundle, legacy path after writeBundle) correspond to real bundle-return sites in driver.ts.",
+          "evidence": "driver.ts:462-465 is where prepareShaperCache resolves a served cache hit and returns `cachedBundle` (consumed by runShaper's own return at :493 and by readUnattachedSavedShaperCache's return at :478 — both funnel through this one point, so wrapping here covers both cache-return callers even though the LLD cites only the shared chokepoint); :549-557 is the pipeline path (writeBundle at :549, return at :557); :620-626 is the legacy path (writeBundle at :624, return at :626). All three match the cited line ranges. [files: src/analyze/context/driver.ts]",
+          "action": "minor note only — readUnattachedSavedShaperCache (driver.ts:474-479) is not named explicitly in the LLD's precondition list but is covered because it shares the same prepareShaperCache chokepoint; no code change needed, flag for the builder to confirm this path is exercised by the 'analyzer subsystem context' test.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The store currently has 37 named databases (not already 39), so adding exactly two new tables (subsystem, subsystem_by_file) is consistent with the migration's stated '37 to 39' delta.",
+          "evidence": "src/understanding/__tests__/storage.test.ts:34-35: comment '36 since doc_summary_carry ...; 37 since entity_by_file (Epic c2ba6fa6 s3).' and `assert.equal(Object.keys(store).filter(key => key !== 'root').length, 37);` [files: src/understanding/__tests__/storage.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The migration chain is a sequence of exported `MIGRATION_Vn_TO_Vn+1` steps opened on store boot without a re-index, so appending MIGRATION_V7_TO_V8 (opening two new DBs, touching no existing row) is additive and matches the existing pattern (k5).",
+          "evidence": "src/db/graph/migrations.ts exports MIGRATION_V1_TO_V2 through MIGRATION_V6_TO_V7 in sequence (lines 107-466), each a `Migration` object consistent with the LLD's description of MIGRATION_V7_TO_V8 as 'applied on open, without a re-index.' [files: src/db/graph/migrations.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S008 does not redesign sc1 (owned by s1) or sc3 (owned by s7); it only reads readIndexState/outNeighbors(withEvidence), matching how a sibling Story (S006) independently attributes the same ownership.",
+          "evidence": "docs/epics/.../S006/LLD.md:33 and :38 state '`s1`: ... — owns `sc1`' and '`s7`: ... — owns `sc3`' verbatim-consistent with S008's own boundary section; S008's contract section (§2.3, §2.4, §5) only calls readIndexState and outNeighbors(withEvidence), never writes IndexState rows or relationship evidence. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S006/LLD.md, docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/LLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The error-handling primitives the design's error paths depend on — a dedicated `XxxError extends Error` class per recoverable failure, and `withWriteTxn` as the real one-transaction write primitive — exist in the codebase with the shape the LLD assumes (a throwing call, caught and logged; a single transaction that either fully commits or fully fails).",
+          "evidence": "src/analyze/context/{synthesizer,decomposer,invariants}.ts define SynthesizerLlmUnavailableError, DecomposerLlmUnavailableError, RepoIndexingError etc. following the same 'XxxError extends Error' pattern the LLD's SubsystemSummaryError follows; src/db/graph/store.ts:1272 `export async function withWriteTxn<T>(...)` is the real transactional primitive the 'store transaction writing the two tables fails' error path relies on. [files: src/analyze/context/synthesizer.ts, src/analyze/context/invariants.ts, src/db/graph/store.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test-strategy's cited framework pattern ('real temporary LMDB stores ... and the real IndexerService, as in src/indexer/__tests__/sql-index.test.ts') points to a real, existing test file rather than an invented one.",
+          "evidence": "Glob confirms src/indexer/__tests__/sql-index.test.ts exists in the repo. [files: src/indexer/__tests__/sql-index.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion in the DEF (ac1-ac5) has a named proving test in the LLD's acceptance-mapping table, with none left unmapped.",
+          "evidence": "DEF.md §6.8 lists exactly ac1-ac5; the LLD's §7 'Acceptance mapping' table has one row per ac1 through ac5, each naming a specific unit or integration test subject (e.g. ac2 maps to both a unit determinism test and an integration two-pass-identical-rows test). [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 14,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-02T09:11:06.155Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-02T09:15:01.804Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Once a repository's graph is complete, a queued pass groups its code files into subsystems. The grouping reads the stored relationships between files (imports, calls, inheritance, references), weighted by how each was established, and gives the same groups for the same graph. Each subsystem records its member files, its connections to the other subsystems, and a summary the cheap-tier model writes when its membership is new. A daemon request returns the subsystems, and says when they rest on an incomplete or older graph. The analyzer's context gains a code-written block naming the subsystems a request touches, with their summaries and connections."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. It grows out of the existing whole-file replacement (reindexFile), which already replaces a file's entities in one transaction but removes relationships only for entities that disappeared from the file; the commit goes further and replaces the outgoing relationships of every entity of the file. The indexer's refresh, the delete event and the repair all call it; a file is selected for it by one filter built from the repository's ignore files. A relationship is never dropped in the commit: when its target is not stored it becomes a pending row, and pending rows are completed only by the passes that own them: the cross-file pass for code symbols, and the two endpoint passes of the external-services Epic for theirs. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete (relationships awaiting a target that is in an indexed repository, relationships that could not be written, entities without vectors). The four repository status values keep their meaning; completeness is a separate field read from this row and shown wherever status is shown, so a repository with anything outstanding does not read as fully ready. Layer 3, derived data: evidence is a one-byte value on the relationship row, written in the commit, by the cross-file pass and by every other writer of a stored relationship; subsystem grouping, subsystem summaries and model-proposed document relationships are queued passes that start only from a repository whose state is complete, write their own tables, and stamp what they wrote with the generation it was computed from. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "IndexState",
+          "purpose": "The recorded per-repository state: the generation of the graph and what is known to be incomplete. Written in the same transaction as every file commit and by the cross-file pass; read by repository status, by the commit's callers, and by every derived pass to decide whether it may run and whether what it wrote is stale.",
+          "interfaceSketch": "type PendingClass = 'awaiting-target' | 'ambiguous' | 'no-candidate' | 'external-endpoint';\n\ninterface IndexState {\n  repoPath: string;\n  generation: number;                 // advanced by every file commit and every completion\n  pending: Record<PendingClass, number>;\n  unwritable: number;                 // relationships refused by the store, with a stated reason\n  unembedded: number;                 // entities the embed step selects (non-empty body) whose vector is not written\n  embeddingAvailable: boolean;        // false when the embedding backend is disabled or cannot be reached\n  uncommittedFiles: string[];         // paths of files whose parse or commit failed; persisted; a path leaves when its file next commits or is removed\n  fullIndexFinished: boolean;         // the full pass, the cross-file pass and both endpoint passes have ended\n  endpointPassFailed: boolean;\n  graphComplete: boolean;             // derived: fullIndexFinished && !endpointPassFailed && uncommittedFiles.length == 0 && awaiting-target == 0 && unwritable == 0\n  complete: boolean;                  // derived: graphComplete && (unembedded == 0 || !embeddingAvailable)\n}\n\ninterface RepoCompleteness {          // returned beside RepoStatus, which keeps its four values\n  complete: boolean;\n  reasons: string[];                  // one line per non-zero cause\n  counts: Pick<IndexState, 'pending' | 'unwritable' | 'unembedded'> & { uncommittedFiles: number };\n  uncommittedFiles: string[];         // the paths that could not be committed\n  generation: number;\n}\n\ninterface DerivedStamp { computedAtGeneration: number; }   // carried by every row a derived pass writes\n  // + reasonCounts: { unwritable: Record<string, number>; awaiting: Record<string, number> };  // counts of unwritable relationships and of awaiting-target rows by reason, so completeness can say why a repository is incomplete (e.g. targets excluded by an ignore rule vs. not stored yet) (amend:AMD-c2ba6fa62a148ed1-2)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s7",
+            "s8",
+            "s10",
+            "s13"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        },
+        {
+          "id": "sc3",
+          "name": "RelationEvidence",
+          "purpose": "How a relationship was established, stored as the value of its row and returned wherever relationships are read. An empty value, which is what every existing row holds, reads as 'unknown', so no existing row is rewritten.",
+          "interfaceSketch": "type RelationEvidence =\n  | 'unknown'      // stored before this change (empty value)\n  | 'extracted'    // read directly from the source text\n  | 'inferred'     // established by resolution across files\n  | 'chosen'       // one target picked among several candidates; reserved, written only if a choosing rule is added\n  | 'model';       // proposed by a model\n\ninterface RelationRead {\n  from: string;\n  kind: RelationKind;\n  to: string;\n  evidence: RelationEvidence;\n}",
+          "ownedByStory": "s7",
+          "consumedByStories": [
+            "s8",
+            "s10"
+          ],
+          "assumptions": [
+            "c1"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s8",
+        "owns": [],
+        "depends": [
+          "sc1",
+          "sc3"
+        ],
+        "internal": "The grouping of a complete repository's code entities into subsystems, its determinism, the tables for membership, connections and summaries and their migration step; the queued pass and its trigger on a new generation; the cheap-tier summary of a subsystem whose membership changed; the daemon request that returns subsystems; the addition of subsystem context to the analyzer's context builder; the statement that groups rest on an incomplete or older graph. Which relationships count toward grouping, and with what weight by evidence, is decided here."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The rule that a relationship with an absent target becomes pending instead of being skipped, at each of the six places in src/db/relations.ts where one is lost today (the resolved write's skip on a missing endpoint and its skip on a kind with no byte, promoteToResolved, promoteResolvedBatch, and the pending write's discard of a row without its file or repository and of a row whose repository is not registered), each either kept as pending or counted as unwritable with a reason; the set of files whose parse or commit failed in a full index, persisted with their paths until they next commit; which fields of the state are recounted on open and which are persisted and carried over; the classification of a pending relationship as awaiting-target, ambiguous or no-candidate, with the external-service rows classed apart and the two endpoint passes counted in when a full index is finished; the class is stored on the pending row itself, in its existing free-form record, so no stored form changes, a row the cross-file pass has not yet attempted counts as awaiting-target, and the recount on open reads the stored class and does not run resolution again; the extension of the cross-file pass to complete relationships awaiting a target by id, for imports and the other code-symbol kinds as well as calls and inheritance, and to follow a re-exporting file to the function it re-exports; the lookup of pending rows by the id they await, with its migration step, and the pass after a file event visiting the rows that await an entity of the files just committed; the change of the reindex request so that it deletes the repository's rows in the graph store and the vector store and builds them again from every file, in place of today's skip of unchanged files, with no separate repair request, returning to pending the relationships that other repositories hold into the deleted entities, and its queuing by the migration for every repository indexed before this change, which starts as not complete; the storing of the repository entity so that the manifest step's dependency relationships are written; the measurement on this repository, before and after a repair, of the awaiting-target, ambiguous, no-candidate and unwritable counts, with unwritable expected to be zero; the IndexState row, its migration step, its recount on open, and the derivation of repository status from it, as a completeness field returned beside the unchanged status by the daemon's status and stats requests and shown in the CLI's repository pane and in both editor plugins; and the analyzer's read of it: an analyzer lookup that reads relationships of a repository that is not complete says so in its result, with the counts, so that an answer over an incomplete graph is not returned as a plain fact. The choice, in this Story's design, of the function reached only through a re-exporting file that the repair is measured on, since the issue's own example (pickScope) has been removed from the source. Raising the log level of a refused relationship from debug is internal. Until Story s2 lands, s1 applies its rule inside the existing separate writes."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The extension of the existing whole-file replacement into the file commit (relationships and pending rows in the same transaction as entities; outgoing relationships of surviving entities replaced, not only those of entities that disappeared; incoming relationships of a removed entity returned to pending), the move of the indexer's refresh and delete paths and of the clean-up pass's removal of a stored file onto it, and the retirement of the separate delete-then-upsert sequence in the indexer. The handling of vectors after the commit: writing the entity row with its embedding marker empty and setting it in a second transaction only after the vector write succeeds, counting an entity with an empty marker in IndexState, comparing entity ids with the vector table on open in both directions, so that a vector left behind by a failed removal is deleted before a plain insert can meet it, and the extension of the existing reembed job to run on daemon start and after an index, with a vector write for an entity whose marker is empty made an upsert, except for an entity first allocated in the same commit, which keeps the plain insert. Three things in that job change with it: it applies the embed step's own selection instead of forcing every entity, so empty-body entities (external endpoints, module stubs) stay unselected and uncounted; its update of an embedding writes the vector first and sets the marker in a second transaction, where today it sets the marker first; and the marker carries the model of the backend that is active, not one fixed name. Which entities count as unembedded (those the embed step selects) and the separate recorded reason when the embedding backend is unavailable. The count of a file whose commit fails on a file event. The queue rule that index jobs go ahead of other jobs and that a long job yields between its units, so that a commit is not held behind a model pass. How a reader sees the old or the new set during a commit is the store's ordinary transaction isolation and needs no new mechanism."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [],
+          "internal": "The by-file and by-repository index of entity rows, its migration step that builds it for an existing store, and its upkeep. No single entity-row write exists today: there are seven raw put and remove sites across src/db/entities.ts and src/db/graph/migrations.ts, and the existing name index is kept in step by a helper each site must remember to call. This Story introduces one put and one remove function for entity rows that maintain the name index and the new index together, routes every raw site through them, and adds a test that fails when a raw put or remove appears outside them. Upkeep therefore sits beneath every caller, so that neither today's writers nor the file commit need to know of it and this Story does not depend on s2. The two reads (findEntitiesByFile, listEntitiesForRepo) keep their results and their callers; a new existence check answers whether a repository holds any entity, and the analyzer's scope check uses it."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [],
+          "internal": "The cause, which ISSUE-0d577569 records as not known, was reproduced on 2026-10-11 and is not the system's semaphore limit, which the library's message names, but the loss of the daemon's own file lock on the store's lock file, after which another process that opens and closes the store removes the store's semaphores; the daemon's next write then fails with the library's message about the limit, and its exit hangs in the library's close. What in the daemon closes a second descriptor on the lock file is not yet identified. First, therefore, the remedy that does not depend on finding it: the live store is opened by the daemon alone, and any other process is refused it. Second, a bound on the whole shutdown including the store's close, so that a close that hangs ends in an exit. Third, recording a store failure of this kind and stating it in the daemon's status. None of this is consumed by another Story."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [],
+          "internal": "The refusal, with a named error and its own code, of a search or analyze request about a repository whose status is indexing, at the analyzer's scope check and at the daemon's search requests, carrying the status and how far the run has got (files done of files selected, and when it began), read from the indexer's running job; the tools that rest on the analyzer (the workflow steps, triage, code review) pass that error on as it is. The order of the analyzer's run: the refusal of a scope the index does not hold comes before a size is announced, or the announcement says the size could not be counted. The named cause and error code for a failed read of the last-indexed time and for a failed lookup, and the three other defects of ISSUE-e2bcadd9 (the wrong provider named, the scope resolved before the cache, and failure text matched inside echoed output). This Story does not read IndexState: it works with the checks the analyzer has today, so that it stays independent of s1."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The in-process matcher of the gitignore grammar over nested ignore files and its conformance test against git; the move onto the one filter of every site that reads the list today in src/indexer/index.ts (the full walk, the start-up scan for changed files, the file event, the clean-up pass, and the two places that seed the list when a repository is registered), of the watcher, and of the analyzer's reader, its two exploration walkers and its infra walker (src/analyze/runtimes/infra/_shared.ts), each of which has its own list of names today, and of the indexer's source-root detection (src/indexer/source-roots.ts), whose own list would otherwise hide a package in a directory the filter includes; a search of the source for such lists found five more, in the daemon's four file-search tools (glob, grep, list-dir, recent under src/daemon/tools/builtins/search) and in the review probe (src/workflow/review/probe.ts), which search the working tree as text, do not decide what the index holds, and are deliberately left as they are; the filter keeps answering for a directory that holds an included file, as the analyzer's reader does now; the retirement of the bare-name list and of the ignore entry in the repository's .insrc config; the two built-in exclusions (generated or minified files, the .insrc directory) applied inside the filter so that the full walk and the file event no longer differ on them; the handling of a change to an ignore file as an event that removes and adds files, and the comparison by content hash of the clone's exclude file and the global ignore file, which the watcher cannot see, whenever the filter is used; the queued step that proposes a root ignore file with the cheap-tier model when a repository is added without one, its fallback, and the rule that an existing file is never written. Two points were decided by the stakeholder: the filter honours all three of git's ignore sources (the .gitignore files, the clone's exclude file, the user's global ignore file), and a file git tracks is indexed even when a rule matches it, so the filter takes git's list of tracked files as an input and a plain folder is filtered by the rules alone."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The one-byte encoding of evidence as the value of a relationship row; the points in the per-file resolver and the cross-file pass that decide 'extracted' or 'inferred' ('chosen' is reserved and not written, since an ambiguous relationship stays pending with its candidates); the passing of evidence as an argument to the store's resolved write and promote operations, so that the two endpoint passes write 'inferred' and the manifest step writes 'extracted' and no relationship written after this change reads 'unknown'; the carrying of evidence through the store's traversal reads and the daemon's caller and callee requests; the marking of inferred and chosen relationships in the analyzer's lookups and answers. No migration rewrites existing rows, since an empty value reads as 'unknown'."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "One reader per added language (Rust, C#, C, C++) in the existing parser registry with a guarded load, as the Kotlin reader has; the structured reading of SQL in place of the whole-file document, keeping the document entity for retrieval; any entity kinds this needs, appended to the fixed byte table without renumbering; the additions to the Language union; the daemon request that lists the languages read and why any was skipped. Each language can be delivered on its own."
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The reading of links and references between documents, and from a document to code, as relationships of the existing REFERENCES kind written in the file commit with evidence 'extracted'; the queued mid-tier pass over new or changed documents and its own table of model-proposed relationships; the hand-checked set, the measurement, and the recorded figures that switch the capability on or leave it off; the merging of model-proposed relationships into reads with evidence 'model'; the status line when no CLI provider is available."
+        },
+        {
+          "storyId": "s11",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+        },
+        {
+          "storyId": "s12",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+        },
+        {
+          "storyId": "s13",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private implementation of s13: Settling file changes does work proportional to the changed files, never a scan of the repository or the store"
+        }
+      ],
+      "rolloutPhase": "Phase E — subsystems and document relationships",
+      "nonFunctional": {
+        "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows. A file commit is one write transaction whose size is bounded by one file. A first full index holds more pending rows than today until the cross-file pass runs, and that pass does more work; this is accepted under the accuracy rule. Index jobs take precedence in the queue and a derived pass yields between its units of work, so a commit waits for at most one unit of a pass. Model calls are serial; the mid-tier pass sends only new or changed documents. Vector writes keep the plain insert for entities first stored in the same commit, so a first full index writes vectors at today's cost; the upsert, which costs more against a large vector table, is used only for changed entities and for the backfill, and Story s2's design measures it on this repository.",
+        "security": "No store is opened outside the daemon and no model is reached except through the local provider or the CLI providers. The ignore-file proposal sends the model file names and manifest names, not file contents, and writes into the user's repository only when no root ignore file exists. Document text sent to the mid-tier model goes through the user's own CLI session, as other mid-tier calls do.",
+        "observability": "Repository status carries the completeness counts and the reason a repository is incomplete. A relationship the store refuses is logged at warn with its reason and counted, not logged at debug. A fallback ignore file, a skipped language reader, a store failure after its locks were taken away, and a model-proposed capability that is off each state their cause where status is read. Each derived row carries the generation it was computed from.",
+        "durability": "The file commit is atomic in LMDB: after a crash a file holds its old rows or its new rows. Vectors are written after the commit and may be missing after a crash; the gap is recorded by an empty embedding marker, checked against the vector table on open, and backfilled, and the repository reads as incomplete until it is, unless the embedding backend is unavailable, which is reported as its own reason. The IndexState fields that the tables can answer are recounted when the store is opened; the rest, including the paths of files that could not be committed, are persisted in the state row and survive a restart. Every new table and value arrives by a migration step applied on open; no existing key or kind byte changes, so an older store is brought forward without a re-index. Derived tables can be dropped and recomputed without loss."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "index.subsystems",
+          "signature": "request 'index.subsystems' (params: { repoPath: string }) => SubsystemsAnswer",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The registered repository.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SubsystemsAnswer",
+            "meaning": "{ repoPath; generation: number; computedAtGeneration: number | null; graphComplete: boolean; stale: boolean; note?: string; subsystems: SubsystemView[] }, where SubsystemView = { id; name; files: string[]; entityCount: number; summary: string | null; connections: { to: string; weight: number; kinds: Record<RelationKind, number> }[] }. The note says 'the groups rest on an incomplete graph' when graphComplete is false, 'the groups rest on an older graph' when computedAtGeneration < generation, and 'not grouped yet' when nothing is stored."
+          },
+          "errors": [
+            {
+              "type": "RepoNotRegisteredError",
+              "condition": "repoPath is not a registered repository (answered { error }, as repo.stats does)"
+            }
+          ],
+          "preconditions": [
+            "Classed 'indexing' in methodClasses, beside repo.stats (src/daemon/threads/method-class.ts:46)."
+          ],
+          "postconditions": [
+            "Read-only: reads IndexState and the two subsystem tables.",
+            "Every code entity of the repository is in exactly one subsystem: each code file is in exactly one, and an entity is in its file's."
+          ]
+        },
+        {
+          "name": "groupSubsystems",
+          "signature": "function groupSubsystems(graph: FileGraph): SubsystemGroup[]",
+          "parameters": [
+            {
+              "name": "graph",
+              "type": "FileGraph",
+              "purpose": "{ files: string[] (code files, repo-relative); edges: { a: string; b: string; weight: number; kinds: Record<RelationKind, number> }[] }, built from the stored relationships.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SubsystemGroup[]",
+            "meaning": "A partition of graph.files: { id: string (sha256 of sorted member paths, hex-32); name: string (the longest common directory of the members, or the single file's path); files: string[] (sorted) }, sorted by id. Connections are computed from the same edges."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pure: no store access, no clock, no randomness."
+          ],
+          "postconditions": [
+            "The same graph gives the same groups (ac2): nodes are visited in path order, ties go to the smaller group, and aggregation repeats until no move improves modularity."
+          ]
+        },
+        {
+          "name": "runSubsystemPass",
+          "signature": "function runSubsystemPass(opts: { repoPath: string; provider?: LLMProvider }): Promise<SubsystemPassResult>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository to group.",
+              "optional": false
+            },
+            {
+              "name": "provider",
+              "type": "LLMProvider",
+              "purpose": "The summariser provider; defaults to buildSummariserProvider(cfg) (tiers.cheap). Injected in tests.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<SubsystemPassResult>",
+            "meaning": "{ ran: boolean; reason?: 'graph-incomplete' | 'up-to-date'; generation: number; subsystems: number; summariesWritten: number; summariesFailed: number }"
+          },
+          "errors": [
+            {
+              "type": "SubsystemSummaryError",
+              "condition": "a summary call fails: logged and counted, and the subsystem keeps summary null; the pass goes on"
+            }
+          ],
+          "preconditions": [
+            "Runs as the queued job { kind: 'subsystems', repoPath } in the summary lane (src/daemon/queue.ts:35), which starts only while the index lane is idle."
+          ],
+          "postconditions": [
+            "Does nothing unless readIndexState(repoPath).graphComplete (lc1); does nothing when the stored computedAtGeneration equals the state's generation.",
+            "Builds the FileGraph from the stored relationships between code entities of different files of the repository: IMPORTS, CALLS, INHERITS, IMPLEMENTS and REFERENCES. Weight by kind: INHERITS and IMPLEMENTS 2, the rest 1. Multiplied by evidence: extracted 1, inferred 0.8, unknown 0.6. Plus 0.1 between files of one directory.",
+            "Writes the subsystem and subsystem_by_file rows in one transaction, stamped computedAtGeneration = the generation read, replacing the previous set; a subsystem whose id was already stored keeps its summary.",
+            "Then writes a summary for each subsystem with summary null, one completeStructured call at a time (never Promise.all), yielding to the queue between calls. Before each write it re-reads the generation; if it advanced, it stops (a new pass is queued)."
+          ]
+        },
+        {
+          "name": "readSubsystems",
+          "signature": "function readSubsystems(repoPath: string, opts?: { files?: readonly string[] }): Promise<StoredSubsystems>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository.",
+              "optional": false
+            },
+            {
+              "name": "files",
+              "type": "readonly string[]",
+              "purpose": "Only the subsystems containing these files (absolute or repo-relative), through subsystem_by_file.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<StoredSubsystems>",
+            "meaning": "{ computedAtGeneration: number | null; subsystems: SubsystemView[] }"
+          },
+          "errors": [],
+          "preconditions": [
+            "Used by the index.subsystems request and by the analyzer."
+          ],
+          "postconditions": [
+            "Reads only the two subsystem tables."
+          ]
+        },
+        {
+          "name": "withSubsystemContext",
+          "signature": "function withSubsystemContext(bundle: AnalyzeContextBundle, repoPath: string | null, scopePath: string | undefined): Promise<AnalyzeContextBundle>",
+          "parameters": [
+            {
+              "name": "bundle",
+              "type": "AnalyzeContextBundle",
+              "purpose": "The bundle runShaper is about to return to its caller, on every path: a cache hit (src/analyze/context/driver.ts:462-465), the pipeline path after writeBundle (:549-557), and the legacy path after writeBundle (:620-626).",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string | null",
+              "purpose": "The bundle's repository (meta.repoPath).",
+              "optional": false
+            },
+            {
+              "name": "scopePath",
+              "type": "string | undefined",
+              "purpose": "The request's scope path, when it names a file or directory.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<AnalyzeContextBundle>",
+            "meaning": "The bundle with a 'Subsystems' block appended to its structure layer. For each subsystem holding a code file under scopePath, or a file the bundle cites as path:line: its name, summary, connections (named subsystems, with weights) and member paths. It is followed by the IndexState note when the groups rest on an incomplete or older graph."
+          },
+          "errors": [],
+          "preconditions": [
+            "Applied at serve time, after any cache read or write: runShaper's result is wrapped as it returns, so the block is never written into the bundle cache and is computed from the stored subsystems on every serve, cache hits included. A subsystem pass that completes after a bundle was cached is therefore reflected on the next request, without invalidating the cache."
+          ],
+          "postconditions": [
+            "Code-written, never by a model. Every name in it is a stored subsystem with stored member paths (ac3).",
+            "The bundle is returned unchanged when repoPath is null or no subsystem is stored. The block never removes or rewrites existing layer text.",
+            "The cached bundle (writeBundle, readBundle) never contains the block, so the cache key and staleness rules (servedFromCache / isStaleByIndexer, src/analyze/context/driver.ts:407-420) are unchanged."
+          ]
+        },
+        {
+          "name": "MIGRATION_V7_TO_V8",
+          "signature": "const MIGRATION_V7_TO_V8: MigrationStep",
+          "parameters": [],
+          "returns": {
+            "type": "MigrationStep",
+            "meaning": "Opens the 'subsystem' and 'subsystem_by_file' databases; SCHEMA_VERSION becomes 8."
+          },
+          "errors": [],
+          "preconditions": [
+            "Applied on open, without a re-index (k5)."
+          ],
+          "postconditions": [
+            "Adds tables only; existing rows are untouched. Repositories have no subsystems until their next pass."
+          ]
+        },
+        {
+          "name": "IndexJob.subsystems",
+          "signature": "type IndexJob = ... | { kind: 'subsystems'; repoPath: string }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IndexJob",
+            "meaning": "A summary-lane job; a queued one per repository is not duplicated."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Enqueued after a full index, and after a settle or clean-up, when the repository's state is graph-complete at a generation newer than its stored subsystems."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "subsystem (new table)",
+        "change": "new",
+        "details": "Key: (repoId, subsystem id). Value: { name; files: repo-relative paths (sorted); entityCount; connections: { to: subsystem id; weight; kinds }[] (sorted by to); summary: string | null; summaryModel?: string; computedAtGeneration }. Relationship: a subsystem has 1..n member files; each connection points to another subsystem of the same repository (directed by edge direction, weights summed per pair). Dropped and rewritten whole by each pass; never written by the file commit.",
+        "schemaDiff": "+ db 'subsystem'",
+        "callSites": [
+          "src/db/graph/migrations.ts",
+          "src/db/graph/store.ts"
+        ]
+      },
+      {
+        "entity": "subsystem_by_file (new table)",
+        "change": "new",
+        "details": "Key: (repoId, repo-relative file path). Value: subsystem id. Exactly one row per code file of the repository (cardinality file 1 -> 1 subsystem, subsystem 1 -> n files). An entity's subsystem is its file's. Rewritten whole with the subsystem table.",
+        "schemaDiff": "+ db 'subsystem_by_file'",
+        "callSites": [
+          "src/db/graph/migrations.ts",
+          "src/db/graph/store.ts"
+        ]
+      },
+      {
+        "entity": "SCHEMA_VERSION",
+        "change": "field-modify",
+        "details": "7 -> 8 with MIGRATION_V7_TO_V8 on the existing chain (k5). Current behaviour: SCHEMA_VERSION 7 from s9; the namespace inventory test counts the open databases and moves from 37 to 39.",
+        "callSites": [
+          "src/db/graph/store.ts",
+          "src/db/graph/migrations.ts",
+          "src/understanding/__tests__/storage.test.ts:35"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "readIndexState(repoPath).graphComplete gates the pass (lc1). Its generation is stamped as computedAtGeneration and compared on read to say 'stale' (the HLD's DerivedStamp). completenessOf gives the request's note."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "outNeighbors(..., { withEvidence: true }) supplies each relationship's evidence, which weights its edge (extracted 1, inferred 0.8, unknown 0.6)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A summary call fails (provider down, schema retries exhausted, CLI not signed in)",
+          "detection": "completeStructured throws inside runSubsystemPass's per-subsystem loop",
+          "response": "Logged with the subsystem id, counted in summariesFailed; the subsystem keeps summary null and the next pass retries it",
+          "userImpact": "That subsystem shows no summary until the next pass; grouping and connections are unaffected",
+          "recoverable": true
+        },
+        {
+          "scenario": "The graph changes while summaries are being written",
+          "detection": "Before each summary write, runSubsystemPass re-reads readIndexState(repoPath).generation and compares it with the generation it grouped",
+          "response": "Stops writing; the enqueue on the new generation runs a fresh pass",
+          "userImpact": "Summaries for the old grouping may be partial; the request reports the groups stale until the new pass",
+          "recoverable": true
+        },
+        {
+          "scenario": "The pass is asked to run on an incomplete graph",
+          "detection": "readIndexState(repoPath).graphComplete is false",
+          "response": "Returns { ran: false, reason: 'graph-incomplete' } and writes nothing (lc1)",
+          "userImpact": "Any stored groups stay from the older complete generation and are reported stale or incomplete",
+          "recoverable": true
+        },
+        {
+          "scenario": "The store transaction writing the two tables fails",
+          "detection": "withWriteTxn throws",
+          "response": "Nothing is written (one transaction), the job fails and is logged; the next generation's job retries",
+          "userImpact": "The previous groups remain",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repository with no cross-file relationships",
+          "expected": "Groups follow directories (the 0.1 same-directory edges); every code file is still in exactly one subsystem"
+        },
+        {
+          "input": "A code file with no relationships alone in its directory",
+          "expected": "Its own single-file subsystem, named by its path"
+        },
+        {
+          "input": "Two runs over the same stored graph",
+          "expected": "Identical ids, names, members and connections (ac2)"
+        },
+        {
+          "input": "A file added to an existing subsystem",
+          "expected": "That subsystem's id changes (its members changed), so its summary is rewritten; untouched subsystems keep their ids and summaries"
+        },
+        {
+          "input": "A repository that is a DEPENDS_ON closure member of another",
+          "expected": "Grouping covers only the repository's own files; relationships into other repositories are not edges"
+        },
+        {
+          "input": "A relationship to a module stub or an external endpoint",
+          "expected": "Not an edge: only relationships between code entities of two files of the repository count"
+        },
+        {
+          "input": "An analyzer request whose scope is a directory with no code files, or a repository not grouped yet",
+          "expected": "The bundle is returned unchanged"
+        },
+        {
+          "input": "index.subsystems on a repository whose graph is incomplete but whose earlier groups are stored",
+          "expected": "Returns those groups with graphComplete false and the note 'the groups rest on an incomplete graph' (ac5)"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A derived pass reads graphComplete and stamps the generation it read; a reader comparing generations says when the derived data is stale",
+          "source": "c1"
+        },
+        {
+          "text": "Relationships are read with their evidence (outNeighbors withEvidence), never rewritten by the pass",
+          "source": "c2"
+        },
+        {
+          "text": "Summary-lane jobs start only while the index lane is idle, and model calls are made one at a time",
+          "source": "c3"
+        },
+        {
+          "text": "The analyzer bundle's existing layers keep their text: the subsystem block is appended, nothing is removed",
+          "source": "c4"
+        },
+        {
+          "text": "Summaries use the cheap tier (k9's 'local model')",
+          "source": "c5"
+        },
+        {
+          "text": "A store change arrives as a step on the migration chain, applied on open without a re-index",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), over real temporary LMDB stores (useTemporaryLance) and the real IndexerService, as in src/indexer/__tests__/sql-index.test.ts; model calls through an injected recording LLMProvider",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "groupSubsystems: a partition of the files; deterministic for one graph (run twice, and with the input edges shuffled); ids are the hash of the sorted members; directory edges place unconnected files; names are the longest common directory",
+          "subjects": [
+            "subsystem grouping"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "runSubsystemPass over a real store: the file graph is built from stored relationships weighted by evidence; tables are written stamped with the generation; it does nothing on an incomplete graph; summaries come from an injected provider, one call at a time, only for new ids; a failure leaves summary null; a generation change stops the summaries",
+          "subjects": [
+            "subsystem pass over a stored graph"
+          ],
+          "fixturesNeeded": [
+            "a temporary store with a registered repository, entities in several files and relationships with evidence",
+            "a recording provider that counts concurrent calls"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Through IndexerService and the request: a fully indexed repository gets subsystems; every code entity is in exactly one; connections are listed; an incomplete graph is reported",
+          "subjects": [
+            "index.subsystems through IndexerService"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository of a few TypeScript files in two directories"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The analyzer: withSubsystemContext adds, for a request scoped to one module, the subsystem's name, summary, connections and member paths, all from stored rows; existing layer text is kept; nothing changes without stored groups",
+          "subjects": [
+            "analyzer subsystem context"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "On the installed daemon: index this repository, run the pass, request index.subsystems, and build one analyzer context",
+          "subjects": [
+            "installed daemon: subsystems"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: index.subsystems through IndexerService -- every code entity is in exactly one subsystem and each lists its connections"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: subsystem grouping -- the same graph, run twice and with its edges shuffled, gives the same groups",
+            "integration: subsystem pass over a stored graph -- two passes over one generation write identical rows"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: analyzer subsystem context -- a request about one module names its subsystem, summary and connections, each a stored row"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: subsystem pass over a stored graph -- summaries go through the summariser (cheap-tier) provider, never two calls at once"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: index.subsystems through IndexerService -- an incomplete graph is reported as 'the groups rest on an incomplete graph'"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The store is at SCHEMA_VERSION 7 (src/db/graph/store.ts, bundle c6) with 37 named databases; no subsystem data exists. The full index ends by enqueuing the doc-summary and backfill jobs (src/indexer/index.ts:848-849, bundle c3). The analyzer bundle has seven layers, with no subsystem context (src/analyze/context/types.ts:40, bundle c4).",
+      "stateAfter": "SCHEMA_VERSION 8 adds 'subsystem' and 'subsystem_by_file'. A summary-lane job { kind: 'subsystems' } groups a graph-complete repository and writes summaries for new subsystems. The request 'index.subsystems' returns them with completeness and staleness, and the analyzer's structure layer gains a code-written subsystem block when groups are stored.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add MIGRATION_V7_TO_V8: open the two new databases; SCHEMA_VERSION 7 -> 8. No existing row is touched",
+          "rollbackable": false
+        },
+        {
+          "order": 2,
+          "action": "Add the 'subsystems' job kind to the queue's summary lane, and enqueue it after a full index, a settle and a clean-up when the state is graph-complete at a newer generation",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the 'index.subsystems' request (classed 'indexing') and the analyzer's subsystem block",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Existing repositories gain subsystems on their next full index or settle that leaves them graph-complete; nothing is backfilled at migration",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive. The new request, job kind and tables are new; no request, field or layer is removed or renamed. The analyzer's structure layer may carry more text. An older daemon cannot open a store migrated to 8, as with every forward step of the chain.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "File-level deterministic modularity grouping, stored tables, queued pass, code-written context block",
+        "oneLineSummary": "Group a complete repository's code files with a deterministic Louvain-style modularity pass over an evidence-weighted file graph. Store membership and connections in their own tables, write summaries with the cheap-tier model only for new memberships, answer a daemon request, and add a code-written subsystem block to the analyzer's structure layer.",
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Directory-tree grouping",
+        "oneLineSummary": "Subsystems are directories (top source directories, merged where they are small), and connections are counted from stored relationships between them.",
+        "costEstimate": "M",
+        "reasonRejected": "Violates sc3: groups come from the directory layout and evidence plays no part (FR001 asks for grouping from stored relationships)."
+      },
+      {
+        "id": "a3",
+        "name": "Grouping computed per request, no tables",
+        "oneLineSummary": "Compute the groups when they are requested or when the analyzer builds a context, and keep nothing stored.",
+        "costEstimate": "M",
+        "reasonRejected": "Violates ac4: summaries would need model calls on the request path, not queued one at a time."
+      },
+      {
+        "id": "a4",
+        "name": "Entity-level label propagation",
+        "oneLineSummary": "Group entities, not files, by deterministic label propagation over entity relationships.",
+        "costEstimate": "L",
+        "reasonRejected": "Partial on ac2: label propagation needs a round cap that the result then depends on, and entity graphs are an order of magnitude larger."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "NOTE (s8 cd1 partial): index.subsystems, groupSubsystems, runSubsystemPass, readSubsystems, withSubsystemContext, MIGRATION_V7_TO_V8 and the 'subsystems' job kind are new names this Story introduces. Its boundary owns the request, tables and pass, and it owns no shared contract.",
+      "NOTE (s8 alt2 partial): alternatives were scored against ac1-ac5, sc1 and sc3. The Epic constraints the criteria operationalize (k1-k4, k9) were not scored separately, as on s2/s7/s9.",
+      "RESOLVED (user decision 2026-11-02): subsystem summaries use the cheap tier, through buildSummariserProvider, as document summaries do, whatever runner the tier is configured with. ac4's 'the local model' and k9's 'local model' are read as 'the cheap-tier model'; calls stay one at a time. The user's direction is that the local model is to be removed in the future, so no Ollama-specific path is added."
+    ],
+    "erDefinition": {
+      "id": "s8-subsystems",
+      "narrative": "The two tables the subsystem pass writes, and how a code file and its entities belong to exactly one subsystem.",
+      "classes": {
+        "Subsystem": {
+          "description": "A group of a repository's code files, rewritten whole by each pass.",
+          "attributes": {
+            "id": {
+              "description": "sha256 of the sorted member paths (hex-32).",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "name": {
+              "description": "The members' longest common directory.",
+              "range": "string",
+              "required": true
+            },
+            "summary": {
+              "description": "Written by the cheap-tier model when the id is new; null until then.",
+              "range": "string"
+            },
+            "computedAtGeneration": {
+              "description": "The IndexState generation the grouping read.",
+              "range": "integer",
+              "required": true
+            },
+            "connections": {
+              "description": "Weighted links to other subsystems of the repository.",
+              "range": "SubsystemConnection",
+              "multivalued": true
+            }
+          }
+        },
+        "SubsystemConnection": {
+          "description": "Summed relationship weight from one subsystem to another, with counts by kind.",
+          "attributes": {
+            "to": {
+              "description": "The other subsystem's id.",
+              "range": "Subsystem",
+              "required": true
+            },
+            "weight": {
+              "description": "Sum of kind x evidence weights.",
+              "range": "float",
+              "required": true
+            }
+          }
+        },
+        "SubsystemMembership": {
+          "description": "subsystem_by_file: one row per code file.",
+          "attributes": {
+            "file": {
+              "description": "Repo-relative path of a code file.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "subsystem": {
+              "description": "The file's subsystem; its entities belong to it too.",
+              "range": "Subsystem",
+              "required": true,
+              "minimum_cardinality": 1,
+              "maximum_cardinality": 1
+            }
+          }
+        }
+      }
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/er-model.html",
+        "title": "ER model"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/db/index-state.ts:44",
+      "quotedText": "export async function readIndexState(repoPath: string): Promise<IndexState | undefined> {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/db/graph/edges.ts:105",
+      "quotedText": "export async function outNeighbors(from: bigint, opts: NeighborOpts & { readonly withEvidence: true }): Promise<NeighborRelation[]>;"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:848",
+      "quotedText": "this.queue.enqueue({ kind: 'doc-summarise-repo', repoPath });"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/analyze/context/driver.ts:599",
+      "quotedText": "const bundle: AnalyzeContextBundle = {"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/analyze/context/shaper-provider.ts:366",
+      "quotedText": "export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>, execution?: ConnectionExecutionContext): LLMProvider {"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts:46",
+      "quotedText": "['repo.stats', 'indexing', false],"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts:94",
+      "quotedText": "// (C) Indexing — PERIPHERAL → cheap (the cheapest CLI model by default)."
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/queue.ts:35",
+      "quotedText": "job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/analyze/context/types.ts:108",
+      "quotedText": "export type BundleLayerName ="
+    }
+  ]
+}

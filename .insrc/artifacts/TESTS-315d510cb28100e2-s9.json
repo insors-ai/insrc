@@ -1,0 +1,658 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "d523f052a8cb9cabdc324df190a5bfbbd6eabd8a3bcf8f43788b52d9068edf56",
+        "at": "2026-11-02T09:01:17.263Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s9",
+    "createdAt": "2026-11-02T06:08:57.571Z",
+    "updatedAt": "2026-11-02T09:01:17.206Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "epicSlug": "team-signoff-claim-based-workflow",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "cac74c19d",
+        "ranAt": "2026-11-02T06:08:57.571Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/port.test.ts: missingCapabilities reports status-read for a declared set without it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/port.test.ts",
+                "title": "missingCapabilities reports status-read for a declared set without it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: readIssueStatus maps the gh issue view output to state and labels and the adapter declares status-read",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "readIssueStatus maps the gh issue view output to state and labels and the adapter declares status-read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: readIssueStatus maps a gh timeout to unreachable, a missing gh to missing-tool and a signed-out gh to missing-signin, and is cancelled by the Deadline signal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+                "title": "readIssueStatus maps a gh timeout to unreachable, a missing gh to missing-tool and a signed-out gh to missing-signin, and is cancelled by the Deadline signal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/github-adapter.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3500,
+            "titles": [
+              {
+                "title": "compatibility exception 1, a failed typed create is not retried untyped unless the type is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "a typed create rejected as an unknown issue type is retried once untyped and reports typed false",
+                "result": "pass"
+              },
+              {
+                "title": "whoAmI success, empty login converted to missing-signin, missing tool, missing sign-in and unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "findIssue returns the first of several matches and separates failure from not found",
+                "result": "pass"
+              },
+              {
+                "title": "findIssues lists every open or closed match across all pages in ascending order, and a failure is not an answer",
+                "result": "pass"
+              },
+              {
+                "title": "the adapter declares signoff-request but not completion, and a malformed signoff request or ref is rejected without running gh",
+                "result": "pass"
+              },
+              {
+                "title": "readAssignee returns the single login, null when unassigned and rejected for several or a malformed reference",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee from zero, one and several assignees ends with exactly the requested user",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee makes no change call when already right and clears for null",
+                "result": "pass"
+              },
+              {
+                "title": "setAssignee reports rejected or unreachable without a retry when the re-read differs or a step times out",
+                "result": "pass"
+              },
+              {
+                "title": "addAssignee adds without removing, returns the assignees read back and reports a failed step without a retry",
+                "result": "pass"
+              },
+              {
+                "title": "Epic create parity with ghCreateIssueTyped",
+                "result": "pass"
+              },
+              {
+                "title": "Story create and Epic parent link parity",
+                "result": "pass"
+              },
+              {
+                "title": "Task create and Story parent link parity",
+                "result": "pass"
+              },
+              {
+                "title": "each issueOps operation runs the expected gh argv and fails with the kind and message of the gh failure",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabel returns false on failure, ensureMilestone swallows a failed create, closing a closed issue succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "ghGetIssueId and the adapter's resolveIssueId run gh api for the issue number, return the numeric id, and fail on a non-integer or a gh error",
+                "result": "pass"
+              },
+              {
+                "title": "readIssueStatus maps the gh issue view output to state and labels and the adapter declares status-read",
+                "result": "pass"
+              },
+              {
+                "title": "readIssueStatus maps a gh timeout to unreachable, a missing gh to missing-tool and a signed-out gh to missing-signin, and is cancelled by the Deadline signal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/port.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8643,
+            "titles": [
+              {
+                "title": "missingCapabilities names every capability the tracker does not declare",
+                "result": "pass"
+              },
+              {
+                "title": "missingCapabilities reports status-read for a declared set without it",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver refuses malformed or unsupported configuration",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver accepts an own entry without a type and falls back to the origin remote for type github",
+                "result": "pass"
+              },
+              {
+                "title": "strict resolver never takes a target from the default entry's owner and repo",
+                "result": "pass"
+              },
+              {
+                "title": "TrackerPort type exposes issueOps with the AMD-8 signatures",
+                "result": "pass"
+              },
+              {
+                "title": "the signature fixture compiles with resolveIssueId and its broken twin does not",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker succeeds when every needed capability is declared",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker with an empty needed set validates configuration and sign-in",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker refuses a needed completion capability naming it, and accepts signoff-request",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names gh as the missing tool",
+                "result": "pass"
+              },
+              {
+                "title": "loadTracker names the missing sign-in",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "57330ee35",
+        "ranAt": "2026-11-02T06:14:45.124Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/refresh.test.ts: refreshTrackerStatus writes epicStatus, storyStatus and lastSyncedAt only",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+                "title": "refreshTrackerStatus writes epicStatus, storyStatus and lastSyncedAt only",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/refresh.test.ts: a port without status-read fails naming the capability and a read that fails is a failed result",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+                "title": "a port without status-read fails naming the capability and a read that fails is a failed result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/refresh.test.ts: a slow port hits the budget with an injected Deadline and the unread Epics and Stories are skipped with time limit reached",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+                "title": "a slow port hits the budget with an injected Deadline and the unread Epics and Stories are skipped with time limit reached",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/refresh.test.ts: a ToolDenied is rethrown and a non-GitHub fake port gets the same fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+                "title": "a ToolDenied is rethrown and a non-GitHub fake port gets the same fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+                "title": "the default GitHub path hands the Deadline signal to gh, so a call that never answers is cancelled and the sync is skipped",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/tracker-sync-method.test.ts: tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+                "title": "tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 728,
+            "titles": [
+              {
+                "title": "tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/refresh.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1239,
+            "titles": [
+              {
+                "title": "refreshTrackerStatus writes epicStatus, storyStatus and lastSyncedAt only",
+                "result": "pass"
+              },
+              {
+                "title": "a port without status-read fails naming the capability and a read that fails is a failed result",
+                "result": "pass"
+              },
+              {
+                "title": "a slow port hits the budget with an injected Deadline and the unread Epics and Stories are skipped with time limit reached",
+                "result": "pass"
+              },
+              {
+                "title": "a ToolDenied is rethrown and a non-GitHub fake port gets the same fields",
+                "result": "pass"
+              },
+              {
+                "title": "the default GitHub path hands the Deadline signal to gh, so a call that never answers is cancelled and the sync is skipped",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1e91c7bcd",
+        "ranAt": "2026-11-02T06:18:14.730Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/refresh-hooks.test.ts: git_pull and git_push through callTool with the hooks registered refresh the status after success",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/refresh-hooks.test.ts",
+                "title": "git_pull and git_push through callTool with the hooks registered refresh the status after success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/refresh-hooks.test.ts: a failing, denied or slow tracker leaves success true and adds hookFailures and a line of output",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/refresh-hooks.test.ts",
+                "title": "a failing, denied or slow tracker leaves success true and adds hookFailures and a line of output",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/refresh-hooks.test.ts: a dry-run pull, a push with pushed false, a failed git command, a missing cwd and a push from a temporary worktree run no refresh",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/tracker/__tests__/refresh-hooks.test.ts",
+                "title": "a dry-run pull, a push with pushed false, a failed git command, a missing cwd and a push from a temporary worktree run no refresh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/refresh-hooks.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 959,
+            "titles": [
+              {
+                "title": "git_pull and git_push through callTool with the hooks registered refresh the status after success",
+                "result": "pass"
+              },
+              {
+                "title": "a failing, denied or slow tracker leaves success true and adds hookFailures and a line of output",
+                "result": "pass"
+              },
+              {
+                "title": "a dry-run pull, a push with pushed false, a failed git command, a missing cwd and a push from a temporary worktree run no refresh",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "51784e82b",
+        "ranAt": "2026-11-02T06:23:58.703Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/draft-issues.test.ts: a team repo creates the stage's issue as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "a team repo creates the stage's issue as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/draft-issues.test.ts: a repo with no team policy and a tracker that is on creates the Epic and Story issues",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "a repo with no team policy and a tracker that is on creates the Epic and Story issues",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/draft-issues.test.ts: tracker type none makes no tracker call, a malformed github.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "tracker type none makes no tracker call, a malformed github.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/draft-issues.test.ts: the terminal approve over issues the daemon already created creates nothing and no duplicate",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/draft-issues.test.ts",
+                "title": "the terminal approve over issues the daemon already created creates nothing and no duplicate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/draft-issues.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 690,
+            "titles": [
+              {
+                "title": "ensureDraftIssues returns not-applicable without a team policy and maps policy and sc1 failures to messages",
+                "result": "pass"
+              },
+              {
+                "title": "Define, LLD and plan drafts create one issue per unit, a second write creates none, and failures stop and report",
+                "result": "pass"
+              },
+              {
+                "title": "outcomeKnown wording for a failed lookup and for a create that times out",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose Story is recorded needs no Epic, and an issue that cannot be recorded is not reported ready",
+                "result": "pass"
+              },
+              {
+                "title": "a team repo creates the stage's issue as before",
+                "result": "pass"
+              },
+              {
+                "title": "a repo with no team policy and a tracker that is on creates the Epic and Story issues",
+                "result": "pass"
+              },
+              {
+                "title": "tracker type none makes no tracker call, a malformed github.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown",
+                "result": "pass"
+              },
+              {
+                "title": "the terminal approve over issues the daemon already created creates nothing and no duplicate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "8bd3df380",
+        "ranAt": "2026-11-02T06:27:26.152Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/chain-report-tracker.test.ts: the tracker record carries artifactId and revision for the Epic and each Story with an issue, 0 when absent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-report-tracker.test.ts",
+                "title": "the tracker record carries artifactId and revision for the Epic and each Story with an issue, 0 when absent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/chain-report-tracker.test.ts: the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/chain-report-tracker.test.ts",
+                "title": "the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/chain-report-tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 720,
+            "titles": [
+              {
+                "title": "the tracker record carries artifactId and revision for the Epic and each Story with an issue, 0 when absent",
+                "result": "pass"
+              },
+              {
+                "title": "the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "0f48dc974",
+        "ranAt": "2026-11-02T06:29:26.737Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/s9-docs-record.test.ts: team-workflow.md records the amendment and the s9 decisions and workflow.md describes the automatic refresh",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/s9-docs-record.test.ts",
+                "title": "team-workflow.md records the amendment and the s9 decisions and workflow.md describes the automatic refresh",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/s9-docs-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 412,
+            "titles": [
+              {
+                "title": "team-workflow.md records the amendment and the s9 decisions and workflow.md describes the automatic refresh",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "62640e413",
+        "ranAt": "2026-11-02T09:01:17.206Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/s9-sweep-record.test.ts: the outcome section of team-workflow.md lists the sweep result and the open items",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/s9-sweep-record.test.ts",
+                "title": "the outcome section of team-workflow.md lists the sweep result and the open items",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "On a sandbox GitHub repo: write a draft in a repo with no team policy and see the Epic issue created, change the issue state on GitHub, run git_pull through the daemon tool and see the status in meta.tracker",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/plans/team-workflow.md section 's9 outcome', Open items: sandbox repo subhagho/insors-test run of 2026-11-02 (Epic issue subhagho/insrc-test#1 created at first draft, closed on GitHub, git_pull through tools.call, meta.tracker epicStatus closed, lastSyncedAt 2026-11-02T08:57:50Z, no hookFailures)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/s9-sweep-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 383,
+            "titles": [
+              {
+                "title": "the outcome section of team-workflow.md lists the sweep result and the open items",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

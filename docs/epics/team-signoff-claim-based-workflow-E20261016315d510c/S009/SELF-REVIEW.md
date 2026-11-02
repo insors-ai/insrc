@@ -32,3 +32,32 @@ Date: 2026-11-02. Subject: `LLD-315d510cb28100e2-s9`. Method: each claim about c
 ## Verdict
 
 warn. No HIGH finding. MED-1 and LOW-1 are one rule in the hook ("only for the repository root, only with a cwd") and belong in the plan's task for the hooks. The design is internally consistent with ac1 to ac8, k4 (overridden for issue creation by the user's decision of 2026-10-23) and k8.
+
+---
+
+# Build self-review of `BUILD-315d510cb28100e2-s9`
+
+Date: 2026-11-02. Reviewer: the controller that wrote the code (the code-review tool is unavailable: `insrc_code_review_step` throws PENDING REVIEW RE-IMPLEMENTATION), so this is a self-review and the approval needs an override reason. Scope: the commits of this Story (trailer `Insrc-Story: 315d510cb28100e2/s9`, t1 to t7 and two follow-up commits), read against the approved LLD (revision 4) and PLAN.
+
+## What was checked
+
+- Every acceptance check of t1 to t7 against the code, by the build gate (all seven passed) and again by reading the diff.
+- The three review points carried from the plan: the hooks act only when `input.cwd` is the registered root (`src/workflow/tracker/refresh-hooks.ts`, tested with a symlinked root, an unregistered clone, a missing cwd and a detached worktree); the signal reaches the gh call (tested with a gh that never answers); the sc1 `methodAdd` amendment is recorded, and the implemented signature matches `AMD-315d510cb28100e2-31`.
+- A full sweep once, compared by test name with the tree before s9 (see the outcome section of `docs/plans/team-workflow.md`): no new failure.
+- A smoke run on a real repository (`subhagho/insrc-test`): the Epic issue created at first draft, `git_pull` through the daemon refreshed `meta.tracker`.
+
+## Findings
+
+- **MED-1 (decide).** The label create of the draft hook is `gh_label` with `force: true`, a destructive-class call that always asks. With no connected client the draft write of a repo with no team policy and the tracker on now ends with "gh_label was denied (no-client)", and with an unanswered prompt "(timed-out)" after 5 minutes. The draft is written either way. Before s9 this reached team repos and the terminal approve only. Found by the smoke run; the fix (create labels without `force`) is outside this Story and should be triaged on its own.
+- **MED-2 (accepted, decided by the user in item 3 of the s9 decisions).** The refresh runs inside the git tool's result, so a slow tracker holds `git_pull` and `git_push` for up to the 120-second budget plus one call's own limit.
+- **LOW-1.** Fixed during the review: a repo whose tracker setting is none reported a "tracker disabled" warning for every Epic with a bound issue, which would have added a `hookFailures` line to every pull. It now reports nothing (test added).
+- **LOW-2.** Deviation from the LLD, recorded: a refresh the Deadline stops writes nothing for that Epic and reports it skipped, instead of a partial `storyStatus`.
+- **LOW-3.** Deviation, recorded: an unparseable `github.json` reads as tracker off (as the terminal approve reads it); the not-ready case is `type: github` with no target. The chain report's per-Story artifact id and revision are those of the Story's LLD.
+- **LOW-4.** `registerTrackerRefreshHooks` is called in `src/daemon/index.ts` at start-up; no test starts the daemon, so the wiring is covered by the live run only (the smoke), not by a unit test.
+- **LOW-5.** Skipped tests were compared by name only for `src/workflow`; in the other chunks the skips are the live and probe suites, not compared one by one. The record of the smoke test in the BUILD test record has a typo in its evidence text (`insors-test` for `insrc-test`).
+- **LOW-6.** `AMD-315d510cb28100e2-31` and `-32` are still drafts; `-29` and `-30` are stale duplicates. They are approved in the amendment store at completion, with the user's yes.
+- **Process.** Another session's uncommitted work briefly broke `tsc` in `src/workflow/code-review/task-review/`; t4 failed its first validate on that and passed on the rerun. No file of that session was touched.
+
+## Verdict
+
+warn. No HIGH finding. MED-1 is a behaviour found in use that needs its own tracked fix; MED-2 is a decision already taken. The Story meets ac1 to ac8 of the LLD as built.

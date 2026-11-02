@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s9",
+    "createdAt": "2026-11-02T05:01:33.548Z",
+    "updatedAt": "2026-11-02T05:01:33.548Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "7348f340d",
+        "ranAt": "2026-11-02T05:01:33.548Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "migration step for namespaces and kinds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: a v6 store without the new namespace rows opens at version 7 holding them, its entities and relationships read unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: a fresh store holds all seven shared-modules rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: a module stub of Rust, C#, C or C++ is stored under its namespace row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "table/view kinds and new languages",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: table and view are appended kind slots 14 and 15, and every earlier slot keeps its byte",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1138,
+            "titles": [
+              {
+                "title": "s9 t1: a v6 store without the new namespace rows opens at version 7 holding them, its entities and relationships read unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t1: a fresh store holds all seven shared-modules rows",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t1: a module stub of Rust, C#, C or C++ is stored under its namespace row",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t1: table and view are appended kind slots 14 and 15, and every earlier slot keeps its byte",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

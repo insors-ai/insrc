@@ -549,16 +549,6 @@ Built on `v2`, not pushed. The git family now has 49 tools (40 before, plus nine
 - **Extended tools** (`git/extended.ts`): `git_stash` (branch, create, store, export, import), `git_worktree` (lock, unlock, repair), `git_remote` (show, prune, update, set-head, set-branches, set-url-add, set-url-delete), `git_branch` (rename, copy, set-upstream-to, unset-upstream, edit-description) and `git_tag` (verify, sign). Every input that was valid before is valid and gives the same result and class; `git-approval.test.ts` pins this and lists the new inputs as added by s8.
 - **Destructive**: `read-tree` with reset or update, `replace` delete or force, `notes` remove, prune and add force, `format-patch` with an output directory, `archive` with an output file, `bundle create`, `fast-export` with export marks, `diagnose` and `bugreport` with an output directory, `clean` (not a dry run), `restore` of the working tree, `checkout-index` force, `mv` force, `submodule` deinit and update force, `merge-file` in place, `replay` with ref-action update, `gc` with pruneNow, `prune` (not a dry run), `maintenance` with the reflog-expire task, `reflog` expire and delete (not a dry run), `remote prune` (not a dry run), `branch` rename and copy with force. All ask every time and are denied with no client; each pair (destructive input, safe input) is tested.
 
-## s8 full sweep (2026-11-02)
-
-Run once after t9, in foreground chunks, in two clean checkouts: the s8 head (`54b082196`) and the base before s8 (`cb2c00d4f`), so that the uncommitted work of other sessions did not count. Tests per chunk, head against base (failures in brackets): `src/daemon/tools` 652 (2) against 634 (2), the 18 more being the s8 tests; `src/daemon` top level 389 (15) against 389 (13); `src/daemon/db` 556 (11) against 556 (11); `src/daemon/steps` 322 (18) against 322 (18), without `peer-state-store-leakfree.test.ts`, which hangs on both; `src/daemon/threads` 86 (1) against 86 (1); `src/workflow` 875 + 464 + 921 (42 + 6 + 4) against 875 + 464 + 916 (42 + 5 + 4); `src/analyze` 1230 (18) against 1207 (18); `src/db` 597 (3) against 597 (3); `src/cli` 240 (11) against 240 (10); the other directories 1054 (37) against 1047 (43).
-
-Failures only at the head, each checked:
-- `repo-call-audit.test.ts` and `repo-call-table.test.ts`: the audit lacks `codeReview.task.cleanup`, which commit `850b4cc34` (Story s3 of the review epic, another session) registered. Not s8.
-- `policy-reader.test.ts` ("non-git, no-commit and no-remote directories without a sighting read as none") and `daemon-stop-forced.test.ts`: both pass in isolation at the head and at the base (21 and 13 tests); load noise.
-
-The failures present at both are the known ones (daemon lifecycle and shutdown, review and code-review enforcement, the connection-manager `CM-S2` and `CM-S3` suites, `typecheck-config.test.ts`, `live-store-file-refusal.test.ts`, `peer-state-store-leakfree.test.ts`). s8 added no failure.
-
 ### Deviations from the approved LLD and PLAN, and why
 
 - **Tools were registered in the task that built them**, not all in t9, because each task's coverage cases run through the registry. t9 added the exclusions, the no-assigned-row test and the inventory update.
@@ -579,3 +569,12 @@ The failures present at both are the known ones (daemon lifecycle and shutdown, 
 - `git submodule add` needs the file transport allowed for a local url; the coverage case sets `GIT_CONFIG_COUNT` for its process.
 - `git backfill` and `git refs migrate` were run in a partial clone and a fresh repository; a repository with linked worktrees cannot migrate (git refuses).
 
+## s8 full sweep (2026-11-02)
+
+Run once after t9, in foreground chunks, in two clean checkouts: the s8 head (`54b082196`) and the base before s8 (`cb2c00d4f`), so that the uncommitted work of other sessions did not count. Tests per chunk, head against base (failures in brackets): `src/daemon/tools` 652 (2) against 634 (2), the 18 more being the s8 tests; `src/daemon` top level 389 (15) against 389 (13); `src/daemon/db` 556 (11) against 556 (11); `src/daemon/steps` 322 (18) against 322 (18), without `peer-state-store-leakfree.test.ts`, which hangs on both; `src/daemon/threads` 86 (1) against 86 (1); `src/workflow` 875 + 464 + 921 (42 + 6 + 4) against 875 + 464 + 916 (42 + 5 + 4); `src/analyze` 1230 (18) against 1207 (18); `src/db` 597 (3) against 597 (3); `src/cli` 240 (11) against 240 (10); the other directories 1054 (37) against 1047 (43).
+
+Failures only at the head, each checked:
+- `repo-call-audit.test.ts` and `repo-call-table.test.ts`: the audit lacks `codeReview.task.cleanup`, which commit `850b4cc34` (Story s3 of the review epic, another session) registered. Not s8.
+- `policy-reader.test.ts` ("non-git, no-commit and no-remote directories without a sighting read as none") and `daemon-stop-forced.test.ts`: both pass in isolation at the head and at the base (21 and 13 tests); load noise.
+
+The failures present at both are the known ones (daemon lifecycle and shutdown, review and code-review enforcement, the connection-manager `CM-S2` and `CM-S3` suites, `typecheck-config.test.ts`, `live-store-file-refusal.test.ts`, `peer-state-store-leakfree.test.ts`). s8 added no failure.

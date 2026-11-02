@@ -148,3 +148,25 @@ test('the default GitHub path hands the Deadline signal to gh, so a call that ne
 		rmSync(repo, { recursive: true, force: true });
 	}
 });
+
+test('a repo whose tracker setting is none has nothing to refresh: no result, no warning and no tracker call', async () => {
+	const repo = seedRepo([A]);
+	const cfg = join(repo, 'github.json');
+	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	try {
+		writeFileSync(cfg, JSON.stringify({ repos: { [repo]: { type: 'none' } } }));
+		process.env['INSRC_GITHUB_CONFIG'] = cfg;
+		let calls = 0;
+		installExecStandIn(() => { calls += 1; return ''; });
+		const all = await refreshTrackerStatus(repo);
+		assert.deepEqual(all, { results: [], warnings: [] });
+		assert.equal(calls, 0);
+		// asked for by name, the Epic's own result says why
+		const named = await refreshTrackerStatus(repo, { epicHash: A });
+		assert.equal(named.results[0]?.result.status, 'skipped');
+	} finally {
+		installExecStandIn();
+		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		rmSync(repo, { recursive: true, force: true });
+	}
+});

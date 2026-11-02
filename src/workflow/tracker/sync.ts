@@ -35,6 +35,7 @@ const log = getLogger('tracker-sync');
 export const TRACKER_REFRESH_DEADLINE_MS = 120_000;
 
 const TIME_LIMIT = 'time limit reached';
+const TRACKER_DISABLED = 'tracker disabled via config';
 
 export type SyncResult =
 	| { readonly status: 'synced';  readonly epicStatus: TrackerStatus; readonly storyStatus: Readonly<Record<string, TrackerStatus>> }
@@ -65,7 +66,7 @@ export async function syncTracker(repoPath: string, epicHash: string, table?: Re
 	if (port === undefined) {
 		try {
 			const cfg = await resolveGithubConfig(repoPath);
-			if (cfg.type === 'none') return { status: 'skipped', reason: `tracker disabled via config (source: ${cfg.source})` };
+			if (cfg.type === 'none') return { status: 'skipped', reason: `${TRACKER_DISABLED} (source: ${cfg.source})` };
 			const tableOf = table ?? createRegistryTable(workflowToolDeps(repoPath, deadline !== undefined ? { signal: deadline.signal } : {}));
 			port = createGithubTracker(cfg.owner, cfg.repo, { repoPath, table: tableOf });
 		} catch (err) {
@@ -144,7 +145,8 @@ export async function refreshTrackerStatus(repoPath: string, opts: { readonly ep
 		for (const epicHash of hashes) {
 			const result = await syncTracker(repoPath, epicHash, undefined, { deadline, ...(opts.port !== undefined ? { port: opts.port } : {}) });
 			// an Epic with no bound issue is not an event of this refresh when it was not asked for by name
-			if (opts.epicHash === undefined && result.status === 'skipped' && /not pushed yet/.test(result.reason)) continue;
+			// and a repo whose tracker setting is none has nothing to refresh: no result and no warning
+			if (opts.epicHash === undefined && result.status === 'skipped' && (/not pushed yet/.test(result.reason) || result.reason.startsWith(TRACKER_DISABLED))) continue;
 			results.push({ epicHash, result });
 			if (result.status !== 'synced') {
 				warnings.push(`tracker status of ${epicHash} ${result.status}: ${result.reason}`);

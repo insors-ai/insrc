@@ -65,8 +65,9 @@ export const GIT_TREE_OPS: readonly GitOpSpec[] = [
       recursive: field.bool('Include nested submodules.'), all: field.bool('For deinit: every submodule.'),
     },
     required: ['action'], paths: ['paths'], notice: 'deinit and update with force discard the submodule working tree.',
-    check: i => (i['action'] === 'add' ? (i['url'] === undefined ? 'add needs url' : undefined) : i['url'] !== undefined ? `${String(i['action'])} takes no url` : i['action'] === 'deinit' && i['all'] !== true && i['paths'] === undefined ? 'deinit needs paths or all' : undefined),
-    argv: i => ['submodule', String(i['action']), ...(i['action'] === 'add' ? [...flag(i['force'], '-f'), '--', String(i['url']), ...list(i['paths'])]
+    check: i => (i['action'] === 'add' ? (i['url'] === undefined ? 'add needs url' : /^(?:ext::|-)/i.test(String(i['url'])) ? 'the ext:: transport runs a command and a url must not start with -' : undefined) : i['url'] !== undefined ? `${String(i['action'])} takes no url` : i['action'] === 'deinit' && i['all'] !== true && i['paths'] === undefined ? 'deinit needs paths or all' : undefined),
+    // a submodule url comes from .gitmodules, which the repository's author wrote: never let it run a command through ext::
+    argv: i => ['-c', 'protocol.ext.allow=never', 'submodule', String(i['action']), ...(i['action'] === 'add' ? [...flag(i['force'], '-f'), '--', String(i['url']), ...list(i['paths'])]
       : [...flag(i['force'] && (i['action'] === 'update' || i['action'] === 'deinit'), '--force'), ...flag(i['recursive'], '--recursive'), ...flag(i['all'], '--all'), ...pathspec(i['paths'])])],
   }),
   op('rerere', {

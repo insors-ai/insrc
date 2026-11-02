@@ -60,6 +60,19 @@ test('git-tree.test.ts: destructive inputs are denied with no client before git 
 	assert.deepEqual(standIn.calls(), [], 'git did not start for any of them');
 });
 
+test('git-tree.test.ts: submodule add refuses an ext:: url and every submodule action switches the ext transport off', async () => {
+	registerForTests();
+	standIn = installStandInGit('exit 0');
+	_setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' as const }; } }));
+	for (const url of ['ext::sh -c "touch /tmp/insrc-ext-ran"', '--upload-pack=x']) {
+		const r = await executeTool('git_tree', { cwd: '/tmp', op: 'submodule', action: 'add', url, paths: ['sm'] }, toolDeps('/tmp'));
+		assert.equal(r.success, false, url);
+	}
+	assert.deepEqual(standIn.calls(), [], 'git did not start');
+	await executeTool('git_tree', { cwd: '/tmp', op: 'submodule', action: 'status' }, toolDeps('/tmp'));
+	assert.deepEqual(standIn.calls(), ['-c protocol.ext.allow=never submodule status']);
+});
+
 test('git-tree.test.ts: a command the installed git lacks fails with git\'s message and the recorded version', async () => {
 	registerForTests();
 	standIn = installStandInGit(`echo "git: 'replay' is not a git command. See 'git --help'." >&2; exit 1`);

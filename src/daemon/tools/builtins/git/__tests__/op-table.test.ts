@@ -160,3 +160,33 @@ test('op-table.test.ts: extendGitTool keeps existing inputs and classes and thro
 	assert.throws(() => extendGitTool(gitStashTool, [{ ...read, name: 'push' }]), /already exists/);
 	assert.throws(() => extendGitTool(gitStashTool, [{ ...wipe, name: 'purge', fields: { message: field.int() }, refs: [], required: [] }]), /collides/);
 });
+
+test('op-table.test.ts: a missing git is missing-tool, a killed command is timed-out with the unknown-outcome text when the op changes something, and a class that is a function is evaluated per input', async () => {
+	const slowRead: GitOpSpec = { name: 'slow-read', cls: 'none', timeoutMs: 300, argv: () => ['wait-a-while'] };
+	const slowWrite: GitOpSpec = { name: 'slow-write', cls: 'common', timeoutMs: 300, argv: () => ['wait-a-while'] };
+	const either: GitOpSpec = { name: 'either', cls: i => (i['dangerous'] === true ? 'destructive' : 'none'), fields: { dangerous: field.bool('Whether it is dangerous.') }, timeoutMs: 5000, argv: () => ['either'] };
+	const tool = build(slowRead, slowWrite, either);
+	const approval = tool.approval as (input: ToolInput) => string;
+	assert.equal(approval({ op: 'either', dangerous: true }), 'destructive');
+	assert.equal(approval({ op: 'either' }), 'none');
+	assert.equal(approval({ op: 'slow-write' }), 'common');
+	registerTool(tool);
+	_setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' as const }; } }));
+	const run = (op: string) => executeTool('git_probe', { cwd: '/tmp', op }, toolDeps('/tmp'));
+
+	standIn = installStandInGit('sleep 5');
+	const read = await run('slow-read');
+	assert.equal(read.failure?.kind, 'timed-out');
+	assert.doesNotMatch(read.failure?.message ?? '', /outcome is unknown/, 'a read does not claim an unknown outcome');
+	const write = await run('slow-write');
+	assert.equal(write.failure?.kind, 'timed-out');
+	assert.match(write.failure?.message ?? '', /outcome is unknown/, 'a changing op says so');
+
+	const path = process.env['PATH'];
+	process.env['PATH'] = '/nonexistent-insrc-path';
+	try {
+		const gone = await run('slow-read');
+		assert.equal(gone.success, false);
+		assert.equal(gone.failure?.kind, 'missing-tool');
+	} finally { process.env['PATH'] = path; }
+});

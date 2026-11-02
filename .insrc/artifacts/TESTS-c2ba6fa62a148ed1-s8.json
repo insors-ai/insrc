@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T10:00:37.755Z",
+    "updatedAt": "2026-11-02T10:48:02.439Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -477,6 +477,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "72bf1dc57",
+        "ranAt": "2026-11-02T10:48:02.439Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: subsystems",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/smoke-t8.txt (installed daemon @ 2befc2d8: /tmp/insrc-s9-smoke grouped into 5 subsystems with 5 summaries at generation 28; insrc_analyze context names '#### Subsystem cpp' with its stored summary and files); full sweep in S008/full-sweep-t8.txt"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

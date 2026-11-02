@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -141,3 +141,13 @@ Run at 2026-11-02T10:00:37.755Z on commit `32cc19900`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/analyze/context/__tests__/subsystem-context.test.ts` | 0 | 4 | 1.6 s |  |
+
+## t8
+
+Run at 2026-11-02T10:48:02.439Z on commit `72bf1dc57`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: subsystems**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/smoke-t8.txt (installed daemon @ 2befc2d8: /tmp/insrc-s9-smoke grouped into 5 subsystems with 5 summaries at generation 28; insrc_analyze context names '#### Subsystem cpp' with its stored summary and files); full sweep in S008/full-sweep-t8.txt

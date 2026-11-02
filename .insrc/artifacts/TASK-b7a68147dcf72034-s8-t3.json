@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d061df1-4ec2-4e12-8304-5141531679d8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:21:26.740Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "envelope": {
+      "description": "git_text: the filters that read standard input",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b8dc77a8f35e3cfdb7693fcb1ae0c46d951d9fd870b308cbb13fd90e6d279b2a",
+        "at": "2026-11-02T11:21:26.740Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:21:26.741Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "git_text: the filters that read standard input",
+    "summary": "Add git_text with column, stripspace, interpret-trailers, fmt-merge-msg, patch-id, mailinfo and mailsplit, each taking its content as an input and sending it through runShellBytes, with the input-budget refusal and the empty-content case. Mark the rows covered with cases; only this Task's own rows are checked.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Each op receives the content given as its input and returns the command's answer",
+      "Empty content is delivered as empty input",
+      "Content over the input budget is refused before git starts",
+      "A failed delivery is a failure of the tool with no answer"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_text covered rows receive their content and return the command's answer"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts: empty content, over-budget content and a failed delivery"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

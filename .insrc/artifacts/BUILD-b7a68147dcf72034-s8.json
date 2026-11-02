@@ -1,0 +1,288 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 11,
+        "contentHash": "04a82c9a510cfe30b65dd5101e274a0eaa9351b8f0e9e5f1f4a1963d35943d70",
+        "at": "2026-11-02T12:57:50.913Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-9cced31d-cb1c-4c3f-8adf-f762ec6dc36c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:25:07.236Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "revision": 11,
+    "updatedAt": "2026-11-02T12:56:33.653Z",
+    "authoredBy": "controller",
+    "epicSlug": "one-tool-registry-git-gh-jira"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      }
+    ],
+    "summary": "Close-out of s8: 13 commands excluded with reasons, no row assigned, inventory and snapshot tests updated, s8 outcome and full-sweep record written. After the first validation the controller's review added the ext:: guard for git submodule and three op-table tests (timeout, missing git, per-input class); the full s8 test set was re-run.",
+    "testRecord": {
+      "md": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S008/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/op-table.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/coverage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/definitions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/inspect.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/safe-args.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/text.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/objects.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-patch.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/patch.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/tree.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/maintenance.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/reflog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/refs.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/setup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/git/extended.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/tool-registry.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/approval-class-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/__tests__/typed-git-tools.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S008/CODE-SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:56:33.653Z"
+      }
+    ],
+    "commit": "e9b399b45"
+  },
+  "citations": []
+}

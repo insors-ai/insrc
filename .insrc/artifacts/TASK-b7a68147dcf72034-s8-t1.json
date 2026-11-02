@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a2967b82-4a5e-432b-a259-467006ab9c54",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:21:26.737Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Git op table: the family builder and the extension of an existing tool",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b941a01affdab4944e602c7be6748528b59153f3a58265d396825ce05652a19c",
+        "at": "2026-11-02T11:21:26.737Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:21:26.738Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Git op table: the family builder and the extension of an existing tool",
+    "summary": "Add src/daemon/tools/builtins/git/op-table.ts with GitOpSpec, buildGitFamilyTool and extendGitTool: flat input schema with an op enum built from the gh field helpers, output union with a literal op, rules that refuse fields an op does not take, ref and path checks, stdin delivery through runShellBytes, cut-output and union checks, the per-op approval class (fixed or a function of the input), time limits and typed failures. No tool uses it yet. Unit tests with a stand-in git.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and two ops that disagree about a shared field",
+      "A field the op does not take and a value outside its pattern are refused before any approval request is built",
+      "A cut stdout is a rejected failure whose partial text is not returned, and a result outside the op's answer member is a schema-mismatch failure with the original text kept",
+      "A stdin delivery error is a failure and no answer is parsed",
+      "extendGitTool keeps every existing input valid with the same result and class, and throws for a name or field collision",
+      "The gh files are unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: a stdin delivery error is a failure with no answer"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

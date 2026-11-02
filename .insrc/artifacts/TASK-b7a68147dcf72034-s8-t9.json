@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1ea8fbc5-f544-47a5-a275-9b075b897398",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:21:26.749Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "envelope": {
+      "description": "Close out: exclusions, registration, inventory, docs and the full sweep",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4cc826c12fce6f73281547840b6f65cb95eb97012981643d9c837fbe278e36ad",
+        "at": "2026-11-02T11:21:26.749Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:21:26.749Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Close out: exclusions, registration, inventory, docs and the full sweep",
+    "summary": "Mark for-each-repo, hook, filter-branch, merge-octopus, merge-ours, merge-recursive, merge-recursive-ours, merge-recursive-theirs, merge-resolve, merge-subtree, subtree, request-pull and quiltimport excluded with the reasons the user gave (no program needs request-pull or quiltimport). Register the new tools in definitions.ts as withFailureNet(tool), update the inventory and registration tests, turn on the rule in git-coverage.test.ts that fails for any row still assigned, write the s8 outcome in docs/plans/tool-registry.md, then run the full sweep once.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "No coverage row is assigned; every excluded row has a reason; every command of GIT_2_53_COMMANDS has a row",
+      "Each of for-each-repo, hook, filter-branch, the seven merge strategy drivers, subtree, request-pull and quiltimport is an excluded row with a reason, and the rule fails when one is left assigned",
+      "The inventory test compares gitToolDefinitions with every tool the git files export",
+      "The full sweep matches the known baseline failures and adds none",
+      "docs/plans/tool-registry.md records the s8 outcome and the user's decisions"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/tools/builtins/git/__tests__/typed-git-tools.test.ts: gitToolDefinitions matches every tool the git files export and each is registered as withFailureNet(tool)"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

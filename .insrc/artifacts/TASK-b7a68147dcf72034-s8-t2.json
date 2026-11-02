@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-410b10a7-48b4-4eed-a01f-4ebcfa5dc8d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:21:26.739Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "envelope": {
+      "description": "git_inspect: the read-only queries",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cf7f82bafffe20be8debf1576a4ef1671524dd1e10a81e833632e5100456fce8",
+        "at": "2026-11-02T11:21:26.739Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:21:26.739Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "git_inspect: the read-only queries",
+    "summary": "Add git_inspect (class none) with the read-only ops of the LLD (describe, name-rev, cherry, shortlog, show-branch, grep, last-modified, count-objects, var, version, check-attr, check-ignore, check-mailmap, check-ref-format, get-tar-commit-id, diff-files, diff-index, diff-pairs, range-diff, show-index, verify-commit, verify-tag, verify-pack, fsck, fsck-objects, pack-redundant, repo), each with its answer shape; a no-match exit gives a found false or an empty list. Mark each covered in the coverage table with a case through executeTool in a temporary repository. The no-assigned-row rule stays off until t9; this Task checks only its own rows.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Every git_inspect op has a coverage case that runs through executeTool in a temporary repository and checks the result",
+      "A command that exits 1 to mean no match gives an empty answer, not a failure",
+      "No git_inspect op asks for approval",
+      "The coverage rows of these ops are covered, not assigned"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_inspect covered rows run through executeTool in a temporary repository"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts: a no-match exit gives an empty answer and no git_inspect op asks for approval"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-56ccb6e7-9357-4b26-a74c-3197bee2caf8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:21:26.742Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "envelope": {
+      "description": "git_objects: object, index and ref writes",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d26789ee29ec936c8ec1c341be3dc307aa569cfe04c0db45b68b91df233502a2",
+        "at": "2026-11-02T11:21:26.742Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:21:26.742Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "git_objects: object, index and ref writes",
+    "summary": "Add git_objects with commit-tree, mktree, mktag, write-tree, read-tree, update-index, replace, notes, fast-import, unpack-objects, index-pack and pack-objects, with the destructive classes the LLD lists (read-tree --reset, notes remove and prune, replace delete) as input-dependent functions tested for both branches, and the stdin ops. Mark the rows covered with cases and approval cases; only this Task's own rows are checked.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Each op has a coverage case that checks the object, ref or index it changes",
+      "Each destructive input asks for approval and is denied with no client before git starts, and the safe input is common",
+      "A stdin delivery that fails is a failure with nothing reported as applied"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_objects covered rows change the object, ref or index as the command does"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts: a failed stdin delivery reports nothing as applied"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

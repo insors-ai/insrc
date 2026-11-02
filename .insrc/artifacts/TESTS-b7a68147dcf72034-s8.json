@@ -1,0 +1,973 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 12,
+        "contentHash": "34054eb55d2cbf34746c3e7e1484d5c062d19454f7aef86f9c7a4a4ee669341a",
+        "at": "2026-11-02T12:56:33.698Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "createdAt": "2026-11-02T11:25:07.236Z",
+    "updatedAt": "2026-11-02T12:56:33.653Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "epicSlug": "one-tool-registry-git-gh-jira",
+    "revision": 12
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "7ab11caca",
+        "ranAt": "2026-11-02T11:25:07.236Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "title": "op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "title": "op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "title": "op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "title": "op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: a stdin delivery error is a failure with no answer",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "title": "op-table.test.ts: a stdin delivery error is a failure with no answer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "title": "op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 699,
+            "titles": [
+              {
+                "title": "op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op",
+                "result": "pass"
+              },
+              {
+                "title": "op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields",
+                "result": "pass"
+              },
+              {
+                "title": "op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request",
+                "result": "pass"
+              },
+              {
+                "title": "op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure",
+                "result": "pass"
+              },
+              {
+                "title": "op-table.test.ts: a stdin delivery error is a failure with no answer",
+                "result": "pass"
+              },
+              {
+                "title": "op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f0b9e481c",
+        "ranAt": "2026-11-02T11:43:54.697Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_inspect covered rows run through executeTool in a temporary repository",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts: a no-match exit gives an empty answer and no git_inspect op asks for approval",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+                "title": "git-inspect.test.ts: a no-match exit gives an empty answer and no git_inspect op asks for approval",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8252,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 710,
+            "titles": [
+              {
+                "title": "git-inspect.test.ts: a no-match exit gives an empty answer and no git_inspect op asks for approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "88f143d54",
+        "ranAt": "2026-11-02T11:48:15.963Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_text covered rows receive their content and return the command's answer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts: empty content, over-budget content and a failed delivery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+                "title": "git-text.test.ts: empty content, over-budget content and a failed delivery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8828,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 725,
+            "titles": [
+              {
+                "title": "git-text.test.ts: empty content, over-budget content and a failed delivery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "bda1575df",
+        "ranAt": "2026-11-02T11:52:24.595Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_objects covered rows change the object, ref or index as the command does",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts",
+                "title": "git-objects.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts: a failed stdin delivery reports nothing as applied",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts",
+                "title": "git-objects.test.ts: a failed stdin delivery reports nothing as applied",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9286,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 700,
+            "titles": [
+              {
+                "title": "git-objects.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common",
+                "result": "pass"
+              },
+              {
+                "title": "git-objects.test.ts: a failed stdin delivery reports nothing as applied",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "81a9b1ef4",
+        "ranAt": "2026-11-02T12:00:27.851Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_patch covered rows produce or apply the patch, archive or bundle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-patch.test.ts: an op writing a named file is destructive, the same op without one is not, and a denial leaves the file unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+                "title": "git-patch.test.ts: an op writing a named file is destructive, the same op without one is not, and a denial leaves the file unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10153,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 741,
+            "titles": [
+              {
+                "title": "git-patch.test.ts: an op writing a named file is destructive, the same op without one is not, and a denial leaves the file unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "073a0e50e",
+        "ranAt": "2026-11-02T12:15:56.035Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_tree covered rows change the working tree or index as the command does",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+                "title": "git-tree.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts: a command the installed git lacks fails with git's message and the recorded version",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+                "title": "git-tree.test.ts: a command the installed git lacks fails with git's message and the recorded version",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15043,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 688,
+            "titles": [
+              {
+                "title": "git-tree.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common",
+                "result": "pass"
+              },
+              {
+                "title": "git-tree.test.ts: a command the installed git lacks fails with git's message and the recorded version",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "0b0bab6d3",
+        "ranAt": "2026-11-02T12:18:25.647Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_maintenance, git_setup, git_refs and git_reflog covered rows run through executeTool in a temporary repository",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts: gc with prune now, prune and reflog expire and delete are denied with no client before git starts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+                "title": "git-maintenance.test.ts: gc with prune now, prune and reflog expire and delete are denied with no client before git starts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts: init in an existing repository reinitialises and reports it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+                "title": "git-setup.test.ts: init in an existing repository reinitialises and reports it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13777,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 684,
+            "titles": [
+              {
+                "title": "git-maintenance.test.ts: gc with prune now, prune and reflog expire and delete are denied with no client before git starts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 686,
+            "titles": [
+              {
+                "title": "git-setup.test.ts: init in an existing repository reinitialises and reports it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "0b0bab6d3",
+        "ranAt": "2026-11-02T12:19:58.083Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: the new ops of git_stash, git_worktree, git_remote, git_branch and git_tag change the repository as the command does",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+                "title": "git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 745,
+            "titles": [
+              {
+                "title": "every typebox input schema serialises to the same JSON as the schema it replaced",
+                "result": "pass"
+              },
+              {
+                "title": "git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a dash-prefixed path after '--' is accepted and a dash-prefixed ref is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "each work-destroying operation is destructive and each read is none",
+                "result": "pass"
+              },
+              {
+                "title": "git_push deletes and forced refspecs, branch and tag delete, stash drop and clear, hard reset, worktree remove with force and checkout of a path are destructive and each read is none",
+                "result": "pass"
+              },
+              {
+                "title": "git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8",
+                "result": "pass"
+              },
+              {
+                "title": "git-approval.test.ts: the five extended tools give the class and the result they gave before for every old input",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 14056,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "e9b399b45",
+        "ranAt": "2026-11-02T12:56:33.653Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "title": "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/tools/builtins/git/__tests__/typed-git-tools.test.ts: gitToolDefinitions matches every tool the git files export and each is registered as withFailureNet(tool)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/__tests__/typed-git-tools.test.ts",
+                "title": "typed-git-tools.test.ts: the list and the tool files agree in both directions, ids are unique and the registered ids equal the list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/__tests__/typed-git-tools.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 555,
+            "titles": [
+              {
+                "title": "typed-git-tools.test.ts: the list and the tool files agree in both directions, ids are unique and the registered ids equal the list",
+                "result": "pass"
+              },
+              {
+                "title": "typed-git-tools.test.ts: every listed tool declares typebox input and output schemas at run time",
+                "result": "pass"
+              },
+              {
+                "title": "typed-git-tools.test.ts: a tool exported but not listed, and a listed object not exported by a tool file, are each reported by the same logic",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13936,
+            "titles": [
+              {
+                "title": "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                "result": "pass"
+              },
+              {
+                "title": "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                "result": "pass"
+              },
+              {
+                "title": "docs/daemon.md shows the coverage table",
+                "result": "pass"
+              },
+              {
+                "title": "every covered row's case runs through executeTool and matches its assertion",
+                "result": "pass"
+              },
+              {
+                "title": "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                "result": "pass"
+              },
+              {
+                "title": "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                "result": "pass"
+              },
+              {
+                "title": "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

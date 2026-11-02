@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6b65428f-4657-4968-b415-c65fbd66f484",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:21:26.744Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "envelope": {
+      "description": "git_tree: worktree and index operations",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "02a4a58440b180ee74429e267a5e3fc380f07f5cb2634fe54e078d7ba31c2fbf",
+        "at": "2026-11-02T11:21:26.745Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:21:26.745Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "git_tree: worktree and index operations",
+    "summary": "Add git_tree with checkout-index, clean, restore, mv, sparse-checkout, submodule, rerere, merge-file, bisect and replay, with the destructive inputs (clean, restore of the worktree, checkout-index force, mv --force, submodule deinit and forced update, merge-file writing in place) as input-dependent classes. Mark the rows covered with cases and approval cases; only this Task's own rows are checked.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "Each op has a coverage case that checks the working tree or index effect",
+      "Every destructive input asks every time and is denied with no client before git starts, and the safe input is common",
+      "replay and other newer commands fail with git's message and the recorded version when git is older"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_tree covered rows change the working tree or index as the command does"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts: a command the installed git lacks fails with git's message and the recorded version"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

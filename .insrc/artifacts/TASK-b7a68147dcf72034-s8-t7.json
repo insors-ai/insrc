@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6ed85750-67c5-4ce5-b6b1-baebeae37f59",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:21:26.746Z",
+    "epicCreatedAt": "2026-10-23T08:45:36.624Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b7a68147dcf72034",
+    "storyId": "s8",
+    "envelope": {
+      "description": "git_maintenance, git_setup, git_refs and git_reflog",
+      "parent": {
+        "entityId": "STORY-b7a68147dcf72034-s8",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b7a68147dcf72034-s8",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b7a68147dcf72034-s8-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ea102839211aa1f288f5efebf69007a2f61ed342f29412463b81b81e82793be1",
+        "at": "2026-11-02T11:21:26.746Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:21:26.747Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "git_maintenance, git_setup, git_refs and git_reflog",
+    "summary": "Add git_maintenance (gc, repack, prune, prune-packed, pack-refs, multi-pack-index, maintenance, commit-graph, backfill), git_setup (init, init-db, clone), git_refs (verify, migrate, optimize) and git_reflog (show, list, exists, expire, delete, write), with gc --prune=now, prune, reflog expire and delete as destructive and the rest common or none; init in an existing repository reports reinitialised true. Mark the rows covered with cases; only this Task's own rows are checked.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "Each op has a coverage case through executeTool in a temporary repository",
+      "gc with prune now, prune, reflog expire and reflog delete are destructive and denied with no client before git starts",
+      "git init in a repository reinitialises without loss and reports it"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts: git_maintenance, git_setup, git_refs and git_reflog covered rows run through executeTool in a temporary repository"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts: gc with prune now, prune and reflog expire and delete are denied with no client before git starts"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts: init in an existing repository reinitialises and reports it"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

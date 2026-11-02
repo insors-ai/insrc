@@ -21,7 +21,7 @@ import { join } from 'node:path';
 
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { commitFile, entityU64ForId, upsertEntities } from '../../db/entities.js';
-import { listUnresolvedRelations, upsertRelations } from '../../db/relations.js';
+import { listUnresolvedRelations, upsertRelations, writtenSqlNames } from '../../db/relations.js';
 import { outNeighbors } from '../../db/graph/edges.js';
 import { addRepo } from '../../db/repos.js';
 import type { DbClient } from '../../db/client.js';
@@ -200,4 +200,38 @@ test('a view never answers its own reference; a REFERENCES row from a non-SQL en
 	assert.equal((await pendingOf(report!)).length, 1);
 	await pass('settle', [at('db/ledger.sql')]);
 	assert.deepEqual(await pendingOf(report!), []);
+});
+
+test('a returned reference keeps the name the user wrote: a bare reference follows its table into another schema', async () => {
+	await commit('db/b.sql', ['table', 'app.users']);
+	const report: Entity = { ...ent('view', 'report', 'db/report.sql'), body: 'CREATE VIEW report AS SELECT * FROM users' };
+	await upsertEntities(null, [ent('file', '', 'db/report.sql'), report]);
+	await refer(report, 'users');
+	await pass();
+
+	const [moved] = await commit('db/b.sql', ['table', 'audit.users']);   // app.users is gone; the text said users
+	await pass('settle', [at('db/b.sql')]);
+
+	assert.deepEqual(await referenced(report, new Map([[moved!.id, 'audit.users']])), ['audit.users: inferred']);
+	assert.deepEqual(await pendingOf(report), []);
+});
+
+test('a reference from a non-SQL entity whose target is removed still awaits the target id, as before', async () => {
+	const [table] = await commit('db/b.sql', ['table', 'orgs']);
+	const ts: Entity = { ...ent('function', 'f', 'src/a.ts'), language: 'typescript' };
+	await upsertEntities(null, [{ ...ent('file', '', 'src/a.ts'), language: 'typescript' }, ts]);
+	await upsertRelations(null, [{ kind: 'REFERENCES', from: ts.id, to: table!.id, resolved: true, meta: { repo } }]);
+
+	await commit('db/b.sql');
+
+	assert.deepEqual((await pendingOf(ts)).map(r => [r.rawTo, r.meta['awaitsId']]), [[table!.id, true]]);
+});
+
+test('the names a returned reference comes back under are the forms its holder wrote', () => {
+	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM users', 'app.users'), ['users']);
+	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM app.users', 'app.users'), ['app.users']);
+	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM "app"."users" u JOIN users x ON true', 'app.users'), ['app.users', 'users']);
+	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT users.id FROM app . users', 'app.users'), ['app.users'], 'users.id is a column prefix, not the bare table');
+	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM [Ledger]', 'ledger'), ['ledger']);
+	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT 1', 'app.users'), ['app.users'], 'the name itself when the text has neither');
 });

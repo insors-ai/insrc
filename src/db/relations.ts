@@ -616,22 +616,45 @@ export function returnEdgeToPendingInTxn(s: GraphStore, fromU64: bigint, kindByt
 	// cross-file pass restores it as it was.
 	const evidence = decodeEvidence(s.outEdge.get(encodeOutEdgeKey(fromU64, kindByte, toU64)) as Buffer | undefined);
 	const awaiting = awaitingRowFor(s, fromU64, fromEntity, kind, target, withEvidence(undefined, evidence), Date.now());
-	writePendingRowInTxn(s, kind === 'REFERENCES' ? byNameRow(s, awaiting, toU64) : awaiting);
+	for (const row of kind === 'REFERENCES' ? sqlByNameRows(s, awaiting, fromU64, toU64) ?? [awaiting] : [awaiting]) writePendingRowInTxn(s, row);
 	return true;
 }
 
 /**
  * A SQL reference is matched by name (Story 9d8b5542), and a table that moves
- * to another file comes back under another id: the reference returns pending
- * by the target's name, not awaiting its old id, so the cross-file pass finds
- * the table wherever it is now -- or classes the name when it is gone.
+ * to another file comes back under another id: a reference between SQL
+ * entities of one repository returns pending by NAME, not awaiting the old
+ * id, so the cross-file pass finds the table wherever it is now -- or classes
+ * the name when it is gone. The name is the one the user wrote, read from the
+ * holder's own text: the qualified form (`app.users`) and/or the bare one
+ * (`users`), one row each, as the SQL reader writes them. Undefined for any
+ * other reference (another language, another repository): it awaits the id.
  */
-function byNameRow(s: GraphStore, awaiting: UnresolvedRow, toU64: bigint): UnresolvedRow {
-	const name = decodeEntityRow(s.entity.get(encodeEntityKey(toU64)) as Buffer).name;
+function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, toU64: bigint): UnresolvedRow[] | undefined {
+	const holder = decodeEntityRow(s.entity.get(encodeEntityKey(fromU64)) as Buffer);
+	const target = decodeEntityRow(s.entity.get(encodeEntityKey(toU64)) as Buffer);
+	if (holder.language !== 'sql' || target.language !== 'sql' || holder.repoId !== target.repoId) return undefined;
 	const { awaitsId: _a, class: _c, reason: _r, ...meta } = awaiting.meta;
 	void _a; void _c; void _r;
 	const repo = meta['repo'] as string;
-	return { ...awaiting, id: makeUnresolvedRelationId(repo, awaiting.fromEntity, 'REFERENCES', name), rawTo: name, meta };
+	return writtenSqlNames(holder.body, target.name).map(name =>
+		({ ...awaiting, id: makeUnresolvedRelationId(repo, awaiting.fromEntity, 'REFERENCES', name), rawTo: name, meta }));
+}
+
+/**
+ * The forms of `name` a SQL text writes: the qualified one (`app.users`, quotes
+ * and spaces around the dots allowed) and/or the bare one (`users`, not after
+ * a dot and not before one). The name itself when the text has neither.
+ */
+export function writtenSqlNames(text: string, name: string): string[] {
+	const esc = (seg: string) => seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const part = (seg: string) => `["\`[]?${esc(seg)}["\`\\]]?`;
+	const segs = name.split('.');
+	const last = segs[segs.length - 1]!;
+	const out: string[] = [];
+	if (segs.length > 1 && new RegExp(`(?<![\\w.])${segs.map(part).join('\\s*\\.\\s*')}(?![\\w"\`\\]])`, 'i').test(text)) out.push(name);
+	if (new RegExp(`(?<![\\w."\`[])(?<!\\.\\s+)${part(last)}(?![\\w"\`\\]])(?!\\s*\\.)`, 'i').test(text)) out.push(last);
+	return out.length > 0 ? [...new Set(out)] : [name];
 }
 
 // ---------------------------------------------------------------------------

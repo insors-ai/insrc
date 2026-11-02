@@ -68,6 +68,15 @@
           "reason": "self-review by the controller (docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S009/SELF-REVIEW.md); the daemon review framework is not functional (user decision 2026-11-01)"
         }
       }
+    },
+    "questionResolutions": {
+      "q993cc792": {
+        "question": "Only git_pull and git_push run through the daemon's tools can trigger the automatic refresh; git typed in a terminal or an IDE cannot. The LLD assumes the explicit refresh plus the daemon tools are enough for ac5 and that a git-hook installer would be its own later Story; the user has not yet confirmed this.",
+        "status": "resolved",
+        "choice": "Confirm scope as written",
+        "rationale": "The approved LLD scopes ac5 to the daemon's git_pull and git_push hooks plus the explicit refresh; a git-hook installer is a later Story. Flagged to the user in the plan summary.",
+        "resolvedAt": "2026-11-02T05:39:26.184Z"
+      }
     }
   },
   "body": {

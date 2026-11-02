@@ -391,3 +391,17 @@ The draft hook widening and the port read are as in a1, but the trigger is a set
 - Only git_pull and git_push run through the daemon's tools can trigger the automatic refresh; git typed in a terminal or an IDE cannot. The LLD assumes the explicit refresh plus the daemon tools are enough for ac5 and that a git-hook installer would be its own later Story; the user has not yet confirmed this.
 - int1 (ambiguous): the HLD context slice lists no shared contracts, so sc1 and sc3 cannot be checked against a list; they are the contracts the adjacent Stories s1 and s4 own.
 - Does the registry table pass a signal from workflowToolDeps to the gh tool call, so the refresh Deadline can cancel a call in flight? Not verified in this design; the plan checks it first and, if it does not, bounds a call only by the registry tool's own limit (30 s).
+
+## Resolved questions
+
+- `q993cc792` — Only git_pull and git_push run through the daemon's tools can trigger the automatic refresh; git typed in a terminal or an IDE cannot. The LLD assumes the explicit refresh plus the daemon tools are enough for ac5 and that a git-hook installer would be its own later Story; the user has not yet confirmed this.
+  - **resolved**: Confirm scope as written — The approved LLD scopes ac5 to the daemon's git_pull and git_push hooks plus the explicit refresh; a git-hook installer is a later Story. Flagged to the user in the plan summary. _(2026-11-02T05:39:26.184Z)_
+
+## Citations
+
+- **[[c1]]** `analyze-bundle` `s1: the draft hook (src/workflow/draft-issues.ts:95-145; src/daemon/steps/workflow-step/phases/synthesize.ts:92; src/daemon/workflow-rpc.ts:350; src/workflow/tracker-auto.ts)`
+- **[[c2]]** `analyze-bundle` `s1: the status sync, the daemon method and the tracker port (src/workflow/tracker/sync.ts; src/daemon/tracker-setup-handlers.ts; src/cli/services/workflow.ts:308; src/workflow/tracker/port.ts:21; src/workflow/tracker/port.ts:127-131)`
+- **[[c3]]** `analyze-bundle` `s1: gh limits, ToolDenied and tool hooks (src/daemon/tools/builtins/gh/helpers.ts:54-69; src/workflow/tracker/registry-table.ts; src/workflow/tracker/tool-denied.ts; src/daemon/tools/hooks.ts; src/daemon/tools/executor.ts:65-73; src/daemon/tools/builtins/git/push.ts:155)`
+- **[[c4]]** `analyze-bundle` `s1: the shown tracker record and the second sync path (src/workflow/chain.ts:67-71; src/workflow/chain.ts:228-235; src/workflow/chain.ts:327; src/workflow/runners/tracker/context.ts:111-139)`
+- **[[c5]]** `doc` `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/HLD.md`
+- **[[c6]]** `doc` `docs/plans/team-workflow.md`

@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s9
 
-**Standalone:** no  ·  **Created:** 2026-11-02T05:01:33.548Z  ·  **Updated:** 2026-11-02T06:08:28.502Z
+**Standalone:** no  ·  **Created:** 2026-11-02T05:01:33.548Z  ·  **Updated:** 2026-11-02T06:53:26.221Z
 
-**Commit:** 710296754
+**Commit:** a50932345
 
 ## Summary
 
@@ -38,7 +38,6 @@ Full sweep at 2b6a06d..e9df926 (/tmp/sweep-s9.log): 7098 passed, 33 failed, and 
 - `src/db/graph/keys.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/db/graph/migrations.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/db/graph/store.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/resolver.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/shared/repo-namespaces.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/shared/types.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/daemon/__tests__/handler-runtime.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
@@ -54,19 +53,20 @@ Full sweep at 2b6a06d..e9df926 (/tmp/sweep-s9.log): 7098 passed, 33 failed, and 
 - `src/indexer/cross-file-resolver.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/indexer/index.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/indexer/parser/__tests__/c.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/c.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/__tests__/c-calls-cpp-header.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/__tests__/cpp.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/cpp.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/__tests__/rust.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/rust.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/indexer/__tests__/mixed-native-languages.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/__tests__/csharp.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/csharp.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/indexer/__tests__/sql-index.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/__tests__/sql.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/indexer/parser/artifact.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
-- `src/indexer/parser/sql.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/daemon/threads/__tests__/board-amendments.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `src/understanding/__tests__/storage.test.ts` — **insrc-build** (2026-11-02T06:08:28.502Z)
 - `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/smoke-t9.txt` — **insrc-build** (2026-11-02T06:08:28.502Z)
+- `src/indexer/resolver.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/c.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/__tests__/c-calls-cpp-header.test.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/__tests__/cpp.test.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/cpp.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/__tests__/rust.test.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/rust.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/__tests__/csharp.test.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/csharp.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/__tests__/sql.test.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)
+- `src/indexer/parser/sql.ts` — **insrc-build** (2026-11-02T06:53:26.221Z)

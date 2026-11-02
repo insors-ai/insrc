@@ -4,10 +4,15 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T06:08:28.502Z",
+    "updatedAt": "2026-11-02T06:53:26.221Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
-    "epicSlug": "complete-consistent-richer-code-index-one"
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-02T06:53:27.046Z",
+    "reviewOverride": {
+      "reason": "Manual code review, 3 rounds (round 1: 1 HIGH/2 MED/6 LOW fixed @9c513a98c; round 2: 1 HIGH/1 MED/2 LOW fixed @a50932345; round 3: pass). Interim rule: the code-review framework is being rewritten, so code reviews are manual. Approved by the user in chat 2026-11-02.",
+      "at": "2026-11-02T06:53:27.046Z"
+    }
   },
   "body": {
     "tasks": [
@@ -139,13 +144,6 @@
       },
       {
         "target": {
-          "file": "src/indexer/resolver.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
           "file": "src/shared/repo-namespaces.ts"
         },
         "author": "insrc-build",
@@ -251,63 +249,7 @@
       },
       {
         "target": {
-          "file": "src/indexer/parser/c.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/__tests__/cpp.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/cpp.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/__tests__/rust.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/rust.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
           "file": "src/indexer/__tests__/mixed-native-languages.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/__tests__/csharp.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/csharp.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T06:08:28.502Z"
@@ -321,21 +263,7 @@
       },
       {
         "target": {
-          "file": "src/indexer/parser/__tests__/sql.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
           "file": "src/indexer/parser/artifact.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T06:08:28.502Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/sql.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T06:08:28.502Z"
@@ -360,8 +288,96 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T06:08:28.502Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/resolver.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/c.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/cpp.test.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/cpp.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/rust.test.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/rust.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/csharp.test.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/csharp.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/sql.test.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/sql.ts",
+          "version": "a50932345"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T06:53:26.221Z"
       }
     ],
-    "commit": "710296754"
+    "commit": "a50932345"
   }
 }

@@ -122,6 +122,7 @@ int helper();
 int g() { return helper(); }
 `);
 	assert.deepEqual(rels(r, 'CALLS'), ['Shape::twice -> Shape::area', 'g -> helper', 'geo::f -> geo::helper']);
+	assert.deepEqual(rels(parse(CPP, 'int size(int);\nstruct V { int size() { return ::size(1); } };\n'), 'CALLS'), ['V::size -> size'], 'a leading :: names the global one');
 
 	const src = 'namespace { inline int anon() { return 1; } }\n';
 	assert.equal(ent(parse('/repo/src/x.hpp', src), 'anon').isExported, true, 'every file that includes the header compiles it');

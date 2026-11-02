@@ -18,8 +18,9 @@
  *  - `use serde::X` / `extern crate log` -> IMPORTS to a module stub under
  *    'cargo', named by the crate
  *  - CALLS by callee name (`run()`, `Circle::new()`) from each fn, named by
- *    the entity of this file it reaches from the fn's scope: `helper()` or
- *    `Self::helper()` in `impl Circle` is `Circle::helper` when the file has it
+ *    the entity of this file it reaches: `Self::helper()` in `impl Circle` is
+ *    `Circle::helper`; a bare `helper()` sees module scopes only (Rust never
+ *    reaches an associated item by a bare name)
  *  - `impl Trait for Type` -> IMPLEMENTS from the type, when it is in this file
  *
  * A pub item (any visibility, pub(crate) included) is exported; a member of
@@ -222,7 +223,7 @@ class RustParser implements CodeParser {
 		}
 		walk(tree.rootNode, ctx, { prefix: '', ownerId: null, owner: null, exported: null });
 		settle(ctx);
-		qualifyCalls(ctx, '::', 'Self');
+		qualifyCalls(ctx, '::', true);
 		return { entities: ctx.entities, relations: ctx.relations };
 	}
 }

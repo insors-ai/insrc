@@ -14,7 +14,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SqlParser, sqlParser } from '../sql.js';
+import { SqlParser, registerSqlReader, sqlParser } from '../sql.js';
+import { listReaders } from '../registry.js';
+import { languageOfExtension } from '../../resolver.js';
 import { makeEntityId } from '../base.js';
 import { getParser } from '../registry.js';
 import { resolveRelations } from '../../resolver.js';
@@ -134,4 +136,14 @@ test('s9 review: without the grammar a .sql file is still stored as its document
 	const r = fallback.parse(FILE, SOURCE, REPO, 1);
 	assert.deepEqual(strip(r.entities), strip(artifact.parse(FILE, SOURCE, REPO, 1).entities));
 	assert.deepEqual(r.relations.map(x => x.kind), ['DEFINES']);
+});
+
+test('s9 review: a SQL grammar that fails to load registers the document-only fallback, which is not listed as SQL', () => {
+	assert.equal(registerSqlReader(() => { throw new Error('no sql grammar here'); }, ['.probe-sql']), null);
+	const fallback = getParser('/repo/db/a.probe-sql');
+	assert.ok(fallback instanceof SqlParser);
+	assert.equal(fallback.language, 'config');
+	assert.deepEqual(fallback.parse('/repo/db/a.probe-sql', SOURCE, REPO, 1).entities.map(e => e.kind), ['file', 'document']);
+	const sql = listReaders(languageOfExtension).find(l => l.language === 'sql');
+	assert.equal(sql?.extensions.includes('.probe-sql'), false, 'the fallback does not count as reading SQL');
 });

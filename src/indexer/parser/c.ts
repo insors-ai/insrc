@@ -135,24 +135,32 @@ export function collectCalls(body: SyntaxNode, fromId: string, ctx: CWalkCtx, ca
  * Name each pending call by the entity of this file it reaches from where it
  * is written: a callee written `area` inside `geo::Shape::twice` is
  * `geo::Shape::area` when this file has it, then `geo::area`, then `area` as
- * written -- the innermost scope first, as C++ and Rust look names up.
- * `selfWord` (Rust's `Self`) is rewritten to the caller's owner, so `Self::x`
- * reaches the impl's own member.
+ * written -- the innermost scope first, as C++ looks names up. A callee
+ * written with a leading separator (`::size`) names the global one.
+ *
+ * Rust (`rust` set) reaches an impl's or trait's own items only through
+ * `Self::x` or `Type::x`, never by a bare name: `Self::` is rewritten to the
+ * caller's owner, and a bare callee is qualified by module scopes only.
  */
-export function qualifyCalls(ctx: CWalkCtx, sep: string, selfWord?: string): void {
-	const byId = new Map(ctx.entities.map(e => [e.id, e.name]));
+export function qualifyCalls(ctx: CWalkCtx, sep: string, rust = false): void {
+	const byId = new Map(ctx.entities.map(e => [e.id, e]));
 	const names = new Set(ctx.entities.filter(e => e.kind === 'function' || e.kind === 'method' || e.kind === 'class').map(e => e.name));
 	ctx.relations.forEach((r, i) => {
 		if (r.kind !== 'CALLS' || r.resolved) return;
 		const caller = byId.get(r.from);
 		if (caller === undefined) return;
-		const scopes = caller.split(sep).slice(0, -1);
-		let callee = r.to;
-		if (selfWord !== undefined && callee.startsWith(`${selfWord}${sep}`) && scopes.length > 0) callee = `${scopes.join(sep)}${callee.slice(selfWord.length)}`;
-		let to = callee;
-		for (let k = scopes.length; k >= 1; k--) {
-			const q = `${scopes.slice(0, k).join(sep)}${sep}${callee}`;
-			if (names.has(q)) { to = q; break; }
+		let scopes = caller.name.split(sep).slice(0, -1);
+		let to = r.to;
+		if (to.startsWith(sep)) {
+			to = to.slice(sep.length);
+		} else if (rust && to.startsWith(`Self${sep}`)) {
+			if (caller.kind === 'method' && scopes.length > 0) to = `${scopes.join(sep)}${to.slice('Self'.length)}`;
+		} else {
+			if (rust && caller.kind === 'method') scopes = scopes.slice(0, -1);   // the owner type is not a scope a bare name sees
+			for (let k = scopes.length; k >= 1; k--) {
+				const q = `${scopes.slice(0, k).join(sep)}${sep}${to}`;
+				if (names.has(q)) { to = q; break; }
+			}
 		}
 		if (to !== r.to) ctx.relations[i] = { ...r, to };
 	});

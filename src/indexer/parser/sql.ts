@@ -89,11 +89,10 @@ function viewReferences(stmt: SyntaxNode): string[] {
  * the languages request still says SQL is not read, with the load error.
  */
 export class SqlParser implements CodeParser {
-	readonly extensions = ['.sql'];
 	readonly language: Language;
 	private readonly tsParser: import('tree-sitter') | null;
 
-	constructor(Parser: typeof import('tree-sitter') | null, grammar: unknown) {
+	constructor(Parser: typeof import('tree-sitter') | null, grammar: unknown, readonly extensions: string[] = ['.sql']) {
 		this.tsParser = Parser === null ? null : new Parser();
 		(this.tsParser as { setLanguage(l: unknown): void } | null)?.setLanguage(grammar);
 		this.language = this.tsParser === null ? 'config' : 'sql';
@@ -148,13 +147,22 @@ export class SqlParser implements CodeParser {
 	}
 }
 
-/** The registered parser, or `null` when the grammar failed to load. */
-export const sqlParser: SqlParser | null = loadReader('sql', ['.sql'], () => {
+/**
+ * Register the SQL reader for `extensions`, or, when `load` throws, record it
+ * unavailable with the error and register the document-only fallback, so a
+ * .sql file is still stored as the document it always was. Returns the
+ * grammar-backed reader, or `null`.
+ */
+export function registerSqlReader(load: () => SqlParser, extensions: readonly string[] = ['.sql']): SqlParser | null {
+	const reader = loadReader('sql', extensions, load);
+	if (reader === null) registerParser(new SqlParser(null, null, [...extensions]));
+	return reader;
+}
+
+/** The registered parser, or `null` when the grammar failed to load (the fallback then reads .sql). */
+export const sqlParser: SqlParser | null = registerSqlReader(() => {
 	const _require = createRequire(import.meta.url);
 	const Parser  = _require('tree-sitter')                 as typeof import('tree-sitter');
 	const grammar = _require('@derekstride/tree-sitter-sql') as unknown;
 	return new SqlParser(Parser, grammar);
 });
-
-// Without the grammar a .sql file is still stored as the document it always was.
-if (sqlParser === null) registerParser(new SqlParser(null, null));

@@ -36,7 +36,8 @@ for (const f of ['it.rs', 'common/mod.rs']) writeFileSync(join(REPO, 'tests', f)
 const BOTH = join(dir, 'both', 'src');
 mkdirSync(BOTH, { recursive: true });
 writeFileSync(join(dir, 'both', 'Cargo.toml'), '[package]\nname = "both"\n');
-for (const f of ['main.rs', 'lib.rs', 'a.rs', 'config.rs']) writeFileSync(join(BOTH, f), '');
+mkdirSync(join(BOTH, 'settings'));
+for (const f of ['main.rs', 'lib.rs', 'a.rs', 'config.rs', 'settings/mod.rs']) writeFileSync(join(BOTH, f), '');
 test.after(() => { rmSync(dir, { recursive: true, force: true }); });
 const MAIN = at('main.rs');
 
@@ -172,6 +173,9 @@ test('s9 review: a module file counts only under its exact name; super chains an
 	// macOS's default file system would answer Config.rs for config.rs.
 	assert.deepEqual(landed(both, join(BOTH, 'a.rs'), 'use crate::Config;\nuse crate::config::Thing;\n'), ['src/config.rs', 'src/lib.rs']);
 	assert.deepEqual(landed(both, join(BOTH, 'lib.rs'), 'use crate::Config;\n'), ['pending crate::Config']);
+	// ... and Settings/mod.rs for settings/mod.rs: every directory counts under its exact name.
+	assert.deepEqual(landed(both, join(BOTH, 'a.rs'), 'use crate::Settings;\nuse crate::settings::Load;\n'), ['src/lib.rs', 'src/settings/mod.rs']);
+	assert.deepEqual(landed(both, join(BOTH, 'lib.rs'), 'use crate::Settings;\n'), ['pending crate::Settings']);
 	assert.deepEqual(landed(REPO, at('deep/inner/leaf.rs'), 'use super::super::X;\nuse super::Y;\n'), ['src/deep/inner.rs', 'src/deep/mod.rs']);
 	assert.deepEqual(landed(REPO, at('bin/tool.rs'), 'mod helper;\nuse crate::helper::run;\n'), ['src/bin/helper.rs', 'src/bin/helper.rs']);
 	assert.deepEqual(landed(REPO, join(REPO, 'tests', 'it.rs'), 'mod common;\nuse crate::common::f;\n'), ['tests/common/mod.rs', 'tests/common/mod.rs']);
@@ -181,4 +185,21 @@ test('s9 review: a deeply nested expression does not overflow the reader', () =>
 	const terms = Array.from({ length: 20_000 }, (_v, i) => String(i)).join(' + ');
 	const r = parse(MAIN, `const X: i32 = ${terms};\npub fn after() {}\n`);
 	assert.deepEqual(of(r, 'function'), ['after']);
+});
+
+test('s9 review: a bare call never reaches an associated item -- only Self:: or Type:: does', () => {
+	const r = parse(MAIN, `fn parse(s: u8) {}
+fn helper() {}
+struct Foo;
+impl Foo {
+	fn parse(s: u8) -> Foo { parse(s); Foo }
+	fn helper() {}
+	fn go() { helper(); Self::helper(); }
+}
+`);
+	assert.deepEqual(rels(r, 'CALLS'), ['Foo::go -> Foo::helper', 'Foo::go -> helper', 'Foo::parse -> parse']);
+	const resolved = resolveRelations(r.relations, MAIN, REPO, r.entities).filter(x => x.kind === 'CALLS');
+	const fn = (name: string) => makeEntityId(REPO, MAIN, 'function', name);
+	assert.ok(resolved.some(x => x.resolved && x.to === fn('helper')), 'the free helper');
+	assert.ok(resolved.some(x => x.resolved && x.to === fn('parse')), 'the free parse, not a self-link');
 });

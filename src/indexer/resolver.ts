@@ -210,10 +210,19 @@ function resolvePythonRelativeImport(
   return null;
 }
 
-/** Whether `path` is on disk under exactly this name: macOS's default file system ignores case, a module path does not. */
-function existsExact(path: string): boolean {
+/**
+ * Whether `path` is on disk under exactly this name, every directory below
+ * `root` included: macOS's default file system ignores case, a module path
+ * does not (`Config/mod.rs` is not `config/mod.rs`).
+ */
+function existsExact(path: string, root: string): boolean {
   if (!existsSync(path)) return false;
-  try { return readdirSync(dirname(path)).includes(basename(path)); } catch { return false; }
+  try {
+    for (let p = path; p.length > root.length && p !== dirname(p); p = dirname(p)) {
+      if (!readdirSync(dirname(p)).includes(basename(p))) return false;
+    }
+    return true;
+  } catch { return false; }
 }
 
 /** Where the files of `fromFile`'s crate hang from, and whether `fromFile` is that crate's root file. */
@@ -232,7 +241,7 @@ function rustCrateOf(fromFile: string, repo: string): { dir: string; isRoot: boo
     const topDir = join(cargo, ...rel.slice(0, top));
     if (rel.length === top + 1) return { dir: topDir, isRoot: true };
     const sub = join(topDir, rel[top]!);
-    if (existsExact(join(sub, 'main.rs'))) return { dir: sub, isRoot: rel.length === top + 2 && rel[top + 1] === 'main.rs' };
+    if (existsExact(join(sub, 'main.rs'), cargo)) return { dir: sub, isRoot: rel.length === top + 2 && rel[top + 1] === 'main.rs' };
     return { dir: topDir, isRoot: false };
   }
   const src = join(cargo, 'src');
@@ -271,7 +280,7 @@ function resolveRustModulePath(fromFile: string, path: string, repo: string): st
 
   // The longest module file wins; when that is the importing file, the path
   // names one of its own items and there is nothing to link.
-  const found = (candidates: string[]): string | undefined => candidates.find(c => c.startsWith(repo) && existsExact(c));
+  const found = (candidates: string[]): string | undefined => candidates.find(c => c.startsWith(repo) && existsExact(c, repo));
   for (let k = segs.length; k >= 1; k--) {
     const mod = join(base, ...segs.slice(0, k));
     const hit = found([`${mod}.rs`, join(mod, 'mod.rs')]);

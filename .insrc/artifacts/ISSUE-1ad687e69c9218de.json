@@ -21,7 +21,11 @@
     "epicSlug": "typescript-reader-drops-calls-user-functions",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-02T11:46:20.300Z",
+    "parentRef": {
+      "slug": "typescript-reader-drops-calls-user-functions"
+    }
   },
   "body": {
     "title": "TypeScript reader drops calls to user functions that share a built-in method's name",

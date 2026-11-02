@@ -21,7 +21,11 @@
     "epicSlug": "sql-references-miss-across-2-3",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-02T11:46:21.757Z",
+    "parentRef": {
+      "slug": "sql-references-miss-across-2-3"
+    }
   },
   "body": {
     "title": "SQL references miss across 2- and 3-part names, fold quoted case, keep stale inferred links and re-scan every pending row on each .sql save",

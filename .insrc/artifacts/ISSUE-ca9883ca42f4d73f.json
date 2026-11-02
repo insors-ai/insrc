@@ -21,7 +21,11 @@
     "epicSlug": "daemon-update-never-retries-failed-npm",
     "standalone": true,
     "magnitude": "sized",
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-02T11:46:18.100Z",
+    "parentRef": {
+      "slug": "daemon-update-never-retries-failed-npm"
+    }
   },
   "body": {
     "title": "Daemon update never retries a failed npm install, and fs-ext fails to build on the Node 22 target",

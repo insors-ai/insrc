@@ -1,0 +1,24 @@
+TAP version 13
+# Subtest: accepted-set-survives-process-kill-at-every-boundary
+ok 1 - accepted-set-survives-process-kill-at-every-boundary
+  ---
+  duration_ms: 13847.857917
+  type: 'test'
+  ...
+# Verified 55 actual SIGKILL boundaries with an observed-accepted-set oracle; fake receipt tests do not qualify Lance or power-loss durability.
+# Subtest: macos-apfs-linux-ext4-node22-queue-qualification
+ok 2 - macos-apfs-linux-ext4-node22-queue-qualification
+  ---
+  duration_ms: 1.416625
+  type: 'test'
+  ...
+# {"node":"22.23.2","abi":"127","platform":"darwin","release":"27.0.0","arch":"arm64","filesystemType":26}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14020.635875

@@ -74,8 +74,11 @@ export async function finishRetirement(io: QueueIo, writer: CheckpointWriter, li
   const id = advance(BigInt(segment.id).toString()).padStart(20, '0');
   const header: SegmentHeader = { formatVersion: 1, recordType: 'segment', queueId: current.queueId, segmentId: id, firstSequence: advance(current.lastSequence) };
   const bytes = encodeFrame(header, limits.maxEventBytes), name = 'segments/' + segmentName(id);
-  if (await io.exists(name)) { if (!(await io.read(name, 512)).equals(bytes)) corrupt(); }
-  else await io.write(name, bytes, 'create');
+  if (await io.exists(name)) {
+    const candidate = await io.read(name, 512);
+    if (candidate.length > bytes.length || !candidate.equals(bytes.subarray(0, candidate.length))) corrupt();
+    if (candidate.length < bytes.length) await io.write(name, bytes, 'replace');
+  } else await io.write(name, bytes, 'create');
   await io.syncDirectory('segments');
   return writer.publish({ ...current, generation: advance(current.generation), activeSegment: id, segments: [{ id, firstSequence: header.firstSequence, acceptedOffset: bytes.length, sealed: false, retiring: false, frames: [] }] });
 }

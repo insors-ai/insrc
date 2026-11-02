@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T08:43:53.453Z",
+    "updatedAt": "2026-11-02T08:49:31.404Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -678,8 +678,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "8915a2cdc",
-        "ranAt": "2026-11-02T08:43:53.453Z",
+        "commit": "4d882859c",
+        "ranAt": "2026-11-02T08:49:31.404Z",
         "testsPassed": true,
         "tests": [
           {
@@ -716,6 +716,11 @@
                 "result": "pass"
               },
               {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "wall-clock-changes-preserve-sequence-and-clamp-age",
+                "result": "pass"
+              },
+              {
                 "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
                 "title": "verified-terminal-ack-retirement-and-reader-pins",
                 "result": "pass"
@@ -729,7 +734,7 @@
             "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4200,
+            "durationMs": 4659,
             "titles": [
               {
                 "title": "write-sync-rename-unlink-failure-fences-the-lane",
@@ -742,6 +747,10 @@
               {
                 "title": "maximum-qualified-identities-preserve-scope-and-epoch",
                 "result": "pass"
+              },
+              {
+                "title": "wall-clock-changes-preserve-sequence-and-clamp-age",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -750,7 +759,7 @@
             "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3613,
+            "durationMs": 3731,
             "titles": [
               {
                 "title": "verified-terminal-ack-retirement-and-reader-pins",

@@ -1,0 +1,425 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "8886ff64e1c7d11d7acd75ea21eb5476cae3f53c0c82ab89a4c88f80c9e26766",
+        "at": "2026-11-02T11:45:55.039Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s3",
+    "createdAt": "2026-11-02T11:09:02.476Z",
+    "updatedAt": "2026-11-02T11:45:54.978Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "bca1429c1",
+        "ranAt": "2026-11-02T11:09:02.476Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Cross-session and worker/direct duplicate review-id admission starts exactly one execution",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/ownership.test.ts",
+                "title": "Cross-session and worker/direct duplicate review-id admission starts exactly one execution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Different review ids overlap with serial per-review provider calls and merged CR history",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/ownership.test.ts",
+                "title": "Different review ids overlap with serial per-review provider calls and merged CR history",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Daemon observer disconnect survives; controller disconnect fences late results and explicit resume skips durable tasks",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "title": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/ownership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1176,
+            "titles": [
+              {
+                "title": "Cross-session and worker/direct duplicate review-id admission starts exactly one execution",
+                "result": "pass"
+              },
+              {
+                "title": "Different review ids overlap with serial per-review provider calls and merged CR history",
+                "result": "pass"
+              },
+              {
+                "title": "story fence accounts for admission and publication and releases after failures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3179,
+            "titles": [
+              {
+                "title": "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped",
+                "result": "pass"
+              },
+              {
+                "title": "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+                "result": "pass"
+              },
+              {
+                "title": "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
+                "result": "pass"
+              },
+              {
+                "title": "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs",
+                "result": "pass"
+              },
+              {
+                "title": "controller recovery preserves every terminal outcome and selects missing task IDs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "7ab11caca",
+        "ranAt": "2026-11-02T11:25:40.910Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/task-review.test.ts",
+                "title": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/task-review.test.ts",
+                "title": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/schema-registry.test.ts",
+                "title": "each multi-turn record phases[] equals its handler accepted set (lockstep)",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/review-rule-text.test.ts",
+                "title": "T13 current code-review guidance preserves both parties and explicit task protocol",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/review-rule-text.test.ts",
+                "title": "T13 current code-review description routes both parties without retired protocol",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/review-rule-text.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 571,
+            "titles": [
+              {
+                "title": "T13 the steering source no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_review_step description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_code_review_step description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_workflow_approve description no longer states the old rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 design-review guidance remains explicitly unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "T13 current code-review guidance preserves both parties and explicit task protocol",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the steering build guide says completion requires a code review whatever the enforcement setting",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the steering tool table describes both review tools by the other-party rule",
+                "result": "pass"
+              },
+              {
+                "title": "T13 design-review tool remains unavailable",
+                "result": "pass"
+              },
+              {
+                "title": "T13 current code-review description routes both parties without retired protocol",
+                "result": "pass"
+              },
+              {
+                "title": "T13 the insrc_workflow_approve description says what approval requires",
+                "result": "pass"
+              },
+              {
+                "title": "T13 canonical guide sections are independently addressable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/schema-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 637,
+            "titles": [
+              {
+                "title": "registry key set == registered tool set (all 13 incl. insrc_schema)",
+                "result": "pass"
+              },
+              {
+                "title": "validTools (from an omitted-tool lookup) equals the registry key set (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "every recorded rawShape converts to JSON Schema without throwing (k1)",
+                "result": "pass"
+              },
+              {
+                "title": "a real registered shape is served, not a stub (insrc_workflow_step)",
+                "result": "pass"
+              },
+              {
+                "title": "each multi-turn record phases[] equals its handler accepted set (lockstep)",
+                "result": "pass"
+              },
+              {
+                "title": "phaseless tools carry no phases",
+                "result": "pass"
+              },
+              {
+                "title": "readWorkflowGuide over the REAL steering asset resolves every WorkflowKey to a non-empty section",
+                "result": "pass"
+              },
+              {
+                "title": "the injected skeleton (stripGuideSections) drops all guide markers, stays shorter, and still names every tool",
+                "result": "pass"
+              },
+              {
+                "title": "the schema registry's expected tool list and the steering skeleton's tool catalog name insrc_present",
+                "result": "pass"
+              },
+              {
+                "title": "c00559b7 — insrc_triage start serves the optional specHash field, so an MCP client can send it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/task-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1985,
+            "titles": [
+              {
+                "title": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
+                "result": "pass"
+              },
+              {
+                "title": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+                "result": "pass"
+              },
+              {
+                "title": "normal controller connections are isolated and session close requires explicit resume",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "850b4cc34",
+        "ranAt": "2026-11-02T11:32:58.395Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+                "title": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+                "title": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+                "title": "Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+                "title": "Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2572,
+            "titles": [
+              {
+                "title": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
+                "result": "pass"
+              },
+              {
+                "title": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence",
+                "result": "pass"
+              },
+              {
+                "title": "Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures",
+                "result": "pass"
+              },
+              {
+                "title": "daemon cleanup owner requires approved lifecycle and preserves pointed native diagnostics",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "38c9d68cd",
+        "ranAt": "2026-11-02T11:45:54.978Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Production transport and worker routing smoke validates progress, restart/retrigger and design review remains unavailable",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Node22: npm run build passed /tmp/s3-final-production-build.log; node scripts/smoke-task-review.mjs passed /tmp/s3-final-production-smoke.log. Compiled actual worker/MCP/Unix IPC and child-process restart; two overlapping independent daemon reviews, serial per-review calls, duplicate refusal including live controller owner preservation, native format failure -> pointed subsequent attempt input, no auto-resume, controller explicit resume preserving t1, disabled design review, approved BUILD cleanup deleted four matching checkpoints and retained CR, no errors. Twelve fake CLI calls only; no hosted model accuracy or actual target-test coverage claim. 71 focused tests passed /tmp/s3-final-regressions.log. Author self-review /tmp/review-s3-build-self-review.md."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

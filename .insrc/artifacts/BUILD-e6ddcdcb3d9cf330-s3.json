@@ -1,0 +1,324 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "080f938d689b015fa4e021d9ead54688288757f51ef05f35b8fbfe0b6f3e3b32",
+        "at": "2026-11-02T11:47:38.604Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-61b685e5-c290-441d-bf6b-651e7d88ae22",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:09:02.476Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s3",
+    "revision": 6,
+    "updatedAt": "2026-11-02T11:45:54.978Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-committed-work-task-checkpoints"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Completed S3 normal MCP integration, central review ownership and preservation-checked post-approval cleanup. All four tasks implemented; final production build, 71 focused tests and compiled local worker/MCP/native-fake/restart/cleanup smoke passed. Self-review corrected controller connection handling after duplicate errors and terminal cache release. Deployment and real S2 cleanup retry await BUILD approval and daemon/MCP update.",
+    "testRecord": {
+      "md": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/task-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/ownership.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-e6ddcdcb3d9cf330-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-e6ddcdcb3d9cf330-s3.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s3.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-e6ddcdcb3d9cf330-s3-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-e6ddcdcb3d9cf330-s3-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-e6ddcdcb3d9cf330-s3-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-e6ddcdcb3d9cf330-s3-t4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-e6ddcdcb3d9cf330-s3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-e6ddcdcb3d9cf330-s3.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S003/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S003/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S003/sequence-diagram.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/task-review-step.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/task-review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/code-review/handler.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/code-review/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/ipc-client.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/schema-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-rule-text.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/helpers/approve.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/cleanup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/record.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "docs/task-review-execution.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      },
+      {
+        "target": {
+          "file": "scripts/smoke-task-review.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:45:54.978Z"
+      }
+    ],
+    "commit": "38c9d68cd"
+  },
+  "citations": []
+}

@@ -99,6 +99,9 @@ import {
 	type PlanArtifact,
 	type PlanBody,
 } from './artifacts/plan.js';
+import { assertMayReviseDraft } from './team/author-gate.js';
+import { TeamGateRefusedError } from './team/gate.js';
+import { isToolDenied } from './tracker/tool-denied.js';
 import { appendStoryToDefine, nextStoryId, readBaseHld, readDefineArtifact, requireApprovedEpic, requireApprovedHld, requireApprovedLld, requireApprovedPlan } from './gates.js';
 import {
 	isTrackerChecklistResult,
@@ -448,6 +451,8 @@ async function finalizeByWorkflow(
 				throw new Error(`finalizeArtifact: workflow '${intent.workflow}' not yet supported`);
 		}
 	} catch (err) {
+		// The team gate and a denied tracker call stop the stage as themselves: neither is a malformed body to retry (Story f32c3abf4a55494b/s1).
+		if (err instanceof TeamGateRefusedError || isToolDenied(err)) throw err;
 		// No Epic anchor: nothing to retry, the work item cannot place its records.
 		if (err instanceof MissingAnchorError) return { ok: false, failure: { ok: false, kind: 'schema', message: err.message, retryable: false } };
 		// A structural check or renderer threw — almost always because the
@@ -1312,6 +1317,9 @@ async function finalizeDefineExtend(
 	// The Epic's anchor is needed by the extend record: resolve it now, before the Define is appended to, an
 	// amendment is proposed or anything is cached, so a work item with none changes nothing.
 	const epicCreatedAt = requireEpicAnchor(intent.repoPath, epicHash);
+	// Team gate (Story f32c3abf4a55494b/s1): an extend changes the Epic's Define, which may be in signoff. Every validation above has passed, so
+	// the gate is asked only for a request that would otherwise write; a refusal throws before the Story, the amendment or the EXT record.
+	await assertMayReviseDraft(intent.repoPath, { unit: 'epic', repoPath: intent.repoPath, epicHash }, 'DEF', 'define');
 	const epicSlug = define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash;
 	const storyId  = nextStoryId(define);
 	const story: DefineStory = {

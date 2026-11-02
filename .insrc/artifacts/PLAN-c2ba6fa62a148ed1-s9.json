@@ -1,0 +1,417 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793595080660-uefrhx",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T04:53:16.538Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 115866,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s9",
+    "lldRunId": "wf-1793565101027-9glb2s",
+    "lldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building s9 starts with the shared ground -- the new languages, the table and view kinds, three namespaces for external libraries with their migration step, the grammar dependencies, a record of readers that cannot load and the request that lists languages, and C/C++ matched as one family -- and then adds one reader per language (C, C++, Rust, C#), each checkable on its own, and a structured SQL reader that keeps the document. It ends with a mixed repository indexed end to end and the installed daemon listing all twelve languages.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the languages, the table/view kinds, the three namespaces and the grammar dependencies",
+        "summary": "Language gains rust, csharp, c, cpp and EXT_TO_LANG maps .rs, .cs, .c, .h, .cc, .cpp, .cxx, .hpp, .hh, .hxx; ENTITY_KIND_BYTE appends table: 14, view: 15 (EntityKind too); SharedModulesNamespace appends cargo/nuget/native with ids 0xFFFFFFFA/0xFFFFFFF9/0xFFFFFFF8 and names, mapped from rust/csharp/c/cpp; a V6->V7 migration step provisions their rows (provisionSharedModulesRows) and SCHEMA_VERSION becomes 7; package.json adds tree-sitter-rust 0.24.0, tree-sitter-c-sharp 0.23.1, tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, @derekstride/tree-sitter-sql 0.3.11.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a store at version 6 opens, migrates to 7 and holds the three namespace rows; a fresh store holds all seven",
+          "existing entity and relation rows decode unchanged",
+          "a module stub of rust/csharp/c/cpp is stored under its namespace row",
+          "all five grammars install with the repository's .npmrc and load under Node 22",
+          "tests that pin the schema version are updated to 7 and the inventory pins are refreshed"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "migration step for namespaces and kinds"
+          },
+          {
+            "level": "unit",
+            "name": "table/view kinds and new languages"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Record readers that cannot load and answer the languages request",
+        "summary": "registerUnavailableReader in src/indexer/parser/registry.ts records a language, its extensions and the load error; the existing readers' guarded loads (kotlin) call it on failure; a new 'index.languages' request, classed for the code-indexing worker, returns every code and SQL language with extensions, availability and reason.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a reader whose grammar require throws is not registered, is listed unavailable with the error, and the others register",
+          "the request lists python, go, typescript, javascript, java, scala, kotlin with availability (the new languages appear as their readers land)",
+          "the request is answered by the worker that holds the registry"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "guarded grammar load records an unavailable reader"
+          },
+          {
+            "level": "integration",
+            "name": "languages request"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Match C and C++ as one family in the cross-file pass",
+        "summary": "Where the cross-file pass compares a candidate's language with the caller's (same-file and cross-file call and inheritance targets), 'c' and 'cpp' match each other; every other language still matches only itself.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a C caller resolves to a function declared in a .h read as cpp",
+          "a Python caller still never resolves to a Go function of the same name"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "C/C++ family match in the cross-file pass"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Read C",
+        "summary": "A C reader (.c) behind the guarded load: file, function (definitions), type (struct/union/enum/typedef) entities; DEFINES; IMPORTS for quoted includes (resolved to the file relative to the including file) and angle includes (module stubs under 'native'); CALLS by callee name. resolveImportPath gains the c/cpp include candidates.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a .c fixture yields its functions and types and its include and call relationships",
+          "a quoted include of a file on disk is an IMPORTS to that file (extracted); an angle include is an IMPORTS to a native module stub",
+          "a same-file call is resolved (extracted)",
+          "a fixture with a syntax error still yields the declarations outside the broken region"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "C reader"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Read C++",
+        "summary": "A C++ reader (.cpp, .cc, .cxx, .hpp, .hh, .hxx and .h) behind the guarded load: file, function, method (class members and qualified definitions), class/type entities, namespaces folded into names; DEFINES/CONTAINS; IMPORTS as for C; CALLS by name; INHERITS from base_class_clause.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a .cpp/.h fixture yields classes, methods and functions and their include, call and inheritance relationships",
+          "a C file calling a function declared in a .h resolves across files through the family rule",
+          "a fixture with a syntax error still yields the declarations outside the broken region"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "C++ reader"
+          },
+          {
+            "level": "integration",
+            "name": "C caller resolves to a C++ header declaration"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Read Rust",
+        "summary": "A Rust reader (.rs) behind the guarded load: file, function, method (impl/trait members), class (struct/enum/union), interface (trait) entities; DEFINES/CONTAINS; IMPORTS for `mod x;` (x.rs, else x/mod.rs, beside the declaring file) and crate-relative `use` paths to files, external crates to module stubs under 'cargo'; CALLS by name; IMPLEMENTS from `impl Trait for Type`.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "a .rs fixture yields its items and its mod/use, call and impl relationships",
+          "`mod util;` resolves to util.rs over util/mod.rs when both exist",
+          "a fixture with a syntax error still yields the declarations outside the broken region"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Rust reader"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Read C#",
+        "summary": "A C# reader (.cs) behind the guarded load of tree-sitter-c-sharp 0.23.1: file, class (class/record/struct), interface, type (enum/delegate), method entities with namespaces folded into names; DEFINES/CONTAINS; IMPORTS for using directives to module stubs under 'nuget'; CALLS by name (calls through a namespace stay pending -- the stated limitation); INHERITS/IMPLEMENTS from base lists.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "a .cs fixture yields its types and members and its using, call and base-list relationships",
+          "a same-file call resolves; a call into another file through a namespace stays pending",
+          "a repository with Rust, C#, C and C++ files indexed through IndexerService stores, per language, file/function/type entities and IMPORTS and CALLS relationships (ac1)",
+          "a fixture with a syntax error still yields the declarations outside the broken region"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "C# reader"
+          },
+          {
+            "level": "integration",
+            "name": "mixed Rust/C#/C/C++ repository through IndexerService"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Read SQL as structure",
+        "summary": "A SQL reader owning '.sql' (removed from the artifact reader) behind the guarded load of @derekstride/tree-sitter-sql: the whole-file document entity with the same id as before, a table or view entity per CREATE TABLE / CREATE VIEW, DEFINES, and REFERENCES from views to relations they select from and from tables to tables their foreign keys name; same-file references resolved (extracted), others pending by name.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "a SQL fixture yields the document, table and view entities and their REFERENCES (ac2)",
+          "the document entity's id equals the artifact reader's for the same file",
+          "a CTE name is not a reference; quoted identifiers are unquoted",
+          "a reference to a table in another file stays pending",
+          "the languages request lists all twelve languages available (ac4)",
+          "a fixture with a syntax error still yields the declarations outside the broken region"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "SQL reader"
+          },
+          {
+            "level": "integration",
+            "name": "SQL repository through IndexerService"
+          },
+          {
+            "level": "integration",
+            "name": "languages request lists all twelve"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Ship and smoke on the installed daemon",
+        "summary": "Full sweep once, update the installed daemon, and index a mixed repository with Rust, C#, C, C++ and SQL files: each language's entities and relationships are stored and the languages request lists all twelve as available.",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [
+          "t5",
+          "t6",
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "full sweep shows no failure caused by this Story",
+          "on the installed daemon: the mixed repository's five languages are indexed and the languages request lists them available (recorded)"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "installed daemon: five languages"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Rust reader",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "C# reader",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "C reader",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "C++ reader",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "SQL reader",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "IndexerService over Rust/C#/C/C++/SQL files",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "registerUnavailableReader",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "guarded grammar load",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "languages request",
+        "coveredByTaskIds": [
+          "t2",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration step for namespaces and kinds",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed daemon: five languages",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contract: Language, EXT_TO_LANG, ENTITY_KIND_BYTE table/view, SharedModulesNamespace cargo/nuget/native"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 dataModel: the Rust / C# / C / C++ readers behind guarded loads"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contract: resolveImportPath / resolveRelations for the new languages (includes, mod/use)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 migration: the V6->V7 step provisioning the namespaces and bumping SCHEMA_VERSION"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 migration step 1: grammar dependencies (tree-sitter-rust 0.24.0, tree-sitter-c-sharp 0.23.1, tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, @derekstride/tree-sitter-sql 0.3.11)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 contract: registerUnavailableReader and the 'index.languages' request (resolved q0ed1e247)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 resolved question qdabf39b5: C and C++ are one family; .h read by the C++ reader (user, 2026-11-02)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 testStrategy (acceptanceMapping ac1-ac4)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s9 backwardCompat and errorPaths (guarded load, parse errors, .sql document id kept)"
+    }
+  ]
+}

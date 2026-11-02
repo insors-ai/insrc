@@ -75,5 +75,7 @@ test('normal controller connections are isolated and session close requires expl
   const still=decode(await call({phase:'assignment',reviewId:'two'}));assert.equal(still.executionId,two.executionId);
   const rebound=decode(await call({phase:'resume',reviewId:'one'}));assert.notEqual(rebound.executionId,one.executionId);
   manager.close();await eventually(()=>f.read(two.path).attempts[0]!.header.interrupted===true);
+  const owned=decode(await h.client.callTool({name:'insrc_code_review_step',arguments:{...common,phase:'start',reviewId:'session-owned',packet:f.packet}}));
+  await h.client.close();await eventually(()=>f.read(owned.path).attempts[0]!.header.interrupted===true);
  }finally{manager.close();await h.close();f.cleanup();}
 });

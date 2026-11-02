@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s8
 
-**Standalone:** no  ·  **Created:** 2026-11-02T09:26:38.830Z  ·  **Updated:** 2026-11-02T10:48:02.439Z
+**Standalone:** no  ·  **Created:** 2026-11-02T09:26:38.830Z  ·  **Updated:** 2026-11-02T11:36:55.095Z
 
-**Commit:** 72bf1dc57
+**Commit:** 41342067d
 
 ## Summary
 
@@ -26,28 +26,19 @@ The full sweep is recorded in S008/full-sweep-t8.txt: run at 1f8351455 (all of t
 ## Changes
 
 - `src/db/__tests__/search-evidence.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/db/__tests__/subsystem-tables.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/db/graph/__tests__/migration-v4-to-v5.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/db/graph/__tests__/migration-v6-to-v7.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/db/graph/__tests__/operational.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/db/graph/codec.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/db/graph/migrations.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/db/graph/store.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/db/subsystems.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/understanding/__tests__/storage.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/indexer/__tests__/subsystem-grouping.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/indexer/subsystems.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/indexer/__tests__/subsystem-pass.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/indexer/subsystem-pass.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/analyze/context/boot-validator.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/analyze/summariser/subsystem-prompt.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/indexer/__tests__/subsystem-summaries.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/prompts/analyze/subsystem-summariser.system.md` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/daemon/__tests__/queue-lanes.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/daemon/queue.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/daemon/threads/summary-link.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/indexer/__tests__/subsystems-job.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/indexer/index.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/shared/types.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/daemon/__tests__/handler-runtime.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/daemon/handler-runtime.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
@@ -55,9 +46,21 @@ The full sweep is recorded in S008/full-sweep-t8.txt: run at 1f8351455 (all of t
 - `src/daemon/threads/__tests__/method-class.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/daemon/threads/method-class.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/indexer/__tests__/subsystems-request.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/analyze/context/__tests__/subsystem-context.test.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `src/analyze/context/driver.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/analyze/context/subsystem-context.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
-- `src/daemon/threads/summary-worker.ts` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/smoke-t8.txt` — **insrc-build** (2026-11-02T10:48:02.439Z)
 - `docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/full-sweep-t8.txt` — **insrc-build** (2026-11-02T10:48:02.439Z)
+- `src/db/__tests__/subsystem-tables.test.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/db/subsystems.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/indexer/__tests__/subsystem-grouping.test.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/indexer/subsystems.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/indexer/subsystem-pass.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/indexer/__tests__/subsystem-summaries.test.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/prompts/analyze/subsystem-summariser.system.md` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/indexer/__tests__/subsystems-job.test.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/indexer/index.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/analyze/context/__tests__/subsystem-context.test.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/analyze/context/subsystem-context.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/daemon/threads/summary-worker.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/daemon/steps/__tests__/analyze-step-subsystems.test.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/daemon/steps/analyze-step/phases/bundle.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)
+- `src/db/repos.ts` — **insrc-build** (2026-11-02T11:36:55.095Z)

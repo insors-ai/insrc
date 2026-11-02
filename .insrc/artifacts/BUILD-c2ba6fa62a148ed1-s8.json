@@ -4,10 +4,15 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T10:48:02.439Z",
+    "updatedAt": "2026-11-02T11:36:55.095Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
-    "epicSlug": "complete-consistent-richer-code-index-one"
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-02T11:36:56.166Z",
+    "reviewOverride": {
+      "reason": "manual code review by an independent reviewer agent (code-review framework being rewritten); 3 rounds: block (1d9d9a1df fixes), block (41342067d fixes), final verdict pass",
+      "at": "2026-11-02T11:36:56.166Z"
+    }
   },
   "body": {
     "tasks": [
@@ -58,13 +63,6 @@
       },
       {
         "target": {
-          "file": "src/db/__tests__/subsystem-tables.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
@@ -107,13 +105,6 @@
       },
       {
         "target": {
-          "file": "src/db/subsystems.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
           "file": "src/understanding/__tests__/storage.test.ts"
         },
         "author": "insrc-build",
@@ -121,28 +112,7 @@
       },
       {
         "target": {
-          "file": "src/indexer/__tests__/subsystem-grouping.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/subsystems.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
           "file": "src/indexer/__tests__/subsystem-pass.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/subsystem-pass.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T10:48:02.439Z"
@@ -157,20 +127,6 @@
       {
         "target": {
           "file": "src/analyze/summariser/subsystem-prompt.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/__tests__/subsystem-summaries.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/prompts/analyze/subsystem-summariser.system.md"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T10:48:02.439Z"
@@ -192,20 +148,6 @@
       {
         "target": {
           "file": "src/daemon/threads/summary-link.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/__tests__/subsystems-job.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T10:48:02.439Z"
@@ -261,28 +203,7 @@
       },
       {
         "target": {
-          "file": "src/analyze/context/__tests__/subsystem-context.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
           "file": "src/analyze/context/driver.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/analyze/context/subsystem-context.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T10:48:02.439Z"
-      },
-      {
-        "target": {
-          "file": "src/daemon/threads/summary-worker.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T10:48:02.439Z"
@@ -300,8 +221,128 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/subsystem-tables.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/db/subsystems.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/subsystems.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/subsystem-pass.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/analyze/subsystem-summariser.system.md",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystems-job.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/subsystem-context.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/summary-worker.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/analyze-step-subsystems.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/phases/bundle.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/db/repos.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
       }
     ],
-    "commit": "72bf1dc57"
+    "commit": "41342067d"
   }
 }

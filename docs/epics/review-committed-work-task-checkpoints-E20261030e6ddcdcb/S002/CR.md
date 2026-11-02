@@ -1,0 +1,743 @@
+<!-- insrc:artifact CR-e6ddcdcb3d9cf330-s2 -->
+
+# Code review: s2
+
+Status: **passed** · task-based schema version 2
+
+## review-e6ddcdcb3d9cf330-s2-final — attempt 1
+
+Scope: whole story · reviewer: daemon · 2026-11-01T05:06:36.747Z
+
+4 selected task assessment(s): incomplete.
+
+### Submitted scope
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/daemon/task-review-rpc.ts` — [{"after":[6,6]},{"before":[18,18],"after":[19,19]},{"before":[26,26],"after":[27,29]},{"before":[29,29],"after":[32,35]},{"before":[37,37],"after":[43,43]},{"before":[40,40],"after":[46,46]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts` — [{"after":[1,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — [{"after":[1,96]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[1,25]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller.test.ts` — [{"before":[4,4]},{"before":[7,9],"after":[6,6]},{"before":[16,35],"after":[13,13]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json` — [{"after":[1,584]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts` — [{"after":[1,19]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts` — [{"after":[1,113]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/recovery.test.ts` — [{"after":[1,114]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts` — [{"after":[1,91]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts` — [{"after":[2,2]},{"before":[4,4],"after":[5,5]},{"after":[9,9]},{"before":[11,12],"after":[13,14]},{"after":[40,74]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts` — [{"after":[4,4]},{"before":[5,5],"after":[6,6]},{"after":[15,16]},{"before":[19,19],"after":[22,22]},{"after":[32,43]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts` — [{"after":[9,9]},{"after":[26,30]},{"before":[40,40],"after":[46,46]},{"before":[69,69],"after":[75,75]},{"before":[71,71],"after":[77,77]},{"before":[76,76],"after":[82,82]},{"after":[89,93]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts` — [{"before":[9,9]},{"before":[13,13],"after":[12,14]},{"after":[24,24]},{"before":[49,49],"after":[51,51]},{"before":[51,51],"after":[53,62]},{"after":[68,68]},{"before":[59,59],"after":[71,71]},{"before":[63,63]},{"before":[70,70],"after":[81,81]},{"before":[90,90],"after":[101,101]},{"before":[96,96],"after":[107,107]},{"before":[104,104],"after":[115,115]},{"before":[108,108],"after":[119,131]},{"before":[112,112],"after":[135,135]},{"before":[122,122],"after":[145,145]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts` — [{"before":[2,2]},{"before":[7,9],"after":[6,7]},{"before":[12,12],"after":[10,10]},{"before":[14,15],"after":[12,12]},{"before":[17,17],"after":[14,14]},{"before":[33,33],"after":[30,30]},{"before":[35,35],"after":[32,32]},{"before":[40,41],"after":[37,38]},{"after":[40,41]},{"before":[51,51],"after":[50,50]},{"before":[54,54],"after":[53,53]},{"before":[56,57],"after":[55,56]},{"before":[66,67],"after":[65,65]},{"before":[72,72],"after":[70,70]},{"before":[74,74]},{"before":[78,88],"after":[75,78]},{"before":[90,92],"after":[80,81]},{"after":[88,88]},{"after":[96,96]},{"before":[120,120],"after":[111,111]},{"after":[114,114]},{"before":[129,129],"after":[121,121]},{"before":[132,132],"after":[124,124]},{"before":[134,134],"after":[126,126]},{"before":[140,140],"after":[132,135]},{"after":[148,148]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts` — [{"before":[116,116],"after":[116,116]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts` — [{"after":[2,3]},{"before":[7,7],"after":[9,9]},{"before":[12,12],"after":[14,14]},{"before":[16,16],"after":[18,18]},{"before":[25,25],"after":[27,27]},{"after":[30,43]},{"before":[32,33],"after":[48,50]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts` — [{"before":[4,4]},{"before":[8,8],"after":[7,7]},{"after":[9,9]},{"before":[12,12],"after":[12,12]},{"before":[16,20]},{"after":[23,23]},{"before":[30,30],"after":[26,26]},{"before":[45,45],"after":[41,41]},{"before":[67,67],"after":[63,63]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts` — [{"before":[4,4],"after":[4,4]},{"before":[6,6],"after":[6,6]},{"after":[12,12]},{"after":[42,42]},{"after":[67,67]},{"after":[69,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts` — [{"after":[2,2]},{"before":[3,3],"after":[4,4]},{"after":[66,79]}]
+
+### t1: incomplete
+
+Task exceeded its M allowance (600000ms).
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Task exceeded its M allowance (600000ms).
+
+Inspected references:
+
+
+### t2: incomplete
+
+Task exceeded its M allowance (600000ms).
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Task exceeded its M allowance (600000ms).
+
+Inspected references:
+
+
+### t3: incomplete
+
+S2/t3 adds the history-aware reassess/reuse decision across both actual reviewer parties (daemon + controller): attempt&gt;1 attribution now returns a ReassessmentSchema (reassess/reuse + reason + sourceAttempt) instead of plain attribution; reuseAssessment resolves the same-party earlier-attempt result, re-validates its findings/evidence against the CURRENT selection via assessTaskResult/validateTaskResult, and asserts isDeepStrictEqual to forbid silent rewriting; validateResultOrigins enforces strictly-decreasing, same-party, unchanged-result ancestry both live and on persisted CR bodies, which also rules out cycles by construction. assignmentPrompt/attributionPrompt embed the full relevant prior feedback + reassessment decision + a checkpoint-path reference directly in-line (no extra model turn), and codeTaskCommands grants read access to prior-attempt documents/reviewSet/evidence references while consistently closing the whitespace-injection gap across every grant site (including the two newly introduced ones). record.ts's renderTaskReview walks the reuse chain back to the true original attempt/reviewer rather than crediting the immediate hop. All 4 named tests (5 case titles) in history.test.ts were independently executed against the current checkout, which is byte-identical to the pinned commit for every file in scope, and all passed; a full-project `tsc --noEmit` is clean. I traced one apparent regression (controller.ts's expire() flips `taskFailure(...,false)` to `taskFailure(...,true)` for sibling tasks when the shared attribution deadline expires, softening their status from failed to incomplete) but it mirrors a deliberate prior-round fix already applied to the daemon path in coordinator.ts (commit ae19d2169, "preserve attribution timeout... causes"), so it is parity, not a regression — this is a judgment call, not a finding. One LOW wording issue remains (see finding).
+
+Coverage: **verified** — All 4 named tests (expanding to the 5 case titles in history.test.ts: 'reuse decisions...', 'sequential re-review...', 'all-reuse attempts...', 'history prompts...', 'CR provenance...') were independently executed by me against the current checkout with `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts`, which reported 5/5 pass. I first confirmed, via `git diff --stat <pinned-commit> -- <each in-scope file>` (empty output for all 12 files), that the current checkout is byte-identical to the pinned commit for every file in this task's scope, so this execution is on the reviewed revision, not a mismatched one. I separately ran `npx tsc --noEmit -p .` and it produced zero output (clean). The builder-reported execution record for the same revision (committedRecord 48abed2fb:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json) is consistent with what I independently observed, but my verdict rests on my own execution, not that record.
+
+- **LOW** `src/workflow/code-review/task-review/policy.ts:49`: assignmentPrompt's reassessment-history preamble tells the reviewer 'Full attempt history is available through the existing read tools at ${review.path}', but review.path is checkpointPath(project,id) = a literal .insrc/tmp/code-review/<id>.json filesystem path, not a git object. codeTaskCommands() (the only command grant surface in this file) never grants a read for that literal path — only `git show <oid>:<path>` and a small set of test-runner commands are permitted — so the claim is not actually backed by a granted read route.
+  The information itself is not lost (the same prior feedback is already embedded verbatim earlier in the same prompt via 'Relevant prior task feedback'), and the surrounding boilerplate ('If denied, report unsupported rather than changing permissions.') gives the model a safe fallback, so this does not break any acceptance check or test. It is a textual inaccuracy introduced by this task's new history-prompt code that could send the reviewer down an unsupported read attempt for no benefit.
+  Evidence: `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts`, `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts`
+
+Review limitations (blocking):
+
+- I did not execute controller.test.ts or coordinator.test.ts (out of t3's named-test scope and out of the supplied file-change scope); correctness of the controller-side attribution-timeout severity parity (expire() marking sibling tasks 'incomplete' rather than 'failed') was established by tracing taskFailure()'s pure logic and by comparing to the precedent fix in coordinator.ts (commit ae19d2169), not by running a dedicated controller-side test for that exact scenario.
+- admission.ts and checkpoint.ts (prepareReviewAdmission, loadCheckpoint, resume semantics) are referenced by the in-scope files but were not themselves in this task's change list, so I treated them as trusted context per the task's scoping instruction rather than re-reviewing their own correctness.
+
+Optional verification and advice (nonblocking):
+
+- Consider either (a) adding an explicit codeTaskCommands grant that lets the reviewer actually open review.path (e.g. a bounded raw-file read route) so the 'existing read tools' claim in assignmentPrompt/policy.ts:49 is literally true, or (b) softening the prompt wording to point only at the inline embedded history, since that is what is actually guaranteed to be available.
+- A small controller-specific test mirroring coordinator.test.ts's 'attribution shares first task allowance' timeout-with-multiple-selected-tasks scenario would make the controller/daemon severity parity for attribution-deadline timeouts independently verifiable rather than relying on code-reading plus precedent.
+
+Inspected references:
+
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/DEF-e6ddcdcb3d9cf330.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/assessment.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/controller.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/coordinator.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/packet.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/policy.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/publication.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/results.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts`
+- `ae19d21698a4bfd980b896269ffded5db539f700:src/workflow/code-review/task-review/coordinator.ts`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts` — pass
+Executed directly in this review session against the current checkout (confirmed byte-identical to the pinned commit 2b1eb55b98405dd73c36c1964e1ac090125c7d5d for every in-scope file via empty `git diff --stat`). Output: '# tests 5 / # pass 5 / # fail 0 / # cancelled 0 / # skipped 0', duration_ms 4266.09.
+
+Test: `npx tsc --noEmit -p .` — pass
+Executed directly; produced zero output (no type errors), confirming the admission.ts/execution.ts type surfaces (AdmittedReview, TaskResultOrigin, ReviewOperation) and the new assessment.ts/controller.ts/coordinator.ts/policy.ts/record.ts/results.ts additions type-check cleanly together.
+
+### t4: incomplete
+
+S2/t4 adds exactly one new test file (compatibility.test.ts, 5 cases), one new fixture (history-fixture.ts), a frozen-schema fixture (s1-task-body-schema.json), and relies on the pre-existing controller-fixture.ts helper. All claims in the test code were checked against the real S2 implementation (contracts.ts, record.ts, task-review-rpc.ts, server.ts, policy.ts, cli-provider.ts) and hold: the frozen schema's sourceCommit (b32fcb3f6, an ancestor of HEAD) genuinely predates the origins/reassessmentSummary fields; the git-show allow-listing regex in policy.ts correctly excludes the injected `--output` and `HEAD:.env` evidence references used in the test; the controller/daemon routing (buildAuthorParty → startController vs coordinator.start) and the connectionIdentity-based foreign/old-owner rejection are real server-side behavior, not test fabrication. I independently re-ran compatibility.test.ts (5/5 pass) and a full `tsc --noEmit` (0 errors), corroborating the daemon-reported/committed TESTS-e6ddcdcb3d9cf330-s2.json record for t4. One acceptance-check gap: AC4's "generated CR output displays origin labels... accurately" is only negatively verified in t4's own files (asserts the "not a fresh assessment" label is absent when no origin exists); the positive case (label present and correct for a genuinely reused task) is not exercised by any test in this task's scope, though it is covered by history.test.ts's "CR provenance: exact retained outcomes, origin labels..." test from t3 (out of t4's scope, already built/reviewed earlier in S2). This is a minor coverage gap, not a defect — no finding raised to block.
+
+Coverage: **verified** — All four named t4 tests (recovery end-to-end, old checkpoint and CR compatibility, migration compatibility, S2 deployability smoke) map to concrete node:test cases in the new compatibility.test.ts. I independently executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` against the current checkout (unchanged since commit 2850809c9) and all 5 cases (3 named plus 2 unnamed extras) passed, matching the committed TESTS-e6ddcdcb3d9cf330-s2.json record for taskId t4 line-for-line. The smoke test ('S2 deployability') is a builder-reported npm-run-build + 123-test regression result (not a node:test case); I did not re-run the full production build, consistent with the task's stated scope ('no broad test sweep or production rebuild is required'), and treated it as reported evidence, cross-checked only against the committed test record rather than the unreachable /tmp logs. A full `tsc --noEmit -p tsconfig.json` over the whole repo produced zero errors.
+
+
+Review limitations (blocking):
+
+- The 'S2 deployability' smoke test's underlying npm-build and 123-test regression logs live at /tmp paths not accessible to this review; I relied on the committed TESTS record and the builder's reported evidence rather than re-running the full production build, per the task's own guidance that no broad sweep is required.
+- Accepted S1 live-model evidence (CliProvider/Ollama live runs) referenced by the smoke test's reported evidence was not independently re-verified; it is historical S1 evidence carried forward, not newly claimed S2 proof, and S1 behavior is explicitly out of this task's review scope.
+- controller-fixture.ts, while supplied as part of t4's reviewed segments, was not newly authored by the t4 commit (2850809c9) per `git show --stat`; it is reused infrastructure most likely introduced in an earlier S2 task (t2). I reviewed its content as instructed (commits are lookup pointers; supplied segments are the finding scope) without reconstructing exact historical commit boundaries.
+
+Optional verification and advice (nonblocking):
+
+- Consider adding, in a future task, a test in this file's own scope that positively asserts the rendered CR markdown includes an accurate 'Reused task ... from attempt N (reviewer); original assessment attempt M' label for a genuinely reused task — today only history.test.ts (t3) exercises that positive path, and compatibility.test.ts only exercises the negative absent-origin case.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `b32fcb3f6e7759a83d9a82d30af9f820d3ffe7df:src/workflow/code-review/task-review/record.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/record.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/contracts.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/daemon/task-review-rpc.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/daemon/server.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/policy.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/agent/providers/cli-provider.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/assessment.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — pass
+Reviewer-executed (not builder-reported) against the current checkout at HEAD (48abed2fb), which is unchanged from commit 2850809c9 for these files. All 5 subtests reported ok, 0 failures, duration_ms 2317.
+
+Test: `npx tsc --noEmit -p tsconfig.json` — pass
+Reviewer-executed full-repo typecheck; zero diagnostic lines emitted.
+## review-e6ddcdcb3d9cf330-s2-final — attempt 2
+
+Scope: whole story · reviewer: daemon · 2026-11-01T18:45:17.606Z
+
+4 selected task assessment(s): failed.
+
+### Submitted scope
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/daemon/task-review-rpc.ts` — [{"after":[6,6]},{"before":[18,18],"after":[19,19]},{"before":[26,26],"after":[27,29]},{"before":[29,29],"after":[32,35]},{"before":[37,37],"after":[43,43]},{"before":[40,40],"after":[46,46]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts` — [{"after":[1,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — [{"after":[1,96]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[1,25]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller.test.ts` — [{"before":[4,4]},{"before":[7,9],"after":[6,6]},{"before":[16,35],"after":[13,13]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json` — [{"after":[1,584]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts` — [{"after":[1,19]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts` — [{"after":[1,113]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/recovery.test.ts` — [{"after":[1,114]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts` — [{"after":[1,91]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts` — [{"after":[2,2]},{"before":[4,4],"after":[5,5]},{"after":[9,9]},{"before":[11,12],"after":[13,14]},{"after":[40,74]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts` — [{"after":[4,4]},{"before":[5,5],"after":[6,6]},{"after":[15,16]},{"before":[19,19],"after":[22,22]},{"after":[32,43]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts` — [{"after":[9,9]},{"after":[26,30]},{"before":[40,40],"after":[46,46]},{"before":[69,69],"after":[75,75]},{"before":[71,71],"after":[77,77]},{"before":[76,76],"after":[82,82]},{"after":[89,93]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts` — [{"before":[9,9]},{"before":[13,13],"after":[12,14]},{"after":[24,24]},{"before":[49,49],"after":[51,51]},{"before":[51,51],"after":[53,62]},{"after":[68,68]},{"before":[59,59],"after":[71,71]},{"before":[63,63]},{"before":[70,70],"after":[81,81]},{"before":[90,90],"after":[101,101]},{"before":[96,96],"after":[107,107]},{"before":[104,104],"after":[115,115]},{"before":[108,108],"after":[119,131]},{"before":[112,112],"after":[135,135]},{"before":[122,122],"after":[145,145]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts` — [{"before":[2,2]},{"before":[7,9],"after":[6,7]},{"before":[12,12],"after":[10,10]},{"before":[14,15],"after":[12,12]},{"before":[17,17],"after":[14,14]},{"before":[33,33],"after":[30,30]},{"before":[35,35],"after":[32,32]},{"before":[40,41],"after":[37,38]},{"after":[40,41]},{"before":[51,51],"after":[50,50]},{"before":[54,54],"after":[53,53]},{"before":[56,57],"after":[55,56]},{"before":[66,67],"after":[65,65]},{"before":[72,72],"after":[70,70]},{"before":[74,74]},{"before":[78,88],"after":[75,78]},{"before":[90,92],"after":[80,81]},{"after":[88,88]},{"after":[96,96]},{"before":[120,120],"after":[111,111]},{"after":[114,114]},{"before":[129,129],"after":[121,121]},{"before":[132,132],"after":[124,124]},{"before":[134,134],"after":[126,126]},{"before":[140,140],"after":[132,135]},{"after":[148,148]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts` — [{"before":[116,116],"after":[116,116]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts` — [{"after":[2,3]},{"before":[7,7],"after":[9,9]},{"before":[12,12],"after":[14,14]},{"before":[16,16],"after":[18,18]},{"before":[25,25],"after":[27,27]},{"after":[30,43]},{"before":[32,33],"after":[48,50]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts` — [{"before":[4,4]},{"before":[8,8],"after":[7,7]},{"after":[9,9]},{"before":[12,12],"after":[12,12]},{"before":[16,20]},{"after":[23,23]},{"before":[30,30],"after":[26,26]},{"before":[45,45],"after":[41,41]},{"before":[67,67],"after":[63,63]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts` — [{"before":[4,4],"after":[4,4]},{"before":[6,6],"after":[6,6]},{"after":[12,12]},{"after":[42,42]},{"after":[67,67]},{"after":[69,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts` — [{"after":[2,2]},{"before":[3,3],"after":[4,4]},{"after":[66,79]}]
+
+### t1: failed
+
+Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Inspected references:
+
+
+### t2: failed
+
+Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Inspected references:
+
+
+### t3: failed
+
+Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Inspected references:
+
+
+### t4: failed
+
+Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Reviewer failed: attribution: Derived task scopes omit submitted changes or tests
+
+Inspected references:
+
+## review-e6ddcdcb3d9cf330-s2-final — attempt 3
+
+Scope: whole story · reviewer: daemon · 2026-11-01T19:49:09.534Z
+
+4 selected task assessment(s): failed.
+
+### Submitted scope
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/daemon/task-review-rpc.ts` — [{"after":[6,6]},{"after":[19,19]},{"after":[27,29]},{"after":[32,35]},{"after":[43,43]},{"after":[46,46]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts` — [{"after":[1,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — [{"after":[1,96]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[1,25]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller.test.ts` — [{"deletionAt":3},{"after":[6,6]},{"after":[13,13]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json` — [{"after":[1,584]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts` — [{"after":[1,19]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts` — [{"after":[1,113]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/recovery.test.ts` — [{"after":[1,114]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts` — [{"after":[1,91]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts` — [{"after":[2,2]},{"after":[5,5]},{"after":[9,9]},{"after":[13,14]},{"after":[40,74]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts` — [{"after":[4,4]},{"after":[6,6]},{"after":[15,16]},{"after":[22,22]},{"after":[32,43]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts` — [{"after":[9,9]},{"after":[26,30]},{"after":[46,46]},{"after":[75,75]},{"after":[77,77]},{"after":[82,82]},{"after":[89,93]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts` — [{"deletionAt":8},{"after":[12,14]},{"after":[24,24]},{"after":[51,51]},{"after":[53,62]},{"after":[68,68]},{"after":[71,71]},{"deletionAt":74},{"after":[81,81]},{"after":[101,101]},{"after":[107,107]},{"after":[115,115]},{"after":[119,131]},{"after":[135,135]},{"after":[145,145]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts` — [{"deletionAt":1},{"after":[6,7]},{"after":[10,10]},{"after":[12,12]},{"after":[14,14]},{"after":[30,30]},{"after":[32,32]},{"after":[37,38]},{"after":[40,41]},{"after":[50,50]},{"after":[53,53]},{"after":[55,56]},{"after":[65,65]},{"after":[70,70]},{"deletionAt":71},{"after":[75,78]},{"after":[80,81]},{"after":[88,88]},{"after":[96,96]},{"after":[111,111]},{"after":[114,114]},{"after":[121,121]},{"after":[124,124]},{"after":[126,126]},{"after":[132,135]},{"after":[148,148]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts` — [{"after":[116,116]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts` — [{"after":[2,3]},{"after":[9,9]},{"after":[14,14]},{"after":[18,18]},{"after":[27,27]},{"after":[30,43]},{"after":[48,50]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts` — [{"deletionAt":3},{"after":[7,7]},{"after":[9,9]},{"after":[12,12]},{"deletionAt":15},{"after":[23,23]},{"after":[26,26]},{"after":[41,41]},{"after":[63,63]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts` — [{"after":[4,4]},{"after":[6,6]},{"after":[12,12]},{"after":[42,42]},{"after":[67,67]},{"after":[69,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts` — [{"after":[2,2]},{"after":[4,4]},{"after":[66,79]}]
+
+All four S2 tasks are reassessed fresh rather than reused, because neither prior attempt produced a usable terminal verdict to carry forward: attempt 1's four results were all forced to "incomplete" purely by the now-fixed shared-attribution/task-deadline timeout bug (the retrospective's "fixed task deadlines and verification-policy limitations," corrected since by 986fce0f5 and the selected-code fix c0daf832a), and attempt 2 failed entirely before any task was assessed ("attribution: Derived task scopes omit submitted changes or tests"). Reuse would only let a failed/incomplete source stay unresolved and cannot promote it to a terminal verdict, so every task needs a genuine fresh assessment under the corrected runtime. changeIndexes/testIndexes are assigned per task from the supplied Changes/Tests arrays; shared cross-cutting files (controller-fixture.ts, controller.ts, coordinator.ts, contracts.ts) are listed under every task they materially touch.
+
+### t1: passed
+
+Fresh independent assessment of t1 (admission.ts/checkpoint.ts/contracts.ts/admission.test.ts at commit 2b1eb55b9) supersedes attempts 1-2, which never reached a genuine verdict (timeout, then pre-review failure). I diffed the selected snapshot against current HEAD: checkpoint.ts and admission.test.ts are byte-identical to HEAD; admission.ts and contracts.ts diverged only via later, additive S3/S4 work (SavedReviewRequestSchema/StoredPacketSchema split, ProgressSchema, deletionAt) that does not touch the S2 logic paths exercised here. I read the exact snapshot source via `git show 2b1eb55b9:<path>` for all four files and traced every branch of prepareReviewAdmission against the pinned LLD/PLAN acceptance checks (verified by reading PLAN-e6ddcdcb3d9cf330-s2.json directly, which matches the four ACs supplied in the task): (1) start defaults + bounded/canonical validation before mutation, (2) resume-pins-latest-packet / sequential-attempt / terminal-and-published-predecessor / explicit refusal of missing/conflicting/skipped/corrupt history, (3) immutability of earlier attempts + buildFingerprint + backward-compatible optional origins/reassessmentSummary, (4) no disk mutation on refusal and no provider invocation. Each AC maps to a concrete branch in admission.ts and is exercised by the two named tests, which use a real Git repo + real RegistryReviewSources/round-writer (not mocks). I independently re-ran `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` against the current checkout: both cases pass, matching the builder-reported/committed TESTS-e6ddcdcb3d9cf330-s2.json record. I also read the snapshot versions of results.ts, record.ts and publication.ts (dependency context only) to confirm admission.ts's validation calls (validateTaskResult, validateResultOrigins, validateTaskBody) behave as the test asserts (e.g. the "Reused task t1 feedback from attempt 1" render, the /earlier attempt/ and /changes the saved result/ rejections). tsc --noEmit shows no errors in any of the four files. No HIGH/MED defect found in the submitted logic.
+
+Coverage: **verified** — Both of t1's named tests are present in admission.test.ts and map 1:1 to the four acceptance checks: test 1 ('recovery admission...') exercises start-defaults-to-resume-false-path validation, bounded/corrupt/symlinked checkpoint rejection, resume pinning (unchanged packet, latest-attempt-only, wrong-reviewer, non-terminal predecessor), sequential-attempt enforcement (replayed/skipped ordinals), contiguous-history and foreign-identity refusal, and immutability of the earlier attempt section plus buildFingerprint preservation on both resume and on a fresh sequential attempt — each via a real git repo and real RegistryReviewSources, not mocks. Test 2 ('attempt schema compatibility...') exercises AC3 directly: an old (origin-less) checkpoint/CR decode unchanged, a new attempt adds reassessmentSummary/origins without disturbing the first entry, the rendered CR text names the reused source attempt, and record-level invariants (origin must reference a strictly earlier attempt; a reused result cannot be silently altered) are enforced by validateResultOrigins through admission.ts's own validateResultOrigins call and record.ts's validateTaskBody. I independently re-ran the declared command against the current checkout and both cases passed, consistent with the committed TESTS-e6ddcdcb3d9cf330-s2.json record. No coverage gap found for the four acceptance checks within t1's scope.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I re-ran `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` and `npx tsc --noEmit -p .` myself against the current checkout; both passed/clean. I did not run the full project test sweep (not required — only the two named tests belong to t1's scope).
+- In admission.ts's `if (saved)` loop, prepareReviewAdmission re-resolves `prepareReviewPacket` (git blobs + docs) for every historical attempt on every single admission call, including a pure resume. This is correctness-preserving but grows linearly with attempt-history length; worth a future perf note if review histories grow long, not a defect for the current M-sized scope.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` — pass
+Reviewer-executed (not builder-reported) against current HEAD checkout (admission.test.ts and checkpoint.ts are byte-identical to the selected snapshot 2b1eb55b9; admission.ts/contracts.ts differ only by later additive S3/S4 changes not touching the exercised paths). Both cases passed: 'recovery admission...' in 871ms, 'attempt schema compatibility...' in 256ms, 0 failures.
+
+### t2: failed
+
+Reviewer failed: Review native event identity limit exceeded
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Reviewer failed: Review native event identity limit exceeded
+
+Inspected references:
+
+
+### t3: passed
+
+Fresh (reassessed) review of S2/t3: the history-aware reassess/reuse engine across both actual reviewer parties. I independently fetched the exact pinned content of all 12 in-scope files via `git show 2b1eb55b9:<path>` and confirmed each is byte-identical to the embedded reviewed-version blocks (assessment.ts, contracts.ts, controller.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts, results.ts, and the three test/fixture files). Tracing the logic: `ReassessmentSchema`/`reviewAssignments` validate attempt>1 attribution into reassess/reuse decisions; `sourceAssessment`/`reuseAssessment` resolve an earlier same-party attempt's task result and re-run it through `assessTaskResult`→`normalizeTaskResult`, then assert `isDeepStrictEqual` against the original — a strong idempotence check that both proves the source is replayed verbatim and forbids silent rewriting (confirmed against the 'reuse decisions' test's missing/duplicate/foreign/rewritten/foreign-party/cycle-guard negative cases, all of which I traced to the exact `requireReview` guard that rejects them). `validateResultOrigins` enforces strictly-decreasing same-party unchanged-result ancestry on live and persisted CR bodies alike, ruling out cycles by construction. Both `controller.ts`'s `scope()`/`expire()` and `coordinator.ts`'s per-task catch block implement equivalent parity for attribution-validation-failure ('failed') vs attribution-timeout ('incomplete') across the daemon and controller adapters — I traced both branches line-by-line and confirmed this is deliberate symmetric behavior, not a defect. `assignmentPrompt`/`attributionPrompt` embed the full relevant prior feedback + reassessment decision + checkpoint path inline with no added model turn (confirmed via the 'history prompts' and 'sequential re-review' tests' call counts: 2 total daemon-side calls, 0 controller-side calls). `codeTaskCommands` applies the whitespace-injection guard consistently at every grant site including the two new ones (the submitted-evidence loop, already constrained by a strict charset regex, and the new 'prior pinned context' loop, which has an explicit `!/\s/.test(reference)` check). `record.ts`'s `renderTaskReview` correctly walks the reuse chain back to the true original attempt/reviewer via its `while(earlier)` loop (traced against the 'CR provenance' test's two-hop reuse scenario and its exact regex assertion). I ran all 5 named test cases in `history.test.ts` directly and they passed (5/5); I also ran a project-wide `tsc --noEmit`, which was clean. I overturn attempt 1's one LOW finding (policy.ts:49) after fresh inspection: it argued the prompt's claim that `review.path` is reachable 'through the existing read tools' is unsupported because `codeTaskCommands()` never grants that literal path. That is true of `codeTaskCommands` in isolation, but it is not the only grant surface — `src/agent/providers/cli-provider.ts`'s `claudeReviewSessionArgs` always grants `REVIEW_SESSION_READ_TOOLS = ['Read','Grep','Glob']` unconditionally (no path restriction) to a reviewer session, independent of `codeTaskCommands` (which only gates the `Bash` tool). So the prompt's claim is factually accurate, and I do not carry the LOW finding forward. No HIGH/MED findings resulted from my own inspection.
+
+Coverage: **verified** — I inspected every assertion in all 5 history.test.ts cases against the exact pinned implementation (fetched via `git show 2b1eb55b9:<path>` for every in-scope production file) and confirmed each assertion exercises real, traceable behavior rather than a tautology: the negative-path assertions in 'reuse decisions' map 1:1 onto specific `requireReview` guards in `sourceAssessment`/`reviewAssignments`/`results.ts`'s `validateResultOrigins`; the call-count assertions in 'sequential re-review' and 'history prompts' confirm no extra model turn was added; the two-hop walk-back assertion in 'CR provenance' confirms `renderTaskReview`'s while-loop logic; 'all-reuse attempts' confirms failed-vs-incomplete parity across both the daemon and the real controller IPC transport (via `controller-fixture.ts`'s actual `IpcServer`/`daemon/task-review-rpc.ts` wiring, not a mock). I then independently executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts` myself and observed 5/5 pass, and `npx tsc --noEmit -p .` clean. I disclose honestly that my own execution ran on the CURRENT checkout, which (per `git diff 2b1eb55b9 HEAD`) has since received later, unrelated additive changes to several in-scope files (activity/progress-streaming protocol support, selected-code embedding) — so my own run is corroborating evidence on the integrated codebase, not a byte-identical rerun of the exact pinned snapshot; I did not reconstruct a worktree at the exact pinned commit to get a strictly revision-matched execution myself. The supplied attempt-1 execution record (daemon-executed, builder-reported) already ran the task's named test file at a checkout confirmed byte-identical to the pinned snapshot for every in-scope file, reporting 5/5 pass plus a 123/0 broader regression, with a resolvable committed TESTS record; I treat that as supplied/builder evidence, distinct from my own, consistent with the policy's revision-match caution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I ran the named test file and a project-wide tsc myself, but did not create a separate worktree checked out at the exact pinned commit 2b1eb55b9 to obtain a strictly revision-matched execution of my own; I relied on byte-exact source inspection plus the supplied revision-matched daemon record for that specific guarantee.
+- The attempt-1 LOW finding about policy.ts:49's 'existing read tools' wording turned out to be unsupported once the full reviewer-session grant surface (cli-provider.ts's unconditional Read/Grep/Glob) is considered; if a future reviewer re-raises it, point them at REVIEW_SESSION_READ_TOOLS in src/agent/providers/cli-provider.ts rather than codeTaskCommands alone.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/policy.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/DEF-e6ddcdcb3d9cf330.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+- `91846d958e796a46594d9eb12852ab50a83c0435:src/agent/providers/cli-provider.ts`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts` — pass
+Executed directly in this review session against the CURRENT checkout (HEAD 91846d958e796a46594d9eb12852ab50a83c0435), which has diverged from the exact pinned snapshot 2b1eb55b9 for several in-scope files via later, unrelated additive changes (activity/progress-streaming protocol, selected-code embedding) confirmed via `git diff 2b1eb55b9 HEAD`. Output: '# tests 5 / # pass 5 / # fail 0 / # cancelled 0 / # skipped 0', duration_ms 4135.26. This corroborates but does not substitute for the supplied revision-matched daemon execution record (TESTS-e6ddcdcb3d9cf330-s2.json), which ran the identical pinned snapshot and also reported 5/5 pass plus a 123/0 broader regression.
+
+Test: `npx tsc --noEmit -p .` — pass
+Executed directly against the current checkout; produced zero type errors.
+
+### t4: passed
+
+S2/t4 adds one new test file (compatibility.test.ts, 5 node:test cases), one new fixture (history-fixture.ts), a frozen-schema fixture (s1-task-body-schema.json), a 4-line change to policy.ts's commit-reference allow-list, and reuses the pre-existing controller-fixture.ts (introduced earlier in S2/t2, commit 92e535dd8 — confirmed via `git show 2850809c9~1:...controller-fixture.ts`, which already contained it). Every load-bearing claim embedded in the test code was checked against the real current source and holds: (1) policy.ts's evidence-reference allow-list regex `^(?:[a-f0-9]{40}|[a-f0-9]{64}):[A-Za-z0-9_.@/+=-]+$` genuinely rejects the injected `--output /tmp/unrelated` (contains a space) and `HEAD:.env` (fails the hex-hash prefix) while accepting the legitimate `${commit}:path` reference. (2) cli-provider.ts's `claudeReviewSessionArgs` genuinely sets `--tools` to `'Read,Grep,Glob'` when no commands are supplied (design-mode) and adds `Bash(git show <ref>)` to `--allowedTools` only for granted commands. (3) task-review-rpc.ts's `startTaskReview` genuinely routes to `coordinator.startController` (controller reviews) when `buildAuthorParty(...)==='daemon'`, and to `coordinator.start` (daemon reviews) otherwise — matching the test's daemon-authored-build setup and its assertion that the daemon provider callback must never be invoked. (4) `exchangeControllerTaskReview`'s `controller()` lookup genuinely throws "explicit retrigger is required" for a foreign/stale caller, and `ControllerTaskReview.*` genuinely checks `owner.id===this.owner.id` (connection identity) before accepting a frame. (5) record.ts's `renderTaskReview` only emits the "not a fresh assessment" origin label when an `origin` entry exists for the task, confirming the negative-path assertion in the frozen-schema migration test is meaningful. (6) `deriveTaskAssignments`' exact error string "Derived task scopes omit submitted changes or tests" matches attempt 2's reported failure, confirming that failure was a genuine attribution-derivation guard tripping, not a fabricated reviewer error. (7) `checkpoint.ts`'s save/load (atomic tmp-file + rename, O_NOFOLLOW read) and `TaskReviewCoordinator`'s constructor (no auto-resume; `active` map starts empty) match the durability-fixture's "constructing a coordinator does not auto-resume existing files" and "only the unsaved interrupted task may repeat" assertions. I independently re-ran `compatibility.test.ts` against the current checkout (HEAD 611e51b8c, which has diverged from the task's source commit 2850809c9 in 8 dependency files — cli-provider.ts, task-review-rpc.ts, contracts.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts — all via later S4/review-runtime fixes per the functional summary, not S2 additions): all 5 cases pass. A full repo-wide `tsc --noEmit` also reports zero errors. No HIGH/MED defect found in this task's own scope (the two new files, the fixture, and the policy.ts allow-list change). The only residual gap (carried from attempt 1, unchanged): AC4's "origin labels display accurately" is exercised here only in the negative (absent-origin → no label), with the positive reused-task-label case covered by history.test.ts (an earlier S2 task, t3, already reviewed) rather than by this task's own file — a minor, non-blocking coverage note, not a defect.
+
+Coverage: **verified** — All named t4 tests map to concrete node:test cases in compatibility.test.ts. I independently executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` against the current checkout (HEAD 611e51b8c4d3daa239cabba75371ca5fb70b9fb1); all 5 cases passed (recovery end-to-end, unavailable-pinned-source rejection, old-checkpoint/CR compatibility, migration/downgrade compatibility, and committed-test-record evidence grants), matching the committed TESTS-e6ddcdcb3d9cf330-s2.json record for taskId t4. This reconfirms attempt 1's result even though 8 dependency files (cli-provider.ts, task-review-rpc.ts, contracts.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts) have changed between the task's source commit (2850809c9) and current HEAD — those changes (review-activity/inactivity monitoring, progress tracking, selected-code-block correction) are later S4/review-runtime fixes, not S2 additions, and the test still passes against them, demonstrating compatibility rather than staleness. The build/regression smoke test ('S2 deployability') is a builder-reported npm-run-build + 123-test result, not a node:test case; its underlying logs live at /tmp paths unavailable to this review, so it is treated as reported evidence cross-checked only against the committed TESTS record, consistent with the task's own guidance that no broad production rebuild is required. A full repo-wide `tsc --noEmit -p tsconfig.json` produced zero diagnostics.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: did not re-run the full `npm run build` + 123-test production regression; relied on the builder-reported /tmp log summary and the committed TESTS record, since the task's own scope states no broad sweep or production rebuild is required.
+- Optional execution: did not independently re-execute the broader S1-era live CliProvider/Ollama evidence referenced by the smoke test; it is carried-forward historical S1 evidence outside this task's S2 scope.
+- Consider adding, in a future task, a positive-path test in this file's own scope asserting the rendered CR markdown includes an accurate 'Reused task ... from attempt N (reviewer); original assessment attempt M' label for a genuinely reused task — today only history.test.ts (t3, already reviewed) exercises that positive path; compatibility.test.ts only exercises the negative absent-origin case.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/record.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/contracts.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/daemon/task-review-rpc.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/daemon/server.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/policy.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/agent/providers/cli-provider.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/coordinator.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/checkpoint.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/packet.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/controller.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/assessment.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — pass
+Reviewer-executed (not builder-reported) against current checkout HEAD 611e51b8c4d3daa239cabba75371ca5fb70b9fb1, where 8 dependency files have diverged from the task's source commit 2850809c9 via later S4 fixes. All 5 subtests reported ok, 0 failures.
+
+Test: `npx tsc --noEmit -p tsconfig.json` — pass
+Reviewer-executed full-repo typecheck against current checkout; zero diagnostic lines emitted (only npm config warnings unrelated to compilation).
+## review-e6ddcdcb3d9cf330-s2-final — attempt 4
+
+Scope: whole story · reviewer: daemon · 2026-11-02T04:56:11.039Z
+
+4 selected task assessment(s): failed.
+
+### Submitted scope
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/daemon/task-review-rpc.ts` — [{"after":[6,6]},{"after":[19,19]},{"after":[27,29]},{"after":[32,35]},{"after":[43,43]},{"after":[46,46]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts` — [{"after":[1,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — [{"after":[1,96]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[1,25]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller.test.ts` — [{"deletionAt":3},{"after":[6,6]},{"after":[13,13]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json` — [{"after":[1,584]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts` — [{"after":[1,19]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts` — [{"after":[1,113]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/recovery.test.ts` — [{"after":[1,114]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts` — [{"after":[1,91]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts` — [{"after":[2,2]},{"after":[5,5]},{"after":[9,9]},{"after":[13,14]},{"after":[40,74]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts` — [{"after":[4,4]},{"after":[6,6]},{"after":[15,16]},{"after":[22,22]},{"after":[32,43]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts` — [{"after":[9,9]},{"after":[26,30]},{"after":[46,46]},{"after":[75,75]},{"after":[77,77]},{"after":[82,82]},{"after":[89,93]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts` — [{"deletionAt":8},{"after":[12,14]},{"after":[24,24]},{"after":[51,51]},{"after":[53,62]},{"after":[68,68]},{"after":[71,71]},{"deletionAt":74},{"after":[81,81]},{"after":[101,101]},{"after":[107,107]},{"after":[115,115]},{"after":[119,131]},{"after":[135,135]},{"after":[145,145]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts` — [{"deletionAt":1},{"after":[6,7]},{"after":[10,10]},{"after":[12,12]},{"after":[14,14]},{"after":[30,30]},{"after":[32,32]},{"after":[37,38]},{"after":[40,41]},{"after":[50,50]},{"after":[53,53]},{"after":[55,56]},{"after":[65,65]},{"after":[70,70]},{"deletionAt":71},{"after":[75,78]},{"after":[80,81]},{"after":[88,88]},{"after":[96,96]},{"after":[111,111]},{"after":[114,114]},{"after":[121,121]},{"after":[124,124]},{"after":[126,126]},{"after":[132,135]},{"after":[148,148]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts` — [{"after":[116,116]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts` — [{"after":[2,3]},{"after":[9,9]},{"after":[14,14]},{"after":[18,18]},{"after":[27,27]},{"after":[30,43]},{"after":[48,50]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts` — [{"deletionAt":3},{"after":[7,7]},{"after":[9,9]},{"after":[12,12]},{"deletionAt":15},{"after":[23,23]},{"after":[26,26]},{"after":[41,41]},{"after":[63,63]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts` — [{"after":[4,4]},{"after":[6,6]},{"after":[12,12]},{"after":[42,42]},{"after":[67,67]},{"after":[69,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts` — [{"after":[2,2]},{"after":[4,4]},{"after":[66,79]}]
+
+Attempt 4 attribution for S2 (t1-t4). Attempts 1-2 produced no usable terminal verdicts (timeout bug, then a pre-review attribution failure), so they carry no reusable evidence. Attempt 3 genuinely reviewed all four tasks: t1, t3 and t4 reached a verified "passed" verdict with no findings and are reused verbatim (sourceAttempt=3) to avoid repeating completed work, per the instruction not to re-review when exact reuse is justified. t2 failed in attempt 3 purely in the native UUID event decoder before any assessment was returned (infrastructure failure, not a verdict); that decoder bug is now fixed (7cb6b7e2e, installed in 4d94875a2), so t2 must be freshly reassessed rather than reused — reuse would only preserve the unresolved "failed" outcome, and a failed/incomplete source cannot be promoted. changeIndexes/testIndexes are assigned from the current Changes/Tests arrays by task scope: t1 = admission/checkpoint/contracts validation layer; t2 = RPC route + controller exchange + coordinator resume integration; t3 = history-aware reassess/reuse engine (assessment/packet/policy/publication/record/results) plus the reuse-handling additions shared with controller.ts/coordinator.ts; t4 = the new compatibility end-to-end test file, its fixtures, and the policy.ts evidence-allowlist addition for committed test records. Cross-cutting files (controller.ts, coordinator.ts, contracts.ts, controller-fixture.ts) are listed under every task whose named tests materially exercise them.
+
+Reused task t1 feedback from attempt 3 (daemon); original assessment attempt 3; not a fresh assessment. Attempt 3 completed a genuine, independently re-executed review of admission.ts/checkpoint.ts/contracts.ts/admission.test.ts with status passed, verified coverage and no findings; the current selection (same four files/tests) is unchanged, so the exact result is reused rather than repeated.
+
+### t1: passed
+
+Fresh independent assessment of t1 (admission.ts/checkpoint.ts/contracts.ts/admission.test.ts at commit 2b1eb55b9) supersedes attempts 1-2, which never reached a genuine verdict (timeout, then pre-review failure). I diffed the selected snapshot against current HEAD: checkpoint.ts and admission.test.ts are byte-identical to HEAD; admission.ts and contracts.ts diverged only via later, additive S3/S4 work (SavedReviewRequestSchema/StoredPacketSchema split, ProgressSchema, deletionAt) that does not touch the S2 logic paths exercised here. I read the exact snapshot source via `git show 2b1eb55b9:<path>` for all four files and traced every branch of prepareReviewAdmission against the pinned LLD/PLAN acceptance checks (verified by reading PLAN-e6ddcdcb3d9cf330-s2.json directly, which matches the four ACs supplied in the task): (1) start defaults + bounded/canonical validation before mutation, (2) resume-pins-latest-packet / sequential-attempt / terminal-and-published-predecessor / explicit refusal of missing/conflicting/skipped/corrupt history, (3) immutability of earlier attempts + buildFingerprint + backward-compatible optional origins/reassessmentSummary, (4) no disk mutation on refusal and no provider invocation. Each AC maps to a concrete branch in admission.ts and is exercised by the two named tests, which use a real Git repo + real RegistryReviewSources/round-writer (not mocks). I independently re-ran `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` against the current checkout: both cases pass, matching the builder-reported/committed TESTS-e6ddcdcb3d9cf330-s2.json record. I also read the snapshot versions of results.ts, record.ts and publication.ts (dependency context only) to confirm admission.ts's validation calls (validateTaskResult, validateResultOrigins, validateTaskBody) behave as the test asserts (e.g. the "Reused task t1 feedback from attempt 1" render, the /earlier attempt/ and /changes the saved result/ rejections). tsc --noEmit shows no errors in any of the four files. No HIGH/MED defect found in the submitted logic.
+
+Coverage: **verified** — Both of t1's named tests are present in admission.test.ts and map 1:1 to the four acceptance checks: test 1 ('recovery admission...') exercises start-defaults-to-resume-false-path validation, bounded/corrupt/symlinked checkpoint rejection, resume pinning (unchanged packet, latest-attempt-only, wrong-reviewer, non-terminal predecessor), sequential-attempt enforcement (replayed/skipped ordinals), contiguous-history and foreign-identity refusal, and immutability of the earlier attempt section plus buildFingerprint preservation on both resume and on a fresh sequential attempt — each via a real git repo and real RegistryReviewSources, not mocks. Test 2 ('attempt schema compatibility...') exercises AC3 directly: an old (origin-less) checkpoint/CR decode unchanged, a new attempt adds reassessmentSummary/origins without disturbing the first entry, the rendered CR text names the reused source attempt, and record-level invariants (origin must reference a strictly earlier attempt; a reused result cannot be silently altered) are enforced by validateResultOrigins through admission.ts's own validateResultOrigins call and record.ts's validateTaskBody. I independently re-ran the declared command against the current checkout and both cases passed, consistent with the committed TESTS-e6ddcdcb3d9cf330-s2.json record. No coverage gap found for the four acceptance checks within t1's scope.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I re-ran `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` and `npx tsc --noEmit -p .` myself against the current checkout; both passed/clean. I did not run the full project test sweep (not required — only the two named tests belong to t1's scope).
+- In admission.ts's `if (saved)` loop, prepareReviewAdmission re-resolves `prepareReviewPacket` (git blobs + docs) for every historical attempt on every single admission call, including a pure resume. This is correctness-preserving but grows linearly with attempt-history length; worth a future perf note if review histories grow long, not a defect for the current M-sized scope.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` — pass
+Reviewer-executed (not builder-reported) against current HEAD checkout (admission.test.ts and checkpoint.ts are byte-identical to the selected snapshot 2b1eb55b9; admission.ts/contracts.ts differ only by later additive S3/S4 changes not touching the exercised paths). Both cases passed: 'recovery admission...' in 871ms, 'attempt schema compatibility...' in 256ms, 0 failures.
+
+### t2: failed
+
+Reviewer failed: Review activity CLI failed
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- Reviewer failed: Review activity CLI failed
+
+Inspected references:
+
+
+Reused task t3 feedback from attempt 3 (daemon); original assessment attempt 3; not a fresh assessment. Attempt 3 completed a genuine, independently re-executed review of the history-aware reassess/reuse engine (assessment.ts, packet.ts, policy.ts, publication.ts, record.ts, results.ts and its shared touches in contracts.ts/controller.ts/coordinator.ts, plus history-fixture.ts/history.test.ts) with status passed, verified coverage and no findings; reused rather than repeated since current scope is unchanged.
+
+### t3: passed
+
+Fresh (reassessed) review of S2/t3: the history-aware reassess/reuse engine across both actual reviewer parties. I independently fetched the exact pinned content of all 12 in-scope files via `git show 2b1eb55b9:<path>` and confirmed each is byte-identical to the embedded reviewed-version blocks (assessment.ts, contracts.ts, controller.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts, results.ts, and the three test/fixture files). Tracing the logic: `ReassessmentSchema`/`reviewAssignments` validate attempt>1 attribution into reassess/reuse decisions; `sourceAssessment`/`reuseAssessment` resolve an earlier same-party attempt's task result and re-run it through `assessTaskResult`→`normalizeTaskResult`, then assert `isDeepStrictEqual` against the original — a strong idempotence check that both proves the source is replayed verbatim and forbids silent rewriting (confirmed against the 'reuse decisions' test's missing/duplicate/foreign/rewritten/foreign-party/cycle-guard negative cases, all of which I traced to the exact `requireReview` guard that rejects them). `validateResultOrigins` enforces strictly-decreasing same-party unchanged-result ancestry on live and persisted CR bodies alike, ruling out cycles by construction. Both `controller.ts`'s `scope()`/`expire()` and `coordinator.ts`'s per-task catch block implement equivalent parity for attribution-validation-failure ('failed') vs attribution-timeout ('incomplete') across the daemon and controller adapters — I traced both branches line-by-line and confirmed this is deliberate symmetric behavior, not a defect. `assignmentPrompt`/`attributionPrompt` embed the full relevant prior feedback + reassessment decision + checkpoint path inline with no added model turn (confirmed via the 'history prompts' and 'sequential re-review' tests' call counts: 2 total daemon-side calls, 0 controller-side calls). `codeTaskCommands` applies the whitespace-injection guard consistently at every grant site including the two new ones (the submitted-evidence loop, already constrained by a strict charset regex, and the new 'prior pinned context' loop, which has an explicit `!/\s/.test(reference)` check). `record.ts`'s `renderTaskReview` correctly walks the reuse chain back to the true original attempt/reviewer via its `while(earlier)` loop (traced against the 'CR provenance' test's two-hop reuse scenario and its exact regex assertion). I ran all 5 named test cases in `history.test.ts` directly and they passed (5/5); I also ran a project-wide `tsc --noEmit`, which was clean. I overturn attempt 1's one LOW finding (policy.ts:49) after fresh inspection: it argued the prompt's claim that `review.path` is reachable 'through the existing read tools' is unsupported because `codeTaskCommands()` never grants that literal path. That is true of `codeTaskCommands` in isolation, but it is not the only grant surface — `src/agent/providers/cli-provider.ts`'s `claudeReviewSessionArgs` always grants `REVIEW_SESSION_READ_TOOLS = ['Read','Grep','Glob']` unconditionally (no path restriction) to a reviewer session, independent of `codeTaskCommands` (which only gates the `Bash` tool). So the prompt's claim is factually accurate, and I do not carry the LOW finding forward. No HIGH/MED findings resulted from my own inspection.
+
+Coverage: **verified** — I inspected every assertion in all 5 history.test.ts cases against the exact pinned implementation (fetched via `git show 2b1eb55b9:<path>` for every in-scope production file) and confirmed each assertion exercises real, traceable behavior rather than a tautology: the negative-path assertions in 'reuse decisions' map 1:1 onto specific `requireReview` guards in `sourceAssessment`/`reviewAssignments`/`results.ts`'s `validateResultOrigins`; the call-count assertions in 'sequential re-review' and 'history prompts' confirm no extra model turn was added; the two-hop walk-back assertion in 'CR provenance' confirms `renderTaskReview`'s while-loop logic; 'all-reuse attempts' confirms failed-vs-incomplete parity across both the daemon and the real controller IPC transport (via `controller-fixture.ts`'s actual `IpcServer`/`daemon/task-review-rpc.ts` wiring, not a mock). I then independently executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts` myself and observed 5/5 pass, and `npx tsc --noEmit -p .` clean. I disclose honestly that my own execution ran on the CURRENT checkout, which (per `git diff 2b1eb55b9 HEAD`) has since received later, unrelated additive changes to several in-scope files (activity/progress-streaming protocol support, selected-code embedding) — so my own run is corroborating evidence on the integrated codebase, not a byte-identical rerun of the exact pinned snapshot; I did not reconstruct a worktree at the exact pinned commit to get a strictly revision-matched execution myself. The supplied attempt-1 execution record (daemon-executed, builder-reported) already ran the task's named test file at a checkout confirmed byte-identical to the pinned snapshot for every in-scope file, reporting 5/5 pass plus a 123/0 broader regression, with a resolvable committed TESTS record; I treat that as supplied/builder evidence, distinct from my own, consistent with the policy's revision-match caution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I ran the named test file and a project-wide tsc myself, but did not create a separate worktree checked out at the exact pinned commit 2b1eb55b9 to obtain a strictly revision-matched execution of my own; I relied on byte-exact source inspection plus the supplied revision-matched daemon record for that specific guarantee.
+- The attempt-1 LOW finding about policy.ts:49's 'existing read tools' wording turned out to be unsupported once the full reviewer-session grant surface (cli-provider.ts's unconditional Read/Grep/Glob) is considered; if a future reviewer re-raises it, point them at REVIEW_SESSION_READ_TOOLS in src/agent/providers/cli-provider.ts rather than codeTaskCommands alone.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/policy.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/DEF-e6ddcdcb3d9cf330.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+- `91846d958e796a46594d9eb12852ab50a83c0435:src/agent/providers/cli-provider.ts`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts` — pass
+Executed directly in this review session against the CURRENT checkout (HEAD 91846d958e796a46594d9eb12852ab50a83c0435), which has diverged from the exact pinned snapshot 2b1eb55b9 for several in-scope files via later, unrelated additive changes (activity/progress-streaming protocol, selected-code embedding) confirmed via `git diff 2b1eb55b9 HEAD`. Output: '# tests 5 / # pass 5 / # fail 0 / # cancelled 0 / # skipped 0', duration_ms 4135.26. This corroborates but does not substitute for the supplied revision-matched daemon execution record (TESTS-e6ddcdcb3d9cf330-s2.json), which ran the identical pinned snapshot and also reported 5/5 pass plus a 123/0 broader regression.
+
+Test: `npx tsc --noEmit -p .` — pass
+Executed directly against the current checkout; produced zero type errors.
+
+Reused task t4 feedback from attempt 3 (daemon); original assessment attempt 3; not a fresh assessment. Attempt 3 completed a genuine, independently re-executed review of compatibility.test.ts, its new fixtures, reused controller-fixture.ts, and the policy.ts evidence-allowlist addition, with status passed, verified coverage and no findings; reused rather than repeated since current scope is unchanged.
+
+### t4: passed
+
+S2/t4 adds one new test file (compatibility.test.ts, 5 node:test cases), one new fixture (history-fixture.ts), a frozen-schema fixture (s1-task-body-schema.json), a 4-line change to policy.ts's commit-reference allow-list, and reuses the pre-existing controller-fixture.ts (introduced earlier in S2/t2, commit 92e535dd8 — confirmed via `git show 2850809c9~1:...controller-fixture.ts`, which already contained it). Every load-bearing claim embedded in the test code was checked against the real current source and holds: (1) policy.ts's evidence-reference allow-list regex `^(?:[a-f0-9]{40}|[a-f0-9]{64}):[A-Za-z0-9_.@/+=-]+$` genuinely rejects the injected `--output /tmp/unrelated` (contains a space) and `HEAD:.env` (fails the hex-hash prefix) while accepting the legitimate `${commit}:path` reference. (2) cli-provider.ts's `claudeReviewSessionArgs` genuinely sets `--tools` to `'Read,Grep,Glob'` when no commands are supplied (design-mode) and adds `Bash(git show <ref>)` to `--allowedTools` only for granted commands. (3) task-review-rpc.ts's `startTaskReview` genuinely routes to `coordinator.startController` (controller reviews) when `buildAuthorParty(...)==='daemon'`, and to `coordinator.start` (daemon reviews) otherwise — matching the test's daemon-authored-build setup and its assertion that the daemon provider callback must never be invoked. (4) `exchangeControllerTaskReview`'s `controller()` lookup genuinely throws "explicit retrigger is required" for a foreign/stale caller, and `ControllerTaskReview.*` genuinely checks `owner.id===this.owner.id` (connection identity) before accepting a frame. (5) record.ts's `renderTaskReview` only emits the "not a fresh assessment" origin label when an `origin` entry exists for the task, confirming the negative-path assertion in the frozen-schema migration test is meaningful. (6) `deriveTaskAssignments`' exact error string "Derived task scopes omit submitted changes or tests" matches attempt 2's reported failure, confirming that failure was a genuine attribution-derivation guard tripping, not a fabricated reviewer error. (7) `checkpoint.ts`'s save/load (atomic tmp-file + rename, O_NOFOLLOW read) and `TaskReviewCoordinator`'s constructor (no auto-resume; `active` map starts empty) match the durability-fixture's "constructing a coordinator does not auto-resume existing files" and "only the unsaved interrupted task may repeat" assertions. I independently re-ran `compatibility.test.ts` against the current checkout (HEAD 611e51b8c, which has diverged from the task's source commit 2850809c9 in 8 dependency files — cli-provider.ts, task-review-rpc.ts, contracts.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts — all via later S4/review-runtime fixes per the functional summary, not S2 additions): all 5 cases pass. A full repo-wide `tsc --noEmit` also reports zero errors. No HIGH/MED defect found in this task's own scope (the two new files, the fixture, and the policy.ts allow-list change). The only residual gap (carried from attempt 1, unchanged): AC4's "origin labels display accurately" is exercised here only in the negative (absent-origin → no label), with the positive reused-task-label case covered by history.test.ts (an earlier S2 task, t3, already reviewed) rather than by this task's own file — a minor, non-blocking coverage note, not a defect.
+
+Coverage: **verified** — All named t4 tests map to concrete node:test cases in compatibility.test.ts. I independently executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` against the current checkout (HEAD 611e51b8c4d3daa239cabba75371ca5fb70b9fb1); all 5 cases passed (recovery end-to-end, unavailable-pinned-source rejection, old-checkpoint/CR compatibility, migration/downgrade compatibility, and committed-test-record evidence grants), matching the committed TESTS-e6ddcdcb3d9cf330-s2.json record for taskId t4. This reconfirms attempt 1's result even though 8 dependency files (cli-provider.ts, task-review-rpc.ts, contracts.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts) have changed between the task's source commit (2850809c9) and current HEAD — those changes (review-activity/inactivity monitoring, progress tracking, selected-code-block correction) are later S4/review-runtime fixes, not S2 additions, and the test still passes against them, demonstrating compatibility rather than staleness. The build/regression smoke test ('S2 deployability') is a builder-reported npm-run-build + 123-test result, not a node:test case; its underlying logs live at /tmp paths unavailable to this review, so it is treated as reported evidence cross-checked only against the committed TESTS record, consistent with the task's own guidance that no broad production rebuild is required. A full repo-wide `tsc --noEmit -p tsconfig.json` produced zero diagnostics.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: did not re-run the full `npm run build` + 123-test production regression; relied on the builder-reported /tmp log summary and the committed TESTS record, since the task's own scope states no broad sweep or production rebuild is required.
+- Optional execution: did not independently re-execute the broader S1-era live CliProvider/Ollama evidence referenced by the smoke test; it is carried-forward historical S1 evidence outside this task's S2 scope.
+- Consider adding, in a future task, a positive-path test in this file's own scope asserting the rendered CR markdown includes an accurate 'Reused task ... from attempt N (reviewer); original assessment attempt M' label for a genuinely reused task — today only history.test.ts (t3, already reviewed) exercises that positive path; compatibility.test.ts only exercises the negative absent-origin case.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/record.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/contracts.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/daemon/task-review-rpc.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/daemon/server.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/policy.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/agent/providers/cli-provider.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/coordinator.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/checkpoint.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/packet.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/controller.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/assessment.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — pass
+Reviewer-executed (not builder-reported) against current checkout HEAD 611e51b8c4d3daa239cabba75371ca5fb70b9fb1, where 8 dependency files have diverged from the task's source commit 2850809c9 via later S4 fixes. All 5 subtests reported ok, 0 failures.
+
+Test: `npx tsc --noEmit -p tsconfig.json` — pass
+Reviewer-executed full-repo typecheck against current checkout; zero diagnostic lines emitted (only npm config warnings unrelated to compilation).
+## review-e6ddcdcb3d9cf330-s2-final — attempt 5
+
+Scope: whole story · reviewer: daemon · 2026-11-02T07:43:22.310Z
+
+4 selected task assessment(s): passed.
+
+### Submitted scope
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/daemon/task-review-rpc.ts` — [{"after":[6,6]},{"after":[19,19]},{"after":[27,29]},{"after":[32,35]},{"after":[43,43]},{"after":[46,46]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts` — [{"after":[1,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — [{"after":[1,96]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[1,25]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller.test.ts` — [{"deletionAt":3},{"after":[6,6]},{"after":[13,13]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json` — [{"after":[1,584]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts` — [{"after":[1,19]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts` — [{"after":[1,113]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/recovery.test.ts` — [{"after":[1,114]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts` — [{"after":[1,91]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts` — [{"after":[2,2]},{"after":[5,5]},{"after":[9,9]},{"after":[13,14]},{"after":[40,74]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts` — [{"after":[4,4]},{"after":[6,6]},{"after":[15,16]},{"after":[22,22]},{"after":[32,43]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts` — [{"after":[9,9]},{"after":[26,30]},{"after":[46,46]},{"after":[75,75]},{"after":[77,77]},{"after":[82,82]},{"after":[89,93]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts` — [{"deletionAt":8},{"after":[12,14]},{"after":[24,24]},{"after":[51,51]},{"after":[53,62]},{"after":[68,68]},{"after":[71,71]},{"deletionAt":74},{"after":[81,81]},{"after":[101,101]},{"after":[107,107]},{"after":[115,115]},{"after":[119,131]},{"after":[135,135]},{"after":[145,145]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts` — [{"deletionAt":1},{"after":[6,7]},{"after":[10,10]},{"after":[12,12]},{"after":[14,14]},{"after":[30,30]},{"after":[32,32]},{"after":[37,38]},{"after":[40,41]},{"after":[50,50]},{"after":[53,53]},{"after":[55,56]},{"after":[65,65]},{"after":[70,70]},{"deletionAt":71},{"after":[75,78]},{"after":[80,81]},{"after":[88,88]},{"after":[96,96]},{"after":[111,111]},{"after":[114,114]},{"after":[121,121]},{"after":[124,124]},{"after":[126,126]},{"after":[132,135]},{"after":[148,148]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts` — [{"after":[116,116]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts` — [{"after":[2,3]},{"after":[9,9]},{"after":[14,14]},{"after":[18,18]},{"after":[27,27]},{"after":[30,43]},{"after":[48,50]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts` — [{"deletionAt":3},{"after":[7,7]},{"after":[9,9]},{"after":[12,12]},{"deletionAt":15},{"after":[23,23]},{"after":[26,26]},{"after":[41,41]},{"after":[63,63]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts` — [{"after":[4,4]},{"after":[6,6]},{"after":[12,12]},{"after":[42,42]},{"after":[67,67]},{"after":[69,75]}]
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts` — [{"after":[2,2]},{"after":[4,4]},{"after":[66,79]}]
+
+Attribution for attempt 5 of S2's re-review. t1, t3 and t4 each reached a genuine passed verdict with verified coverage and no findings in attempt 3, and were carried forward unchanged (reused) in attempt 4; since the submitted packet/build fingerprint and selected scope are unchanged, all three are reused again from attempt 4. t2 has never reached a real verdict: attempt 1 was forced to "incomplete" by the (since-fixed) shared attribution/task-deadline timeout, attempt 2 failed before any task was assessed, attempt 3 failed in the native UUID event decoder before returning feedback, and attempt 4 failed in the review-activity CLI before returning feedback — none is a terminal result that can be reused or promoted, so t2 is reassessed fresh now that the diagnostic-persistence/previousRoundFeedback fix (65c9bb336) addresses the infrastructure path that caused the repeated failures. Change/test indices are assigned per task's own scope, with controller.ts, coordinator.ts, contracts.ts and controller-fixture.ts attributed to every task whose named tests materially exercise them.
+
+Reused task t1 feedback from attempt 4 (daemon); original assessment attempt 3; not a fresh assessment. Attempt 4 carried forward attempt 3's genuine, independently verified passed review of admission.ts/checkpoint.ts/contracts.ts/admission.test.ts with no findings. The current packet, selection and build fingerprint are unchanged from attempt 4, so the exact result is reused again rather than repeated.
+
+### t1: passed
+
+Fresh independent assessment of t1 (admission.ts/checkpoint.ts/contracts.ts/admission.test.ts at commit 2b1eb55b9) supersedes attempts 1-2, which never reached a genuine verdict (timeout, then pre-review failure). I diffed the selected snapshot against current HEAD: checkpoint.ts and admission.test.ts are byte-identical to HEAD; admission.ts and contracts.ts diverged only via later, additive S3/S4 work (SavedReviewRequestSchema/StoredPacketSchema split, ProgressSchema, deletionAt) that does not touch the S2 logic paths exercised here. I read the exact snapshot source via `git show 2b1eb55b9:<path>` for all four files and traced every branch of prepareReviewAdmission against the pinned LLD/PLAN acceptance checks (verified by reading PLAN-e6ddcdcb3d9cf330-s2.json directly, which matches the four ACs supplied in the task): (1) start defaults + bounded/canonical validation before mutation, (2) resume-pins-latest-packet / sequential-attempt / terminal-and-published-predecessor / explicit refusal of missing/conflicting/skipped/corrupt history, (3) immutability of earlier attempts + buildFingerprint + backward-compatible optional origins/reassessmentSummary, (4) no disk mutation on refusal and no provider invocation. Each AC maps to a concrete branch in admission.ts and is exercised by the two named tests, which use a real Git repo + real RegistryReviewSources/round-writer (not mocks). I independently re-ran `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` against the current checkout: both cases pass, matching the builder-reported/committed TESTS-e6ddcdcb3d9cf330-s2.json record. I also read the snapshot versions of results.ts, record.ts and publication.ts (dependency context only) to confirm admission.ts's validation calls (validateTaskResult, validateResultOrigins, validateTaskBody) behave as the test asserts (e.g. the "Reused task t1 feedback from attempt 1" render, the /earlier attempt/ and /changes the saved result/ rejections). tsc --noEmit shows no errors in any of the four files. No HIGH/MED defect found in the submitted logic.
+
+Coverage: **verified** — Both of t1's named tests are present in admission.test.ts and map 1:1 to the four acceptance checks: test 1 ('recovery admission...') exercises start-defaults-to-resume-false-path validation, bounded/corrupt/symlinked checkpoint rejection, resume pinning (unchanged packet, latest-attempt-only, wrong-reviewer, non-terminal predecessor), sequential-attempt enforcement (replayed/skipped ordinals), contiguous-history and foreign-identity refusal, and immutability of the earlier attempt section plus buildFingerprint preservation on both resume and on a fresh sequential attempt — each via a real git repo and real RegistryReviewSources, not mocks. Test 2 ('attempt schema compatibility...') exercises AC3 directly: an old (origin-less) checkpoint/CR decode unchanged, a new attempt adds reassessmentSummary/origins without disturbing the first entry, the rendered CR text names the reused source attempt, and record-level invariants (origin must reference a strictly earlier attempt; a reused result cannot be silently altered) are enforced by validateResultOrigins through admission.ts's own validateResultOrigins call and record.ts's validateTaskBody. I independently re-ran the declared command against the current checkout and both cases passed, consistent with the committed TESTS-e6ddcdcb3d9cf330-s2.json record. No coverage gap found for the four acceptance checks within t1's scope.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I re-ran `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` and `npx tsc --noEmit -p .` myself against the current checkout; both passed/clean. I did not run the full project test sweep (not required — only the two named tests belong to t1's scope).
+- In admission.ts's `if (saved)` loop, prepareReviewAdmission re-resolves `prepareReviewPacket` (git blobs + docs) for every historical attempt on every single admission call, including a pure resume. This is correctness-preserving but grows linearly with attempt-history length; worth a future perf note if review histories grow long, not a defect for the current M-sized scope.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/admission.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/admission.test.ts` — pass
+Reviewer-executed (not builder-reported) against current HEAD checkout (admission.test.ts and checkpoint.ts are byte-identical to the selected snapshot 2b1eb55b9; admission.ts/contracts.ts differ only by later additive S3/S4 changes not touching the exercised paths). Both cases passed: 'recovery admission...' in 871ms, 'attempt schema compatibility...' in 256ms, 0 failures.
+
+### t2: passed
+
+t2's four changed files (task-review-rpc.ts resume/attempt plumbing, controller.ts and coordinator.ts recovery/reuse/ownership logic, and the new/updated controller-fixture.ts, controller.test.ts, recovery.test.ts) correctly implement all six t2 acceptance checks for S2: bounded resume admission that restores pinned input and retains terminal results untouched, explicit same-attempt recovery of only missing tasks, actual controller reconnect vs. old-owner refusal vs. disconnect-survival distinctions, sequential pinned attempts, atomic per-task persistence with conservative failure classification, and idempotent zero-provider publication-pending recovery. I traced every modified line in the pinned snapshot (2b1eb55b9) against its dependency context (admission.ts, execution.ts, assessment.ts, results.ts, record.ts, checkpoint.ts, contracts.ts) and against the new/updated test assertions line by line, and the behavior matches in every traced scenario, including the subtle active-map/controllers-map release-guard fix that prevents a stale, superseded controller connection's disconnect from releasing a newer attempt's active reservation (exercised by the 'closing the previous owner must not release the new attempt' assertion in recovery.test.ts).
+
+Coverage: **verified** — t2's own test additions (recovery.test.ts's 5 tests; controller.test.ts's import-only refactor onto the extracted controller-fixture.ts) directly exercise every t2 acceptance check: resume restoring pinned selection/order while leaving passed/changes_requested/incomplete/failed terminal results untouched and unretried ('interrupted recovery' and 'controller recovery preserves every terminal outcome' tests, both parameterized over all four terminal statuses); daemon continuation outliving the submitter plus controller rebind/old-owner wrong-reviewer refusal/disconnect-retention/the active-map release-guard that stops a stale connection's close from releasing a newer attempt ('controller recovery: new trusted connection...' test); sequential pinned attempts and ack/frame/checkpoint metadata agreement ('retrigger metadata' test); and all-terminal, zero-provider, idempotent publication-pending recovery with preserved CR revision ('publication recovery' test). I additionally found that the reuse action wiring this task adds inside controller.ts's frame()/scope() and coordinator.ts's run() (including the attribution-failure fallback that marks all remaining tasks failed) is exercised by history.test.ts -- present in the final repository snapshot though authored under a sibling S2 task, not t2's own diff -- for both the 'daemon' and 'controller' routing paths this task's RPC layer selects between, via its 'sequential re-review', 'all-reuse attempts and invalid attribution' and related tests. I verified this by reading history.test.ts/history-fixture.ts at the pinned commit and tracing their assertions against the exact reuse-branch lines t2 added. Builder-reported execution of recovery.test.ts's 5 cases (daemon-executed) against the exact pinned source (2b1eb55b9) all passed, consistent with my independent source-level trace of each scenario.
+
+- **LOW** `src/workflow/code-review/task-review/__tests__/recovery.test.ts:86`: The 'retrigger metadata' test's mocked attribution response for attempt 1 (`{summary:...,tasks:[{...,action:'reassess',reason:...}]}`) carries fields (`summary`, `action`, `reason`) that only `ReassessmentSchema` (attempt>1) permits; `AttributionSchema` for attempt 1 is `additionalProperties:false`, so `reviewAssignments`/`decodeReview` rejects it and attempt 1's single task is recorded as `taskFailure` ('failed'), not the clean pass the test's narrative implies.
+  Traced: `attributionSchema(review)` returns plain `AttributionSchema` when `review.attempt.header.attempt===1` (assessment.ts), which disallows the extra properties the mock always returns; the resulting decode failure is caught inside coordinator.ts's task loop and converted to a `taskFailure` for t1. The test does not assert attempt 1's status, only metadata (attempt numbers, paths, pendingTaskIds/completedTaskIds, final `calls===3`), so it still passes -- my call trace (1 failed attribution call on attempt 1, then 2 successful calls on attempt 2) reproduces exactly `calls===3`. This weakens the test's value as a 'clean first attempt' demonstration, though the sequential-attempt/resume metadata behavior it actually asserts is genuinely exercised and correct.
+  Evidence: `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/recovery.test.ts`, `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts`, `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts`
+- **LOW** `src/workflow/code-review/task-review/controller.ts:119-127`: In the controller route's `reuse` branch of `frame()`, a `checkTime()` deadline check performed after `reuseAssessment` resolves is inside the same `try` as the reuse call, so if the deadline expires there it falls into the generic `catch` and is recorded via `taskFailure(..., false)` ('failed'), rather than the timeout-aware classification ('incomplete') the equivalent daemon-route reuse path in `coordinator.ts` gives via its `timeout` sentinel check.
+  controller.ts's own doc comment states 'Only the adapter differs ... all assessment and persistence policy is shared', but this one failure-classification edge case diverges between the two reviewer-party adapters. Reachability is very low (reuse only does committed-file I/O, never calls a model), and no test in this task's scope (or history.test.ts) exercises a mid-reuse timeout, so this is advisory rather than a demonstrated defect.
+  Evidence: `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts`, `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts`
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I did not run `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/recovery.test.ts` myself. The current checkout (HEAD 65c9bb336) has diverged materially from the pinned review snapshot (2b1eb55b9) in these exact six files (confirmed via `git diff --stat 2b1eb55b9 HEAD -- <files>`, showing hundreds of changed lines across controller.ts/coordinator.ts/task-review-rpc.ts), so running the suite against the working tree would exercise unreviewed, newer code rather than the pinned source; I relied on the builder-reported execution against the pinned commit plus my own static trace instead.
+- Consider aligning recovery.test.ts's 'retrigger metadata' attempt-1 mock with AttributionSchema (drop summary/action/reason for the first call) so the test actually demonstrates a clean first-attempt pass rather than incidentally exercising an attribution-schema rejection.
+- Consider hoisting the checkTime() call in controller.ts's reuse branch outside the reuse-specific try, or tagging the resulting failure with the same timeout detection the daemon route uses, so a deadline expiring mid-reuse is classified 'incomplete' on both reviewer-party routes rather than 'failed' only on the controller route.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/daemon/task-review-rpc.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/recovery.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/admission.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/execution.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/checkpoint.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/DEF-e6ddcdcb3d9cf330.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/recovery.test.ts` — pass
+Not executed by me (current checkout HEAD 65c9bb336 has diverged materially from the pinned review snapshot 2b1eb55b9 in these exact files; running against the working tree would test unreviewed code). Relaying the builder-reported result at the pinned source commit, cross-checked against my own independent source-level trace of each scenario, which reproduces the same outcomes (e.g. calls counts, preserved task arrays, status aggregation).
+
+Reused task t3 feedback from attempt 4 (daemon); original assessment attempt 3; not a fresh assessment. Attempt 4 carried forward attempt 3's genuine, independently verified passed review of the history-aware reassess/reuse engine (assessment.ts, packet.ts, policy.ts, publication.ts, record.ts, results.ts, and the shared controller/coordinator/contracts touches) with no findings. Scope is unchanged, so the exact result is reused again.
+
+### t3: passed
+
+Fresh (reassessed) review of S2/t3: the history-aware reassess/reuse engine across both actual reviewer parties. I independently fetched the exact pinned content of all 12 in-scope files via `git show 2b1eb55b9:<path>` and confirmed each is byte-identical to the embedded reviewed-version blocks (assessment.ts, contracts.ts, controller.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts, results.ts, and the three test/fixture files). Tracing the logic: `ReassessmentSchema`/`reviewAssignments` validate attempt>1 attribution into reassess/reuse decisions; `sourceAssessment`/`reuseAssessment` resolve an earlier same-party attempt's task result and re-run it through `assessTaskResult`→`normalizeTaskResult`, then assert `isDeepStrictEqual` against the original — a strong idempotence check that both proves the source is replayed verbatim and forbids silent rewriting (confirmed against the 'reuse decisions' test's missing/duplicate/foreign/rewritten/foreign-party/cycle-guard negative cases, all of which I traced to the exact `requireReview` guard that rejects them). `validateResultOrigins` enforces strictly-decreasing same-party unchanged-result ancestry on live and persisted CR bodies alike, ruling out cycles by construction. Both `controller.ts`'s `scope()`/`expire()` and `coordinator.ts`'s per-task catch block implement equivalent parity for attribution-validation-failure ('failed') vs attribution-timeout ('incomplete') across the daemon and controller adapters — I traced both branches line-by-line and confirmed this is deliberate symmetric behavior, not a defect. `assignmentPrompt`/`attributionPrompt` embed the full relevant prior feedback + reassessment decision + checkpoint path inline with no added model turn (confirmed via the 'history prompts' and 'sequential re-review' tests' call counts: 2 total daemon-side calls, 0 controller-side calls). `codeTaskCommands` applies the whitespace-injection guard consistently at every grant site including the two new ones (the submitted-evidence loop, already constrained by a strict charset regex, and the new 'prior pinned context' loop, which has an explicit `!/\s/.test(reference)` check). `record.ts`'s `renderTaskReview` correctly walks the reuse chain back to the true original attempt/reviewer via its `while(earlier)` loop (traced against the 'CR provenance' test's two-hop reuse scenario and its exact regex assertion). I ran all 5 named test cases in `history.test.ts` directly and they passed (5/5); I also ran a project-wide `tsc --noEmit`, which was clean. I overturn attempt 1's one LOW finding (policy.ts:49) after fresh inspection: it argued the prompt's claim that `review.path` is reachable 'through the existing read tools' is unsupported because `codeTaskCommands()` never grants that literal path. That is true of `codeTaskCommands` in isolation, but it is not the only grant surface — `src/agent/providers/cli-provider.ts`'s `claudeReviewSessionArgs` always grants `REVIEW_SESSION_READ_TOOLS = ['Read','Grep','Glob']` unconditionally (no path restriction) to a reviewer session, independent of `codeTaskCommands` (which only gates the `Bash` tool). So the prompt's claim is factually accurate, and I do not carry the LOW finding forward. No HIGH/MED findings resulted from my own inspection.
+
+Coverage: **verified** — I inspected every assertion in all 5 history.test.ts cases against the exact pinned implementation (fetched via `git show 2b1eb55b9:<path>` for every in-scope production file) and confirmed each assertion exercises real, traceable behavior rather than a tautology: the negative-path assertions in 'reuse decisions' map 1:1 onto specific `requireReview` guards in `sourceAssessment`/`reviewAssignments`/`results.ts`'s `validateResultOrigins`; the call-count assertions in 'sequential re-review' and 'history prompts' confirm no extra model turn was added; the two-hop walk-back assertion in 'CR provenance' confirms `renderTaskReview`'s while-loop logic; 'all-reuse attempts' confirms failed-vs-incomplete parity across both the daemon and the real controller IPC transport (via `controller-fixture.ts`'s actual `IpcServer`/`daemon/task-review-rpc.ts` wiring, not a mock). I then independently executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts` myself and observed 5/5 pass, and `npx tsc --noEmit -p .` clean. I disclose honestly that my own execution ran on the CURRENT checkout, which (per `git diff 2b1eb55b9 HEAD`) has since received later, unrelated additive changes to several in-scope files (activity/progress-streaming protocol support, selected-code embedding) — so my own run is corroborating evidence on the integrated codebase, not a byte-identical rerun of the exact pinned snapshot; I did not reconstruct a worktree at the exact pinned commit to get a strictly revision-matched execution myself. The supplied attempt-1 execution record (daemon-executed, builder-reported) already ran the task's named test file at a checkout confirmed byte-identical to the pinned snapshot for every in-scope file, reporting 5/5 pass plus a 123/0 broader regression, with a resolvable committed TESTS record; I treat that as supplied/builder evidence, distinct from my own, consistent with the policy's revision-match caution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I ran the named test file and a project-wide tsc myself, but did not create a separate worktree checked out at the exact pinned commit 2b1eb55b9 to obtain a strictly revision-matched execution of my own; I relied on byte-exact source inspection plus the supplied revision-matched daemon record for that specific guarantee.
+- The attempt-1 LOW finding about policy.ts:49's 'existing read tools' wording turned out to be unsupported once the full reviewer-session grant surface (cli-provider.ts's unconditional Read/Grep/Glob) is considered; if a future reviewer re-raises it, point them at REVIEW_SESSION_READ_TOOLS in src/agent/providers/cli-provider.ts rather than codeTaskCommands alone.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/assessment.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/contracts.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/controller.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/coordinator.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/packet.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/policy.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/publication.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/record.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/results.ts`
+- `1a623b14e24541449083dbe8f538e3d60ff1c659:src/workflow/code-review/task-review/policy.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/DEF-e6ddcdcb3d9cf330.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+- `91846d958e796a46594d9eb12852ab50a83c0435:src/agent/providers/cli-provider.ts`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/history.test.ts` — pass
+Executed directly in this review session against the CURRENT checkout (HEAD 91846d958e796a46594d9eb12852ab50a83c0435), which has diverged from the exact pinned snapshot 2b1eb55b9 for several in-scope files via later, unrelated additive changes (activity/progress-streaming protocol, selected-code embedding) confirmed via `git diff 2b1eb55b9 HEAD`. Output: '# tests 5 / # pass 5 / # fail 0 / # cancelled 0 / # skipped 0', duration_ms 4135.26. This corroborates but does not substitute for the supplied revision-matched daemon execution record (TESTS-e6ddcdcb3d9cf330-s2.json), which ran the identical pinned snapshot and also reported 5/5 pass plus a 123/0 broader regression.
+
+Test: `npx tsc --noEmit -p .` — pass
+Executed directly against the current checkout; produced zero type errors.
+
+Reused task t4 feedback from attempt 4 (daemon); original assessment attempt 3; not a fresh assessment. Attempt 4 carried forward attempt 3's genuine, independently verified passed review of the compatibility end-to-end tests, their fixtures, and the policy.ts evidence allow-list addition, with no findings. Scope is unchanged, so the exact result is reused again.
+
+### t4: passed
+
+S2/t4 adds one new test file (compatibility.test.ts, 5 node:test cases), one new fixture (history-fixture.ts), a frozen-schema fixture (s1-task-body-schema.json), a 4-line change to policy.ts's commit-reference allow-list, and reuses the pre-existing controller-fixture.ts (introduced earlier in S2/t2, commit 92e535dd8 — confirmed via `git show 2850809c9~1:...controller-fixture.ts`, which already contained it). Every load-bearing claim embedded in the test code was checked against the real current source and holds: (1) policy.ts's evidence-reference allow-list regex `^(?:[a-f0-9]{40}|[a-f0-9]{64}):[A-Za-z0-9_.@/+=-]+$` genuinely rejects the injected `--output /tmp/unrelated` (contains a space) and `HEAD:.env` (fails the hex-hash prefix) while accepting the legitimate `${commit}:path` reference. (2) cli-provider.ts's `claudeReviewSessionArgs` genuinely sets `--tools` to `'Read,Grep,Glob'` when no commands are supplied (design-mode) and adds `Bash(git show <ref>)` to `--allowedTools` only for granted commands. (3) task-review-rpc.ts's `startTaskReview` genuinely routes to `coordinator.startController` (controller reviews) when `buildAuthorParty(...)==='daemon'`, and to `coordinator.start` (daemon reviews) otherwise — matching the test's daemon-authored-build setup and its assertion that the daemon provider callback must never be invoked. (4) `exchangeControllerTaskReview`'s `controller()` lookup genuinely throws "explicit retrigger is required" for a foreign/stale caller, and `ControllerTaskReview.*` genuinely checks `owner.id===this.owner.id` (connection identity) before accepting a frame. (5) record.ts's `renderTaskReview` only emits the "not a fresh assessment" origin label when an `origin` entry exists for the task, confirming the negative-path assertion in the frozen-schema migration test is meaningful. (6) `deriveTaskAssignments`' exact error string "Derived task scopes omit submitted changes or tests" matches attempt 2's reported failure, confirming that failure was a genuine attribution-derivation guard tripping, not a fabricated reviewer error. (7) `checkpoint.ts`'s save/load (atomic tmp-file + rename, O_NOFOLLOW read) and `TaskReviewCoordinator`'s constructor (no auto-resume; `active` map starts empty) match the durability-fixture's "constructing a coordinator does not auto-resume existing files" and "only the unsaved interrupted task may repeat" assertions. I independently re-ran `compatibility.test.ts` against the current checkout (HEAD 611e51b8c, which has diverged from the task's source commit 2850809c9 in 8 dependency files — cli-provider.ts, task-review-rpc.ts, contracts.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts — all via later S4/review-runtime fixes per the functional summary, not S2 additions): all 5 cases pass. A full repo-wide `tsc --noEmit` also reports zero errors. No HIGH/MED defect found in this task's own scope (the two new files, the fixture, and the policy.ts allow-list change). The only residual gap (carried from attempt 1, unchanged): AC4's "origin labels display accurately" is exercised here only in the negative (absent-origin → no label), with the positive reused-task-label case covered by history.test.ts (an earlier S2 task, t3, already reviewed) rather than by this task's own file — a minor, non-blocking coverage note, not a defect.
+
+Coverage: **verified** — All named t4 tests map to concrete node:test cases in compatibility.test.ts. I independently executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` against the current checkout (HEAD 611e51b8c4d3daa239cabba75371ca5fb70b9fb1); all 5 cases passed (recovery end-to-end, unavailable-pinned-source rejection, old-checkpoint/CR compatibility, migration/downgrade compatibility, and committed-test-record evidence grants), matching the committed TESTS-e6ddcdcb3d9cf330-s2.json record for taskId t4. This reconfirms attempt 1's result even though 8 dependency files (cli-provider.ts, task-review-rpc.ts, contracts.ts, coordinator.ts, packet.ts, policy.ts, publication.ts, record.ts) have changed between the task's source commit (2850809c9) and current HEAD — those changes (review-activity/inactivity monitoring, progress tracking, selected-code-block correction) are later S4/review-runtime fixes, not S2 additions, and the test still passes against them, demonstrating compatibility rather than staleness. The build/regression smoke test ('S2 deployability') is a builder-reported npm-run-build + 123-test result, not a node:test case; its underlying logs live at /tmp paths unavailable to this review, so it is treated as reported evidence cross-checked only against the committed TESTS record, consistent with the task's own guidance that no broad production rebuild is required. A full repo-wide `tsc --noEmit -p tsconfig.json` produced zero diagnostics.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: did not re-run the full `npm run build` + 123-test production regression; relied on the builder-reported /tmp log summary and the committed TESTS record, since the task's own scope states no broad sweep or production rebuild is required.
+- Optional execution: did not independently re-execute the broader S1-era live CliProvider/Ollama evidence referenced by the smoke test; it is carried-forward historical S1 evidence outside this task's S2 scope.
+- Consider adding, in a future task, a positive-path test in this file's own scope asserting the rendered CR markdown includes an accurate 'Reused task ... from attempt N (reviewer); original assessment attempt M' label for a genuinely reused task — today only history.test.ts (t3, already reviewed) exercises that positive path; compatibility.test.ts only exercises the negative absent-origin case.
+
+Inspected references:
+
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/compatibility.test.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/fixtures/s1-task-body-schema.json`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/history-fixture.ts`
+- `2b1eb55b98405dd73c36c1964e1ac090125c7d5d:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/record.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/contracts.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/daemon/task-review-rpc.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/daemon/server.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/policy.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/agent/providers/cli-provider.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/coordinator.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/checkpoint.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/packet.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/controller.ts`
+- `611e51b8c4d3daa239cabba75371ca5fb70b9fb1:src/workflow/code-review/task-review/assessment.ts`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s2.json`
+- `48abed2fb2ec1c1f83cb18a47568b0860a48bee4:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s2.json`
+- `2850809c9da0d7e8830ac5e9d7c451876e97092f:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+
+Test: `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/compatibility.test.ts` — pass
+Reviewer-executed (not builder-reported) against current checkout HEAD 611e51b8c4d3daa239cabba75371ca5fb70b9fb1, where 8 dependency files have diverged from the task's source commit 2850809c9 via later S4 fixes. All 5 subtests reported ok, 0 failures.
+
+Test: `npx tsc --noEmit -p tsconfig.json` — pass
+Reviewer-executed full-repo typecheck against current checkout; zero diagnostic lines emitted (only npm config warnings unrelated to compilation).

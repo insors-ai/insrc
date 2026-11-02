@@ -6,18 +6,27 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 4,
+        "number": 6,
         "contentHash": "43fc743972902910da2f47f003a2855a732309d8192fc4461a6823efcf0e1890",
-        "at": "2026-10-31T20:26:16.711Z",
+        "at": "2026-11-02T09:09:21.466Z",
         "by": {
-          "id": "insrc:build",
+          "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T10:23:49.828Z"
+      }
     },
     "workflow": "build",
     "runId": "store-879eee4f-491c-426e-b6f9-b110c32eaff9",
@@ -29,7 +38,7 @@
     "schemaVersion": 1,
     "epicHash": "e6ddcdcb3d9cf330",
     "storyId": "s2",
-    "revision": 4,
+    "revision": 6,
     "updatedAt": "2026-10-31T20:22:31.980Z",
     "authoredBy": "controller",
     "epicSlug": "review-committed-work-task-checkpoints"

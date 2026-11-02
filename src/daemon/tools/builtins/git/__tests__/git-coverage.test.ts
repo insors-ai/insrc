@@ -12,7 +12,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,7 +39,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 43, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text, git_objects from s8');
+	assert.equal(registered.size, 44, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text, git_objects, git_patch from s8');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -326,6 +327,49 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 	'pack-objects': async c => {
 		const r = await c.ok('git_objects', { op: 'pack-objects', revs: 'HEAD\n' }); const d = r.data as { pack: string; size: number };
 		assert.equal(Buffer.from(d.pack, 'base64').subarray(0, 4).toString(), 'PACK'); assert.equal(Buffer.from(d.pack, 'base64').length, d.size);
+	},
+
+	// ---- git_patch (s8)
+	'apply': async c => {
+		const patch = c.git('diff'); c.git('checkout', '-q', '--', 'a.txt');
+		const check = await c.ok('git_patch', { op: 'apply', patch, check: true }); assert.equal(check.success, true); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'two\n', '--check changes nothing');
+		await c.ok('git_patch', { op: 'apply', patch }); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'dirty\n');
+	},
+	'am': async c => {
+		const mbox = c.git('format-patch', '--stdout', '-1'); c.git('checkout', '-q', '--', 'a.txt'); c.git('reset', '-q', '--hard', 'HEAD~1');
+		await c.ok('git_patch', { op: 'am', mbox }); assert.equal(c.git('log', '-1', '--format=%s').trim(), 'second'); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'two\n');
+	},
+	'format-patch': async c => {
+		const printed = await c.ok('git_patch', { op: 'format-patch', range: 'HEAD~1' }); assert.match((printed.data as { text: string }).text, /^From [0-9a-f]{40} .*\nFrom: T <t@example\.com>/);
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-fp-'));
+		try { await c.ok('git_patch', { op: 'format-patch', range: 'HEAD~1', outputDirectory: dir }); assert.deepEqual(readdirSync(dir), ['0001-second.patch']); } finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'archive': async c => {
+		const r = await c.ok('git_patch', { op: 'archive', rev: 'HEAD' }); const d = r.data as { archive: string; size: number };
+		assert.equal(execFileSync('tar', ['-tf', '-'], { input: Buffer.from(d.archive, 'base64'), encoding: 'utf8' }).trim(), 'a.txt'); assert.equal(Buffer.from(d.archive, 'base64').length, d.size);
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-ar-')); const out = join(dir, 'a.zip');
+		try { const f = await c.ok('git_patch', { op: 'archive', rev: 'HEAD', format: 'zip', output: out }); assert.equal((f.data as { size: number }).size > 0, true); assert.ok(existsSync(out)); } finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'bundle': async c => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-bu-')); const file = join(dir, 'x.bundle');
+		try {
+			await c.ok('git_patch', { op: 'bundle', action: 'create', file, revs: ['main'] }); assert.ok(existsSync(file));
+			const ok = await c.ok('git_patch', { op: 'bundle', action: 'verify', file }); assert.match((ok.data as { text: string }).text, /is okay/);
+			const heads = await c.ok('git_patch', { op: 'bundle', action: 'list-heads', file }); assert.match((heads.data as { text: string }).text, /refs\/heads\/main/);
+		} finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'fast-export': async c => {
+		const r = await c.ok('git_patch', { op: 'fast-export', revs: ['main'] }); assert.match((r.data as { text: string }).text, /^commit refs\/heads\/main$/m);
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-fe-')); const marks = join(dir, 'marks');
+		try { await c.ok('git_patch', { op: 'fast-export', all: true, exportMarks: marks }); assert.match(readFileSync(marks, 'utf8'), /^:\d+ [0-9a-f]{40}/m); } finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'diagnose': async c => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-dg-'));
+		try { await c.ok('git_patch', { op: 'diagnose', output: dir, suffix: 'x' }); assert.deepEqual(readdirSync(dir), ['git-diagnostics-x.zip']); } finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'bugreport': async c => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-br-'));
+		try { await c.ok('git_patch', { op: 'bugreport', output: dir, suffix: 'x' }); assert.deepEqual(readdirSync(dir), ['git-bugreport-x.txt']); } finally { rmSync(dir, { recursive: true, force: true }); }
 	},
 };
 

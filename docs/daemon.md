@@ -1552,13 +1552,13 @@ and a test keeps this copy equal to it.
 | reflog | delete | assigned | s8 |
 | reflog | write | assigned | s8 |
 | reflog |  | assigned | s8 |
-| am |  | assigned | s8 |
-| apply |  | assigned | s8 |
-| archive |  | assigned | s8 |
+| am |  | covered | git_patch |
+| apply |  | covered | git_patch |
+| archive |  | covered | git_patch |
 | backfill |  | assigned | s8 |
 | bisect |  | assigned | s8 |
-| bugreport |  | assigned | s8 |
-| bundle |  | assigned | s8 |
+| bugreport |  | covered | git_patch |
+| bundle |  | covered | git_patch |
 | check-attr |  | covered | git_inspect |
 | check-ignore |  | covered | git_inspect |
 | check-mailmap |  | covered | git_inspect |
@@ -1572,14 +1572,14 @@ and a test keeps this copy equal to it.
 | commit-tree |  | covered | git_objects |
 | count-objects |  | covered | git_inspect |
 | describe |  | covered | git_inspect |
-| diagnose |  | assigned | s8 |
+| diagnose |  | covered | git_patch |
 | diff-files |  | covered | git_inspect |
 | diff-index |  | covered | git_inspect |
 | diff-pairs |  | covered | git_inspect |
-| fast-export |  | assigned | s8 |
+| fast-export |  | covered | git_patch |
 | fast-import |  | covered | git_objects |
 | fmt-merge-msg |  | covered | git_text |
-| format-patch |  | assigned | s8 |
+| format-patch |  | covered | git_patch |
 | fsck |  | covered | git_inspect |
 | fsck-objects |  | covered | git_inspect |
 | gc |  | assigned | s8 |

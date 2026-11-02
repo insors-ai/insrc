@@ -1,0 +1,293 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "6ca20225ca852757c02fbc23985911804963f82ebb3e7fcdcba0a1324d70bcc8",
+        "at": "2026-11-02T07:12:50.744Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-66ca7fa8-cea1-4b3a-8a20-e5d18b49fcce",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:16:18.415Z",
+    "epicCreatedAt": "2026-11-02T05:39:08.234Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd3fc04540624ba3",
+    "storyId": "s1",
+    "revision": 3,
+    "updatedAt": "2026-11-02T07:11:43.189Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "preserve-native-review-validation-failures-next"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented bounded, scoped previousRoundFeedback for both native CLI review routes, durable failure diagnostics and recovery without rewriting prior attempts. Focused regressions and production build passed; continuity verified using fake CLI subprocesses and real local IPC, not hosted model reviews.",
+    "testRecord": {
+      "md": "docs/standalone/preserve-native-review-validation-failures-next-E20261102bd3fc045/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-67a00caafa8fcb3e.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-67a00caafa8fcb3e.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-bd3fc04540624ba3-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-bd3fc04540624ba3-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-bd3fc04540624ba3-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-bd3fc04540624ba3-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-bd3fc04540624ba3-s1-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-bd3fc04540624ba3-s1-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-bd3fc04540624ba3-s1-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/preserve-native-review-validation-failures-next-E2026110267a00caa/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/preserve-native-review-validation-failures-next-E20261102bd3fc045/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/preserve-native-review-validation-failures-next-E20261102bd3fc045/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/preserve-native-review-validation-failures-next-E20261102bd3fc045/S001/sequence-diagram.html"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/review-activity-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-diagnostics.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/admission.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/checkpoint.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/controller.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/diagnostic-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/diagnostics.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "docs/task-review-execution.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-activity.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/previous-round-feedback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:11:43.189Z"
+      }
+    ],
+    "commit": "6c02faf63"
+  },
+  "citations": []
+}

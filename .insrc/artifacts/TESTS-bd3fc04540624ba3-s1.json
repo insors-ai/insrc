@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "9ecadc6d5876d47baef9f18eabe9e5fc3f3c316a56ba321b6bdb3ed4405db7b7",
+        "at": "2026-11-02T07:11:43.272Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "bd3fc04540624ba3",
+    "storyId": "s1",
+    "createdAt": "2026-11-02T06:16:18.415Z",
+    "updatedAt": "2026-11-02T07:11:43.189Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T05:39:08.234Z",
+    "epicSlug": "preserve-native-review-validation-failures-next",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c034aeb45",
+        "ranAt": "2026-11-02T06:16:18.415Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Claude missing-findings repeated five times coalesces and never accepts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+                "title": "Claude missing-findings repeated five times coalesces and never accepts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Codex final JSON parse/schema failure preserves finality and diagnostics",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+                "title": "Codex final JSON parse/schema failure preserves finality and diagnostics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Terminal CLI failure and host semantic rejection retain pointed fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+                "title": "Terminal CLI failure and host semantic rejection retain pointed fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+                "title": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-output-diagnostics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 550,
+            "titles": [
+              {
+                "title": "Claude missing-findings repeated five times coalesces and never accepts",
+                "result": "pass"
+              },
+              {
+                "title": "Codex final JSON parse/schema failure preserves finality and diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal CLI failure and host semantic rejection retain pointed fields",
+                "result": "pass"
+              },
+              {
+                "title": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair",
+                "result": "pass"
+              },
+              {
+                "title": "fake native CLI exit carries diagnostics and callback failures are not acknowledged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "74fcef072",
+        "ranAt": "2026-11-02T06:32:36.497Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts",
+                "title": "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Shared attribution diagnostics stored once and projected only to applicable selected scope",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts",
+                "title": "Shared attribution diagnostics stored once and projected only to applicable selected scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts",
+                "title": "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts",
+                "title": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1264,
+            "titles": [
+              {
+                "title": "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema",
+                "result": "pass"
+              },
+              {
+                "title": "Shared attribution diagnostics stored once and projected only to applicable selected scope",
+                "result": "pass"
+              },
+              {
+                "title": "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity",
+                "result": "pass"
+              },
+              {
+                "title": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+                "result": "pass"
+              },
+              {
+                "title": "attempt diagnostic budget removes previews before pointed errors",
+                "result": "pass"
+              },
+              {
+                "title": "controller rejects a late scope diagnostic after valid attribution and retains resolved evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "6c02faf63",
+        "ranAt": "2026-11-02T07:11:43.189Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+                "title": "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+                "title": "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+                "title": "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+                "title": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3051,
+            "titles": [
+              {
+                "title": "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result",
+                "result": "pass"
+              },
+              {
+                "title": "feedback applies shared attribution only to selected tasks and enforces the whole-input byte budget",
+                "result": "pass"
+              },
+              {
+                "title": "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+                "result": "pass"
+              },
+              {
+                "title": "controller fake native failures use the same persisted feedback on real IPC for both CLIs",
+                "result": "pass"
+              },
+              {
+                "title": "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+                "result": "pass"
+              },
+              {
+                "title": "exact failed-result origins preserve diagnostic provenance without reviving resolved older rounds",
+                "result": "pass"
+              },
+              {
+                "title": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

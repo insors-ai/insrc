@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:01:33.548Z",
+    "updatedAt": "2026-11-02T05:07:15.705Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "New languages (rust/csharp/c/cpp) and extensions, table/view kind slots, cargo/nuget/native namespaces with a v6-to-v7 provisioning step (schema 7), and the five pinned grammars, which install with the repo's .npmrc and load under Node 22 (checked with require + setLanguage in the repo).",
+    "summary": "Guarded reader loads record unavailable readers with their reason; the index.languages request (indexing class) lists every code and SQL language with extensions and availability from the worker's registry.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/TESTS.md"
     },
@@ -26,107 +30,170 @@
           "file": "package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/repo-strict-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/graph/keys.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/indexer/resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/shared/repo-namespaces.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:01:33.548Z"
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/method-class.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/registry-languages.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/kotlin.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:07:15.705Z"
       }
     ],
-    "commit": "7348f340d"
+    "commit": "bf7897d48"
   }
 }

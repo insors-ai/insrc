@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:01:33.548Z",
+    "updatedAt": "2026-11-02T05:07:15.705Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -74,6 +74,89 @@
               },
               {
                 "title": "s9 t1: table and view are appended kind slots 14 and 15, and every earlier slot keeps its byte",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "bf7897d48",
+        "ranAt": "2026-11-02T05:07:15.705Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "guarded grammar load records an unavailable reader",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+                "title": "s9 t2: a reader whose grammar load throws is not registered and is listed unavailable with the error; a reader loaded after it still registers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "languages request",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+                "title": "s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12014,
+            "titles": [
+              {
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1330,
+            "titles": [
+              {
+                "title": "s9 t2: a reader whose grammar load throws is not registered and is listed unavailable with the error; a reader loaded after it still registers",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker",
                 "result": "pass"
               }
             ],

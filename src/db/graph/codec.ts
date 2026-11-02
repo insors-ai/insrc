@@ -86,7 +86,7 @@ export type RepoKind = 'workspace' | 'shared-modules';
  * etc.). Adding a new ecosystem appends here + to
  * `SHARED_MODULES_REPO_ID` + to `SHARED_MODULES_NAMESPACE_BY_LANG`.
  */
-export type SharedModulesNamespace = 'jvm' | 'npm' | 'python' | 'go';
+export type SharedModulesNamespace = 'jvm' | 'npm' | 'python' | 'go' | 'cargo' | 'nuget' | 'native';
 
 export interface RepoRow {
 	id:           number;       // u32, also encoded in the key

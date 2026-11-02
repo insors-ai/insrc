@@ -149,7 +149,9 @@ test('SCHEMA_VERSION constant is exported and stable', () => {
 	// index_state, and writes an IndexStateRow per workspace repository.
 	// v6 (Epic c2ba6fa6, Story s3) adds entity_by_file, backfilled from the
 	// existing entity table for fast by-file/by-repo reads.
-	assert.equal(SCHEMA_VERSION, 6);
+	// v7 (Epic c2ba6fa6, Story s9) appends the table/view entity kinds and
+	// provisions the cargo, nuget and native shared-modules rows.
+	assert.equal(SCHEMA_VERSION, 7);
 });
 
 // ---------------------------------------------------------------------------

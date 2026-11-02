@@ -81,6 +81,9 @@ export const ENTITY_KIND_BYTE = {
 	// External-service dependency node (sc1 — E20260806914cbf5e:S001).
 	// Append-only: never reorder or reuse a slot. Bump SCHEMA_VERSION when adding.
 	externalEndpoint: 13,
+	// SQL objects (Epic c2ba6fa6 s9). Append-only; SCHEMA_VERSION 7.
+	table:            14,
+	view:             15,
 } as const;
 
 export type EntityKind = keyof typeof ENTITY_KIND_BYTE;

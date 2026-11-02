@@ -415,6 +415,22 @@ export const MIGRATION_V5_TO_V6: Migration = {
 };
 
 /**
+ * v6 -> v7 (Epic c2ba6fa6 s9): the shared-modules rows of the three namespaces
+ * the added languages' module stubs live under (cargo, nuget, native). The two
+ * entity kinds appended with this version (table, view) need no data step: no
+ * existing row uses them and no key or byte is rewritten. Idempotent.
+ */
+export const MIGRATION_V6_TO_V7: Migration = {
+	from: 6,
+	to:   7,
+	description: 'shared-modules rows for the cargo, nuget and native namespaces (s9); table/view entity kinds appended',
+	run: (store) => {
+		const provisioned = provisionSharedModulesRows(store);
+		log.info({ provisioned }, 'v6->v7: shared-modules namespaces provisioned');
+	},
+};
+
+/**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
  * and we don't want to introduce a cycle).
@@ -447,6 +463,7 @@ export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V3_TO_V4,
 	MIGRATION_V4_TO_V5,
 	MIGRATION_V5_TO_V6,
+	MIGRATION_V6_TO_V7,
 ];
 
 /**

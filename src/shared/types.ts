@@ -563,6 +563,8 @@ export interface AgentConfig {
 
 export type Language = 'python' | 'go' | 'typescript' | 'javascript'
   | 'java' | 'scala' | 'kotlin'
+  // Epic c2ba6fa6 s9: 'c' and 'cpp' are one family when calls are matched across files
+  | 'rust' | 'csharp' | 'c' | 'cpp'
   | 'markdown' | 'html' | 'css' | 'yaml' | 'json' | 'toml' | 'shell'
   | 'sql' | 'proto' | 'graphql' | 'dockerfile' | 'config';
 
@@ -580,7 +582,10 @@ export type EntityKind =
   | 'section'
   | 'config'
   // External-service dependency node (sc1 — E20260806914cbf5e:S001)
-  | 'externalEndpoint';
+  | 'externalEndpoint'
+  // SQL objects (Epic c2ba6fa6 s9)
+  | 'table'
+  | 'view';
 
 export type RelationKind =
   | 'DEFINES'
@@ -805,7 +810,7 @@ export interface RegisteredRepo {
   kind?:        'workspace' | 'shared-modules';
   /**
    * Namespace for `kind === 'shared-modules'` rows; absent
-   * otherwise. Possible values: 'jvm' | 'npm' | 'python' | 'go'.
+   * otherwise. Possible values: 'jvm' | 'npm' | 'python' | 'go' | 'cargo' | 'nuget' | 'native'.
    */
   namespace?:   string;
   path:         string;

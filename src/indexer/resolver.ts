@@ -280,4 +280,9 @@ const EXT_TO_LANG: Readonly<Record<string, Language>> = {
   '.go':    'go',
   '.java':  'java',
   '.scala': 'scala', '.sc': 'scala',
+  // Epic c2ba6fa6 s9 (.h is read by the C++ reader: C and C++ are one family)
+  '.rs':    'rust',
+  '.cs':    'csharp',
+  '.c':     'c',
+  '.h':     'cpp', '.cc': 'cpp', '.cpp': 'cpp', '.cxx': 'cpp', '.hpp': 'cpp', '.hh': 'cpp', '.hxx': 'cpp',
 };

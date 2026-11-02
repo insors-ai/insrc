@@ -139,7 +139,7 @@ export const MAX_DBS = 64;
  *         workspace repository with fullIndexFinished false and its
  *         pending counts recounted from the stored rows.
  */
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 7;
 
 const META_SCHEMA_VERSION = 'schema_version';
 

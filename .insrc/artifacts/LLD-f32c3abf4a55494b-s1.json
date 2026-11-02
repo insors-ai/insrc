@@ -68,6 +68,13 @@
         "choice": "Accept derived ACs as-is",
         "rationale": "The user approved the LLD on 2026-11-02 with ac1 to ac5 in its test strategy.",
         "resolvedAt": "2026-11-02T09:33:19.969Z"
+      },
+      "qe92b79ce": {
+        "question": "Reviewers and resolveComment: when the stage is in signoff, should a person who is not the holder (a reviewer) still be allowed to record comments, or is 'revise' (holder only) the rule for every comment? This design applies 'revise' to every comment, as the Story says, which refuses a non-holder reviewer",
+        "status": "resolved",
+        "choice": "Holder-only everywhere (status quo)",
+        "rationale": "The user approved the LLD with its default: resolveComment follows the Story text, revise for every comment. The stage-aware exception for reviewers (the framework's recommendation) was not chosen; it can be a later change.",
+        "resolvedAt": "2026-11-02T09:34:11.585Z"
       }
     }
   },

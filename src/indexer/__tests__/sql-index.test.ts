@@ -5,7 +5,9 @@
  * from, beside the document entity. The real full index (readers, resolver,
  * cross-file pass) over a temporary store; no embedding backend is set, so no
  * model runs. A same-file reference is stored 'extracted'; one to a table of
- * another file stays pending by name (user decision 2026-11-02).
+ * another file is resolved by the cross-file pass, 'inferred' (Story 9d8b5542;
+ * in s9 it stayed pending), and a settle that commits the file defining a
+ * table resolves a reference waiting on it in an unchanged file.
  *
  * Run: npx tsx --test src/indexer/__tests__/sql-index.test.ts
  */
@@ -33,7 +35,10 @@ useTemporaryLance();
 const FILES: Record<string, string> = {
 	'db/schema.sql': 'CREATE TABLE orgs (id int PRIMARY KEY);\nCREATE TABLE users (id int, org_id int REFERENCES orgs (id));\n',
 	'db/views.sql':  'CREATE VIEW org_users AS SELECT u.id FROM users u JOIN orgs o ON o.id = u.org_id;\nCREATE VIEW top AS SELECT * FROM org_users;\n',
+	'db/report.sql': 'CREATE VIEW report AS SELECT * FROM ledger;\n',
 };
+
+const watcher = { onEvents() {}, async addRepo() {}, async removeRepo() {}, async addConfigDir() {} } as unknown as Watcher;
 
 let store: string;
 let repo: string;
@@ -45,7 +50,6 @@ test.before(async () => {
 	mkdirSync(join(repo, 'db'));
 	for (const [f, text] of Object.entries(FILES)) writeFileSync(join(repo, f), text);
 	await addRepo(null, { path: repo, name: 'sql', addedAt: '2026-11-02T00:00:00.000Z', status: 'pending' });
-	const watcher = { onEvents() {}, async addRepo() {}, async removeRepo() {}, async addConfigDir() {} } as unknown as Watcher;
 	await new IndexerService(null as unknown as DbClient, new IndexQueue(), watcher, undefined, 600_000).processJob({ kind: 'full', repoPath: repo });
 });
 test.after(async () => {
@@ -71,10 +75,27 @@ test('s9 t8 (ac2): SQL files indexed through IndexerService store a table or vie
 			stored.push(`${e.name} -> ${byU64.get(n.u64)}: ${n.evidence}`);
 		}
 	}
-	assert.deepEqual(stored.sort(), ['top -> org_users: extracted', 'users -> orgs: extracted']);
+	assert.deepEqual(stored.sort(), ['org_users -> orgs: inferred', 'org_users -> users: inferred', 'top -> org_users: extracted', 'users -> orgs: extracted']);
 
-	const pending = (await listUnresolvedRelations(null, repo)).filter(r => r.kind === 'REFERENCES')
-		.map(r => `${all.find(e => e.id === r.fromEntity)?.name} -> ${r.rawTo}`).sort();
-	assert.deepEqual(pending, ['org_users -> orgs', 'org_users -> users'], 'references to tables of another file stay pending by name');
+	const pending = (await listUnresolvedRelations(null, repo)).filter(r => r.kind === 'REFERENCES').map(r => `${r.rawTo}: ${r.meta['class']}`);
+	assert.deepEqual(pending, ['ledger: no-candidate'], 'only the reference to a table no file defines stays pending');
 	assert.ok(views.some(e => e.id === makeEntityId(repo, at('db/views.sql'), 'document', 'views.sql')));
+});
+
+test('a settle that commits the file defining a table resolves a reference waiting on it in an unchanged file', async () => {
+	class Svc extends IndexerService {
+		constructor() { super(null as unknown as DbClient, new IndexQueue(), watcher, undefined, 20); }
+	}
+	const svc = new Svc();
+	await svc.start([{ path: repo, name: 'sql', addedAt: '2026-11-02T00:00:00.000Z', status: 'ready' }]);
+	writeFileSync(at('db/ledger.sql'), 'CREATE TABLE ledger (id int);\n');
+	await svc.processJob({ kind: 'file', filePath: at('db/ledger.sql'), event: 'update' });
+	const report = makeEntityId(repo, at('db/report.sql'), 'view', 'report');
+	const ledger = makeEntityId(repo, at('db/ledger.sql'), 'table', 'ledger');
+	const reaches = async () => (await outNeighbors((await entityU64ForId(report))!, { kindFilter: ['REFERENCES'], withEvidence: true }))
+		.map(n => [n.u64, n.evidence]);
+	for (let i = 0; i < 300 && (svc._armedSettleTimersForTest() > 0 || (await reaches()).length === 0); i++) await new Promise(r => setTimeout(r, 10));
+	await svc._settlePassesDoneForTest();
+	assert.deepEqual(await reaches(), [[(await entityU64ForId(ledger))!, 'inferred']], 'report.sql was not saved; the settle for ledger.sql answered its reference');
+	assert.deepEqual((await listUnresolvedRelations(null, repo)).filter(r => r.kind === 'REFERENCES'), []);
 });

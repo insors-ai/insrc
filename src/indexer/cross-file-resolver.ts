@@ -131,7 +131,8 @@ export interface CrossFileResolveResult {
 }
 
 /** Pass 2 resolves these kinds by name; a row of another code-symbol kind is not attempted. */
-const PASS2_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>(['CALLS', 'INHERITS', 'IMPLEMENTS']);
+// REFERENCES: a SQL table or view naming one defined in another file (Story 9d8b5542).
+const PASS2_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>(['CALLS', 'INHERITS', 'IMPLEMENTS', 'REFERENCES']);
 
 export async function runCrossFileResolver(
   opts: CrossFileResolveOpts,
@@ -522,6 +523,7 @@ async function runPass2(
   // map (one DB read each; per-row helpers below are pure-sync).
   const tList = Date.now();
   const unresolved = await rowsInScope(opts, mode);
+  if (mode === 'settle') unresolved.push(...await sqlReferencesAwaitingCommitted(opts, index, unresolved));
   log.info(
     { repo: opts.repoRoot, rows: unresolved.length, elapsedMs: Date.now() - tList },
     'cross-file Pass 2: listUnresolvedRelations done',
@@ -557,9 +559,16 @@ async function runPass2(
       processed++;
       continue;
     }
+    // A REFERENCES row is attempted only from a SQL entity still in the index.
+    if (row.kind === 'REFERENCES' && fromEntityOf(row, index)?.language !== 'sql') {
+      processed++;
+      continue;
+    }
     const intent: ResolveIntent = row.kind === 'CALLS'
       ? resolveCall(opts, row, index, importsByFile, exports)
-      : resolveInheritance(opts, row, index, importsByFile);
+      : row.kind === 'REFERENCES'
+        ? resolveSqlReference(row, index)
+        : resolveInheritance(opts, row, index, importsByFile);
     if (intent.kind === 'resolved') {
       // Resolved by name across files (s7). An ambiguous name writes no edge:
       // it stays pending with its candidates, so 'chosen' is never written.
@@ -772,6 +781,60 @@ function resolveCall(
 }
 
 // ---------------------------------------------------------------------------
+// SQL references across files (Story 9d8b5542)
+// ---------------------------------------------------------------------------
+
+function fromEntityOf(row: UnresolvedRelation, index: EntityIndex): Entity | undefined {
+  return (index.byFile.get(row.fromFile) ?? []).find(e => e.id === row.fromEntity) ?? index.byId.get(row.fromEntity);
+}
+
+/**
+ * The repository's SQL tables and views a name can mean, as SQL compares
+ * unquoted names (case-insensitively): a qualified name (`app.users`) only
+ * the definition of that qualified name; a bare one (`users`) a definition
+ * named so, or any qualified definition whose last segment it is -- the
+ * schema search path decides which, so several stay several.
+ */
+function sqlCandidates(name: string, index: EntityIndex): Entity[] {
+  // A last-segment key holds no dot, so only a bare name finds qualified definitions there.
+  const key = name.toLowerCase();
+  return [...(index.sqlByName.get(key) ?? []), ...(index.sqlByLastSegment.get(key) ?? [])];
+}
+
+/**
+ * Resolve a SQL REFERENCES row by name among the repository's tables and
+ * views. The same file's references were linked by the reader, so a match
+ * here is another file's: one is the target ('inferred'), several stay
+ * ambiguous, none is no-candidate. The from-entity is never its own target.
+ */
+function resolveSqlReference(row: UnresolvedRelation, index: EntityIndex): ResolveIntent {
+  const candidates = sqlCandidates(row.rawTo, index).filter(e => e.id !== row.fromEntity);
+  if (candidates.length === 1) return { kind: 'resolved', targetId: candidates[0]!.id };
+  if (candidates.length > 1) return { kind: 'ambiguous', meta: { ...row.meta, candidates: candidates.map(e => e.id) } };
+  return UNRESOLVED;
+}
+
+/**
+ * In settle mode: the repository's pending SQL references that a table or
+ * view of a committed file can now answer, beyond the rows already in scope,
+ * so saving the file that defines a table resolves the references waiting on
+ * it. Reads nothing when no committed file defines a table or view.
+ */
+async function sqlReferencesAwaitingCommitted(
+  opts:    CrossFileResolveOpts,
+  index:   EntityIndex,
+  inScope: readonly UnresolvedRelation[],
+): Promise<UnresolvedRelation[]> {
+  const defined = (opts.committedFiles ?? []).flatMap(f => index.byFile.get(f) ?? [])
+    .filter(e => e.language === 'sql' && (e.kind === 'table' || e.kind === 'view'));
+  if (defined.length === 0) return [];
+  const answers = new Set(defined.map(e => e.id));
+  const seen = new Set(inScope.map(r => r.id));
+  return (await listUnresolvedRelations(opts.db, opts.repoRoot))
+    .filter(r => r.kind === 'REFERENCES' && !seen.has(r.id) && sqlCandidates(r.rawTo, index).some(e => answers.has(e.id)));
+}
+
+// ---------------------------------------------------------------------------
 // Same-package visibility (Java / Scala)
 // ---------------------------------------------------------------------------
 
@@ -944,6 +1007,10 @@ interface EntityIndex {
   readonly fileEntities:   Map<string, Entity>;
   /** `<lang>:<kind>:<name>` -> entities matching that triple. */
   readonly byNameKindLang: Map<string, Entity[]>;
+  /** SQL tables and views by lower-cased full name (`app.users`). */
+  readonly sqlByName:      Map<string, Entity[]>;
+  /** Schema-qualified SQL tables and views by lower-cased last segment (`users`), for a bare reference. */
+  readonly sqlByLastSegment: Map<string, Entity[]>;
 }
 
 function buildEntityIndex(entities: readonly Entity[]): EntityIndex {
@@ -951,6 +1018,9 @@ function buildEntityIndex(entities: readonly Entity[]): EntityIndex {
   const byFile         = new Map<string, Entity[]>();
   const fileEntities   = new Map<string, Entity>();
   const byNameKindLang = new Map<string, Entity[]>();
+  const sqlByName        = new Map<string, Entity[]>();
+  const sqlByLastSegment = new Map<string, Entity[]>();
+  const add = (m: Map<string, Entity[]>, k: string, e: Entity) => { const a = m.get(k); if (a === undefined) m.set(k, [e]); else a.push(e); };
 
   for (const e of entities) {
     byId.set(e.id, e);
@@ -971,9 +1041,15 @@ function buildEntityIndex(entities: readonly Entity[]): EntityIndex {
     let fileArr = byFile.get(e.file);
     if (fileArr === undefined) { fileArr = []; byFile.set(e.file, fileArr); }
     fileArr.push(e);
+
+    if (e.language === 'sql' && (e.kind === 'table' || e.kind === 'view')) {
+      const name = e.name.toLowerCase();
+      add(sqlByName, name, e);
+      if (name.includes('.')) add(sqlByLastSegment, name.slice(name.lastIndexOf('.') + 1), e);
+    }
   }
 
-  return { byId, byFile, fileEntities, byNameKindLang };
+  return { byId, byFile, fileEntities, byNameKindLang, sqlByName, sqlByLastSegment };
 }
 
 function entityKey(lang: Language, kind: EntityKind, name: string): string {

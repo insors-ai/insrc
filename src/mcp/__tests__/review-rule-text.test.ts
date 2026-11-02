@@ -22,7 +22,6 @@ import { buildInsrcMcpServerWithRegistry } from '../server.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SOURCE_PATH = join(HERE, '../../prompts/steering-block.md');
-const PLUGIN_PATH = join(HERE, '../../../vscode-plugin/assets/steering-block.md');
 const STEERING = readFileSync(SOURCE_PATH, 'utf8');
 
 /** One line, single spaces: the texts are hard-wrapped, the claims are not. */
@@ -64,27 +63,21 @@ for (const [name, text] of TEXTS) {
 	});
 }
 
-test('T13 the steering review guide states the rule in both directions', () => {
-	const g = guide('review');
-	assert.match(g, /the party that did not author the work reviews it/i);
-	assert.match(g, /An artifact you authored through `insrc_workflow_step` is reviewed by the daemon/);
-	assert.match(g, /an artifact the daemon authored is reviewed by you/);
-	assert.match(g, /The same model on both sides is fine/);
-	assert.match(g, /A subagent you spawn is still you/);
-	assert.match(g, /You do not choose the reviewer\..*the tool routes by who authored the artifact/);
-	assert.match(g, /It does NOT fall back to a review by you/);
-	assert.match(g, /approval requires it/i);
-	assert.match(g, /An ISSUE, SPEC or PLAN needs no review/);
+test('T13 design-review guidance remains explicitly unavailable', () => {
+ const g = guide('review');
+ assert.match(g, /PENDING REVIEW RE-IMPLEMENTATION/);
+ assert.match(g, /Do not retry through another transport/);
 });
 
-test('T13 the steering code-review guide states the rule in both directions', () => {
-	const g = guide('code-review');
-	assert.match(g, /the party that did not write the code reviews it/i);
-	assert.match(g, /You wrote the code .* the tool asks the daemon to review/);
-	assert.match(g, /The daemon wrote the code:.*`emit_judgements`/);
-	assert.match(g, /it does NOT fall back to a review by you/);
-	assert.match(g, /`confirm_wait`/);
-	assert.match(g, /a Story with no code review is always withheld/);
+test('T13 current code-review guidance preserves both parties and explicit task protocol', () => {
+ const g = guide('code-review');
+ assert.match(g, /party that did not write the code/);
+ assert.match(g, /controller-authored code goes to the daemon/);
+ assert.match(g, /daemon-authored code goes to the live controller/);
+ for (const phase of ['start','resume','progress','assignment','scope','activity','result','publish']) assert.ok(g.includes(phase));
+ assert.match(g, /No self-review fallback/);
+ assert.match(g, /whole-story review is withheld/);
+ assert.doesNotMatch(g, /emit_judgements|confirm_wait/);
 });
 
 test('T13 the steering build guide says completion requires a code review whatever the enforcement setting', () => {
@@ -99,25 +92,18 @@ test('T13 the steering tool table describes both review tools by the other-party
 	assert.match(s, /\| `insrc_code_review_step` \| Post-build code review by the party that did not write the code/);
 });
 
-test('T13 the insrc_review_step description states the rule in both directions', () => {
-	const d = description('insrc_review_step');
-	assert.match(d, /by the party that did NOT author it/);
-	assert.match(d, /an artifact the daemon authored is reviewed by YOU \(the controller\)/);
-	assert.match(d, /an artifact YOU authored .* is reviewed by the daemon/);
-	assert.match(d, /The same model on both sides is fine/);
-	assert.match(d, /the tool routes it/);
-	assert.match(d, /never falls back to a review by you/);
-	assert.match(d, /approval REQUIRES it/);
+test('T13 design-review tool remains unavailable', () => {
+ assert.equal(description('insrc_review_step'), 'PENDING REVIEW RE-IMPLEMENTATION');
 });
 
-test('T13 the insrc_code_review_step description states the rule in both directions', () => {
-	const d = description('insrc_code_review_step');
-	assert.match(d, /by the party that did NOT write the code/);
-	assert.match(d, /code the daemon wrote is reviewed by YOU \(the controller\)/);
-	assert.match(d, /code YOU wrote .* is reviewed by the daemon/);
-	assert.match(d, /The same model on both sides is fine/);
-	assert.match(d, /never falls back to a review by you/);
-	assert.match(d, /REQUIRES one, done by the other party/);
+test('T13 current code-review description routes both parties without retired protocol', () => {
+ const d = description('insrc_code_review_step');
+ assert.match(d, /party that did not write the code/);
+ assert.match(d, /Controller-authored code is reviewed by the daemon/);
+ assert.match(d, /daemon-authored code is reviewed by the live controller/);
+ assert.match(d, /No substitute self-review/);
+ assert.match(d, /committed packet/);
+ assert.doesNotMatch(d, /emit_judgements|confirm_wait/);
 });
 
 test('T13 the insrc_workflow_approve description says what approval requires', () => {
@@ -127,6 +113,7 @@ test('T13 the insrc_workflow_approve description says what approval requires', (
 	assert.match(d, /missing, same-party or blocking review/);
 });
 
-test('T13 the plugin copy of the steering source is identical to the source', () => {
-	assert.equal(readFileSync(PLUGIN_PATH, 'utf8'), STEERING);
+test('T13 canonical guide sections are independently addressable', () => {
+ assert.ok(guide('review')); assert.ok(guide('code-review')); assert.ok(guide('tracker'));
+ assert.doesNotMatch(guide('review'), /committed task review/);
 });

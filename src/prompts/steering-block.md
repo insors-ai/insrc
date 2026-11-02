@@ -332,6 +332,10 @@ references and full test cases, commands, results and execution details. Never i
 scope from HEAD or omit selected modules. Test-coverage inspection is mandatory;
 running tests/integration/build is optional and any skipped execution is advice.
 
+The party that did not write the code reviews it: controller-authored code goes
+to the daemon, and daemon-authored code goes to the live controller. No self-review
+fallback. A story with no valid independent whole-story review is withheld.
+
 1. `start`: supply repo, epicHash, reviewId, attempt and packet. The daemon derives
    the independent reviewer from BUILD author. Acknowledge only; do not wait for
    the model in the tool call. Store the returned checkpoint path.

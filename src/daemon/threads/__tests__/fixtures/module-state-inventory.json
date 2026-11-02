@@ -834,6 +834,10 @@
 		"class": "per-thread",
 		"reason": "This thread's LanceDB table handle; each thread opens its own handles over the shared Lance directory, as the worker-stores design requires."
 	},
+	"src/db/relations.ts#sqlReferenceReader": {
+		"class": "per-thread",
+		"reason": "A registry or registration latch filled at module load or bootstrap on every thread that loads the module; each thread builds the same contents, so a copy per thread is correct."
+	},
 	"src/db/relations.ts#KIND_OF_BYTE": {
 		"class": "per-thread",
 		"reason": "A read-only lookup set or map, built once at module load and never changed afterwards, so a copy per thread is identical and correct."

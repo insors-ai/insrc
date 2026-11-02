@@ -32,6 +32,7 @@ import type { CodeParser, ParseResult } from './base.js';
 import { makeEntityId } from './base.js';
 import type { Entity, Language, Relation } from '../../shared/types.js';
 import { loadReader, registerParser } from './registry.js';
+import { setSqlReferenceReader } from '../../db/relations.js';
 
 type SyntaxNode = import('tree-sitter').SyntaxNode;
 
@@ -96,6 +97,21 @@ export class SqlParser implements CodeParser {
 		this.tsParser = Parser === null ? null : new Parser();
 		(this.tsParser as { setLanguage(l: unknown): void } | null)?.setLanguage(grammar);
 		this.language = this.tsParser === null ? 'config' : 'sql';
+	}
+
+	/**
+	 * The names a CREATE TABLE / VIEW statement references, read as this reader
+	 * reads them when it parses the file (a view's CTE names are not
+	 * references; strings, comments and aliases are not names), or undefined
+	 * without a grammar or when the text holds no such statement.
+	 */
+	referencesIn(statement: string): string[] | undefined {
+		const root = (this.tsParser as { parse(s: string): { rootNode: SyntaxNode } } | null)?.parse(statement).rootNode;
+		if (root === undefined) return undefined;
+		const stmt = [...descendants(root, 'create_table'), ...descendants(root, 'create_view')]
+			.sort((a, b) => a.startIndex - b.startIndex)[0];
+		if (stmt === undefined) return undefined;
+		return stmt.type === 'create_table' ? tableReferences(stmt) : viewReferences(stmt);
 	}
 
 	parse(filePath: string, source: string, repo: string, repoId: number): ParseResult {
@@ -166,3 +182,7 @@ export const sqlParser: SqlParser | null = registerSqlReader(() => {
 	const grammar = _require('@derekstride/tree-sitter-sql') as unknown;
 	return new SqlParser(Parser, grammar);
 });
+
+// A SQL reference whose target is removed returns pending under the names this
+// reader reads in its holder's statement (Story 9d8b5542), not a guess at them.
+if (sqlParser !== null) setSqlReferenceReader(statement => sqlParser.referencesIn(statement));

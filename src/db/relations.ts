@@ -621,40 +621,42 @@ export function returnEdgeToPendingInTxn(s: GraphStore, fromU64: bigint, kindByt
 }
 
 /**
- * A SQL reference is matched by name (Story 9d8b5542), and a table that moves
- * to another file comes back under another id: a reference between SQL
- * entities of one repository returns pending by NAME, not awaiting the old
- * id, so the cross-file pass finds the table wherever it is now -- or classes
- * the name when it is gone. The name is the one the user wrote, read from the
- * holder's own text: the qualified form (`app.users`) and/or the bare one
- * (`users`), one row each, as the SQL reader writes them. Undefined for any
- * other reference (another language, another repository): it awaits the id.
+ * The names a SQL table or view statement references, as the SQL reader reads
+ * them (registered by the reader when its grammar loads; the store does not
+ * parse SQL itself). Unset on a thread that has not loaded the reader.
  */
-function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, toU64: bigint): UnresolvedRow[] | undefined {
-	const holder = decodeEntityRow(s.entity.get(encodeEntityKey(fromU64)) as Buffer);
-	const target = decodeEntityRow(s.entity.get(encodeEntityKey(toU64)) as Buffer);
-	if (holder.language !== 'sql' || target.language !== 'sql' || holder.repoId !== target.repoId) return undefined;
-	const { awaitsId: _a, class: _c, reason: _r, ...meta } = awaiting.meta;
-	void _a; void _c; void _r;
-	const repo = meta['repo'] as string;
-	return writtenSqlNames(holder.body, target.name).map(name =>
-		({ ...awaiting, id: makeUnresolvedRelationId(repo, awaiting.fromEntity, 'REFERENCES', name), rawTo: name, meta }));
+let sqlReferenceReader: ((statement: string) => string[] | undefined) | undefined;
+
+/** Register (or clear) the SQL reader's reference extraction. */
+export function setSqlReferenceReader(read: ((statement: string) => string[] | undefined) | undefined): void {
+	sqlReferenceReader = read;
 }
 
 /**
- * The forms of `name` a SQL text writes: the qualified one (`app.users`, quotes
- * and spaces around the dots allowed) and/or the bare one (`users`, not after
- * a dot and not before one). The name itself when the text has neither.
+ * A SQL reference is matched by name (Story 9d8b5542), and a table that moves
+ * to another file comes back under another id: a reference between SQL
+ * entities of one repository returns pending by NAME, so the cross-file pass
+ * finds the table wherever it is now -- or classes the name when it is gone.
+ * The names are the ones the holder's statement references, read by the SQL
+ * reader's own parse, that could have meant the removed target: its full name,
+ * or a bare name equal to its last segment (one row each, as the reader writes
+ * them). Undefined -- the reference awaits the id, as before -- for any other
+ * reference, when the reader is not registered, or when no written name fits.
  */
-export function writtenSqlNames(text: string, name: string): string[] {
-	const esc = (seg: string) => seg.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const part = (seg: string) => `["\`[]?${esc(seg)}["\`\\]]?`;
-	const segs = name.split('.');
-	const last = segs[segs.length - 1]!;
-	const out: string[] = [];
-	if (segs.length > 1 && new RegExp(`(?<![\\w.])${segs.map(part).join('\\s*\\.\\s*')}(?![\\w"\`\\]])`, 'i').test(text)) out.push(name);
-	if (new RegExp(`(?<![\\w."\`[])(?<!\\.\\s+)${part(last)}(?![\\w"\`\\]])(?!\\s*\\.)`, 'i').test(text)) out.push(last);
-	return out.length > 0 ? [...new Set(out)] : [name];
+function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, toU64: bigint): UnresolvedRow[] | undefined {
+	if (sqlReferenceReader === undefined) return undefined;
+	const holder = decodeEntityRow(s.entity.get(encodeEntityKey(fromU64)) as Buffer);
+	const target = decodeEntityRow(s.entity.get(encodeEntityKey(toU64)) as Buffer);
+	if (holder.language !== 'sql' || target.language !== 'sql' || holder.repoId !== target.repoId) return undefined;
+	const full = target.name.toLowerCase();
+	const last = full.slice(full.lastIndexOf('.') + 1);
+	const names = [...new Set(sqlReferenceReader(holder.body) ?? [])]
+		.filter(n => n.toLowerCase() === full || (!n.includes('.') && n.toLowerCase() === last));
+	if (names.length === 0) return undefined;
+	const { awaitsId: _a, class: _c, reason: _r, ...meta } = awaiting.meta;
+	void _a; void _c; void _r;
+	const repo = meta['repo'] as string;
+	return names.map(name => ({ ...awaiting, id: makeUnresolvedRelationId(repo, awaiting.fromEntity, 'REFERENCES', name), rawTo: name, meta }));
 }
 
 // ---------------------------------------------------------------------------

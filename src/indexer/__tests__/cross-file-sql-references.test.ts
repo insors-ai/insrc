@@ -21,7 +21,8 @@ import { join } from 'node:path';
 
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { commitFile, entityU64ForId, upsertEntities } from '../../db/entities.js';
-import { listUnresolvedRelations, upsertRelations, writtenSqlNames } from '../../db/relations.js';
+import { listUnresolvedRelations, setSqlReferenceReader, upsertRelations } from '../../db/relations.js';
+import { sqlParser } from '../parser/sql.js';
 import { outNeighbors } from '../../db/graph/edges.js';
 import { addRepo } from '../../db/repos.js';
 import type { DbClient } from '../../db/client.js';
@@ -131,6 +132,13 @@ test('a settle that commits the file defining a table resolves a waiting referen
 	assert.deepEqual(await pendingOf(report!), []);
 });
 
+/** A view with its statement as the reader stores it (a returned reference is read from it). */
+async function holder(rel: string, name: string, sql: string): Promise<Entity> {
+	const v: Entity = { ...ent('view', name, rel), body: sql };
+	await upsertEntities(null, [ent('file', '', rel), v]);
+	return v;
+}
+
 /** A file's tables/views committed as the indexer commits a re-parsed file (its removed entities' edges return to pending). */
 async function commit(rel: string, ...objects: Array<[EntityKind, string]>): Promise<Entity[]> {
 	const es = [ent('file', '', rel), ...objects.map(([k, n]) => ent(k, n, rel))];
@@ -140,43 +148,43 @@ async function commit(rel: string, ...objects: Array<[EntityKind, string]>): Pro
 
 test('a table moved to another file: the settle for the two files re-links the reference of an unchanged file to its new place', async () => {
 	await commit('db/b.sql', ['table', 'orgs']);
-	const [report] = await define('db/report.sql', ['view', 'report']);
-	await refer(report!, 'orgs');
+	const report = await holder('db/report.sql', 'report', 'CREATE VIEW report AS SELECT * FROM orgs');
+	await refer(report, 'orgs');
 	await pass();
 
 	await commit('db/b.sql');                       // orgs leaves b.sql: its edge returns to pending, by name
 	const [moved] = await commit('db/c.sql', ['table', 'orgs']);
 	await pass('settle', [at('db/b.sql'), at('db/c.sql')]);
 
-	assert.deepEqual(await referenced(report!, new Map([[moved!.id, 'c.sql orgs']])), ['c.sql orgs: inferred']);
-	assert.deepEqual(await pendingOf(report!), []);
+	assert.deepEqual(await referenced(report, new Map([[moved!.id, 'c.sql orgs']])), ['c.sql orgs: inferred']);
+	assert.deepEqual(await pendingOf(report), []);
 });
 
 test('a table renamed in its file: the settle classes the waiting reference no-candidate by its name', async () => {
 	await commit('db/b.sql', ['table', 'orgs']);
-	const [report] = await define('db/report.sql', ['view', 'report']);
-	await refer(report!, 'orgs');
+	const report = await holder('db/report.sql', 'report', 'CREATE VIEW report AS SELECT * FROM orgs');
+	await refer(report, 'orgs');
 	await pass();
 
 	await commit('db/b.sql', ['table', 'organisations']);
 	await pass('settle', [at('db/b.sql')]);
 
-	const rows = await pendingOf(report!);
+	const rows = await pendingOf(report);
 	assert.deepEqual(rows.map(r => [r.rawTo, r.meta['class'], r.meta['awaitsId']]), [['orgs', 'no-candidate', undefined]]);
 });
 
 test('removing one of two definitions: the settle resolves the reference that was ambiguous between them', async () => {
 	const [kept] = await commit('db/b.sql', ['table', 'users']);
 	await commit('db/c.sql', ['table', 'users']);
-	const [report] = await define('db/report.sql', ['view', 'report']);
-	await refer(report!, 'users');
+	const report = await holder('db/report.sql', 'report', 'CREATE VIEW report AS SELECT * FROM users');
+	await refer(report, 'users');
 	await pass();
-	assert.equal((await pendingOf(report!))[0]?.meta['class'], 'ambiguous');
+	assert.equal((await pendingOf(report))[0]?.meta['class'], 'ambiguous');
 
 	await commit('db/c.sql');
 	await pass('settle', [at('db/c.sql')]);
 
-	assert.deepEqual(await referenced(report!, new Map([[kept!.id, 'b.sql users']])), ['b.sql users: inferred']);
+	assert.deepEqual(await referenced(report, new Map([[kept!.id, 'b.sql users']])), ['b.sql users: inferred']);
 });
 
 test('a view never answers its own reference; a REFERENCES row from a non-SQL entity is not attempted; a settle with no SQL file reads no SQL reference', async () => {
@@ -227,11 +235,43 @@ test('a reference from a non-SQL entity whose target is removed still awaits the
 	assert.deepEqual((await pendingOf(ts)).map(r => [r.rawTo, r.meta['awaitsId']]), [[table!.id, true]]);
 });
 
-test('the names a returned reference comes back under are the forms its holder wrote', () => {
-	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM users', 'app.users'), ['users']);
-	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM app.users', 'app.users'), ['app.users']);
-	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM "app"."users" u JOIN users x ON true', 'app.users'), ['app.users', 'users']);
-	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT users.id FROM app . users', 'app.users'), ['app.users'], 'users.id is a column prefix, not the bare table');
-	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT * FROM [Ledger]', 'ledger'), ['ledger']);
-	assert.deepEqual(writtenSqlNames('CREATE VIEW r AS SELECT 1', 'app.users'), ['app.users'], 'the name itself when the text has neither');
+test('a returned reference comes back only under names the holder references: a CTE, a string, an alias or a comment is not one', async () => {
+	assert.ok(sqlParser, 'the SQL reader is loaded and registered its reference extraction');
+	await commit('db/b.sql', ['table', 'app.users']);
+	const [other] = await commit('db/c.sql', ['table', 'audit.users']);
+	const report = await holder('db/report.sql', 'report',
+		"CREATE VIEW report AS WITH users AS (SELECT * FROM app.users) SELECT 'users' AS users FROM users -- users");
+	await refer(report, 'app.users');
+	await pass();
+
+	await commit('db/b.sql');                       // app.users is gone; the statement never named a bare users table
+	await pass('settle', [at('db/b.sql')]);
+
+	assert.deepEqual(await referenced(report, new Map([[other!.id, 'audit.users']])), [], 'no edge to audit.users is made up');
+	assert.deepEqual((await pendingOf(report)).map(r => [r.rawTo, r.meta['class']]), [['app.users', 'no-candidate']]);
+});
+
+test('without the SQL reader registered, a reference whose target is removed awaits the target id, as before', async () => {
+	const [table] = await commit('db/b.sql', ['table', 'orgs']);
+	const report = await holder('db/report.sql', 'report', 'CREATE VIEW report AS SELECT * FROM orgs');
+	await refer(report, 'orgs');
+	await pass();
+
+	setSqlReferenceReader(undefined);
+	try {
+		await commit('db/b.sql');
+	} finally {
+		setSqlReferenceReader(statement => sqlParser!.referencesIn(statement));
+	}
+	assert.deepEqual((await pendingOf(report)).map(r => [r.rawTo, r.meta['awaitsId']]), [[table!.id, true]]);
+});
+
+test('a holder whose statement names nothing that could mean the removed target: the reference awaits the target id', async () => {
+	const [table] = await commit('db/b.sql', ['table', 'orgs']);
+	const report = await holder('db/report.sql', 'report', 'CREATE VIEW report AS SELECT * FROM organisations');
+	await upsertRelations(null, [{ kind: 'REFERENCES', from: report.id, to: table!.id, resolved: true, meta: { repo } }]);
+
+	await commit('db/b.sql');
+
+	assert.deepEqual((await pendingOf(report)).map(r => [r.rawTo, r.meta['awaitsId']]), [[table!.id, true]]);
 });

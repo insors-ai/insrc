@@ -1,7 +1,7 @@
 import { isAbsolute } from 'node:path';
 import { MemoryError } from '../errors.js';
-import type { HostPolicy, Json, MemoryCommand, OperationReceipt, ProjectBinding } from '../types.js';
-import { boundedString, IngressBudget, snapshotCommand, snapshotJson } from './codec.js';
+import type { HostPolicy, Json, MemoryCommand, OperationReceipt, OperationRequest, ProjectBinding } from '../types.js';
+import { boundedString, IngressBudget, snapshotCommand, snapshotJson, validateScope } from './codec.js';
 import type { Reservation } from './codec.js';
 import { FileQueue } from './file-queue.js';
 
@@ -22,6 +22,21 @@ export class QueueAdmission {
       return snapshot;
     } catch (error) { throw policyFailure(error); }
   }
+  operation(request: OperationRequest): Promise<OperationReceipt> {
+    let lease: Reservation | undefined;
+    try {
+      lease = this.#budget.reserve();
+      const value = snapshotJson(request, 16_384, lease).value as unknown as OperationRequest;
+      if (!value || typeof value !== 'object' || Object.keys(value).sort().join(',') !== 'operationId,scope' || typeof value.operationId !== 'string' || !/^[a-f0-9]{64}$/.test(value.operationId)) throw new MemoryError('INVALID_REQUEST', 'Invalid memory operation query.');
+      validateScope(value.scope);
+      const reservation = lease;
+      return this.#queue.enqueue(async () => {
+        const binding = await this.bind(value.scope.projectId, value.scope.sessionId);
+        return this.#queue.operationWithinLane(value.scope, value.operationId, binding.scopeEpoch);
+      }).finally(() => reservation.release());
+    } catch (error) { lease?.release(); return Promise.reject(error); }
+  }
+  replay() { return this.#queue.replay(); }
   append(command: MemoryCommand): Promise<OperationReceipt> {
     let lease: Reservation | undefined;
     try {

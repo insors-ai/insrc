@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -123,3 +123,26 @@ Run at 2026-11-02T07:27:05.062Z on commit `f14a8ef95`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-append.test.ts` | 0 | 3 | 1.5 s |  |
+
+## t6
+
+Run at 2026-11-02T07:30:49.857Z on commit `54e12c6af`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: concurrent-admission-fifo-and-idempotent-retry**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | concurrent-admission-fifo-and-idempotent-retry | `packages/project-memory/src/__tests__/queue-admission.test.ts` |
+| pass | admission-quota-refunds-and-hanging-policy-drains-safely | `packages/project-memory/src/__tests__/queue-admission.test.ts` |
+
+**integration: privacy-binding-and-scope-status-isolation-before-enqueue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | privacy-binding-and-scope-status-isolation-before-enqueue | `packages/project-memory/src/__tests__/queue-admission.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-admission.test.ts` | 0 | 3 | 2.1 s |  |

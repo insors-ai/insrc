@@ -1,7 +1,7 @@
-import type { MemoryLimits, OperationReceipt } from '../types.js';
+import type { MemoryLimits, OperationReceipt, Scope } from '../types.js';
 import type { DirectoryOwnership } from '../ownership.js';
 import { MemoryError } from '../errors.js';
-import { boundedString, encodeFrame, validateQueueLimits } from './codec.js';
+import { boundedString, decodeFrame, encodeFrame, validateQueueLimits, visibleScope } from './codec.js';
 import type { CommandSnapshot } from './codec.js';
 import { advance, CheckpointWriter, reserveMetadata } from './checkpoint.js';
 import type { FrameRecord } from './checkpoint.js';
@@ -10,7 +10,7 @@ import type { IoHooks } from './io.js';
 import { indexFrame, recoverQueue } from './recovery.js';
 import type { IndexedFrame } from './recovery.js';
 import { QUEUE_LIMITS } from './types.js';
-import type { EventBody, QueueStats, SegmentHeader } from './types.js';
+import type { EventBody, QueueFrame, QueueStats, SegmentHeader } from './types.js';
 
 class QueueWriteError extends MemoryError {
   constructor(readonly operationId: string) { super('STORE_UNAVAILABLE', 'Queue durability could not be verified; reopen before retrying.', true); }
@@ -23,6 +23,10 @@ export class FileQueue {
   readonly index = new Map<string, IndexedFrame>();
   #tail: Promise<void> = Promise.resolve();
   #calls = 0;
+  #readerActive = false;
+  #readersIdle: Promise<void> = Promise.resolve();
+  #readersDone: (() => void) | undefined;
+  readonly #pins = new Set<string>();
   #reserved = 0;
   #ready = false;
   #stopped = false;
@@ -93,14 +97,60 @@ export class FileQueue {
     } catch { this.#fenced = true; throw new QueueWriteError(snapshot.operationId); }
     finally { this.#reserved -= outstanding; }
   }
+  operationWithinLane(scope: Scope, operationId: string, scopeEpoch: string): OperationReceipt {
+    const entry = this.index.get(operationId);
+    if (!entry || entry.scopeEpoch !== scopeEpoch || !visibleScope(entry.scope, scope)) throw new MemoryError('INVALID_REQUEST', 'Memory operation is unavailable in this scope.');
+    return { operationId, eventId: entry.eventId, state: 'accepted' };
+  }
+  isPinned(segmentId: string): boolean { return this.#pins.has(segmentId); }
+  replay(): AsyncIterable<QueueFrame> {
+    const acquired = this.enqueue(async () => {
+      if (this.#readerActive) throw new MemoryError('NOT_READY', 'A queue replay reader is already active.');
+      const entries = [...this.index.values()].filter(entry => !entry.record.terminal).sort((a, b) => BigInt(a.record.sequence) < BigInt(b.record.sequence) ? -1 : 1);
+      this.#readerActive = true;
+      this.#readersIdle = new Promise<void>(resolve => { this.#readersDone = resolve; });
+      for (const entry of entries) this.#pins.add(entry.segmentId);
+      return entries;
+    });
+    // An unused iterable must not produce an unhandled rejection.
+    void acquired.catch(() => undefined);
+    let released = false;
+    const release = async () => {
+      const entries = await acquired.catch(() => undefined);
+      if (released || !entries) return;
+      released = true; this.#pins.clear(); this.#readerActive = false; this.#readersDone?.(); this.#readersDone = undefined;
+    };
+    const queue = this;
+    const generator = (async function* () {
+      try {
+        for (const entry of await acquired) {
+          let frame: QueueFrame;
+          try {
+            const decoded = decodeFrame(await queue.io.readRange('segments/' + segmentName(entry.segmentId), entry.record.offset, entry.record.length), queue.limits.maxEventBytes);
+            const body = decoded.body;
+            if (body.recordType !== 'event' || body.operationId !== entry.record.operationId || body.sequence !== entry.record.sequence || body.payloadHash !== entry.payloadHash || body.scopeEpoch !== entry.scopeEpoch || body.queueId !== queue.writer.current.queueId) throw new MemoryError('STORE_UNAVAILABLE', 'Replay frame integrity failed.');
+            frame = Object.freeze({ ...body, checksum: decoded.checksum });
+          } catch { queue.#fenced = true; throw new MemoryError('STORE_UNAVAILABLE', 'Replay frame integrity failed.'); }
+          yield frame;
+        }
+      } finally { await release(); }
+    })();
+    const iterator: AsyncIterableIterator<QueueFrame> = {
+      next: () => generator.next(),
+      async return() { try { return await generator.return(undefined); } finally { await release(); } },
+      async throw(error: unknown) { try { return await generator.throw(error); } finally { await release(); } },
+      [Symbol.asyncIterator]() { return this; },
+    };
+    return iterator;
+  }
   stats(): QueueStats {
     const retained = this.#ready ? this.writer.current.segments.reduce((sum, s) => sum + s.acceptedOffset, 0) : 0;
     const pending = [...this.index.values()].filter(entry => !entry.record.terminal);
     return { pendingBytes: retained + this.#reserved, pendingEvents: pending.length, oldestPendingMs: pending.length ? Math.max(0, Date.now() - Math.min(...pending.map(entry => entry.admittedAtMs))) : 0 };
   }
   stopAdmission(): void { this.#stopped = true; }
-  pending(): number { return this.#calls; }
-  async drain(): Promise<void> { await this.#tail; }
+  pending(): number { return this.#calls + (this.#readerActive ? 1 : 0); }
+  async drain(): Promise<void> { await this.#tail; if (this.#readerActive) await this.#readersIdle; }
   /** Seal this writer's admission, retaining the active recovery segment identity. */
   async seal(): Promise<void> {
     this.stopAdmission(); await this.drain();

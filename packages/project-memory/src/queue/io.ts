@@ -148,6 +148,18 @@ export class QueueIo {
       } finally { await this.#release(file); }
     });
   }
+  async readRange(name: string, offset: number, length: number): Promise<Buffer> {
+    if (!Number.isSafeInteger(offset) || offset < 0 || !Number.isSafeInteger(length) || length < 1 || length > QUEUE_LIMITS.maxEventBytes + QUEUE_LIMITS.frameOverhead) throw failure();
+    return this.#action('read-range', name, false, async () => {
+      const file = await this.#open(name, false);
+      try {
+        if (offset + length > (await file.stat()).size) throw failure();
+        const bytes = Buffer.alloc(length); let done = 0;
+        while (done < length) { const read = await file.read(bytes, done, length - done, offset + done); if (!read.bytesRead) throw failure(); done += read.bytesRead; }
+        await this.#checkFile(name, file); return bytes;
+      } finally { await this.#release(file); }
+    });
+  }
   /** Bounded streaming scanner; also yields an unterminated final fragment. */
   async *scan(name: string, maxLineBytes: number, maxFileBytes: number): AsyncIterable<{ bytes: Buffer; offset: number; end: number; terminated: boolean }> {
     const file = await this.#open(name, false);

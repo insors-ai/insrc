@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T07:27:05.062Z",
+    "updatedAt": "2026-11-02T07:30:49.857Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -340,6 +340,68 @@
               },
               {
                 "title": "ambiguous-append-fences-and-reopen-deduplicates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "54e12c6af",
+        "ranAt": "2026-11-02T07:30:49.857Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "concurrent-admission-fifo-and-idempotent-retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+                "title": "concurrent-admission-fifo-and-idempotent-retry",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+                "title": "admission-quota-refunds-and-hanging-policy-drains-safely",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "privacy-binding-and-scope-status-isolation-before-enqueue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+                "title": "privacy-binding-and-scope-status-isolation-before-enqueue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2143,
+            "titles": [
+              {
+                "title": "concurrent-admission-fifo-and-idempotent-retry",
+                "result": "pass"
+              },
+              {
+                "title": "privacy-binding-and-scope-status-isolation-before-enqueue",
+                "result": "pass"
+              },
+              {
+                "title": "admission-quota-refunds-and-hanging-policy-drains-safely",
                 "result": "pass"
               }
             ],

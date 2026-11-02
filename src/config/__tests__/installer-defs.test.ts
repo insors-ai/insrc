@@ -123,3 +123,54 @@ test("installer-defs.test.ts: both installer copies are identical with no tier-m
 	// No family runs the chosen CLI: the installer stops with an actionable error.
 	dryRun('claude', 'ollama', twoCodex, true);
 });
+
+test('S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies', () => {
+	const script = read('scripts/insrc-daemon-install.sh');
+	assert.equal(read('vscode-plugin/assets/insrc-daemon-install.sh'), script, 'both copies are identical');
+	const start = script.indexOf('# Step 3: npm install + build');
+	const end = script.indexOf('# Step 4: symlink');
+	assert.ok(start > 0 && end > start, 'the step-3 block is found');
+	const step3 = script.slice(start, end);
+
+	const dir = mkdtempSync(join(tmpdir(), 'installer-step3-'));
+	try {
+		// A daemon checkout with a committed lockfile, and a fake npm that logs
+		// "<args>|<CXXFLAGS>" and exits with the code in npm-exit (0 when absent).
+		const src = join(dir, 'daemon');
+		mkdirSync(src);
+		writeFileSync(join(src, 'package-lock.json'), '{"lockfileVersion":3}\n');
+		const git = (...args: string[]) => spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: src, encoding: 'utf8' }).stdout.trim();
+		git('init', '-q');
+		git('add', '.');
+		git('commit', '-q', '-m', 'seed');
+		const lockHash = git('hash-object', 'package-lock.json');
+		const bin = join(dir, 'bin');
+		mkdirSync(bin);
+		const npmLog = join(dir, 'npm.log');
+		const npmExit = join(dir, 'npm-exit');
+		writeFileSync(join(bin, 'npm'), `#!/bin/sh\necho "$*|$CXXFLAGS" >> '${npmLog}'\nif [ -f '${npmExit}' ]; then exit "$(cat '${npmExit}')"; fi\nexit 0\n`, { mode: 0o755 });
+		const marker = join(src, 'node_modules', '.insrc-install-ok');
+		const prelude = `set -euo pipefail\nlog(){ :; }\nok(){ :; }\ndie(){ echo "FATAL: $*" >&2; exit "\${2:-1}"; }\nDAEMON_SRC='${src}'\n`;
+		const runStep3 = (cxxflags?: string) => spawnSync('bash', ['-c', prelude + step3], {
+			encoding: 'utf8',
+			env: { ...process.env, PATH: `${bin}:${process.env['PATH']}`, ...(cxxflags !== undefined ? { CXXFLAGS: cxxflags } : { CXXFLAGS: '' }) },
+		});
+
+		const r = runStep3();
+		assert.equal(r.status, 0, r.stderr);
+		assert.equal(readFileSync(npmLog, 'utf8').split('\n')[0], 'install --no-fund --no-audit|-std=c++17', 'npm install asks for C++17');
+		assert.equal(readFileSync(marker, 'utf8').trim(), lockHash, 'the marker holds the lockfile blob hash after the install');
+
+		rmSync(npmLog);
+		assert.equal(runStep3('-O2').status, 0);
+		assert.equal(readFileSync(npmLog, 'utf8').split('\n')[0], 'install --no-fund --no-audit|-O2 -std=c++17', "the caller's CXXFLAGS are kept");
+
+		// A failed install stops the installer and leaves no marker, though one was there before.
+		writeFileSync(npmExit, '1');
+		const failed = runStep3();
+		assert.notEqual(failed.status, 0, 'a failed npm install stops the installer');
+		assert.equal(existsSync(marker), false, 'no marker after a failed install');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

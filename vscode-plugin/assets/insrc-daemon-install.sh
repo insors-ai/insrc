@@ -198,10 +198,23 @@ fi
 
 [ -d "$DAEMON_SRC" ] || die "expected daemon source at $DAEMON_SRC but not found -- was the branch renamed?" 3
 
+# The install marker (INSTALL_MARKER in src/cli/services/maintenance.ts, also
+# read by scripts/daemon-ctl.sh): the blob hash of the package-lock.json the last
+# successful npm install ran from. Removed before the install and written after
+# it, so the first update after a good install skips and one after a failed
+# install installs again. CXXFLAGS asks for C++17 (NATIVE_CXX_STD there): fs-ext
+# sets no standard and does not build on the Node 22.22.1 headers without it.
+INSTALL_MARKER="$DAEMON_SRC/node_modules/.insrc-install-ok"
+rm -f "$INSTALL_MARKER"
 log "installing daemon dependencies (may take a few minutes on first install) ..."
-( cd "$DAEMON_SRC" && npm install --no-fund --no-audit ) 2>&1 | tail -3 | while IFS= read -r line; do
+( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }-std=c++17" npm install --no-fund --no-audit ) 2>&1 | tail -3 | while IFS= read -r line; do
 	printf '   %s\n' "$line"
 done
+LOCK_HASH=$(git -C "$DAEMON_SRC" hash-object package-lock.json 2>/dev/null || echo "")
+if [ -n "$LOCK_HASH" ]; then
+	mkdir -p "$(dirname "$INSTALL_MARKER")"
+	printf '%s\n' "$LOCK_HASH" > "$INSTALL_MARKER"
+fi
 ok "npm install done"
 
 log "building daemon (tsc) ..."

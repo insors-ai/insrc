@@ -131,7 +131,10 @@ export function createGithubTracker(owner: string, repo: string, opts: GithubTra
 		readSignoffState: (request: SignoffRequestRef, since?: string) => attempt(() => tableOf().readSignoffState(request, since)),
 		readSignoffRequest: (request: SignoffRequestRef) => attempt(() => tableOf().readSignoffRequest(request)),
 
-		readIssueStatus: (issue: IssueRef) => attempt(() => tableOf().ghGetIssueState(owner, repo, issue)),
+		readIssueStatus: (issue: IssueRef) => attempt(async () => {
+			const s = await tableOf().ghGetIssueState(owner, repo, issue);
+			return { state: s.state === 'closed' ? 'closed' as const : 'open' as const, labels: s.labels };
+		}),
 	};
 }
 

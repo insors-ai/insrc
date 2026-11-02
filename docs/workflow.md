@@ -244,6 +244,15 @@ Use `insrc_workflow_step` to run tracker.sync for
 add-tag-filtering-todos.
 ```
 
+#### Automatic status refresh and issues at first draft
+
+With the tracker on, the daemon keeps the status current without a manual sync:
+
+- **After a pull or a push.** A successful, non-dry-run `git_pull`, and a `git_push` that pushed, run through the daemon's tools in a registered repository root refresh `meta.tracker` (`epicStatus`, `storyStatus`, `lastSyncedAt`) of every Epic that has an issue. The refresh has a 120-second budget; Epics it does not reach are skipped with "time limit reached". A failure, a denied call or a slow tracker never fails the git tool: the result stays a success and carries `hookFailures` and a line of output. The refresh does not run for git typed in a terminal or an IDE, for a subdirectory or a linked worktree, for a dry run, or when the call names no `cwd`; use the explicit refresh there.
+- **Explicit refresh.** `insrc workflow sync <epic-hash>` (the daemon method `tracker.sync`) runs the same refresh for one Epic. The chain report's next action names it.
+- **Issues at first draft.** A repo with no team policy whose tracker setting is on (type github) gets the Epic and Story issues when the first draft is written, as a team repo does; with tracker type `none` no tracker call is made. The terminal approve finds those issues and creates no duplicate.
+- **What the chain report shows.** The tracker section lists the Define's artifact id and revision and, for each Story with an issue, its issue key and its LLD's artifact id and revision (0 when absent). They are shown only; nothing is stored.
+
 To attach a design summary as a comment on the target issue:
 
 ```

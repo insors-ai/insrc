@@ -217,7 +217,16 @@
       "model": "cli-claude:claude-sonnet-5",
       "reviewedBy": "daemon"
     },
-    "approvedAt": "2026-11-02T09:15:01.804Z"
+    "approvedAt": "2026-11-02T09:15:01.804Z",
+    "questionResolutions": {
+      "qa64cd4f3": {
+        "question": "NOTE (s8 cd1 partial): index.subsystems, groupSubsystems, runSubsystemPass, readSubsystems, withSubsystemContext, MIGRATION_V7_TO_V8 and the 'subsystems' job kind are new names this Story introduces. Its boundary owns the request, tables and pass, and it owns no shared contract.",
+        "status": "resolved",
+        "choice": "Accept as LLD-concrete (adopt as canonical)",
+        "rationale": "These are s8's own names (its boundary owns the request, tables and pass); the plan builds them. Same default as the equivalent note on s9, stated to the user 2026-11-02.",
+        "resolvedAt": "2026-11-02T09:16:46.359Z"
+      }
+    }
   },
   "body": {
     "summary": {

@@ -363,20 +363,19 @@ Group entities, not files, by deterministic label propagation over entity relati
 - NOTE (s8 alt2 partial): alternatives were scored against ac1-ac5, sc1 and sc3. The Epic constraints the criteria operationalize (k1-k4, k9) were not scored separately, as on s2/s7/s9.
 - RESOLVED (user decision 2026-11-02): subsystem summaries use the cheap tier, through buildSummariserProvider, as document summaries do, whatever runner the tier is configured with. ac4's 'the local model' and k9's 'local model' are read as 'the cheap-tier model'; calls stay one at a time. The user's direction is that the local model is to be removed in the future, so no Ollama-specific path is added.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qa64cd4f3` — NOTE (s8 cd1 partial): index.subsystems, groupSubsystems, runSubsystemPass, readSubsystems, withSubsystemContext, MIGRATION_V7_TO_V8 and the 'subsystems' job kind are new names this Story introduces. Its boundary owns the request, tables and pass, and it owns no shared contract.
+  - **resolved**: Accept as LLD-concrete (adopt as canonical) — These are s8's own names (its boundary owns the request, tables and pass); the plan builds them. Same default as the equivalent note on s9, stated to the user 2026-11-02. _(2026-11-02T09:16:46.359Z)_
 
-### ✅ Review `PASS` — design.story (design.story)
+## Citations
 
-**0 do not hold · 0 could not be verified · 14 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-11-02T09:11:06.155Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-_None._
+- **[[c1]]** `code` `src/db/index-state.ts:44` — "export async function readIndexState(repoPath: string): Promise<IndexState | undefined> {"
+- **[[c2]]** `code` `src/db/graph/edges.ts:105` — "export async function outNeighbors(from: bigint, opts: NeighborOpts & { readonly withEvidence: true }): Promise<NeighborRelation[]>;"
+- **[[c3]]** `code` `src/indexer/index.ts:848` — "this.queue.enqueue({ kind: 'doc-summarise-repo', repoPath });"
+- **[[c4]]** `code` `src/analyze/context/driver.ts:599` — "const bundle: AnalyzeContextBundle = {"
+- **[[c5]]** `code` `src/analyze/context/shaper-provider.ts:366` — "export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>, execution?: ConnectionExecutionContext): LLMProvider {"
+- **[[c6]]** `code` `src/daemon/threads/method-class.ts:46` — "['repo.stats', 'indexing', false],"
+- **[[c7]]** `code` `src/config/role-taxonomy.ts:94` — "// (C) Indexing — PERIPHERAL → cheap (the cheapest CLI model by default)."
+- **[[c8]]** `code` `src/daemon/queue.ts:35` — "job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';"
+- **[[c9]]** `code` `src/analyze/context/types.ts:108` — "export type BundleLayerName ="

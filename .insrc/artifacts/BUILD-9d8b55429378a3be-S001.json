@@ -10,7 +10,12 @@
     "sizeClass": "small",
     "triageRationale": "One story in one module with a clear approach: add REFERENCES (language sql) to Pass 2 of the cross-file pass with a name matcher over the repository's table/view entities; no storage or schema change.",
     "epicCreatedAt": "2026-11-02T07:01:36.648Z",
-    "epicSlug": "resolve-sql-table-view-references-across"
+    "epicSlug": "resolve-sql-table-view-references-across",
+    "approvedAt": "2026-11-02T08:23:26.507Z",
+    "reviewOverride": {
+      "reason": "Manual code review, 2 cycles / 4 rounds, final verdict pass (interim rule: code-review framework being rewritten). Approved by the user in chat 2026-11-02.",
+      "at": "2026-11-02T08:23:26.507Z"
+    }
   },
   "body": {
     "tasks": [

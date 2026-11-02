@@ -367,6 +367,8 @@ Group entities, not files, by deterministic label propagation over entity relati
 
 - `qa64cd4f3` — NOTE (s8 cd1 partial): index.subsystems, groupSubsystems, runSubsystemPass, readSubsystems, withSubsystemContext, MIGRATION_V7_TO_V8 and the 'subsystems' job kind are new names this Story introduces. Its boundary owns the request, tables and pass, and it owns no shared contract.
   - **resolved**: Accept as LLD-concrete (adopt as canonical) — These are s8's own names (its boundary owns the request, tables and pass); the plan builds them. Same default as the equivalent note on s9, stated to the user 2026-11-02. _(2026-11-02T09:16:46.359Z)_
+- `qf13df71f` — NOTE (s8 alt2 partial): alternatives were scored against ac1-ac5, sc1 and sc3. The Epic constraints the criteria operationalize (k1-k4, k9) were not scored separately, as on s2/s7/s9.
+  - **resolved**: Defer and flag as known gap — As for the same note on s2, s7 and s9: k1-k4/k9 are the constraints ac1-ac5 operationalize (the DEF's own 'operationalizes' fields), so their scores follow from the criteria. Default stated to the user 2026-11-02. _(2026-11-02T09:17:42.283Z)_
 
 ## Citations
 

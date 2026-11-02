@@ -52,7 +52,7 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 **Postconditions:**
 - The install runs when skipInstall is not set and the install marker is missing or does not hold the hash of the synced package-lock.json (the lockfile-changed and node_modules-missing cases are subsumed: either leaves the marker absent or stale)
 - Before npm install starts, the marker is removed; after npm install exits 0, the marker is written with the hash of the synced package-lock.json taken before the install
-- npm install runs with the environment's CXXFLAGS plus -std=gnu++17 (an existing CXXFLAGS value is kept, with the flag appended)
+- npm install runs with the environment's CXXFLAGS plus -std=c++17 (an existing CXXFLAGS value is kept, with the flag appended)
 - When the install is skipped the log says the marker matches the lockfile
 
 ### 2.2 `npm_install_if_needed`
@@ -91,7 +91,7 @@ A plain-text file holding one line: the git blob hash (`git hash-object package-
 
 ### 3.2 `daemon npm install environment (CXXFLAGS)` — invariant-change
 
-Every npm install the daemon tooling runs (maintenance.update, daemon-ctl.sh, both installer copies) sets CXXFLAGS to the caller's CXXFLAGS with -std=gnu++17 appended, so native dependencies whose build files set no C++ standard compile against the Node 22.22.1 headers pinned in .npmrc. Packages that pin their own standard (tree-sitter's -std=c++17) keep building; the full install is verified in the build stage. The project-memory package and its fs-ext dependency are not changed.
+Every npm install the daemon tooling runs (maintenance.update, daemon-ctl.sh, both installer copies) sets CXXFLAGS to the caller's CXXFLAGS with -std=c++17 appended, so native dependencies whose build files set no C++ standard compile against the Node 22.22.1 headers pinned in .npmrc. Packages that pin their own standard (tree-sitter's -std=c++17) keep building; the full install is verified in the build stage. The project-memory package and its fs-ext dependency are not changed. The flag value is -std=c++17, the value the project-memory package's owner (Epic 17123b6d) already decided and qualified: its README (packages/project-memory/README.md:119), CI (.github/workflows/project-memory.yml:46) and packed-install test (packages/project-memory/src/__tests__/packed.test.ts:17) all use CXXFLAGS=-std=c++17, and its qualification evidence passed with it [c10]. The daemon reuses that value rather than choosing its own; -std=c++17 was also probed to build and load fs-ext on 2026-11-02 [c8].
 
 **Call sites:**
 - `src/cli/services/maintenance.ts:121-131`
@@ -99,6 +99,9 @@ Every npm install the daemon tooling runs (maintenance.update, daemon-ctl.sh, bo
 - `scripts/insrc-daemon-install.sh:202`
 - `.npmrc:21-23`
 - `packages/project-memory/package.json:36`
+- `packages/project-memory/README.md:119`
+- `.github/workflows/project-memory.yml:46`
+- `packages/project-memory/src/__tests__/packed.test.ts:17`
 
 ## 4. Error paths
 
@@ -128,7 +131,7 @@ Every npm install the daemon tooling runs (maintenance.update, daemon-ctl.sh, bo
 | An existing install made before this change (node_modules present, no marker) | The next update installs once and writes the marker; later updates with the same lockfile skip |
 | Lockfile changes in the pull and the previous install succeeded | The marker holds the old hash, so the update installs and writes the new hash |
 | node_modules deleted by hand | The marker goes with it; the next update installs |
-| The user already exports CXXFLAGS (for example -O2) | npm install sees CXXFLAGS='-O2 -std=gnu++17'; the user's flags are kept |
+| The user already exports CXXFLAGS (for example -O2) | npm install sees CXXFLAGS='-O2 -std=c++17'; the user's flags are kept |
 | --skip-install / skipInstall: true | No install and no marker change, as today |
 | The update runs twice in a row with nothing new | The second run skips the install (marker matches) |
 | npm install rewrites package-lock.json during the install | The marker holds the hash taken before the install (the synced origin copy); sync_repo / update discard the rewrite before the next comparison, so the next update compares against the same origin hash and skips |
@@ -164,7 +167,7 @@ Every npm install the daemon tooling runs (maintenance.update, daemon-ctl.sh, bo
 | :--- | :--- |
 | `ac1` | `maintenance.update: an update after a failed install installs again (fake npm exits 1, then 0), and the marker exists only after the successful one`, `daemon-ctl.sh update: the same failed-then-retried sequence` |
 | `ac2` | `maintenance.update: with a matching marker and unchanged lockfile the install is skipped; with a stale marker (lockfile changed) or no marker (existing install, node_modules deleted) it installs`, `daemon-ctl.sh update: the same three cases` |
-| `ac3` | `maintenance.update and daemon-ctl.sh: the fake npm sees CXXFLAGS ending in -std=gnu++17 and keeps a caller's existing CXXFLAGS`, `installer contract: both installer copies set the flag and write the marker, and are identical` |
+| `ac3` | `maintenance.update and daemon-ctl.sh: the fake npm sees CXXFLAGS ending in -std=c++17 and keeps a caller's existing CXXFLAGS`, `installer contract: both installer copies set the flag and write the marker, and are identical` |
 | `ac4` | `smoke: a clean npm install of the repository under Node 22 builds fs-ext and the other native modules (recorded as evidence)`, `smoke: updating the installed daemon reinstalls once, then skips (recorded as evidence)` |
 | `ac5` | `maintenance.update: skipInstall leaves npm uncalled and the marker unchanged; a failed install still returns { ok:false, error:'npm install failed' }`, `daemon-ctl.sh: --skip-install leaves npm uncalled; a failed install exits 4` |
 
@@ -172,7 +175,7 @@ Every npm install the daemon tooling runs (maintenance.update, daemon-ctl.sh, bo
 
 **State before:** Both update paths decide to install from the lockfile hash before vs after the sync, or a missing node_modules (src/cli/services/maintenance.ts:121-131; scripts/daemon-ctl.sh:111-121, per s1 bundles 1 and 2). No successful-install record exists, and npm install runs with the caller's environment unchanged, so fs-ext fails to build under npm's bundled node-gyp 11.5.0 (s1 bundle 5).
 
-**State after:** Both update paths install when node_modules/.insrc-install-ok is absent or holds a different lockfile hash; the marker is removed before and written after a successful install. Every daemon npm install, including both installer copies, runs with -std=gnu++17 appended to CXXFLAGS. The installers write the marker too.
+**State after:** Both update paths install when node_modules/.insrc-install-ok is absent or holds a different lockfile hash; the marker is removed before and written after a successful install. Every daemon npm install, including both installer copies, runs with -std=c++17 appended to CXXFLAGS. The installers write the marker too.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
@@ -188,9 +191,9 @@ Every npm install the daemon tooling runs (maintenance.update, daemon-ctl.sh, bo
 
 ### 7.1 a1: Install marker keyed by the lockfile hash + C++17 CXXFLAGS at every daemon install site — **CHOSEN**
 
-A marker file inside node_modules records the lockfile hash of the last successful install; updates install when it is absent or different, and every daemon npm install runs with -std=gnu++17 appended to CXXFLAGS.
+A marker file inside node_modules records the lockfile hash of the last successful install; updates install when it is absent or different, and every daemon npm install runs with -std=c++17 appended to CXXFLAGS.
 
-Both update paths (maintenance.update and daemon-ctl.sh npm_install_if_needed) decide to install when the marker node_modules/.insrc-install-ok is missing or does not hold the hash of the synced (origin) package-lock.json, instead of comparing the before/after hashes. The marker is removed before an install starts and written only after npm install exits 0, so a failed or interrupted install leaves it absent and the next update installs again; deleting node_modules removes it too. The first-time installers write the same marker after their install. Every daemon npm install (the two update paths and both installer copies) runs with CXXFLAGS extended by -std=gnu++17 (keeping any CXXFLAGS the user set), so a native dependency whose build file sets no C++ standard (fs-ext) compiles against the Node 22.22.1 headers. The project-memory package and its fs-ext dependency are unchanged.
+Both update paths (maintenance.update and daemon-ctl.sh npm_install_if_needed) decide to install when the marker node_modules/.insrc-install-ok is missing or does not hold the hash of the synced (origin) package-lock.json, instead of comparing the before/after hashes. The marker is removed before an install starts and written only after npm install exits 0, so a failed or interrupted install leaves it absent and the next update installs again; deleting node_modules removes it too. The first-time installers write the same marker after their install. Every daemon npm install (the two update paths and both installer copies) runs with CXXFLAGS extended by -std=c++17 (keeping any CXXFLAGS the user set), so a native dependency whose build file sets no C++ standard (fs-ext) compiles against the Node 22.22.1 headers. The project-memory package and its fs-ext dependency are unchanged.
 
 ### 7.2 a2: Install marker + a newer node-gyp pinned for npm
 
@@ -217,8 +220,10 @@ On a non-zero npm install exit, write a 'last install failed' flag; the next upd
 - **[[c5]]** `code` `packages/project-memory/package.json:36` — ""fs-ext": "2.1.1""
 - **[[c6]]** `code` `src/daemon/update-runner.ts`
 - **[[c7]]** `code` `scripts/insrc-daemon-install.sh:202` — "( cd "$DAEMON_SRC" && npm install --no-fund --no-audit ) 2>&1 | tail -3"
-- **[[c8]]** `stakeholder` `Probe 2026-11-02 under Node 22.23.2 with npm-bundled node-gyp 11.5.0: fs-ext 2.1.1 compiles with no -std flag and fails on std::is_void_v; CXXFLAGS=-std=gnu++17 builds it and it loads.`
+- **[[c8]]** `stakeholder` `Probe 2026-11-02 under Node 22.23.2 with npm-bundled node-gyp 11.5.0: fs-ext 2.1.1 compiles with no -std flag and fails on std::is_void_v; with CXXFLAGS=-std=c++17 (and also -std=gnu++17) it builds and require(fs-ext).flockSync loads.`
 - **[[c9]]** `prior-artifact` `docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/ISSUE.md`
+- **[[c10]]** `prior-artifact` `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/t2/qualification.json:23` — ""qualifiedCommand": "PATH=/opt/homebrew/opt/node@22/bin:$PATH CXXFLAGS=-std=c++17 npm rebuild fs-ext --foreground-scripts""
+- **[[c11]]** `code` `packages/project-memory/README.md:119` — "Node 22 headers and C++17. On macOS run `CXXFLAGS=-std=c++17 npm ci` or rebuild"
 
 ## 9. Open questions
 
@@ -238,5 +243,25 @@ On a non-zero npm install exit, write a 'last install failed' flag; the next upd
 - **[[c5]]** `code` `packages/project-memory/package.json:36` — ""fs-ext": "2.1.1""
 - **[[c6]]** `code` `src/daemon/update-runner.ts`
 - **[[c7]]** `code` `scripts/insrc-daemon-install.sh:202` — "( cd "$DAEMON_SRC" && npm install --no-fund --no-audit ) 2>&1 | tail -3"
-- **[[c8]]** `stakeholder` `Probe 2026-11-02 under Node 22.23.2 with npm-bundled node-gyp 11.5.0: fs-ext 2.1.1 compiles with no -std flag and fails on std::is_void_v; CXXFLAGS=-std=gnu++17 builds it and it loads.`
+- **[[c8]]** `stakeholder` `Probe 2026-11-02 under Node 22.23.2 with npm-bundled node-gyp 11.5.0: fs-ext 2.1.1 compiles with no -std flag and fails on std::is_void_v; with CXXFLAGS=-std=c++17 (and also -std=gnu++17) it builds and require(fs-ext).flockSync loads.`
 - **[[c9]]** `prior-artifact` `docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/ISSUE.md`
+- **[[c10]]** `prior-artifact` `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/t2/qualification.json:23` — ""qualifiedCommand": "PATH=/opt/homebrew/opt/node@22/bin:$PATH CXXFLAGS=-std=c++17 npm rebuild fs-ext --foreground-scripts""
+- **[[c11]]** `code` `packages/project-memory/README.md:119` — "Node 22 headers and C++17. On macOS run `CXXFLAGS=-std=c++17 npm ci` or rebuild"
+
+<!-- insrc:review -->
+
+## Review
+
+### ✅ Review `PASS` — design.story (design.story)
+
+**0 do not hold · 0 could not be verified · 5 hold** · template `design-issue` · model `cli-claude:claude-sonnet-5` · reviewed 2026-11-02T11:56:25.116Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+_None._

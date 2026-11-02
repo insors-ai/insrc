@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T09:33:49.424Z",
+    "updatedAt": "2026-11-02T09:39:41.527Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -18,9 +18,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "Added groupSubsystems (src/indexer/subsystems.ts), a pure, deterministic Louvain-style modularity grouping of a file graph. Local moves visit nodes in path order, and a tie within 1e-12 goes to the smaller group. Aggregation numbers groups by their first member and repeats until nothing moves. There is no randomness. Ids are the sha256 of the sorted members (hex-32); names are the longest common directory, or the file's own path for a single file. Connections sum relationship edges and their kind counts, following edge direction, and leave out the kind-less same-directory edges. directoryEdges builds those 0.1 same-directory edges for the pass to use.",
+    "summary": "Added runSubsystemPass (src/indexer/subsystem-pass.ts), without summaries; t4 adds those. It runs only when readIndexState(repo).graphComplete holds, and does nothing when the stored computedAtGeneration equals the generation. It builds the file graph from the stored IMPORTS/CALLS/INHERITS/IMPLEMENTS/REFERENCES out of each code file's entities and file entity, keeping only targets among the repository's own code files. Weights are by kind (inheritance 2, the rest 1) times evidence (extracted 1, inferred/chosen 0.8, unknown 0.6, model 0.5), plus 0.1 same-directory edges. It groups with groupSubsystems and writes the set stamped with the generation, with entity counts per subsystem. Found while testing: the TypeScript reader records no call named `parse` (outside s8; noted for follow-up).",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/TESTS.md"
     },
@@ -30,86 +34,100 @@
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/subsystem-tables.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/db/subsystems.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/understanding/__tests__/storage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystem-grouping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
       },
       {
         "target": {
           "file": "src/indexer/subsystems.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:33:49.424Z"
+        "timestamp": "2026-11-02T09:39:41.527Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-pass.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:39:41.527Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/subsystem-pass.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:39:41.527Z"
       }
     ],
-    "commit": "98f28962f"
+    "commit": "90a7d68c2"
   }
 }

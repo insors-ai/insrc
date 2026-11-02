@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -46,3 +46,22 @@ Run at 2026-11-02T09:33:49.424Z on commit `98f28962f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/subsystem-grouping.test.ts` | 0 | 7 | 0.5 s |  |
+
+## t3
+
+Run at 2026-11-02T09:39:41.527Z on commit `90a7d68c2`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: subsystem pass over a stored graph**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s8 t3: an incomplete graph is not grouped and nothing is written | `src/indexer/__tests__/subsystem-pass.test.ts` |
+| pass | s8 t3: the stored set follows the stored relationships and their evidence; module stubs and other repositories are not edges | `src/indexer/__tests__/subsystem-pass.test.ts` |
+| pass | s8 t3: a second pass at one generation does nothing; after a file changes, the new generation is regrouped | `src/indexer/__tests__/subsystem-pass.test.ts` |
+| pass | s8 t3: every code entity of the repository has exactly one subsystem, through its file | `src/indexer/__tests__/subsystem-pass.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/subsystem-pass.test.ts` | 0 | 4 | 2.2 s |  |

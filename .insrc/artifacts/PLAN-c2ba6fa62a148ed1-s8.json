@@ -1,0 +1,330 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793611100001-hnacp6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T09:20:09.879Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 109848,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s8",
+    "lldRunId": "wf-1793609472505-f09fso",
+    "lldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-02T09:23:29.797Z",
+    "rangeBase": "fe0f6d6af47771a5dbd5a93386ef310730da3d65"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s8 adds a store module and schema step for two subsystem tables, a pure deterministic grouping of a repository's code files, and a queued summary-lane pass. The pass groups a graph-complete repository from its evidence-weighted relationships and writes cheap-tier summaries one at a time. The rest is wiring: the job kind and its triggers after a full index, settle and clean-up; a read-only index.subsystems request; and a serve-time subsystem block in the analyzer's context. It ends with a full sweep and a smoke on the installed daemon."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Subsystem tables and schema 8",
+        "summary": "A store module for subsystems: the 'subsystem' and 'subsystem_by_file' databases opened by MIGRATION_V7_TO_V8 (SCHEMA_VERSION 8). It provides a write that replaces a repository's set in one transaction, stamped computedAtGeneration and keeping the stored summary of an unchanged id, plus readSubsystems(repoPath, { files? }). The namespace-count and module-state guards are updated.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a v7 store opens at version 8 with the two databases and its existing rows unchanged; a fresh store has them",
+          "writing a set replaces the previous set in one transaction, stamped with the generation; a subsystem whose id was stored keeps its summary",
+          "readSubsystems returns all of a repository's subsystems, or those holding the given files, and nothing of another repository",
+          "a write that fails part-way leaves the previous set intact (one transaction)"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c8",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "subsystem tables and migration to schema 8"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Group files into subsystems",
+        "summary": "groupSubsystems(graph): a pure, deterministic Louvain-style modularity grouping of a FileGraph into a partition. Nodes are visited in path order, ties go to the smaller group, there is no randomness, and passes aggregate until no move improves modularity. A subsystem's id is the sha256 of its sorted members (hex-32) and its name their longest common directory; connections are summed per pair with kind counts.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "every file is in exactly one group",
+          "the same graph gives the same groups, also with its edges shuffled",
+          "two densely connected clusters joined by one weak edge become two groups; an unconnected file joins its directory's group through the 0.1 edge",
+          "ids are the hash of sorted members and names the longest common directory"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "subsystem grouping"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Run the grouping pass over the stored graph",
+        "summary": "runSubsystemPass(repoPath) without summaries. It does nothing unless graphComplete, and nothing when the stored computedAtGeneration equals the generation. It builds the FileGraph from stored cross-file IMPORTS/CALLS/INHERITS/IMPLEMENTS/REFERENCES between code entities of the repository, weighted by kind (inheritance 2, the rest 1) and evidence (extracted 1, inferred 0.8, unknown 0.6), plus 0.1 same-directory edges. It groups and writes the tables stamped with the generation read.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "an incomplete graph: ran false, reason graph-incomplete, nothing written",
+          "the stored set matches the stored relationships and their evidence weights; module stubs, endpoints and other repositories are not edges",
+          "a second pass at the same generation does nothing (up-to-date); at a new generation it rewrites the set",
+          "every code entity of the repository has exactly one subsystem through its file"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "subsystem pass over a stored graph"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Write subsystem summaries with the cheap-tier model",
+        "summary": "After the grouping, for each subsystem with summary null: one completeStructured call through buildSummariserProvider (tiers.cheap; injectable for tests), with a prompt from src/prompts of the name, member paths, their exported entity names and the connections. Calls are made one at a time, with a yield between them. A failure is logged and counted, and the summary stays null. Before each write the generation is re-read, and the loop stops if it advanced. The prompt lives under src/prompts and is loaded as the summariser's prompts are, so a built daemon ships it.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "summaries are written only for new ids; an unchanged subsystem keeps its summary and causes no call",
+          "never two model calls at once (a recording provider sees concurrency 1)",
+          "a failing call leaves that summary null and the others written",
+          "a generation advance during the loop stops further writes"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "subsystem summaries through the cheap-tier provider"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Queue the pass when the graph is complete",
+        "summary": "The job kind { kind: 'subsystems'; repoPath } in the IndexJob union. Both isSummaryJob predicates (queue lane and summary-link) route it to the summary lane, the summary worker runs runSubsystemPass, and a queued job per repository is deduped. It is enqueued at the end of a full index, after a settle and after a clean-up when readIndexState(repoPath).graphComplete is true.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the job runs in the summary lane on the summary worker, and only while the index lane is idle",
+          "a full index of a complete repository enqueues one subsystems job; an incomplete one does not",
+          "a settle and a clean-up that leave the repository complete enqueue it; queued duplicates collapse to one"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "subsystems job queued and run in the summary lane"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "The index.subsystems request",
+        "summary": "A request 'index.subsystems' { repoPath } classed 'indexing'. It returns generation, computedAtGeneration, graphComplete, stale, the note ('the groups rest on an incomplete graph' / 'the groups rest on an older graph' / 'not grouped yet') and the subsystems with files, entity counts, summaries and connections; an unregistered repository gets { error }. The method-class and handler-runtime lists are updated.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a complete, grouped repository returns its subsystems, each with its connections, and every code entity in exactly one (ac1)",
+          "an incomplete graph returns the note 'the groups rest on an incomplete graph' (ac5); an older generation is reported stale",
+          "the request is classed for the code-indexing worker"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "index.subsystems through IndexerService"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Subsystem context in the analyzer",
+        "summary": "withSubsystemContext wraps runShaper's result on every return path (cache hit, pipeline, legacy), after any cache read or write, and is never cached. It appends to the structure layer a code-written 'Subsystems' block for the subsystems holding a code file under the scope path or a file the bundle cites as path:line: name, summary, connections and member paths, followed by the staleness or incompleteness note. Without stored subsystems or a repository, the bundle is unchanged.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a request about one module names its subsystem, summary and connections, each a stored row (ac3)",
+          "existing layer text is kept; the cache never holds the block, and a pass completed after caching shows on the next serve",
+          "no stored subsystems or no repository: the bundle is unchanged",
+          "only files with a stored subsystem_by_file row select a subsystem; other path-like text is ignored"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "analyzer subsystem context"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Ship and smoke on the installed daemon",
+        "summary": "Run the full sweep once, update the installed daemon, index this repository, let the pass run, request index.subsystems, and build one analyzer context.",
+        "size": "S",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "the full sweep shows no failure caused by this Story",
+          "on the installed daemon the repository has subsystems with summaries, and one analyzer context names a subsystem (recorded)"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "installed daemon: subsystems"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "subsystem grouping",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "subsystem pass over a stored graph",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "index.subsystems through IndexerService",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "analyzer subsystem context",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed daemon: subsystems",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contract: index.subsystems request"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contract: groupSubsystems"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contract: runSubsystemPass"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contract: readSubsystems"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contract: withSubsystemContext"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contract: MIGRATION_V7_TO_V8"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 contract: IndexJob.subsystems"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 data model: subsystem and subsystem_by_file tables, SCHEMA_VERSION 8"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 error paths"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 test strategy"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s8 migration"
+    }
+  ]
+}

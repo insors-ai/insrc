@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -53,3 +53,19 @@ Run at 2026-11-02T05:07:15.705Z on commit `bf7897d48`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 12 s |  |
 | `src/indexer/parser/__tests__/registry-languages.test.ts` | 0 | 2 | 1.3 s |  |
+
+## t3
+
+Run at 2026-11-02T05:09:48.138Z on commit `ba35c2a89`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: C/C++ family match in the cross-file pass**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t3: a C caller resolves to a function declared in an included .h read as cpp; a Python caller still never resolves to a same-named Go function | `src/indexer/__tests__/cross-file-c-family.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/cross-file-c-family.test.ts` | 0 | 1 | 1 s |  |

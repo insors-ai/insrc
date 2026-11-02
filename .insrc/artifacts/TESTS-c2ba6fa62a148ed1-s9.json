@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:07:15.705Z",
+    "updatedAt": "2026-11-02T05:09:48.138Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -157,6 +157,42 @@
               },
               {
                 "title": "s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ba35c2a89",
+        "ranAt": "2026-11-02T05:09:48.138Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C/C++ family match in the cross-file pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/cross-file-c-family.test.ts",
+                "title": "s9 t3: a C caller resolves to a function declared in an included .h read as cpp; a Python caller still never resolves to a same-named Go function",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/cross-file-c-family.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 955,
+            "titles": [
+              {
+                "title": "s9 t3: a C caller resolves to a function declared in an included .h read as cpp; a Python caller still never resolves to a same-named Go function",
                 "result": "pass"
               }
             ],

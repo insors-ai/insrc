@@ -92,6 +92,7 @@ import {
 	validateBundleWithErrors,
 } from './schema.js';
 import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from './tool-surface.js';
+import { withSubsystemContext } from './subsystem-context.js';
 import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError } from './decomposer.js';
 import { synthesize, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
@@ -475,10 +476,28 @@ export async function readUnattachedSavedShaperCache(args: ShaperEntryArgs): Pro
 	assertExplicitConnectionExecution(undefined);
 	if (args.opts.connectionExecution !== undefined) throw new ConnectionExecutionError('session-expired');
 	loadAnalyzeConfig();
-	return (await prepareShaperCache(args)).cachedBundle;
+	const cached = (await prepareShaperCache(args)).cachedBundle;
+	return cached === null ? null : served(cached, args.inputs);
 }
 
+/**
+ * The shaper's bundle, as served: the cached or newly built bundle with the
+ * subsystem block of its scope added (Epic c2ba6fa6 s8) after any cache read
+ * or write, so the cache never holds the block and it always reflects the
+ * stored subsystems.
+ */
 export async function runShaper(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
+	return served(await buildShaperBundle(args), args.inputs);
+}
+
+/** A bundle as it is handed to the caller, on every path (built, cached, or read from the saved cache). */
+function served(bundle: AnalyzeContextBundle, inputs: RunShaperArgs['inputs']): Promise<AnalyzeContextBundle> {
+	const ref = scopeRefOf(inputs);
+	const scopePath = ref.kind === 'module' || ref.kind === 'file' ? ref.value : undefined;
+	return withSubsystemContext(bundle, bundle.meta?.repoPath, scopePath);
+}
+
+async function buildShaperBundle(args: RunShaperArgs): Promise<AnalyzeContextBundle> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const execution = requireConnectionExecution(args.connectionExecution);
 	if (args.opts?.connectionExecution !== undefined && args.opts.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');

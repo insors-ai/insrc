@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T09:39:41.527Z",
+    "updatedAt": "2026-11-02T09:46:53.914Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -22,9 +22,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "Added runSubsystemPass (src/indexer/subsystem-pass.ts), without summaries; t4 adds those. It runs only when readIndexState(repo).graphComplete holds, and does nothing when the stored computedAtGeneration equals the generation. It builds the file graph from the stored IMPORTS/CALLS/INHERITS/IMPLEMENTS/REFERENCES out of each code file's entities and file entity, keeping only targets among the repository's own code files. Weights are by kind (inheritance 2, the rest 1) times evidence (extracted 1, inferred/chosen 0.8, unknown 0.6, model 0.5), plus 0.1 same-directory edges. It groups with groupSubsystems and writes the set stamped with the generation, with entity counts per subsystem. Found while testing: the TypeScript reader records no call named `parse` (outside s8; noted for follow-up).",
+    "summary": "runSubsystemPass now summarises each subsystem with no summary after the grouping. It makes one completeStructured call through buildSummariserProvider (tiers.cheap, injectable), with a yield between calls and never two at once. The prompt is src/prompts/analyze/subsystem-summariser.system.md, shipped by copy-assets and registered with the boot validator through src/analyze/summariser/subsystem-prompt.ts. Its input is the subsystem's name, its files with their exported names, and its connections by name. A failed call is logged and counted, and the summary stays null. The generation is re-read before each call and before each write, and the loop stops if it advanced. writeSubsystemSummary sets a summary only on the row grouped at that generation.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/TESTS.md"
     },
@@ -34,100 +38,128 @@
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/subsystem-tables.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/db/subsystems.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/understanding/__tests__/storage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystem-grouping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/indexer/subsystems.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystem-pass.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
       },
       {
         "target": {
           "file": "src/indexer/subsystem-pass.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:39:41.527Z"
+        "timestamp": "2026-11-02T09:46:53.914Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/boot-validator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:46:53.914Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/subsystem-prompt.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:46:53.914Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-summaries.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:46:53.914Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/analyze/subsystem-summariser.system.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:46:53.914Z"
       }
     ],
-    "commit": "90a7d68c2"
+    "commit": "7182d1d58"
   }
 }

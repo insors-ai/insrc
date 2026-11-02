@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -65,3 +65,23 @@ Run at 2026-11-02T09:39:41.527Z on commit `90a7d68c2`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/subsystem-pass.test.ts` | 0 | 4 | 2.2 s |  |
+
+## t4
+
+Run at 2026-11-02T09:46:53.914Z on commit `7182d1d58`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: subsystem summaries through the cheap-tier provider**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s8 t4: summaries are written only for new memberships; an unchanged subsystem keeps its summary and causes no call | `src/indexer/__tests__/subsystem-summaries.test.ts` |
+| pass | s8 t4: the summary calls are made one at a time | `src/indexer/__tests__/subsystem-summaries.test.ts` |
+| pass | s8 t4: a failing call leaves that summary empty and the others written | `src/indexer/__tests__/subsystem-summaries.test.ts` |
+| pass | s8 t4: a generation that advances while summaries are written stops further writes | `src/indexer/__tests__/subsystem-summaries.test.ts` |
+| pass | s8 t4: a summary is stored only on the subsystem rows of the generation it was written for | `src/indexer/__tests__/subsystem-summaries.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/subsystem-summaries.test.ts` | 0 | 5 | 3.2 s |  |

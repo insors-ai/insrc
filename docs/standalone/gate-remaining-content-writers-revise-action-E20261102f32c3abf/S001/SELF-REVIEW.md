@@ -22,3 +22,30 @@ Date: 2026-11-02. Reviewer: the controller that wrote the design (the design-rev
 ## Verdict
 
 warn. No HIGH finding. MED-1 and MED-2 are the two open questions of the LLD; both have a default that follows the Story text.
+
+---
+
+# Build self-review of `BUILD-f32c3abf4a55494b-s1`
+
+Date: 2026-11-02. Reviewer: the controller that wrote the code (the code-review tool is unavailable), so this is a self-review and the approval needs an override reason. Scope: the commits of this Story (trailer `Insrc-Story: f32c3abf4a55494b/s1`, t1 to t5 and two follow-ups), read against the approved LLD and PLAN.
+
+## What was checked
+
+- Each acceptance check of t1 to t5 against the code, by the build gate (all five passed, t1 and t2 on a second round) and again by reading the diff.
+- Order of effects: in `finalizeDefineExtend` the gate sits after every validation and before `appendStoryToDefine`, the amendment and the cache write; in `handleResolveComment` it sits after the artifact is read and before the first record.
+- A repo with no team policy: `teamGate` answers allowed with no tracker call, tested for the helper, the extend and the recorder.
+- A full sweep once, compared by test name with the tree before the Story (outcome in `docs/plans/team-workflow.md`): no new failure.
+
+## Findings
+
+- **MED-1 (decide).** `finalizeByWorkflow` now rethrows a `TeamGateRefusedError` and a `ToolDenied` instead of turning every thrown error into a retryable schema failure. It is the only place that changes behaviour for every workflow, though no other finalizer throws these two. Callers (the synthesize phase and the daemon driver) already handle the same errors from `assertMayAuthor`, but there is no test that drives a refusal through the MCP synthesize phase end to end.
+- **MED-2 (by decision).** `resolveComment` is holder-only while a stage is in signoff, so a non-holder reviewer using the review pane is refused. Outside signoff a comment on an unassigned stage takes the claim, which a reader of the pane would not expect from "add a comment". Both follow the Story text and the user's decisions; they are tested, not designed away.
+- **LOW-1.** The duplicate-id guard in the extend path cannot fire today (`nextStoryId` mints an unused id) and has no runtime test; the build judge accepted it by code inspection.
+- **LOW-2.** `checkWriteGates` accepts any use of the names `assertMayAuthor` or `assertMayReviseDraft` in the named file or function (the recorder reaches the check through its test seam), so a comment that mentions the name would satisfy it. It catches a missing or stale gate, not a bypassed one.
+- **LOW-3.** The recorder's gate runs for any caller of `workflow.resolveComment`; other callers of `recordResolution` (design runs) are not gated, by design (alternative a2 was rejected for that reason).
+- **LOW-4.** The gate seam of `ResolveCommentDeps` (`gate`) is used by one test; the other tests go through the team gate's own seams.
+- **Process.** A first sweep chunk of src/workflow showed one test (`git-calls.test.ts`) failing only under load; it passes alone. Another session's files were not touched.
+
+## Verdict
+
+warn. No HIGH finding. MED-1 is the one change outside the three writers; MED-2 is a decision already taken.

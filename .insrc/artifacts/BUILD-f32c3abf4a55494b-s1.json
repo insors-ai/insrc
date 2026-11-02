@@ -1,0 +1,139 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "83d1ba42edf59c708dd18a079357577dc485743f065389789be3c967b9460702",
+        "at": "2026-11-02T10:14:00.491Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-f636ac03-829a-4ed5-88c0-05fd8935805c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:42:50.628Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "storyId": "s1",
+    "revision": 7,
+    "updatedAt": "2026-11-02T10:13:07.330Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "gate-remaining-content-writers-revise-action"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/gate-remaining-content-writers-revise-action-E20261102f32c3abf/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/revise-draft-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/author-gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/define-extend-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/orchestrator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/resolve-comment-gate.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/resolve-comment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/__tests__/artifact-write-inventory.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-write-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/team-workflow.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/team/__tests__/revise-writers-record.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:13:07.330Z"
+      }
+    ],
+    "commit": "ad508c050"
+  },
+  "citations": []
+}

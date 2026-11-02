@@ -1,0 +1,438 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "f9f32a16e412b90916b61c9b5c776bbb958b171b2ac129ddbd816e6077f86147",
+        "at": "2026-11-02T10:13:07.398Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "f32c3abf4a55494b",
+    "storyId": "s1",
+    "createdAt": "2026-11-02T09:42:50.628Z",
+    "updatedAt": "2026-11-02T10:13:07.330Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "epicSlug": "gate-remaining-content-writers-revise-action",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6f0f7f88f",
+        "ranAt": "2026-11-02T09:44:56.149Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft asks teamGate for revise when the stage is in signoff or changes-requested and for author otherwise, and applies assertHeld for revise",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/revise-draft-gate.test.ts",
+                "title": "assertMayReviseDraft asks teamGate for revise when the stage is in signoff or changes-requested and for author otherwise, and applies assertHeld for revise",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/team/__tests__/author-gate-revise.test.ts",
+                "title": "assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft resolves with no tracker call in a repo with no team policy",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/revise-draft-gate.test.ts",
+                "title": "assertMayReviseDraft resolves with no tracker call in a repo with no team policy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft rethrows a ToolDenied and throws TeamGateRefusedError for every other refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/revise-draft-gate.test.ts",
+                "title": "assertMayReviseDraft rethrows a ToolDenied and throws TeamGateRefusedError for every other refusal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/author-gate-revise.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 722,
+            "titles": [
+              {
+                "title": "assertMayAuthor asks 'revise' for an HLD or LLD in signoff, refuses a non-holder and an unassigned unit without taking the claim, and asks 'author' for any other status, a define run and a plan run",
+                "result": "pass"
+              },
+              {
+                "title": "a design.story run on an LLD in changes-requested whose HLD is no longer signed off is refused by settleBeforeAuthor before assertMayAuthor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/team/__tests__/revise-draft-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 684,
+            "titles": [
+              {
+                "title": "assertMayReviseDraft asks teamGate for revise when the stage is in signoff or changes-requested and for author otherwise, and applies assertHeld for revise",
+                "result": "pass"
+              },
+              {
+                "title": "assertMayReviseDraft resolves with no tracker call in a repo with no team policy",
+                "result": "pass"
+              },
+              {
+                "title": "assertMayReviseDraft rethrows a ToolDenied and throws TeamGateRefusedError for every other refusal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b1ce2a25b",
+        "ranAt": "2026-11-02T09:54:43.564Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/define-extend-gate.test.ts: the define extend path refuses a non-holder while the Define is in signoff and writes nothing, and the holder's extend is written as today",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/define-extend-gate.test.ts",
+                "title": "the define extend path refuses a non-holder while the Define is in signoff and writes nothing, and the holder's extend is written as today",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts",
+                "title": "define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/define-extend-gate.test.ts: a repo with no team policy makes no tracker call and the extend is written as today",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/define-extend-gate.test.ts",
+                "title": "a repo with no team policy makes no tracker call and the extend is written as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/define-extend-gate.test.ts: a duplicate Story id or an unapproved Epic fails before the gate is asked, and a denied tracker call in the gate stops the run",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/define-extend-gate.test.ts",
+                "title": "an unapproved Epic fails before the gate is asked, and a denied tracker call in the gate stops the run",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/define-extend-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 805,
+            "titles": [
+              {
+                "title": "define EXTEND: scope=extend → skip frame/compose → append Story + pending amendment + ExtendArtifact",
+                "result": "pass"
+              },
+              {
+                "title": "define EXTEND: a Define that carries a stamp but no creation time fails with no Epic anchor and appends nothing",
+                "result": "pass"
+              },
+              {
+                "title": "define EXTEND: s4 scope-boundary hard-fail refuses synthesize (no Story appended)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/define-extend-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 635,
+            "titles": [
+              {
+                "title": "the define extend path refuses a non-holder while the Define is in signoff and writes nothing, and the holder's extend is written as today",
+                "result": "pass"
+              },
+              {
+                "title": "a repo with no team policy makes no tracker call and the extend is written as today",
+                "result": "pass"
+              },
+              {
+                "title": "an unapproved Epic fails before the gate is asked, and a denied tracker call in the gate stops the run",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "504e0622a",
+        "ranAt": "2026-11-02T09:58:30.477Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: handleResolveComment answers an error and records nothing when the actor may not revise the stage",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/resolve-comment-gate.test.ts",
+                "title": "handleResolveComment answers an error and records nothing when the actor may not revise the stage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: the gate is asked once for several comments and maps define, hld and lld to the Epic and Story stages",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/resolve-comment-gate.test.ts",
+                "title": "the gate is asked once for several comments and maps define, hld and lld to the Epic and Story stages",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: outside signoff a comment behaves as an author turn, and a repo with no team policy records as today",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/resolve-comment-gate.test.ts",
+                "title": "outside signoff a comment behaves as an author turn, and a repo with no team policy records as today",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: a denied tracker call in the gate is rethrown and is not an error result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/resolve-comment-gate.test.ts",
+                "title": "a denied tracker call in the gate is rethrown and is not an error result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/resolve-comment-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 682,
+            "titles": [
+              {
+                "title": "handleResolveComment answers an error and records nothing when the actor may not revise the stage",
+                "result": "pass"
+              },
+              {
+                "title": "the gate is asked once for several comments and maps define, hld and lld to the Epic and Story stages",
+                "result": "pass"
+              },
+              {
+                "title": "outside signoff a comment behaves as an author turn, and a repo with no team policy records as today",
+                "result": "pass"
+              },
+              {
+                "title": "a denied tracker call in the gate is rethrown and is not an error result",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2de44b705",
+        "ranAt": "2026-11-02T10:00:40.249Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: every content entry and site names a gatedBy entry point or an exemption with a reason, including appendStoryToDefine",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every content entry and site names a gatedBy entry point or an exemption with a reason, including appendStoryToDefine",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: a content writer with neither a gate nor an exemption is reported",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "a content writer with neither a gate nor an exemption is reported",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1709,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "every content entry and site names a gatedBy entry point or an exemption with a reason, including appendStoryToDefine",
+                "result": "pass"
+              },
+              {
+                "title": "a content writer with neither a gate nor an exemption is reported",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "ad508c050",
+        "ranAt": "2026-11-02T10:13:07.330Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/team/__tests__/revise-writers-record.test.ts: the revise-writers section of team-workflow.md records the decisions, the exemptions, the sweep result and the open items",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/team/__tests__/revise-writers-record.test.ts",
+                "title": "the revise-writers section of team-workflow.md records the decisions, the exemptions, the sweep result and the open items",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/team/__tests__/revise-writers-record.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 374,
+            "titles": [
+              {
+                "title": "the revise-writers section of team-workflow.md records the decisions, the exemptions, the sweep result and the open items",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -39,3 +39,7 @@ Measured on Apple M3 Pro, Node 22.23.2, APFS/macOS. Full data and runtime-source
 | 16MiB-safety | accepted in 384.24 ms; one-byte excess rejected | — | — | 417.06 |
 
 Durability steps remain enabled. Backlog fixtures are constructed by a private measurement helper and fully validated by production recovery; fixture construction is not reported as ingestion latency. Recovery starts a new Node process with the OS file cache warm. Physical segment/control bytes, active/durable counters and RSS/heap snapshots are recorded; snapshots are lower bounds on peaks. Semantic commit is unimplemented, and these results do not qualify Lance atomicity or hardware power-loss durability.
+
+## Review maintenance refactor
+
+Queue structural record/required/optional-key validation is centralized in private queue/shape.ts; codecs, checkpoint parsing and external receipts retain their respective error policies. Recovery now names its ordered phases: checkpoint loading/retirement, inventory validation, read-only scanning, durable tail repair, orphan cleanup, and synced frontier publication. The durable format, public API and interaction/ownership relationships are unchanged. Existing failure/crash tests verify those phases through the real IO boundary.

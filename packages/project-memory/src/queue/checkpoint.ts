@@ -1,3 +1,4 @@
+import { record, fields } from './shape.js';
 import { MemoryError } from '../errors.js';
 import { boundedString, decimal, encodeFrame, snapshotJson } from './codec.js';
 import { INITIAL_SEGMENT, QueueIo, segmentName } from './io.js';
@@ -42,20 +43,16 @@ export function reserveMetadata(frames: number, segments: number): void {
     throw new MemoryError('BACKPRESSURE', 'Queue checkpoint capacity is exhausted.', true);
   }
 }
-function object(value: unknown): asserts value is Record<string, unknown> { if (!value || typeof value !== 'object' || Array.isArray(value)) corrupt(); }
-function fields(value: Record<string, unknown>, required: string[], optional: string[] = []): void {
-  if (required.some(key => !Object.hasOwn(value, key)) || Object.keys(value).some(key => !required.includes(key) && !optional.includes(key))) corrupt();
-}
 function integer(value: unknown, min = 0): value is number { return typeof value === 'number' && Number.isSafeInteger(value) && value >= min; }
 /** Structural validation only; recovery separately proves referenced on-disk bytes. */
 export function validateCheckpoint(value: unknown): asserts value is Checkpoint {
-  object(value); fields(value, ['formatVersion', 'queueId', 'generation', 'activeSegment', 'lastSequence', 'receiptBarrier', 'segments']);
+  record(corrupt, value); fields(corrupt, value, ['formatVersion', 'queueId', 'generation', 'activeSegment', 'lastSequence', 'receiptBarrier', 'segments']);
   if (value.formatVersion !== 1 || typeof value.queueId !== 'string' || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.queueId) || !decimal(value.generation) || !decimal(value.lastSequence) || typeof value.receiptBarrier !== 'boolean' || !Array.isArray(value.segments) || !value.segments.length || value.segments.length > QUEUE_LIMITS.maxSegments) corrupt();
   const ids = new Set<string>(), operations = new Set<string>();
   let frames = 0, previousId = '', previousSequence: bigint | undefined, active = 0, retiring = 0;
   for (let i = 0; i < value.segments.length; i++) {
-    const segment: unknown = value.segments[i]; object(segment);
-    fields(segment, ['id', 'firstSequence', 'acceptedOffset', 'sealed', 'retiring', 'frames']);
+    const segment: unknown = value.segments[i]; record(corrupt, segment);
+    fields(corrupt, segment, ['id', 'firstSequence', 'acceptedOffset', 'sealed', 'retiring', 'frames']);
     if (typeof segment.id !== 'string') corrupt(); segmentName(segment.id);
     if (ids.has(segment.id) || (previousId && segment.id <= previousId) || !decimal(segment.firstSequence) || BigInt(segment.firstSequence) < 1n || !integer(segment.acceptedOffset, 1) || typeof segment.sealed !== 'boolean' || typeof segment.retiring !== 'boolean' || !Array.isArray(segment.frames)) corrupt();
     ids.add(segment.id); previousId = segment.id;
@@ -64,16 +61,16 @@ export function validateCheckpoint(value: unknown): asserts value is Checkpoint 
     if (segment.retiring) { retiring++; if (!segment.sealed || !value.receiptBarrier || i !== 0) corrupt(); }
     let sequence = BigInt(segment.firstSequence), offset: number | undefined;
     for (const entry of segment.frames) {
-      object(entry); fields(entry, ['operationId', 'sequence', 'offset', 'length', 'terminal'], ['generation', 'retry', 'retirement']);
+      record(corrupt, entry); fields(corrupt, entry, ['operationId', 'sequence', 'offset', 'length', 'terminal'], ['generation', 'retry', 'retirement']);
       if (typeof entry.operationId !== 'string' || !/^[a-f0-9]{64}$/.test(entry.operationId) || operations.has(entry.operationId) || !decimal(entry.sequence) || BigInt(entry.sequence) !== sequence || !integer(entry.offset, 1) || !integer(entry.length, 1) || entry.length > QUEUE_LIMITS.maxEventBytes + QUEUE_LIMITS.frameOverhead || typeof entry.terminal !== 'boolean' || (offset !== undefined && entry.offset !== offset)) corrupt();
       if (entry.terminal ? !boundedString(entry.generation, 128) : Object.hasOwn(entry, 'generation')) corrupt();
       if (segment.retiring) {
         if (!entry.terminal || Object.hasOwn(entry, 'retry')) corrupt();
-        object(entry.retirement); fields(entry.retirement, ['identityDigest', 'payloadHash', 'scopeDigest', 'scopeEpochDigest']);
+        record(corrupt, entry.retirement); fields(corrupt, entry.retirement, ['identityDigest', 'payloadHash', 'scopeDigest', 'scopeEpochDigest']);
         if (!Object.values(entry.retirement).every(v => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v))) corrupt();
       } else if (Object.hasOwn(entry, 'retirement')) corrupt();
       if (Object.hasOwn(entry, 'retry')) {
-        object(entry.retry); fields(entry.retry, ['attempts', 'nextEligibleAt', 'errorCode']);
+        record(corrupt, entry.retry); fields(corrupt, entry.retry, ['attempts', 'nextEligibleAt', 'errorCode']);
         if (!integer(entry.retry.attempts) || !integer(entry.retry.nextEligibleAt) || !boundedString(entry.retry.errorCode, 128)) corrupt();
       }
       operations.add(entry.operationId); sequence++; offset = entry.offset + entry.length;

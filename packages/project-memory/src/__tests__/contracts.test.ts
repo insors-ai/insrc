@@ -6,7 +6,6 @@ import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 test('public-v1-types-and-emitted-boundary', () => {
   const output = mkdtempSync(join(tmpdir(), 'memory-contract-'));

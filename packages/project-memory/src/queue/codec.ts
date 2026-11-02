@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import { MemoryError } from '../errors.js';
 import type { Json, MemoryCommand, MemoryLimits, Scope } from '../types.js';
+import { record, fields } from './shape.js';
 import { QUEUE_LIMITS } from './types.js';
 import type { EventBody, SegmentHeader, StableIdentity } from './types.js';
 
@@ -119,24 +120,18 @@ export function snapshotJson(input: unknown, maxBytes: number, reservation?: Res
   const value = walk(input, 0);
   return { value, text: chunks.join(''), bytes };
 }
-function record(value: unknown): asserts value is Record<string, unknown> {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) invalid();
-}
-function fields(value: Record<string, unknown>, required: readonly string[], optional: readonly string[] = []): void {
-  if (required.some(key => !Object.hasOwn(value, key)) || Object.keys(value).some(key => !required.includes(key) && !optional.includes(key))) invalid();
-}
 export function boundedString(value: unknown, max = 512): value is string {
   return typeof value === 'string' && value.length > 0 && !value.includes('\0') && stringBytes(value) >= 2 && Buffer.byteLength(value) <= max;
 }
 export function validateScope(value: unknown): asserts value is Scope {
-  record(value); fields(value, ['projectId'], ['sessionId', 'branch', 'environment']);
+  record(invalid, value); fields(invalid, value, ['projectId'], ['sessionId', 'branch', 'environment']);
   for (const item of Object.values(value)) if (!boundedString(item)) invalid();
 }
 function commandShape(value: unknown): asserts value is MemoryCommand {
-  record(value); fields(value, ['version', 'scope', 'source', 'kind', 'payload'], ['expectedRevision']);
+  record(invalid, value); fields(invalid, value, ['version', 'scope', 'source', 'kind', 'payload'], ['expectedRevision']);
   if (value.version !== 1) throw new MemoryError('UNSUPPORTED_VERSION', 'Unsupported memory command version.');
-  validateScope(value.scope); record(value.source);
-  fields(value.source, ['producerId', 'eventId', 'sessionId', 'turnId', 'sourceVersion']);
+  validateScope(value.scope); record(invalid, value.source);
+  fields(invalid, value.source, ['producerId', 'eventId', 'sessionId', 'turnId', 'sourceVersion']);
   for (const [key, item] of Object.entries(value.source)) if (!boundedString(item, key === 'sourceVersion' ? 256 : 512)) invalid();
   if (!['capture', 'correct', 'forget', 'resolve', 'maintenance', 'delivery'].includes(value.kind as string)) invalid();
   if (Object.hasOwn(value, 'expectedRevision') && !boundedString(value.expectedRevision)) invalid();
@@ -166,18 +161,18 @@ export function decodeFrame(line: Uint8Array, maxEventBytes: number): { body: Ev
     const parsed: unknown = JSON.parse(text);
     const decoded = snapshotJson(parsed, line.byteLength, undefined, 3, 80);
     if (decoded.text !== text) invalid();
-    record(parsed); fields(parsed, ['bytes', 'checksum', 'frame']);
+    record(invalid, parsed); fields(invalid, parsed, ['bytes', 'checksum', 'frame']);
     if (!Number.isSafeInteger(parsed.bytes) || typeof parsed.checksum !== 'string' || !DIGEST.test(parsed.checksum)) invalid();
-    const body = parsed.frame; record(body);
+    const body = parsed.frame; record(invalid, body);
     const canonical = snapshotJson(body, line.byteLength, undefined, 2, 64);
     if (canonical.bytes !== parsed.bytes || digest(canonical.text) !== parsed.checksum) invalid();
     if (body.formatVersion !== 1) throw new MemoryError('UNSUPPORTED_VERSION', 'Unsupported queue frame version.');
     if (typeof body.queueId !== 'string' || !UUID.test(body.queueId)) invalid();
     if (body.recordType === 'segment') {
-      fields(body, ['formatVersion', 'recordType', 'queueId', 'segmentId', 'firstSequence']);
+      fields(invalid, body, ['formatVersion', 'recordType', 'queueId', 'segmentId', 'firstSequence']);
       if (typeof body.segmentId !== 'string' || !/^[0-9]{20}$/.test(body.segmentId) || !decimal(body.segmentId.replace(/^0+(?=\d)/, '')) || !decimal(body.firstSequence) || line.byteLength > QUEUE_LIMITS.headerBytes) invalid();
     } else {
-      fields(body, ['formatVersion', 'recordType', 'queueId', 'sequence', 'operationId', 'command', 'payloadHash', 'admittedAtMs', 'scopeEpoch']);
+      fields(invalid, body, ['formatVersion', 'recordType', 'queueId', 'sequence', 'operationId', 'command', 'payloadHash', 'admittedAtMs', 'scopeEpoch']);
       if (body.recordType !== 'event' || !decimal(body.sequence) || !boundedString(body.scopeEpoch, 256) || !Number.isSafeInteger(body.admittedAtMs) || (body.admittedAtMs as number) < 0) invalid();
       const command = snapshotCommand(body.command, maxEventBytes);
       if (body.operationId !== command.operationId || body.payloadHash !== command.payloadHash) invalid();

@@ -79,7 +79,7 @@ nativeTest(import.meta.url, 'tarball-public-dependency-and-asset-allowlist', asy
   const { dir, files } = await packed();
   for (const required of ['package.json', 'README.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/host-node.js']) assert.ok(files.includes(required), required);
   for (const file of files) assert.match(file, /^(?:package\.json|README\.md|LICENSE|dist\/(?:queue\/)?[\w-]+\.(?:js|d\.ts)(?:\.map)?)$/);
-  for (const module of ['types', 'codec', 'io', 'checkpoint', 'index-record', 'recovery', 'receipts', 'retirement', 'file-queue', 'admission']) {
+  for (const module of ['types', 'shape', 'codec', 'io', 'checkpoint', 'index-record', 'recovery', 'receipts', 'retirement', 'file-queue', 'admission']) {
     assert.ok(files.includes('dist/queue/' + module + '.js')); assert.ok(files.includes('dist/queue/' + module + '.d.ts'));
   }
   const manifest = JSON.parse(await readFile(join(dir, 'node_modules/@insrc/project-memory/package.json'), 'utf8'));

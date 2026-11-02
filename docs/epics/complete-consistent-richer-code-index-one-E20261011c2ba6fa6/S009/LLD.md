@@ -348,22 +348,23 @@ Rust/C#/C/C++ readers as in a1. The SQL reader splits a file into statements and
 - NOTE (s8 cd1 partial): registerUnavailableReader and the 'index.languages' request are new names this Story introduces (the HLD names the request only by purpose).
 - NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc2; the Epic constraints the criteria operationalize (k1, k2, k6) were not scored separately.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `qdabf39b5` — OPEN: which language a .h header belongs to. The cross-file pass matches calls only within one language, so a C caller and a header read as C++ never meet. Proposed: read .h with the C++ reader (a superset for declarations) and treat 'c' and 'cpp' as one family when the cross-file pass matches call targets; alternatives: read .h as C unless the repository has C++ sources, or as C always. Decide before the plan.
+  - **resolved**: Unify c/cpp as one family (proposed) — User decision 2026-11-02: C and C++ are one family. .h headers are read with the C++ reader, and the cross-file pass treats 'c' and 'cpp' as one language family when it matches call targets, so a C caller links to a declaration in a header. _(2026-11-02T04:46:40.906Z)_
 
-### ⚠️ Review `WARN` — design.story (design.story)
+## Citations
 
-**0 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-11-01T20:37:35.557Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-_None._
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| new-versus-reuse | The specific grammar version pins (tree-sitter-rust 0.24.0, tree-sitter-c-sharp 0.23.1, tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, @derekstride/tree-sitter-sql 0.3.11) actually install and load under this repo's Node 22 / tree-sitter 0.25 toolchain. | The design cites a prior exploration output ([[c3]]: 'Probe in a scratch directory... probed') as the source of these pins, which I cannot independently re-run without installing packages from the network in this review. | Would require running npm install of each pinned grammar in an isolated scratch dir and loading it under Node 22 — out of scope for a read-only review. |
+- **[[c1]]** `analyze-bundle` `s1 symbol.locate: the parser registry and how a reader registers` — "src/indexer/parser/registry.ts holds one array of CodeParser; registerParser appends, getParser(filePath) returns the FIRST parser whose extensions include the file's extension, supportedExtensions() "
+- **[[c2]]** `analyze-bundle` `s1 usage.example: the guarded grammar load` — "src/indexer/parser/kotlin.ts:630-645 loads tree-sitter and tree-sitter-kotlin through createRequire inside a try; on failure it logs a warn ('Kotlin files will not be indexed (other parsers unaffected"
+- **[[c3]]** `analyze-bundle` `s1 docs: grammar packages for the added languages (probe 2026-11-02)` — "Probe in a scratch directory with tree-sitter@0.25.0 under Node 22 and the repo's .npmrc (legacy-peer-deps, Node 22.22.1 headers): tree-sitter-rust@0.24.0, tree-sitter-c@0.24.1, tree-sitter-cpp@0.23.4"
+- **[[c4]]** `analyze-bundle` `s1 data-model.trace: Language union, entity kinds and relation kinds` — "Language (src/shared/types.ts:564-567) has python, go, typescript, javascript, java, scala, kotlin and document languages including 'sql'; no rust/csharp/c/cpp. ENTITY_KIND_BYTE (src/db/graph/keys.ts:"
+- **[[c5]]** `analyze-bundle` `s1 symbol.locate: SQL today` — "The artifact reader (src/indexer/parser/artifact.ts) stores a .sql file as one whole-file document entity (header comment line 9; extension map '.sql' -> 'sql' at :40; listed in its extensions at :104"
+- **[[c6]]** `analyze-bundle` `s1 data-model.trace: module stubs and the shared-modules namespaces` — "Module stubs (kind 'module', repo '') live under reserved shared-modules rows keyed by namespace: SharedModulesNamespace is 'jvm' | 'npm' | 'python' | 'go' with reserved repo ids 0xFFFFFFFE..0xFFFFFFF"
+- **[[c7]]** `analyze-bundle` `s1 usage.example: per-file resolution the new readers rely on` — "resolveRelations (src/indexer/resolver.ts:63-118) resolves a CALLS by the callee's name to a unique entity of the same file for any language, and a relative IMPORTS through resolveImportPath with a pe"
+- **[[c8]]** `analyze-bundle` `s1 symbol.locate: where a daemon request would list languages` — "No request lists the languages the index reads. system.info (src/daemon/handler-runtime.ts:1263-1266) returns host facts. Indexing runs in the code-indexing worker (the readers are imported there via "
+- **[[c9]]** `analyze-bundle` `s1 test.locate: tests to extend` — "Per-language reader tests live in src/indexer/parser/__tests__/ (kotlin.test.ts, java.test.ts, scala.test.ts); indexer-level tests that run IndexerService on real files in src/indexer/__tests__/ (evid"
+- **[[c10]]** `prior-artifact` `HLD-c2ba6fa62a148ed1 s9 boundary and sc2 FileCommit`
+- **[[c11]]** `prior-artifact` `DEF-c2ba6fa62a148ed1 Story s9 acceptance criteria ac1-ac4 and lc1`
+- **[[c12]]** `step-output` `s3 alternatives.judge: a1 chosen`
+- **[[c13]]** `step-output` `s8 checklist.verify: cd1 partial, alt2 partial`

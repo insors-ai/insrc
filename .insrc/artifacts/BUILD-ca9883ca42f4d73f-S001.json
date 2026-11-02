@@ -4,7 +4,7 @@
     "epicHash": "ca9883ca42f4d73f",
     "storyId": "S001",
     "createdAt": "2026-11-02T12:14:26.040Z",
-    "updatedAt": "2026-11-02T12:14:26.040Z",
+    "updatedAt": "2026-11-02T12:17:38.611Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:42:30.446Z",
@@ -15,13 +15,32 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "update() now installs when node_modules/.insrc-install-ok is missing or holds another lockfile's blob hash, removes the marker before npm install and writes it only after npm exits 0, and runs npm install with -std=c++17 appended to CXXFLAGS. Fake-npm integration tests over a scratch git checkout; every acceptance check mutation-checked.",
+    "summary": "daemon-ctl.sh npm_install_if_needed now uses the same install marker as maintenance.update (removed before npm install, written after a successful one) and builds with -std=c++17 appended to CXXFLAGS; SYNC_LOCK_HASH_BEFORE removed. Integration tests drive the real script over a scratch checkout with a fake npm, including cross-compatibility with maintenance.update; mutation-checked.",
     "testRecord": {
       "md": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/TESTS.md"
     },
-    "changeLog": [],
-    "commit": "9355bdead"
+    "changeLog": [
+      {
+        "target": {
+          "file": "scripts/daemon-ctl.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:17:38.611Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:17:38.611Z"
+      }
+    ],
+    "commit": "15f44dc79"
   }
 }

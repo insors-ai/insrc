@@ -4,7 +4,7 @@
     "epicHash": "ca9883ca42f4d73f",
     "storyId": "S001",
     "createdAt": "2026-11-02T12:14:26.040Z",
-    "updatedAt": "2026-11-02T12:14:26.040Z",
+    "updatedAt": "2026-11-02T12:17:38.611Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:42:30.446Z",
     "epicSlug": "daemon-update-never-retries-failed-npm"
@@ -108,6 +108,93 @@
               },
               {
                 "title": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "15f44dc79",
+        "ranAt": "2026-11-02T12:17:38.611Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: daemon-ctl.sh and maintenance.update honour each other's marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh and maintenance.update honour each other's marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5131,
+            "titles": [
+              {
+                "title": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: daemon-ctl.sh and maintenance.update honour each other's marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
                 "result": "pass"
               }
             ],

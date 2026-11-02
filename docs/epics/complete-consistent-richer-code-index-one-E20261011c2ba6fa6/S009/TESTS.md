@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -113,3 +113,21 @@ Run at 2026-11-02T05:20:51.601Z on commit `b0e4f9d74`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/c-calls-cpp-header.test.ts` | 0 | 1 | 1 s |  |
 | `src/indexer/parser/__tests__/cpp.test.ts` | 0 | 3 | 0.6 s |  |
+
+## t6
+
+Run at 2026-11-02T05:27:53.386Z on commit `d031e5656`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: Rust reader**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t6: a .rs fixture yields its items and its mod/use, call and impl relationships | `src/indexer/parser/__tests__/rust.test.ts` |
+| pass | s9 t6: mod util; resolves to util.rs over util/mod.rs when both exist; crate, declared-module and super paths resolve to their module files; a missing module stays pending | `src/indexer/parser/__tests__/rust.test.ts` |
+| pass | s9 t6: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked | `src/indexer/parser/__tests__/rust.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/parser/__tests__/rust.test.ts` | 0 | 3 | 0.6 s |  |

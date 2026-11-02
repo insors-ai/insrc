@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:20:51.601Z",
+    "updatedAt": "2026-11-02T05:27:53.386Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -336,6 +336,60 @@
               },
               {
                 "title": "s9 t5: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "d031e5656",
+        "ranAt": "2026-11-02T05:27:53.386Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Rust reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/rust.test.ts",
+                "title": "s9 t6: a .rs fixture yields its items and its mod/use, call and impl relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/rust.test.ts",
+                "title": "s9 t6: mod util; resolves to util.rs over util/mod.rs when both exist; crate, declared-module and super paths resolve to their module files; a missing module stays pending",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/rust.test.ts",
+                "title": "s9 t6: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/rust.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 561,
+            "titles": [
+              {
+                "title": "s9 t6: a .rs fixture yields its items and its mod/use, call and impl relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t6: mod util; resolves to util.rs over util/mod.rs when both exist; crate, declared-module and super paths resolve to their module files; a missing module stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t6: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:20:51.601Z",
+    "updatedAt": "2026-11-02T05:27:53.386Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -30,9 +30,13 @@
       {
         "id": "t5",
         "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
       }
     ],
-    "summary": "Added the C++ reader (src/indexer/parser/cpp.ts) for .cpp/.cc/.cxx/.hpp/.hh/.hxx/.h, behind the guarded load. It reads classes and structs with INHERITS from their bases, and members as Class::name with their access. Qualified out-of-line definitions are attached to their class. Free functions and prototypes are kept (a definition takes precedence), and types are read. Namespaces are folded into names; a function in an anonymous namespace or declared static is not exported. Includes and calls are handled as in C. Left out: calls through an object (obj.m()) are not recorded, and an unqualified name inside a namespace matches only a target of exactly that name.",
+    "summary": "Added the Rust reader (src/indexer/parser/rust.ts) behind the guarded load. It reads fn as function, impl/trait members as Type::name methods, struct/enum/union as class, and trait as interface, with DEFINES; an inline mod folds its name into the names inside it. `mod x;` and crate::/self::/super::/declared-module use paths become relative IMPORTS. External crates become cargo module stubs. Calls are recorded by name, and `impl Trait for Type` gives IMPLEMENTS. resolveImportPath gains resolveRustModulePath: the longest existing module file wins, x.rs before x/mod.rs. A path that lands on the importing file links nothing. collectCalls in c.ts now takes the callee node types. The t2 registry test's unavailable-reader probe moved from rust to proto. Left out: method calls through a value and macro invocations.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/TESTS.md"
     },
@@ -42,226 +46,240 @@
           "file": "package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/repo-strict-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/graph/keys.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/shared/repo-namespaces.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/registry-languages.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/kotlin.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/cross-file-c-family.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/cross-file-resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/c.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/c.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/cpp.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/cpp.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:20:51.601Z"
+        "timestamp": "2026-11-02T05:27:53.386Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/rust.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:27:53.386Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/rust.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:27:53.386Z"
       }
     ],
-    "commit": "b0e4f9d74"
+    "commit": "d031e5656"
   }
 }

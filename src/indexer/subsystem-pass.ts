@@ -131,7 +131,11 @@ export async function summariseSubsystem(
 	}
 	while (summaries.join('\n').length > SUMMARY_PART_CHARS) {
 		const next: string[] = [];
-		for (const group of chunk(summaries)) next.push(`- ${await ask(`Subsystem: ${sub.name} -- summaries of some of its parts\n\n${group.join('\n')}`)}`);
+		const groups = chunk(summaries);
+		// A round that cannot put two summaries in one message would only
+		// rewrite them one by one: combine them as they are instead.
+		if (groups.length >= summaries.length) break;
+		for (const group of groups) next.push(`- ${await ask(`Subsystem: ${sub.name} -- summaries of some of its parts\n\n${group.join('\n')}`)}`);
 		summaries = next;
 	}
 	return ask(`Subsystem: ${sub.name}\n\nIts files, summarised in parts:\n${summaries.join('\n')}\n\nConnections to other subsystems:\n${conns}`);
@@ -150,10 +154,11 @@ export async function runSubsystemPass(opts: { readonly db: DbClient; readonly r
 		log.info({ repo: repoPath, generation }, 'subsystem pass: the graph is not complete; nothing grouped');
 		return { ran: false, reason: 'graph-incomplete', generation, ...none };
 	}
-	if ((await readSubsystems(repoPath)).computedAtGeneration === generation) {
+	const stored = await readSubsystems(repoPath);
+	if (stored.computedAtGeneration === generation) {
 		// The groups are current; a summary that failed or was stopped is retried here.
 		const summaries = await summarise(db, repoPath, generation, undefined, opts);
-		return { ran: false, reason: 'up-to-date', generation, subsystems: 0, ...summaries };
+		return { ran: false, reason: 'up-to-date', generation, subsystems: stored.subsystems.length, ...summaries };
 	}
 
 	const entities = await listEntitiesForRepo(db, repoPath);

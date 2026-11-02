@@ -4,7 +4,9 @@
  * the job is a summary-lane job, which waits for code work and is handed to the
  * summary worker; queued duplicates for one repository collapse to one; a full
  * index, a settle and a clean-up that leave the graph complete enqueue it, and
- * an incomplete graph does not; the job runs the subsystem pass.
+ * an incomplete graph does not; a clean-up that removes nothing (the one
+ * each daemon start queues) enqueues it too, so a failed summary is retried;
+ * the job runs the subsystem pass.
  *
  * Run: npx tsx --test src/indexer/__tests__/subsystems-job.test.ts
  */
@@ -170,4 +172,19 @@ test('s8 review: the indexer runs the pass with its queue: a stopping daemon ask
 	assert.ok(stored.subsystems.length > 0, 'the groups are written');
 	assert.deepEqual(calls, [], 'no model call once the daemon is stopping');
 	assert.ok(stored.subsystems.every(s => s.summary === null));
+});
+
+test('s8 review: a clean-up that removes nothing -- the one each daemon start queues -- enqueues the job, so a failed summary is retried; not on an incomplete graph', async () => {
+	const svc = new Svc(new RecordingQueue());
+	await svc.processJob({ kind: 'full', repoPath: repo });
+	await svc.start([{ path: repo, name: 'fixture', addedAt: '2026-11-02T00:00:00.000Z', status: 'ready' }]);
+	svc.q.enqueued.length = 0;
+
+	await svc.processJob({ kind: 'reconcile', repoPath: repo });
+	assert.deepEqual(subsystemJobs(svc.q), [{ kind: 'subsystems', repoPath: repo }], 'queued with no file removed');
+
+	svc.q.enqueued.length = 0;
+	await markFullIndexUnfinished(repo);
+	await svc.processJob({ kind: 'reconcile', repoPath: repo });
+	assert.deepEqual(subsystemJobs(svc.q), [], 'not on an incomplete graph');
 });

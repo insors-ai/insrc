@@ -129,6 +129,8 @@ test('s8 review: a directory is a hub, not a clique: edges grow with its files, 
 	const chain = (fs: string[]) => fs.slice(1).map((f, i) => call(fs[i]!, f, 1));
 	const groups = groupSubsystems({ files, hubs: dirs.hubs, edges: [...chain(A), ...chain(B), ...dirs.edges] });
 	assert.ok(groups.length > 1, `the directory does not collapse into one group (got ${groups.length})`);
+	const inA = new Set(A);
+	assert.ok(groups.every(g => g.files.every(f => inA.has(f)) || g.files.every(f => !inA.has(f))), 'no group holds files of both clusters');
 	assert.ok(groups.every(g => g.files.every(f => !f.startsWith('\u0000'))), 'no hub is a member');
 	assert.equal(groups.reduce((n, g) => n + g.files.length, 0), files.length);
 });

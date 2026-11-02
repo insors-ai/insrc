@@ -490,6 +490,11 @@ export class IndexerService {
       await attempt('dropping the cached explorations', () => deleteCachedExplorationsForRepo(repoPath));
       await attempt('the resolver run', () => this.resolveAfterReconcile(repoPath));
     }
+    // Every clean-up -- the one each daemon start queues included -- queues the
+    // subsystem pass, so a summary that failed is retried even when the
+    // repository is never edited again (s8 review); the pass is cheap when the
+    // groups are current and every summary is written.
+    await attempt('queueing the subsystem pass', () => this.enqueueSubsystemsIfComplete(repoPath));
     log.info({ repo: repoPath, ...counts }, 'index clean-up complete');
     this.queue.enqueue({ kind: 'reembed', repoPath });
     if (failure !== undefined) throw failure;

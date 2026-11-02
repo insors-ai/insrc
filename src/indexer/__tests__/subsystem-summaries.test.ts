@@ -157,6 +157,8 @@ test('s8 review: a summary that failed is retried by the next pass at the same g
 	const again = recordingProvider();
 	const r = await runSubsystemPass({ db, repoPath: repo, provider: again.provider });
 	assert.deepEqual([r.ran, r.reason, r.summariesWritten], [false, 'up-to-date', 1], 'the groups are current; the missing summary is written');
+	assert.equal(r.subsystems, (await readSubsystems(repo)).subsystems.length, 'the up-to-date result counts the stored subsystems');
+	assert.ok(r.subsystems > 0);
 	assert.deepEqual(again.calls, ['src/store'], 'only the subsystem without a summary');
 	assert.equal((await summaries()).get('src/store'), 'src/store summary');
 });
@@ -205,4 +207,19 @@ test('s8 review: a subsystem too large for one message is summarised in parts, e
 	assert.match(asked.at(-1)!, /- other: 1 CALLS/, 'the connections are in the combining message');
 	assert.equal(summary, `summary ${asked.length}`);
 	assert.equal(maxActive, 1, 'one call at a time');
+});
+
+test('s8 review: part summaries too long to combine two to a message are combined as they are, with no call that rewrites them one by one', async () => {
+	const files = Array.from({ length: 3000 }, (_v, i) => `gen/very/long/directory/name/for/generated/code/file-${String(i).padStart(5, '0')}.ts`);
+	const sub = { id: 'big', name: 'gen', files, entityCount: files.length, summary: null, connections: [] };
+	const asked: string[] = [];
+	await summariseSubsystem(sub, new Map(), new Map(), async (content) => {
+		asked.push(content);
+		return 'x'.repeat(Math.ceil(SUMMARY_PART_CHARS * 0.6));   // longer than half a message
+	});
+	const parts = asked.filter(c => / -- part \d+ of \d+ of its files/.test(c)).length;
+	assert.ok(parts >= 2, `the files need several parts (got ${parts})`);
+	assert.equal(asked.filter(c => c.includes('-- summaries of some of its parts')).length, 0, 'no round that cannot shrink');
+	assert.equal(asked.length, parts + 1, 'the parts, then one combining message');
+	assert.match(asked.at(-1)!, /^Subsystem: gen\n\nIts files, summarised in parts:/);
 });

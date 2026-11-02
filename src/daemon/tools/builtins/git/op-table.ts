@@ -23,6 +23,8 @@ import { assertSafeArg, cancelledFail, failureKind, rejectInput, spawnFail, UNKN
 
 /** The content of a stdin op is refused past this many bytes, before git starts. */
 export const MAX_STDIN_BYTES = 1024 * 1024;
+/** The git version the op tables were written for (GIT_2_53_COMMANDS); an older git that lacks a command is told so. */
+export const GIT_TABLE_VERSION = '2.53.0';
 /** The stdout budget of an op that sets none. Output past it is a failure, never a shortened answer. */
 export const DEFAULT_STDOUT_BYTES = 512 * 1024;
 
@@ -206,7 +208,11 @@ async function runIn(_id: string, spec: GitOpSpec, input: ToolInput, deps: ToolD
     return fail('rejected', `could not deliver ${spec.stdin ?? 'the input'} to git: ${r.stdinError}${mutating ? ' (git may have partly run; check the repository before retrying)' : ''}`);
   }
   const code = r.code ?? -1;
-  if (!(spec.okCodes ?? [0]).includes(code)) { return fail(failureKind(r), stderrText || stdout.trim() || `exit ${code}`); }
+  if (!(spec.okCodes ?? [0]).includes(code)) {
+    const msg = stderrText || stdout.trim() || `exit ${code}`;
+    const lacks = /is not a git command|unknown option|unknown switch|unrecognized argument/i.test(msg);
+    return fail(failureKind(r), lacks ? `${msg} (the tool's table is written for git ${GIT_TABLE_VERSION}; this git may be older)` : msg);
+  }
 
   const data = spec.parse !== undefined ? spec.parse({ stdout, bytes: r.stdout, stderr: r.stderr, code }, input, dir) : { text: stdout };
   const member = answerMember(spec);

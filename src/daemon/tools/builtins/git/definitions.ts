@@ -55,6 +55,7 @@ import { gitInspectTool } from './inspect.js';
 import { gitTextTool } from './text.js';
 import { gitObjectsTool } from './objects.js';
 import { gitPatchTool } from './patch.js';
+import { gitTreeTool } from './tree.js';
 
 export const gitToolDefinitions = [
   gitStatusTool,
@@ -101,4 +102,5 @@ export const gitToolDefinitions = [
   gitTextTool,
   gitObjectsTool,
   gitPatchTool,
+  gitTreeTool,
 ] as const satisfies readonly TypedTool[];

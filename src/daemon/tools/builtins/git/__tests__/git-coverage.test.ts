@@ -39,7 +39,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 44, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text, git_objects, git_patch from s8');
+	assert.equal(registered.size, 45, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text, git_objects, git_patch, git_tree from s8');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -370,6 +370,70 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 	'bugreport': async c => {
 		const dir = mkdtempSync(join(tmpdir(), 'insrc-br-'));
 		try { await c.ok('git_patch', { op: 'bugreport', output: dir, suffix: 'x' }); assert.deepEqual(readdirSync(dir), ['git-bugreport-x.txt']); } finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+
+	// ---- git_tree (s8)
+	'checkout-index': async c => {
+		rmSync(join(c.repo, 'a.txt')); await c.ok('git_tree', { op: 'checkout-index', paths: ['a.txt'] }); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'two\n');
+		writeFileSync(join(c.repo, 'a.txt'), 'changed\n'); await c.ok('git_tree', { op: 'checkout-index', all: true, force: true }); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'two\n');
+	},
+	'clean': async c => {
+		writeFileSync(join(c.repo, 'u.txt'), 'u');
+		const dry = await c.ok('git_tree', { op: 'clean', dryRun: true }); assert.equal((dry.data as { text: string }).text, 'Would remove u.txt'); assert.ok(existsSync(join(c.repo, 'u.txt')));
+		await c.ok('git_tree', { op: 'clean' }); assert.equal(existsSync(join(c.repo, 'u.txt')), false);
+	},
+	'restore': async c => {
+		await c.ok('git_tree', { op: 'restore', paths: ['a.txt'] }); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'two\n');
+		writeFileSync(join(c.repo, 'a.txt'), 'staged\n'); c.git('add', 'a.txt'); await c.ok('git_tree', { op: 'restore', paths: ['a.txt'], staged: true });
+		assert.equal(c.git('diff', '--cached', '--name-only').trim(), ''); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'staged\n');
+	},
+	'mv': async c => { await c.ok('git_tree', { op: 'mv', from: 'a.txt', to: 'b.txt' }); assert.equal(existsSync(join(c.repo, 'a.txt')), false); assert.equal(c.git('ls-files').trim(), 'b.txt'); },
+	'sparse-checkout': async c => {
+		c.git('checkout', '-q', '--', 'a.txt'); writeFileSync(join(c.repo, 'b.txt'), 'b'); c.git('add', 'b.txt'); c.git('commit', '-q', '-m', 'b');
+		await c.ok('git_tree', { op: 'sparse-checkout', action: 'set', patterns: ['a.txt'], cone: false });
+		const listed = await c.ok('git_tree', { op: 'sparse-checkout', action: 'list' }); assert.equal((listed.data as { text: string }).text, 'a.txt'); assert.equal(existsSync(join(c.repo, 'b.txt')), false);
+		await c.ok('git_tree', { op: 'sparse-checkout', action: 'disable' }); assert.ok(existsSync(join(c.repo, 'b.txt')));
+	},
+	'submodule': async c => {
+		const sub = newRepo(); writeFileSync(join(sub, 's.txt'), 's'); git(sub, 'add', '-A'); git(sub, 'commit', '-q', '-m', 'sub');
+		// a submodule is cloned by a child git that ignores the repository's config, so allow the file transport for this process
+		const saved = [process.env['GIT_CONFIG_COUNT'], process.env['GIT_CONFIG_KEY_0'], process.env['GIT_CONFIG_VALUE_0']];
+		process.env['GIT_CONFIG_COUNT'] = '1'; process.env['GIT_CONFIG_KEY_0'] = 'protocol.file.allow'; process.env['GIT_CONFIG_VALUE_0'] = 'always';
+		try {
+			await c.ok('git_tree', { op: 'submodule', action: 'add', url: sub, paths: ['sm'] }); assert.match(readFileSync(join(c.repo, '.gitmodules'), 'utf8'), /path = sm/);
+			const status = await c.ok('git_tree', { op: 'submodule', action: 'status' }); assert.match((status.data as { text: string }).text, /^ ?[0-9a-f]{40} sm/);
+			await c.ok('git_tree', { op: 'submodule', action: 'sync' }); await c.ok('git_tree', { op: 'submodule', action: 'init' }); await c.ok('git_tree', { op: 'submodule', action: 'update', force: true });
+			await c.ok('git_tree', { op: 'submodule', action: 'deinit', paths: ['sm'], force: true }); assert.equal(existsSync(join(c.repo, 'sm', 's.txt')), false);
+		} finally {
+			for (const [k, v] of [['GIT_CONFIG_COUNT', saved[0]], ['GIT_CONFIG_KEY_0', saved[1]], ['GIT_CONFIG_VALUE_0', saved[2]]] as const) { if (v === undefined) { delete process.env[k]; } else { process.env[k] = v; } }
+			rmSync(sub, { recursive: true, force: true });
+		}
+	},
+	'rerere': async c => {
+		c.git('config', 'rerere.enabled', 'true');
+		for (const action of ['status', 'diff', 'remaining', 'gc', 'clear']) { const r = await c.ok('git_tree', { op: 'rerere', action }); assert.equal(typeof (r.data as { text: string }).text, 'string'); }
+		await c.ok('git_tree', { op: 'rerere', action: 'forget', paths: ['a.txt'] });
+	},
+	'merge-file': async c => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-mf-')); const w = (n: string, s: string): string => { writeFileSync(join(dir, n), s); return join(dir, n); };
+		try {
+			const base = w('base', 'a\nb\nc\nd\ne\n'); const ours = w('ours', 'a\nB\nc\nd\ne\n'); const theirs = w('theirs', 'a\nb\nc\nD\ne\n');
+			const clean = await c.ok('git_tree', { op: 'merge-file', current: ours, base, other: theirs, stdout: true }); assert.deepEqual(clean.data, { op: 'merge-file', conflicts: 0, text: 'a\nB\nc\nD\ne\n' }); assert.equal(readFileSync(ours, 'utf8'), 'a\nB\nc\nd\ne\n');
+			await c.ok('git_tree', { op: 'merge-file', current: ours, base, other: theirs }); assert.equal(readFileSync(ours, 'utf8'), 'a\nB\nc\nD\ne\n');
+			const x = w('x', 'x\n'); const conflict = await c.ok('git_tree', { op: 'merge-file', current: x, base: w('z', 'z\n'), other: w('y', 'y\n'), stdout: true }); assert.equal((conflict.data as { conflicts: number }).conflicts, 1);
+		} finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'bisect': async c => {
+		c.git('checkout', '-q', '--', 'a.txt');
+		const r = await c.ok('git_tree', { op: 'bisect', action: 'start', bad: 'HEAD', good: ['HEAD~1'] }); assert.match((r.data as { text: string }).text, /is the first bad commit/);
+		const log = await c.ok('git_tree', { op: 'bisect', action: 'log' }); assert.match((log.data as { text: string }).text, /git bisect start/);
+		await c.ok('git_tree', { op: 'bisect', action: 'reset' }); assert.equal(c.git('symbolic-ref', '--short', 'HEAD').trim(), 'main');
+	},
+	'replay': async c => {
+		c.git('checkout', '-q', '--', 'a.txt'); c.git('checkout', '-q', '-b', 'topic', 'HEAD~1'); writeFileSync(join(c.repo, 't.txt'), 't'); c.git('add', 't.txt'); c.git('commit', '-q', '-m', 'topic'); c.git('checkout', '-q', 'main');
+		const before = sha(c, 'topic'); const printed = await c.ok('git_tree', { op: 'replay', onto: 'main', range: 'main..topic' });
+		assert.match((printed.data as { text: string }).text, /^update refs\/heads\/topic [0-9a-f]{40} [0-9a-f]{40}$/); assert.equal(sha(c, 'topic'), before, 'print makes no change');
+		await c.ok('git_tree', { op: 'replay', onto: 'main', range: 'main..topic', refAction: 'update' }); assert.equal(c.git('merge-base', 'main', 'topic').trim(), sha(c, 'main'));
 	},
 };
 

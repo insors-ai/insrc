@@ -87,6 +87,13 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['codeAnalyzer.diffRuns', 'session', false],
 	['codeReview.freshness', 'session', false],
 	['codeReview.grounding', 'session', false],
+	['codeReview.task.start', 'session', false],
+	['codeReview.task.progress', 'session', false],
+	['codeReview.task.publish', 'session', false],
+	['codeReview.task.assignment', 'session', false],
+	['codeReview.task.scope', 'session', false],
+	['codeReview.task.result', 'session', false],
+	['codeReview.task.activity', 'session', false],
 	['config.agents', 'session', false],
 	['config.list', 'session', false],
 	['config.reload', 'session', false],
@@ -283,4 +290,10 @@ export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'db.connections.v2.test','db.connections.v2.cancelTest',
  'db.connections.v2.session.open','db.connections.v2.session.resume','db.connections.v2.session.attach',
  'db.connections.v2.session.delegate','db.connections.v2.session.heartbeat','db.connections.v2.session.end',
+]);
+
+/** Task review state and trusted controller lifetimes have one main-daemon owner. */
+export const MAIN_DAEMON_TASK_REVIEW_METHODS: ReadonlySet<string> = new Set([
+ 'codeReview.task.start', 'codeReview.task.progress', 'codeReview.task.publish',
+ 'codeReview.task.assignment', 'codeReview.task.scope', 'codeReview.task.result', 'codeReview.task.activity',
 ]);

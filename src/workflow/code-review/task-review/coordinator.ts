@@ -16,7 +16,7 @@ import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import { checkpointPath, saveCheckpoint, loadCheckpoint } from './checkpoint.js';
 import { assignmentPrompt, codeTaskCommands } from './policy.js';
-import { prepareReviewAdmission } from './admission.js';
+import { canonicalReviewStory, prepareReviewAdmission } from './admission.js';
 import { assignmentResultSchema } from './result-schema.js';
 import { attributionSchema, attributionPrompt, directReviewAssignments, reviewAssignments, reuseAssessment, taskReferences, assessTaskResult, taskFailure } from './assessment.js';
 import { ControllerTaskReview } from './controller.js';
@@ -40,6 +40,40 @@ interface ActiveReview { checkpoint: ReviewCheckpoint; attempt: ReviewAttempt; d
 export class TaskReviewCoordinator {
  private readonly active = new Map<string, ActiveReview | null>();
  private readonly controllers = new Map<string, ControllerTaskReview>();
+ // Unknown scope during admission blocks cleanup conservatively until pins resolve.
+ private readonly storyWork = new Map<string, string | undefined>();
+ private readonly cleaning = new Set<string>();
+ private release(path: string): void { this.active.delete(path); this.storyWork.delete(path); }
+ private storyKey(project: string, hash: string, story: string): string {
+  return `${project}\0${hash}\0${canonicalReviewStory(story, hash)}`;
+ }
+ /** A short cleanup fence, not a queue or a second execution ledger. */
+ async withStoryCleanup<T>(project: string, hash: string, story: string, work: () => Promise<T>): Promise<{ busy: true } | { busy: false; result: T }> {
+  const key = this.storyKey(project, hash, story);
+  if (this.cleaning.has(key) || [...this.storyWork].some(([path, scope]) => path.startsWith(`${project}/`) && (scope === undefined || scope === key))) return { busy: true };
+  this.cleaning.add(key);
+  try { return { busy: false, result: await work() }; }
+  finally { this.cleaning.delete(key); }
+ }
+ /** Explicit publication retries participate in the same exclusion as execution. */
+ async publishStored<T>(project: string, id: string, hash: string, work: () => Promise<T>): Promise<T> {
+  const path = checkpointPath(project, id);
+  this.reserve(path);
+  try {
+   const saved = await loadCheckpoint(path);
+   requireReview(saved, 'checkpoint', 'missing-checkpoint');
+   const key = this.storyKey(project, hash, saved.storyId);
+   requireReview(!this.cleaning.has(key), 'storyId', 'cleanup-in-progress');
+   this.storyWork.set(path, key);
+   return await work();
+  } finally { this.release(path); }
+ }
+ private reserve(path: string, scope?: string): void {
+  requireReview(!this.active.has(path), 'reviewId', 'already-running');
+  requireReview(scope !== undefined ? !this.cleaning.has(scope) : this.cleaning.size === 0, 'storyId', 'cleanup-in-progress');
+  this.active.set(path, null);
+  this.storyWork.set(path, scope);
+ }
  constructor(private readonly deps: TaskReviewDeps) {}
  async start(project: string, reviewId: string, attempt: number, input?: unknown, context?: { provider?: () => LLMProvider; epicHash?: string; operation?: ReviewOperation }): Promise<ReviewAcknowledgement> {
   let provider: LLMProvider | undefined;
@@ -47,22 +81,22 @@ export class TaskReviewCoordinator {
   const admitted = await this.admit(project, reviewId, attempt, input, 'daemon', context?.epicHash, context?.operation, () => requireReviewActivity(providerForReview()));
   const { path, checkpoint, attempt: entry, prepared } = admitted;
   const metadata = (): ReviewAcknowledgement => ({ reviewId, attempt: entry.header.attempt, reviewer: 'daemon', path, status: entry.header.status, crPublication: entry['review-response'].crPublication, completedTaskIds: entry['review-response'].tasks.map(task => task.taskId), pendingTaskIds: entry.header.selectedTaskIds.filter(id => !entry['review-response'].tasks.some(task => task.taskId === id)) });
-  if (entry['review-response'].crPublication === 'complete') { this.active.delete(path); return metadata(); }
+  if (entry['review-response'].crPublication === 'complete') { this.release(path); return metadata(); }
   try {
    const done = new Promise<void>(resolve => setImmediate(() => {
     void this.run(path, checkpoint, entry, prepared, providerForReview).catch(error => {
      // A persistence failure stops scheduling. Never overwrite the last durable task with a fabricated success.
      log.error({ reviewId, error: error instanceof Error ? error.message : String(error) }, 'Task review stopped; last durable checkpoint retained');
-    }).finally(() => { this.active.delete(path); resolve(); });
+    }).finally(() => { this.release(path); resolve(); });
    }));
    this.active.set(path, { checkpoint, attempt: entry, done });
    return metadata();
-  } catch (error) { this.active.delete(path); throw error; }
+  } catch (error) { this.release(path); throw error; }
  }
  async startController(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,epicHash?:string,operation?:ReviewOperation):Promise<ControllerFrame>{
   requireReview(owner.signal instanceof AbortSignal&&!owner.signal.aborted&&!owner.requestSignal?.aborted,'reviewer','Disconnected or unsupported controller lifetime');owner.assertReviewer?.();
   const admitted=await this.admit(project,id,attempt,input,'controller',epicHash,operation);
-  const controller=new ControllerTaskReview(admitted,owner,{...this.deps,release:drop=>{if(this.active.get(admitted.path)?.done===controller.done)this.active.delete(admitted.path);if(drop&&this.controllers.get(admitted.path)===controller)this.controllers.delete(admitted.path);}});
+  const controller=new ControllerTaskReview(admitted,owner,{...this.deps,release:drop=>{if(this.active.get(admitted.path)?.done===controller.done)this.release(admitted.path);if(drop&&this.controllers.get(admitted.path)===controller)this.controllers.delete(admitted.path);}});
   this.controllers.set(admitted.path,controller);this.active.set(admitted.path,{checkpoint:admitted.checkpoint,attempt:admitted.attempt,done:controller.done});
   return controller.assignment(owner);
  }
@@ -97,10 +131,12 @@ export class TaskReviewCoordinator {
  }
  private async admit(project: string, reviewId: string, attempt: number, input: unknown, reviewer: 'daemon' | 'controller', epicHash?: string, operation?: ReviewOperation, preflight?: () => void): Promise<AdmittedReview> {
   const path = checkpointPath(project, reviewId);
-  requireReview(!this.active.has(path), 'reviewId', 'already-running');
-  this.active.set(path, null); // Reserve before any awaited admission or provider use.
+  const story = input && typeof input === 'object' ? (input as { storyId?: unknown }).storyId : undefined;
+  const scope = epicHash && typeof story === 'string' ? this.storyKey(project, epicHash, story) : undefined;
+  this.reserve(path, scope); // Reserve before any awaited admission or provider use.
   try {
    const admitted = await prepareReviewAdmission(project, reviewId, attempt, input, reviewer, this.deps.sources, { epicHash, operation });
+   this.storyWork.set(path, this.storyKey(project, admitted.prepared.epicHash, admitted.checkpoint.storyId));
    if (operation === 'resume' && admitted.attempt['review-response'].crPublication === 'complete') return admitted;
    if (admitted.attempt.header.selectedTaskIds.some(id => !admitted.attempt['review-response'].tasks.some(task => task.taskId === id))) preflight?.();
    if (operation === 'resume' && admitted.attempt.header.selectedTaskIds.some(id => !admitted.attempt['review-response'].tasks.some(task => task.taskId === id))) {
@@ -108,7 +144,7 @@ export class TaskReviewCoordinator {
    }
    await (this.deps.save ?? saveCheckpoint)(admitted.path, admitted.checkpoint);
    return admitted;
-  } catch (error) { this.active.delete(path); throw error; }
+  } catch (error) { this.release(path); throw error; }
  }
  /** Used by shutdown/tests, never awaited by start or attached to a caller's cancellation. */
  isActive(project: string, reviewId: string): boolean { return this.active.has(checkpointPath(project, reviewId)); }

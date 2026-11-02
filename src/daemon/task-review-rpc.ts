@@ -1,3 +1,4 @@
+import { isMainThread } from 'node:worker_threads';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
 import { TaskReviewCoordinator } from '../workflow/code-review/task-review/coordinator.js';
@@ -48,7 +49,8 @@ export async function startTaskReview(raw: unknown, trusted?: TrustedRpcContext,
  return coordinator.start(repo, p['reviewId'], attempt, input, { epicHash, operation, provider: () => provider ??= deps.provider?.(repo, client) ?? createRoleRouter({ clientDefault: familyForClient(client), cliTimeoutMs: 900000 }).resolveProviderForRole('review', loadAnalyzeConfig(), repo).provider });
 }
 
-function coordinatorFor(repo: string): TaskReviewCoordinator {
+export function coordinatorFor(repo: string): TaskReviewCoordinator {
+ requireReview(isMainThread, 'reviewer', 'Task review ownership belongs to the main daemon; route through the existing request router');
  let coordinator = coordinators.get(repo);
  if (!coordinator) {
   coordinator = new TaskReviewCoordinator({ sources: new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review', requestId: 0, send: () => {} }), provider: () => { throw new Error('Review provider context missing'); }, publish: (project, id, hash) => publishTaskCheckpoint(project, hash, id, publicationDeps(project)) });
@@ -87,8 +89,7 @@ export async function publishStoredTaskReview(raw: unknown): Promise<unknown> {
  const repo = await realpath(p['repo']);
  requireReview(!repoSchemaRefusal(repo), 'repo', 'Repository schema must be current');
  requireReview(typeof p['reviewId'] === 'string' && typeof p['epicHash'] === 'string' && /^[a-f0-9]{16}$/.test(p['epicHash']), 'request', 'Expected reviewId and canonical epicHash');
- requireReview(!coordinators.get(repo)?.isActive(repo, p['reviewId']), 'reviewId', 'already-running');
- return publishTaskCheckpoint(repo, p['epicHash'], p['reviewId'], publicationDeps(repo));
+ return coordinatorFor(repo).publishStored(repo, p['reviewId'], p['epicHash'], () => publishTaskCheckpoint(repo, p['epicHash'] as string, p['reviewId'] as string, publicationDeps(repo)));
 }
 
 /** Read-only observation. Never starts/resumes a review or resolves an LLM provider. */

@@ -255,6 +255,8 @@ Take a1 for the code. Extend artifact-write-inventory.ts so each content-kind en
   - **resolved**: Accept derived ACs as-is — The user approved the LLD on 2026-11-02 with ac1 to ac5 in its test strategy. _(2026-11-02T09:33:19.969Z)_
 - `qe92b79ce` — Reviewers and resolveComment: when the stage is in signoff, should a person who is not the holder (a reviewer) still be allowed to record comments, or is 'revise' (holder only) the rule for every comment? This design applies 'revise' to every comment, as the Story says, which refuses a non-holder reviewer
   - **resolved**: Holder-only everywhere (status quo) — The user approved the LLD with its default: resolveComment follows the Story text, revise for every comment. The stage-aware exception for reviewers (the framework's recommendation) was not chosen; it can be a later change. _(2026-11-02T09:34:11.585Z)_
+- `qdad78469` — An extend of a Define that is not in signoff: this design asks for 'author' (which takes the claim on an unassigned Epic, as for design.epic); the alternative is 'revise' for every extend
+  - **resolved**: author-when-unsigned — The user approved the LLD with its default: an extend outside signoff is gated as author (same rule as design.epic); in signoff or changes-requested it is revise. _(2026-11-02T09:34:42.275Z)_
 
 ## Citations
 

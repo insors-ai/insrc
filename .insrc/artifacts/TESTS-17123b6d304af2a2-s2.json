@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T07:07:03.756Z",
+    "updatedAt": "2026-11-02T07:11:12.268Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -136,6 +136,85 @@
               },
               {
                 "title": "file-sync-failure-preserves-written-bytes-and-ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e2288ef98",
+        "ranAt": "2026-11-02T07:11:12.268Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "retained-byte-and-worst-case-metadata-reservations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "retained-byte-and-worst-case-metadata-reservations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "checkpoint-schema-generation-and-retry-state-validation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "checkpoint-schema-generation-and-retry-state-validation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "checkpoint-publication-faults-preserve-current-or-complete-next",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1551,
+            "titles": [
+              {
+                "title": "retained-byte-and-worst-case-metadata-reservations",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint-schema-generation-and-retry-state-validation",
+                "result": "pass"
+              },
+              {
+                "title": "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint-publication-faults-preserve-current-or-complete-next",
                 "result": "pass"
               }
             ],

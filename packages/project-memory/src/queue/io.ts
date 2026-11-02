@@ -148,6 +148,39 @@ export class QueueIo {
       } finally { await this.#release(file); }
     });
   }
+  /** Bounded streaming scanner; also yields an unterminated final fragment. */
+  async *scan(name: string, maxLineBytes: number, maxFileBytes: number): AsyncIterable<{ bytes: Buffer; offset: number; end: number; terminated: boolean }> {
+    const file = await this.#open(name, false);
+    try {
+      const size = (await file.stat()).size;
+      if (!Number.isSafeInteger(size) || size > maxFileBytes) throw failure();
+      let position = 0, lineStart = 0, held = 0;
+      let fragments: Buffer[] = [];
+      while (position < size) {
+        await this.assertOwned(); await this.#checkFile(name, file);
+        const chunk = Buffer.alloc(Math.min(65_536, size - position));
+        const { bytesRead } = await file.read(chunk, 0, chunk.length, position);
+        if (!bytesRead) throw failure();
+        let start = 0;
+        for (let i = 0; i < bytesRead; i++) {
+          if (chunk[i] !== 10) continue;
+          const part = chunk.subarray(start, i + 1);
+          held += part.length;
+          if (held > maxLineBytes) throw failure();
+          fragments.push(part);
+          const end = position + i + 1;
+          yield { bytes: Buffer.concat(fragments, held), offset: lineStart, end, terminated: true };
+          fragments = []; held = 0; lineStart = end; start = i + 1;
+        }
+        if (start < bytesRead) { const rest = chunk.subarray(start, bytesRead); held += rest.length; if (held > maxLineBytes) throw failure(); fragments.push(rest); }
+        position += bytesRead;
+      }
+      if (held) yield { bytes: Buffer.concat(fragments, held), offset: lineStart, end: size, terminated: false };
+      await this.#checkFile(name, file);
+      if ((await file.stat()).size !== size) throw failure();
+    } catch { throw failure(); }
+    finally { await this.#release(file); }
+  }
   async write(name: string, bytes: Uint8Array, mode: 'create' | 'replace' | 'append', position = 0): Promise<void> {
     await this.#action('write', name, true, async () => {
       const file = await this.#open(name, mode === 'create');

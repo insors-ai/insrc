@@ -1,0 +1,45 @@
+s8 t8 full sweep, 2026-11-02, at 1f8351455 (all of t1-t7)
+command: npx tsx --test --test-force-exit --test-reporter=tap 'src/**/__tests__/*.test.ts' (Node 22)
+# tests 7334
+# pass 7164
+# fail 32
+
+Every failure, classified (none caused by s8):
+- tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown
+- docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path
+- /Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/doc-summary-restore-ipc.test.ts
+- repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable
+- search.callers across repositories leaves out the entities of a repository under index
+- search.query while one repository is being indexed returns rows from the other repositories only
+- entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out
+- search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before
+- entity.closure / entity.unreachable with a root in a repository under index are refused
+- search guard: a registry read that throws skips the guard and the request is answered as today
+- search request contract: each guarded search request accepts its existing params and answers
+- CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry
+- DuckDBFileDriver -- pool path-escape guard
+- CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+- CM-S4-SOURCE: real PostgreSQL and Redis survive both-scope removal failed close retry and same-ID recreation
+- CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+- CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity
+- SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged
+- file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link
+- DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice
+- import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail
+- CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections
+- CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift
+- CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence
+- CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create
+- CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views
+- CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee
+- CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation
+- CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+- CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility
+- CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets
+- CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage
+
+Classification:
+- seeded test daemon does not start (pre-existing; also at the pre-s2 base): doc-summary-restore-ipc (2), repo-completeness, search-filter (7).
+- load flakes, pass alone after the sweep: threads-boot SIGTERM (5/5 alone), tui-models Model Tiers (13/13 alone).
+- the other session's connection-manager / project-memory work: every CM-S3-*, CM-S4-*, CM-S5-* (incl. the *-KT JetBrains suite), DIFF-CONTROLLER-TIME (src/mcp controller-review), import graph ac4 (the same four edges as the previous sweep: agent/providers/ollama.ts, agent/read-only-tool-loop.ts, daemon/tools/executor.ts -> analyze/connection-access.ts and analyze/context/tool-surface.ts; none from s8), file-tools store refusal (executor.ts connectionExecution), DuckDBFileDriver path guard, check-model-definitions.
+- CM-S3-INVENTORY: the other epic's frozen production-boundary snapshot, already failing on many unlisted files; it now also lists s8's new src/db/subsystems.ts and src/analyze/context/subsystem-context.ts as unclassified. Not edited: that baseline belongs to the other epic.

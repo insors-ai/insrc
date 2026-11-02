@@ -8,7 +8,7 @@ What the build validation gate ran for each Task of this Story, and what each te
 
 ## S001
 
-Run at 2026-11-02T07:33:53.688Z on commit `13948e28c`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-02T08:12:44.741Z on commit `24a045cf2`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: SQL references resolved by the cross-file pass**
 
@@ -30,5 +30,5 @@ Run at 2026-11-02T07:33:53.688Z on commit `13948e28c`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/indexer/__tests__/cross-file-sql-references.test.ts` | 0 | 4 | 1.4 s |  |
+| `src/indexer/__tests__/cross-file-sql-references.test.ts` | 0 | 13 | 3.4 s |  |
 | `src/indexer/__tests__/sql-index.test.ts` | 0 | 2 | 0.9 s |  |

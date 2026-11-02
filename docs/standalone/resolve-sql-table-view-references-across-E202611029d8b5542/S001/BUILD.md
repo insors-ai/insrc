@@ -2,9 +2,9 @@
 
 # Build (standalone small) — Story S001
 
-**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-11-02T07:33:53.688Z  ·  **Updated:** 2026-11-02T07:33:53.688Z
+**Size class:** small  ·  **Standalone:** yes  ·  **Created:** 2026-11-02T07:33:53.688Z  ·  **Updated:** 2026-11-02T08:12:44.741Z
 
-**Commit:** 13948e28c
+**Commit:** 24a045cf2
 
 ## Triage rationale
 
@@ -12,7 +12,7 @@ One story in one module with a clear approach: add REFERENCES (language sql) to 
 
 ## Summary
 
-The cross-file pass now resolves pending SQL REFERENCES by name. REFERENCES joins PASS2_KINDS. The entity index gains sqlByName and sqlByLastSegment, and runPass2's dispatch gains a third arm, resolveSqlReference; only rows from a SQL entity are attempted. Matching: unquoted names compare case-insensitively; a qualified name matches only that definition; a bare name also matches any qualified definition ending in it. One candidate is written 'inferred', several stay ambiguous with their candidates, none is no-candidate (no-match). In settle mode, runPass2 also takes pending SQL references that a committed file's tables or views answer; rowsInScope is unchanged. The s9 assertion in sql-index.test.ts that cross-file references stay pending now expects inferred edges.
+The cross-file pass resolves pending SQL REFERENCES by name (REFERENCES in PASS2_KINDS, sqlByName/sqlByLastSegment, resolveSqlReference in a three-way dispatch). Unquoted names compare case-insensitively; a qualified name matches only that definition, a bare one also any qualified definition ending in it. One candidate is written 'inferred', several stay ambiguous, none is no-candidate. Manual code review over two cycles (4 rounds; last verdict pass). It added two things. First, a REFERENCES edge between SQL entities of one repository whose target is removed returns pending by name, under the names the SQL reader's own parse reads in the holder (SqlParser.referencesIn, registered through setSqlReferenceReader). A moved or re-schema'd table is then found again. With no reader or no matching name, it awaits the id as before. Second, a deviation from the LLD: a settle that commits any .sql file re-attempts all of the repository's pending SQL references, not only names the committed files define, so removals and renames are re-attempted too. Follow-ups, not fixed: L1, a stale inferred edge when a second candidate appears (as for CALLS); L2, a settle scans all pending rows on a .sql commit; L3, quoted identifiers lose case-sensitivity; L4, 2- and 3-part names don't meet.
 
 ## Tasks validated
 
@@ -22,6 +22,9 @@ The cross-file pass now resolves pending SQL REFERENCES by name. REFERENCES join
 
 ## Changes
 
-- `src/indexer/__tests__/cross-file-sql-references.test.ts` — **insrc-build** (2026-11-02T07:33:53.688Z)
-- `src/indexer/__tests__/sql-index.test.ts` — **insrc-build** (2026-11-02T07:33:53.688Z)
-- `src/indexer/cross-file-resolver.ts` — **insrc-build** (2026-11-02T07:33:53.688Z)
+- `src/indexer/__tests__/cross-file-sql-references.test.ts` — **insrc-build** (2026-11-02T08:12:44.741Z)
+- `src/indexer/__tests__/sql-index.test.ts` — **insrc-build** (2026-11-02T08:12:44.741Z)
+- `src/indexer/cross-file-resolver.ts` — **insrc-build** (2026-11-02T08:12:44.741Z)
+- `src/db/relations.ts` — **insrc-build** (2026-11-02T08:12:44.741Z)
+- `src/daemon/threads/__tests__/fixtures/module-state-inventory.json` — **insrc-build** (2026-11-02T08:12:44.741Z)
+- `src/indexer/parser/sql.ts` — **insrc-build** (2026-11-02T08:12:44.741Z)

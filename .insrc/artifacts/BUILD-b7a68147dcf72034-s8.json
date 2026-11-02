@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 11,
         "contentHash": "04a82c9a510cfe30b65dd5101e274a0eaa9351b8f0e9e5f1f4a1963d35943d70",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 11,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T13:37:15.352Z",
+        "override": {
+          "reason": "Daemon code review unavailable for the whole build; controller self-review at docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S008/CODE-SELF-REVIEW.md (verdict pass). User approved explicitly in chat."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-9cced31d-cb1c-4c3f-8adf-f762ec6dc36c",

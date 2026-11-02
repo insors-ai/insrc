@@ -36,6 +36,7 @@ export class QueueAdmission {
       }).finally(() => reservation.release());
     } catch (error) { lease?.release(); return Promise.reject(error); }
   }
+  markResolved(operationId: string, generation: string) { return this.#queue.markResolved(operationId, generation); }
   replay() { return this.#queue.replay(); }
   append(command: MemoryCommand): Promise<OperationReceipt> {
     let lease: Reservation | undefined;

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -146,3 +146,25 @@ Run at 2026-11-02T07:30:49.857Z on commit `54e12c6af`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-admission.test.ts` | 0 | 3 | 2.1 s |  |
+
+## t7
+
+Run at 2026-11-02T08:10:27.157Z on commit `08549be1f`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: pinned-replay-and-qualified-operation-status**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | pinned-replay-and-qualified-operation-status | `packages/project-memory/src/__tests__/queue-replay.test.ts` |
+
+**integration: retry-holes-do-not-authorize-mixed-segment-deletion**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | retry-holes-do-not-authorize-mixed-segment-deletion | `packages/project-memory/src/__tests__/queue-replay.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-replay.test.ts` | 0 | 2 | 1.2 s |  |

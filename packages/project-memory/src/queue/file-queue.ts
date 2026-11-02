@@ -1,16 +1,18 @@
 import type { MemoryLimits, OperationReceipt, Scope } from '../types.js';
 import type { DirectoryOwnership } from '../ownership.js';
 import { MemoryError } from '../errors.js';
-import { boundedString, decodeFrame, encodeFrame, validateQueueLimits, visibleScope } from './codec.js';
+import { boundedString, decodeFrame, encodeFrame, validateQueueLimits, visibleScope, snapshotJson } from './codec.js';
 import type { CommandSnapshot } from './codec.js';
 import { advance, CheckpointWriter, reserveMetadata } from './checkpoint.js';
-import type { FrameRecord } from './checkpoint.js';
+import type { FrameRecord, RetryRecord } from './checkpoint.js';
 import { QueueIo, segmentName } from './io.js';
 import type { IoHooks } from './io.js';
 import { indexFrame, recoverQueue } from './recovery.js';
 import type { IndexedFrame } from './recovery.js';
 import { QUEUE_LIMITS } from './types.js';
-import type { EventBody, QueueFrame, QueueStats, SegmentHeader } from './types.js';
+import type { EventBody, QueueFrame, QueueStats, SegmentHeader, ReceiptVerifier } from './types.js';
+
+import { matchProof, readReceipt, ReceiptUnavailableError } from './receipts.js';
 
 class QueueWriteError extends MemoryError {
   constructor(readonly operationId: string) { super('STORE_UNAVAILABLE', 'Queue durability could not be verified; reopen before retrying.', true); }
@@ -20,6 +22,7 @@ export class FileQueue {
   readonly io: QueueIo;
   readonly writer: CheckpointWriter;
   readonly limits: MemoryLimits;
+  readonly verifier: ReceiptVerifier | undefined;
   readonly index = new Map<string, IndexedFrame>();
   #tail: Promise<void> = Promise.resolve();
   #calls = 0;
@@ -32,8 +35,8 @@ export class FileQueue {
   #stopped = false;
   #fenced = false;
   #closing: Promise<void> | undefined;
-  constructor(owner: DirectoryOwnership, root: string, limits: MemoryLimits, hooks: IoHooks = {}) {
-    validateQueueLimits(limits);
+  constructor(owner: DirectoryOwnership, root: string, limits: MemoryLimits, hooks: IoHooks = {}, verifier?: ReceiptVerifier) {
+    validateQueueLimits(limits); this.verifier = verifier;
     this.limits = Object.freeze({ ...limits });
     this.io = new QueueIo(owner, root, hooks); this.writer = new CheckpointWriter(this.io);
   }
@@ -56,7 +59,7 @@ export class FileQueue {
       if (this.#fenced || this.io.fenced) throw new MemoryError('STORE_UNAVAILABLE', 'Queue requires recovery.', true);
       try { return await work(); }
       catch (error) {
-        if (this.io.fenced || !(error instanceof MemoryError) || error.code === 'STORE_UNAVAILABLE') this.#fenced = true;
+        if (this.io.fenced || !(error instanceof MemoryError) || (error.code === 'STORE_UNAVAILABLE' && !(error instanceof ReceiptUnavailableError))) this.#fenced = true;
         if (error instanceof MemoryError) throw error;
         throw new MemoryError('STORE_UNAVAILABLE', 'Queue work failed safely.', true);
       }
@@ -67,8 +70,16 @@ export class FileQueue {
   async persist(snapshot: CommandSnapshot, scopeEpoch: string): Promise<OperationReceipt> {
     if (snapshot.bytes > this.limits.maxEventBytes) throw new MemoryError('INVALID_REQUEST', 'Command exceeds the configured event limit.');
     if (!boundedString(scopeEpoch, 256)) throw new MemoryError('INVALID_REQUEST', 'Invalid project scope epoch.');
+    if (this.verifier) {
+      const lookup = await readReceipt(() => this.verifier!.byIdentity(snapshot.identity));
+      if (lookup.status === 'found') {
+        matchProof(lookup.proof, { operationId: snapshot.operationId, identityDigest: snapshot.identityDigest, payloadHash: snapshot.payloadHash, scope: snapshot.command.scope, scopeEpoch, eventId: snapshot.command.source.eventId });
+        return lookup.proof.receipt;
+      }
+    }
     const existing = this.index.get(snapshot.operationId);
     if (existing) {
+      if (existing.record.terminal) throw new ReceiptUnavailableError();
       if (existing.payloadHash !== snapshot.payloadHash || existing.scopeEpoch !== scopeEpoch) throw new MemoryError('REVISION_CONFLICT', 'Event identity was already used with different content or scope.');
       return { operationId: snapshot.operationId, eventId: snapshot.command.source.eventId, state: 'accepted' };
     }
@@ -97,10 +108,48 @@ export class FileQueue {
     } catch { this.#fenced = true; throw new QueueWriteError(snapshot.operationId); }
     finally { this.#reserved -= outstanding; }
   }
-  operationWithinLane(scope: Scope, operationId: string, scopeEpoch: string): OperationReceipt {
+  async operationWithinLane(scope: Scope, operationId: string, scopeEpoch: string): Promise<OperationReceipt> {
     const entry = this.index.get(operationId);
+    if (this.verifier) {
+      const lookup = await readReceipt(() => this.verifier!.byOperation(operationId, scope));
+      if (lookup.status === 'found') {
+        const proof = lookup.proof;
+        if (proof.operationId !== operationId || proof.scopeEpoch !== scopeEpoch || !visibleScope(proof.scope, scope)) throw new MemoryError('INVALID_REQUEST', 'Memory operation is unavailable in this scope.');
+        if (entry) matchProof(proof, { ...entry, operationId });
+        return proof.receipt;
+      }
+    }
     if (!entry || entry.scopeEpoch !== scopeEpoch || !visibleScope(entry.scope, scope)) throw new MemoryError('INVALID_REQUEST', 'Memory operation is unavailable in this scope.');
+    if (entry.record.terminal) throw new ReceiptUnavailableError();
     return { operationId, eventId: entry.eventId, state: 'accepted' };
+  }
+  async #updateRecord(entry: IndexedFrame, record: FrameRecord): Promise<void> {
+    const current = this.writer.current;
+    await this.writer.publish({ ...current, generation: advance(current.generation), segments: current.segments.map(segment => segment.id !== entry.segmentId ? segment : { ...segment, frames: segment.frames.map(old => old.operationId === record.operationId ? record : old) }) });
+    this.index.set(record.operationId, { ...entry, record });
+  }
+  markResolved(operationId: string, generation: string): Promise<void> {
+    return this.enqueue(async () => {
+      if (!this.verifier) throw new MemoryError('NOT_READY', 'Terminal acknowledgement requires authoritative receipts.');
+      const entry = this.index.get(operationId);
+      if (!entry) throw new MemoryError('INVALID_REQUEST', 'Memory operation is unavailable in this scope.');
+      const lookup = await readReceipt(() => this.verifier!.byOperation(operationId, entry.scope));
+      if (lookup.status !== 'found') throw new MemoryError('NOT_READY', 'A durable terminal receipt is required.');
+      matchProof(lookup.proof, { ...entry, operationId }, generation);
+      if (!entry.record.terminal || entry.record.generation !== generation) await this.#updateRecord(entry, { ...entry.record, terminal: true, generation });
+    }, true);
+  }
+  recordRetry(operationId: string, retry: RetryRecord): Promise<void> {
+    let snapshot: RetryRecord;
+    try {
+      snapshot = snapshotJson(retry, 2048).value as unknown as RetryRecord;
+      if (Object.keys(snapshot).sort().join(',') !== 'attempts,errorCode,nextEligibleAt' || !Number.isSafeInteger(snapshot.attempts) || snapshot.attempts < 0 || !Number.isSafeInteger(snapshot.nextEligibleAt) || snapshot.nextEligibleAt < 0 || !boundedString(snapshot.errorCode, 128)) throw new MemoryError('INVALID_REQUEST', 'Invalid retry metadata.');
+    } catch { return Promise.reject(new MemoryError('INVALID_REQUEST', 'Invalid retry metadata.')); }
+    return this.enqueue(async () => {
+      const entry = this.index.get(operationId);
+      if (!entry || entry.record.terminal) throw new MemoryError('NOT_READY', 'Retry bookkeeping requires a retained pending operation.');
+      await this.#updateRecord(entry, { ...entry.record, retry: snapshot });
+    }, true);
   }
   isPinned(segmentId: string): boolean { return this.#pins.has(segmentId); }
   replay(): AsyncIterable<QueueFrame> {

@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T07:30:49.857Z",
+    "updatedAt": "2026-11-02T08:10:27.157Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -402,6 +402,59 @@
               },
               {
                 "title": "admission-quota-refunds-and-hanging-policy-drains-safely",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "08549be1f",
+        "ranAt": "2026-11-02T08:10:27.157Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pinned-replay-and-qualified-operation-status",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-replay.test.ts",
+                "title": "pinned-replay-and-qualified-operation-status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "retry-holes-do-not-authorize-mixed-segment-deletion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-replay.test.ts",
+                "title": "retry-holes-do-not-authorize-mixed-segment-deletion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-replay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1205,
+            "titles": [
+              {
+                "title": "pinned-replay-and-qualified-operation-status",
+                "result": "pass"
+              },
+              {
+                "title": "retry-holes-do-not-authorize-mixed-segment-deletion",
                 "result": "pass"
               }
             ],

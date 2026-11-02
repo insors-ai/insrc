@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 20 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -85,3 +85,22 @@ Run at 2026-11-02T09:46:53.914Z on commit `7182d1d58`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/subsystem-summaries.test.ts` | 0 | 5 | 3.2 s |  |
+
+## t5
+
+Run at 2026-11-02T09:51:03.089Z on commit `72314d819`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: subsystems job queued and run in the summary lane**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s8 t5: the subsystems job runs in the summary lane, after code work, and is handed to the summary worker | `src/indexer/__tests__/subsystems-job.test.ts` |
+| pass | s8 t5: queued subsystems jobs for one repository collapse to one | `src/indexer/__tests__/subsystems-job.test.ts` |
+| pass | s8 t5: a full index that leaves the graph complete enqueues one subsystems job; an incomplete one enqueues none; the job runs the pass | `src/indexer/__tests__/subsystems-job.test.ts` |
+| pass | s8 t5: a settle and a clean-up that leave the graph complete enqueue the job; an incomplete graph does not | `src/indexer/__tests__/subsystems-job.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/subsystems-job.test.ts` | 0 | 4 | 1.7 s |  |

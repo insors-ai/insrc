@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T09:46:53.914Z",
+    "updatedAt": "2026-11-02T09:51:03.089Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -291,6 +291,69 @@
               },
               {
                 "title": "s8 t4: a summary is stored only on the subsystem rows of the generation it was written for",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "72314d819",
+        "ranAt": "2026-11-02T09:51:03.089Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystems job queued and run in the summary lane",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: the subsystems job runs in the summary lane, after code work, and is handed to the summary worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: queued subsystems jobs for one repository collapse to one",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: a full index that leaves the graph complete enqueues one subsystems job; an incomplete one enqueues none; the job runs the pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: a settle and a clean-up that leave the graph complete enqueue the job; an incomplete graph does not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystems-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1689,
+            "titles": [
+              {
+                "title": "s8 t5: the subsystems job runs in the summary lane, after code work, and is handed to the summary worker",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t5: queued subsystems jobs for one repository collapse to one",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t5: a full index that leaves the graph complete enqueues one subsystems job; an incomplete one enqueues none; the job runs the pass",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t5: a settle and a clean-up that leave the graph complete enqueue the job; an incomplete graph does not",
                 "result": "pass"
               }
             ],

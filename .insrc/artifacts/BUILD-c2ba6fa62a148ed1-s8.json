@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T09:55:10.020Z",
+    "updatedAt": "2026-11-02T10:00:37.755Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -34,9 +34,13 @@
       {
         "id": "t6",
         "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
       }
     ],
-    "summary": "Added the 'index.subsystems' request { repoPath }, classed 'indexing'. subsystemsAnswer in src/db/subsystems.ts builds the answer: generation, computedAtGeneration, graphComplete, stale, and the subsystems with files, entity counts, summaries and connections. The note says 'the groups rest on an incomplete graph' (ac5), 'the groups rest on an older graph' or 'not grouped yet'. An unregistered repository gets { error }. The handler-runtime, method-class and indexing-worker request lists include the new request.",
+    "summary": "Added withSubsystemContext (src/analyze/context/subsystem-context.ts). It appends a code-written 'Subsystems' block to the bundle's structure layer: for each subsystem holding a stored code file under the scope path, or a file the bundle cites as path or path:line, its name, summary, connections (by subsystem name, with weight and kinds) and member files, then the incomplete/older-graph note. Only files with a stored subsystem_by_file row select one. The block is added as each bundle is served, through one helper in the driver, on all three paths: runShaper's built and cache-hit bundles, and the saved-cache read (readUnattachedSavedShaperCache), which runShaperAtEntry serves without calling runShaper. It runs after any cache write, so the cache never holds the block. With no repository, no stored subsystems or none touched, the bundle is unchanged.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/TESTS.md"
     },
@@ -46,212 +50,233 @@
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/subsystem-tables.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/db/subsystems.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/understanding/__tests__/storage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystem-grouping.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/subsystems.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystem-pass.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/subsystem-pass.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/analyze/context/boot-validator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/analyze/summariser/subsystem-prompt.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystem-summaries.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/prompts/analyze/subsystem-summariser.system.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/queue-lanes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/summary-link.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystems-job.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/subsystems-request.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:55:10.020Z"
+        "timestamp": "2026-11-02T10:00:37.755Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/subsystem-context.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:00:37.755Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:00:37.755Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/subsystem-context.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:00:37.755Z"
       }
     ],
-    "commit": "674989914"
+    "commit": "32cc19900"
   }
 }

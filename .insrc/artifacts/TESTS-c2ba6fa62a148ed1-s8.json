@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T09:55:10.020Z",
+    "updatedAt": "2026-11-02T10:00:37.755Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -408,6 +408,69 @@
               },
               {
                 "title": "s8 t6: the index.subsystems request is classed for the code-indexing worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "32cc19900",
+        "ranAt": "2026-11-02T10:00:37.755Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyzer subsystem context",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7 (ac3): a request about one module names its subsystem, summary and connections, each a stored row, after the existing structure",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7: only a file with a stored subsystem row selects a subsystem; other path-like text is ignored",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7: without a repository or stored subsystems the bundle is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7: the cache never holds the block, and subsystems stored after a bundle was cached show on the next serve",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1584,
+            "titles": [
+              {
+                "title": "s8 t7 (ac3): a request about one module names its subsystem, summary and connections, each a stored row, after the existing structure",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t7: only a file with a stored subsystem row selects a subsystem; other path-like text is ignored",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t7: without a repository or stored subsystems the bundle is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t7: the cache never holds the block, and subsystems stored after a bundle was cached show on the next serve",
                 "result": "pass"
               }
             ],

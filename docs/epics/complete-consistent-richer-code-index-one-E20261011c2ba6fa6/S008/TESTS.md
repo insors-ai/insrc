@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -122,3 +122,22 @@ Run at 2026-11-02T09:55:10.020Z on commit `674989914`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/subsystems-request.test.ts` | 0 | 3 | 2.1 s |  |
+
+## t7
+
+Run at 2026-11-02T10:00:37.755Z on commit `32cc19900`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: analyzer subsystem context**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s8 t7 (ac3): a request about one module names its subsystem, summary and connections, each a stored row, after the existing structure | `src/analyze/context/__tests__/subsystem-context.test.ts` |
+| pass | s8 t7: only a file with a stored subsystem row selects a subsystem; other path-like text is ignored | `src/analyze/context/__tests__/subsystem-context.test.ts` |
+| pass | s8 t7: without a repository or stored subsystems the bundle is unchanged | `src/analyze/context/__tests__/subsystem-context.test.ts` |
+| pass | s8 t7: the cache never holds the block, and subsystems stored after a bundle was cached show on the next serve | `src/analyze/context/__tests__/subsystem-context.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/analyze/context/__tests__/subsystem-context.test.ts` | 0 | 4 | 1.6 s |  |

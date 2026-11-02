@@ -31,6 +31,7 @@ import {
 } from '../classifier/index.js';
 import { PLANNER_PROMPT_PATH } from '../planner/index.js';
 import { DOC_SUMMARISER_PROMPT_PATH } from '../summariser/index.js';
+import { SUBSYSTEM_SUMMARISER_PROMPT_PATH } from '../summariser/subsystem-prompt.js';
 import { DECOMPOSE_PROMPT_PATH } from './decomposer.js';
 import {
 	SYNTHESIZE_ADHERENCE_PROMPT_PATH,
@@ -119,6 +120,7 @@ function collectComponentPrompts(): ReadonlyArray<{ componentId: string; relPath
 	out.push({ componentId: 'classifier',        relPath: CLASSIFY_PROMPT_PATH });
 	out.push({ componentId: 'planner',           relPath: PLANNER_PROMPT_PATH });
 	out.push({ componentId: 'doc-summariser',    relPath: DOC_SUMMARISER_PROMPT_PATH });
+	out.push({ componentId: 'subsystem-summariser', relPath: SUBSYSTEM_SUMMARISER_PROMPT_PATH });
 	out.push({ componentId: 'decomposer',            relPath: DECOMPOSE_PROMPT_PATH        });
 	out.push({ componentId: 'synthesize.code',       relPath: SYNTHESIZE_CODE_PROMPT_PATH       });
 	out.push({ componentId: 'synthesize.docs',       relPath: SYNTHESIZE_DOCS_PROMPT_PATH       });

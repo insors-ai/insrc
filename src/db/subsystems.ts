@@ -91,3 +91,21 @@ export async function readSubsystems(repoPath: string, opts: { readonly files?: 
 	}
 	return { computedAtGeneration: generation, subsystems: rows.filter(r => wanted.has(r.id)).map(view) };
 }
+
+/**
+ * Set one subsystem's summary -- only while its row is still the one grouped at
+ * `generation` (a newer pass may have replaced it). Returns whether it was set.
+ */
+export async function writeSubsystemSummary(repoPath: string, id: string, summary: string, summaryModel: string, generation: number): Promise<boolean> {
+	const repoId = await lookupRepoId(repoPath);
+	if (repoId === undefined) return false;
+	return withWriteTxn(s => {
+		const key = subsystemKey(repoId, id);
+		const buf = s.subsystem.get(key) as Buffer | undefined;
+		if (buf === undefined) return false;
+		const row = decodeSubsystemRow(buf);
+		if (row.computedAtGeneration !== generation) return false;
+		s.subsystem.put(key, encodeSubsystemRow({ ...row, summary, summaryModel }));
+		return true;
+	});
+}

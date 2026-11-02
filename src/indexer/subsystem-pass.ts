@@ -12,15 +12,28 @@
  * directory. A relationship to a module stub, an external endpoint or another
  * repository's entity is not an edge: its target is not one of the
  * repository's code entities.
+ *
+ * Then each subsystem without a summary (a membership not summarised before)
+ * gets one from the cheap-tier model (buildSummariserProvider, as document
+ * summaries do), one call at a time with a yield between them. A failed call
+ * leaves that summary empty for the next pass; a generation that advances
+ * while summaries are written stops the loop -- the pass on the new
+ * generation regroups.
  */
 
 import type { DbClient } from '../db/client.js';
 import { entityU64ForId, listEntitiesForRepo } from '../db/entities.js';
 import { outNeighbors } from '../db/graph/edges.js';
 import { readIndexState } from '../db/index-state.js';
-import { readSubsystems, writeSubsystems, type SubsystemGroupRow } from '../db/subsystems.js';
+import { readSubsystems, writeSubsystemSummary, writeSubsystems, type SubsystemGroupRow, type SubsystemView } from '../db/subsystems.js';
+import { loadAnalyzeConfig } from '../config/analyze.js';
+import { buildSummariserProvider } from '../analyze/context/shaper-provider.js';
+import { SUBSYSTEM_SUMMARISER_PROMPT_PATH } from '../analyze/summariser/subsystem-prompt.js';
 import { getLogger } from '../shared/logger.js';
-import type { Entity, EntityKind, RelationEvidence, RelationKind } from '../shared/types.js';
+import type { Entity, EntityKind, LLMMessage, LLMProvider, RelationEvidence, RelationKind, StructuredSchema } from '../shared/types.js';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { directoryEdges, groupSubsystems, type FileEdge } from './subsystems.js';
 
 const log = getLogger('subsystem-pass');
@@ -40,19 +53,51 @@ export interface SubsystemPassResult {
 	readonly reason?:          'graph-incomplete' | 'up-to-date' | undefined;
 	readonly generation:       number;
 	readonly subsystems:       number;
+	readonly summariesWritten: number;
+	readonly summariesFailed:  number;
+	/** The generation advanced while summaries were written; the rest wait for the next pass. */
+	readonly stopped:          boolean;
 }
 
-/** Group a graph-complete repository's code files into subsystems and store them. */
-export async function runSubsystemPass(opts: { readonly db: DbClient; readonly repoPath: string }): Promise<SubsystemPassResult> {
+
+const SUMMARY_SCHEMA = {
+	type: 'object',
+	additionalProperties: false,
+	required: ['summary'],
+	properties: { summary: { type: 'string', minLength: 1 } },
+} as unknown as StructuredSchema;
+
+/** The prompt, under src/prompts so a built daemon ships it (copy-assets). */
+function loadPrompt(): string {
+	// .../indexer/subsystem-pass.js -> .../indexer -> the source (or out) root
+	return readFileSync(resolve(fileURLToPath(import.meta.url), '..', '..', SUBSYSTEM_SUMMARISER_PROMPT_PATH), 'utf8');
+}
+
+/** One subsystem, as the summariser reads it: its files with their exported names, and its connections by name. */
+function summaryMessages(prompt: string, sub: SubsystemView, exportsOf: ReadonlyMap<string, readonly string[]>, nameOf: ReadonlyMap<string, string>): LLMMessage[] {
+	const files = sub.files.map(f => `- ${f}: ${(exportsOf.get(f) ?? []).join(', ') || '(no exported names)'}`).join('\n');
+	const conns = sub.connections.length === 0 ? '(none)'
+		: sub.connections.map(c => `- ${nameOf.get(c.to) ?? c.to}: ${Object.entries(c.kinds).map(([k, n]) => `${n} ${k}`).join(', ')}`).join('\n');
+	return [
+		{ role: 'system', content: prompt },
+		{ role: 'user', content: `Subsystem: ${sub.name}\n\nFiles and their exported names:\n${files}\n\nConnections to other subsystems:\n${conns}` },
+	];
+}
+
+const yieldNow = () => new Promise<void>(r => setImmediate(r));
+
+/** Group a graph-complete repository's code files into subsystems, store them, and summarise new ones. */
+export async function runSubsystemPass(opts: { readonly db: DbClient; readonly repoPath: string; readonly provider?: LLMProvider | undefined }): Promise<SubsystemPassResult> {
 	const { db, repoPath } = opts;
+	const none = { subsystems: 0, summariesWritten: 0, summariesFailed: 0, stopped: false };
 	const state = await readIndexState(repoPath);
 	const generation = state?.generation ?? 0;
 	if (state === undefined || !state.graphComplete) {
 		log.info({ repo: repoPath, generation }, 'subsystem pass: the graph is not complete; nothing grouped');
-		return { ran: false, reason: 'graph-incomplete', generation, subsystems: 0 };
+		return { ran: false, reason: 'graph-incomplete', generation, ...none };
 	}
 	if ((await readSubsystems(repoPath)).computedAtGeneration === generation) {
-		return { ran: false, reason: 'up-to-date', generation, subsystems: 0 };
+		return { ran: false, reason: 'up-to-date', generation, ...none };
 	}
 
 	const entities = await listEntitiesForRepo(db, repoPath);
@@ -95,5 +140,54 @@ export async function runSubsystemPass(opts: { readonly db: DbClient; readonly r
 	}));
 	await writeSubsystems(repoPath, generation, rows);
 	log.info({ repo: repoPath, generation, files: files.length, subsystems: rows.length, sources: sources.length }, 'subsystem pass: grouped');
-	return { ran: true, generation, subsystems: rows.length };
+
+	const summaries = await summarise(repoPath, generation, entities, rel, opts.provider);
+	return { ran: true, generation, subsystems: rows.length, ...summaries };
+}
+
+/** Summaries for the subsystems that have none, one model call at a time. */
+async function summarise(
+	repoPath:   string,
+	generation: number,
+	entities:   readonly Entity[],
+	rel:        (file: string) => string,
+	injected:   LLMProvider | undefined,
+): Promise<{ summariesWritten: number; summariesFailed: number; stopped: boolean }> {
+	const { subsystems } = await readSubsystems(repoPath);
+	const pending = subsystems.filter(s => s.summary === null);
+	if (pending.length === 0) return { summariesWritten: 0, summariesFailed: 0, stopped: false };
+
+	const cfg = loadAnalyzeConfig();
+	const provider = injected ?? buildSummariserProvider(cfg);
+	const prompt = loadPrompt();
+	const exportsOf = new Map<string, string[]>();
+	for (const e of entities) {
+		if (e.isExported !== true || !CODE_KINDS.has(e.kind)) continue;
+		const list = exportsOf.get(rel(e.file));
+		if (list === undefined) exportsOf.set(rel(e.file), [e.name]); else list.push(e.name);
+	}
+	const nameOf = new Map(subsystems.map(s => [s.id, s.name]));
+	const advanced = async () => ((await readIndexState(repoPath))?.generation ?? generation) !== generation;
+
+	let written = 0, failed = 0;
+	for (const sub of pending) {
+		await yieldNow();
+		if (await advanced()) return { summariesWritten: written, summariesFailed: failed, stopped: true };
+		let summary: string;
+		try {
+			// One call at a time (never in parallel): the loop awaits each.
+			const out = await provider.completeStructured<{ summary: string }>(summaryMessages(prompt, sub, exportsOf, nameOf), SUMMARY_SCHEMA, {
+				maxAttempts: cfg.shaper.structuredOutputRetries, disableThinking: true, maxTokens: 1_024,
+			});
+			summary = out.summary.trim();
+		} catch (err) {
+			failed++;
+			log.warn({ repo: repoPath, subsystem: sub.id, name: sub.name, err: err instanceof Error ? err.message : String(err) }, 'subsystem pass: a summary call failed; it stays empty until the next pass');
+			continue;
+		}
+		if (await advanced()) return { summariesWritten: written, summariesFailed: failed, stopped: true };
+		if (await writeSubsystemSummary(repoPath, sub.id, summary, cfg.summariserModel, generation)) written++;
+	}
+	log.info({ repo: repoPath, generation, written, failed }, 'subsystem pass: summaries written');
+	return { summariesWritten: written, summariesFailed: failed, stopped: false };
 }

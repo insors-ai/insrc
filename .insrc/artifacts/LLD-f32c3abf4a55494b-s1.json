@@ -1,0 +1,468 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793611542462-nl097c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:29:49.749Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 245515,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "epicSlug": "gate-remaining-content-writers-revise-action",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793611542462-nl097c",
+    "hldEffectiveHash": "f32c3abf4a55494b5c0fc2e58aafcee463c0168c8419fbeaaf1bdb89a1f6e2e4",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "One cohesive story (put three content writers behind the team gate's 'revise' action) with real design choices and several build tasks; touches the team gate, the orchestrator, the review-comment handler and the Define write, but needs no Epic framing.",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Three places that change a draft while it may be in signoff get the team gate's check: the define run that extends an existing Epic, the review-comment recorder, and (through its only caller) the write that appends a Story to a Define. One shared check chooses 'revise' when the stage is in signoff and 'author' otherwise, and a repo with no team policy sees no change and no tracker call. The write inventory names the check behind each content writer, and a test fails when one has none."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Gate the remaining content writers with the revise action"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "assertMayReviseDraft",
+          "signature": "assertMayReviseDraft(repoPath: string, unit: UnitRef, stage: SignoffStage, authoring: string): Promise<void>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository whose team policy and tracker apply",
+              "optional": false
+            },
+            {
+              "name": "unit",
+              "type": "UnitRef",
+              "purpose": "The Epic or Story whose stage draft is about to change",
+              "optional": false
+            },
+            {
+              "name": "stage",
+              "type": "SignoffStage",
+              "purpose": "The stage artifact being changed: DEF, HLD or LLD",
+              "optional": false
+            },
+            {
+              "name": "authoring",
+              "type": "string",
+              "purpose": "The workflow or operation name the gate records and passes to the completion hook",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves when the actor may change the draft; a repo with no team policy resolves with no tracker call"
+          },
+          "errors": [
+            {
+              "type": "TeamGateRefusedError",
+              "condition": "teamGate answers anything but allowed (held by another, awaiting signoff, no issue, refused), or the action is 'revise' and nobody holds the stage"
+            },
+            {
+              "type": "ToolDenied",
+              "condition": "A denied tracker call stops the operation; it is rethrown, never made a refusal"
+            }
+          ],
+          "preconditions": [
+            "The unit has an artifact for the stage, or the call is the first author turn of a stage with no issue"
+          ],
+          "postconditions": [
+            "The action asked of teamGate is 'revise' when isUnderSignoff(repoPath, unit, stage) holds and 'author' otherwise",
+            "assertHeld is applied for 'revise', so revising never takes the claim",
+            "assertMayAuthor keeps its behaviour and its three call sites"
+          ]
+        },
+        {
+          "name": "finalizeDefineExtend",
+          "signature": "finalizeDefineExtend(...existing parameters): Promise<ExtendResult>",
+          "parameters": [
+            {
+              "name": "existing parameters",
+              "type": "unchanged",
+              "purpose": "No parameter is added; the unit comes from the target Epic the extend already resolves",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "unchanged",
+            "meaning": "The extend result, or the failure the orchestrator already returns"
+          },
+          "errors": [
+            {
+              "type": "TeamGateRefusedError",
+              "condition": "The gate refuses the Epic's DEF stage; thrown before appendStoryToDefine, the amendment id or any file is touched"
+            }
+          ],
+          "preconditions": [
+            "The target Epic and its HLD are approved (as today)"
+          ],
+          "postconditions": [
+            "The gate is asked for the Epic and stage DEF after the Epic anchor is resolved and before the first side effect",
+            "A refused extend writes no Story, no amendment and no EXT record"
+          ]
+        },
+        {
+          "name": "handleResolveComment",
+          "signature": "handleResolveComment(params, repoEnv, deps?: ResolveCommentDeps): Promise<ResolveCommentResult | ResolveCommentError>",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ResolveCommentDeps",
+              "purpose": "Gains an optional gate seam beside record, for tests",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ResolveCommentResult | ResolveCommentError",
+            "meaning": "A refused gate is an { error } naming the gate's reason and recording nothing"
+          },
+          "errors": [
+            {
+              "type": "ToolDenied",
+              "condition": "Rethrown to the daemon method, as for every denied tracker call"
+            }
+          ],
+          "preconditions": [
+            "The artifactId parses as DEF, HLD or LLD and the artifact exists"
+          ],
+          "postconditions": [
+            "The gate runs after the artifact is found and before the first recordResolution",
+            "define and hld map to the Epic (stages DEF, HLD) and lld to the Story (stage LLD)",
+            "A repo with no team policy behaves as today"
+          ]
+        },
+        {
+          "name": "appendStoryToDefine",
+          "signature": "appendStoryToDefine(repoPath: string, epicHash: string, story: DefineStory): DefineArtifact",
+          "parameters": [],
+          "returns": {
+            "type": "DefineArtifact",
+            "meaning": "Unchanged"
+          },
+          "errors": [],
+          "preconditions": [
+            "Its only production caller, finalizeDefineExtend, has passed the gate"
+          ],
+          "postconditions": [
+            "Signature and behaviour are unchanged; the inventory records that it is gated by finalizeDefineExtend"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "WriteInventoryEntry (src/workflow/artifact-write-inventory.ts)",
+        "change": "field-add",
+        "details": "Each content-kind entry or site gains gatedBy: the name of the entry point that calls assertMayReviseDraft or assertMayAuthor for it, or { exempt: reason } (for example the raw design-run writes, which are gated at workflow entry by assertMayAuthor). A test fails for a content writer with neither. Compatible: the field is optional for non-content entries.",
+        "callSites": [
+          "src/workflow/artifact-write-inventory.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Someone other than the holder extends a Define with the define workflow while its stage is in signoff",
+          "detection": "assertMayReviseDraft asks teamGate for 'revise' (isUnderSignoff is true for DEF) and gets held-by-other, or awaiting-signoff",
+          "response": "TeamGateRefusedError is thrown from finalizeDefineExtend before appendStoryToDefine, the amendment id or any file is touched; the run stops with the gate's reason",
+          "userImpact": "The extend is refused with the reason and the holder's name; nothing was written",
+          "recoverable": true
+        },
+        {
+          "scenario": "Nobody holds the Epic while its Define is in signoff and someone extends it",
+          "detection": "teamGate allows 'revise' on an unassigned stage, then assertHeld finds no holder",
+          "response": "TeamGateRefusedError 'nobody holds the issue: claim it before revising work that is in signoff'; nothing written",
+          "userImpact": "The person must claim the Epic first",
+          "recoverable": true
+        },
+        {
+          "scenario": "A comment is recorded with resolveComment by someone who may not revise the stage",
+          "detection": "handleResolveComment calls assertMayReviseDraft after the artifact is found and gets a TeamGateRefusedError",
+          "response": "The method answers { error: 'workflow.resolveComment: <gate reason>' } and records no comment, so the plugin keeps the buffer",
+          "userImpact": "The review pane shows Unavailable with the reason and keeps the unsent comments",
+          "recoverable": true
+        },
+        {
+          "scenario": "The tracker call inside the gate is denied",
+          "detection": "teamGate or assertHeld throws a ToolDenied (isToolDenied)",
+          "response": "Rethrown unchanged by the helper and by both entries; never turned into a refusal or an { error } that hides the denial",
+          "userImpact": "The operation stops as every denied tracker call does",
+          "recoverable": true
+        },
+        {
+          "scenario": "The team gate fails to read the policy or the tracker",
+          "detection": "teamGate returns refused('the team gate failed: ...') or a no-issue outcome",
+          "response": "The helper throws TeamGateRefusedError with that reason; the writer does not run",
+          "userImpact": "The operation is refused with the cause; it can be retried",
+          "recoverable": true
+        },
+        {
+          "scenario": "A content writer is added to the write inventory with no gatedBy",
+          "detection": "The inventory test reads every content entry and site and finds neither gatedBy nor an exemption with a reason",
+          "response": "The test fails and names the entry",
+          "userImpact": "A build is stopped at its tests, not a user",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repo with no team policy, or teamMode false, runs the define extend or resolveComment",
+          "expected": "teamGate answers allowed with no tracker call; the writers behave exactly as today"
+        },
+        {
+          "input": "resolveComment on an artifact whose stage is not in signoff",
+          "expected": "The action asked is 'author'; the holder is allowed, an unassigned stage is claimed as for any author turn, and a stage held by someone else is refused as for design.epic and design.story"
+        },
+        {
+          "input": "The define run is a first define (a fresh Epic, no target)",
+          "expected": "Not gated: there is no unit yet; only the extend path, which has a target Epic, asks the gate"
+        },
+        {
+          "input": "resolveComment names an lld artifactId",
+          "expected": "The unit is the Story (epicHash and storyId from the id) and the stage is LLD; define and hld name the Epic with stage DEF or HLD"
+        },
+        {
+          "input": "The extend finds a duplicate Story id or an unapproved Epic",
+          "expected": "The existing validation failures are returned before the gate is asked, so the gate never runs for a request that would fail anyway"
+        },
+        {
+          "input": "resolveComment with several comments",
+          "expected": "The gate is asked once, before the first recordResolution, not once per comment"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "teamGate never throws except for a ToolDenied, and a repo with no team policy gets 'allowed' with no tracker call",
+          "source": "c1"
+        },
+        {
+          "text": "appendStoryToDefine keeps the lifecycle approval of the Define (the extend is the sanctioned edit) and its synchronous signature",
+          "source": "c2"
+        },
+        {
+          "text": "handleResolveComment records nothing when it answers an { error }, and a retry after a partial failure does not duplicate comments",
+          "source": "c3"
+        },
+        {
+          "text": "assertMayAuthor keeps its behaviour at its three call sites, including the first-author exception for a stage with no issue",
+          "source": "c1"
+        },
+        {
+          "text": "isUnderSignoff is true only for in-signoff and changes-requested and false for an absent head",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test), tests co-located in __tests__; a stand-in tracker port and policy reader as in src/workflow/team/__tests__",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The shared check chooses the action and applies the holder rule; the write inventory has a gate for every content writer",
+          "subjects": [
+            "assertMayReviseDraft asks teamGate for 'revise' when the stage is in signoff or changes-requested and for 'author' otherwise, applies assertHeld for 'revise', rethrows a ToolDenied and resolves with no tracker call in a repo with no team policy",
+            "the write inventory names a gatedBy entry point or an exemption with a reason for every content entry and site, and the test fails for a content writer with neither"
+          ],
+          "fixturesNeeded": [
+            "a stand-in tracker port with a holder",
+            "a policy reader returning team, off and none",
+            "a temp repo with a Define head in each lifecycle status"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The two entry points refuse before any write and leave a repo with no team policy unchanged",
+          "subjects": [
+            "the define extend path refuses when the Epic's Define is in signoff and the actor is not the holder, and writes no Story, no amendment and no EXT record; the holder is allowed and the extend is written as today",
+            "handleResolveComment answers an { error } with the gate's reason and records no comment when the stage is in signoff and the actor is not the holder, asks the gate once for several comments, maps define and hld to the Epic and lld to the Story, and records as today in a repo with no team policy",
+            "a denied tracker call in the gate is rethrown by both entry points and is not an { error }"
+          ],
+          "fixturesNeeded": [
+            "a temp repo with an approved Define, HLD and a scope.assess result of decision extend",
+            "a stand-in tracker port"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "the define extend path refuses a non-holder while the Define is in signoff and writes nothing (integration)",
+            "assertMayReviseDraft asks teamGate for 'revise' when the stage is in signoff and for 'author' otherwise (unit)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "handleResolveComment answers an { error } and records nothing when the actor may not revise the stage (integration)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "the write inventory names a gate or an exemption for every content writer, including appendStoryToDefine (unit)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "a repo with no team policy makes no tracker call and behaves as today for the define extend and for handleResolveComment (integration)",
+            "assertMayReviseDraft resolves with no tracker call in a repo with no team policy (unit)"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "a denied tracker call in the gate is rethrown by both entry points and is not an { error } (integration)",
+            "assertMayReviseDraft rethrows a ToolDenied (unit)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The define extend path and handleResolveComment change a Define, HLD or LLD draft with no team-gate check; appendStoryToDefine is reached only from the extend path; the write inventory lists content writers without naming a gate (c2, c3); assertMayAuthor gates design.epic, design.story and plan runs at workflow entry (c1).",
+      "stateAfter": "Both entry points ask the team gate through one helper before their first write, choosing 'revise' for a stage in signoff and 'author' otherwise; the write inventory names the gate behind every content writer and a test fails for one with none; a repo with no team policy is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the shared helper to author-gate.ts next to assertMayAuthor, and make assertMayAuthor's action choice use the same rule; no call site changes yet",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Call the helper in the define extend path before its first side effect, and in handleResolveComment before the first record",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the optional gatedBy field to the write inventory entries and sites, fill it for every content writer, and add the test that fails for a content writer with neither a gate nor an exemption",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data changes and no public API changes. Behaviour changes only in a repo with a team policy: an extend or a comment recorded by someone who may not revise a stage in signoff is now refused where it was allowed. A repo with no team policy sees no tracker call and no difference. The daemon method workflow.resolveComment gains one more possible { error } text, which the plugin already renders as Unavailable.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One shared check at each writer's entry",
+        "oneLineSummary": "Add assertMayReviseDraft(repo, unit, stage) to author-gate.ts and call it at the three entries: the define extend path before its side effects, handleResolveComment before the first write, and nowhere inside the pure Define write.",
+        "approach": "Generalise authorActionOf and assertMayAuthor into one helper that takes a unit and a stage, asks teamGate for 'revise' when isUnderSignoff holds for that stage and for 'author' otherwise, then applies assertHeld for 'revise'. The define extend path in the orchestrator calls it for the Epic and stage DEF once the target Epic is known and before appendStoryToDefine; handleResolveComment calls it after it has parsed the artifactId and found the artifact, before the first recordResolution. appendStoryToDefine stays a synchronous pure write whose only caller is already gated.",
+        "pros": [
+          "Smallest change that fully closes the three entries",
+          "Reuses teamGate, isUnderSignoff and assertHeld unchanged; no new gate state"
+        ],
+        "cons": [
+          "The guarantee that appendStoryToDefine is only reached through a gated caller rests on a test and the write inventory, not on its signature",
+          "A future caller of the writer could skip the gate"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Meets the Story with the least change, but nothing stops a future caller of the pure writer from skipping the gate; a3 adds the inventory test that closes that gap for the same code."
+      },
+      {
+        "id": "a2",
+        "name": "Gate inside the writers",
+        "oneLineSummary": "Make appendStoryToDefine and the resolution recorder await the gate themselves, so no caller can skip it.",
+        "approach": "appendStoryToDefine becomes async and takes the acting context, calls the shared check for the Epic and stage DEF, then writes; recordResolution (used by resolveComment and by other callers) calls the check for the artifact it changes.",
+        "pros": [
+          "No caller can reach the write without the gate",
+          "One place per writer"
+        ],
+        "cons": [
+          "Changes a synchronous exported function to async and touches every caller and test of it",
+          "recordResolution has other callers (design runs resolving open questions) that are not reviewers and would be gated too, changing behaviour outside the Story",
+          "The refusal would surface from deep inside a run, after side effects such as the amendment id have been read"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Makes a synchronous exported function async, touches every caller and test, and would also gate the other users of the resolution recorder (design runs), which is outside the Story and changes behaviour for non-reviewers."
+      },
+      {
+        "id": "a3",
+        "name": "Entry checks plus an inventory test",
+        "oneLineSummary": "a1, and make the write inventory name the gate each content writer is behind, with a test that fails when a content writer has none.",
+        "approach": "Take a1 for the code. Extend artifact-write-inventory.ts so each content-kind entry carries a gatedBy field: the entry that calls the shared check, or an explicit 'exempt' with a reason. A new test reads the inventory and fails for a content writer with neither.",
+        "pros": [
+          "Keeps a1's small code change and adds a guard against the next ungated writer",
+          "The exemptions become visible and reviewable in one table"
+        ],
+        "cons": [
+          "More to write and keep current than a1",
+          "The inventory is a hand-kept list, so the test only covers writers listed in it"
+        ],
+        "costEstimate": "S"
+      }
+    ],
+    "chosenAlternative": "a3",
+    "openQuestions": [
+      "Item ts1: the Story has no acceptance criteria; ac1 to ac5 in the test strategy were derived from the Story text and need confirming at plan time",
+      "Reviewers and resolveComment: when the stage is in signoff, should a person who is not the holder (a reviewer) still be allowed to record comments, or is 'revise' (holder only) the rule for every comment? This design applies 'revise' to every comment, as the Story says, which refuses a non-holder reviewer",
+      "An extend of a Define that is not in signoff: this design asks for 'author' (which takes the claim on an unassigned Epic, as for design.epic); the alternative is 'revise' for every extend"
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/team/author-gate.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:210"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/resolve-comment.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/team/signoff.ts:254"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/plans/team-workflow.md"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-write-inventory.ts"
+    }
+  ]
+}

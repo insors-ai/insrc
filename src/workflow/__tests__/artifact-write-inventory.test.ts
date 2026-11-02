@@ -18,7 +18,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ARTIFACT_WRITE_INVENTORY, checkInventoryEntry, scanWriters, type InventoryEntry } from '../artifact-write-inventory.js';
+import { ARTIFACT_WRITE_INVENTORY, checkInventoryEntry, checkWriteGates, scanWriters, type InventoryEntry } from '../artifact-write-inventory.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 
@@ -253,4 +253,41 @@ test('the write inventory lists the binding and attach writers as meta-only writ
 	// connection-session-rpc.ts has a session pipe's delivery `envelope` and a connection `binding`: not meta.envelope.
 	const others = productionFiles(join(ROOT, 'src')).filter(f => !/tracker\/(binding|attach|unit-head)\.ts$|artifact-core\/|workflow\/storage\.ts$|daemon\/connection-session-rpc\.ts$/.test(f) && /envelope['"\]]*\s*[:=][^;\n]*\b(binding|attachments)\b/.test(read(f)));
 	assert.deepEqual(others, []);
+});
+
+test('every content entry and site names a gatedBy entry point or an exemption with a reason, including appendStoryToDefine', async () => {
+	const readOrUndefined = (file: string): string | undefined => { try { return read(file); } catch { return undefined; } };
+	assert.deepEqual(checkWriteGates(ARTIFACT_WRITE_INVENTORY, readOrUndefined), []);
+
+	// the two writers this Story closed are recorded behind the entry points that gate them
+	const gates = byFile.get('src/workflow/gates.ts');
+	assert.equal(gates?.sites?.find(s => s.fn === 'appendStoryToDefine')?.gatedBy, 'src/workflow/orchestrator.ts:finalizeDefineExtend');
+	assert.equal(byFile.get('src/workflow/resolve-comment.ts')?.gatedBy, 'src/workflow/resolve-comment.ts:handleResolveComment');
+	// and the content places the inventory lists are exactly the ones that were checked
+	const content = ARTIFACT_WRITE_INVENTORY.filter(e => e.class === 'content').map(e => e.file).sort();
+	assert.deepEqual(content, [
+		'src/daemon/steps/workflow-step/phases/synthesize.ts', 'src/daemon/workflow-rpc.ts', 'src/workflow/resolve-comment.ts', 'src/workflow/runners/build/standalone-record.ts',
+		'src/workflow/runners/build/test-record.ts', 'src/workflow/tasks/task-set.ts', 'src/workflow/tracker/unit-head.ts',
+	]);
+});
+
+test('a content writer with neither a gate nor an exemption is reported', async () => {
+	const src = (file: string): string | undefined => (file === 'src/gated.ts' ? 'export async function save(): Promise<void> { await assertMayReviseDraft(r, u, "DEF", "x"); }\nexport function other() {}\n' : file === 'src/ungated.ts' ? 'export function save() { writeArtifact(p, a, "content"); }\n' : undefined);
+	const entry = (over: Partial<InventoryEntry> = {}): InventoryEntry => ({ file: 'src/w.ts', class: 'content', via: 'writeArtifact', note: 'x', ...over });
+
+	assert.deepEqual(checkWriteGates([entry({ gatedBy: 'src/gated.ts:save' })], src), [], 'a named gate that calls the check');
+	assert.deepEqual(checkWriteGates([entry({ gatedBy: { exempt: 'machine output' } })], src), [], 'an exemption with a reason');
+	assert.match(checkWriteGates([entry()], src).join(), /names neither a gate nor an exemption/, 'neither');
+	assert.match(checkWriteGates([entry({ gatedBy: { exempt: '  ' } })], src).join(), /gives no reason/, 'an empty reason');
+	assert.match(checkWriteGates([entry({ gatedBy: 'src/ungated.ts:save' })], src).join(), /does not use assertMayAuthor or assertMayReviseDraft/, 'a gate that never calls the check');
+	assert.match(checkWriteGates([entry({ gatedBy: 'src/gated.ts:other' })], src).join(), /does not use/, 'another function of the file');
+	assert.match(checkWriteGates([entry({ gatedBy: 'src/gated.ts:missing' })], src).join(), /function that does not exist/, 'a stale function name');
+	assert.match(checkWriteGates([entry({ gatedBy: 'src/gone.ts' })], src).join(), /file that does not exist/, 'a stale file name');
+
+	// a content site of a mixed entry is checked, a meta-only site is not
+	const mixed = (site: { fn: string; kind: 'content' | 'meta-only' | 'content|meta-only'; gatedBy?: string }): InventoryEntry => ({ file: 'src/m.ts', class: 'mixed', via: 'both', note: 'x', sites: [site] });
+	assert.match(checkWriteGates([mixed({ fn: 'a', kind: 'content' })], src).join(), /src\/m\.ts a: .*neither/);
+	assert.match(checkWriteGates([mixed({ fn: 'a', kind: 'content|meta-only' })], src).join(), /neither/);
+	assert.deepEqual(checkWriteGates([mixed({ fn: 'a', kind: 'meta-only' })], src), []);
+	assert.deepEqual(checkWriteGates([mixed({ fn: 'a', kind: 'content', gatedBy: 'src/gated.ts:save' })], src), []);
 });

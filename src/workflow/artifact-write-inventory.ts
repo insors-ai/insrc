@@ -31,11 +31,19 @@ import ts from 'typescript';
 export type WriteClass = 'content' | 'meta-only' | 'mixed' | 'render' | 'record' | 'migration' | 'store' | 'non-artifact';
 export type WriteVia = 'writeArtifact' | 'raw' | 'injected' | 'both';
 
+/**
+ * The team gate behind a content writer (Story f32c3abf4a55494b/s1): `path` or `path:fn`, the file or function that calls
+ * assertMayAuthor or assertMayReviseDraft before the write, or `{ exempt }` with the reason the writer needs none.
+ */
+export type WriteGate = string | { readonly exempt: string };
+
 export interface WriteSite {
 	/** The exported function that holds the write. */
 	readonly fn:   string;
 	/** `content`, `meta-only`, or `content|meta-only` when the call chooses at run time. */
 	readonly kind: 'content' | 'meta-only' | 'content|meta-only';
+	/** Required for a `content` or `content|meta-only` site. */
+	readonly gatedBy?: WriteGate | undefined;
 }
 
 export interface InventoryEntry {
@@ -45,17 +53,19 @@ export interface InventoryEntry {
 	readonly via:   WriteVia;
 	/** A mixed entry names each site. */
 	readonly sites?: readonly WriteSite[] | undefined;
+	/** Required for a `content` entry; a mixed entry names it per site. */
+	readonly gatedBy?: WriteGate | undefined;
 	readonly note:  string;
 }
 
 export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	// --- content: the body or something a signoff covers changes -------------------
-	{ file: 'src/daemon/steps/workflow-step/phases/synthesize.ts', class: 'content', via: 'both', note: 'the draft pair: json is content, markdown a render' },
-	{ file: 'src/daemon/workflow-rpc.ts', class: 'content', via: 'both', note: 'the server-side draft pair' },
-	{ file: 'src/workflow/resolve-comment.ts', class: 'content', via: 'writeArtifact', note: 'appends the comment to body.openQuestions' },
-	{ file: 'src/workflow/tracker/unit-head.ts', class: 'content', via: 'writeArtifact', note: 'makes the EPIC or STORY head of a unit that has none (a draft with an empty body, a lifecycle at revision 1 and its create entry); it never rewrites a head that exists' },
-	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', via: 'both', note: 'the BUILD record is regenerated on each persist' },
-	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
+	{ file: 'src/daemon/steps/workflow-step/phases/synthesize.ts', class: 'content', gatedBy: 'src/daemon/steps/workflow-step/phases/synthesize.ts', via: 'both', note: 'the draft pair: json is content, markdown a render' },
+	{ file: 'src/daemon/workflow-rpc.ts', class: 'content', gatedBy: 'src/daemon/workflow-rpc.ts', via: 'both', note: 'the server-side draft pair' },
+	{ file: 'src/workflow/resolve-comment.ts', class: 'content', gatedBy: 'src/workflow/resolve-comment.ts:handleResolveComment', via: 'writeArtifact', note: 'appends the comment to body.openQuestions' },
+	{ file: 'src/workflow/tracker/unit-head.ts', class: 'content', gatedBy: { exempt: 'makes the head of a unit that has none and never rewrites one that exists; it writes no author content a signoff covers' }, via: 'writeArtifact', note: 'makes the EPIC or STORY head of a unit that has none (a draft with an empty body, a lifecycle at revision 1 and its create entry); it never rewrites a head that exists' },
+	{ file: 'src/workflow/runners/build/standalone-record.ts', class: 'content', gatedBy: { exempt: 'machine output of the build gate for a unit that passed assertMayBuild; a build is gated by the build action, not revise' }, via: 'both', note: 'the BUILD record is regenerated on each persist' },
+	{ file: 'src/workflow/runners/build/test-record.ts', class: 'content', gatedBy: { exempt: 'machine output of the build gate (the TESTS record), never approved or signed off; the build is gated by assertMayBuild' }, via: 'both', note: 'the TESTS record replaces body.tasks; its rollback restores the earlier bytes and revision' },
 	{ file: 'src/workflow/code-review/task-review/publication.ts', class: 'render', via: 'raw', note: 'task-based CR JSON is merged and journalled through the canonical artifact store queue; writeAtomic refreshes only its markdown projection' },
 
 	// --- meta-only: stamps, review stamps, tracker patches, resolutions -------------
@@ -63,7 +73,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{ file: 'src/workflow/tracker/refs.ts', class: 'meta-only', via: 'writeArtifact', note: 'patchTrackerMeta' },
 	{ file: 'src/workflow/tracker/binding.ts', class: 'meta-only', via: 'writeArtifact', note: 'the tracker binding: the one writer of meta.envelope.binding after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
 	{ file: 'src/workflow/tracker/attach.ts', class: 'meta-only', via: 'writeArtifact', note: 'recordAttachment: the one writer of meta.envelope.attachments after creation; a synchronous patch that moves no revision, refused while the store has a write staged' },
-	{ file: 'src/workflow/tasks/task-set.ts', class: 'content', via: 'injected', note: 'the Task set: writes the TASKS and TASK heads through ArtifactStore.write and update (a Task\'s own content, so each change mints a revision), and a build round or a pending close as a revision-less log entry through History' },
+	{ file: 'src/workflow/tasks/task-set.ts', class: 'content', gatedBy: { exempt: 'the Task records follow the plan approval and the build, which are gated by assertMayBuild; no signoff covers a Task draft' }, via: 'injected', note: 'the Task set: writes the TASKS and TASK heads through ArtifactStore.write and update (a Task\'s own content, so each change mints a revision), and a build round or a pending close as a revision-less log entry through History' },
 	{ file: 'src/workflow/bugfix/stamp.ts', class: 'meta-only', via: 'writeArtifact', note: 'single-field meta patch (meta.parentRef)' },
 	{ file: 'src/workflow/orchestrator.ts', class: 'meta-only', via: 'both', note: 'tracker push and sync patch the Define meta; the scope-analyze cache is not an artifact' },
 
@@ -71,7 +81,7 @@ export const ARTIFACT_WRITE_INVENTORY: readonly InventoryEntry[] = [
 	{
 		file: 'src/workflow/gates.ts', class: 'mixed', via: 'both',
 		sites: [
-			{ fn: 'appendStoryToDefine', kind: 'content' },
+			{ fn: 'appendStoryToDefine', kind: 'content', gatedBy: 'src/workflow/orchestrator.ts:finalizeDefineExtend' },
 			{ fn: 'approveArtifactByJsonPath', kind: 'meta-only' },
 		],
 		note: 'the extend path changes body.stories; approve stamps meta.rangeBase after the lifecycle approves (reject and ack-stale write no head)',
@@ -313,6 +323,36 @@ export function checkInventoryEntry(source: string, entry: InventoryEntry | unde
 			for (const k of want) if (!kinds.has(k as 'content' | 'meta-only')) problems.push(`site ${site.fn}: expected a writeArtifact with kind '${k}'`);
 			if (site.kind !== 'content|meta-only') for (const k of kinds) if (k !== site.kind) problems.push(`site ${site.fn}: writes with kind '${k}', the entry says '${site.kind}'`);
 		}
+	}
+	return problems;
+}
+
+/** A use of the team gate's author or revise check (a call, or the default of a test seam). */
+const GATE_CALL = /\bassertMay(?:ReviseDraft|Author)\b/;
+
+/**
+ * The problems of the gates the inventory names (Story f32c3abf4a55494b/s1): every content entry and content site needs a gate or an
+ * exemption with a reason, and a named gate must be a file (or a function of it) that uses assertMayAuthor or assertMayReviseDraft.
+ * `readSource` reads a repo-relative file; a missing file is a problem.
+ */
+export function checkWriteGates(entries: readonly InventoryEntry[], readSource: (file: string) => string | undefined): string[] {
+	const problems: string[] = [];
+	const check = (where: string, gate: WriteGate | undefined): void => {
+		if (gate === undefined) { problems.push(`${where}: a content writer names neither a gate nor an exemption`); return; }
+		if (typeof gate !== 'string') {
+			if (gate.exempt.trim().length === 0) problems.push(`${where}: the exemption gives no reason`);
+			return;
+		}
+		const [file = '', fn] = gate.split(':');
+		const source = readSource(file);
+		if (source === undefined) { problems.push(`${where}: the gate ${gate} names a file that does not exist`); return; }
+		const body = fn === undefined ? source : functionBody(source, fn);
+		if (body === undefined) { problems.push(`${where}: the gate ${gate} names a function that does not exist`); return; }
+		if (!GATE_CALL.test(body)) problems.push(`${where}: ${gate} does not use assertMayAuthor or assertMayReviseDraft`);
+	};
+	for (const e of entries) {
+		if (e.class === 'content') check(e.file, e.gatedBy);
+		if (e.class === 'mixed') for (const site of e.sites ?? []) if (site.kind !== 'meta-only') check(`${e.file} ${site.fn}`, site.gatedBy);
 	}
 	return problems;
 }

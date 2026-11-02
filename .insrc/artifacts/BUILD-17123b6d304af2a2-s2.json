@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T08:10:27.157Z",
+    "updatedAt": "2026-11-02T08:17:35.066Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -38,9 +38,13 @@
       {
         "id": "t7",
         "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
       }
     ],
-    "summary": "Implemented ordered pinned replay, safe return/abort cleanup, scoped retained operation status and reader-aware lifecycle accounting without exposing hidden operations.",
+    "summary": "Added a validated S2-owned receipt-proof seam, authoritative-first retry/status lookup, durable terminal acknowledgement and retry metadata; fake receipt tests do not claim S3 Lance atomicity.",
     "testRecord": {
       "md": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/TESTS.md"
     },
@@ -50,107 +54,121 @@
           "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-io.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/io.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/checkpoint.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/recovery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-append.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/file-queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/admission.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-replay.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:10:27.157Z"
+        "timestamp": "2026-11-02T08:17:35.066Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:17:35.066Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/queue/receipts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:17:35.066Z"
       }
     ],
-    "commit": "08549be1f"
+    "commit": "6a3cd8936"
   }
 }

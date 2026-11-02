@@ -2,7 +2,7 @@ import { MemoryError } from '../errors.js';
 import { boundedString, decimal, encodeFrame, snapshotJson } from './codec.js';
 import { INITIAL_SEGMENT, QueueIo, segmentName } from './io.js';
 import { QUEUE_LIMITS } from './types.js';
-import type { SegmentHeader } from './types.js';
+import type { RetirementDigests, SegmentHeader } from './types.js';
 
 export interface RetryRecord { readonly attempts: number; readonly nextEligibleAt: number; readonly errorCode: string; }
 export interface FrameRecord {
@@ -13,6 +13,7 @@ export interface FrameRecord {
   readonly terminal: boolean;
   readonly generation?: string | undefined;
   readonly retry?: RetryRecord | undefined;
+  readonly retirement?: RetirementDigests | undefined;
 }
 export interface SegmentRecord {
   readonly id: string;
@@ -63,10 +64,14 @@ export function validateCheckpoint(value: unknown): asserts value is Checkpoint 
     if (segment.retiring) { retiring++; if (!segment.sealed || !value.receiptBarrier || i !== 0) corrupt(); }
     let sequence = BigInt(segment.firstSequence), offset: number | undefined;
     for (const entry of segment.frames) {
-      object(entry); fields(entry, ['operationId', 'sequence', 'offset', 'length', 'terminal'], ['generation', 'retry']);
+      object(entry); fields(entry, ['operationId', 'sequence', 'offset', 'length', 'terminal'], ['generation', 'retry', 'retirement']);
       if (typeof entry.operationId !== 'string' || !/^[a-f0-9]{64}$/.test(entry.operationId) || operations.has(entry.operationId) || !decimal(entry.sequence) || BigInt(entry.sequence) !== sequence || !integer(entry.offset, 1) || !integer(entry.length, 1) || entry.length > QUEUE_LIMITS.maxEventBytes + QUEUE_LIMITS.frameOverhead || typeof entry.terminal !== 'boolean' || (offset !== undefined && entry.offset !== offset)) corrupt();
       if (entry.terminal ? !boundedString(entry.generation, 128) : Object.hasOwn(entry, 'generation')) corrupt();
-      if (segment.retiring && !entry.terminal) corrupt();
+      if (segment.retiring) {
+        if (!entry.terminal || Object.hasOwn(entry, 'retry')) corrupt();
+        object(entry.retirement); fields(entry.retirement, ['identityDigest', 'payloadHash', 'scopeDigest', 'scopeEpochDigest']);
+        if (!Object.values(entry.retirement).every(v => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v))) corrupt();
+      } else if (Object.hasOwn(entry, 'retirement')) corrupt();
       if (Object.hasOwn(entry, 'retry')) {
         object(entry.retry); fields(entry.retry, ['attempts', 'nextEligibleAt', 'errorCode']);
         if (!integer(entry.retry.attempts) || !integer(entry.retry.nextEligibleAt) || !boundedString(entry.retry.errorCode, 128)) corrupt();
@@ -78,7 +83,8 @@ export function validateCheckpoint(value: unknown): asserts value is Checkpoint 
     if (offset !== undefined && offset !== segment.acceptedOffset) corrupt();
     previousSequence = sequence - 1n;
   }
-  if (active !== 1 || retiring > 1 || previousSequence !== BigInt(value.lastSequence)) corrupt();
+  const retiringOnlyActive = active === 0 && retiring === 1 && value.segments.length === 1 && (value.segments[0] as SegmentRecord).id === value.activeSegment;
+  if ((active !== 1 && !retiringOnlyActive) || retiring > 1 || previousSequence !== BigInt(value.lastSequence)) corrupt();
   try { reserveMetadata(frames, value.segments.length); } catch { corrupt(); }
 }
 export function checkpointBytes(value: Checkpoint): Buffer {

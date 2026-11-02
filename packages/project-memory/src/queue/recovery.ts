@@ -1,23 +1,13 @@
 import { createHash } from 'node:crypto';
-import type { MemoryLimits, Scope } from '../types.js';
+import type { MemoryLimits } from '../types.js';
 import { MemoryError } from '../errors.js';
-import { decodeFrame, digest, snapshotJson } from './codec.js';
+import { decodeFrame, snapshotJson } from './codec.js';
 import { advance, CheckpointWriter, initialCheckpoint, reserveMetadata } from './checkpoint.js';
 import type { Checkpoint, FrameRecord, SegmentRecord } from './checkpoint.js';
 import { QueueIo, segmentName } from './io.js';
 import { QUEUE_LIMITS } from './types.js';
-import type { EventBody, SegmentHeader } from './types.js';
+import type { SegmentHeader, ReceiptVerifier } from './types.js';
 
-export interface IndexedFrame {
-  readonly segmentId: string;
-  readonly record: FrameRecord;
-  readonly payloadHash: string;
-  readonly identityDigest: string;
-  readonly scope: Scope;
-  readonly scopeEpoch: string;
-  readonly eventId: string;
-  readonly admittedAtMs: number;
-}
 export interface RecoveredQueue { readonly checkpoint: Checkpoint; readonly index: ReadonlyMap<string, IndexedFrame>; }
 interface TailReport {
   readonly formatVersion: 1;
@@ -28,15 +18,17 @@ interface TailReport {
   readonly suffixHash: string;
   readonly state: 'intent' | 'complete';
 }
+import { indexFrame } from './index-record.js';
+import type { IndexedFrame } from './index-record.js';
+import { finishRetirement, verifyBarrier } from './retirement.js';
+import { ReceiptUnavailableError } from './receipts.js';
+
 function corrupt(): never { throw new MemoryError('STORE_UNAVAILABLE', 'Queue recovery found inconsistent durable data.'); }
 function hash(bytes: Uint8Array): string { return createHash('sha256').update(bytes).digest('hex'); }
-export function indexFrame(body: EventBody, segmentId: string, record: FrameRecord): IndexedFrame {
-  const { projectId } = body.command.scope, { producerId, eventId } = body.command.source;
-  return { segmentId, record, payloadHash: body.payloadHash, identityDigest: digest(snapshotJson({ version: 1, projectId, producerId, eventId }, 4096).text), scope: body.command.scope, scopeEpoch: body.scopeEpoch, eventId, admittedAtMs: body.admittedAtMs };
-}
 async function marker(io: QueueIo, name: 'recovery.json' | 'fault.json', value: unknown): Promise<void> {
-  await io.write(name, Buffer.from(snapshotJson(value, 2047).text + '\n'), await io.exists(name) ? 'replace' : 'create');
-  await io.syncDirectory('queue');
+  // Reuse the unaccepted checkpoint candidate for atomic small-report publication.
+  await io.write('checkpoint.next', Buffer.from(snapshotJson(value, 2047).text + '\n'), await io.exists('checkpoint.next') ? 'replace' : 'create');
+  await io.rename('checkpoint.next', name); await io.syncDirectory('queue');
 }
 async function tailReport(io: QueueIo): Promise<TailReport | undefined> {
   if (!await io.exists('recovery.json')) return undefined;
@@ -50,15 +42,17 @@ async function tailReport(io: QueueIo): Promise<TailReport | undefined> {
 }
 
 /** Validate all accepted bytes before readiness. No prior-frontier fallback. */
-export async function recoverQueue(io: QueueIo, writer: CheckpointWriter, boot: { queueId: string; header: SegmentHeader }, limits: MemoryLimits): Promise<RecoveredQueue> {
+export async function recoverQueue(io: QueueIo, writer: CheckpointWriter, boot: { queueId: string; header: SegmentHeader }, limits: MemoryLimits, verifier?: ReceiptVerifier): Promise<RecoveredQueue> {
   try {
     if (await io.exists('fault.json')) corrupt();
     let checkpoint = await writer.load();
     if (!checkpoint) checkpoint = await writer.publish(initialCheckpoint(boot.queueId, boot.header));
     if (checkpoint.queueId !== boot.queueId) corrupt();
-    // S2's proof/recycling task installs the retirement continuation later.
-    if (checkpoint.segments.some(s => s.retiring)) throw new MemoryError('NOT_READY', 'Queue retirement requires authoritative receipt verification.');
-    if ((checkpoint.receiptBarrier || await io.exists('receipt-barrier.json'))) throw new MemoryError('NOT_READY', 'Queue requires authoritative receipt verification.');
+    const barrier = await verifyBarrier(io, checkpoint, verifier);
+    if (checkpoint.segments.some(s => s.retiring)) {
+      if (!verifier) throw new MemoryError('NOT_READY', 'Queue retirement requires authoritative receipt verification.');
+      checkpoint = await finishRetirement(io, writer, limits, verifier);
+    }
     const total = checkpoint.segments.reduce((sum, s) => sum + s.acceptedOffset, 0);
     if (total > limits.maxPendingBytes) throw new MemoryError('BACKPRESSURE', 'Configured queue capacity is below retained data.', true);
     const report = await tailReport(io);
@@ -132,14 +126,15 @@ export async function recoverQueue(io: QueueIo, writer: CheckpointWriter, boot: 
       await marker(io, 'recovery.json', { ...next, state: 'complete' });
     } else if (completedIntent && report) await marker(io, 'recovery.json', { ...report, state: 'complete' });
     if (orphan) { await io.unlink('segments/' + orphan); await io.syncDirectory('segments'); }
-    if (changed) {
+    if (changed || (barrier && !checkpoint.receiptBarrier)) {
       const active = segments.at(-1)!;
       // Sync possibly unacknowledged complete data before promoting its frontier.
       await io.write('segments/' + segmentName(active.id), Buffer.alloc(0), 'append', active.acceptedOffset);
-      checkpoint = await writer.publish({ ...checkpoint, generation: advance(checkpoint.generation), lastSequence: (expectedSequence - 1n).toString(), segments });
+      checkpoint = await writer.publish({ ...checkpoint, generation: advance(checkpoint.generation), lastSequence: (expectedSequence - 1n).toString(), receiptBarrier: barrier, segments });
     }
     return { checkpoint, index };
   } catch (error) {
+    if (error instanceof ReceiptUnavailableError) throw error;
     if (error instanceof MemoryError && (error.code === 'NOT_READY' || error.code === 'BACKPRESSURE')) throw error;
     if (!io.fenced) { try { await marker(io, 'fault.json', { formatVersion: 1, queueId: boot.queueId, code: 'QUEUE_CORRUPTION' }); } catch { /* Preserve original bytes even if diagnostics cannot be persisted. */ } }
     throw new MemoryError('STORE_UNAVAILABLE', 'Queue recovery failed; durable bytes were preserved.');

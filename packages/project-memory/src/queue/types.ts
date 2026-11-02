@@ -48,6 +48,19 @@ export type ReceiptLookup = { readonly status: 'absent' } | { readonly status: '
 export interface ReceiptVerifier {
   byIdentity(identity: StableIdentity): Promise<ReceiptLookup>;
   byOperation(operationId: string, requestedScope: Scope): Promise<ReceiptLookup>;
+  /** Privileged owner-only boolean check; no scoped receipt content is returned.
+   * Required before recycling, including crash recovery after segment unlink. */
+  confirmRetirement?(reference: RetirementReference): Promise<boolean>;
+}
+export interface RetirementDigests {
+  readonly identityDigest: string;
+  readonly payloadHash: string;
+  readonly scopeDigest: string;
+  readonly scopeEpochDigest: string;
+}
+export interface RetirementReference extends RetirementDigests {
+  readonly operationId: string;
+  readonly generation: string;
 }
 export const QUEUE_LIMITS = Object.freeze({
   maxEventBytes: 16 * 1024 * 1024,

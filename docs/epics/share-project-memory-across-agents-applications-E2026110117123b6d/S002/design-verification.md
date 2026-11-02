@@ -9,3 +9,17 @@
 - API/durability design uses Node 22 filesystem documentation and Linux fsync/rename specifications. These support primitive semantics only: S2 crash, resource and latency qualification remains future build evidence, not claimed as complete here.
 - Required qualification covers macOS/APFS and Linux/ext4 under Node >=22.22.1 <23. SIGKILL/fault injection does not establish hardware power-loss guarantees.
 - Planning/build and LLD approval remain separate user gates after independent design review.
+
+## Build refinements to the private S2 protocol
+
+The public sc1/sc2/sc3 signatures remain unchanged. The following private details make the approved durability boundaries concrete; actual S3 receipt storage remains unimplemented.
+
+| Area | Implemented refinement and reason |
+| --- | --- |
+| Receipt continuation | Optional private `ReceiptVerifier.confirmRetirement(reference)` is required before recycling. It returns only a boolean matching operation/generation and identity/content/scope/epoch digests against durable terminal receipts. This owner-only confirmation permits crash recovery after unlink without retaining a second receipt store or reconstructing scoped payload from a deleted file. Public status lookup still supplies and validates the complete requested scope. A verifier lacking this capability can acknowledge terminal work but cannot recycle or reopen a receipt-barrier queue. |
+| Intent metadata | Retiring checkpoint entries keep bounded operation/generation/digest references and omit obsolete retry scheduling metadata. Both ordinary and retiring entries fit the existing 2048-byte reservation; only one segment retires at a time. |
+| Retained sequence | Recycling removes a fully resolved prefix. A pending hole or reader pin defers removal; later terminal segments remain until that prefix is eligible. This preserves contiguous retained sequence without a second sequence-gap ledger. |
+| Full active segment | A durable intent may temporarily contain one sealed retiring segment and no writable active segment. After verified unlink and directory sync free the retained-byte quota, recovery creates/syncs the empty successor and publishes final removal. Startup completes this transition before readiness; the serialized lane prevents a completed operation from observing it. Normal ready state still has exactly one active segment. This avoids requiring extra header space in an already full queue. |
+| Small control publication | Recovery reports and the write-once receipt barrier stage through the unaccepted `checkpoint.next` candidate, then rename and directory sync. They never overwrite `checkpoint.json`; a crash during report/barrier writing cannot publish a partial control record. |
+| Logical admission quota | Immutable pass-through policy output reuses its already validated snapshot. Node charges are logical units (16 bytes plus encoded/key bytes), with the separately enforced node/call/depth caps; these counters do not claim to measure V8 RSS. |
+| Code organization | Private receipt validation, index metadata and retirement helpers live in `packages/project-memory/src/queue/receipts.ts`, `packages/project-memory/src/queue/index-record.ts` and `packages/project-memory/src/queue/retirement.ts`. They add no backend/store import or runtime dependency. |

@@ -7,11 +7,13 @@ import { advance, CheckpointWriter, reserveMetadata } from './checkpoint.js';
 import type { FrameRecord, RetryRecord } from './checkpoint.js';
 import { QueueIo, segmentName } from './io.js';
 import type { IoHooks } from './io.js';
-import { indexFrame, recoverQueue } from './recovery.js';
-import type { IndexedFrame } from './recovery.js';
+import { recoverQueue } from './recovery.js';
+import { indexFrame } from './index-record.js';
+import type { IndexedFrame } from './index-record.js';
 import { QUEUE_LIMITS } from './types.js';
 import type { EventBody, QueueFrame, QueueStats, SegmentHeader, ReceiptVerifier } from './types.js';
 
+import { retireFirst } from './retirement.js';
 import { matchProof, readReceipt, ReceiptUnavailableError } from './receipts.js';
 
 class QueueWriteError extends MemoryError {
@@ -44,7 +46,7 @@ export class FileQueue {
     if (this.#ready || this.#closing) throw new MemoryError('NOT_READY', 'Queue startup is not available.');
     try {
       await this.io.start(); const boot = await this.io.bootstrap();
-      const recovered = await recoverQueue(this.io, this.writer, boot, this.limits);
+      const recovered = await recoverQueue(this.io, this.writer, boot, this.limits, this.verifier);
       for (const [id, entry] of recovered.index) this.index.set(id, entry);
       this.#ready = true;
     } catch (error) { this.#fenced = true; throw error; }
@@ -149,6 +151,19 @@ export class FileQueue {
       const entry = this.index.get(operationId);
       if (!entry || entry.record.terminal) throw new MemoryError('NOT_READY', 'Retry bookkeeping requires a retained pending operation.');
       await this.#updateRecord(entry, { ...entry.record, retry: snapshot });
+    }, true);
+  }
+  recycleResolvedSegments(): Promise<void> {
+    return this.enqueue(async () => {
+      if (!this.verifier?.confirmRetirement) throw new MemoryError('NOT_READY', 'Recycling requires authoritative receipt retirement support.');
+      // Retire only a resolved prefix, preserving contiguous retained sequence.
+      for (;;) {
+        const first = this.writer.current.segments[0]!;
+        if (this.isPinned(first.id) || !first.frames.length || first.frames.some(frame => !frame.terminal)) return;
+        const removed = await retireFirst(this.io, this.writer, this.limits, this.index, this.verifier);
+        if (!removed.length) return;
+        for (const id of removed) this.index.delete(id);
+      }
     }, true);
   }
   isPinned(segmentId: string): boolean { return this.#pins.has(segmentId); }

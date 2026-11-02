@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -168,3 +168,21 @@ Run at 2026-11-02T08:10:27.157Z on commit `08549be1f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-replay.test.ts` | 0 | 2 | 1.2 s |  |
+
+## t8
+
+Run at 2026-11-02T08:17:35.066Z on commit `6a3cd8936`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: sc3-receipt-verifier-proof-and-causal-order-contract**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | sc3-receipt-verifier-proof-and-causal-order-contract | `packages/project-memory/src/__tests__/queue-receipts.test.ts` |
+| pass | invalid-and-nonterminal-proofs-never-resolve-or-delete | `packages/project-memory/src/__tests__/queue-receipts.test.ts` |
+| pass | queue-only-mode-cannot-ack-terminal-state | `packages/project-memory/src/__tests__/queue-receipts.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-receipts.test.ts` | 0 | 3 | 1.6 s |  |

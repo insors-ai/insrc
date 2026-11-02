@@ -76,7 +76,7 @@ export function snapshotJson(input: unknown, maxBytes: number, reservation?: Res
   function quoted(text: string): void { const n = stringBytes(text); charge(n); chunks.push(JSON.stringify(text)); }
   function walk(value: unknown, depth: number): Json {
     if (++nodes > QUEUE_LIMITS.maxNodes + extraNodes || depth > QUEUE_LIMITS.maxDepth + extraDepth) invalid();
-    reservation?.charge(64);
+    reservation?.charge(16);
     if (value === null) { token('null'); return null; }
     if (typeof value === 'boolean') { token(String(value)); return value; }
     if (typeof value === 'string') { quoted(value); return value; }

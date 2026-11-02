@@ -25,6 +25,13 @@ test('retained-byte-and-worst-case-metadata-reservations', () => {
     assert.ok(size - previous < QUEUE_LIMITS.checkpointPerFrame); previous = size;
   }
   assert.throws(() => reserveMetadata(65_536, 1), (e: unknown) => e instanceof MemoryError && e.code === 'BACKPRESSURE');
+  // Retirement references stay within the same allowance; terminal retry
+  // scheduling metadata is deliberately absent from the retiring representation.
+  const { retry: _retry, ...terminal } = entry(1);
+  const retiring = { ...terminal, retirement: { identityDigest: 'a'.repeat(64), payloadHash: 'b'.repeat(64), scopeDigest: 'c'.repeat(64), scopeEpochDigest: 'd'.repeat(64) } };
+  assert.ok(Buffer.byteLength(JSON.stringify(retiring)) < QUEUE_LIMITS.checkpointPerFrame);
+  const first = initial();
+  checkpointBytes({ ...first, receiptBarrier: true, lastSequence: '1', segments: [{ ...first.segments[0]!, sealed: true, retiring: true, acceptedOffset: 400, frames: [retiring] }] });
   reserveMetadata(0, 1);
   assert.throws(() => advance('18446744073709551615'), MemoryError);
 });

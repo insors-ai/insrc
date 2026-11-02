@@ -37,6 +37,10 @@ export class QueueAdmission {
     } catch (error) { lease?.release(); return Promise.reject(error); }
   }
   markResolved(operationId: string, generation: string) { return this.#queue.markResolved(operationId, generation); }
+  recycleResolvedSegments() { return this.#queue.recycleResolvedSegments(); }
+  stats() { return this.#queue.stats(); }
+  seal() { return this.#queue.seal(); }
+  close() { return this.#queue.close(); }
   replay() { return this.#queue.replay(); }
   append(command: MemoryCommand): Promise<OperationReceipt> {
     let lease: Reservation | undefined;
@@ -50,7 +54,7 @@ export class QueueAdmission {
         let output: Json;
         try { output = await this.#policy.admit(binding, original.command as unknown as Json); }
         catch (error) { throw policyFailure(error); }
-        const admitted = snapshotCommand(output, this.#queue.limits.maxEventBytes, reservation);
+        const admitted = output === (original.command as unknown as Json) ? original : snapshotCommand(output, this.#queue.limits.maxEventBytes, reservation);
         if (!sameEnvelope(admitted.command, original.command)) throw new MemoryError('POLICY_DENIED', 'Policy cannot change command identity or scope.');
         return this.#queue.persist(admitted, binding.scopeEpoch);
       });

@@ -1469,7 +1469,7 @@ and a test keeps this copy equal to it.
 | pull |  | covered | git_pull |
 | push |  | covered | git_push |
 | rebase |  | covered | git_rebase |
-| refs |  | covered | git_for_each_ref, git_show_ref |
+| refs |  | covered | git_for_each_ref, git_show_ref, git_refs |
 | remote |  | covered | git_remote |
 | reset |  | covered | git_reset |
 | rm |  | covered | git_rm (built by s7) |
@@ -1542,20 +1542,20 @@ and a test keeps this copy equal to it.
 | tag | sign | assigned | s8 |
 | refs | list | covered | git_for_each_ref |
 | refs | exists | covered | git_show_ref |
-| refs | verify | assigned | s8 |
-| refs | migrate | assigned | s8 |
-| refs | optimize | assigned | s8 |
-| reflog | show | assigned | s8 |
-| reflog | list | assigned | s8 |
-| reflog | exists | assigned | s8 |
-| reflog | expire | assigned | s8 |
-| reflog | delete | assigned | s8 |
-| reflog | write | assigned | s8 |
-| reflog |  | assigned | s8 |
+| refs | verify | covered | git_refs |
+| refs | migrate | covered | git_refs |
+| refs | optimize | covered | git_refs |
+| reflog | show | covered | git_reflog |
+| reflog | list | covered | git_reflog |
+| reflog | exists | covered | git_reflog |
+| reflog | expire | covered | git_reflog |
+| reflog | delete | covered | git_reflog |
+| reflog | write | covered | git_reflog |
+| reflog |  | covered | git_reflog |
 | am |  | covered | git_patch |
 | apply |  | covered | git_patch |
 | archive |  | covered | git_patch |
-| backfill |  | assigned | s8 |
+| backfill |  | covered | git_maintenance |
 | bisect |  | covered | git_tree |
 | bugreport |  | covered | git_patch |
 | bundle |  | covered | git_patch |
@@ -1566,9 +1566,9 @@ and a test keeps this copy equal to it.
 | checkout-index |  | covered | git_tree |
 | cherry |  | covered | git_inspect |
 | clean |  | covered | git_tree |
-| clone |  | assigned | s8 |
+| clone |  | covered | git_setup |
 | column |  | covered | git_text |
-| commit-graph |  | assigned | s8 |
+| commit-graph |  | covered | git_maintenance |
 | commit-tree |  | covered | git_objects |
 | count-objects |  | covered | git_inspect |
 | describe |  | covered | git_inspect |
@@ -1582,17 +1582,17 @@ and a test keeps this copy equal to it.
 | format-patch |  | covered | git_patch |
 | fsck |  | covered | git_inspect |
 | fsck-objects |  | covered | git_inspect |
-| gc |  | assigned | s8 |
+| gc |  | covered | git_maintenance |
 | get-tar-commit-id |  | covered | git_inspect |
 | grep |  | covered | git_inspect |
 | index-pack |  | covered | git_objects |
-| init |  | assigned | s8 |
-| init-db |  | assigned | s8 |
+| init |  | covered | git_setup |
+| init-db |  | covered | git_setup |
 | interpret-trailers |  | covered | git_text |
 | last-modified |  | covered | git_inspect |
 | mailinfo |  | covered | git_text |
 | mailsplit |  | covered | git_text |
-| maintenance |  | assigned | s8 |
+| maintenance |  | covered | git_maintenance |
 | merge-file |  | covered | git_tree |
 | merge-octopus |  | assigned | s8 |
 | merge-ours |  | assigned | s8 |
@@ -1603,20 +1603,20 @@ and a test keeps this copy equal to it.
 | merge-subtree |  | assigned | s8 |
 | mktag |  | covered | git_objects |
 | mktree |  | covered | git_objects |
-| multi-pack-index |  | assigned | s8 |
+| multi-pack-index |  | covered | git_maintenance |
 | mv |  | covered | git_tree |
 | name-rev |  | covered | git_inspect |
 | notes |  | covered | git_objects |
 | pack-objects |  | covered | git_objects |
 | pack-redundant |  | covered | git_inspect |
-| pack-refs |  | assigned | s8 |
+| pack-refs |  | covered | git_maintenance |
 | patch-id |  | covered | git_text |
-| prune |  | assigned | s8 |
-| prune-packed |  | assigned | s8 |
+| prune |  | covered | git_maintenance |
+| prune-packed |  | covered | git_maintenance |
 | quiltimport |  | assigned | s8 |
 | range-diff |  | covered | git_inspect |
 | read-tree |  | covered | git_objects |
-| repack |  | assigned | s8 |
+| repack |  | covered | git_maintenance |
 | replace |  | covered | git_objects |
 | replay |  | covered | git_tree |
 | repo |  | covered | git_inspect |

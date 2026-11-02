@@ -39,7 +39,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 45, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text, git_objects, git_patch, git_tree from s8');
+	assert.equal(registered.size, 49, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text, git_objects, git_patch, git_tree, git_maintenance, git_setup, git_refs, git_reflog from s8');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -82,14 +82,13 @@ test('multi-operation commands are tracked per subcommand and the operations the
 		['worktree', 'lock'], ['worktree', 'unlock'], ['worktree', 'repair'],
 		['remote', 'show'], ['remote', 'prune'], ['remote', 'update'], ['remote', 'set-head'], ['remote', 'set-branches'], ['remote', 'set-url --add'], ['remote', 'set-url --delete'],
 		['branch', 'rename'], ['branch', 'copy'], ['branch', 'set-upstream-to'], ['branch', 'unset-upstream'], ['branch', 'edit-description'],
-		['tag', 'verify'], ['tag', 'sign'], ['refs', 'verify'], ['refs', 'migrate'], ['refs', 'optimize'],
-		['reflog', 'show'], ['reflog', 'expire'], ['reflog', 'delete'], ['reflog', 'write']] as const) {
+		['tag', 'verify'], ['tag', 'sign']] as const) {
 		assert.equal(owner(c, op), 'assigned', `${c} ${op} is assigned to s8`);
 	}
 	// the reads that git branch has and git_for_each_ref serves, and the two refs operations s4 covers
 	for (const op of ['merged', 'no-merged', 'points-at', 'contains']) { assert.equal(owner('branch', op), 'covered', `branch ${op}`); }
 	assert.equal(owner('refs', 'list'), 'covered'); assert.equal(owner('refs', 'exists'), 'covered');
-	assert.equal(baseRows.find(r => r.command === 'reflog')?.owner, 'assigned');
+	assert.equal(baseRows.find(r => r.command === 'reflog')?.owner, 'covered');
 	// a multi-operation command that is not in the list of seven would have no per-operation rows: none is missing
 	assert.deepEqual([...new Set(opRows.map(r => r.command))].sort(), [...MULTI_OPERATION].sort());
 });
@@ -434,6 +433,84 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 		const before = sha(c, 'topic'); const printed = await c.ok('git_tree', { op: 'replay', onto: 'main', range: 'main..topic' });
 		assert.match((printed.data as { text: string }).text, /^update refs\/heads\/topic [0-9a-f]{40} [0-9a-f]{40}$/); assert.equal(sha(c, 'topic'), before, 'print makes no change');
 		await c.ok('git_tree', { op: 'replay', onto: 'main', range: 'main..topic', refAction: 'update' }); assert.equal(c.git('merge-base', 'main', 'topic').trim(), sha(c, 'main'));
+	},
+
+	// ---- git_maintenance, git_setup, git_refs, git_reflog (s8)
+	'gc': async c => {
+		const loose = execFileSync('git', ['hash-object', '-w', '--stdin'], { cwd: c.repo, input: 'unreachable gc' }).toString().trim();
+		await c.ok('git_maintenance', { op: 'gc', aggressive: true }); assert.match(c.git('count-objects', '-v'), /^in-pack: [1-9]/m); c.git('cat-file', '-e', loose);
+		await c.ok('git_maintenance', { op: 'gc', pruneNow: true }); assert.throws(() => c.git('cat-file', '-e', loose));
+	},
+	'repack': async c => { await c.ok('git_maintenance', { op: 'repack', all: true, deleteRedundant: true }); assert.match(c.git('count-objects', '-v'), /^in-pack: [1-9]/m); },
+	'prune': async c => {
+		const loose = execFileSync('git', ['hash-object', '-w', '--stdin'], { cwd: c.repo, input: 'unreachable prune' }).toString().trim();
+		const dry = await c.ok('git_maintenance', { op: 'prune', dryRun: true, expire: 'now' }); assert.match((dry.data as { text: string }).text, new RegExp(loose)); c.git('cat-file', '-e', loose);
+		await c.ok('git_maintenance', { op: 'prune', expire: 'now' }); assert.throws(() => c.git('cat-file', '-e', loose));
+	},
+	'prune-packed': async c => {
+		c.git('repack', '-q', '-a'); assert.match(c.git('count-objects', '-v'), /^count: [1-9]/m);
+		await c.ok('git_maintenance', { op: 'prune-packed' }); assert.match(c.git('count-objects', '-v'), /^count: 0$/m);
+	},
+	'pack-refs': async c => { await c.ok('git_maintenance', { op: 'pack-refs', all: true }); assert.match(readFileSync(join(c.repo, '.git', 'packed-refs'), 'utf8'), /refs\/heads\/main/); },
+	'multi-pack-index': async c => {
+		c.git('repack', '-q', '-a', '-d'); await c.ok('git_maintenance', { op: 'multi-pack-index', action: 'write' }); assert.ok(existsSync(join(c.repo, '.git', 'objects', 'pack', 'multi-pack-index')));
+		await c.ok('git_maintenance', { op: 'multi-pack-index', action: 'verify' });
+	},
+	'maintenance': async c => { await c.ok('git_maintenance', { op: 'maintenance', tasks: ['commit-graph'] }); assert.ok(existsSync(join(c.repo, '.git', 'objects', 'info', 'commit-graph')) || existsSync(join(c.repo, '.git', 'objects', 'info', 'commit-graphs'))); },
+	'commit-graph': async c => {
+		await c.ok('git_maintenance', { op: 'commit-graph', action: 'write', reachable: true }); assert.ok(existsSync(join(c.repo, '.git', 'objects', 'info', 'commit-graph')));
+		await c.ok('git_maintenance', { op: 'commit-graph', action: 'verify' });
+	},
+	'backfill': async c => {
+		c.git('config', '--file', join(c.remote, 'config'), 'uploadpack.allowFilter', 'true'); const clone = mkdtempSync(join(tmpdir(), 'insrc-bf-'));
+		try {
+			execFileSync('git', ['clone', '-q', '--no-checkout', '--filter=blob:none', `file://${c.remote}`, clone]);
+			await c.ok('git_maintenance', { op: 'backfill', cwd: clone }); assert.equal(execFileSync('git', ['rev-list', '--objects', '--missing=print', '--all'], { cwd: clone, encoding: 'utf8' }).includes('?'), false, 'no object is missing any more');
+		} finally { rmSync(clone, { recursive: true, force: true }); }
+	},
+	'init': async c => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-init-')); const target = join(dir, 'new');
+		try {
+			const first = await c.ok('git_setup', { op: 'init', directory: target, initialBranch: 'trunk' }); assert.equal((first.data as { reinitialised: boolean }).reinitialised, false);
+			assert.equal(execFileSync('git', ['symbolic-ref', 'HEAD'], { cwd: target, encoding: 'utf8' }).trim(), 'refs/heads/trunk');
+			const again = await c.ok('git_setup', { op: 'init', directory: target }); assert.equal((again.data as { reinitialised: boolean }).reinitialised, true);
+		} finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'init-db': async c => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-initdb-'));
+		try { const r = await c.ok('git_setup', { op: 'init-db', directory: join(dir, 'b'), bare: true }); assert.equal((r.data as { reinitialised: boolean }).reinitialised, false); assert.equal(execFileSync('git', ['rev-parse', '--is-bare-repository'], { cwd: join(dir, 'b'), encoding: 'utf8' }).trim(), 'true'); } finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'clone': async c => {
+		const dir = mkdtempSync(join(tmpdir(), 'insrc-clone-')); const target = join(dir, 'c');
+		try {
+			await c.ok('git_setup', { op: 'clone', url: c.remote, directory: target, branch: 'main' }); assert.equal(execFileSync('git', ['log', '-1', '--format=%s'], { cwd: target, encoding: 'utf8' }).trim(), 'second');
+			const refused = await executeTool('git_setup', { cwd: c.repo, op: 'clone', url: 'ext::sh -c "touch /tmp/insrc-ext-ran"' }, { ...toolDeps(c.repo), approvalMode: 'auto' as const }); assert.equal(refused.success, false); assert.equal(existsSync('/tmp/insrc-ext-ran'), false);
+		} finally { rmSync(dir, { recursive: true, force: true }); }
+	},
+	'refs verify': async c => { const r = await c.ok('git_refs', { op: 'verify', strict: true }); assert.equal(typeof (r.data as { text: string }).text, 'string'); },
+	'refs migrate': async c => {
+		const fresh = newRepo(); writeFileSync(join(fresh, 'f.txt'), 'f'); git(fresh, 'add', '-A'); git(fresh, 'commit', '-q', '-m', 'f');
+		try {
+			await c.ok('git_refs', { op: 'migrate', refFormat: 'reftable', dryRun: true, cwd: fresh }); assert.equal(git(fresh, 'rev-parse', '--show-ref-format').trim(), 'files', 'a dry run changes nothing');
+			await c.ok('git_refs', { op: 'migrate', refFormat: 'reftable', cwd: fresh }); assert.equal(git(fresh, 'rev-parse', '--show-ref-format').trim(), 'reftable'); assert.equal(git(fresh, 'log', '-1', '--format=%s').trim(), 'f');
+		} finally { rmSync(fresh, { recursive: true, force: true }); }
+	},
+	'refs optimize': async c => { await c.ok('git_refs', { op: 'optimize', all: true }); assert.match(readFileSync(join(c.repo, '.git', 'packed-refs'), 'utf8'), /refs\/heads\/main/); },
+	'reflog show': async c => { const r = await c.ok('git_reflog', { op: 'show', limit: 3 }); const d = r.data as { count: number; lines: string[] }; assert.equal(d.count, 3); assert.ok(d.lines.some(l => /HEAD@\{\d+\}: commit: second/.test(l))); },
+	'reflog list': async c => { const r = await c.ok('git_reflog', { op: 'list' }); assert.ok((r.data as { lines: string[] }).lines.includes('refs/heads/main')); },
+	'reflog exists': async c => {
+		const yes = await c.ok('git_reflog', { op: 'exists', ref: 'refs/heads/main' }); assert.deepEqual(yes.data, { op: 'exists', exists: true });
+		const no = await c.ok('git_reflog', { op: 'exists', ref: 'refs/heads/nope' }); assert.deepEqual(no.data, { op: 'exists', exists: false });
+	},
+	'reflog expire': async c => {
+		await c.ok('git_reflog', { op: 'expire', expire: 'now', all: true, dryRun: true }); assert.notEqual(c.git('reflog').trim(), '');
+		await c.ok('git_reflog', { op: 'expire', expire: 'now', all: true }); assert.equal(c.git('reflog').trim(), '');
+	},
+	'reflog delete': async c => {
+		const before = c.git('reflog').trim().split('\n').length; await c.ok('git_reflog', { op: 'delete', entries: ['HEAD@{1}'] }); assert.equal(c.git('reflog').trim().split('\n').length, before - 1);
+	},
+	'reflog write': async c => {
+		await c.ok('git_reflog', { op: 'write', ref: 'refs/heads/main', oldOid: sha(c, 'HEAD~1'), newOid: sha(c, 'HEAD'), message: 'manual entry' }); assert.match(c.git('reflog', 'show', 'main'), /manual entry/);
 	},
 };
 

@@ -398,6 +398,8 @@ The draft hook widening and the port read are as in a1, but the trigger is a set
   - **resolved**: Confirm scope as written — The approved LLD scopes ac5 to the daemon's git_pull and git_push hooks plus the explicit refresh; a git-hook installer is a later Story. Flagged to the user in the plan summary. _(2026-11-02T05:39:26.184Z)_
 - `q71b0bc75` — int1 (ambiguous): the HLD context slice lists no shared contracts, so sc1 and sc3 cannot be checked against a list; they are the contracts the adjacent Stories s1 and s4 own.
   - **resolved**: Ground sc1/sc3 against s1/s4's own artifacts — Check sc1 (the tracker port) and sc3 (meta.revision) against the built code and the s1 and s4 LLDs. _(2026-11-02T05:40:25.323Z)_
+- `q932cb3ff` — Does the registry table pass a signal from workflowToolDeps to the gh tool call, so the refresh Deadline can cancel a call in flight? Not verified in this design; the plan checks it first and, if it does not, bounds a call only by the registry tool's own limit (30 s).
+  - **resolved**: Verify-then-accept-30s-fallback — The first task checks whether the registry table passes deps.signal to the gh call; if not, the registry tool's own limit bounds the call. _(2026-11-02T05:40:54.410Z)_
 
 ## Citations
 

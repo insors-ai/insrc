@@ -83,6 +83,13 @@
         "choice": "Ground sc1/sc3 against s1/s4's own artifacts",
         "rationale": "Check sc1 (the tracker port) and sc3 (meta.revision) against the built code and the s1 and s4 LLDs.",
         "resolvedAt": "2026-11-02T05:40:25.323Z"
+      },
+      "q932cb3ff": {
+        "question": "Does the registry table pass a signal from workflowToolDeps to the gh tool call, so the refresh Deadline can cancel a call in flight? Not verified in this design; the plan checks it first and, if it does not, bounds a call only by the registry tool's own limit (30 s).",
+        "status": "resolved",
+        "choice": "Verify-then-accept-30s-fallback",
+        "rationale": "The first task checks whether the registry table passes deps.signal to the gh call; if not, the registry tool's own limit bounds the call.",
+        "resolvedAt": "2026-11-02T05:40:54.410Z"
       }
     }
   },

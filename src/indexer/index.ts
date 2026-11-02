@@ -37,6 +37,7 @@ import './parser/kotlin.js';
 import './parser/c.js';
 import './parser/cpp.js';
 import './parser/rust.js';
+import './parser/csharp.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
 import { selectFile } from './file-selection.js';

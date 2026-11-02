@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s2",
+    "createdAt": "2026-11-02T07:02:24.067Z",
+    "updatedAt": "2026-11-02T07:02:24.067Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented private sc3 queue types, canonical checksummed framing and bounded immutable command snapshots with stable retry identities; public contracts remain unchanged.",
+    "testRecord": {
+      "md": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:02:24.067Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/queue-codec.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:02:24.067Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/queue/codec.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:02:24.067Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/queue/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:02:24.067Z"
+      }
+    ],
+    "commit": "3aa3b89d1"
+  }
+}

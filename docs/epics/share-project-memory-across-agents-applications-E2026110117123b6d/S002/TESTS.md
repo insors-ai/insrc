@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 26 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -186,3 +186,28 @@ Run at 2026-11-02T08:17:35.066Z on commit `6a3cd8936`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-receipts.test.ts` | 0 | 3 | 1.6 s |  |
+
+## t9
+
+Run at 2026-11-02T08:30:08.709Z on commit `3b404c77a`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: verified-terminal-ack-retirement-and-reader-pins**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | verified-terminal-ack-retirement-and-reader-pins | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+| pass | mixed-pending-prefix-keeps-later-terminal-segments | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+| pass | retirement-resumes-after-intent-unlink-and-successor-creation | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+| pass | full-terminal-active-segment-recycles-without-extra-headroom | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+
+**integration: recycled-identity-requires-authoritative-receipt-capability**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | recycled-identity-requires-authoritative-receipt-capability | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 5 | 4.2 s |  |

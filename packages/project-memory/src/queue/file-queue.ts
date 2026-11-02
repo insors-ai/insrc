@@ -51,6 +51,7 @@ export class FileQueue {
       this.#ready = true;
     } catch (error) { this.#fenced = true; throw error; }
   }
+  isAvailable(): boolean { return this.#ready && !this.#closing && !this.#stopped && !this.#fenced && !this.io.fenced; }
   /** Invoke synchronously to establish FIFO before any policy/I/O await. */
   enqueue<T>(work: () => Promise<T>, internal = false): Promise<T> {
     if (!this.#ready || this.#closing || this.#fenced || this.io.fenced) return Promise.reject(new MemoryError('NOT_READY', 'Queue is not accepting work.'));

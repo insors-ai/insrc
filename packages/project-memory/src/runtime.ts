@@ -11,8 +11,13 @@ export interface OwnedWork {
   /** Release drained resources only; this must never resume work. */
   close(): Promise<void>;
 }
+export interface MemoryIngress {
+  ready(): boolean;
+  submit(command: MemoryCommand): Promise<OperationReceipt>;
+  operation(request: OperationRequest): Promise<OperationReceipt>;
+}
 type State = 'ready' | 'draining' | 'closing' | 'closed' | 'failed';
-const unavailable = () => new MemoryError('NOT_READY', 'Memory data capabilities are not available in this foundation.');
+const unavailable = () => new MemoryError('NOT_READY', 'This memory capability is not currently available.');
 
 export class EmbeddedMemoryService implements MemoryService {
   #state: State = 'ready';
@@ -25,17 +30,18 @@ export class EmbeddedMemoryService implements MemoryService {
   readonly #owner: DirectoryOwnership;
   readonly #models: ModelDispatcher;
   readonly #logger: MemoryLogger;
+  readonly #ingress: MemoryIngress | undefined;
 
-  constructor(owner: DirectoryOwnership, models: ModelDispatcher, logger: MemoryLogger, work: readonly OwnedWork[] = []) {
+  constructor(owner: DirectoryOwnership, models: ModelDispatcher, logger: MemoryLogger, work: readonly OwnedWork[] = [], ingress?: MemoryIngress) {
     this.#owner = owner; this.#models = models; this.#logger = logger;
-    this.#work = [...work];
+    this.#work = [...work]; this.#ingress = ingress;
     this.#log('memory.ready');
   }
   #log(event: string): void {
     try { this.#logger.write('info', event, { state: this.#state }); } catch { /* Host logging cannot interrupt cleanup. */ }
   }
   ready(): Promise<void> {
-    return this.#state === 'ready' ? this.#readyResult : Promise.reject(new MemoryError('NOT_READY', 'Memory is no longer ready.'));
+    return this.#state === 'ready' && (this.#ingress?.ready() ?? true) ? this.#readyResult : Promise.reject(new MemoryError('NOT_READY', 'Memory is no longer ready.'));
   }
   #stopAdmission(): void {
     if (!this.#admissionStopped) {
@@ -95,9 +101,13 @@ export class EmbeddedMemoryService implements MemoryService {
     })();
     return this.#closing;
   }
-  submit(_command: MemoryCommand): Promise<OperationReceipt> { return Promise.reject(unavailable()); }
+  submit(command: MemoryCommand): Promise<OperationReceipt> {
+    return this.#state === 'ready' && this.#ingress ? this.#ingress.submit(command) : Promise.reject(unavailable());
+  }
   context(_request: ReadRequest): Promise<ContextResult> { return Promise.reject(unavailable()); }
   search(_request: SearchRequest): Promise<ContextResult> { return Promise.reject(unavailable()); }
   inspect(_request: InspectRequest): Promise<Json> { return Promise.reject(unavailable()); }
-  operation(_request: OperationRequest): Promise<OperationReceipt> { return Promise.reject(unavailable()); }
+  operation(request: OperationRequest): Promise<OperationReceipt> {
+    return this.#state === 'ready' && this.#ingress ? this.#ingress.operation(request) : Promise.reject(unavailable());
+  }
 }

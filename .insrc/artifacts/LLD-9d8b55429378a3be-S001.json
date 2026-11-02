@@ -1,0 +1,524 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793602732740-c6z5wd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T07:01:36.648Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 163903,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9d8b55429378a3be",
+    "epicSlug": "resolve-sql-table-view-references-across",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793602732740-c6z5wd",
+    "hldEffectiveHash": "9d8b55429378a3be2b0281876cd4319880826d71c7c11015f15ceaa84e9fa21c",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story in one module with a clear approach. The cross-file pass (src/indexer/cross-file-resolver.ts) already dispatches pending rows by kind through PASS2_KINDS ({CALLS, INHERITS, IMPLEMENTS}) into resolveCall / resolveInheritance, promotes single matches with evidence 'inferred' via promoteResolvedBatch, and classes ambiguous / no-candidate rows. The change adds REFERENCES (language sql) to that dispatch with a name matcher over the repository's table/view entities (schema-qualified or bare, unquoted, case-insensitive) and keeps classifyUnattempted from classing those rows 'not-attempted'. No schema or storage change: REFERENCES pending rows, the table/view kinds and the evidence byte already exist (s1/s7/s9). There is one small design choice (how a bare name matches a schema-qualified definition, and the settle-mode scope, which re-attempts only rows from committed files). That stays within a small story, not a feature.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every behavior named in the Story (resolve single-candidate, ambiguous, no-candidate, settle re-attempt, IndexerService integration) has a corresponding test (ac1-ac5), and no non-goal (e.g. guessed/awaitsId resolution, which a2 rejects) is designed in.",
+          "evidence": "Test strategy's acceptance mapping table lists ac1 (single resolve), ac2 (ambiguous), ac3 (no-candidate), ac4 (settle re-attempt), ac5 (IndexerService integration) each with a named test. Section 7.3 explicitly rejects the awaitsId/guess alternative ('Violates never-guess'), matching the epic c2ba6fa6 S009 LLD's resolved question qa7870f0b which explicitly scoped this as 'teach the cross-file pass to match SQL table and view names ... several candidates staying ambiguous' with no guessing. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/LLD.md, docs/standalone/resolve-sql-table-view-references-across-E202611029d8b5542/S001/LLD.md]",
+          "action": "Read docs/epics/.../S009/LLD.md:356 (resolved question) and the LLD's own Test strategy / Alternatives sections; confirmed the Story's open question honestly flags that acceptanceCriteria arrived empty and the ac1-ac5 were derived from the Story's stated behaviour.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "PASS2_KINDS today resolves only CALLS, INHERITS and IMPLEMENTS by name, and a SQL REFERENCES row to another file is written pending and never attempted by Pass 2 today.",
+          "evidence": "src/indexer/cross-file-resolver.ts:134: `const PASS2_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>(['CALLS', 'INHERITS', 'IMPLEMENTS']);` — REFERENCES is absent. src/indexer/parser/sql.ts:138-144 writes a cross-file SQL reference as `{ kind: 'REFERENCES', from: d.id, to: target, resolved: false, meta: { file, repo } }` (no awaitsId/targetFile), which classifyFileTargets skips (no awaitsId) and classifyUnattempted (line 264-273) classes 'no-candidate'/'not-attempted' since REFERENCES isn't in PASS2_KINDS, BOUNDARY_RELATION_KINDS, or EXPORTS. [files: src/indexer/cross-file-resolver.ts, src/indexer/parser/sql.ts, src/indexer/__tests__/sql-index.test.ts]",
+          "action": "Read cross-file-resolver.ts lines 1-160, 230-280, 500-610, 930-996 and parser/sql.ts in full; also read sql-index.test.ts which exercises exactly this and asserts the pending state today.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The per-row dispatch the design cites at cross-file-resolver.ts:560-562 is really the two-way ternary (CALLS vs INHERITS/IMPLEMENTS) the design says it will turn three-way.",
+          "evidence": "Lines 560-562: `const intent: ResolveIntent = row.kind === 'CALLS' ? resolveCall(...) : resolveInheritance(...);` — matches verbatim. [files: src/indexer/cross-file-resolver.ts]",
+          "action": "Read the exact lines cited.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "`resolveSqlReference` and the entity index's `sqlByName` map are genuinely new (do not already exist), while PASS2_KINDS, runPass2's dispatch, buildEntityIndex, promoteResolvedBatch/updateUnresolvedMetaBatch and rowsInScope are reused as-is with the stated shape.",
+          "evidence": "grep for `resolveSqlReference` and `sqlByName` across src/ returns no matches. promoteResolvedBatch (db/relations.ts:528) takes a generic `{unresolved, targetEntityId, evidence}` item keyed off `unresolved.kind` — not CALLS/INHERITS-specific — so it is reusable for a resolved REFERENCES row exactly as claimed. buildEntityIndex (line 949-977) only has byId/byFile/fileEntities/byNameKindLang today, confirming `sqlByName` is a genuine addition. [files: src/indexer/cross-file-resolver.ts, src/db/relations.ts]",
+          "action": "Grepped src/ for both new symbol names; read buildEntityIndex and promoteResolvedBatch signatures.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The call sites the design lists for the REFERENCES data-model change (134, 516, 524, 560-562, 949, parser/sql.ts) are the real, correctly-lined sites that touch this edge kind.",
+          "evidence": "Verified each: :134 PASS2_KINDS declaration; :516 `async function runPass2(`; :524 `const unresolved = await rowsInScope(opts, mode);` inside runPass2; :560-562 the dispatch ternary; :949 `function buildEntityIndex(...)`; parser/sql.ts:142-143 is where the pending/resolved REFERENCES relation is first written. All match verbatim. [files: src/indexer/cross-file-resolver.ts, src/indexer/parser/sql.ts]",
+          "action": "Read the cited line ranges directly.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No data rewrite is needed: a previously-stored pending REFERENCES row classed 'no-candidate'/'not-attempted' will be re-attempted and its class corrected the next time Pass 2 runs over it (full, repository, or a settle that defines its name), because Pass 2 does not skip rows that already carry a class.",
+          "evidence": "runPass2's loop (lines 547-585) only skips BOUNDARY_RELATION_KINDS rows and rows outside PASS2_KINDS or awaiting an id — it never checks `row.meta['class']` before attempting a row, and `classUpdate()` (line 511-514) only no-ops when the proposed meta is byte-identical to what's stored, otherwise overwrites it. So an already-classed 'not-attempted' row is reprocessed and reclassed once REFERENCES is added to PASS2_KINDS. [files: src/indexer/cross-file-resolver.ts]",
+          "action": "Read runPass2's full loop and classUpdate helper to confirm no skip-if-already-classed guard exists.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This Story is a pre-planned, explicitly-deferred addition to Epic c2ba6fa6's Story s1 cross-file pass, not an unplanned redesign of another Story's or HLD's current ownership.",
+          "evidence": "The epic c2ba6fa6 S009 LLD's resolved question qa7870f0b (2026-11-02) states: 'Recorded as a pending item: teach the cross-file pass to match SQL table and view names (a small addition to Story s1's pass)' — this Story is exactly that deferred addition, and the LLD correctly declares itself standalone with 'no HLD shared contracts to honour'. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/LLD.md, docs/standalone/resolve-sql-table-view-references-across-E202611029d8b5542/S001/LLD.md]",
+          "action": "Read the epic's S009 LLD resolved-questions section (lines 345-362) and the standalone LLD's HLD-context section.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The claimed ambiguous/no-candidate/deleted-from-entity error handling matches the mechanics Pass 2 already uses for CALLS/INHERITS, so resolveSqlReference's description (ambiguous->meta.candidates/no edge; no-candidate->reason no-match; missing from-entity->UNRESOLVED) is implementable without new plumbing.",
+          "evidence": "runPass2 lines 568-577 show the exact same three outcomes (`promotes.push` on resolved, `classUpdate(... class:'ambiguous')` on ambiguous, `classUpdate(... class:'no-candidate', reason:'no-match')` on UNRESOLVED) already generically applied regardless of kind. resolveCall's own from-entity lookup pattern at lines 727-729 (`byFile find, else byId.get, undefined -> UNRESOLVED`) is quoted verbatim by the design's error-path citation. [files: src/indexer/cross-file-resolver.ts]",
+          "action": "Read runPass2's intent-handling branch and resolveCall's from-entity lookup lines exactly as cited.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test strategy's claim to replace the existing sql-index.test.ts:76-78 assertion ('references ... stay pending') with a new assertion that the same fixture's org_users->orgs and org_users->users resolve as 'inferred' REFERENCES edges is grounded in the real current test and fixture.",
+          "evidence": "sql-index.test.ts lines 33-36 define exactly the `db/schema.sql` (orgs, users) and `db/views.sql` (org_users, top) fixture the design names; lines 76-78 assert `pending = ['org_users -> orgs', 'org_users -> users']` today ('references to tables of another file stay pending by name') — the precise two rows the design says become resolved 'inferred' edges after this Story. [files: src/indexer/__tests__/sql-index.test.ts]",
+          "action": "Read the full sql-index.test.ts file and matched its fixture/assertions against the LLD's test-strategy section 5 claim.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-02T07:15:13.946Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-02T07:30:06.580Z",
+    "rangeBase": "f14a8ef950bd474fdb225c4e1a5d947dcb1a634a"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "A SQL view or table that names a table or view defined in another .sql file of the repository now gets its REFERENCES edge, written by the cross-file pass with evidence 'inferred'. Before this, the edge stayed pending forever. Names match as SQL compares unquoted names: case-insensitively, a qualified name only its own schema's definition, and a bare name any definition with that last segment. Several candidates stay ambiguous and are never guessed. Saving the file that defines a table also resolves the references that were waiting on it, without waiting for a full index."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Resolve SQL table and view references across files"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "PASS2_KINDS",
+          "signature": "const PASS2_KINDS: ReadonlySet<RelationKind>",
+          "parameters": [],
+          "returns": {
+            "type": "ReadonlySet<RelationKind>",
+            "meaning": "The pending kinds Pass 2 resolves by name: CALLS, INHERITS, IMPLEMENTS and now REFERENCES."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Contains REFERENCES, so classifyUnattempted no longer classes a pending REFERENCES row 'not-attempted'; Pass 2 classes it instead."
+          ]
+        },
+        {
+          "name": "runPass2",
+          "signature": "function runPass2(opts: CrossFileResolveOpts, mode: CrossFileMode, index: EntityIndex): Promise<{ resolved: number; ambiguous: number; stillUnresolved: number }>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "CrossFileResolveOpts",
+              "purpose": "The repository, db and (settle) committed files.",
+              "optional": false
+            },
+            {
+              "name": "mode",
+              "type": "CrossFileMode",
+              "purpose": "full | settle | repository.",
+              "optional": false
+            },
+            {
+              "name": "index",
+              "type": "EntityIndex",
+              "purpose": "The repository's entities, now with the SQL name index.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ resolved: number; ambiguous: number; stillUnresolved: number }>",
+            "meaning": "Counts now include REFERENCES rows."
+          },
+          "errors": [],
+          "preconditions": [
+            "A REFERENCES row is attempted only when its from-entity's language is 'sql'; any other REFERENCES row is skipped as today."
+          ],
+          "postconditions": [
+            "A sql REFERENCES row goes to a new resolveSqlReference(row, index): ResolveIntent, a sibling of resolveCall and resolveInheritance. The per-row dispatch at src/indexer/cross-file-resolver.ts:560-562 becomes three-way: CALLS to resolveCall, REFERENCES to resolveSqlReference, INHERITS/IMPLEMENTS to resolveInheritance. A REFERENCES row whose from-entity is not language 'sql' returns UNRESOLVED without a class change.",
+            "Exactly one candidate: the row is promoted through promoteResolvedBatch with evidence 'inferred'.",
+            "Several candidates: the row is classed 'ambiguous' with meta.candidates (the ids); no edge is written.",
+            "No candidate: the row is classed 'no-candidate' with reason 'no-match'.",
+            "The from-entity itself is never a candidate.",
+            "In settle mode, after rowsInScope returns the committed files' own rows, runPass2 also takes the repository's pending sql REFERENCES rows whose name could match a table or view that a committed file defines (read with listUnresolvedRelations for the repository, filtered by kind, language and name; each row at most once). When no committed file defines a table or view, settle mode reads exactly what it reads today. rowsInScope itself is unchanged, so its three callers (classifyFileTargets at src/indexer/cross-file-resolver.ts:244, runPass1b at :447 and runPass2 at :524) keep their behaviour."
+          ]
+        },
+        {
+          "name": "buildEntityIndex",
+          "signature": "function buildEntityIndex(entities: readonly Entity[]): EntityIndex",
+          "parameters": [
+            {
+              "name": "entities",
+              "type": "readonly Entity[]",
+              "purpose": "The repository's entities.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "EntityIndex",
+            "meaning": "Gains sqlByName: Map<string, Entity[]> over sql table/view entities. Each is keyed by its lower-cased full name, and also by its lower-cased last segment when the name is qualified (marked so a bare reference can match it)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The existing maps are unchanged."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "REFERENCES edge between SQL tables/views across files",
+        "change": "invariant-change",
+        "details": "Endpoints and direction: from a table or view entity (language 'sql') to the table or view it names, now also when the target is defined in another file of the same repository. Cardinality: many-to-one per name; one REFERENCES per distinct name per from-entity, as the reader writes it. Ownership: the reader writes it pending, and the cross-file pass promotes it. Evidence: 'inferred' for a cross-file match ('extracted' for a same-file one, unchanged). Compatibility: no new kind, byte or schema version; a pending row that was classed 'no-candidate'/'not-attempted' is re-attempted at the next full, repository or (by name) settle pass. Matching: unquoted names compare case-insensitively. A qualified reference 'app.users' matches only a definition named 'app.users'. A bare reference 'users' matches a definition named 'users', or any qualified definition whose last segment is 'users'.",
+        "callSites": [
+          "src/indexer/cross-file-resolver.ts:134",
+          "src/indexer/cross-file-resolver.ts:516",
+          "src/indexer/cross-file-resolver.ts:524",
+          "src/indexer/cross-file-resolver.ts:560-562",
+          "src/indexer/cross-file-resolver.ts:949",
+          "src/indexer/parser/sql.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Two files define a table of the same qualified name (for example two migrations both CREATE TABLE app.users)",
+          "detection": "resolveSqlReference finds more than one sql table/view entity under the reference's lower-cased name",
+          "response": "The row is classed 'ambiguous' with meta.candidates listing both ids; no edge is written",
+          "userImpact": "The reference stays pending, with its candidates visible; nothing wrong is asserted",
+          "recoverable": true
+        },
+        {
+          "scenario": "A reference names a table that no file of the repository defines (an external or system table, such as pg_catalog.pg_class)",
+          "detection": "No entry under the name, and none under the bare last segment",
+          "response": "The row is classed 'no-candidate' with reason 'no-match'",
+          "userImpact": "The reference stays pending, classed so it does not count as awaiting a target",
+          "recoverable": true
+        },
+        {
+          "scenario": "A REFERENCES row whose from-entity is missing from the index (deleted since the row was listed)",
+          "detection": "resolveSqlReference looks the from-entity up as resolveCall does (src/indexer/cross-file-resolver.ts:727-729: byFile, then index.byId; undefined returns UNRESOLVED)",
+          "response": "Left as it is (UNRESOLVED intent with no class change); the next pass sees the deletion",
+          "userImpact": "None",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A bare reference 'users' with one definition 'app.users' in another file",
+          "expected": "Resolved to app.users, evidence 'inferred'"
+        },
+        {
+          "input": "A bare reference 'users' with definitions 'app.users' and 'audit.users'",
+          "expected": "Ambiguous with both candidates"
+        },
+        {
+          "input": "A bare reference 'users' with definitions 'users' and 'app.users'",
+          "expected": "Ambiguous: a bare name may mean either under the search path, so it is not guessed"
+        },
+        {
+          "input": "A qualified reference 'app.users' with a bare definition 'users' only",
+          "expected": "No candidate: the qualified name says the schema, and the bare definition does not"
+        },
+        {
+          "input": "A reference written 'APP.Users' to a definition 'app.users'",
+          "expected": "Resolved: unquoted names compare case-insensitively (the reader already unquoted the text)"
+        },
+        {
+          "input": "A view that references itself by name (recursive view)",
+          "expected": "The from-entity is never a candidate; the reader already links a same-file reference"
+        },
+        {
+          "input": "Settle after saving b.sql, which newly defines orgs; a.sql (not saved) has a pending reference to orgs",
+          "expected": "The pending row from a.sql is re-attempted in the same settle and resolved"
+        },
+        {
+          "input": "A REFERENCES row from a non-sql entity",
+          "expected": "Not attempted by the SQL matcher; skipped exactly as before"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "An ambiguous name writes no edge; it stays pending with its candidates, so 'chosen' is never written by Pass 2",
+          "source": "c1"
+        },
+        {
+          "text": "A cross-file match is written with evidence 'inferred' through promoteResolvedBatch, and a same-file one stays 'extracted' (the reader's)",
+          "source": "c1"
+        },
+        {
+          "text": "Pass 2 never touches boundary kinds or rows awaiting an id; those stay with the endpoint passes and Pass 0",
+          "source": "c1"
+        },
+        {
+          "text": "The entity index's existing maps (byId, byFile, fileEntities, byNameKindLang keyed by language family) are unchanged; CALLS/INHERITS/IMPLEMENTS resolution is unaffected",
+          "source": "c2"
+        },
+        {
+          "text": "Settle mode still reads only the committed files' rows when no committed file defines a table or view",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), over real temporary LMDB stores (useTemporaryLance), as in src/indexer/__tests__/cross-file-c-family.test.ts",
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "The real cross-file pass over a real temporary store, seeded as the SQL reader writes rows: single, ambiguous and no-candidate matches; qualified vs bare names; case; settle re-attempt by defined name; other kinds unaffected",
+          "subjects": [
+            "SQL references resolved by the cross-file pass"
+          ],
+          "fixturesNeeded": [
+            "a temporary graph store with a registered repository and sql table/view entities in several files"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Through IndexerService: SQL files indexed by a full index store cross-file REFERENCES as 'inferred', and a settle after saving the file that defines a table resolves a waiting reference in an unchanged file. This replaces the s9 assertion in src/indexer/__tests__/sql-index.test.ts:76-78 (cross-file references stay pending after a full index): after this Story the same fixture's 'org_users -> orgs' and 'org_users -> users' are stored as REFERENCES edges with evidence 'inferred', and no pending REFERENCES row remains.",
+          "subjects": [
+            "SQL repository through IndexerService"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository with schema.sql and views.sql"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: a reference to a table or view defined in exactly one other file resolves with evidence 'inferred' (qualified and bare names, case-insensitive)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: several candidates leave the reference ambiguous with its candidates and write no edge"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a name no file defines is classed no-candidate (no-match)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: a settle after saving the file that defines a table resolves a waiting reference in an unchanged file"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: SQL files indexed through IndexerService store cross-file REFERENCES as inferred"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The cross-file pass's Pass 2 resolves only CALLS, INHERITS and IMPLEMENTS (PASS2_KINDS, src/indexer/cross-file-resolver.ts:134; bundle c1). A pending SQL REFERENCES row to a table or view of another file is never attempted. A full index classes it 'no-candidate'/'not-attempted' (classifyUnattempted, src/indexer/cross-file-resolver.ts:262), and settle mode reads only the committed files' own rows (rowsInScope, src/indexer/cross-file-resolver.ts:503; bundle c3).",
+      "stateAfter": "Pass 2 also resolves a sql REFERENCES row by name among the repository's sql table/view entities: one candidate is promoted with evidence 'inferred', several are classed ambiguous, none is classed no-candidate/no-match. Settle mode also re-attempts the repository's pending sql REFERENCES rows whose name a committed file's table or view now matches.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add REFERENCES to the Pass 2 kinds, with a SQL name matcher and a SQL name index on the entity index",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "In settle mode, runPass2 also takes the pending sql REFERENCES rows whose name a committed file's table or view matches; rowsInScope and its other callers are unchanged",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "No data rewrite: rows already stored are re-attempted, and their classes updated, by the next full or repository pass, or by a settle that defines their name. Existing 'not-attempted' classes are replaced then.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Internal only: no request, field, kind, byte or schema version changes. An older daemon reading a store this one wrote sees ordinary REFERENCES edges, whose evidence byte is already known since s7. Rolling back leaves the promoted edges as valid edges.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "SQL REFERENCES in Pass 2, plus a settle re-attempt by defined name",
+        "oneLineSummary": "Add REFERENCES to PASS2_KINDS for language sql with a name matcher over the repository's table/view entities, and in settle mode also re-attempt pending SQL references whose name a committed file now defines.",
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "SQL REFERENCES in Pass 2 only (smallest)",
+        "oneLineSummary": "Add REFERENCES to PASS2_KINDS with the same matcher; settle mode unchanged.",
+        "costEstimate": "XS",
+        "reasonRejected": "Partial on accuracy-first: a reference waits for a full index, or a save of its own file, after its target is added."
+      },
+      {
+        "id": "a3",
+        "name": "Reader-written awaitsId rows completed by Pass 0",
+        "oneLineSummary": "The SQL reader writes a cross-file reference as a row awaiting a guessed target id.",
+        "costEstimate": "M",
+        "reasonRejected": "Violates never-guess: a reader sees one file, so the target's file (and id) is unknowable at parse time."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "NOTE (s8 ts1 partial): the Story arrived with no acceptanceCriteria array; the test strategy names ac1-ac5 from the Story's stated behaviour, each with a proving test."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:134",
+      "quotedText": "const PASS2_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>(['CALLS', 'INHERITS', 'IMPLEMENTS']);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:262",
+      "quotedText": "async function classifyUnattempted(opts: CrossFileResolveOpts): Promise<void> {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:503",
+      "quotedText": "async function rowsInScope(opts: CrossFileResolveOpts, mode: CrossFileMode): Promise<UnresolvedRelation[]> {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:516",
+      "quotedText": "async function runPass2("
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:949",
+      "quotedText": "function buildEntityIndex(entities: readonly Entity[]): EntityIndex {"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:957",
+      "quotedText": "private async runSettlePass(repoPath: string): Promise<void> {"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/db/relations.ts:81",
+      "quotedText": "export interface UnresolvedRelation {"
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/LLD.md:356",
+      "quotedText": "Recorded as a pending item: teach the cross-file pass to match SQL table and view names"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/indexer/__tests__/sql-index.test.ts:78",
+      "quotedText": "references to tables of another file stay pending by name"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:729",
+      "quotedText": "if (fromEntity === undefined) return UNRESOLVED;"
+    }
+  ]
+}

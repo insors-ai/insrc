@@ -682,7 +682,7 @@ function resolveInheritance(
   // Same-file
   for (const kind of targetKinds) {
     const sameFile = (index.byFile.get(row.fromFile) ?? [])
-      .filter(e => e.language === language && e.kind === kind && e.name === row.rawTo);
+      .filter(e => sameFamily(e.language, language) && e.kind === kind && e.name === row.rawTo);
     if (sameFile.length === 1) return { kind: 'resolved', targetId: sameFile[0]!.id };
     if (sameFile.length > 1) {
       return { kind: 'ambiguous', meta: { ...row.meta, candidates: sameFile.map(e => e.id) } };
@@ -731,7 +731,7 @@ function resolveCall(
 
   // Same-file
   const sameFile = (index.byFile.get(row.fromFile) ?? [])
-    .filter(e => e.language === language
+    .filter(e => sameFamily(e.language, language)
               && CALL_TARGET_KINDS.includes(e.kind)
               && e.name === row.rawTo
               && e.id !== row.fromEntity);
@@ -759,7 +759,7 @@ function resolveCall(
     const imported = index.fileEntities.get(path);
     if (imported === undefined) continue;
     for (const e of exportedTargets(imported.id, row.rawTo, index, exports)) {
-      if (e.language === language && CALL_TARGET_KINDS.includes(e.kind)) found.set(e.id, e);
+      if (sameFamily(e.language, language) && CALL_TARGET_KINDS.includes(e.kind)) found.set(e.id, e);
     }
   }
   const candidates = [...found.values()];
@@ -977,6 +977,19 @@ function buildEntityIndex(entities: readonly Entity[]): EntityIndex {
 }
 
 function entityKey(lang: Language, kind: EntityKind, name: string): string {
-  return `${lang}:${kind}:${name}`;
+  return `${languageFamily(lang)}:${kind}:${name}`;
+}
+
+/**
+ * The family a language's names resolve within (Epic c2ba6fa6 s9): C and C++
+ * are one -- a C caller links to a function declared in a header read by the
+ * C++ reader (user decision 2026-11-02). Every other language is its own family.
+ */
+function languageFamily(lang: Language): Language {
+  return lang === 'cpp' ? 'c' : lang;
+}
+
+function sameFamily(a: Language, b: Language): boolean {
+  return languageFamily(a) === languageFamily(b);
 }
 

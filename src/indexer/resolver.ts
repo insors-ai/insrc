@@ -234,6 +234,8 @@ const EXTENSION_MAP: Readonly<Partial<Record<Language, ExtensionCandidates>>> = 
   // python: filled in Phase 1
   // go / java / scala: filled in their respective phases (cross-file pass
   // handles JVM package-style imports rather than relative-path probing).
+  // c / cpp (s9): an #include names its file exactly, extension included, so
+  // the one candidate is the path itself -- the default below.
 };
 
 function buildCandidates(base: string, language: Language): string[] {

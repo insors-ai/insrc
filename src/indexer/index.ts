@@ -34,6 +34,7 @@ import './parser/go.js';
 import './parser/java.js';
 import './parser/scala.js';
 import './parser/kotlin.js';
+import './parser/c.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
 import { selectFile } from './file-selection.js';

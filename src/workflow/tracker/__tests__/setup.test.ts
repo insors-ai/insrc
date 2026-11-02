@@ -78,7 +78,7 @@ function withCfg(seed?: unknown): { cfgPath: string; dir: string } {
 	if (seed !== undefined) writeFileSync(cfgPath, JSON.stringify(seed, null, 2));
 	process.env['INSRC_GITHUB_CONFIG'] = cfgPath;
 	_setWorkflowToolDepsForTests({ approvalMode: 'auto' });   // issue-type and project writes are common-class calls
-	_setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' }; } }));   // the forced label create is destructive-class: it always asks
+	_setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' }; } }));   // approvals asked for in a real run are answered yes
 	return { cfgPath, dir };
 }
 

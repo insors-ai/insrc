@@ -214,10 +214,17 @@ function buildRegistryTable(deps: ToolDeps) {
 		ghCurrentLogin,
 		queryTasks,
 
-		/** Best-effort: false when gh fails. */
+		/**
+		 * Best-effort: false when gh fails. The create has no force (a forced create is destructive and always asks), so a
+		 * label that already exists fails the create; it then counts as created when the repository's labels hold that name.
+		 */
 		async ghCreateLabel(owner: string, repo: string, name: string): Promise<boolean> {
-			const c = await run(ghLabelTool, { op: 'create', repo: repoArg(owner, repo), name, force: true }, deps);
-			return soft(c, undefined) !== undefined;
+			const target = repoArg(owner, repo);
+			if (soft(await run(ghLabelTool, { op: 'create', repo: target, name }, deps), undefined) !== undefined) return true;
+			const listed = soft(await run(ghLabelTool, { op: 'list', repo: target, search: name, limit: 100 }, deps), undefined);
+			if (listed === undefined) return false;
+			const items = opData(listed, 'list')['items'] as readonly { name?: unknown }[];
+			return items.some(l => typeof l.name === 'string' && l.name.toLowerCase() === name.toLowerCase());
 		},
 
 		/** Create an issue; returns its `owner/repo#N` ref. */

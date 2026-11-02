@@ -29,7 +29,7 @@ import type { DefineArtifact, DefineStory } from '../../artifacts/define.js';
 import { approvedMeta, draftMeta } from '../../__tests__/lifecycle-fixtures.js';
 
 afterEach(() => { installExecStandIn(); _setApprovalGateForTests(undefined); });
-/** Every approval the tools ask for is answered yes: the commit, push and forced label create are asked for in a real run. */
+/** Every approval the tools ask for is answered yes: the commit and push are asked for in a real run. */
 const approveAll = (): void => _setApprovalGateForTests(() => ({ async ask(r) { return { requestId: r.requestId, decision: 'approve' }; } }));
 
 const SLUG = 'demo-feature';

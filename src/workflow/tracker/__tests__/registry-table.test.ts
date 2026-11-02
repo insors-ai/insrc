@@ -59,12 +59,28 @@ const table = (deps = OK) => createRegistryTable(deps);
 const rejectedGh = (kind = 'rejected') => (err: unknown) => err instanceof GhCommandError && err.kind === kind;
 
 describe('registry-table.test.ts: one case per issue, comment, label, milestone and task-query row, including best-effort rows and the rule that a denial is thrown, never swallowed', () => {
-	it('ghCreateLabel: creates with force and answers true; false on a gh failure', async () => {
+	it('ghCreateLabel: creates without force and answers true; an existing label counts as created; false for any other gh failure', async () => {
 		const g = gh([['*label*create*', '']]);
 		assert.equal(await table().ghCreateLabel('o', 'r', 'epic:x'), true);
-		assert.match(g.calls()[0]!, /^label create epic:x .*--force|^label create .*epic:x/);
+		assert.match(g.calls()[0]!, /^label create epic:x/);
+		assert.doesNotMatch(g.calls()[0]!, /--force|-f\b/, 'a forced create is destructive and always asks');
+		// the label exists: the create fails and the list holds the name (case does not matter)
+		const exists = gh([['label\\ create*', '', 1, 'label already exists'], ['label\\ list*', '[{"name":"Epic:X","color":"ededed","description":"","id":"1","isDefault":false,"createdAt":"","updatedAt":"","url":""}]']]);
+		assert.equal(await table().ghCreateLabel('o', 'r', 'epic:x'), true);
+		assert.deepEqual(exists.calls().map(c => c.split(' ').slice(0, 2).join(' ')), ['label create', 'label list']);
+		// the create fails and the list has no such name, or the list fails too
+		gh([['label\\ create*', '', 1, 'boom'], ['label\\ list*', '[{"name":"other","color":"","description":"","id":"1","isDefault":false,"createdAt":"","updatedAt":"","url":""}]']]);
+		assert.equal(await table().ghCreateLabel('o', 'r', 'epic:x'), false);
 		gh([fail404()]);
 		assert.equal(await table().ghCreateLabel('o', 'r', 'epic:x'), false);
+	});
+
+	it('ghCreateLabel asks no approval: it is common, not destructive, so a push with no client attached is not denied', async () => {
+		gh([['label\\ create*', '']]);
+		let asked = 0;
+		_setApprovalGateForTests(() => ({ async ask() { asked += 1; return 'no-client'; } }));
+		assert.equal(await table().ghCreateLabel('o', 'r', 'epic:x'), true);
+		assert.equal(asked, 0);
 	});
 
 	it('ghCreateIssue: the ref from the printed url; an unrecognized url throws; a gh failure throws', async () => {

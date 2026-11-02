@@ -615,8 +615,23 @@ export function returnEdgeToPendingInTxn(s: GraphStore, fromU64: bigint, kindByt
 	// The returned relationship keeps the evidence its edge holds (s7), so the
 	// cross-file pass restores it as it was.
 	const evidence = decodeEvidence(s.outEdge.get(encodeOutEdgeKey(fromU64, kindByte, toU64)) as Buffer | undefined);
-	writePendingRowInTxn(s, awaitingRowFor(s, fromU64, fromEntity, kind, target, withEvidence(undefined, evidence), Date.now()));
+	const awaiting = awaitingRowFor(s, fromU64, fromEntity, kind, target, withEvidence(undefined, evidence), Date.now());
+	writePendingRowInTxn(s, kind === 'REFERENCES' ? byNameRow(s, awaiting, toU64) : awaiting);
 	return true;
+}
+
+/**
+ * A SQL reference is matched by name (Story 9d8b5542), and a table that moves
+ * to another file comes back under another id: the reference returns pending
+ * by the target's name, not awaiting its old id, so the cross-file pass finds
+ * the table wherever it is now -- or classes the name when it is gone.
+ */
+function byNameRow(s: GraphStore, awaiting: UnresolvedRow, toU64: bigint): UnresolvedRow {
+	const name = decodeEntityRow(s.entity.get(encodeEntityKey(toU64)) as Buffer).name;
+	const { awaitsId: _a, class: _c, reason: _r, ...meta } = awaiting.meta;
+	void _a; void _c; void _r;
+	const repo = meta['repo'] as string;
+	return { ...awaiting, id: makeUnresolvedRelationId(repo, awaiting.fromEntity, 'REFERENCES', name), rawTo: name, meta };
 }
 
 // ---------------------------------------------------------------------------

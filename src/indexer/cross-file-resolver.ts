@@ -523,7 +523,7 @@ async function runPass2(
   // map (one DB read each; per-row helpers below are pure-sync).
   const tList = Date.now();
   const unresolved = await rowsInScope(opts, mode);
-  if (mode === 'settle') unresolved.push(...await sqlReferencesAwaitingCommitted(opts, index, unresolved));
+  if (mode === 'settle') unresolved.push(...await sqlReferencesAwaitingCommitted(opts, unresolved));
   log.info(
     { repo: opts.repoRoot, rows: unresolved.length, elapsedMs: Date.now() - tList },
     'cross-file Pass 2: listUnresolvedRelations done',
@@ -815,23 +815,20 @@ function resolveSqlReference(row: UnresolvedRelation, index: EntityIndex): Resol
 }
 
 /**
- * In settle mode: the repository's pending SQL references that a table or
- * view of a committed file can now answer, beyond the rows already in scope,
- * so saving the file that defines a table resolves the references waiting on
- * it. Reads nothing when no committed file defines a table or view.
+ * In settle mode: when a committed file is a SQL file (saved or removed), the
+ * repository's pending SQL references beyond the rows already in scope. A
+ * definition added, moved, renamed or removed can answer, disambiguate or
+ * orphan a reference in a file that was not saved, so every one is
+ * re-attempted. Reads nothing when no committed file is a SQL file.
  */
 async function sqlReferencesAwaitingCommitted(
   opts:    CrossFileResolveOpts,
-  index:   EntityIndex,
   inScope: readonly UnresolvedRelation[],
 ): Promise<UnresolvedRelation[]> {
-  const defined = (opts.committedFiles ?? []).flatMap(f => index.byFile.get(f) ?? [])
-    .filter(e => e.language === 'sql' && (e.kind === 'table' || e.kind === 'view'));
-  if (defined.length === 0) return [];
-  const answers = new Set(defined.map(e => e.id));
+  if (!(opts.committedFiles ?? []).some(f => f.toLowerCase().endsWith('.sql'))) return [];
   const seen = new Set(inScope.map(r => r.id));
   return (await listUnresolvedRelations(opts.db, opts.repoRoot))
-    .filter(r => r.kind === 'REFERENCES' && !seen.has(r.id) && sqlCandidates(r.rawTo, index).some(e => answers.has(e.id)));
+    .filter(r => r.kind === 'REFERENCES' && r.meta['awaitsId'] !== true && !seen.has(r.id));
 }
 
 // ---------------------------------------------------------------------------

@@ -6,7 +6,9 @@
  * definition in another file resolves 'inferred', qualified or bare, whatever
  * its case; several definitions leave it ambiguous with its candidates and no
  * edge; a name no file defines is no-candidate; a settle that commits the
- * file defining a table resolves a waiting reference of an unchanged file.
+ * file defining a table resolves a waiting reference of an unchanged file, and
+ * one that moves, renames or removes a definition re-attempts the references
+ * it touches (a returned edge comes back by name, not by the old id).
  *
  * Run: npx tsx --test src/indexer/__tests__/cross-file-sql-references.test.ts
  */
@@ -18,7 +20,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
-import { entityU64ForId, upsertEntities } from '../../db/entities.js';
+import { commitFile, entityU64ForId, upsertEntities } from '../../db/entities.js';
 import { listUnresolvedRelations, upsertRelations } from '../../db/relations.js';
 import { outNeighbors } from '../../db/graph/edges.js';
 import { addRepo } from '../../db/repos.js';
@@ -126,5 +128,76 @@ test('a settle that commits the file defining a table resolves a waiting referen
 	await pass('settle', [at('db/ledger.sql')]);
 
 	assert.deepEqual(await referenced(report!, new Map([[ledger!.id, 'ledger']])), ['ledger: inferred']);
+	assert.deepEqual(await pendingOf(report!), []);
+});
+
+/** A file's tables/views committed as the indexer commits a re-parsed file (its removed entities' edges return to pending). */
+async function commit(rel: string, ...objects: Array<[EntityKind, string]>): Promise<Entity[]> {
+	const es = [ent('file', '', rel), ...objects.map(([k, n]) => ent(k, n, rel))];
+	await commitFile({ repoPath: repo, filePath: at(rel), contentHash: rel + objects.length, entities: es, relations: [] });
+	return es.slice(1);
+}
+
+test('a table moved to another file: the settle for the two files re-links the reference of an unchanged file to its new place', async () => {
+	await commit('db/b.sql', ['table', 'orgs']);
+	const [report] = await define('db/report.sql', ['view', 'report']);
+	await refer(report!, 'orgs');
+	await pass();
+
+	await commit('db/b.sql');                       // orgs leaves b.sql: its edge returns to pending, by name
+	const [moved] = await commit('db/c.sql', ['table', 'orgs']);
+	await pass('settle', [at('db/b.sql'), at('db/c.sql')]);
+
+	assert.deepEqual(await referenced(report!, new Map([[moved!.id, 'c.sql orgs']])), ['c.sql orgs: inferred']);
+	assert.deepEqual(await pendingOf(report!), []);
+});
+
+test('a table renamed in its file: the settle classes the waiting reference no-candidate by its name', async () => {
+	await commit('db/b.sql', ['table', 'orgs']);
+	const [report] = await define('db/report.sql', ['view', 'report']);
+	await refer(report!, 'orgs');
+	await pass();
+
+	await commit('db/b.sql', ['table', 'organisations']);
+	await pass('settle', [at('db/b.sql')]);
+
+	const rows = await pendingOf(report!);
+	assert.deepEqual(rows.map(r => [r.rawTo, r.meta['class'], r.meta['awaitsId']]), [['orgs', 'no-candidate', undefined]]);
+});
+
+test('removing one of two definitions: the settle resolves the reference that was ambiguous between them', async () => {
+	const [kept] = await commit('db/b.sql', ['table', 'users']);
+	await commit('db/c.sql', ['table', 'users']);
+	const [report] = await define('db/report.sql', ['view', 'report']);
+	await refer(report!, 'users');
+	await pass();
+	assert.equal((await pendingOf(report!))[0]?.meta['class'], 'ambiguous');
+
+	await commit('db/c.sql');
+	await pass('settle', [at('db/c.sql')]);
+
+	assert.deepEqual(await referenced(report!, new Map([[kept!.id, 'b.sql users']])), ['b.sql users: inferred']);
+});
+
+test('a view never answers its own reference; a REFERENCES row from a non-SQL entity is not attempted; a settle with no SQL file reads no SQL reference', async () => {
+	const [self] = await define('db/self.sql', ['view', 'app.users']);
+	const [plain] = await define('db/b.sql', ['table', 'users']);
+	await refer(self!, 'users');
+	const ts: Entity = { ...ent('function', 'f', 'src/a.ts'), language: 'typescript' };
+	await upsertEntities(null, [{ ...ent('file', '', 'src/a.ts'), language: 'typescript' }, ts]);
+	await upsertRelations(null, [{ kind: 'REFERENCES', from: ts.id, to: 'users', resolved: false, meta: { repo, file: ts.file } }]);
+	const [report] = await define('db/report.sql', ['view', 'report']);
+	await refer(report!, 'ledger');
+
+	await pass();
+
+	assert.deepEqual(await referenced(self!, new Map([[plain!.id, 'users']])), ['users: inferred'], 'app.users itself is not a candidate for users');
+	assert.deepEqual((await pendingOf(ts)).map(r => [r.rawTo, r.meta['class']]), [['users', undefined]], 'left exactly as written');
+
+	// ledger appears without a SQL commit: a settle for a.ts does not re-read the SQL references.
+	await upsertEntities(null, [ent('file', '', 'db/ledger.sql'), ent('table', 'ledger', 'db/ledger.sql')]);
+	await pass('settle', [at('src/a.ts')]);
+	assert.equal((await pendingOf(report!)).length, 1);
+	await pass('settle', [at('db/ledger.sql')]);
 	assert.deepEqual(await pendingOf(report!), []);
 });

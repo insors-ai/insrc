@@ -85,6 +85,8 @@ export const GIT_PATCH_OPS: readonly GitOpSpec[] = [
     argv: i => ['diagnose', `--mode=${text(i['mode']) ?? 'stats'}`, ...(text(i['output']) !== undefined ? ['-o', text(i['output'])!] : []), ...(text(i['suffix']) !== undefined ? ['-s', text(i['suffix'])!] : [])],
   }),
   op('bugreport', {
+    // git bugreport opens the report in the configured editor once it is written; 'true' is an editor that does nothing
+    env: { GIT_EDITOR: 'true' },
     cls: i => (text(i['output']) !== undefined ? 'destructive' : 'common'), mutating: true, parse: combined,
     fields: { output: path('Directory to write the report into (default: the repository directory).'), suffix: field.str('Name the report git-bugreport-<suffix>.txt.') },
     paths: ['output'],

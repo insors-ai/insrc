@@ -52,6 +52,8 @@ export interface GitOpSpec {
   readonly paths?: readonly string[];
   /** The git words after `git`. `dir` is the scratch directory when the op asks for one (otherwise ''). */
   readonly argv: (input: ToolInput, dir: string) => readonly string[];
+  /** Environment added to the daemon's for this op (e.g. GIT_EDITOR=true for a command that would open an editor). */
+  readonly env?: Readonly<Record<string, string>>;
   /** The op writes files that are part of its answer (mailinfo, mailsplit): it gets a temporary directory, removed after parse. */
   readonly scratch?: boolean;
   /** The field that holds the content sent on standard input; it must be declared in `fields`. */
@@ -186,6 +188,7 @@ async function runIn(_id: string, spec: GitOpSpec, input: ToolInput, deps: ToolD
   const { label, mutating, content, cwd, limit, dir } = run;
   const r = await runShellBytes(['git', ...spec.argv(input, dir)], {
     cwd, timeoutMs: spec.timeoutMs, stdoutLimit: limit,
+    ...(spec.env !== undefined ? { env: { ...process.env, ...spec.env } } : {}),
     ...(content !== undefined ? { stdin: content } : {}),
     ...(deps.signal !== undefined ? { signal: deps.signal } : {}),
   });

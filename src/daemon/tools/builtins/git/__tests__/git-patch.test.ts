@@ -18,7 +18,7 @@ import { join } from 'node:path';
 import { cleanup } from '../../../__tests__/_proc.js';
 import { _setApprovalGateForTests, executeTool } from '../../../executor.js';
 import type { ApprovalDenial, ApprovalGate, ToolInput } from '../../../types.js';
-import { gitPatchTool } from '../patch.js';
+import { GIT_PATCH_OPS, gitPatchTool } from '../patch.js';
 import { registerForTests, toolDeps } from './_repo.js';
 import { installStandInGit } from './_standin.js';
 import type { StandIn } from './_standin.js';
@@ -46,6 +46,7 @@ test('git-patch.test.ts: an op writing a named file is destructive, the same op 
 		assert.equal(classOf(writes), 'destructive', JSON.stringify(writes));
 		assert.equal(classOf(without), cls, JSON.stringify(without));
 	}
+	assert.equal(GIT_PATCH_OPS.find(o => o.name === 'bugreport')?.env?.['GIT_EDITOR'], 'true', 'bugreport must not open an editor');
 	assert.equal(classOf({ op: 'apply', patch: 'p', check: true }), 'none');
 	assert.equal(classOf({ op: 'apply', patch: 'p' }), 'common');
 	assert.equal(classOf({ op: 'am', mbox: 'm' }), 'common');

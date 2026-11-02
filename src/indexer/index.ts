@@ -42,6 +42,7 @@ import './parser/sql.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
 import { selectFile } from './file-selection.js';
+import { runSubsystemPass } from './subsystem-pass.js';
 import { Watcher } from './watcher.js';
 import { createFileFilter, isGeneratedOrMinifiedFile, proposeIgnoreFile, refreshFileFilter, type CheapTierModel, type FileFilter } from './file-filter.js';
 import { IndexQueue } from '../daemon/queue.js';
@@ -442,6 +443,7 @@ export class IndexerService {
       case 'config-reindex': await this.configReindex(job.scope);           break;
       case 'doc-summarise-repo':   await this.docSummariseRepo(job.repoPath);   break;
       case 'doc-summarise-entity': await this.docSummariseEntity(job.entityId); break;
+      case 'subsystems':           await this.subsystemPass(job.repoPath); break;
     }
   }
 
@@ -633,6 +635,21 @@ export class IndexerService {
         'messaging-endpoint pass after index clean-up failed (non-fatal)',
       );
     }
+    await this.enqueueSubsystemsIfComplete(repoPath);
+  }
+
+  /**
+   * Queue the subsystem pass (Epic c2ba6fa6 s8) when the repository's graph is
+   * complete: after a full index, a settle or a clean-up. The pass itself does
+   * nothing when its stored groups are of the current generation.
+   */
+  /** The subsystem pass for one repository (a seam: a test overrides it to run no model). */
+  protected async subsystemPass(repoPath: string): Promise<void> {
+    await runSubsystemPass({ db: this.db, repoPath });
+  }
+
+  protected async enqueueSubsystemsIfComplete(repoPath: string): Promise<void> {
+    if ((await readIndexState(repoPath))?.graphComplete === true) this.queue.enqueue({ kind: 'subsystems', repoPath });
   }
 
   /** Test seam: how many per-repo settle timers are armed. */
@@ -847,6 +864,7 @@ export class IndexerService {
       // makes re-runs cheap; safe to fire on every full-index.
       this.queue.enqueue({ kind: 'doc-summarise-repo', repoPath });
       this.queue.enqueue({ kind: 'reembed', repoPath });
+      await this.enqueueSubsystemsIfComplete(repoPath);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log.error({ repo: repoPath, err: msg }, 'full index failed');
@@ -997,6 +1015,7 @@ export class IndexerService {
       { repo: repoPath, files: scope.size, resolved: totalResolved, ambiguous: totalAmbiguous, importsRewired: totalRewired },
       'cross-file settle pass complete',
     );
+    await this.enqueueSubsystemsIfComplete(repoPath);
   }
 
   // ---------------------------------------------------------------------------

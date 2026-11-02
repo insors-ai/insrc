@@ -897,7 +897,13 @@ export type IndexJob =
    * upserts entities, then enqueues one of these per doc entity
    * so the summary follows the body.
    */
-  | { kind: 'doc-summarise-entity'; entityId: string };
+  | { kind: 'doc-summarise-entity'; entityId: string }
+  /**
+   * Group a graph-complete repository's code into subsystems and summarise
+   * the new ones (Epic c2ba6fa6 s8). A summary-lane job, enqueued after a full
+   * index, a settle or a clean-up that leaves the repository's graph complete.
+   */
+  | { kind: 'subsystems'; repoPath: string };
 
 // ---------------------------------------------------------------------------
 // Config management

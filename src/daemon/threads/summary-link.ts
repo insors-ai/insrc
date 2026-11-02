@@ -48,7 +48,7 @@ export const SUMMARY_TAKE_EDIT = 'summary.takeEdit';
 type SweepFrame = { readonly stream: 'sweep'; readonly data: SummarySweepProgress | null };
 
 /** A summary job: run on the document-summary worker, handed over by the summary lane. */
-export const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';
+export const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity' || job.kind === 'subsystems';
 
 /**
  * The code-indexing queue's job runner. A job runs under the maintenance lock's shared hold,

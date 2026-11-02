@@ -36,7 +36,7 @@ async function until(cond: () => boolean, what: string): Promise<void> {
 
 const label = (job: IndexJob): string => {
 	switch (job.kind) {
-		case 'full': case 'reembed': case 'reconcile': case 'doc-summarise-repo': return `${job.kind}:${job.repoPath}`;
+		case 'full': case 'reembed': case 'reconcile': case 'doc-summarise-repo': case 'subsystems': return `${job.kind}:${job.repoPath}`;
 		case 'file': case 'config-file': return `${job.kind}:${job.filePath}`;
 		case 'doc-summarise-entity': return `${job.kind}:${job.entityId}`;
 		case 'config-full': case 'config-reindex': return job.kind;

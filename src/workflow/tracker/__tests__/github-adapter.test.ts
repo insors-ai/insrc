@@ -18,6 +18,7 @@ import { GhCommandError } from '../github.js';
 import { installExecStandIn, installNoPrograms } from '../../__tests__/helpers/exec-stand-in.js';
 import { _setApprovalGateForTests } from '../../../daemon/tools/executor.js';
 import type { IssueSpec } from '../port.js';
+import { createRegistryTable, workflowToolDeps } from '../registry-table.js';
 
 afterEach(() => { installExecStandIn(); _setApprovalGateForTests(undefined); });
 /** Every approval the tools ask for is answered yes (closing an issue, forcing a label and the like are asked for in a real run). */
@@ -449,4 +450,35 @@ test("ghGetIssueId and the adapter's resolveIssueId run gh api for the issue num
 	assert.equal(((await ops.resolveIssueId('o/r#10')) as { kind: string }).kind, 'unreachable');
 	failWith(execError({ stderr: 'HTTP 404 Not Found' }));
 	assert.equal(((await ops.resolveIssueId('o/r#10')) as { kind: string }).kind, 'rejected');
+});
+
+test('readIssueStatus maps the gh issue view output to state and labels and the adapter declares status-read', async () => {
+	const port = createGithubTracker('o', 'r');
+	assert.equal(port.capabilities.has('status-read'), true);
+	installExecStandIn(() => JSON.stringify(issueRow({ state: 'CLOSED', labels: [{ name: 'status:done' }, { name: 'epic:x' }] })));
+	const r = await port.readIssueStatus?.('o/r#5');
+	assert.deepEqual(r, { ok: true, value: { state: 'closed', labels: ['status:done', 'epic:x'] } });
+});
+
+test('readIssueStatus maps a gh timeout to unreachable, a missing gh to missing-tool and a signed-out gh to missing-signin, and is cancelled by the Deadline signal', async () => {
+	const port = createGithubTracker('o', 'r');
+	const cases: Array<[string, Error, string]> = [
+		['timeout', execError({ code: 'ETIMEDOUT' }), 'unreachable'],
+		['missing tool', execError({ code: 'ENOENT' }), 'missing-tool'],
+		['signed out', execError({ stderr: 'gh auth login required' }), 'missing-signin'],
+	];
+	for (const [label, err, kind] of cases) {
+		failWith(err);
+		const r = await port.readIssueStatus?.('o/r#5');
+		assert.equal(r?.ok, false, label);
+		if (r !== undefined && !r.ok) assert.equal(r.kind, kind, label);
+	}
+	// a gh that never answers: the signal given to the registry table cancels the call in flight and it comes back as a failed result
+	installExecStandIn(() => new Promise<string>(() => undefined));
+	const ctl = new AbortController();
+	const cancellable = createGithubTracker('o', 'r', { table: createRegistryTable(workflowToolDeps(process.cwd(), { signal: ctl.signal })) });
+	setTimeout(() => ctl.abort(), 200);
+	const out = await cancellable.readIssueStatus?.('o/r#5');
+	assert.equal(out?.ok, false);
+	if (out !== undefined && !out.ok) assert.match(out.reason, /aborted/);
 });

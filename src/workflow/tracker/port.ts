@@ -18,7 +18,7 @@ export type IssueRef = string;
 
 export type TrackerKind = string;
 
-export type Capability = 'claim' | 'issue-create' | 'signoff-request' | 'completion';
+export type Capability = 'claim' | 'issue-create' | 'signoff-request' | 'completion' | 'status-read';
 
 export type PortFailureKind = 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected';
 
@@ -114,6 +114,8 @@ export interface TrackerPort {
 	readSignoffState(ref: SignoffRequestRef, since?: string): Promise<PortResult<'open' | 'changes-requested' | 'completed'>>;
 	/** The branch a signoff request was opened from and whether it can still take a push. A tracker without it cannot resubmit to a request (s8). */
 	readSignoffRequest?(ref: SignoffRequestRef): Promise<PortResult<{ branch: string; open: boolean }>>;
+	/** The issue's current state (lower case) and label names. Present only on a tracker that declares `status-read`; the tracker refresh reads it (s9). */
+	readIssueStatus?(issue: IssueRef): Promise<PortResult<{ state: string; labels: string[] }>>;
 }
 
 /** Whether an issue title names the artifact id `token`: the title is the token, or the token then ` — ` and a
@@ -124,7 +126,7 @@ export function titleMatchesToken(title: string, token: string): boolean {
 
 export type LoadTracker = (repo: string, needed: ReadonlySet<Capability>) => Promise<PortResult<TrackerPort>>;
 
-const ALL_CAPABILITIES: readonly Capability[] = ['claim', 'issue-create', 'signoff-request', 'completion'];
+const ALL_CAPABILITIES: readonly Capability[] = ['claim', 'issue-create', 'signoff-request', 'completion', 'status-read'];
 
 /** The capabilities in `needed` that `declared` does not contain, in a fixed order. */
 export function missingCapabilities(declared: ReadonlySet<Capability>, needed: ReadonlySet<Capability>): Capability[] {

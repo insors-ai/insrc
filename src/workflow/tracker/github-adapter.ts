@@ -10,7 +10,7 @@
  * configuration) for fail-open callers; `loadTracker` builds the same adapter
  * after the strict checks and is for team features only.
  *
- * GitHub declares {claim, issue-create, signoff-request}. A signoff request is a
+ * GitHub declares {claim, issue-create, signoff-request, status-read}. A signoff request is a
  * pull request from a branch that holds the committed artifacts; its state is read
  * from the pull request's review decision and merge state.
  */
@@ -43,7 +43,7 @@ export interface GithubTrackerOptions {
 	readonly table?: RegistryTable | undefined;
 }
 
-const CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(['claim', 'issue-create', 'signoff-request']);
+const CAPABILITIES: ReadonlySet<Capability> = new Set<Capability>(['claim', 'issue-create', 'signoff-request', 'status-read']);
 
 function failure(err: unknown): { readonly ok: false; readonly kind: 'missing-tool' | 'missing-signin' | 'unreachable' | 'rejected'; readonly reason: string } {
 	if (err instanceof GhCommandError) return { ok: false, kind: err.kind, reason: err.reason };
@@ -130,6 +130,8 @@ export function createGithubTracker(owner: string, repo: string, opts: GithubTra
 		openSignoffRequest: (spec: SignoffRequestSpec) => attempt(() => tableOf().openSignoffRequest(owner, repo, spec)),
 		readSignoffState: (request: SignoffRequestRef, since?: string) => attempt(() => tableOf().readSignoffState(request, since)),
 		readSignoffRequest: (request: SignoffRequestRef) => attempt(() => tableOf().readSignoffRequest(request)),
+
+		readIssueStatus: (issue: IssueRef) => attempt(() => tableOf().ghGetIssueState(owner, repo, issue)),
 	};
 }
 

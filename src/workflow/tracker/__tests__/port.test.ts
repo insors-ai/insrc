@@ -64,6 +64,11 @@ test('missingCapabilities names every capability the tracker does not declare', 
 	assert.deepEqual(missingCapabilities(set('claim'), set()), []);
 });
 
+test('missingCapabilities reports status-read for a declared set without it', async () => {
+	assert.deepEqual(missingCapabilities(set('claim', 'issue-create', 'signoff-request'), set('status-read')), ['status-read']);
+	assert.deepEqual(missingCapabilities(set('status-read'), set('status-read')), []);
+});
+
 test('strict resolver refuses malformed or unsupported configuration', async () => {
 	const repo = '/r';
 	assert.match(refusal(await resolveStrictTrackerTarget(repo, '/does/not/exist.json')), /does not exist/);
@@ -181,7 +186,7 @@ test('loadTracker succeeds when every needed capability is declared', async () =
 		assert.equal(r.ok, true);
 		if (r.ok) {
 			assert.equal(r.value.kind, 'github');
-			assert.deepEqual([...r.value.capabilities].sort(), ['claim', 'issue-create', 'signoff-request']);
+			assert.deepEqual([...r.value.capabilities].sort(), ['claim', 'issue-create', 'signoff-request', 'status-read']);
 		}
 		assert.deepEqual(calls[0], ['api', 'user']);
 	});

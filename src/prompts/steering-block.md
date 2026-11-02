@@ -320,6 +320,8 @@ The previous design-review engine has been removed. Calls throw
 Design-review redesign is a separate future epic. Approval gates still require
 an explicit user-authorized override when no usable independent review exists.
 
+<!-- insrc:guide:review:end -->
+
 <!-- insrc:guide:code-review:start -->
 ## code-review — committed task review
 
@@ -358,6 +360,7 @@ The schemas advertise reused bounded packet/results; host validates semantic sco
 phase, ownership and replay. Old dimension/chunk review inputs remain rejected.
 <!-- insrc:guide:code-review:end -->
 
+<!-- insrc:guide:tracker:start -->
 ## tracker — sync the Epic to GitHub (`workflow: 'tracker.push' / '.sync' / '.post'`)
 
 Push an Epic to GitHub, sync tracker status, or post an update. YOU invoke `gh`

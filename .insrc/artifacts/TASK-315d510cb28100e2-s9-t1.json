@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95b90303-0e68-413b-a2fe-ba862af1703b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:35.699Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Add the status read to the tracker port and the GitHub adapter",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dcd3fe25f18b9e021d143641b3414e50299664648f792b96bec09adca314c0a8",
+        "at": "2026-11-02T06:06:35.699Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:35.700Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the status read to the tracker port and the GitHub adapter",
+    "summary": "Add the 'status-read' capability to the Capability union, to ALL_CAPABILITIES (so missingCapabilities reports it) and to the GitHub adapter's declared set; add the optional async readIssueStatus(issue) to TrackerPort and implement it in the GitHub adapter over the registry table's ghGetIssueState, mapping a GhCommandError to a port failure kind and rethrowing a ToolDenied. Update the tests that pin the capability set (port.test.ts, github-adapter.test.ts).",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "the adapter declares status-read and readIssueStatus returns { state, labels } for an issue",
+      "a port without the capability is reported by missingCapabilities and loadTracker rejects it when status-read is needed",
+      "a missing tool, a signed-out gh and a timeout map to the port failure kinds and a denied call is rethrown"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/port.test.ts: missingCapabilities reports status-read for a declared set without it"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: readIssueStatus maps the gh issue view output to state and labels and the adapter declares status-read"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/tracker/__tests__/github-adapter.test.ts: readIssueStatus maps a gh timeout to unreachable, a missing gh to missing-tool and a signed-out gh to missing-signin, and is cancelled by the Deadline signal"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

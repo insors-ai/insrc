@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9644cfdc-5d16-4b53-baf7-057eb67bd07e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:35.705Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Create issues at first draft in a repo with no team policy when the tracker is on",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bfd65f1d51edd0ea35c055877ecddeb1d81f2e8e0b20e07d99d0297002eb0c98",
+        "at": "2026-11-02T06:06:35.706Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:35.706Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Create issues at first draft in a repo with no team policy when the tracker is on",
+    "summary": "Widen ensureDraftIssues: a repo whose policy is none or not teamMode checks the tracker with resolveGithubConfig and, when it is on, ensures the Epic and Story issues through createGithubTracker (the pair the terminal approve uses); tracker type none stays not-applicable and makes no call; a malformed github.json is not-ready with its reason; a ToolDenied is rethrown; a team repo keeps loadTracker and today's behaviour. Update the draft-issues tests that pin not-applicable for any repo with no team policy.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "a solo repo with the tracker on gets its Epic and Story issues at first draft",
+      "tracker type none makes no tracker call and a malformed config is not-ready",
+      "the terminal approve over issues the daemon already created creates nothing and no duplicate",
+      "a team repo behaves as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/draft-issues.test.ts: a team repo creates the stage's issue as before"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/draft-issues.test.ts: a repo with no team policy and a tracker that is on creates the Epic and Story issues"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/draft-issues.test.ts: tracker type none makes no tracker call, a malformed github.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/team/__tests__/draft-issues.test.ts: the terminal approve over issues the daemon already created creates nothing and no duplicate"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

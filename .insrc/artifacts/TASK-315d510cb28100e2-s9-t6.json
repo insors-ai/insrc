@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4432c448-4b43-42ae-b4fb-70615d2aa57e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:35.709Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Record the amendments and update the documentation",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s9-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s9-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s9-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d55ca72a73ff8af22af949518d816b7c73cf9f91b16674c585c56e0aab3f71ce",
+        "at": "2026-11-02T06:06:35.709Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:35.709Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the amendments and update the documentation",
+    "summary": "Record the sc1 methodAdd amendment for readIssueStatus and the status-read capability and confirm the nonFunctional.retarget amendment of the LLD in docs/plans/team-workflow.md, describe the refresh, the hooks and the solo-repo issue creation in docs/workflow.md, and add the s9 decisions (scope as written, hooks only for the repo root, signal propagation verified) to the plan notes.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "the amendment and the decisions are written in docs/plans/team-workflow.md",
+      "docs/workflow.md describes the automatic refresh and its limits"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/s9-docs-record.test.ts: team-workflow.md records the amendment and the s9 decisions and workflow.md describes the automatic refresh"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1f84d5c4-b644-4435-b039-cbc2f4967850",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:35.707Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Show the issue key, artifact id and revision in the chain report",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4664d2aac5e254c29845c3d41f94dc7c87ab03a5d2dfe4a6192eda553f5d758b",
+        "at": "2026-11-02T06:06:35.707Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:35.708Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Show the issue key, artifact id and revision in the chain report",
+    "summary": "ChainReport.tracker gains read-only artifactId and revision for the Epic's Define (0 when meta.revision is absent) and a stories list with issue, artifactId and revision for each Story head that has an issue; the stored TrackerMeta gains no field. The sync-tracker next action names the explicit refresh instead of the GitHub-only tracker.sync workflow.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "the record carries the artifact id and revision for the Epic and each Story with an issue, 0 when absent",
+      "the stored TrackerMeta has no new field",
+      "the sync-tracker next action names the explicit refresh"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/chain-report-tracker.test.ts: the tracker record carries artifactId and revision for the Epic and each Story with an issue, 0 when absent"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/chain-report-tracker.test.ts: the stored TrackerMeta gains no field and the sync-tracker next action names the explicit refresh"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

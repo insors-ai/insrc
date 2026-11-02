@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b0b7c7d5-ecec-4e70-95ff-d87d945a7c38",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:35.704Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Register the two post-success hooks on git_pull and git_push",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s9-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "31fef981d5843dcb0aa4f56ad3d6446773bd02160014fc4cf244ca21c8c692c4",
+        "at": "2026-11-02T06:06:35.704Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:35.705Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Register the two post-success hooks on git_pull and git_push",
+    "summary": "Register tracker-refresh-after-pull and tracker-refresh-after-push at daemon start (registerToolHook, the first production rules). A rule acts only when input.cwd is present and equals the registered repository root exactly after canonicalising both paths; a linked worktree, including the detached temporary worktree the handoff park pushes from, is refused because its cwd differs from the registered path (confirmed by comparing git_rev_parse gitDir with the common directory). The pull must not be a dry run and the push must have data.pushed true. The rule calls refreshTrackerStatus with its own Deadline (the hook receives no signal) and throws one line when the refresh was skipped, failed or denied, so the executor reports it as hookFailures while the git tool stays a success.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a successful non-dry-run pull and a pushed push in a registered repo root refresh the status",
+      "a dry run, a push with pushed false, a missing cwd and a linked worktree run no refresh",
+      "a push from a temporary worktree (the handoff park) runs no refresh",
+      "a failing, denied or slow tracker leaves the tool a success and adds hookFailures and a line of output"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/refresh-hooks.test.ts: git_pull and git_push through callTool with the hooks registered refresh the status after success"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/refresh-hooks.test.ts: a failing, denied or slow tracker leaves success true and adds hookFailures and a line of output"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/tracker/__tests__/refresh-hooks.test.ts: a dry-run pull, a push with pushed false, a failed git command, a missing cwd and a push from a temporary worktree run no refresh"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

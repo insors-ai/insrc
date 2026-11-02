@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2b65a642-6d1f-455e-b8ea-a36e36fc3fb2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:35.710Z",
+    "epicCreatedAt": "2026-10-16T14:46:39.254Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "315d510cb28100e2",
+    "storyId": "s9",
+    "envelope": {
+      "description": "Run the full sweep once and write the s9 outcome",
+      "parent": {
+        "entityId": "STORY-315d510cb28100e2-s9",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-315d510cb28100e2-s9",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-315d510cb28100e2-s9-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dbba9deb9d5cbc8e4ad4a8840a23a4d7d40b6cfa2ca675e588259461f1e79946",
+        "at": "2026-11-02T06:06:35.710Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:35.711Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the full sweep once and write the s9 outcome",
+    "summary": "Run the full test sweep once in foreground chunks and compare by test name with the tree before s9; write the outcome section (deviations, open items) in docs/plans/team-workflow.md.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "no new failure and no new skipped test against the tree before s9, with the pre-existing failures listed",
+      "the outcome section is written"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/s9-sweep-record.test.ts: the outcome section of team-workflow.md lists the sweep result and the open items"
+      },
+      {
+        "level": "smoke",
+        "name": "On a sandbox GitHub repo: write a draft in a repo with no team policy and see the Epic issue created, change the issue state on GitHub, run git_pull through the daemon tool and see the status in meta.tracker"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

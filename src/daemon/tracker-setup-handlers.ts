@@ -8,7 +8,7 @@ import {
 	configAlreadyDetail, configWrittenDetail, planTrackerConfig, runTrackerSetup,
 } from '../workflow/tracker/setup.js';
 import type { ConfigOutcome, TrackerSetupOptions, TrackerSetupReport } from '../workflow/tracker/setup.js';
-import { syncTracker } from '../workflow/tracker/sync.js';
+import { refreshTrackerStatus } from '../workflow/tracker/sync.js';
 import type { SyncResult } from '../workflow/tracker/sync.js';
 import type { RpcHandler } from './server.js';
 
@@ -17,7 +17,8 @@ export async function handleTrackerSync(params: unknown): Promise<SyncResult | {
 	const p = (params ?? {}) as { repoPath?: unknown; epicHash?: unknown };
 	if (typeof p.repoPath !== 'string' || p.repoPath.length === 0) return { error: 'tracker.sync: `repoPath` is required' };
 	if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) return { error: 'tracker.sync: `epicHash` is required' };
-	return await syncTracker(p.repoPath, p.epicHash);
+	const entry = (await refreshTrackerStatus(p.repoPath, { epicHash: p.epicHash })).results[0];
+	return entry?.result ?? { status: 'skipped', reason: 'nothing to refresh' };
 }
 
 type EnsureReply = { readonly ok: true; readonly changed: boolean } | { readonly ok: false; readonly error: { readonly code: string; readonly message: string } };

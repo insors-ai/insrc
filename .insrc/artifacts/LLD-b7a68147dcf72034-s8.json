@@ -82,6 +82,13 @@
         "choice": "Exclude merge drivers + subtree; keep request-pull/quiltimport only if a program needs them",
         "rationale": "User decision 2026-11-02: follow the recommendation; no program needs request-pull or quiltimport today, so they are excluded with a reason that says so.",
         "resolvedAt": "2026-11-02T11:17:07.645Z"
+      },
+      "q82e22558": {
+        "question": "The missing operations of git_stash, git_worktree, git_remote, git_branch and git_tag: this design adds them to those tools as new values of their op enum (additive, existing inputs unchanged); the alternative is new tools for them",
+        "status": "resolved",
+        "choice": "additive-enum",
+        "rationale": "User decision 2026-11-02: extend the five existing tools (git_stash, git_worktree, git_remote, git_branch, git_tag) with new op values; existing inputs unchanged; no new tools for them.",
+        "resolvedAt": "2026-11-02T11:17:38.495Z"
       }
     }
   },

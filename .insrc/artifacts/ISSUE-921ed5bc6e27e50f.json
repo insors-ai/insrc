@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793626818768-vo38h1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T13:40:44.403Z",
+    "epicCreatedAt": "2026-11-02T13:40:44.403Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 25634,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "921ed5bc6e27e50f",
+    "epicSlug": "create-tracker-labels-without-force-so",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "title": "Create tracker labels without force so a push needs no approval",
+    "reproduction": "Push an Epic to GitHub with the tracker enabled (insrc workflow tracker push, or the tracker step of a team Story) with no approval client attached, or with a TUI that is not watching. The label step calls gh_label create with force:true. Observed: the call is classed destructive, asks for approval, and is denied with 'no-client' or times out after 300 s, so the push stops at the first label. Expected: creating the labels the tracker needs is routine setup and needs no approval.",
+    "rootCause": "ghCreateLabel in src/workflow/tracker/registry-table.ts runs gh_label with op create and force:true, to make an existing label not an error. In src/daemon/tools/builtins/gh/helpers.ts ghApprovalClass raises a common op to destructive when any of the inputs force, clobber, visibility, newName, newTag or extraArgs is set, and gh_label create is common (src/daemon/tools/builtins/gh/resources.ts). So the tracker's own call is destructive, which always asks and is denied with no client.",
+    "fixIntent": "Create each label without force. A create that fails because the label already exists counts as success (the label is there), found by listing the repository labels for that exact name. A denial is still thrown and never swallowed, and a failure for any other reason still answers false. The approval class of gh_label is not changed: a real forced overwrite still asks."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/tracker/registry-table.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/helpers.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/tools/builtins/gh/resources.ts"
+    }
+  ]
+}

@@ -1317,11 +1317,15 @@ async function finalizeDefineExtend(
 	// The Epic's anchor is needed by the extend record: resolve it now, before the Define is appended to, an
 	// amendment is proposed or anything is cached, so a work item with none changes nothing.
 	const epicCreatedAt = requireEpicAnchor(intent.repoPath, epicHash);
+	const epicSlug = define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash;
+	const storyId  = nextStoryId(define);
+	// nextStoryId mints an unused id, so this cannot fire today; it keeps the order true (every validation before the gate) if the id source changes.
+	if (define.body.stories.some(s => s.id === storyId)) {
+		return { ok: false, failure: schemaFailure(`extend target invalid: Story '${storyId}' already exists in Epic '${epicHash}'`) };
+	}
 	// Team gate (Story f32c3abf4a55494b/s1): an extend changes the Epic's Define, which may be in signoff. Every validation above has passed, so
 	// the gate is asked only for a request that would otherwise write; a refusal throws before the Story, the amendment or the EXT record.
 	await assertMayReviseDraft(intent.repoPath, { unit: 'epic', repoPath: intent.repoPath, epicHash }, 'DEF', 'define');
-	const epicSlug = define.meta.epicSlug ?? s1.target?.epicSlug ?? epicHash;
-	const storyId  = nextStoryId(define);
 	const story: DefineStory = {
 		id:        storyId,
 		title:     ns.title,

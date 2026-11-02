@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { MemoryLimits } from '../types.js';
 import { MemoryError } from '../errors.js';
-import { decodeFrame, snapshotJson } from './codec.js';
+import { decodeFrame, encodeFrame, snapshotJson } from './codec.js';
 import { advance, CheckpointWriter, initialCheckpoint, reserveMetadata } from './checkpoint.js';
 import type { Checkpoint, FrameRecord, SegmentRecord } from './checkpoint.js';
 import { QueueIo, segmentName } from './io.js';
@@ -68,8 +68,10 @@ export async function recoverQueue(io: QueueIo, writer: CheckpointWriter, boot: 
       const id = advance(BigInt(checkpoint.activeSegment).toString()).padStart(20, '0');
       if (orphans[0] !== segmentName(id)) corrupt();
       const expected: SegmentHeader = { formatVersion: 1, recordType: 'segment', queueId: checkpoint.queueId, segmentId: id, firstSequence: advance(checkpoint.lastSequence) };
-      const candidate = decodeFrame(await io.read('segments/' + orphans[0], QUEUE_LIMITS.headerBytes), limits.maxEventBytes).body;
-      if (snapshotJson(candidate, 512).text !== snapshotJson(expected, 512).text) corrupt();
+      const candidate = await io.read('segments/' + orphans[0], QUEUE_LIMITS.headerBytes);
+      const expectedBytes = encodeFrame(expected, limits.maxEventBytes);
+      // Rotation can die during header creation, before any event is possible.
+      if (candidate.length > expectedBytes.length || !candidate.equals(expectedBytes.subarray(0, candidate.length))) corrupt();
       orphan = orphans[0];
     }
     const index = new Map<string, IndexedFrame>();

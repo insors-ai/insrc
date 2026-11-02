@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T08:30:08.709Z",
+    "updatedAt": "2026-11-02T08:35:50.529Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -589,6 +589,86 @@
               },
               {
                 "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "5cebe413a",
+        "ranAt": "2026-11-02T08:35:50.529Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "drain-close-startup-failure-preserve-backlog-and-ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "drain-close-startup-failure-preserve-backlog-and-ownership",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "queue-limit-validation-precedes-directory-ownership",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "all-quiescent-participants-close-before-unverified-ownership-is-retained",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1556,
+            "titles": [
+              {
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+                "result": "pass"
+              },
+              {
+                "title": "all-quiescent-participants-close-before-unverified-ownership-is-retained",
+                "result": "pass"
+              },
+              {
+                "title": "drain-close-startup-failure-preserve-backlog-and-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "queue-limit-validation-precedes-directory-ownership",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 31 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -211,3 +211,28 @@ Run at 2026-11-02T08:30:08.709Z on commit `3b404c77a`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 5 | 4.2 s |  |
+
+## t10
+
+Run at 2026-11-02T08:35:50.529Z on commit `5cebe413a`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: drain-close-startup-failure-preserve-backlog-and-ownership**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | drain-close-startup-failure-preserve-backlog-and-ownership | `packages/project-memory/src/__tests__/runtime.test.ts` |
+| pass | queue-limit-validation-precedes-directory-ownership | `packages/project-memory/src/__tests__/runtime.test.ts` |
+| pass | all-quiescent-participants-close-before-unverified-ownership-is-retained | `packages/project-memory/src/__tests__/runtime.test.ts` |
+| pass | idempotent-drain-close-and-provider-ownership | `packages/project-memory/src/__tests__/runtime.test.ts` |
+
+**integration: public-service-accepted-status-and-unavailable-semantic-capabilities**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | public-service-accepted-status-and-unavailable-semantic-capabilities | `packages/project-memory/src/__tests__/runtime.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/runtime.test.ts` | 0 | 5 | 1.6 s |  |

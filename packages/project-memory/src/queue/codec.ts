@@ -146,7 +146,7 @@ export function snapshotCommand(input: unknown, maxBytes: number, reservation?: 
   const snapshot = snapshotJson(input, maxBytes, reservation); commandShape(snapshot.value);
   const command = snapshot.value;
   const identity: StableIdentity = Object.freeze({ version: 1, projectId: command.scope.projectId, producerId: command.source.producerId, eventId: command.source.eventId });
-  const key = snapshotJson(identity, 4096).text;
+  const key = snapshotJson(identity, 16_384).text;
   const identityDigest = digest(key);
   return { command, text: snapshot.text, bytes: snapshot.bytes, payloadHash: digest(snapshot.text), identity, identityDigest, operationId: digest('insrc-project-memory-operation-v1\0' + key) };
 }

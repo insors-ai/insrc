@@ -15,5 +15,5 @@ export interface IndexedFrame {
 }
 export function indexFrame(body: EventBody, segmentId: string, record: FrameRecord): IndexedFrame {
   const { projectId } = body.command.scope, { producerId, eventId } = body.command.source;
-  return { segmentId, record, payloadHash: body.payloadHash, identityDigest: digest(snapshotJson({ version: 1, projectId, producerId, eventId }, 4096).text), scope: body.command.scope, scopeEpoch: body.scopeEpoch, eventId, admittedAtMs: body.admittedAtMs };
+  return { segmentId, record, payloadHash: body.payloadHash, identityDigest: digest(snapshotJson({ version: 1, projectId, producerId, eventId }, 16_384).text), scope: body.command.scope, scopeEpoch: body.scopeEpoch, eventId, admittedAtMs: body.admittedAtMs };
 }

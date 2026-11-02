@@ -7,7 +7,7 @@ import type { DirectoryOwnership } from '../ownership.js';
 import { assertPrivateFile } from '../private-file.js';
 import { errno } from '../configuration.js';
 import { MemoryError } from '../errors.js';
-import { decodeFrame, encodeFrame, snapshotJson } from './codec.js';
+import { encodeFrame, snapshotJson } from './codec.js';
 import type { SegmentHeader } from './types.js';
 import { QUEUE_LIMITS } from './types.js';
 
@@ -249,7 +249,15 @@ export class QueueIo {
         const value = JSON.parse(text) as { formatVersion: number; queueId: string };
         if (snapshotJson(value, 512).text + '\n' !== text || Object.keys(value).length !== 2 || value.formatVersion !== 1 || !/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value.queueId)) throw failure();
         queueId = value.queueId;
-      } catch { throw failure(); }
+      } catch {
+        const template = '{"formatVersion":1,"queueId":"00000000-0000-0000-0000-000000000000"}\n';
+        const uuidStart = template.indexOf('00000000');
+        const prefix = text.length < template.length && [...text].every((char, i) => i >= uuidStart && i < uuidStart + 36 && template[i] !== '-' ? /^[a-f0-9]$/.test(char) : char === template[i]);
+        if (!prefix || segments.length || names.some(name => name !== 'format.json' && name !== 'segments')) throw failure();
+        queueId = randomUUID();
+        await this.write('format.json', Buffer.from(snapshotJson({ formatVersion: 1, queueId }, 512).text + '\n'), 'replace');
+        await this.syncDirectory('queue');
+      }
     }
     const header: SegmentHeader = { formatVersion: 1, recordType: 'segment', queueId, segmentId: INITIAL_SEGMENT, firstSequence: '1' };
     if (!segments.length && !names.includes('checkpoint.json')) {
@@ -258,8 +266,9 @@ export class QueueIo {
     } else if (!names.includes('checkpoint.json')) {
       if (segments.length !== 1 || segments[0] !== segmentName(INITIAL_SEGMENT)) throw failure();
       const line = await this.read('segments/' + segments[0], 512);
-      const existing = decodeFrame(line, 512).body;
-      if (snapshotJson(existing, 512).text !== snapshotJson(header, 512).text) throw failure();
+      const expected = encodeFrame(header, 512);
+      if (line.length > expected.length || !line.equals(expected.subarray(0, line.length))) throw failure();
+      if (line.length < expected.length) { await this.write('segments/' + segments[0], expected, 'replace'); await this.syncDirectory('segments'); }
     }
     return { queueId, header };
   }

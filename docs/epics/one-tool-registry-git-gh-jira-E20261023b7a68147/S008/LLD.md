@@ -322,6 +322,8 @@ Group the assigned commands into the same families as a2, but write each family 
 
 - `q4e06d056` — Exclusion of for-each-repo, hook and filter-branch: confirm they stay excluded as commands that run an arbitrary command (a raw passthrough), as the coverage table has recorded since the s4 split
   - **resolved**: Confirm exclusion as-is — User decision 2026-11-02: for-each-repo, hook and filter-branch stay excluded as raw passthrough. _(2026-11-02T11:16:29.678Z)_
+- `q09348323` — The merge strategy drivers (merge-octopus, merge-ours, merge-recursive, merge-recursive-ours, merge-recursive-theirs, merge-resolve, merge-subtree), quiltimport, request-pull and the contrib subtree command: offered through a family, or excluded as helpers a person does not run directly? Recommended: exclude the merge strategy drivers and subtree (git merge runs them) and keep request-pull and quiltimport only if a program needs them
+  - **resolved**: Exclude merge drivers + subtree; keep request-pull/quiltimport only if a program needs them — User decision 2026-11-02: follow the recommendation; no program needs request-pull or quiltimport today, so they are excluded with a reason that says so. _(2026-11-02T11:17:07.645Z)_
 
 ## Citations
 

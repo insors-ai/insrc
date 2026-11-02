@@ -28,7 +28,39 @@
     "sizeClass": "feature",
     "triageRationale": "One cohesive story (put three content writers behind the team gate's 'revise' action) with real design choices and several build tasks; touches the team gate, the orchestrator, the review-comment handler and the Define write, but needs no Epic framing.",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a211e2c24b0de711e641e56457f38e2004c0c4fc04949f5ca14de22a28ffed79",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:31:53.467Z",
+        "override": {
+          "reason": "controller self-review, see docs/standalone/gate-remaining-content-writers-revise-action-E20261102f32c3abf/S001/SELF-REVIEW.md (the design-review tool is unavailable)"
+        }
+      }
+    },
+    "rangeBase": "58ccc647cde5826df8aa48383596ac5de13cd3d7"
   },
   "body": {
     "summary": {

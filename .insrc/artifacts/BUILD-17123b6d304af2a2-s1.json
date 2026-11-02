@@ -4,10 +4,11 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s1",
     "createdAt": "2026-11-01T18:52:29.474Z",
-    "updatedAt": "2026-11-01T20:53:40.807Z",
+    "updatedAt": "2026-11-01T21:01:56.149Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
-    "epicSlug": "share-project-memory-across-agents-applications"
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "approvedAt": "2026-11-02T04:44:41.445Z"
   },
   "body": {
     "tasks": [
@@ -380,6 +381,6 @@
         "timestamp": "2026-11-01T20:53:40.807Z"
       }
     ],
-    "commit": "0ac3f8ba5"
+    "commit": "36c384082"
   }
 }

@@ -1,6 +1,6 @@
 # S1 foundation acceptance evidence
 
-The independent @insrc/project-memory foundation is implemented in packages/project-memory. All ten task gates passed. The user subsequently requested implementation of the two remaining MED findings; both are implemented in b4ee0ba51. Completion remains pending fresh independent review and the approval stamp.
+The independent @insrc/project-memory foundation is implemented in packages/project-memory. All ten task gates passed. The user subsequently requested implementation of the two remaining MED findings; both are implemented in b4ee0ba51. S1 completion was approved on 2026-11-02T04:44:41.445Z; the final advisory finding and user decision are recorded below.
 
 ## Current actual results
 
@@ -52,3 +52,11 @@ Qualification covers local APFS/macOS and ext4/Linux. Linux ext-family magic alo
 - Provider failure, caller abort and timeout now route through ModelCall.cancel as one settlement path. The additional #fail method is removed; only underlying settlement releases the dispatcher lane.
 
 Refreshed current evidence remains 20 local package tests, 15 Linux checks, successful root build, and an exact source/workflow match to the archived run. No code-review exceptions are requested.
+
+## Completion approval
+
+S1 BUILD approval was recorded successfully at 2026-11-02T04:44:41.445Z. The approval tool returned one approved artifact and no skipped artifacts. Both originally requested MEDs and the follow-up items above are implemented.
+
+The final full-grounded independent review returned WARN (HIGH 0, MED 1, LOW 0). Its remaining claim is a call-graph false positive: runtime.ts #quiesce calls each participant's work.drain(), not EmbeddedMemoryService.drain(). The claimed recursive service cycle is absent from the source. The user explicitly approved completion with this advisory finding documented. No source or test input changed between the final review and successful approval; the approval stamp preceded this archival commit.
+
+Validation remains 20 passing local package tests, 15 passing Linux checks and a successful root build.

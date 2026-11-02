@@ -1,5 +1,5 @@
 {
-  "capturedAt": "2026-11-02T09:55:42.955224+00:00",
+  "capturedAt": "2026-11-02T10:50:19.448772+00:00",
   "sourceCommit": "d2a7e5ae8f2a7ae5c668a2a8c937190c03972600",
   "rootBuild": "pass",
   "memoryPackage": {
@@ -10,37 +10,68 @@
     "actualSigkillScenarios": 55
   },
   "backendSweep": {
-    "status": "running-with-failures",
-    "command": "node --import tsx --test --test-concurrency=2 'src/**/__tests__/*.test.ts'",
-    "fullLog": "/tmp/insrc-s2-backend-sweep-permitted.tap",
-    "failuresObserved": [
-      "not ok 1662 - check-model-definitions.test.ts: the build gate exits non-zero naming the entry for a structurally invalid copy and zero for the shipped file",
-      "not ok 2109 - repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
-      "not ok 2126 - search.callers across repositories leaves out the entities of a repository under index",
-      "not ok 2127 - search.query while one repository is being indexed returns rows from the other repositories only",
-      "not ok 2128 - entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
-      "not ok 2132 - search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
-      "not ok 2133 - entity.closure / entity.unreachable with a root in a repository under index are refused",
-      "not ok 2134 - search guard: a registry read that throws skips the guard and the request is answered as today",
-      "not ok 2135 - search request contract: each guarded search request accepts its existing params and answers",
-      "not ok 2345 - DuckDBFileDriver -- pool path-escape guard",
-      "not ok 2521 - CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
-      "not ok 2536 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
-      "not ok 2538 - CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
-      "not ok 3168 - SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
-      "not ok 465 - src/daemon/threads/__tests__/worker-stores.test.ts",
-      "not ok 3298 - file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link",
-      "not ok 541 - src/db/lance/__tests__/config-vec.test.ts"
+    "sourceCommit": "2befc2d83832ceedd71ab9d75c6209858f669825",
+    "endCommit": "72bf1dc570e7709216f370c9ea50fdd015f22187",
+    "unchangedHead": false,
+    "exitCode": 1,
+    "globalDeadlineExceeded": false,
+    "durationSeconds": 1415.65,
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-concurrency=2",
+      "--test-timeout=180000",
+      "src/**/__tests__/*.test.ts"
     ],
+    "failures": [
+      "not ok 1569 - the poll interval fires while open and is cleared on unmount (ac2)",
+      "not ok 1959 - docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path",
+      "not ok 1960 - /Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/doc-summary-restore-ipc.test.ts",
+      "not ok 2114 - repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+      "not ok 2131 - search.callers across repositories leaves out the entities of a repository under index",
+      "not ok 2132 - search.query while one repository is being indexed returns rows from the other repositories only",
+      "not ok 2133 - entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+      "not ok 2137 - search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+      "not ok 2138 - entity.closure / entity.unreachable with a root in a repository under index are refused",
+      "not ok 2139 - search guard: a registry read that throws skips the guard and the request is answered as today",
+      "not ok 2140 - search request contract: each guarded search request accepts its existing params and answers",
+      "not ok 2350 - DuckDBFileDriver -- pool path-escape guard",
+      "not ok 2541 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+      "not ok 2543 - CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+      "not ok 466 - src/daemon/threads/__tests__/worker-stores.test.ts",
+      "not ok 3303 - file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link",
+      "not ok 543 - src/db/lance/__tests__/config-vec.test.ts",
+      "not ok 4510 - import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+      "not ok 4638 - CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee",
+      "not ok 4639 - CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation"
+    ],
+    "counts": {
+      "tests": 7337,
+      "pass": 7179,
+      "fail": 18,
+      "cancelled": 2,
+      "skipped": 135,
+      "todo": 3
+    },
+    "status": "completed-with-failures-and-revision-change",
+    "fullLog": "/tmp/insrc-s2-stable-backend-sweep.tap",
     "notes": [
-      "Initial sandbox-denied run was discarded after EPERM listen failures.",
-      "Stale exact build-command assertion was corrected to semantic compile/validate/copy ordering and its isolated rerun passed.",
-      "Three search-filter startup-hook failures reproduced in an isolated permitted run.",
-      "Own worker-stores and config-vec sweep children were terminated after >12 and >11 minutes stalled; their incomplete file results remain failures. No other process was signalled."
+      "Completed bounded full sweep; not a clean fixed-revision qualification. Parallel S8 commits advanced HEAD during execution.",
+      "These backend failures are outside the self-contained project-memory package; no unrelated production fixes were made.",
+      "The separately run project-memory suite passed all 62 cases on both supported platforms."
     ]
   },
   "linuxQualification": {
-    "status": "pending-authorization",
-    "reason": "Automatic approval review rejected direct origin/main push plus CI without explicit user authorization. No push/CI occurred."
+    "status": "pass",
+    "run": "https://github.com/insors-ai/insrc/actions/runs/41430621597",
+    "sourceCommit": "2befc2d83832ceedd71ab9d75c6209858f669825",
+    "tests": 62,
+    "pass": 62,
+    "fail": 0,
+    "skipped": 0,
+    "actualSigkillScenarios": 55,
+    "note": "Full job: native lifecycle 14, packed consumer 4, queue 44; no push was needed as this revision was already remote."
   }
 }

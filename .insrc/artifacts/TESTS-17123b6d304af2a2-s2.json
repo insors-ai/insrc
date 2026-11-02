@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T09:05:30.730Z",
+    "updatedAt": "2026-11-02T10:49:25.477Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -788,8 +788,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "e21c32c2a",
-        "ranAt": "2026-11-02T09:05:30.730Z",
+        "commit": "72bf1dc57",
+        "ranAt": "2026-11-02T10:49:25.477Z",
         "testsPassed": true,
         "tests": [
           {
@@ -816,7 +816,7 @@
             "file": "packages/project-memory/src/__tests__/queue-cost.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1655,
+            "durationMs": 1503,
             "titles": [
               {
                 "title": "queue-resource-and-fsync-cost-measurement",
@@ -829,10 +829,90 @@
             "file": "scripts/__tests__/project-memory-s2-performance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 391,
+            "durationMs": 372,
             "titles": [
               {
                 "title": "full-current-source-queue-resource-study-evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "2befc2d83",
+        "ranAt": "2026-11-02T10:44:42.761Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "accepted-set-survives-process-kill-at-every-boundary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-crash.test.ts",
+                "title": "accepted-set-survives-process-kill-at-every-boundary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "macos-apfs-linux-ext4-node22-queue-qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-crash.test.ts",
+                "title": "macos-apfs-linux-ext4-node22-queue-qualification",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/project-memory-s2-qualification.test.ts",
+                "title": "current-source-macos-apfs-node22-crash-qualification",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/project-memory-s2-qualification.test.ts",
+                "title": "current-source-linux-ext4-node22-crash-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-crash.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18160,
+            "titles": [
+              {
+                "title": "accepted-set-survives-process-kill-at-every-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "macos-apfs-linux-ext4-node22-queue-qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/project-memory-s2-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 763,
+            "titles": [
+              {
+                "title": "current-source-macos-apfs-node22-crash-qualification",
+                "result": "pass"
+              },
+              {
+                "title": "current-source-linux-ext4-node22-crash-qualification",
                 "result": "pass"
               }
             ],

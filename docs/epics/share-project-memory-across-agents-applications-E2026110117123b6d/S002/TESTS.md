@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -266,7 +266,7 @@ Run at 2026-11-02T08:49:31.404Z on commit `4d882859c`. Tests check: **passed**. 
 
 ## t13
 
-Run at 2026-11-02T09:05:30.730Z on commit `e21c32c2a`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-02T10:49:25.477Z on commit `72bf1dc57`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: queue-resource-and-fsync-cost-measurement**
 
@@ -279,5 +279,30 @@ Run at 2026-11-02T09:05:30.730Z on commit `e21c32c2a`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/queue-cost.test.ts` | 0 | 1 | 1.7 s |  |
+| `packages/project-memory/src/__tests__/queue-cost.test.ts` | 0 | 1 | 1.5 s |  |
 | `scripts/__tests__/project-memory-s2-performance.test.ts` | 0 | 1 | 0.4 s |  |
+
+## t12
+
+Run at 2026-11-02T10:44:42.761Z on commit `2befc2d83`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: accepted-set-survives-process-kill-at-every-boundary**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | accepted-set-survives-process-kill-at-every-boundary | `packages/project-memory/src/__tests__/queue-crash.test.ts` |
+
+**integration: macos-apfs-linux-ext4-node22-queue-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | macos-apfs-linux-ext4-node22-queue-qualification | `packages/project-memory/src/__tests__/queue-crash.test.ts` |
+| pass | current-source-macos-apfs-node22-crash-qualification | `scripts/__tests__/project-memory-s2-qualification.test.ts` |
+| pass | current-source-linux-ext4-node22-crash-qualification | `scripts/__tests__/project-memory-s2-qualification.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-crash.test.ts` | 0 | 2 | 18.2 s |  |
+| `scripts/__tests__/project-memory-s2-qualification.test.ts` | 0 | 2 | 0.8 s |  |

@@ -1,0 +1,12 @@
+# S2 review round 2 response
+
+All blocking findings concern evidence registration or missing task mappings, rather than an identified queue implementation defect.
+
+- Performance registration: `scripts/__tests__/project-memory-s2-performance.test.ts:8` explicitly registers `test('full-current-source-queue-resource-study-evidence', ...)` using node:test. The actual measurement generator is `packages/project-memory/benchmarks/queue-cost.mjs`; the registered proof verifies its full current-source report. An empty indexed callees list is incomplete graph evidence, not proof that this test did not register or execute. Task t13 maps this exact passing case as well as the actual quick benchmark case.
+- Dual-platform and crash tests: t12 now maps `accepted-set-survives-process-kill-at-every-boundary` and `macos-apfs-linux-ext4-node22-queue-qualification` to queue-crash.test.ts and the current-source archived evidence checks. Both platform runs cover 55 actual SIGKILL boundaries.
+- Admission/isolation: the t11 mapping is queue-fault-matrix.test.ts (`maximum-qualified-identities-preserve-scope-and-epoch`, `wall-clock-changes-preserve-sequence-and-clamp-age`) plus queue-retirement.test.ts (`verified-terminal-ack-retirement-and-reader-pins`). It is not carried by queue-crash.test.ts. These named cases passed daemon validation.
+- Public import and dependency boundary: t14 maps contracts.test.ts (`public-v1-types-and-emitted-boundary`, `pure-public-import-without-native-or-daemon`) and packed.test.ts (`packed-native-missing-import-versus-open`, `tarball-public-dependency-and-asset-allowlist`).
+- Packed restart: `packed-external-submit-crash-reopen-and-operation` is the exact registered case in packed.test.ts, not queue-crash.test.ts. The test installs the actual tarball into an external consumer, accepts a submission, kills its process, reopens and checks operation identity.
+- Full evidence: local memory suite 62/62; root build passes; Linux full CI run 41430621597 at 2befc2d passes native lifecycle 14, packed 4 and queue 44 without skips. Backend sweep results and their revision-change limitation are recorded separately in backend/full-sweep.json and local-validation.json; no clean backend result is claimed.
+
+The two LOW identifier suggestions refer to embedded QueueAcknowledgement/MemoryCommand value objects. Their identity comes from the owning frame and qualified operation; neither is an independent entity/table requiring a new public id field. Public v1 types remain unchanged.

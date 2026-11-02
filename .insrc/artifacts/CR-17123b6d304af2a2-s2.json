@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793615060514-qcd81f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T10:24:16.126Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 506188,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "17123b6d304af2a2",
+      "storyId": "s2",
+      "author": "controller",
+      "sourceDigest": "1e25ed60e4c0f836d21cf513e5c9dc0db197c224bb5ebad526b3f2078a6a7d09",
+      "contractDigest": "7fe40afe84aef82cd50f4e0a260fc69267d94b8e4d9055fe02e68aedd7d7de37",
+      "buildDigest": "479ecd5e5a66759ed103eaddd228bf3cd9547876620d686d8935454667bd564a",
+      "testsDigest": "8f9d42f69c168fcf213dc8bd67beca554465dd8ebb6295237a4f470739e72d01",
+      "digest": "c0feb21d9e46e756f18c682102f76abce25b11dcbdd1b97dfe2518bd206ff217"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s2",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "packages/project-memory/src/__tests__/queue-codec.test.ts",
+        "packages/project-memory/src/queue/codec.ts",
+        "packages/project-memory/src/queue/types.ts",
+        "packages/project-memory/src/__tests__/queue-io.test.ts",
+        "packages/project-memory/src/queue/io.ts",
+        "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+        "packages/project-memory/src/queue/checkpoint.ts",
+        "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+        "packages/project-memory/src/queue/recovery.ts",
+        "packages/project-memory/src/__tests__/queue-append.test.ts",
+        "packages/project-memory/src/queue/file-queue.ts",
+        "packages/project-memory/src/__tests__/queue-admission.test.ts",
+        "packages/project-memory/src/queue/admission.ts",
+        "packages/project-memory/src/__tests__/queue-replay.test.ts",
+        "packages/project-memory/src/__tests__/queue-receipts.test.ts",
+        "packages/project-memory/src/queue/receipts.ts",
+        "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+        "packages/project-memory/src/queue/index-record.ts",
+        "packages/project-memory/src/queue/retirement.ts",
+        "packages/project-memory/src/__tests__/runtime.test.ts",
+        "packages/project-memory/src/host-node.ts",
+        "packages/project-memory/src/runtime.ts",
+        "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+        ".github/workflows/project-memory.yml",
+        "packages/project-memory/src/__tests__/fixtures/queue-crash-peer.ts",
+        "packages/project-memory/src/__tests__/fixtures/queue-crash-ports.ts",
+        "packages/project-memory/src/__tests__/queue-crash.test.ts",
+        "scripts/__tests__/project-memory-s2-qualification.test.ts",
+        "packages/project-memory/benchmarks/queue-cost.mjs",
+        "packages/project-memory/src/__tests__/queue-cost.test.ts",
+        "scripts/__tests__/project-memory-s2-performance.test.ts",
+        "packages/project-memory/README.md",
+        "packages/project-memory/src/__tests__/contracts.test.ts",
+        "packages/project-memory/src/__tests__/packed.test.ts",
+        "packages/project-memory/src/ownership.ts",
+        "src/config/__tests__/check-model-definitions.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "scripts/__tests__/project-memory-s2-performance.test.ts",
+            "message": "This file is the designated evidence point for PLAN task t13 ('Measure queue resource and durability costs') and LLD testStrategy item 'queue-resource-and-fsync-cost-measurement', but its callees list is completely empty — no calls at all, not even a test-registration call — in contrast to scripts/__tests__/project-memory-s2-qualification.test.ts (calls fresh/crashProof) or packages/project-memory/src/__tests__/queue-cost.test.ts (calls nativeTest). This indicates the file likely does not actually register or execute the required p50/p95 acceptance-latency, cold-recovery, physical-byte and RSS/heap measurement evidence that t13's acceptance checks and the LLD's nonFunctional.performance section mandate before OD-02 can be considered closed.",
+            "expectationRef": "PLAN t13 acceptance checks ('Named hardware/OS/filesystem/Node corpus...', 'Report p50/p95 acceptance, cold recovery...'); LLD testStrategy 'queue-resource-and-fsync-cost-measurement'"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "packages/project-memory/src/queue/io.ts:1",
+            "message": "Promised test 'macos-apfs-linux-ext4-node22-queue-qualification' has no corresponding test anywhere in the grounding (no test-record title, no testsReaching edge from any file hints at it).",
+            "expectationRef": "macos-apfs-linux-ext4-node22-queue-qualification",
+            "confidence": "breach",
+            "findingKind": "promised-test"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "packages/project-memory/src/runtime.ts:1",
+            "message": "Promised test 'pure-import-and-no-daemon-or-backend-storage-dependency' has no corresponding test anywhere in the grounding (no test-record title, no testsReaching edge from any file hints at it).",
+            "expectationRef": "pure-import-and-no-daemon-or-backend-storage-dependency",
+            "confidence": "breach",
+            "findingKind": "promised-test"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "packages/project-memory/src/runtime.ts:1",
+            "message": "Promised test 'package-suite-root-build-and-current-source-ci-evidence' has no corresponding test anywhere in the grounding (no test-record title, no testsReaching edge from any file hints at it; the only similarly-named title found, scripts/project-memory-s2-performance.test.ts#full-current-source-queue-resource-study-evidence, covers a different promise).",
+            "expectationRef": "package-suite-root-build-and-current-source-ci-evidence",
+            "confidence": "breach",
+            "findingKind": "promised-test"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "packages/project-memory/src/queue/admission.ts:1",
+            "message": "Promised test 'adversarial-admission-and-recycled-scope-isolation' is present but unverified: queue-crash.test.ts (which testsReaching edges show calling FileQueue.append/operation and QueueAdmission entry points — a plausible home for this test) exists in the grounding but is entirely absent from the latest test-record run, so its pass-state cannot be confirmed.",
+            "expectationRef": "adversarial-admission-and-recycled-scope-isolation",
+            "confidence": "observation",
+            "findingKind": "promised-test"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "packages/project-memory/src/queue/recovery.ts:1",
+            "message": "Promised test 'accepted-set-survives-process-kill-at-every-boundary' is present but unverified: queue-crash.test.ts and its queue-crash-peer.ts fixture (which call recoverQueue/FileQueue.start and simulate a killed peer process per testsReaching edges) exist in the grounding but queue-crash.test.ts is entirely absent from the latest test-record run, so its pass-state cannot be confirmed.",
+            "expectationRef": "accepted-set-survives-process-kill-at-every-boundary",
+            "confidence": "observation",
+            "findingKind": "promised-test"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "packages/project-memory/src/queue/file-queue.ts:1",
+            "message": "Promised test 'packed-external-submit-crash-reopen-and-operation' is present but unverified: queue-crash.test.ts (whose testsReaching edges show it calling FileQueue.start/append/operation and acquireOwnership, matching a submit-crash-reopen scenario) exists in the grounding but is entirely absent from the latest test-record run, so its pass-state cannot be confirmed.",
+            "expectationRef": "packed-external-submit-crash-reopen-and-operation",
+            "confidence": "observation",
+            "findingKind": "promised-test"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "functional-coverage",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": [
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "erDefinition:classes.QueueAcknowledgement",
+            "message": "class 'QueueAcknowledgement' declares no identifier slot (identifier:true) — the entity has no primary key",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "erDefinition:classes.MemoryCommand",
+            "message": "class 'MemoryCommand' declares no identifier slot (identifier:true) — the entity has no primary key",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 3,
+      "med": 4,
+      "low": 2
+    }
+  }
+}

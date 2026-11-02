@@ -356,6 +356,8 @@ Rust/C#/C/C++ readers as in a1. The SQL reader splits a file into statements and
   - **resolved**: Leave all cross-file SQL references pending in this Story — User decision 2026-11-02: same-file SQL references are resolved by the reader; references to tables/views defined in other files stay pending by name in s9. Recorded as a pending item: teach the cross-file pass to match SQL table and view names (a small addition to Story s1's pass), with several candidates staying ambiguous. _(2026-11-02T04:48:31.406Z)_
 - `q1e0c2c08` — NOTE: C# 'using' imports a namespace, not a file, so a call into another file resolves across files only where the cross-file pass can map the namespace to files; this Story stores such calls pending and does not add namespace-to-file mapping.
   - **resolved**: Ship with documented limitation — As stated in the approved LLD (2026-11-02): C# calls reached only through a 'using' namespace stay pending; no namespace-to-file mapping in s9. Default stated to the user. _(2026-11-02T04:49:44.386Z)_
+- `q0ed1e247` — NOTE (s8 cd1 partial): registerUnavailableReader and the 'index.languages' request are new names this Story introduces (the HLD names the request only by purpose).
+  - **resolved**: Accept as LLD-concrete (adopt as canonical) — The HLD names the request only by purpose; registerUnavailableReader and 'index.languages' are the LLD's concrete names. Default stated to the user 2026-11-02. _(2026-11-02T04:50:33.112Z)_
 
 ## Citations
 

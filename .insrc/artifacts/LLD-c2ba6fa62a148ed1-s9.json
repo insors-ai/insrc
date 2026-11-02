@@ -203,6 +203,13 @@
         "choice": "Ship with documented limitation",
         "rationale": "As stated in the approved LLD (2026-11-02): C# calls reached only through a 'using' namespace stay pending; no namespace-to-file mapping in s9. Default stated to the user.",
         "resolvedAt": "2026-11-02T04:49:44.386Z"
+      },
+      "q0ed1e247": {
+        "question": "NOTE (s8 cd1 partial): registerUnavailableReader and the 'index.languages' request are new names this Story introduces (the HLD names the request only by purpose).",
+        "status": "resolved",
+        "choice": "Accept as LLD-concrete (adopt as canonical)",
+        "rationale": "The HLD names the request only by purpose; registerUnavailableReader and 'index.languages' are the LLD's concrete names. Default stated to the user 2026-11-02.",
+        "resolvedAt": "2026-11-02T04:50:33.112Z"
       }
     }
   },

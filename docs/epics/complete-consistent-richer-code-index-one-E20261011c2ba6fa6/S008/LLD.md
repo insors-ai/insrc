@@ -369,6 +369,8 @@ Group entities, not files, by deterministic label propagation over entity relati
   - **resolved**: Accept as LLD-concrete (adopt as canonical) — These are s8's own names (its boundary owns the request, tables and pass); the plan builds them. Same default as the equivalent note on s9, stated to the user 2026-11-02. _(2026-11-02T09:16:46.359Z)_
 - `qf13df71f` — NOTE (s8 alt2 partial): alternatives were scored against ac1-ac5, sc1 and sc3. The Epic constraints the criteria operationalize (k1-k4, k9) were not scored separately, as on s2/s7/s9.
   - **resolved**: Defer and flag as known gap — As for the same note on s2, s7 and s9: k1-k4/k9 are the constraints ac1-ac5 operationalize (the DEF's own 'operationalizes' fields), so their scores follow from the criteria. Default stated to the user 2026-11-02. _(2026-11-02T09:17:42.283Z)_
+- `qaeeb30a7` — RESOLVED (user decision 2026-11-02): subsystem summaries use the cheap tier, through buildSummariserProvider, as document summaries do, whatever runner the tier is configured with. ac4's 'the local model' and k9's 'local model' are read as 'the cheap-tier model'; calls stay one at a time. The user's direction is that the local model is to be removed in the future, so no Ollama-specific path is added.
+  - **resolved**: A. Call-site reuse — User decision 2026-11-02: cheap tier through buildSummariserProvider, as document summaries do; no shared abstraction until the local-model removal lands. _(2026-11-02T09:18:12.741Z)_
 
 ## Citations
 

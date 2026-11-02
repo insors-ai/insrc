@@ -232,6 +232,13 @@
         "choice": "Defer and flag as known gap",
         "rationale": "As for the same note on s2, s7 and s9: k1-k4/k9 are the constraints ac1-ac5 operationalize (the DEF's own 'operationalizes' fields), so their scores follow from the criteria. Default stated to the user 2026-11-02.",
         "resolvedAt": "2026-11-02T09:17:42.283Z"
+      },
+      "qaeeb30a7": {
+        "question": "RESOLVED (user decision 2026-11-02): subsystem summaries use the cheap tier, through buildSummariserProvider, as document summaries do, whatever runner the tier is configured with. ac4's 'the local model' and k9's 'local model' are read as 'the cheap-tier model'; calls stay one at a time. The user's direction is that the local model is to be removed in the future, so no Ollama-specific path is added.",
+        "status": "resolved",
+        "choice": "A. Call-site reuse",
+        "rationale": "User decision 2026-11-02: cheap tier through buildSummariserProvider, as document summaries do; no shared abstraction until the local-model removal lands.",
+        "resolvedAt": "2026-11-02T09:18:12.741Z"
       }
     }
   },

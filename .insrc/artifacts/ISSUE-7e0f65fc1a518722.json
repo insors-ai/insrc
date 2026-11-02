@@ -1,0 +1,66 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793628714263-ommfx1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T14:12:18.721Z",
+    "epicCreatedAt": "2026-11-02T14:12:18.721Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 24457,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "7e0f65fc1a518722",
+    "epicSlug": "keep-artifact-log-step-raw-content",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "title": "Keep the artifact log in step with raw content writes",
+    "reproduction": "Write an artifact through the store (ArtifactStore.write), so its head is revision 1 and its history log holds one entry at revision 1. Change its content with a raw writer: read the head, change the body and call writeArtifact with kind 'content'. Observed (reproduced with a scratch test on 2026-11-02): the head is now revision 2 and the log still ends at revision 1; asking the lifecycle service to approve it throws LifecycleConflictError 'head-ahead-of-log' and nothing is approved. Expected: a content change on a head that has history is logged, so the service can approve and review the new revision.",
+    "rootCause": "writeArtifact in src/workflow/storage.ts prepares a content write with prepareArtifactWrite, which mints the next revision and rewrites the head, but it never appends to the artifact's history. The integrity check in src/workflow/artifact-core/lifecycle.ts compares the head's revision with the last revision in the log and reports 'head-ahead-of-log' when the head is later. The store tolerates that state on a write (src/workflow/artifact-core/store.ts) but LifecycleService refuses to approve, review or complete such a head (src/workflow/artifact-core/lifecycle-service.ts). Content writers that call writeArtifact directly include src/daemon/steps/workflow-step/phases/synthesize.ts, src/daemon/workflow-rpc.ts, src/workflow/gates.ts, src/workflow/resolve-comment.ts, src/workflow/tracker/unit-head.ts and the build ledger writers (src/workflow/runners/build/test-record.ts and standalone-record.ts); which of them run on a head that already has history is not yet established. The core data model plan lists the gap as binding item 3 for the s3 build (docs/plans/core-data-model.md).",
+    "fixIntent": "A content change that a raw writer makes to a head that has history must leave the log in step with the head, so the lifecycle service approves, reviews and completes the new revision as it does a store write. The design settles whether that is done by moving those writers onto the history-aware store path or by the service treating a head ahead of its log by a raw writer explicitly, and which of the raw writers need it. A real content change on a head with existing history is tested through service approval and review. The integrity rules themselves (hash-mismatch, log-ahead-of-head) are not loosened."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle-service.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-write-inventory.ts"
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -158,3 +158,38 @@ Run at 2026-11-02T05:34:48.328Z on commit `b8a2832cf`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/mixed-native-languages.test.ts` | 0 | 3 | 1.4 s |  |
 | `src/indexer/parser/__tests__/csharp.test.ts` | 0 | 3 | 0.7 s |  |
+
+## t8
+
+Run at 2026-11-02T05:41:47.671Z on commit `906458b2e`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: SQL reader**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t8: a SQL fixture yields the document, table and view entities and their REFERENCES (ac2) | `src/indexer/parser/__tests__/sql.test.ts` |
+| pass | s9 t8: the document entity is the one the artifact reader writes for the same file | `src/indexer/parser/__tests__/sql.test.ts` |
+| pass | s9 t8: a CTE name is not a reference, and quoted identifiers are unquoted | `src/indexer/parser/__tests__/sql.test.ts` |
+| pass | s9 t8: a reference to a table defined in another file stays pending by name after the per-file resolver | `src/indexer/parser/__tests__/sql.test.ts` |
+| pass | s9 t8: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked | `src/indexer/parser/__tests__/sql.test.ts` |
+| pass | s9 t8: definitions inside a transaction block are read | `src/indexer/parser/__tests__/sql.test.ts` |
+
+**integration: SQL repository through IndexerService**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t8 (ac2): SQL files indexed through IndexerService store a table or view per definition beside the document, and REFERENCES per foreign key and per relation a view selects from | `src/indexer/__tests__/sql-index.test.ts` |
+
+**integration: languages request lists all twelve**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t8 (ac4): the index.languages request lists all twelve languages available, with their extensions | `src/indexer/parser/__tests__/registry-languages.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/sql-index.test.ts` | 0 | 1 | 1.6 s |  |
+| `src/indexer/parser/__tests__/registry-languages.test.ts` | 0 | 3 | 1.3 s |  |
+| `src/indexer/parser/__tests__/sql.test.ts` | 0 | 6 | 0.7 s |  |

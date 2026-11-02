@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:34:48.328Z",
+    "updatedAt": "2026-11-02T05:41:47.671Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -38,9 +38,13 @@
       {
         "id": "t7",
         "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
       }
     ],
-    "summary": "Added the C# reader (src/indexer/parser/csharp.ts) behind the guarded load of tree-sitter-c-sharp 0.23.1. It reads class/record/struct as class, interface as interface, and enum/delegate as type, with names folded by namespace (block or file-scoped) and by enclosing type. Methods and constructors become Type.Name methods, with DEFINES. using directives become nuget module stubs. Calls are recorded by name (M(), this.M(), Type.M()), and base lists give INHERITS or IMPLEMENTS. A callee or base that names a member of an enclosing type or namespace in the same file is qualified to it, innermost first, so same-file references link. A call through a using namespace stays pending (the documented limitation). A new integration test indexes a mixed Rust/C#/C/C++ repository through IndexerService (ac1). Left out: properties, fields and events are not entities; calls through a value and object creation are not recorded.",
+    "summary": "Added the SQL reader (src/indexer/parser/sql.ts), which now owns .sql (removed from the artifact reader's extensions) behind the guarded load of @derekstride/tree-sitter-sql. It writes the artifact reader's file and document entities unchanged: same ids, names, flags, body truncation and size limit. It adds a table or view entity per CREATE TABLE / CREATE [OR REPLACE] VIEW, named by the unquoted, schema-qualified name, with DEFINES. REFERENCES go from tables to their foreign-key targets and from views to the relations they select from; the view's own CTE names are excluded and duplicates are merged. Same-file references are resolved by case-insensitive unquoted name; others stay pending by name (user decision). CREATEs inside transaction blocks and outside ERROR regions are read. New: an IndexerService SQL integration test and the twelve-languages check (ac4). Left out: other statement kinds, and DML outside views.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/TESTS.md"
     },
@@ -50,261 +54,289 @@
           "file": "package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/repo-strict-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/graph/keys.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/shared/repo-namespaces.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/handler-runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/__tests__/method-class.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/registry-languages.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/kotlin.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/registry.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/cross-file-c-family.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/cross-file-resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/c.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/c.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/cpp.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/cpp.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/rust.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/rust.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/mixed-native-languages.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/csharp.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/csharp.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T05:34:48.328Z"
+        "timestamp": "2026-11-02T05:41:47.671Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/sql-index.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:41:47.671Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/sql.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:41:47.671Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/artifact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:41:47.671Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/sql.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T05:41:47.671Z"
       }
     ],
-    "commit": "b8a2832cf"
+    "commit": "906458b2e"
   }
 }

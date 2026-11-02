@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:34:48.328Z",
+    "updatedAt": "2026-11-02T05:41:47.671Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -488,6 +488,147 @@
               },
               {
                 "title": "s9 t7: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "906458b2e",
+        "ranAt": "2026-11-02T05:41:47.671Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "SQL reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a SQL fixture yields the document, table and view entities and their REFERENCES (ac2)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: the document entity is the one the artifact reader writes for the same file",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a CTE name is not a reference, and quoted identifiers are unquoted",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a reference to a table defined in another file stays pending by name after the per-file resolver",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: definitions inside a transaction block are read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SQL repository through IndexerService",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-index.test.ts",
+                "title": "s9 t8 (ac2): SQL files indexed through IndexerService store a table or view per definition beside the document, and REFERENCES per foreign key and per relation a view selects from",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "languages request lists all twelve",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+                "title": "s9 t8 (ac4): the index.languages request lists all twelve languages available, with their extensions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/sql-index.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1630,
+            "titles": [
+              {
+                "title": "s9 t8 (ac2): SQL files indexed through IndexerService store a table or view per definition beside the document, and REFERENCES per foreign key and per relation a view selects from",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1251,
+            "titles": [
+              {
+                "title": "s9 t2: a reader whose grammar load throws is not registered and is listed unavailable with the error; a reader loaded after it still registers",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8 (ac4): the index.languages request lists all twelve languages available, with their extensions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/sql.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "s9 t8: a SQL fixture yields the document, table and view entities and their REFERENCES (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: the document entity is the one the artifact reader writes for the same file",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a CTE name is not a reference, and quoted identifiers are unquoted",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a reference to a table defined in another file stays pending by name after the per-file resolver",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: definitions inside a transaction block are read",
                 "result": "pass"
               }
             ],

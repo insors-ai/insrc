@@ -59,13 +59,14 @@ git(seed, 'push', '-q', 'origin', 'main');
 git(sandbox, 'clone', '-q', origin, root);
 const lockHash = git(root, 'hash-object', 'package-lock.json');
 
-// The fake npm: logs "<args>|<CXXFLAGS>", creates node_modules like a real
-// install, exits with the code in npm-exit (0 when absent).
+// The fake npm: logs "<args>|<CXXFLAGS>", creates node_modules and rewrites
+// package-lock.json as a real install may, exits with the code in npm-exit (0 when absent).
 mkdirSync(bin);
 writeFileSync(join(bin, 'npm'), [
 	'#!/bin/sh',
 	`echo "$*|$CXXFLAGS" >> '${npmLog}'`,
 	'mkdir -p node_modules',
+	'if [ -f package-lock.json ]; then echo " " >> package-lock.json; fi',   // npm may rewrite the lockfile
 	`if [ -f '${npmExit}' ]; then exit "$(cat '${npmExit}')"; fi`,
 	'exit 0',
 	'',

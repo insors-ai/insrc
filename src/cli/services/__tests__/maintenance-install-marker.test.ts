@@ -53,8 +53,8 @@ git(seed, 'push', '-q', 'origin', 'main');
 git(sandbox, 'clone', '-q', origin, root);
 const lockHash = git(root, 'hash-object', 'package-lock.json');
 
-// The fake npm: logs "<args>|<CXXFLAGS>", creates node_modules like a real
-// install, exits with the code in npm-exit (0 when absent). With
+// The fake npm: logs "<args>|<CXXFLAGS>", creates node_modules and rewrites
+// package-lock.json as a real install may, exits with the code in npm-exit (0 when absent). With
 // FAKE_NPM_MARKER_DIR set it occupies the marker path with a directory, so
 // the marker cannot be written.
 mkdirSync(bin);
@@ -62,6 +62,7 @@ writeFileSync(join(bin, 'npm'), [
 	'#!/bin/sh',
 	`echo "$*|$CXXFLAGS" >> '${npmLog}'`,
 	'mkdir -p node_modules',
+	'if [ -f package-lock.json ]; then echo " " >> package-lock.json; fi',   // npm may rewrite the lockfile
 	'if [ -n "$FAKE_NPM_MARKER_DIR" ]; then mkdir -p node_modules/.insrc-install-ok; fi',
 	`if [ -f '${npmExit}' ]; then exit "$(cat '${npmExit}')"; fi`,
 	'exit 0',

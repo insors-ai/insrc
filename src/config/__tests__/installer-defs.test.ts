@@ -130,12 +130,14 @@ test('S001 t3: the installer builds with -std=c++17 and writes the install marke
 	const start = script.indexOf('# Step 3: npm install + build');
 	const end = script.indexOf('# Step 4: symlink');
 	assert.ok(start > 0 && end > start, 'the step-3 block is found');
+	assert.ok(script.split('\n').includes('set -euo pipefail'), 'the installer itself stops on a failed npm install in a pipeline');
 	const step3 = script.slice(start, end);
 
 	const dir = mkdtempSync(join(tmpdir(), 'installer-step3-'));
 	try {
 		// A daemon checkout with a committed lockfile, and a fake npm that logs
-		// "<args>|<CXXFLAGS>" and exits with the code in npm-exit (0 when absent).
+		// "<args>|<CXXFLAGS>", rewrites the lockfile as a real install may, and
+		// exits with the code in npm-exit (0 when absent).
 		const src = join(dir, 'daemon');
 		mkdirSync(src);
 		writeFileSync(join(src, 'package-lock.json'), '{"lockfileVersion":3}\n');
@@ -148,7 +150,7 @@ test('S001 t3: the installer builds with -std=c++17 and writes the install marke
 		mkdirSync(bin);
 		const npmLog = join(dir, 'npm.log');
 		const npmExit = join(dir, 'npm-exit');
-		writeFileSync(join(bin, 'npm'), `#!/bin/sh\necho "$*|$CXXFLAGS" >> '${npmLog}'\nif [ -f '${npmExit}' ]; then exit "$(cat '${npmExit}')"; fi\nexit 0\n`, { mode: 0o755 });
+		writeFileSync(join(bin, 'npm'), `#!/bin/sh\necho "$*|$CXXFLAGS" >> '${npmLog}'\necho ' ' >> package-lock.json\nif [ -f '${npmExit}' ]; then exit "$(cat '${npmExit}')"; fi\nexit 0\n`, { mode: 0o755 });
 		const marker = join(src, 'node_modules', '.insrc-install-ok');
 		const prelude = `set -euo pipefail\nlog(){ :; }\nok(){ :; }\ndie(){ echo "FATAL: $*" >&2; exit "\${2:-1}"; }\nDAEMON_SRC='${src}'\n`;
 		const runStep3 = (cxxflags?: string) => spawnSync('bash', ['-c', prelude + step3], {
@@ -159,10 +161,12 @@ test('S001 t3: the installer builds with -std=c++17 and writes the install marke
 		const r = runStep3();
 		assert.equal(r.status, 0, r.stderr);
 		assert.equal(readFileSync(npmLog, 'utf8').split('\n')[0], 'install --no-fund --no-audit|-std=c++17', 'npm install asks for C++17');
-		assert.equal(readFileSync(marker, 'utf8').trim(), lockHash, 'the marker holds the lockfile blob hash after the install');
+		assert.equal(readFileSync(marker, 'utf8').trim(), lockHash, 'the marker holds the blob hash of the lockfile as it was before npm rewrote it');
+		git('checkout', '--', 'package-lock.json');
 
 		rmSync(npmLog);
 		assert.equal(runStep3('-O2').status, 0);
+		git('checkout', '--', 'package-lock.json');
 		assert.equal(readFileSync(npmLog, 'utf8').split('\n')[0], 'install --no-fund --no-audit|-O2 -std=c++17', "the caller's CXXFLAGS are kept");
 
 		// A failed install stops the installer and leaves no marker, though one was there before.

@@ -214,7 +214,7 @@ Six panes (switch with `1`–`6`/`Tab`, `r` refresh, `q` quit):
 
 - **Daemon** — live health (uptime, queue, model-pull, LMDB size) + the full
   maintenance lifecycle: `s` start · `x` stop · `R` restart · `u` update
-  (git fast-forward → `npm install` if the lockfile changed → build) · `b`
+  (git fast-forward → `npm install` unless the last install of this lockfile succeeded → build) · `b`
   backup · `c` compact.
 - **Repos** — registered repositories with indexing status; `a` add · `d` remove
   · `i` reindex. The highlighted repo is what the Workflows pane targets.

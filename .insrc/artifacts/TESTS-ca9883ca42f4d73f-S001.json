@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ca9883ca42f4d73f",
+    "storyId": "S001",
+    "createdAt": "2026-11-02T12:14:26.040Z",
+    "updatedAt": "2026-11-02T12:14:26.040Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:42:30.446Z",
+    "epicSlug": "daemon-update-never-retries-failed-npm"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "9355bdead",
+        "ranAt": "2026-11-02T12:14:26.040Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5083,
+            "titles": [
+              {
+                "title": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

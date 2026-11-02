@@ -1,0 +1,27 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "ca9883ca42f4d73f",
+    "storyId": "S001",
+    "createdAt": "2026-11-02T12:14:26.040Z",
+    "updatedAt": "2026-11-02T12:14:26.040Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:42:30.446Z",
+    "epicSlug": "daemon-update-never-retries-failed-npm"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "update() now installs when node_modules/.insrc-install-ok is missing or holds another lockfile's blob hash, removes the marker before npm install and writes it only after npm exits 0, and runs npm install with -std=c++17 appended to CXXFLAGS. Fake-npm integration tests over a scratch git checkout; every acceptance check mutation-checked.",
+    "testRecord": {
+      "md": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/TESTS.md"
+    },
+    "changeLog": [],
+    "commit": "9355bdead"
+  }
+}

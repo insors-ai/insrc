@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "d2a7e5ae8f2a7ae5c668a2a8c937190c03972600",
+  "platform": "darwin",
+  "node": "22.23.2",
+  "filesystem": "APFS",
+  "scenarios": 55,
+  "command": "PATH=/opt/homebrew/opt/node@22/bin:$PATH npm test --workspace @insrc/project-memory",
+  "limits": "Process SIGKILL qualification only; no hardware power-loss or S3 Lance claim.",
+  "packageTests": 62
+}

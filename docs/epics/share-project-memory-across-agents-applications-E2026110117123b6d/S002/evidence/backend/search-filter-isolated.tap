@@ -1,0 +1,74 @@
+TAP version 13
+# [09:27:51] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 158
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 8
+#     [35mpath[39m: "/tmp/isc-j0SUaw/.insrc/graph.lmdb"
+# [09:27:51] [32mINFO[39m: [36m[lance-conn] lance connection initialised[39m
+#     [35mmodule[39m: "lance-conn"
+#     [35minitMs[39m: 26
+#     [35mpath[39m: "/tmp/isc-j0SUaw/.insrc/lance"
+# Subtest: search.callers across repositories leaves out the entities of a repository under index
+not ok 1 - search.callers across repositories leaves out the entities of a repository under index
+  ---
+  duration_ms: 61045.973917
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:1:572'
+  failureType: 'hookFailed'
+  error: |-
+    the daemon did not start: (node:37932) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    startDaemon (/Users/subhagho/work/projects/insors/insrc/src/mcp/__tests__/helpers/mcp-e2e.ts:87:61)
+    async startSeededDaemon (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:195:12)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:33:11)
+    async TestHook.run (node:internal/test_runner/test:1054:7)
+  ...
+# Subtest: search.query while one repository is being indexed returns rows from the other repositories only
+not ok 2 - search.query while one repository is being indexed returns rows from the other repositories only
+  ---
+  duration_ms: 2.193833
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:1:1678'
+  failureType: 'hookFailed'
+  error: |-
+    the daemon did not start: (node:37932) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    startDaemon (/Users/subhagho/work/projects/insors/insrc/src/mcp/__tests__/helpers/mcp-e2e.ts:87:61)
+    async startSeededDaemon (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:195:12)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:33:11)
+    async TestHook.run (node:internal/test_runner/test:1054:7)
+  ...
+# Subtest: entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out
+not ok 3 - entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out
+  ---
+  duration_ms: 0.057209
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:1:2521'
+  failureType: 'hookFailed'
+  error: |-
+    the daemon did not start: (node:37932) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    startDaemon (/Users/subhagho/work/projects/insors/insrc/src/mcp/__tests__/helpers/mcp-e2e.ts:87:61)
+    async startSeededDaemon (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:195:12)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:33:11)
+    async TestHook.run (node:internal/test_runner/test:1054:7)
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 0
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 62265.575083

@@ -1,22 +1,22 @@
 {
   "mode": "full",
-  "capturedAt": "2026-11-02T09:03:13.603Z",
+  "capturedAt": "2026-11-02T09:35:39.234Z",
   "source": {
-    "benchmarks/queue-cost.mjs": "100df82a192d23b4f3679e4ceeebbd5aa3d1189db5c8afc2ca96ce931daf4b0d",
+    "benchmarks/queue-cost.mjs": "633ff43c62b1ee77c06bcd89097401c43f2d978f67612429e4c4654020bcdc23",
     "src/configuration.ts": "c9648b79eb9ef2721a069373b8381a7e4418ec35a163c92bfe1e0f4bdde83a26",
     "src/errors.ts": "4ef853da3c18fc4db41a4b304948a9340b694a42b14ed62c1e746a9032a8147e",
-    "src/host-node.ts": "cc00d296184ebfb74d4fa48a459c2fbb5a4079c33370de2da7ea835bc09181c1",
+    "src/host-node.ts": "7f6bb7888a5100e24c0360e47769a257fb8f4b625d3699ba0d1f6614ed863622",
     "src/index.ts": "4b93dd63f2fbf4619eaa41abb1dd862b4f115e77899e7c9aec9f4a6eaaab19b4",
     "src/model-dispatcher.ts": "9d89796744663b6c8504844f3dd2ae93e3fac53ac202d45d6d09ead35853deaf",
     "src/native.ts": "375bb260295a539f17be429c1562895296a325a4f0961632b4b98ba58b5bb5c1",
-    "src/ownership.ts": "be5b08a8a236283f786e475edcb91a3f2e0ee7b692eb55d84c59bb30854ef141",
+    "src/ownership.ts": "82d7ff424fffa5cd2648baef797903412506b059719c2736d4b441b30207e06c",
     "src/private-file.ts": "478d8e394efa5e08f8ffddad2be6fdfb8755f977817a59b20ceb43b41def4d67",
     "src/queue/admission.ts": "64e8c969790bf6eedce7fc28fd84f001228ac10bd107f921867098646e6e7cf3",
     "src/queue/checkpoint.ts": "92d557009224894b1b7e4ec69b5ba7fadc7147ebcc5e30374e01f05a273153d5",
     "src/queue/codec.ts": "a29c331bf1102a1e3a57ff862cb71f11483d1b9bdc24c048573514ace6681942",
     "src/queue/file-queue.ts": "9a2e016ea15e234bbe0a843da213eaac2c03a6f2544eae3605f4217855214592",
     "src/queue/index-record.ts": "199b90ac36b3d0719fab98d51ba429818b17805062cf44400b04ccab951fe891",
-    "src/queue/io.ts": "8df77796ca078848a1b4512a63be30358c9ca16d35cd8840ca181063a80aef40",
+    "src/queue/io.ts": "58a7fe9c2c5f55afbf1e4f41dfee0d47afb2532f44f3e833c473e8657a5cd987",
     "src/queue/receipts.ts": "74d09d7e5ddf75440b9b904848fade4f300ac7c5ede9b9327c1ee2e607afa98b",
     "src/queue/recovery.ts": "0dd77fbb248740b5b6a0c450c7df15ecb40ed2e107bc92f44868f49959bf8fd8",
     "src/queue/retirement.ts": "080ee26c70d91256d59c4afa764a3305b8721f05fe731a9a8e72a965a9ebf139",
@@ -45,13 +45,13 @@
       "name": "empty",
       "commandBytes": 1024,
       "samples": 20,
-      "p50Ms": 19.839166999999975,
-      "p95Ms": 20.938583000000108,
+      "p50Ms": 21.128207999999987,
+      "p95Ms": 41.94820800000002,
       "counters": {
         "durable": {
           "pendingBytes": 1700,
           "pendingEvents": 1,
-          "oldestPendingMs": 21
+          "oldestPendingMs": 24
         },
         "activeOwnedWork": 0
       },
@@ -61,14 +61,14 @@
         "totalQueueBytes": 2501
       },
       "processCold": {
-        "recoveryMs": 22.571959,
+        "recoveryMs": 17.399083000000005,
         "pendingEvents": 1,
         "memory": {
-          "rss": 48087040,
-          "heapTotal": 10551296,
-          "heapUsed": 6869256,
-          "external": 2341537,
-          "arrayBuffers": 81847
+          "rss": 47808512,
+          "heapTotal": 10813440,
+          "heapUsed": 6858600,
+          "external": 2341737,
+          "arrayBuffers": 82047
         },
         "physical": {
           "segmentBytes": 1700,
@@ -81,13 +81,13 @@
       "name": "empty",
       "commandBytes": 65536,
       "samples": 20,
-      "p50Ms": 20.933207999999922,
-      "p95Ms": 23.846374999999625,
+      "p50Ms": 20.962708999999904,
+      "p95Ms": 44.63529100000005,
       "counters": {
         "durable": {
           "pendingBytes": 66213,
           "pendingEvents": 1,
-          "oldestPendingMs": 26
+          "oldestPendingMs": 23
         },
         "activeOwnedWork": 0
       },
@@ -97,12 +97,12 @@
         "totalQueueBytes": 67016
       },
       "processCold": {
-        "recoveryMs": 23.579000000000008,
+        "recoveryMs": 29.892375,
         "pendingEvents": 1,
         "memory": {
-          "rss": 50003968,
+          "rss": 49987584,
           "heapTotal": 10813440,
-          "heapUsed": 5791112,
+          "heapUsed": 5794480,
           "external": 2417923,
           "arrayBuffers": 158233
         },
@@ -117,13 +117,13 @@
       "name": "empty",
       "commandBytes": 1048576,
       "samples": 20,
-      "p50Ms": 38.635749999999916,
-      "p95Ms": 43.1674579999999,
+      "p50Ms": 65.30195899999944,
+      "p95Ms": 88.77504099999987,
       "counters": {
         "durable": {
           "pendingBytes": 1049255,
           "pendingEvents": 1,
-          "oldestPendingMs": 35
+          "oldestPendingMs": 58
         },
         "activeOwnedWork": 0
       },
@@ -133,14 +133,14 @@
         "totalQueueBytes": 1050062
       },
       "processCold": {
-        "recoveryMs": 50.258666,
+        "recoveryMs": 58.931167,
         "pendingEvents": 1,
         "memory": {
-          "rss": 65273856,
-          "heapTotal": 23248896,
-          "heapUsed": 13169448,
-          "external": 4384211,
-          "arrayBuffers": 2124521
+          "rss": 60538880,
+          "heapTotal": 26853376,
+          "heapUsed": 8179608,
+          "external": 3315916,
+          "arrayBuffers": 1075945
         },
         "physical": {
           "segmentBytes": 1049255,
@@ -154,13 +154,13 @@
       "fixtureEvents": 1000,
       "commandBytes": 1024,
       "samples": 20,
-      "p50Ms": 29.88116700000046,
-      "p95Ms": 33.022124999999505,
+      "p50Ms": 38.625708000000486,
+      "p95Ms": 55.64912499999991,
       "counters": {
         "durable": {
           "pendingBytes": 1484260,
           "pendingEvents": 1020,
-          "oldestPendingMs": 828
+          "oldestPendingMs": 1228
         },
         "activeOwnedWork": 0
       },
@@ -169,16 +169,16 @@
         "controlBytes": 300740,
         "totalQueueBytes": 1785000
       },
-      "fixtureBuildAndOpenMs": 863.2096250000004,
+      "fixtureBuildAndOpenMs": 1292.825291,
       "processCold": {
-        "recoveryMs": 115.844959,
+        "recoveryMs": 138.510042,
         "pendingEvents": 1020,
         "memory": {
-          "rss": 68861952,
-          "heapTotal": 25231360,
-          "heapUsed": 10811760,
-          "external": 2742792,
-          "arrayBuffers": 502821
+          "rss": 70893568,
+          "heapTotal": 25493504,
+          "heapUsed": 12835056,
+          "external": 3056688,
+          "arrayBuffers": 816717
         },
         "physical": {
           "segmentBytes": 1484260,
@@ -192,13 +192,13 @@
       "fixtureEvents": 16351,
       "outcome": "BACKPRESSURE",
       "samples": 20,
-      "p50Ms": 0.06779199999982666,
-      "p95Ms": 0.07833299999947485,
+      "p50Ms": 0.07279100000050676,
+      "p95Ms": 0.16649999999935972,
       "counters": {
         "durable": {
           "pendingBytes": 23812548,
           "pendingEvents": 16351,
-          "oldestPendingMs": 2635
+          "oldestPendingMs": 3327
         },
         "activeOwnedWork": 0
       },
@@ -207,16 +207,16 @@
         "controlBytes": 2450928,
         "totalQueueBytes": 26263476
       },
-      "fixtureBuildAndOpenMs": 2668.463667,
+      "fixtureBuildAndOpenMs": 3381.819041999999,
       "processCold": {
-        "recoveryMs": 1067.544459,
+        "recoveryMs": 1183.6019580000002,
         "pendingEvents": 16351,
         "memory": {
-          "rss": 131874816,
+          "rss": 123895808,
           "heapTotal": 80019456,
-          "heapUsed": 59730392,
-          "external": 5411785,
-          "arrayBuffers": 3171814
+          "heapUsed": 59718904,
+          "external": 5410785,
+          "arrayBuffers": 3170814
         },
         "physical": {
           "segmentBytes": 23812548,
@@ -228,13 +228,13 @@
     {
       "name": "16MiB-safety",
       "commandBytes": 16777216,
-      "acceptanceMs": 351.2659590000003,
+      "acceptanceMs": 384.2387920000001,
       "oversizeRejected": true,
       "counters": {
         "durable": {
           "pendingBytes": 16777896,
           "pendingEvents": 1,
-          "oldestPendingMs": 325
+          "oldestPendingMs": 356
         },
         "activeOwnedWork": 0
       },
@@ -244,12 +244,12 @@
         "totalQueueBytes": 16778705
       },
       "processCold": {
-        "recoveryMs": 402.50608300000005,
+        "recoveryMs": 417.063917,
         "pendingEvents": 1,
         "memory": {
-          "rss": 275152896,
-          "heapTotal": 174260224,
-          "heapUsed": 139378768,
+          "rss": 277397504,
+          "heapTotal": 175046656,
+          "heapUsed": 139413416,
           "external": 35821776,
           "arrayBuffers": 33581805
         },
@@ -263,27 +263,28 @@
   ],
   "resources": {
     "before": {
-      "rss": 44990464,
+      "rss": 44892160,
       "heapTotal": 8978432,
-      "heapUsed": 6230928,
-      "external": 2312432,
-      "arrayBuffers": 109828
+      "heapUsed": 6222192,
+      "external": 2312514,
+      "arrayBuffers": 109910
     },
     "after": {
-      "rss": 318734336,
-      "heapTotal": 184877056,
-      "heapUsed": 128193792,
-      "external": 21811190,
-      "arrayBuffers": 19577213
+      "rss": 263405568,
+      "heapTotal": 154451968,
+      "heapUsed": 111373136,
+      "external": 21811661,
+      "arrayBuffers": 19577684
     },
-    "observedMaxRss": 292732928,
-    "observedMaxHeap": 95599240
+    "observedMaxRss": 273743872,
+    "observedMaxHeap": 110540400
   },
   "qualifications": [
     "All measured acceptance paths include production data sync and checkpoint/backup/directory sync.",
     "Backlog fixtures use test-only bulk journal/checkpoint construction followed by full production recovery; their build times are not ingestion latency.",
     "Process-cold recovery starts a fresh Node process; OS filesystem cache remains warm.",
     "Observed RSS/heap snapshots are lower bounds on peak use, not V8 allocation guarantees.",
+    "Development host background workloads are not isolated; these timings are empirical observations, not capacity or latency guarantees.",
     "Metadata-cap latency is rejection latency, not acceptance.",
     "Semantic commit is unimplemented. No production defaults, latency SLO, Lance atomicity or hardware power-loss claim."
   ]

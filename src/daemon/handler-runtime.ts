@@ -1266,6 +1266,14 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { languages: listReaders(languageOfExtension) };
 		},
 
+		// A repository's subsystems, with what they rest on (Epic c2ba6fa6 s8).
+		'index.subsystems': async (params) => {
+			const { repoPath } = (params ?? {}) as { repoPath?: unknown };
+			if (typeof repoPath !== 'string' || repoPath === '') return { error: 'index.subsystems: repoPath is required' };
+			const { subsystemsAnswer } = await import('../db/subsystems.js');
+			return subsystemsAnswer(repoPath);
+		},
+
 		// ----- Config management -----
 
 		'system.info': async () => {

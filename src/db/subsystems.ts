@@ -18,6 +18,7 @@ import { encodeRepoKey } from './graph/keys.js';
 import { decodeSubsystemRow, encodeSubsystemRow, type SubsystemConnection, type SubsystemRow } from './graph/codec.js';
 import { getGraphStore, withWriteTxn, type GraphStore } from './graph/store.js';
 import { lookupRepoId } from './repos.js';
+import { readIndexState } from './index-state.js';
 
 export type { SubsystemConnection, SubsystemRow };
 
@@ -108,4 +109,38 @@ export async function writeSubsystemSummary(repoPath: string, id: string, summar
 		s.subsystem.put(key, encodeSubsystemRow({ ...row, summary, summaryModel }));
 		return true;
 	});
+}
+
+/** The index.subsystems answer: the stored subsystems, with what they rest on. */
+export interface SubsystemsAnswer {
+	readonly repoPath:             string;
+	readonly generation:           number;
+	readonly computedAtGeneration: number | null;
+	readonly graphComplete:        boolean;
+	readonly stale:                boolean;
+	readonly note?:                string | undefined;
+	readonly subsystems:           readonly SubsystemView[];
+}
+
+export const NOTE_INCOMPLETE = 'the groups rest on an incomplete graph';
+export const NOTE_OLDER = 'the groups rest on an older graph';
+export const NOTE_NOT_GROUPED = 'not grouped yet';
+
+/**
+ * A repository's subsystems with the state they rest on (Epic c2ba6fa6 s8):
+ * the note says when the graph is incomplete (ac5), when the groups are of an
+ * older generation, or that the repository is not grouped yet.
+ */
+export async function subsystemsAnswer(repoPath: string): Promise<SubsystemsAnswer | { error: string }> {
+	if (await lookupRepoId(repoPath) === undefined) return { error: `index.subsystems: ${repoPath} is not a registered repo` };
+	const state = await readIndexState(repoPath);
+	const generation = state?.generation ?? 0;
+	const graphComplete = state?.graphComplete ?? false;
+	const stored = await readSubsystems(repoPath);
+	const stale = stored.computedAtGeneration !== null && stored.computedAtGeneration < generation;
+	const note = !graphComplete ? NOTE_INCOMPLETE : stored.computedAtGeneration === null ? NOTE_NOT_GROUPED : stale ? NOTE_OLDER : undefined;
+	return {
+		repoPath, generation, computedAtGeneration: stored.computedAtGeneration, graphComplete, stale,
+		...(note !== undefined && { note }), subsystems: stored.subsystems,
+	};
 }

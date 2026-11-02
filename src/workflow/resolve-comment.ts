@@ -38,12 +38,17 @@ import { questionId, recordResolution, type QuestionArtifactKind } from './quest
 import { artifactJsonPath, writeArtifact } from './storage.js';
 import { commitAndPush } from './tracker/commit-and-push-registry.js';
 import { isToolDenied } from './tracker/tool-denied.js';
+import type { UnitRef } from './tracker/refs.js';
+import { assertMayReviseDraft } from './team/author-gate.js';
+import { TeamGateRefusedError } from './team/gate.js';
 
 /** The recordResolution seam — injectable so the a1 mapping logic is testable
  *  headlessly without recordResolution's full artifact re-render (production
  *  passes the real recordResolution). */
 export type RecordResolutionFn = typeof recordResolution;
-export interface ResolveCommentDeps { readonly record?: RecordResolutionFn }
+/** The team gate's check for a draft change; the default is {@link assertMayReviseDraft}. A test seam. */
+export type ReviseDraftGate = typeof assertMayReviseDraft;
+export interface ResolveCommentDeps { readonly record?: RecordResolutionFn; readonly gate?: ReviseDraftGate }
 
 // ---------------------------------------------------------------------------
 // sc3 contract types (internal-shared; mirrored as Kotlin data classes plugin-side)
@@ -168,6 +173,19 @@ export async function handleResolveComment(
 		readArtifact(jsonPath);
 	} catch (err) {
 		return { error: `workflow.resolveComment: artifact '${p.artifactId}' not found or unreadable: ${(err as Error).message}` };
+	}
+
+	// Team gate (Story f32c3abf4a55494b/s1): a recorded comment changes the draft, which may be in signoff. Asked once, before the first record;
+	// a refusal records nothing and is answered as an error, a denied tracker call is rethrown.
+	try {
+		const unit: UnitRef = identity.storyId !== undefined
+			? { unit: 'story', repoPath, epicHash: identity.epicHash, storyId: identity.storyId }
+			: { unit: 'epic', repoPath, epicHash: identity.epicHash };
+		const stage = identity.kind === 'define' ? 'DEF' : identity.kind === 'hld' ? 'HLD' : 'LLD';
+		await (deps?.gate ?? assertMayReviseDraft)(repoPath, unit, stage, 'resolveComment');
+	} catch (err) {
+		if (err instanceof TeamGateRefusedError) return { error: `workflow.resolveComment: ${err.reason}` };
+		throw err;
 	}
 
 	const resolutions: ResolvedCommentEntry[] = [];

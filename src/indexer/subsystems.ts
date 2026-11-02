@@ -17,8 +17,14 @@
  * changed membership is a new id; its name is the members' longest common
  * directory (the file's own path for a single file). Its connections are the
  * summed weights and kind counts of the edges from its files to another
- * subsystem's; an edge without kinds (a same-directory edge) adds weight to
- * the grouping only.
+ * subsystem's; an edge without kinds (a directory edge) adds weight to the
+ * grouping only.
+ *
+ * A directory is a hub node joined to each of its files by a light edge, so an
+ * unconnected file lands with its neighbours. The hubs take part in the
+ * grouping but are never members of a subsystem, and their weight grows with
+ * the directory's size, not its square, so a large directory neither swamps
+ * the real relationships nor costs a quadratic number of edges.
  */
 
 import { createHash } from 'node:crypto';
@@ -37,6 +43,8 @@ export interface FileEdge {
 export interface FileGraph {
 	readonly files: readonly string[];          // repo-relative code files
 	readonly edges: readonly FileEdge[];
+	/** Nodes that take part in the grouping but are never members (the directory hubs). */
+	readonly hubs?: readonly string[] | undefined;
 }
 
 export interface SubsystemConnectionOut {
@@ -52,24 +60,22 @@ export interface SubsystemGroup {
 	readonly connections: readonly SubsystemConnectionOut[];   // sorted by `to`
 }
 
-/** The weight of the edge joining two files of one directory: it places a file with no relationships beside its neighbours. */
+/** The weight of the edge joining a file to its directory's hub: it places a file with no relationships beside its neighbours. */
 export const DIRECTORY_EDGE_WEIGHT = 0.1;
 
-/** An edge, without kinds, between every two files of one directory. */
-export function directoryEdges(files: readonly string[]): FileEdge[] {
-	const byDir = new Map<string, string[]>();
+/** The hub node of a directory (never a file path: it starts with a NUL). */
+const hubOf = (dir: string): string => `\u0000dir:${dir}`;
+
+/** One hub per directory with a file, and an edge without kinds from each file to its directory's hub. */
+export function directoryHubs(files: readonly string[]): { hubs: string[]; edges: FileEdge[] } {
+	const hubs = new Set<string>();
+	const edges: FileEdge[] = [];
 	for (const f of [...files].sort()) {
-		const d = dirname(f);
-		const list = byDir.get(d);
-		if (list === undefined) byDir.set(d, [f]); else list.push(f);
+		const hub = hubOf(dirname(f));
+		hubs.add(hub);
+		edges.push({ a: f, b: hub, weight: DIRECTORY_EDGE_WEIGHT, kinds: {} });
 	}
-	const out: FileEdge[] = [];
-	for (const list of byDir.values()) {
-		for (let i = 0; i < list.length; i++) {
-			for (let j = i + 1; j < list.length; j++) out.push({ a: list[i]!, b: list[j]!, weight: DIRECTORY_EDGE_WEIGHT, kinds: {} });
-		}
-	}
-	return out;
+	return { hubs: [...hubs].sort(), edges };
 }
 
 const EPS = 1e-12;
@@ -120,7 +126,7 @@ function localMoves(level: Level): { group: number[]; moved: boolean } {
 }
 
 function aggregate(level: Level, group: readonly number[]): Level {
-	const n = Math.max(-1, ...group) + 1;
+	const n = group.reduce((max, g) => Math.max(max, g), -1) + 1;   // no spread: a large repository's array would overflow the call stack
 	const adj = Array.from({ length: n }, () => new Map<number, number>());
 	for (let i = 0; i < level.n; i++) {
 		for (const [j, w] of level.adj[i]!) {
@@ -150,8 +156,10 @@ const subsystemId = (files: readonly string[]): string =>
 /** Group the graph's files into subsystems: a partition, the same for the same graph. */
 export function groupSubsystems(graph: FileGraph): SubsystemGroup[] {
 	const files = [...new Set(graph.files)].sort();
-	const index = new Map(files.map((f, i) => [f, i]));
-	const adj = files.map(() => new Map<number, number>());
+	const isHub = new Set(graph.hubs ?? []);
+	const nodes = [...new Set([...files, ...isHub])].sort();
+	const index = new Map(nodes.map((f, i) => [f, i]));
+	const adj = nodes.map(() => new Map<number, number>());
 	for (const e of graph.edges) {
 		const a = index.get(e.a), b = index.get(e.b);
 		if (a === undefined || b === undefined || a === b || !(e.weight > 0)) continue;
@@ -159,8 +167,8 @@ export function groupSubsystems(graph: FileGraph): SubsystemGroup[] {
 	}
 
 	// membership[f]: the current node of file f at the current level.
-	let membership = files.map((_f, i) => i);
-	let level: Level = { n: files.length, adj };
+	let membership = nodes.map((_f, i) => i);
+	let level: Level = { n: nodes.length, adj };
 	for (;;) {
 		const { group, moved } = localMoves(level);
 		if (!moved) break;
@@ -169,7 +177,8 @@ export function groupSubsystems(graph: FileGraph): SubsystemGroup[] {
 	}
 
 	const members = new Map<number, string[]>();
-	files.forEach((f, i) => {
+	nodes.forEach((f, i) => {
+		if (isHub.has(f)) return;                                  // a hub is never a member
 		const g = membership[i]!;
 		const list = members.get(g);
 		if (list === undefined) members.set(g, [f]); else list.push(f);

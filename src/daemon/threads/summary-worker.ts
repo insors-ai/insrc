@@ -21,7 +21,6 @@ import { withWriteTxn } from '../../db/graph/store.js';
 import { IndexerService } from '../../indexer/index.js';
 import { Watcher } from '../../indexer/watcher.js';
 import type { Entity, LLMProvider } from '../../shared/types.js';
-import { runSubsystemPass } from '../../indexer/subsystem-pass.js';
 import { IndexingBlock } from './indexing-block.js';
 import type { WorkerConnection } from './main-services.js';
 import { SUMMARY_PORT_OP, SummaryWorkerLink } from './summary-link.js';
@@ -53,9 +52,8 @@ class StubSummaryIndexer extends IndexerService {
 	}
 
 	/** The subsystem pass (Epic c2ba6fa6 s8) with a stand-in for the cheap tier: stub mode calls no model. */
-	protected override async subsystemPass(repoPath: string): Promise<void> {
-		const provider = { capabilities: {}, completeStructured: async () => ({ summary: 'stub summary' }) } as unknown as LLMProvider;
-		await runSubsystemPass({ db, repoPath, provider });
+	protected override subsystemProvider(): LLMProvider {
+		return { capabilities: {}, completeStructured: async () => ({ summary: 'stub summary' }) } as unknown as LLMProvider;
 	}
 }
 

@@ -27,7 +27,7 @@ import type { Watcher } from '../watcher.js';
 import { IndexerService } from '../index.js';
 import { runCrossFileResolver } from '../cross-file-resolver.js';
 import { detectSourceRoots } from '../source-roots.js';
-import { runSubsystemPass } from '../subsystem-pass.js';
+import { runSubsystemPass, summariseSubsystem, SUMMARY_PART_CHARS } from '../subsystem-pass.js';
 
 useTemporaryLance();
 
@@ -124,7 +124,7 @@ test('s8 t4: a failing call leaves that summary empty and the others written', a
 	assert.deepEqual(await summaries(), new Map([['src/parse', 'src/parse summary'], ['src/store', null]]));
 });
 
-test('s8 t4: a generation that advances while summaries are written stops further writes', async () => {
+test('s8 t4: a generation that advances while summaries are written stops further calls; the summary already made is kept for its membership', async () => {
 	let advanced = false;
 	const rec = recordingProvider({ during: async () => {
 		if (advanced) return;
@@ -134,17 +134,75 @@ test('s8 t4: a generation that advances while summaries are written stops furthe
 	const r = await runSubsystemPass({ db, repoPath: repo, provider: rec.provider });
 	assert.equal(r.stopped, true);
 	assert.equal(rec.calls.length, 1, 'no call after the generation moved');
-	assert.equal(r.summariesWritten, 0, 'the summary computed for the old generation is not written');
-	assert.deepEqual([...(await summaries()).values()], [null, null]);
+	assert.equal(r.summariesWritten, 1, 'the summary made for a membership is written: its row (id = membership) still exists');
+	const got = await summaries();
+	assert.equal(got.get(rec.calls[0]!), `${rec.calls[0]} summary`);
+	assert.equal([...got.values()].filter(v => v === null).length, 1, 'the other subsystem waits for the next pass');
 });
 
-test('s8 t4: a summary is stored only on the subsystem rows of the generation it was written for', async () => {
+test('s8 t4: a summary is stored only on a subsystem row with its id (its membership)', async () => {
 	const rec = recordingProvider({ failFor: 'src/store' });
-	const r = await runSubsystemPass({ db, repoPath: repo, provider: rec.provider });
+	await runSubsystemPass({ db, repoPath: repo, provider: rec.provider });
 	const storeSub = (await readSubsystems(repo)).subsystems.find(s => s.name === 'src/store')!;
 
-	assert.equal(await writeSubsystemSummary(repo, storeSub.id, 'late', 'cheap', r.generation - 1), false, 'a summary from an older grouping is refused');
-	assert.equal((await summaries()).get('src/store'), null);
-	assert.equal(await writeSubsystemSummary(repo, storeSub.id, 'current', 'cheap', r.generation), true);
+	assert.equal(await writeSubsystemSummary(repo, 'no-such-membership', 'late', 'cheap'), false, 'no row with that id: refused');
+	assert.equal(await writeSubsystemSummary(repo, storeSub.id, 'current', 'cheap'), true);
 	assert.equal((await summaries()).get('src/store'), 'current');
+});
+
+test('s8 review: a summary that failed is retried by the next pass at the same generation', async () => {
+	await runSubsystemPass({ db, repoPath: repo, provider: recordingProvider({ failFor: 'src/store' }).provider });
+	assert.equal((await summaries()).get('src/store'), null);
+
+	const again = recordingProvider();
+	const r = await runSubsystemPass({ db, repoPath: repo, provider: again.provider });
+	assert.deepEqual([r.ran, r.reason, r.summariesWritten], [false, 'up-to-date', 1], 'the groups are current; the missing summary is written');
+	assert.deepEqual(again.calls, ['src/store'], 'only the subsystem without a summary');
+	assert.equal((await summaries()).get('src/store'), 'src/store summary');
+});
+
+test('s8 review: each summary waits for code work and none starts once the daemon is stopping', async () => {
+	// Stopping: two summaries are pending, and none is asked for.
+	const stopping = recordingProvider();
+	const halted = await runSubsystemPass({ db, repoPath: repo, provider: stopping.provider, shouldStop: () => true });
+	assert.equal(halted.ran, true, 'the groups are still written');
+	assert.deepEqual([stopping.calls.length, halted.summariesWritten, halted.stopped], [0, 0, true]);
+	assert.deepEqual([...(await summaries()).values()], [null, null]);
+
+	// Waiting: one wait per summary, and one more when code work arrived just before a call.
+	let waits = 0;
+	let busyOnce = true;
+	const rec = recordingProvider();
+	const r = await runSubsystemPass({
+		db, repoPath: repo, provider: rec.provider,
+		waitForCodeIdle: async () => { waits++; },
+		isCodeIdle: () => { if (busyOnce) { busyOnce = false; return false; } return true; },
+		shouldStop: () => false,
+	});
+	assert.deepEqual([r.ran, r.reason], [false, 'up-to-date'], 'the stopped summaries are retried at the same generation');
+	assert.equal(rec.calls.length, 2);
+	assert.equal(waits, 3);
+	assert.equal(r.summariesWritten, 2);
+});
+
+test('s8 review: a subsystem too large for one message is summarised in parts, every file read, then combined', async () => {
+	const files = Array.from({ length: 3000 }, (_v, i) => `gen/very/long/directory/name/for/generated/code/file-${String(i).padStart(5, '0')}.ts`);
+	const sub = { id: 'big', name: 'gen', files, entityCount: files.length, summary: null, connections: [{ to: 'x', weight: 1, kinds: { CALLS: 1 } }] };
+	const exportsOf = new Map(files.map(f => [f, [`fn${f.slice(-8, -3)}`]]));
+	const asked: string[] = [];
+	let active = 0, maxActive = 0;
+	const summary = await summariseSubsystem(sub, exportsOf, new Map([['x', 'other']]), async (content) => {
+		active++; maxActive = Math.max(maxActive, active);
+		await new Promise(r => setTimeout(r, 1));
+		active--;
+		asked.push(content);
+		return `summary ${asked.length}`;
+	});
+	assert.ok(asked.length > 2, `parts, then a combining message (got ${asked.length} messages)`);
+	assert.ok(asked.every(c => c.length <= SUMMARY_PART_CHARS + 200), 'every message fits');
+	for (const f of files) assert.ok(asked.some(c => c.includes(f)), `${f} is read`);
+	assert.match(asked.at(-1)!, /^Subsystem: gen\n\nIts files, summarised in parts:/);
+	assert.match(asked.at(-1)!, /- other: 1 CALLS/, 'the connections are in the combining message');
+	assert.equal(summary, `summary ${asked.length}`);
+	assert.equal(maxActive, 1, 'one call at a time');
 });

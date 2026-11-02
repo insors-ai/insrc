@@ -8,6 +8,8 @@ You run in the background after a repository's code has been grouped into subsys
 - Its **member files**, each with the names of the entities it exports
 - Its **connections**: the other subsystems it reaches, with how many imports, calls, inheritance links and references go there
 
+A large subsystem comes in parts: first one part of its files at a time (summarise that part on its own), then, in a last message, the summaries of its parts with its connections (combine them into one summary of the whole subsystem).
+
 ## What you emit
 
 A single JSON object matching the schema. Emit ONLY the JSON. First char `{`, no markdown fence, no prose intro.

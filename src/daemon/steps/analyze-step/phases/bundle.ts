@@ -55,6 +55,7 @@ import type {
 import type { BundleLayers } from '../../../../analyze/context/driver.js';
 import { reportFromLookups } from '../../../../analyze/explore/answer-report.js';
 import { measureLookupResults } from '../../../../analyze/measure.js';
+import { withSubsystemContext } from '../../../../analyze/context/subsystem-context.js';
 
 const log = getLogger('mcp:analyze-step:bundle');
 
@@ -122,7 +123,14 @@ export async function handleBundle(
 	// Its measure is taken from the same results, with the caller's stated size as the hint.
 	const results = state.executed?.results ?? [];
 	const report = reportFromLookups(results, measureLookupResults(results, state.sizeHint));
-	const bundle: AnalyzeContextBundle = { ...layers, meta, report };
+	// (3b) The subsystems of the scope and of the files the bundle cites (Epic
+	// c2ba6fa6 s8), from the stored subsystem rows, as runShaper's bundles carry them.
+	const scopeRef = state.intent.scopeRef;
+	const bundle: AnalyzeContextBundle = await withSubsystemContext(
+		{ ...layers, meta, report },
+		state.repoPath,
+		scopeRef.kind === 'module' || scopeRef.kind === 'file' ? scopeRef.value : undefined,
+	);
 
 	// (4) Render.
 	const markdown = renderBundleAsMarkdown(bundle);

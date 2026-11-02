@@ -201,6 +201,11 @@ export async function removeRepo(_db: DbClient, path: string): Promise<void> {
 		if (id === undefined) return;
 		s.repo.remove(encodeRepoKey(id));
 		s.indexState.remove(encodeRepoKey(id));
+		// The repository's subsystems (Epic c2ba6fa6 s8): every key from its
+		// 4-byte prefix up to the next repository's.
+		const range = { start: encodeRepoKey(id), end: encodeRepoKey(id + 1) };
+		for (const { key } of s.subsystem.getRange(range)) s.subsystem.remove(key);
+		for (const { key } of s.subsystemByFile.getRange(range)) s.subsystemByFile.remove(key);
 	});
 }
 

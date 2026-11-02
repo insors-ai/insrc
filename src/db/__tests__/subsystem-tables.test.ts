@@ -5,7 +5,8 @@
  * repository's set in one transaction, stamped with the generation, and a
  * subsystem whose id was stored keeps its summary; readSubsystems returns a
  * repository's set, or the subsystems holding given files, and nothing of
- * another repository; a write that fails part-way leaves the previous set.
+ * another repository; a write that fails part-way leaves the previous set;
+ * removing a repository removes its subsystem rows and no other repository's.
  *
  * Run: npx tsx --test src/db/__tests__/subsystem-tables.test.ts
  */
@@ -19,7 +20,7 @@ import { join } from 'node:path';
 import { closeGraphStore, getGraphStore, SCHEMA_VERSION, setGraphStorePath, withWriteTxn } from '../graph/store.js';
 import { encodeRepoKey } from '../graph/keys.js';
 import { encodeSubsystemRow } from '../graph/codec.js';
-import { addRepo, lookupRepoId } from '../repos.js';
+import { addRepo, lookupRepoId, removeRepo } from '../repos.js';
 import { readSubsystems, writeSubsystems, type SubsystemGroupRow } from '../subsystems.js';
 import { useTemporaryLance } from '../lance/__tests__/helpers/temp-lance.js';
 
@@ -107,4 +108,18 @@ test('s8 t1: a write that fails part-way leaves the previous set intact', async 
 	assert.deepEqual(ids(stored), ['old']);
 	assert.deepEqual(ids(await readSubsystems(A, { files: ['src/a.ts'] })), ['old']);
 	assert.deepEqual(ids(await readSubsystems(A, { files: ['src/c.ts'] })), [], 'nothing of the failed write remains');
+});
+
+test("s8 t1: removing a repository removes its subsystem rows and keeps another repository's", async () => {
+	await writeSubsystems(A, 1, [group('a1', ['src/x.ts', 'src/y.ts'])]);
+	await writeSubsystems(B, 1, [group('b1', ['lib/z.ts'])]);
+	const repoId = (await lookupRepoId(A))!;
+	await removeRepo(null, A);
+
+	const store = await getGraphStore();
+	const range = { start: encodeRepoKey(repoId), end: encodeRepoKey(repoId + 1) };
+	assert.equal([...store.subsystem.getRange(range)].length, 0, 'no subsystem row of the removed repository');
+	assert.equal([...store.subsystemByFile.getRange(range)].length, 0, 'no file row of the removed repository');
+	assert.deepEqual(ids(await readSubsystems(B)), ['b1'], "the other repository's set is kept");
+	assert.deepEqual(ids(await readSubsystems(B, { files: ['lib/z.ts'] })), ['b1']);
 });

@@ -6,14 +6,17 @@
  * row (ac3); existing layer text is kept; the cache never holds the block, and
  * subsystems stored after a bundle was cached show on the next serve; without a
  * repository or stored subsystems the bundle is unchanged; only a file with a
- * stored subsystem row selects a subsystem.
+ * stored subsystem row selects a subsystem; a cite at the end of a sentence,
+ * with a #L anchor or of a root-level file selects too; a whole-repository
+ * scope lists every subsystem without its files, keeping the full block for
+ * cited ones; a store that cannot be read leaves the bundle unchanged.
  *
  * Run: npx tsx --test src/analyze/context/__tests__/subsystem-context.test.ts
  */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -56,8 +59,8 @@ const PARSE = { id: 'p1', name: 'src/parse', files: ['src/parse/lexer.ts', 'src/
 const STORE = { id: 's1', name: 'src/store', files: ['src/store/db.ts'], entityCount: 1, connections: [{ to: 'p1', weight: 1.8, kinds: { IMPORTS: 1, CALLS: 1 } }] };
 async function storeSubsystems(): Promise<void> {
 	await writeSubsystems(repo, 0, [PARSE, STORE]);
-	await writeSubsystemSummary(repo, 'p1', 'Turns text into tokens with lex and token.', 'cheap', 0);
-	await writeSubsystemSummary(repo, 's1', 'Loads rows, lexing their text first.', 'cheap', 0);
+	await writeSubsystemSummary(repo, 'p1', 'Turns text into tokens with lex and token.', 'cheap');
+	await writeSubsystemSummary(repo, 's1', 'Loads rows, lexing their text first.', 'cheap');
 }
 const bundle = (over: Partial<AnalyzeContextBundle> = {}): AnalyzeContextBundle => ({ system: 'sys', focus: 'f', summary: 'sum', structure: 'existing structure', surface: 'su', artefacts: 'a', upstream: 'u', ...over });
 
@@ -80,6 +83,34 @@ test('s8 t7: only a file with a stored subsystem row selects a subsystem; other 
 	assert.match(out.structure, /#### Subsystem src\/parse/);
 	assert.doesNotMatch(out.structure, /#### Subsystem src\/store/);
 	assert.deepEqual(await withSubsystemContext(bundle({ artefacts: 'see docs/notes/plan.md:3' }), repo, undefined), bundle({ artefacts: 'see docs/notes/plan.md:3' }), 'a cited path with no row selects nothing');
+});
+
+test('s8 t7: a cite at the end of a sentence, with a #L anchor, or of a root-level file selects its subsystem', async () => {
+	const ROOT = { id: 'r1', name: 'main.ts', files: ['main.ts'], entityCount: 1, connections: [] };
+	await writeSubsystems(repo, 0, [PARSE, STORE, ROOT]);
+	const names = (b: AnalyzeContextBundle) => [...b.structure.matchAll(/#### Subsystem (\S+)/g)].map(m => m[1]);
+	assert.deepEqual(names(await withSubsystemContext(bundle({ summary: 'It starts in src/parse/tokens.ts.' }), repo, undefined)), ['src/parse'], 'end of a sentence');
+	assert.deepEqual(names(await withSubsystemContext(bundle({ summary: 'see src/store/db.ts#L10' }), repo, undefined)), ['src/store'], 'a #L anchor');
+	assert.deepEqual(names(await withSubsystemContext(bundle({ summary: 'the entry point is main.ts:4' }), repo, undefined)), ['main.ts'], 'a root-level file');
+});
+
+test('s8 t7: a whole-repository scope lists every subsystem by name and summary without its files, keeping the full block for a cited one', async () => {
+	await storeSubsystems();
+	for (const scope of [repo, '.', '']) {
+		const out = await withSubsystemContext(bundle({ artefacts: 'see src/store/db.ts:3' }), repo, scope);
+		assert.match(out.structure, /#### Subsystem src\/parse\n\nTurns text into tokens with lex and token\.\n\nFiles: 2 \(not listed\)/, `scope '${scope}': the uncited subsystem is compact`);
+		assert.doesNotMatch(out.structure, /src\/parse\/lexer\.ts/, `scope '${scope}': its files are not listed`);
+		assert.match(out.structure, /#### Subsystem src\/store\n\nLoads rows[\s\S]*Files \(1\):\n {2}- src\/store\/db\.ts/, `scope '${scope}': the cited subsystem keeps its full block`);
+	}
+});
+
+test('s8 t7: when the stored subsystems cannot be read the bundle is served unchanged', async () => {
+	await storeSubsystems();
+	await closeGraphStore();
+	const notADir = join(sandbox, 'not-a-dir');
+	writeFileSync(notADir, 'x');
+	setGraphStorePath(join(notADir, 'graph.lmdb'));
+	assert.deepEqual(await withSubsystemContext(bundle(), repo, join(repo, 'src/store')), bundle());
 });
 
 test('s8 t7: without a repository or stored subsystems the bundle is unchanged', async () => {

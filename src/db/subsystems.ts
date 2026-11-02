@@ -94,10 +94,11 @@ export async function readSubsystems(repoPath: string, opts: { readonly files?: 
 }
 
 /**
- * Set one subsystem's summary -- only while its row is still the one grouped at
- * `generation` (a newer pass may have replaced it). Returns whether it was set.
+ * Set one subsystem's summary -- only while a row with its id exists. The id is
+ * the hash of the membership, so a summary written for an id holds for every
+ * grouping that kept that membership, at any generation. Returns whether it was set.
  */
-export async function writeSubsystemSummary(repoPath: string, id: string, summary: string, summaryModel: string, generation: number): Promise<boolean> {
+export async function writeSubsystemSummary(repoPath: string, id: string, summary: string, summaryModel: string): Promise<boolean> {
 	const repoId = await lookupRepoId(repoPath);
 	if (repoId === undefined) return false;
 	return withWriteTxn(s => {
@@ -105,7 +106,6 @@ export async function writeSubsystemSummary(repoPath: string, id: string, summar
 		const buf = s.subsystem.get(key) as Buffer | undefined;
 		if (buf === undefined) return false;
 		const row = decodeSubsystemRow(buf);
-		if (row.computedAtGeneration !== generation) return false;
 		s.subsystem.put(key, encodeSubsystemRow({ ...row, summary, summaryModel }));
 		return true;
 	});

@@ -151,3 +151,23 @@ test('s8 t5: a settle and a clean-up that leave the graph complete enqueue the j
 	await svc.cleanUpPass(repo);
 	assert.deepEqual(subsystemJobs(svc.q), [], 'not on an incomplete graph');
 });
+
+test('s8 review: the indexer runs the pass with its queue: a stopping daemon asks for no summary', async () => {
+	const calls: string[] = [];
+	class Recording extends IndexerService {
+		constructor(q: IndexQueue) { super(db, q, watcher, undefined, 600_000); }
+		protected override subsystemProvider() {
+			return { capabilities: {}, completeStructured: async () => { calls.push('call'); return { summary: 's' }; } } as never;
+		}
+	}
+	const q = new IndexQueue();
+	const svc = new Recording(q);
+	await svc.processJob({ kind: 'full', repoPath: repo });
+	q.stop();   // the daemon is stopping: isStopping is true
+	await svc.processJob({ kind: 'subsystems', repoPath: repo });
+	const { readSubsystems } = await import('../../db/subsystems.js');
+	const stored = await readSubsystems(repo);
+	assert.ok(stored.subsystems.length > 0, 'the groups are written');
+	assert.deepEqual(calls, [], 'no model call once the daemon is stopping');
+	assert.ok(stored.subsystems.every(s => s.summary === null));
+});

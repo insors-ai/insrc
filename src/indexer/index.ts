@@ -2,7 +2,7 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, extname, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity } from '../shared/types.js';
+import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity, LLMProvider } from '../shared/types.js';
 import type { SummariseDocResult } from '../analyze/summariser/index.js';
 import { upsertEntities, listEntityFilesForRepo, deleteEntitiesForRepo, reconcileEntityVectors } from '../db/entities.js';
 import {
@@ -643,9 +643,22 @@ export class IndexerService {
    * complete: after a full index, a settle or a clean-up. The pass itself does
    * nothing when its stored groups are of the current generation.
    */
-  /** The subsystem pass for one repository (a seam: a test overrides it to run no model). */
+  /**
+   * The subsystem pass for one repository, yielding to code work and stopping
+   * on shutdown as the document sweep does (a seam: a test overrides it).
+   */
   protected async subsystemPass(repoPath: string): Promise<void> {
-    await runSubsystemPass({ db: this.db, repoPath });
+    await runSubsystemPass({
+      db: this.db, repoPath, provider: this.subsystemProvider(),
+      waitForCodeIdle: () => this.queue.waitForIndexIdle(),
+      isCodeIdle:      () => this.queue.isIndexIdle,
+      shouldStop:      () => this.queue.isStopping,
+    });
+  }
+
+  /** The summaries' model: undefined is the cheap tier (a seam: the stub summary worker runs none). */
+  protected subsystemProvider(): LLMProvider | undefined {
+    return undefined;
   }
 
   protected async enqueueSubsystemsIfComplete(repoPath: string): Promise<void> {

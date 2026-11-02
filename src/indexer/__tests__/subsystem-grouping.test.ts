@@ -14,7 +14,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
-import { directoryEdges, groupSubsystems, type FileEdge, type FileGraph } from '../subsystems.js';
+import { directoryHubs, groupSubsystems, type FileEdge, type FileGraph } from '../subsystems.js';
 
 const call = (a: string, b: string, weight = 1): FileEdge => ({ a, b, weight, kinds: { CALLS: 1 } });
 
@@ -27,7 +27,8 @@ const LONELY = 'src/parse/constants.ts';
 
 const graph = (): FileGraph => {
 	const files = [...PARSE, ...STORE, LONELY];
-	return { files, edges: [...clique(PARSE), ...clique(STORE), call('src/parse/parser.ts', 'src/store/db.ts', 0.6), ...directoryEdges(files)] };
+	const dirs = directoryHubs(files);
+	return { files, hubs: dirs.hubs, edges: [...clique(PARSE), ...clique(STORE), call('src/parse/parser.ts', 'src/store/db.ts', 0.6), ...dirs.edges] };
 };
 const membersOf = (g: FileGraph) => groupSubsystems(g).map(s => [...s.files]).sort((a, b) => a[0]!.localeCompare(b[0]!));
 
@@ -57,7 +58,7 @@ test('s8 t2: the same graph gives the same groups, also with its edges and files
 	const first = groupSubsystems(g);
 	assert.deepEqual(groupSubsystems(g), first, 'run twice');
 	for (const seed of [1, 7, 42, 2026]) {
-		assert.deepEqual(groupSubsystems({ files: shuffled(g.files, seed), edges: shuffled(g.edges, seed + 1) }), first, `shuffle ${seed}`);
+		assert.deepEqual(groupSubsystems({ files: shuffled(g.files, seed), hubs: shuffled(g.hubs ?? [], seed + 2), edges: shuffled(g.edges, seed + 1) }), first, `shuffle ${seed}`);
 	}
 });
 
@@ -66,7 +67,7 @@ test('s8 t2: two dense clusters joined by one weak edge are two groups; a file w
 
 	// Without the directory edges the lonely file stands alone.
 	const g = graph();
-	const bare = { files: g.files, edges: g.edges.filter(e => Object.keys(e.kinds).length > 0) };
+	const bare = { files: g.files, edges: g.edges.filter(e => Object.keys(e.kinds).length > 0) };   // no hubs
 	assert.ok(membersOf(bare).some(m => m.length === 1 && m[0] === LONELY));
 });
 
@@ -87,7 +88,7 @@ test('s8 t2: ids are the hash of the sorted members, names the longest common di
 	assert.equal(groupSubsystems({ files: ['src/only.ts'], edges: [] })[0]!.name, 'src/only.ts', 'a single file is named by its path');
 });
 
-test('s8 t2: a file tied between two groups joins the smaller one, whatever the edge order', () => {
+test('s8 t2: a file tied between two groups joins the first one in path order, whatever the edge order', () => {
 	const e = (a: string, b: string) => call(a, b);
 	const tri = (p: string) => [e(`${p}1.ts`, `${p}2.ts`), e(`${p}2.ts`, `${p}3.ts`), e(`${p}1.ts`, `${p}3.ts`)];
 	const files = ['a1.ts', 'a2.ts', 'a3.ts', 'm.ts', 'b1.ts', 'b2.ts', 'b3.ts'];
@@ -110,8 +111,24 @@ test('s8 t2: connections count only relationships, never the same-directory edge
 	const A = ['lib/a1.ts', 'lib/a2.ts', 'lib/a3.ts', 'lib/a4.ts'];
 	const B = ['lib/b1.ts', 'lib/b2.ts', 'lib/b3.ts', 'lib/b4.ts'];
 	const heavy = (fs: string[]) => clique(fs).map(e => ({ ...e, weight: 3 }));
-	const groups = groupSubsystems({ files: [...A, ...B], edges: [...heavy(A), ...heavy(B), call('lib/a1.ts', 'lib/b1.ts'), ...directoryEdges([...A, ...B])] });
+	const dirs = directoryHubs([...A, ...B]);
+	const groups = groupSubsystems({ files: [...A, ...B], hubs: dirs.hubs, edges: [...heavy(A), ...heavy(B), call('lib/a1.ts', 'lib/b1.ts'), ...dirs.edges] });
 	const a = groups.find(s => s.files.includes('lib/a1.ts'))!, b = groups.find(s => s.files.includes('lib/b1.ts'))!;
 	assert.notEqual(a.id, b.id);
 	assert.deepEqual(a.connections, [{ to: b.id, weight: 1, kinds: { CALLS: 1 } }]);
+});
+
+test('s8 review: a directory is a hub, not a clique: edges grow with its files, it never swamps real relationships, and a hub is never a member', () => {
+	const files = Array.from({ length: 2000 }, (_v, i) => `gen/f${String(i).padStart(4, '0')}.ts`);
+	const dirs = directoryHubs(files);
+	assert.equal(dirs.edges.length, 2000, 'one edge per file, not one per pair');
+	assert.deepEqual(dirs.hubs, ['\u0000dir:gen']);
+
+	// Two clusters joined only by calls inside one big directory stay two groups.
+	const A = files.slice(0, 1000), B = files.slice(1000);
+	const chain = (fs: string[]) => fs.slice(1).map((f, i) => call(fs[i]!, f, 1));
+	const groups = groupSubsystems({ files, hubs: dirs.hubs, edges: [...chain(A), ...chain(B), ...dirs.edges] });
+	assert.ok(groups.length > 1, `the directory does not collapse into one group (got ${groups.length})`);
+	assert.ok(groups.every(g => g.files.every(f => !f.startsWith('\u0000'))), 'no hub is a member');
+	assert.equal(groups.reduce((n, g) => n + g.files.length, 0), files.length);
 });

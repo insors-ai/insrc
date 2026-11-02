@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 33 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -193,3 +193,13 @@ Run at 2026-11-02T05:41:47.671Z on commit `906458b2e`. Tests check: **passed**. 
 | `src/indexer/__tests__/sql-index.test.ts` | 0 | 1 | 1.6 s |  |
 | `src/indexer/parser/__tests__/registry-languages.test.ts` | 0 | 3 | 1.3 s |  |
 | `src/indexer/parser/__tests__/sql.test.ts` | 0 | 6 | 0.7 s |  |
+
+## t9
+
+Run at 2026-11-02T06:08:28.502Z on commit `710296754`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: installed daemon: five languages**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/smoke-t9.txt (installed daemon @ b26dd1cd: index.languages lists all twelve available; /tmp/insrc-s9-smoke status ready with rust/c/cpp/csharp/sql entities, tables/views, and CALLS incl. run [inferred], util_add [inferred])

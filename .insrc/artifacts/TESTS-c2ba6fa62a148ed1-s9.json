@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:41:47.671Z",
+    "updatedAt": "2026-11-02T06:08:28.502Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -635,6 +635,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "710296754",
+        "ranAt": "2026-11-02T06:08:28.502Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: five languages",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/smoke-t9.txt (installed daemon @ b26dd1cd: index.languages lists all twelve available; /tmp/insrc-s9-smoke status ready with rust/c/cpp/csharp/sql entities, tables/views, and CALLS incl. run [inferred], util_add [inferred])"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

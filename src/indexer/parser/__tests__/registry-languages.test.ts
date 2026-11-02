@@ -67,3 +67,25 @@ test('s9 t2: the index.languages request lists python, go, typescript, javascrip
 		runtime.understandingRoutes.stop();
 	}
 });
+
+test('s9 t8 (ac4): the index.languages request lists all twelve languages available, with their extensions', async () => {
+	const runtime = buildHandlerRuntime({
+		db: untouchable('db'), configStore: untouchable('configStore'), queue: untouchable('queue'), indexer: untouchable('indexer'),
+		startedAt: 0, shutdown: () => { throw new Error('shutdown called'); }, attachedClients: () => [], understandingService: () => undefined,
+	});
+	try {
+		const { languages } = await runtime.rpcHandlers['index.languages']!({}) as { languages: Array<{ language: string; extensions: string[]; available: boolean }> };
+		const by = new Map(languages.map(l => [l.language, l]));
+		const twelve = ['python', 'go', 'typescript', 'javascript', 'java', 'scala', 'kotlin', 'rust', 'csharp', 'c', 'cpp', 'sql'];
+		for (const lang of twelve) assert.equal(by.get(lang)?.available, true, `${lang} is read`);
+		const ext = (lang: string) => by.get(lang)!.extensions.filter(e => !e.startsWith('.probe')).sort();
+		assert.deepEqual(ext('rust'), ['.rs']);
+		assert.deepEqual(ext('csharp'), ['.cs']);
+		assert.deepEqual(ext('c'), ['.c']);
+		assert.deepEqual(ext('cpp'), ['.cc', '.cpp', '.cxx', '.h', '.hh', '.hpp', '.hxx']);
+		assert.deepEqual(ext('sql'), ['.sql']);
+		assert.deepEqual(languages.filter(l => l.available).map(l => l.language).sort(), [...twelve].sort(), 'no other language is listed as read');
+	} finally {
+		runtime.understandingRoutes.stop();
+	}
+});

@@ -1,3 +1,4 @@
+import type { ReviewDiagnosticSnapshot } from './review-diagnostics.js';
 import type { ReviewActivityEvent } from './review-activity.js';
 import type { ReviewExecutionBudget, ReviewExecutionKind, ReviewProviderBudgetProfile } from './review-budget.js';
 /**
@@ -274,6 +275,7 @@ export interface ActivityReviewSessionOpts {
   readonly internalRetry: false;
   readonly onActivity: (event: ReviewActivityEvent) => void | Promise<void>;
   readonly onCandidate: (candidate: unknown) => Promise<{ readonly accepted: boolean }>;
+  readonly onDiagnostic?: ((snapshot: ReviewDiagnosticSnapshot) => void | Promise<void>) | undefined;
   readonly codeTaskCommands?: readonly string[] | undefined;
   readonly deadlineMs?: never;
   readonly stallMs?: never;

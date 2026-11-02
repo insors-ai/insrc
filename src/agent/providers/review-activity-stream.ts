@@ -3,6 +3,8 @@ import { StringDecoder } from 'node:string_decoder';
 import type { ActivityReviewSessionOpts, StructuredSchema } from '../../shared/types.js';
 import type { ReviewActivityEvent } from '../../shared/review-activity.js';
 import { validateAgainstSchema } from './structured-output.js';
+import { ReviewDiagnosticCollector, ReviewOutputFailureError } from '../../shared/review-diagnostics.js';
+import type { ReviewDiagnosticSnapshot, ReviewValidationIssue } from '../../shared/review-diagnostics.js';
 
 const RECENT_EVENT_IDS = 4096;
 const FRAME_BYTES = 8 * 1024 * 1024, CANDIDATE_BYTES = 4 * 1024 * 1024;
@@ -16,20 +18,46 @@ export class ReviewActivityStream<T> {
  private readonly seen = new Set<string>();
  private readonly tools = new Set<string>();
  private pendingFinal: unknown;
+ private pendingJsonError = false;
  private finalSucceeded = false;
  private failed = false;
  private value: T | undefined;
  private accepted = false;
- constructor(private readonly kind: 'claude'|'codex', private readonly schema: StructuredSchema, private readonly opts: ActivityReviewSessionOpts, private readonly stop: () => void) {}
+ private readonly diagnostics: ReviewDiagnosticCollector;
+ private readonly outputTools = new Set<string>();
+ private diagnosticWriteError: unknown;
+ constructor(private readonly kind: 'claude'|'codex', private readonly schema: StructuredSchema, private readonly opts: ActivityReviewSessionOpts, private readonly stop: () => void) { this.diagnostics = new ReviewDiagnosticCollector(kind); }
  async start(): Promise<void> { await this.activity('session_started'); }
- async feed(chunk: Buffer): Promise<void> { this.buffer += this.decoder.write(chunk); await this.lines(false); }
- async end(): Promise<void> { this.buffer += this.decoder.end(); await this.lines(true); }
+ async feed(chunk: Buffer): Promise<void> { this.buffer += this.decoder.write(chunk); await this.decode(false); }
+ async end(): Promise<void> { this.buffer += this.decoder.end(); await this.decode(true); }
+ diagnosticSnapshot(): ReviewDiagnosticSnapshot { return this.diagnostics.snapshot(); }
+ async failure(reason: string, message: string, exitCode?: number): Promise<ReviewOutputFailureError> {
+  const prior = this.diagnosticSnapshot().terminal;
+  this.diagnostics.terminal(prior?.reason ?? reason, prior?.message ?? message, exitCode ?? prior?.exitCode);
+  if(!this.diagnosticSnapshot().issues.length)this.diagnostics.issue({ code: 'NATIVE_CLI_FAILURE', field: '/', correction: 'Resolve the native CLI failure before resubmitting feedback.', message });
+  await this.report();
+  return new ReviewOutputFailureError(message, this.diagnosticSnapshot());
+ }
  result(): { accepted: true; value: T } | { accepted: false } { return this.accepted ? {accepted:true,value:this.value!} : {accepted:false}; }
  completed(): T {
-  if (this.failed || !this.finalSucceeded || this.pendingFinal === undefined) throw new Error('Review native session did not produce a successful final assessment');
+  if (this.failed || !this.finalSucceeded || this.pendingFinal === undefined) throw new ReviewOutputFailureError('Review native session did not produce a successful final assessment', this.diagnosticSnapshot());
   const checked = validateAgainstSchema<T>(this.schema,this.pendingFinal);
-  if (!checked.ok) throw new Error('Review final assessment does not match schema');
+  if (!checked.ok) throw new ReviewOutputFailureError('Review final assessment does not match schema', this.diagnosticSnapshot());
   return checked.value;
+ }
+ private async report(): Promise<void> {
+  try { await this.opts.onDiagnostic?.(this.diagnosticSnapshot()); }
+  catch (error) { this.diagnosticWriteError = error; throw error; }
+ }
+ private async note(issue: ReviewValidationIssue): Promise<void> { this.diagnostics.issue(issue); await this.report(); }
+ private async decode(eof: boolean): Promise<void> {
+  try { await this.lines(eof); }
+  catch (error) {
+   if (error === this.diagnosticWriteError || error instanceof ReviewOutputFailureError) throw error;
+   const message = error instanceof Error ? error.message : 'Invalid native review output';
+   await this.note({ code: 'NATIVE_PROTOCOL_ERROR', field: '/', correction: 'Return valid native review output within the protocol limits.', message });
+   throw new ReviewOutputFailureError(message, this.diagnosticSnapshot(), error);
+  }
  }
  private async lines(eof: boolean): Promise<void> {
   while (!this.accepted) {
@@ -69,9 +97,21 @@ export class ReviewActivityStream<T> {
  private async candidate(raw: unknown): Promise<void> {
   if (this.failed || this.accepted) return;
   if (Buffer.byteLength(JSON.stringify(raw)??'')>CANDIDATE_BYTES) throw new Error('Review candidate exceeds 4 MiB');
-  const checked=validateAgainstSchema<T>(this.schema,raw);if(!checked.ok)return;
+  const checked=validateAgainstSchema<T>(this.schema,raw);
+  if(!checked.ok){
+   this.diagnostics.rejected(raw, Object.keys(this.schema['properties'] as object ?? {}));
+   for(const issue of checked.issues ?? [{code:'SCHEMA_CONSTRAINT',field:'/',correction:'Return output matching the supplied JSON schema.'}]) this.diagnostics.issue(issue);
+   await this.report();return;
+  }
   await this.activity('feedback_submitted');
-  const receipt=await this.opts.onCandidate(checked.value);
+  let receipt: { readonly accepted: boolean };
+  try { receipt=await this.opts.onCandidate(checked.value); }
+  catch(error){
+   const field=record(error)&&typeof error['field']==='string'?error['field']:'/';
+   this.diagnostics.rejected(raw, Object.keys(this.schema['properties'] as object ?? {}));
+   await this.note({code:'HOST_VALIDATION_ERROR',field,correction:'Correct the host-rejected review field before resubmitting.',message:error instanceof Error?error.message:'Host rejected review feedback'});
+   throw new ReviewOutputFailureError(error instanceof Error?error.message:'Host rejected review feedback',this.diagnosticSnapshot(),error);
+  }
   if(receipt.accepted){this.value=checked.value;this.accepted=true;this.stop();}
  }
  private async claude(frame:Record<string,unknown>):Promise<void>{
@@ -86,14 +126,29 @@ export class ReviewActivityStream<T> {
     if(!record(content))continue;
     if(content.type==='tool_use'){
      await this.tool('tool_started',content.id);
-     if(content.name==='StructuredOutput'&&record(content.input))await this.candidate(content.input);
+     if(content.name==='StructuredOutput'){
+      if(typeof content.id==='string'&&content.id.length<=256){if(this.outputTools.size===128)this.outputTools.delete(this.outputTools.values().next().value!);this.outputTools.add(content.id);}
+      await this.candidate(content.input);
+     }
     }
-    if(content.type==='tool_result')await this.tool('tool_completed',content.tool_use_id);
+    if(content.type==='tool_result'){
+     if(typeof content.tool_use_id==='string'&&this.outputTools.delete(content.tool_use_id)&&content.is_error===true){
+      // Local schema issues are more precise than the CLI's prose error. Only
+      // correlated StructuredOutput failures enter this diagnostic channel.
+      if(!this.diagnosticSnapshot().issues.length)await this.note({code:'NATIVE_VALIDATION_ERROR',field:'/',correction:'Return one JSON object matching the supplied schema.',message:typeof content.content==='string'?content.content:'Native StructuredOutput rejected the submission'});
+     }
+     await this.tool('tool_completed',content.tool_use_id);
+    }
    }
   }
   if(frame.type==='result'){
    this.failed=frame.is_error===true;
    this.finalSucceeded=!this.failed&&frame.subtype==='success';
+   if(this.failed){
+    const message=Array.isArray(frame.errors)?frame.errors.filter((x):x is string=>typeof x==='string').slice(0,8).join('\n'):'Native Claude result failed';
+    this.diagnostics.terminal(typeof frame.subtype==='string'?frame.subtype:'result_failed',message);
+    await this.note({code:'NATIVE_CLI_FAILURE',field:'/',correction:'Resolve the reported native CLI output failure.',message});
+   }
    if(this.finalSucceeded){this.pendingFinal=frame.structured_output;await this.candidate(frame.structured_output);}
   }
  }
@@ -105,15 +160,26 @@ export class ReviewActivityStream<T> {
    if(item.type==='agent_message'&&typeof item.text!=='string')throw new Error('Review native final message has no text');
    if(item.type==='agent_message'&&typeof item.text==='string'){
     // Only the most recent assistant message can become the final answer.
-    this.pendingFinal=undefined;this.finalSucceeded=false;
+    this.pendingFinal=undefined;this.pendingJsonError=false;this.finalSucceeded=false;
     await this.activity('model_output');
     if(Buffer.byteLength(item.text)>CANDIDATE_BYTES)throw new Error('Review candidate exceeds 4 MiB');
-    let raw:unknown;try{raw=JSON.parse(item.text);}catch{return;}
+    let raw:unknown;try{raw=JSON.parse(item.text);}catch{
+     this.pendingJsonError=true;return;
+    }
     // item.completed alone does not establish finality. Require a successful turn.
     this.pendingFinal=raw;
    }
   }
-  if(frame.type==='turn.failed'||frame.type==='error')this.failed=true;
-  if(frame.type==='turn.completed'&&!this.failed){this.finalSucceeded=true;if(this.pendingFinal!==undefined)await this.candidate(this.pendingFinal);}
+  if(frame.type==='turn.failed'||frame.type==='error'){
+   this.failed=true;
+   const message=record(frame.error)&&typeof frame.error.message==='string'?frame.error.message:typeof frame.message==='string'?frame.message:'Native Codex turn failed';
+   this.diagnostics.terminal(String(frame.type),message);
+   await this.note({code:'NATIVE_CLI_FAILURE',field:'/',correction:'Resolve the reported native CLI output failure.',message});
+  }
+  if(frame.type==='turn.completed'&&!this.failed){
+   this.finalSucceeded=true;
+   if(this.pendingJsonError){this.diagnostics.rejectedText('unretained final text');await this.note({code:'INVALID_JSON',field:'/',correction:'Return one valid JSON object.',message:'Final agent message is not valid JSON.'});}
+   else if(this.pendingFinal!==undefined)await this.candidate(this.pendingFinal);
+  }
  }
 }

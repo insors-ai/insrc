@@ -517,8 +517,8 @@ export class CliProvider implements LLMProvider {
    await parser.end();
    const accepted=parser.result();if(accepted.accepted)return accepted.value;
    if(result.aborted)throw abortError();
-   if(result.spawnError||result.exitCode!==0)throw new Error('Review activity CLI failed');
-   return parser.completed();
+   if(result.spawnError||result.exitCode!==0)throw await parser.failure(result.spawnError?'spawn_failed':'cli_exit',result.spawnError??'Review activity CLI failed',result.exitCode);
+   try{return parser.completed();}catch(error){throw await parser.failure('no_valid_final',error instanceof Error?error.message:'No valid final assessment');}
   }finally{if(directory)rmSync(directory,{recursive:true,force:true});}
  }
 

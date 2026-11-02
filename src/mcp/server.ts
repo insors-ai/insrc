@@ -1,3 +1,5 @@
+import { CODE_REVIEW_INPUT, CODE_REVIEW_PHASES } from './code-review/schema.js';
+import { CodeReviewConnections } from './code-review/handler.js';
 import { reviewUnavailable } from '../workflow/review-unavailable.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -81,6 +83,7 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 			'Multi-turn: the per-phase payload the run hands back is authoritative — ' +
 			'this is the fixed OUTER call envelope.',
 	},
+	insrc_code_review_step: { phases: [...CODE_REVIEW_PHASES] },
 	insrc_triage: {
 		phases: ['start', 'classify'],
 	},
@@ -159,7 +162,7 @@ const ANALYZE_INPUT = {
  * rawShape object-identity (k1), phases lockstep — is testable without a live
  * transport.
  */
-export function buildInsrcMcpServerWithRegistry(): {
+export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorParameters<typeof CodeReviewConnections>[0] } = {}): {
 	server: McpServer;
 	schemaRegistry: InsrcToolSchemaRegistry;
 } {
@@ -624,17 +627,15 @@ export function buildInsrcMcpServerWithRegistry(): {
 	registerAndRecord('insrc_review_step', { title: 'Review unavailable', description: 'PENDING REVIEW RE-IMPLEMENTATION', inputSchema: {} }, async () => reviewUnavailable());
 
 	// -------------------------------------------------------------------
-	// insrc_code_review_step — multi-turn CODE review by the other party
-	// (code-review S008). Peer of insrc_review_step, but over a Story's built
-	// CODE (not a design artifact), under the same rule: the party that did not
-	// write the code reviews it, and the tool routes by the BUILD record's
-	// author. Code the daemon wrote is reviewed here by the controller: the
-	// daemon resolves the fixed subject + serves grounding over IPC and
-	// folds/persists the record via the SAME sc5 runCodeReview, and the
-	// controller supplies each dimension's judgement. Code the controller wrote
-	// (or of unknown author) is sent to the daemon's `codeReview.run`.
-	// -------------------------------------------------------------------
-	registerAndRecord('insrc_code_review_step', { title: 'Review unavailable', description: 'PENDING REVIEW RE-IMPLEMENTATION', inputSchema: {} }, async () => reviewUnavailable());
+	// Current task review is asynchronous; persistent transport preserves live controller authority.
+	const reviews = new CodeReviewConnections(options.review);
+	const priorClose = server.server.onclose;
+	server.server.onclose = () => { reviews.close(); priorClose?.(); };
+	registerAndRecord('insrc_code_review_step', {
+	 title: 'Review committed task changes',
+	 description: 'Task-oriented independent code review. Create a committed packet before start. Start acknowledges in the background; poll progress/checkpoint, explicitly resume interrupted attempts. Controller reviewers return scope/activity/result on the live owner connection. No HEAD-derived scope, auto retries or retired engine.',
+	 inputSchema: CODE_REVIEW_INPUT,
+	}, async (args, extra) => reviews.call(args, detectClient(server.server.getClientVersion()?.name), extra.signal));
 
 	// -------------------------------------------------------------------
 	// insrc_triage — controller-driven size classifier + workflow-entry router.

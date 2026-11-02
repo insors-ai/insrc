@@ -1,3 +1,5 @@
+import { handleTaskReviewStep } from './task-review-step.js';
+import type { TrustedRpcContext } from '../request-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -50,7 +52,7 @@ export interface StepEnvelope {
 }
 
 /** `progress`: report progress, sent as a 'progress' frame before the reply. */
-export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void, execution?: ConnectionExecutionContext) => Promise<StepEnvelope>;
+export type StepToolRunner = (args: unknown, signal: AbortSignal, progress?: (data: unknown) => void, execution?: ConnectionExecutionContext, trusted?: TrustedRpcContext) => Promise<StepEnvelope>;
 
 export interface StepHostOptions {
 	/** Test seam: replace or add tool runners. */
@@ -77,7 +79,7 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),
 		insrc_review_step:      async () => reviewUnavailable(),
-		insrc_code_review_step: async () => reviewUnavailable(),
+		insrc_code_review_step: (args, _signal, _progress, _execution, trusted) => handleTaskReviewStep(args, trusted),
 		insrc_triage:           (args) => handleTriageStep(args),
 	};
 	return { ...table, ...opts.tools } as Record<string, StepToolRunner>;
@@ -188,7 +190,7 @@ export function createStepCallHandler(table: Record<string, StepToolRunner> = st
 				if ('refusal' in gated) { answered = true; send({ id: 0, stream: 'done', data: gated.refusal }); return; }
 				stepArgs = gated.args;
 			}
-			const call = (): Promise<StepEnvelope> => run(stepArgs, signal, progress, execution);
+			const call = (): Promise<StepEnvelope> => run(stepArgs, signal, progress, execution, trusted);
 			try { envelope = await runInStepContext(ownedContext, () => family !== undefined ? runWithClientProviderContext(family, call) : call()); }
 			finally { localOwner?.close(); }
 		} catch (err) {

@@ -219,3 +219,49 @@ export function createIpcClient(connect?: () => Socket): IpcClient {
     stream: (method, params, onFrame, onClose) => openStream(method, params, onFrame, onClose, connect),
   };
 }
+
+/** A connection-scoped client for protocols whose authority outlives one reply.
+ * Cancellation closes this connection; callers must not share it across owners.
+ */
+export function createPersistentIpcClient(connect: () => Socket = () => createConnection(PATHS.sockFile)) {
+ const socket = connect();
+ let sequence = 0, buffer = '', closed = false;
+ const pending = new Map<number, { resolve(value: unknown): void; reject(error: Error): void; detach(): void }>();
+ const close = (error = new Error('daemon connection closed')): void => {
+  if (closed) return;
+  closed = true;
+  for (const waiter of pending.values()) { waiter.detach(); waiter.reject(error); }
+  pending.clear(); socket.destroy();
+ };
+ onUtf8Data(socket, chunk => {
+  buffer += chunk;
+  if (Buffer.byteLength(buffer) > 16 * 1024 * 1024) { close(new Error('daemon response exceeds limit')); return; }
+  let newline: number;
+  while ((newline = buffer.indexOf('\n')) >= 0) {
+   const line = buffer.slice(0, newline); buffer = buffer.slice(newline + 1);
+   if (!line.trim()) continue;
+   let reply: { id?: number; error?: string; result?: unknown; stream?: string; data?: unknown };
+   try { reply = JSON.parse(line); } catch { close(new Error('Invalid daemon response')); return; }
+   const waiter = reply.id === undefined ? undefined : pending.get(reply.id);
+   if (!waiter || reply.stream && !['done','error'].includes(reply.stream)) continue;
+   pending.delete(reply.id!); waiter.detach();
+   if (reply.error || reply.stream === 'error') waiter.reject(new Error(reply.error ?? JSON.stringify(reply.data)));
+   else waiter.resolve(reply.stream === 'done' ? reply.data : reply.result);
+  }
+ });
+ socket.on('error', error => close(error)); socket.on('close', () => close());
+ return {
+  close: () => close(),
+  call<T>(method: string, params: unknown, opts: { signal?: AbortSignal | undefined; stream?: boolean | undefined } = {}): Promise<T> {
+   if (closed) return Promise.reject(new Error('daemon connection closed; explicit review resume required'));
+   if (opts.signal?.aborted) { close(new Error('Review request cancelled')); return Promise.reject(new Error('Review request cancelled')); }
+   return new Promise<T>((resolve, reject) => {
+    const id = ++sequence, abort = () => close(new Error('Review request cancelled'));
+    opts.signal?.addEventListener('abort', abort, { once: true });
+    pending.set(id, { resolve: value => resolve(value as T), reject, detach: () => opts.signal?.removeEventListener('abort', abort) });
+    const request = { id, method, params, ...(opts.stream ? { stream: true } : {}), client: { label: 'mcp-review', pid: process.pid } };
+    socket.write(JSON.stringify(request) + '\n', error => { if (error) close(error); });
+   });
+  },
+ };
+}

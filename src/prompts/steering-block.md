@@ -320,13 +320,43 @@ The previous design-review engine has been removed. Calls throw
 Design-review redesign is a separate future epic. Approval gates still require
 an explicit user-authorized override when no usable independent review exists.
 
-## code-review — current task engine only
+<!-- insrc:guide:code-review:start -->
+## code-review — committed task review
 
-The previous chunk/dimension engine and its `insrc_code_review_step` route have
-been removed. Calls throw `PENDING REVIEW RE-IMPLEMENTATION`.
-The explicit `codeReview.task.*` engine from epic e6ddcdcb3d9cf330 remains;
-normal MCP integration is pending that epic's S3. Never fall back to the removed
-engine, infer scope from HEAD, or silently substitute a self-review.
+Use `insrc_schema({ tool: 'insrc_code_review_step', phase })` for exact fields.
+Create the commit packet FIRST. Selected after-version segments (or deletion anchors)
+are the finding scope; commits are lookup pointers. Include pinned Story/LLD/Plan
+references and full test cases, commands, results and execution details. Never infer
+scope from HEAD or omit selected modules. Test-coverage inspection is mandatory;
+running tests/integration/build is optional and any skipped execution is advice.
+
+1. `start`: supply repo, epicHash, reviewId, attempt and packet. The daemon derives
+   the independent reviewer from BUILD author. Acknowledge only; do not wait for
+   the model in the tool call. Store the returned checkpoint path.
+2. `progress`: observe the same repo/epicHash/reviewId/attempt, or read the atomic
+   checkpoint. This never starts/resumes work. Report meaningful progress to user.
+3. For a controller reviewer, use `assignment`, `scope`, `activity`, `result` on the
+   live owner connection. Follow returned prompt/schema/taskId/executionId/nextSequence.
+   Scope/result/activity require the exact task/execution/sequence envelope.
+   Diagnostic activity carries phase and bounded native errors; it does not renew
+   inactivity or complete a task. Do not substitute a daemon CLI for the controller.
+4. `resume`: explicit controller retrigger or daemon restart recovery, same identity
+   and pinned attempt; packet may be omitted. Changed input is rejected. Failed or
+   incomplete terminal tasks require a NEW sequential attempt, never same-attempt
+   repetition. No automatic retries or new attempts. Daemon review survives observer
+   disconnect; controller loss requires explicit resume. Cancelling one review
+   releases only its own connection, not other reviews in the session.
+5. `publish`: explicitly retry CR publication using saved terminal feedback, without
+   rerunning models. Permanent CR records preserve findings/coverage/limitations
+   and origins. Only a passing whole-story current BUILD binding permits completion.
+6. Present BUILD and CR and ask for human approval; never auto-approve. Story BUILD
+   approval cleanup is handled by the host when available; retained/errors mean retry
+   cleanup explicitly without re-review. Design review remains unavailable.
+
+All phases require repo (or resolved project), epicHash, reviewId, attempt.
+The schemas advertise reused bounded packet/results; host validates semantic scope,
+phase, ownership and replay. Old dimension/chunk review inputs remain rejected.
+<!-- insrc:guide:code-review:end -->
 
 ## tracker — sync the Epic to GitHub (`workflow: 'tracker.push' / '.sync' / '.post'`)
 

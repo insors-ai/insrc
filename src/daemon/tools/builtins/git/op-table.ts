@@ -7,6 +7,9 @@
  * The field helpers and the input rules are the ones the gh family uses (gh/op-table.ts), imported and not changed.
  */
 
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Type } from '@sinclair/typebox';
 import type { TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
@@ -44,8 +47,10 @@ export interface GitOpSpec {
   readonly refs?: readonly string[];
   /** Fields whose value goes after `--` (checked with assertSafeArg 'path'). */
   readonly paths?: readonly string[];
-  /** The git words after `git`. */
-  readonly argv: (input: ToolInput) => readonly string[];
+  /** The git words after `git`. `dir` is the scratch directory when the op asks for one (otherwise ''). */
+  readonly argv: (input: ToolInput, dir: string) => readonly string[];
+  /** The op writes files that are part of its answer (mailinfo, mailsplit): it gets a temporary directory, removed after parse. */
+  readonly scratch?: boolean;
   /** The field that holds the content sent on standard input; it must be declared in `fields`. */
   readonly stdin?: string;
   /** How the stdin field's string becomes bytes: 'utf8' (default) or 'base64' for binary input (a tar, a pack, an index file). */
@@ -61,7 +66,7 @@ export interface GitOpSpec {
   /** The members of the answer besides the literal op (default: text). */
   readonly answer?: Readonly<Record<string, TSchema>>;
   /** The answer of a finished command, or undefined when it cannot be read (a schema-mismatch). Default: { text: stdout }. */
-  readonly parse?: (run: GitRun, input: ToolInput) => Record<string, unknown> | undefined;
+  readonly parse?: (run: GitRun, input: ToolInput, dir: string) => Record<string, unknown> | undefined;
   /** A sentence the approval preview carries for this op. */
   readonly notice?: string;
 }
@@ -164,7 +169,19 @@ async function runOp(id: string, spec: GitOpSpec, input: ToolInput, deps: ToolDe
   }
   const cwd = typeof input['cwd'] === 'string' && input['cwd'].length > 0 ? input['cwd'] : process.cwd();
   const limit = spec.maxBytes ?? DEFAULT_STDOUT_BYTES;
-  const r = await runShellBytes(['git', ...spec.argv(input)], {
+  const dir = spec.scratch === true ? mkdtempSync(join(tmpdir(), 'insrc-git-')) : '';
+  try {
+    return await runIn(id, spec, input, deps, { label, mutating, content, cwd, limit, dir });
+  } finally {
+    if (dir !== '') { rmSync(dir, { recursive: true, force: true }); }
+  }
+}
+
+interface Run { label: string; mutating: boolean; content: string | Buffer | undefined; cwd: string; limit: number; dir: string }
+
+async function runIn(_id: string, spec: GitOpSpec, input: ToolInput, deps: ToolDeps, run: Run): Promise<ToolResult> {
+  const { label, mutating, content, cwd, limit, dir } = run;
+  const r = await runShellBytes(['git', ...spec.argv(input, dir)], {
     cwd, timeoutMs: spec.timeoutMs, stdoutLimit: limit,
     ...(content !== undefined ? { stdin: content } : {}),
     ...(deps.signal !== undefined ? { signal: deps.signal } : {}),
@@ -185,7 +202,7 @@ async function runOp(id: string, spec: GitOpSpec, input: ToolInput, deps: ToolDe
   const code = r.code ?? -1;
   if (!(spec.okCodes ?? [0]).includes(code)) { return fail(failureKind(r), stderrText || stdout.trim() || `exit ${code}`); }
 
-  const data = spec.parse !== undefined ? spec.parse({ stdout, stderr: r.stderr, code }, input) : { text: stdout };
+  const data = spec.parse !== undefined ? spec.parse({ stdout, stderr: r.stderr, code }, input, dir) : { text: stdout };
   const member = answerMember(spec);
   if (data === undefined || !Value.Check(member, { op: spec.name, ...data })) {
     return withFailure({ output: `[${label}] failed: git printed what was not expected`, format: 'text', success: false, error: 'git printed what was not expected' },

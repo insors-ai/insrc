@@ -1567,7 +1567,7 @@ and a test keeps this copy equal to it.
 | cherry |  | covered | git_inspect |
 | clean |  | assigned | s8 |
 | clone |  | assigned | s8 |
-| column |  | assigned | s8 |
+| column |  | covered | git_text |
 | commit-graph |  | assigned | s8 |
 | commit-tree |  | assigned | s8 |
 | count-objects |  | covered | git_inspect |
@@ -1578,7 +1578,7 @@ and a test keeps this copy equal to it.
 | diff-pairs |  | covered | git_inspect |
 | fast-export |  | assigned | s8 |
 | fast-import |  | assigned | s8 |
-| fmt-merge-msg |  | assigned | s8 |
+| fmt-merge-msg |  | covered | git_text |
 | format-patch |  | assigned | s8 |
 | fsck |  | covered | git_inspect |
 | fsck-objects |  | covered | git_inspect |
@@ -1588,10 +1588,10 @@ and a test keeps this copy equal to it.
 | index-pack |  | assigned | s8 |
 | init |  | assigned | s8 |
 | init-db |  | assigned | s8 |
-| interpret-trailers |  | assigned | s8 |
+| interpret-trailers |  | covered | git_text |
 | last-modified |  | covered | git_inspect |
-| mailinfo |  | assigned | s8 |
-| mailsplit |  | assigned | s8 |
+| mailinfo |  | covered | git_text |
+| mailsplit |  | covered | git_text |
 | maintenance |  | assigned | s8 |
 | merge-file |  | assigned | s8 |
 | merge-octopus |  | assigned | s8 |
@@ -1610,7 +1610,7 @@ and a test keeps this copy equal to it.
 | pack-objects |  | assigned | s8 |
 | pack-redundant |  | covered | git_inspect |
 | pack-refs |  | assigned | s8 |
-| patch-id |  | assigned | s8 |
+| patch-id |  | covered | git_text |
 | prune |  | assigned | s8 |
 | prune-packed |  | assigned | s8 |
 | quiltimport |  | assigned | s8 |
@@ -1627,7 +1627,7 @@ and a test keeps this copy equal to it.
 | show-branch |  | covered | git_inspect |
 | show-index |  | covered | git_inspect |
 | sparse-checkout |  | assigned | s8 |
-| stripspace |  | assigned | s8 |
+| stripspace |  | covered | git_text |
 | submodule |  | assigned | s8 |
 | subtree |  | assigned | s8 |
 | unpack-objects |  | assigned | s8 |

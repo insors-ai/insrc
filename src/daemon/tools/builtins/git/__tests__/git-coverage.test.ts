@@ -38,7 +38,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 41, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect from s8');
+	assert.equal(registered.size, 42, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text from s8');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -248,6 +248,30 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 	'repo': async c => {
 		const info = await c.ok('git_inspect', { op: 'repo', what: 'info', keys: ['layout.bare'] }); assert.deepEqual(info.data, { op: 'repo', text: 'layout.bare=false' });
 		const shape = await c.ok('git_inspect', { op: 'repo', what: 'structure' }); assert.match((shape.data as { text: string }).text, /References/);
+	},
+
+	// ---- git_text (s8)
+	'column': async c => { const r = await c.ok('git_text', { op: 'column', content: 'a\nb\nc\nd\n', width: 20 }); assert.deepEqual(r.data, { op: 'column', text: 'a b c d' }); },
+	'stripspace': async c => {
+		const r = await c.ok('git_text', { op: 'stripspace', content: '  hi  \n\n\n\nx\n# c\n', stripComments: true }); assert.deepEqual(r.data, { op: 'stripspace', text: '  hi\n\nx\n' });
+		const commented = await c.ok('git_text', { op: 'stripspace', content: 'a\n', commentLines: true }); assert.equal((commented.data as { text: string }).text, '# a\n');
+	},
+	'interpret-trailers': async c => { const r = await c.ok('git_text', { op: 'interpret-trailers', content: 'subject\n\nbody\n', trailers: ['Signed-off-by: A <a@b.c>'] }); assert.equal((r.data as { text: string }).text, 'subject\n\nbody\n\nSigned-off-by: A <a@b.c>\n'); },
+	'fmt-merge-msg': async c => { const r = await c.ok('git_text', { op: 'fmt-merge-msg', content: `${sha(c, 'HEAD')}\t\tbranch 'b' of /x\n` }); assert.equal((r.data as { text: string }).text, "Merge branch 'b' of /x\n"); },
+	'patch-id': async c => {
+		const patch = c.git('diff', 'HEAD~1', 'HEAD');
+		const r = await c.ok('git_text', { op: 'patch-id', content: patch }); const items = (r.data as { items: { patchId: string }[] }).items;
+		assert.equal(items.length, 1); assert.equal(items[0]!.patchId, execFileSync('git', ['patch-id', '--stable'], { cwd: c.repo, input: patch, encoding: 'utf8' }).split(' ')[0]);
+	},
+	'mailinfo': async c => {
+		const mail = c.git('format-patch', '-1', '--stdout');
+		const r = await c.ok('git_text', { op: 'mailinfo', content: mail }); const d = r.data as { headers: string; patch: string };
+		assert.match(d.headers, /^Author: T\nEmail: t@example\.com\nSubject: second\n/); assert.match(d.patch, /a\.txt \| 2 \+-/);
+	},
+	'mailsplit': async c => {
+		c.git('commit', '-q', '--allow-empty', '-m', 'third');
+		const r = await c.ok('git_text', { op: 'mailsplit', content: c.git('format-patch', '--stdout', '-2') }); const d = r.data as { count: number; messages: string[] };
+		assert.equal(d.count, 2); assert.match(d.messages[0]!, /Subject: \[PATCH 1\/2\] second/); assert.match(d.messages[1]!, /Subject: \[PATCH 2\/2\] third/);
 	},
 };
 

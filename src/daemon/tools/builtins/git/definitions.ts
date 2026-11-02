@@ -52,6 +52,7 @@ import { gitLsRemoteTool } from './ls-remote.js';
 import { gitUpdateRefTool } from './update-ref.js';
 import { gitRmTool } from './rm.js';
 import { gitInspectTool } from './inspect.js';
+import { gitTextTool } from './text.js';
 
 export const gitToolDefinitions = [
   gitStatusTool,
@@ -95,4 +96,5 @@ export const gitToolDefinitions = [
   gitDiffTreeTool,
   gitMergeTreeTool,
   gitInspectTool,
+  gitTextTool,
 ] as const satisfies readonly TypedTool[];

@@ -1,90 +1,86 @@
-
-> @insrc/project-memory@0.1.0 test
-> node --import tsx --test src/__tests__/*.test.ts
-
 TAP version 13
 # Subtest: options-fail-before-side-effects
 ok 1 - options-fail-before-side-effects
   ---
-  duration_ms: 33.629167
+  duration_ms: 49.632583
   type: 'test'
   ...
 # Subtest: canonical-root-and-readonly-layout-validation
 ok 2 - canonical-root-and-readonly-layout-validation
   ---
-  duration_ms: 98.933333
+  duration_ms: 79.06675
   type: 'test'
   ...
 # Subtest: same-process-package-copy-thread-process-contention
 ok 3 - same-process-package-copy-thread-process-contention
   ---
-  duration_ms: 1867.681208
+  duration_ms: 1341.793917
   type: 'test'
   ...
 # Subtest: killed-owner-release-stopped-owner-exclusion-and-aliases
 ok 4 - killed-owner-release-stopped-owner-exclusion-and-aliases
   ---
-  duration_ms: 433.558375
+  duration_ms: 335.408167
   type: 'test'
   ...
 # Subtest: public-v1-types-and-emitted-boundary
 ok 5 - public-v1-types-and-emitted-boundary
   ---
-  duration_ms: 3328.20825
+  duration_ms: 2942.942375
   type: 'test'
   ...
 # Subtest: pure-public-import-without-native-or-daemon
 ok 6 - pure-public-import-without-native-or-daemon
   ---
-  duration_ms: 70.072792
+  duration_ms: 189.500167
   type: 'test'
   ...
 # Subtest: one-underlying-call-complete-and-embed
 ok 7 - one-underlying-call-complete-and-embed
   ---
-  duration_ms: 15.421625
+  duration_ms: 18.064042
   type: 'test'
   ...
 # Subtest: cancel-timeout-rejection-and-bounded-backpressure
 ok 8 - cancel-timeout-rejection-and-bounded-backpressure
   ---
-  duration_ms: 29.173625
+  duration_ms: 30.99425
   type: 'test'
   ...
 # Subtest: queued-cancellation-never-invokes-provider
 ok 9 - queued-cancellation-never-invokes-provider
   ---
-  duration_ms: 0.324458
+  duration_ms: 0.275833
   type: 'test'
   ...
 # Subtest: node22-fs-ext-abi-and-separate-descriptor-probe
 ok 10 - node22-fs-ext-abi-and-separate-descriptor-probe
   ---
-  duration_ms: 60.370833
+  duration_ms: 51.191208
   type: 'test'
   ...
 # Subtest: native-load-failure-is-not-ready
 ok 11 - native-load-failure-is-not-ready
   ---
-  duration_ms: 0.608209
+  duration_ms: 0.623
   type: 'test'
   ...
 # Subtest: exclusive-descriptor-and-owned-bootstrap
 ok 12 - exclusive-descriptor-and-owned-bootstrap
   ---
-  duration_ms: 66.639542
+  duration_ms: 132.386208
   type: 'test'
   ...
 # Subtest: native-callback-cleanup-and-inode-faults
 ok 13 - native-callback-cleanup-and-inode-faults
   ---
-  duration_ms: 27.249334
+  duration_ms: 31.803
   type: 'test'
   ...
 # Subtest: layout-state-is-decided-under-ownership-after-one-preflight
 ok 14 - layout-state-is-decided-under-ownership-after-one-preflight
   ---
-  duration_ms: 85.614541
+  duration_ms: 36.455458
   type: 'test'
   ...
 # > @insrc/project-memory@0.1.0 prepack
@@ -94,291 +90,291 @@ ok 14 - layout-state-is-decided-under-ownership-after-one-preflight
 # Subtest: packed-isolated-node22-consumer
 ok 15 - packed-isolated-node22-consumer
   ---
-  duration_ms: 10868.172959
+  duration_ms: 10239.476958
   type: 'test'
   ...
 # Subtest: packed-native-missing-import-versus-open
 ok 16 - packed-native-missing-import-versus-open
   ---
-  duration_ms: 159.925459
+  duration_ms: 150.605958
   type: 'test'
   ...
 # Subtest: tarball-public-dependency-and-asset-allowlist
 ok 17 - tarball-public-dependency-and-asset-allowlist
   ---
-  duration_ms: 1.806875
+  duration_ms: 1.719166
   type: 'test'
   ...
 # Subtest: packed-external-submit-crash-reopen-and-operation
 ok 18 - packed-external-submit-crash-reopen-and-operation
   ---
-  duration_ms: 517.93
+  duration_ms: 369.465041
   type: 'test'
   ...
 # Subtest: concurrent-admission-fifo-and-idempotent-retry
 ok 19 - concurrent-admission-fifo-and-idempotent-retry
   ---
-  duration_ms: 650.188792
+  duration_ms: 523.920208
   type: 'test'
   ...
 # Subtest: privacy-binding-and-scope-status-isolation-before-enqueue
 ok 20 - privacy-binding-and-scope-status-isolation-before-enqueue
   ---
-  duration_ms: 1868.164667
+  duration_ms: 1713.726833
   type: 'test'
   ...
 # Subtest: admission-quota-refunds-and-hanging-policy-drains-safely
 ok 21 - admission-quota-refunds-and-hanging-policy-drains-safely
   ---
-  duration_ms: 4065.313042
+  duration_ms: 3494.2665
   type: 'test'
   ...
 # Subtest: durable-append-frontier-and-full-queue-refusal
 ok 22 - durable-append-frontier-and-full-queue-refusal
   ---
-  duration_ms: 482.945959
+  duration_ms: 425.224333
   type: 'test'
   ...
 # Subtest: oversized-single-frame-rotates-without-exceeding-retained-budget
 ok 23 - oversized-single-frame-rotates-without-exceeding-retained-budget
   ---
-  duration_ms: 475.692209
+  duration_ms: 743.375
   type: 'test'
   ...
 # Subtest: ambiguous-append-fences-and-reopen-deduplicates
 ok 24 - ambiguous-append-fences-and-reopen-deduplicates
   ---
-  duration_ms: 388.6865
+  duration_ms: 366.861541
   type: 'test'
   ...
 # Subtest: retained-byte-and-worst-case-metadata-reservations
 ok 25 - retained-byte-and-worst-case-metadata-reservations
   ---
-  duration_ms: 184.330708
+  duration_ms: 116.005125
   type: 'test'
   ...
 # Subtest: checkpoint-schema-generation-and-retry-state-validation
 ok 26 - checkpoint-schema-generation-and-retry-state-validation
   ---
-  duration_ms: 1.801
+  duration_ms: 0.625375
   type: 'test'
   ...
 # Subtest: rotation-orphan-successor-and-checkpoint-replacement-matrix
 ok 27 - rotation-orphan-successor-and-checkpoint-replacement-matrix
   ---
-  duration_ms: 385.78675
+  duration_ms: 351.554875
   type: 'test'
   ...
 # Subtest: checkpoint-publication-faults-preserve-current-or-complete-next
 ok 28 - checkpoint-publication-faults-preserve-current-or-complete-next
   ---
-  duration_ms: 1516.613875
+  duration_ms: 1415.39975
   type: 'test'
   ...
 # Subtest: canonical-json-frame-length-checksum-and-bounded-decoding
 ok 29 - canonical-json-frame-length-checksum-and-bounded-decoding
   ---
-  duration_ms: 3.419417
+  duration_ms: 3.481917
   type: 'test'
   ...
 # Subtest: immutable-policy-snapshot-before-persistence
 ok 30 - immutable-policy-snapshot-before-persistence
   ---
-  duration_ms: 124.652125
+  duration_ms: 52.792375
   type: 'test'
   ...
 # Subtest: scoped-identity-exact-retry-and-conflicting-reuse
 ok 31 - scoped-identity-exact-retry-and-conflicting-reuse
   ---
-  duration_ms: 0.570291
+  duration_ms: 0.916625
   type: 'test'
   ...
 # Subtest: queue-resource-and-fsync-cost-measurement
 ok 32 - queue-resource-and-fsync-cost-measurement
   ---
-  duration_ms: 2881.570292
+  duration_ms: 2675.997209
   type: 'test'
   ...
 # Subtest: accepted-set-survives-process-kill-at-every-boundary
 ok 33 - accepted-set-survives-process-kill-at-every-boundary
   ---
-  duration_ms: 24369.835458
+  duration_ms: 18207.423083
   type: 'test'
   ...
 # Verified 55 actual SIGKILL boundaries with an observed-accepted-set oracle; fake receipt tests do not qualify Lance or power-loss durability.
 # Subtest: macos-apfs-linux-ext4-node22-queue-qualification
 ok 34 - macos-apfs-linux-ext4-node22-queue-qualification
   ---
-  duration_ms: 2.971541
+  duration_ms: 1.589834
   type: 'test'
   ...
 # {"node":"22.23.2","abi":"127","platform":"darwin","release":"27.0.0","arch":"arm64","filesystemType":26}
 # Subtest: write-sync-rename-unlink-failure-fences-the-lane
 ok 35 - write-sync-rename-unlink-failure-fences-the-lane
   ---
-  duration_ms: 9066.415166
+  duration_ms: 7181.198625
   type: 'test'
   ...
 # Subtest: partial-bootstrap-header-and-event-writes-recover-explicitly
 ok 36 - partial-bootstrap-header-and-event-writes-recover-explicitly
   ---
-  duration_ms: 734.280375
+  duration_ms: 625.935041
   type: 'test'
   ...
 # Subtest: maximum-qualified-identities-preserve-scope-and-epoch
 ok 37 - maximum-qualified-identities-preserve-scope-and-epoch
   ---
-  duration_ms: 171.224708
+  duration_ms: 168.026708
   type: 'test'
   ...
 # Subtest: wall-clock-changes-preserve-sequence-and-clamp-age
 ok 38 - wall-clock-changes-preserve-sequence-and-clamp-age
   ---
-  duration_ms: 286.166542
+  duration_ms: 150.252208
   type: 'test'
   ...
 # Subtest: owned-bootstrap-short-write-and-directory-sync
 ok 39 - owned-bootstrap-short-write-and-directory-sync
   ---
-  duration_ms: 404.247667
+  duration_ms: 692.117625
   type: 'test'
   ...
 # Subtest: uncertain-write-fences-without-unsafe-cleanup
 ok 40 - uncertain-write-fences-without-unsafe-cleanup
   ---
-  duration_ms: 120.923
+  duration_ms: 128.32225
   type: 'test'
   ...
 # Subtest: unsafe-queue-files-and-directory-replacement-are-refused
 ok 41 - unsafe-queue-files-and-directory-replacement-are-refused
   ---
-  duration_ms: 152.902584
+  duration_ms: 161.121917
   type: 'test'
   ...
 # Subtest: file-sync-failure-preserves-written-bytes-and-ownership
 ok 42 - file-sync-failure-preserves-written-bytes-and-ownership
   ---
-  duration_ms: 171.554667
+  duration_ms: 107.833208
   type: 'test'
   ...
 # Subtest: retargeted-input-alias-cannot-redirect-owned-queue
 ok 43 - retargeted-input-alias-cannot-redirect-owned-queue
   ---
-  duration_ms: 168.075958
+  duration_ms: 136.971667
   type: 'test'
   ...
 # Subtest: sc3-receipt-verifier-proof-and-causal-order-contract
 ok 44 - sc3-receipt-verifier-proof-and-causal-order-contract
   ---
-  duration_ms: 611.759209
+  duration_ms: 810.956916
   type: 'test'
   ...
 # Subtest: invalid-and-nonterminal-proofs-never-resolve-or-delete
 ok 45 - invalid-and-nonterminal-proofs-never-resolve-or-delete
   ---
-  duration_ms: 537.880208
+  duration_ms: 375.972459
   type: 'test'
   ...
 # Subtest: queue-only-mode-cannot-ack-terminal-state
 ok 46 - queue-only-mode-cannot-ack-terminal-state
   ---
-  duration_ms: 348.634917
+  duration_ms: 211.399708
   type: 'test'
   ...
 # Subtest: recovery-frontier-complete-suffix-and-unaccepted-partial-tail
 ok 47 - recovery-frontier-complete-suffix-and-unaccepted-partial-tail
   ---
-  duration_ms: 703.484625
+  duration_ms: 593.171834
   type: 'test'
   ...
 # Subtest: published-checkpoint-and-sealed-corruption-fail-closed
 ok 48 - published-checkpoint-and-sealed-corruption-fail-closed
   ---
-  duration_ms: 2686.175125
+  duration_ms: 2285.0125
   type: 'test'
   ...
 # Subtest: exact-header-only-orphan-recovers-event-bearing-orphan-does-not
 ok 49 - exact-header-only-orphan-recovers-event-bearing-orphan-does-not
   ---
-  duration_ms: 353.639625
+  duration_ms: 297.078083
   type: 'test'
   ...
 # Subtest: partial-tail-intent-resumes-before-and-after-truncate
 ok 50 - partial-tail-intent-resumes-before-and-after-truncate
   ---
-  duration_ms: 734.792791
+  duration_ms: 565.603791
   type: 'test'
   ...
 # Subtest: pinned-replay-and-qualified-operation-status
 ok 51 - pinned-replay-and-qualified-operation-status
   ---
-  duration_ms: 544.125
+  duration_ms: 439.217083
   type: 'test'
   ...
 # Subtest: retry-holes-do-not-authorize-mixed-segment-deletion
 ok 52 - retry-holes-do-not-authorize-mixed-segment-deletion
   ---
-  duration_ms: 731.874625
+  duration_ms: 735.769291
   type: 'test'
   ...
 # Subtest: verified-terminal-ack-retirement-and-reader-pins
 ok 53 - verified-terminal-ack-retirement-and-reader-pins
   ---
-  duration_ms: 1337.5215
+  duration_ms: 1338.370916
   type: 'test'
   ...
 # Subtest: recycled-identity-requires-authoritative-receipt-capability
 ok 54 - recycled-identity-requires-authoritative-receipt-capability
   ---
-  duration_ms: 537.949416
+  duration_ms: 452.65075
   type: 'test'
   ...
 # Subtest: mixed-pending-prefix-keeps-later-terminal-segments
 ok 55 - mixed-pending-prefix-keeps-later-terminal-segments
   ---
-  duration_ms: 1036.746208
+  duration_ms: 842.878291
   type: 'test'
   ...
 # Subtest: retirement-resumes-after-intent-unlink-and-successor-creation
 ok 56 - retirement-resumes-after-intent-unlink-and-successor-creation
   ---
-  duration_ms: 3148.934667
+  duration_ms: 2274.05125
   type: 'test'
   ...
 # Subtest: full-terminal-active-segment-recycles-without-extra-headroom
 ok 57 - full-terminal-active-segment-recycles-without-extra-headroom
   ---
-  duration_ms: 392.553833
+  duration_ms: 260.760417
   type: 'test'
   ...
 # Subtest: idempotent-drain-close-and-provider-ownership
 ok 58 - idempotent-drain-close-and-provider-ownership
   ---
-  duration_ms: 33.3555
+  duration_ms: 21.435167
   type: 'test'
   ...
 # Subtest: public-service-accepted-status-and-unavailable-semantic-capabilities
 ok 59 - public-service-accepted-status-and-unavailable-semantic-capabilities
   ---
-  duration_ms: 524.135875
+  duration_ms: 414.171
   type: 'test'
   ...
 # Subtest: all-quiescent-participants-close-before-unverified-ownership-is-retained
 ok 60 - all-quiescent-participants-close-before-unverified-ownership-is-retained
   ---
-  duration_ms: 1.060417
+  duration_ms: 1.044958
   type: 'test'
   ...
 # Subtest: drain-close-startup-failure-preserve-backlog-and-ownership
 ok 61 - drain-close-startup-failure-preserve-backlog-and-ownership
   ---
-  duration_ms: 511.228166
+  duration_ms: 682.9635
   type: 'test'
   ...
 # Subtest: queue-limit-validation-precedes-directory-ownership
 ok 62 - queue-limit-validation-precedes-directory-ownership
   ---
-  duration_ms: 11.140666
+  duration_ms: 4.755667
   type: 'test'
   ...
 1..62
@@ -389,4 +385,4 @@ ok 62 - queue-limit-validation-precedes-directory-ownership
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 25153.410083
+# duration_ms 19087.940959

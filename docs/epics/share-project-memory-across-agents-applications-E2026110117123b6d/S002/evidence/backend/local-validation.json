@@ -1,6 +1,6 @@
 {
-  "capturedAt": "2026-11-02T10:50:19.448772+00:00",
-  "sourceCommit": "d2a7e5ae8f2a7ae5c668a2a8c937190c03972600",
+  "capturedAt": "2026-11-02T11:42:32.605624+00:00",
+  "sourceCommit": "2688289f7562b99be0e55f411bb591b61ef81c99",
   "rootBuild": "pass",
   "memoryPackage": {
     "tests": 62,
@@ -65,13 +65,22 @@
   },
   "linuxQualification": {
     "status": "pass",
-    "run": "https://github.com/insors-ai/insrc/actions/runs/41430621597",
-    "sourceCommit": "2befc2d83832ceedd71ab9d75c6209858f669825",
+    "run": "https://github.com/insors-ai/insrc/actions/runs/41438637297",
+    "sourceCommit": "2688289f7562b99be0e55f411bb591b61ef81c99",
     "tests": 62,
     "pass": 62,
     "fail": 0,
     "skipped": 0,
     "actualSigkillScenarios": 55,
-    "note": "Full job: native lifecycle 14, packed consumer 4, queue 44; no push was needed as this revision was already remote."
+    "note": "Full job on separate validation branch after maintainability refactor; native 14, packed 4, queue 44 all pass. No main push."
+  },
+  "refactorValidation": {
+    "relevantTests": 16,
+    "packageTests": 62,
+    "pass": 62,
+    "fail": 0,
+    "skipped": 0,
+    "rootBuildLog": "root-build.log",
+    "note": "First sandboxed package attempt failed only npm cache EPERM; permitted full rerun passed. The backend sweep remains the prior recorded result; no new clean backend-wide claim."
   }
 }

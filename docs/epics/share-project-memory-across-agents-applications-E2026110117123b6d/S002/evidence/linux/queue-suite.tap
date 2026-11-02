@@ -2,267 +2,267 @@ TAP version 13
 # Subtest: concurrent-admission-fifo-and-idempotent-retry
 ok 1 - concurrent-admission-fifo-and-idempotent-retry
   ---
-  duration_ms: 645.832554
+  duration_ms: 202.150867
   type: 'test'
   ...
 # Subtest: privacy-binding-and-scope-status-isolation-before-enqueue
 ok 2 - privacy-binding-and-scope-status-isolation-before-enqueue
   ---
-  duration_ms: 718.392241
+  duration_ms: 685.671993
   type: 'test'
   ...
 # Subtest: admission-quota-refunds-and-hanging-policy-drains-safely
 ok 3 - admission-quota-refunds-and-hanging-policy-drains-safely
   ---
-  duration_ms: 2595.047934
+  duration_ms: 2087.309172
   type: 'test'
   ...
 # Subtest: durable-append-frontier-and-full-queue-refusal
 ok 4 - durable-append-frontier-and-full-queue-refusal
   ---
-  duration_ms: 617.766945
+  duration_ms: 142.086352
   type: 'test'
   ...
 # Subtest: oversized-single-frame-rotates-without-exceeding-retained-budget
 ok 5 - oversized-single-frame-rotates-without-exceeding-retained-budget
   ---
-  duration_ms: 226.661829
+  duration_ms: 233.401284
   type: 'test'
   ...
 # Subtest: ambiguous-append-fences-and-reopen-deduplicates
 ok 6 - ambiguous-append-fences-and-reopen-deduplicates
   ---
-  duration_ms: 162.958656
+  duration_ms: 106.539712
   type: 'test'
   ...
 # Subtest: retained-byte-and-worst-case-metadata-reservations
 ok 7 - retained-byte-and-worst-case-metadata-reservations
   ---
-  duration_ms: 209.115384
+  duration_ms: 149.666436
   type: 'test'
   ...
 # Subtest: checkpoint-schema-generation-and-retry-state-validation
 ok 8 - checkpoint-schema-generation-and-retry-state-validation
   ---
-  duration_ms: 1.230474
+  duration_ms: 1.267003
   type: 'test'
   ...
 # Subtest: rotation-orphan-successor-and-checkpoint-replacement-matrix
 ok 9 - rotation-orphan-successor-and-checkpoint-replacement-matrix
   ---
-  duration_ms: 379.825238
+  duration_ms: 172.688242
   type: 'test'
   ...
 # Subtest: checkpoint-publication-faults-preserve-current-or-complete-next
 ok 10 - checkpoint-publication-faults-preserve-current-or-complete-next
   ---
-  duration_ms: 531.981248
+  duration_ms: 579.350749
   type: 'test'
   ...
 # Subtest: canonical-json-frame-length-checksum-and-bounded-decoding
 ok 11 - canonical-json-frame-length-checksum-and-bounded-decoding
   ---
-  duration_ms: 7.328645
+  duration_ms: 6.865426
   type: 'test'
   ...
 # Subtest: immutable-policy-snapshot-before-persistence
 ok 12 - immutable-policy-snapshot-before-persistence
   ---
-  duration_ms: 92.856792
+  duration_ms: 39.127693
   type: 'test'
   ...
 # Subtest: scoped-identity-exact-retry-and-conflicting-reuse
 ok 13 - scoped-identity-exact-retry-and-conflicting-reuse
   ---
-  duration_ms: 1.812219
+  duration_ms: 0.781974
   type: 'test'
   ...
 # Subtest: queue-resource-and-fsync-cost-measurement
 ok 14 - queue-resource-and-fsync-cost-measurement
   ---
-  duration_ms: 1315.130717
+  duration_ms: 1040.792513
   type: 'test'
   ...
 # Subtest: accepted-set-survives-process-kill-at-every-boundary
 ok 15 - accepted-set-survives-process-kill-at-every-boundary
   ---
-  duration_ms: 24977.541768
+  duration_ms: 22055.513497
   type: 'test'
   ...
 # Verified 55 actual SIGKILL boundaries with an observed-accepted-set oracle; fake receipt tests do not qualify Lance or power-loss durability.
 # Subtest: macos-apfs-linux-ext4-node22-queue-qualification
 ok 16 - macos-apfs-linux-ext4-node22-queue-qualification
   ---
-  duration_ms: 7.49886
+  duration_ms: 5.069672
   type: 'test'
   ...
 # {"node":"22.22.1","abi":"127","platform":"linux","release":"7.0.0-1017-azure","arch":"x64","filesystemType":61267}
 # Subtest: write-sync-rename-unlink-failure-fences-the-lane
 ok 17 - write-sync-rename-unlink-failure-fences-the-lane
   ---
-  duration_ms: 7187.577453
+  duration_ms: 4343.718351
   type: 'test'
   ...
 # Subtest: partial-bootstrap-header-and-event-writes-recover-explicitly
 ok 18 - partial-bootstrap-header-and-event-writes-recover-explicitly
   ---
-  duration_ms: 776.98649
+  duration_ms: 598.07908
   type: 'test'
   ...
 # Subtest: maximum-qualified-identities-preserve-scope-and-epoch
 ok 19 - maximum-qualified-identities-preserve-scope-and-epoch
   ---
-  duration_ms: 129.269424
+  duration_ms: 71.79716
   type: 'test'
   ...
 # Subtest: wall-clock-changes-preserve-sequence-and-clamp-age
 ok 20 - wall-clock-changes-preserve-sequence-and-clamp-age
   ---
-  duration_ms: 194.289361
+  duration_ms: 186.851935
   type: 'test'
   ...
 # Subtest: owned-bootstrap-short-write-and-directory-sync
 ok 21 - owned-bootstrap-short-write-and-directory-sync
   ---
-  duration_ms: 203.943754
+  duration_ms: 98.401995
   type: 'test'
   ...
 # Subtest: uncertain-write-fences-without-unsafe-cleanup
 ok 22 - uncertain-write-fences-without-unsafe-cleanup
   ---
-  duration_ms: 67.287046
+  duration_ms: 60.629628
   type: 'test'
   ...
 # Subtest: unsafe-queue-files-and-directory-replacement-are-refused
 ok 23 - unsafe-queue-files-and-directory-replacement-are-refused
   ---
-  duration_ms: 38.405822
+  duration_ms: 31.628442
   type: 'test'
   ...
 # Subtest: file-sync-failure-preserves-written-bytes-and-ownership
 ok 24 - file-sync-failure-preserves-written-bytes-and-ownership
   ---
-  duration_ms: 49.728478
+  duration_ms: 27.635938
   type: 'test'
   ...
 # Subtest: retargeted-input-alias-cannot-redirect-owned-queue
 ok 25 - retargeted-input-alias-cannot-redirect-owned-queue
   ---
-  duration_ms: 60.951579
+  duration_ms: 52.62384
   type: 'test'
   ...
 # Subtest: sc3-receipt-verifier-proof-and-causal-order-contract
 ok 26 - sc3-receipt-verifier-proof-and-causal-order-contract
   ---
-  duration_ms: 434.826818
+  duration_ms: 206.451683
   type: 'test'
   ...
 # Subtest: invalid-and-nonterminal-proofs-never-resolve-or-delete
 ok 27 - invalid-and-nonterminal-proofs-never-resolve-or-delete
   ---
-  duration_ms: 277.717349
+  duration_ms: 100.592778
   type: 'test'
   ...
 # Subtest: queue-only-mode-cannot-ack-terminal-state
 ok 28 - queue-only-mode-cannot-ack-terminal-state
   ---
-  duration_ms: 153.599894
+  duration_ms: 77.569969
   type: 'test'
   ...
 # Subtest: recovery-frontier-complete-suffix-and-unaccepted-partial-tail
 ok 29 - recovery-frontier-complete-suffix-and-unaccepted-partial-tail
   ---
-  duration_ms: 372.315351
+  duration_ms: 245.108272
   type: 'test'
   ...
 # Subtest: published-checkpoint-and-sealed-corruption-fail-closed
 ok 30 - published-checkpoint-and-sealed-corruption-fail-closed
   ---
-  duration_ms: 1783.393501
+  duration_ms: 959.994575
   type: 'test'
   ...
 # Subtest: exact-header-only-orphan-recovers-event-bearing-orphan-does-not
 ok 31 - exact-header-only-orphan-recovers-event-bearing-orphan-does-not
   ---
-  duration_ms: 183.378514
+  duration_ms: 150.679503
   type: 'test'
   ...
 # Subtest: partial-tail-intent-resumes-before-and-after-truncate
 ok 32 - partial-tail-intent-resumes-before-and-after-truncate
   ---
-  duration_ms: 417.816735
+  duration_ms: 298.168753
   type: 'test'
   ...
 # Subtest: pinned-replay-and-qualified-operation-status
 ok 33 - pinned-replay-and-qualified-operation-status
   ---
-  duration_ms: 245.511319
+  duration_ms: 195.633404
   type: 'test'
   ...
 # Subtest: retry-holes-do-not-authorize-mixed-segment-deletion
 ok 34 - retry-holes-do-not-authorize-mixed-segment-deletion
   ---
-  duration_ms: 284.89333
+  duration_ms: 210.221138
   type: 'test'
   ...
 # Subtest: verified-terminal-ack-retirement-and-reader-pins
 ok 35 - verified-terminal-ack-retirement-and-reader-pins
   ---
-  duration_ms: 753.170904
+  duration_ms: 509.987587
   type: 'test'
   ...
 # Subtest: recycled-identity-requires-authoritative-receipt-capability
 ok 36 - recycled-identity-requires-authoritative-receipt-capability
   ---
-  duration_ms: 320.480334
+  duration_ms: 286.109414
   type: 'test'
   ...
 # Subtest: mixed-pending-prefix-keeps-later-terminal-segments
 ok 37 - mixed-pending-prefix-keeps-later-terminal-segments
   ---
-  duration_ms: 710.012065
+  duration_ms: 393.368263
   type: 'test'
   ...
 # Subtest: retirement-resumes-after-intent-unlink-and-successor-creation
 ok 38 - retirement-resumes-after-intent-unlink-and-successor-creation
   ---
-  duration_ms: 1806.992422
+  duration_ms: 1496.208908
   type: 'test'
   ...
 # Subtest: full-terminal-active-segment-recycles-without-extra-headroom
 ok 39 - full-terminal-active-segment-recycles-without-extra-headroom
   ---
-  duration_ms: 222.971742
+  duration_ms: 149.892413
   type: 'test'
   ...
 # Subtest: idempotent-drain-close-and-provider-ownership
 ok 40 - idempotent-drain-close-and-provider-ownership
   ---
-  duration_ms: 18.031813
+  duration_ms: 13.67795
   type: 'test'
   ...
 # Subtest: public-service-accepted-status-and-unavailable-semantic-capabilities
 ok 41 - public-service-accepted-status-and-unavailable-semantic-capabilities
   ---
-  duration_ms: 225.695573
+  duration_ms: 176.062215
   type: 'test'
   ...
 # Subtest: all-quiescent-participants-close-before-unverified-ownership-is-retained
 ok 42 - all-quiescent-participants-close-before-unverified-ownership-is-retained
   ---
-  duration_ms: 0.823965
+  duration_ms: 0.585308
   type: 'test'
   ...
 # Subtest: drain-close-startup-failure-preserve-backlog-and-ownership
 ok 43 - drain-close-startup-failure-preserve-backlog-and-ownership
   ---
-  duration_ms: 331.880387
+  duration_ms: 215.900751
   type: 'test'
   ...
 # Subtest: queue-limit-validation-precedes-directory-ownership
 ok 44 - queue-limit-validation-precedes-directory-ownership
   ---
-  duration_ms: 2.504115
+  duration_ms: 1.541602
   type: 'test'
   ...
 1..44
@@ -273,4 +273,4 @@ ok 44 - queue-limit-validation-precedes-directory-ownership
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 27175.808648
+# duration_ms 23432.459164

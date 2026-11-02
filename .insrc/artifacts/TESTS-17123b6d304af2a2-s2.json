@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T10:49:25.477Z",
+    "updatedAt": "2026-11-02T11:51:06.132Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -12,8 +12,8 @@
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "3aa3b89d1",
-        "ranAt": "2026-11-02T07:02:24.067Z",
+        "commit": "2688289f7",
+        "ranAt": "2026-11-02T11:39:57.149Z",
         "testsPassed": true,
         "tests": [
           {
@@ -61,7 +61,7 @@
             "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 496,
+            "durationMs": 706,
             "titles": [
               {
                 "title": "canonical-json-frame-length-checksum-and-bounded-decoding",
@@ -224,8 +224,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "b7605021b",
-        "ranAt": "2026-11-02T07:21:34.621Z",
+        "commit": "2688289f7",
+        "ranAt": "2026-11-02T11:42:45.468Z",
         "testsPassed": true,
         "tests": [
           {
@@ -270,7 +270,7 @@
             "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2721,
+            "durationMs": 2855,
             "titles": [
               {
                 "title": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
@@ -788,8 +788,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "72bf1dc57",
-        "ranAt": "2026-11-02T10:49:25.477Z",
+        "commit": "8e9b2be7d",
+        "ranAt": "2026-11-02T11:48:51.653Z",
         "testsPassed": true,
         "tests": [
           {
@@ -816,7 +816,7 @@
             "file": "packages/project-memory/src/__tests__/queue-cost.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1503,
+            "durationMs": 1568,
             "titles": [
               {
                 "title": "queue-resource-and-fsync-cost-measurement",
@@ -829,7 +829,7 @@
             "file": "scripts/__tests__/project-memory-s2-performance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 372,
+            "durationMs": 354,
             "titles": [
               {
                 "title": "full-current-source-queue-resource-study-evidence",
@@ -842,8 +842,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "2befc2d83",
-        "ranAt": "2026-11-02T10:44:42.761Z",
+        "commit": "8e9b2be7d",
+        "ranAt": "2026-11-02T11:51:06.132Z",
         "testsPassed": true,
         "tests": [
           {
@@ -888,7 +888,7 @@
             "file": "packages/project-memory/src/__tests__/queue-crash.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 18160,
+            "durationMs": 15638,
             "titles": [
               {
                 "title": "accepted-set-survives-process-kill-at-every-boundary",
@@ -905,7 +905,7 @@
             "file": "scripts/__tests__/project-memory-s2-qualification.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 763,
+            "durationMs": 699,
             "titles": [
               {
                 "title": "current-source-macos-apfs-node22-crash-qualification",
@@ -913,6 +913,110 @@
               },
               {
                 "title": "current-source-linux-ext4-node22-crash-qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "522ed6083",
+        "ranAt": "2026-11-02T11:08:20.448Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "packed-external-submit-crash-reopen-and-operation",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pure-import-and-no-daemon-or-backend-storage-dependency",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "package-suite-root-build-and-current-source-ci-evidence",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "S002/evidence/backend/local-validation.json and backend/full-sweep.json: root build passed and local project-memory 62/62 passed, 55 real SIGKILL boundaries. Full Linux Node22/ext4 CI https://github.com/insors-ai/insrc/actions/runs/41430621597 succeeded at 2befc2d (current package source unchanged): native 14, packed 4, queue 44 passed, no skips; archived evidence/linux. Backend full sweep completed 7337 cases: 7179 pass,18 fail,2 cancelled,135 skipped,3 todo, and parallel S8 advanced HEAD during run; explicitly NOT a clean fixed-revision backend qualification. Unrelated backend failures recorded separately; no off-ledger production fixes."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1622,
+            "titles": [
+              {
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18368,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "packed-external-submit-crash-reopen-and-operation",
                 "result": "pass"
               }
             ],

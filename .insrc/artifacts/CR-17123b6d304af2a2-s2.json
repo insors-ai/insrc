@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1793615060514-qcd81f",
+    "runId": "cr-1793618821259-tzdq72",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-02T10:24:16.126Z",
+    "createdAt": "2026-11-02T11:26:56.235Z",
     "model": "claude:claude-sonnet-5",
-    "elapsedMs": 506188,
+    "elapsedMs": 400748,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "17123b6d304af2a2",
@@ -17,11 +17,11 @@
       "epicHash": "17123b6d304af2a2",
       "storyId": "s2",
       "author": "controller",
-      "sourceDigest": "1e25ed60e4c0f836d21cf513e5c9dc0db197c224bb5ebad526b3f2078a6a7d09",
+      "sourceDigest": "64504cdf2b4a5fa7639da6e38210de7505d60a571cdc3d3d6a48bc1331f9122c",
       "contractDigest": "7fe40afe84aef82cd50f4e0a260fc69267d94b8e4d9055fe02e68aedd7d7de37",
-      "buildDigest": "479ecd5e5a66759ed103eaddd228bf3cd9547876620d686d8935454667bd564a",
-      "testsDigest": "8f9d42f69c168fcf213dc8bd67beca554465dd8ebb6295237a4f470739e72d01",
-      "digest": "c0feb21d9e46e756f18c682102f76abce25b11dcbdd1b97dfe2518bd206ff217"
+      "buildDigest": "8c87d64e85be97dc072b49a165f007cc27a8816e2fdd0d6d93fc6795f7c7d6fd",
+      "testsDigest": "9ecfce20a4783d5f1204b6b1f1b0d32b409b5d46d17df6a459cf9a058e79dc87",
+      "digest": "bc4dc83e66141faefd16f3d7c45191e0a42760541d0f88ecf454ded994f1e8ad"
     },
     "reviewInputSchemaVersion": 1,
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
@@ -80,10 +80,10 @@
         "findings": [
           {
             "dimension": "adherence",
-            "severity": "MED",
-            "location": "scripts/__tests__/project-memory-s2-performance.test.ts",
-            "message": "This file is the designated evidence point for PLAN task t13 ('Measure queue resource and durability costs') and LLD testStrategy item 'queue-resource-and-fsync-cost-measurement', but its callees list is completely empty — no calls at all, not even a test-registration call — in contrast to scripts/__tests__/project-memory-s2-qualification.test.ts (calls fresh/crashProof) or packages/project-memory/src/__tests__/queue-cost.test.ts (calls nativeTest). This indicates the file likely does not actually register or execute the required p50/p95 acceptance-latency, cold-recovery, physical-byte and RSS/heap measurement evidence that t13's acceptance checks and the LLD's nonFunctional.performance section mandate before OD-02 can be considered closed.",
-            "expectationRef": "PLAN t13 acceptance checks ('Named hardware/OS/filesystem/Node corpus...', 'Report p50/p95 acceptance, cold recovery...'); LLD testStrategy 'queue-resource-and-fsync-cost-measurement'"
+            "severity": "HIGH",
+            "location": "packages/project-memory/src/runtime.ts:EmbeddedMemoryService.submit",
+            "message": "EmbeddedMemoryService.submit and EmbeddedMemoryService.operation both resolve purely by calling the local `unavailable()` helper — the same helper used by context/search/inspect — with no call edge into the queue/admission layer (FileQueue/QueueAdmission.append or .operation). By contrast, EmbeddedMemoryService.drain/close do call queue-shaped lifecycle methods (`pending`, `stop`) on their owned participants, showing the composition seam exists for lifecycle but was never wired for the data path. This means submit/operation still report NOT_READY/unavailable exactly like the explicitly-deferred context/search/inspect capabilities, instead of performing real durable queue work.",
+            "expectationRef": "LLD dataModelChanges 'S2 service composition and incremental capability' postcondition ('submit is now real durable acceptance only; operation is an authorized read of retained queue status, never a new writer... context/search/inspect remain NOT_READY') and PLAN task t10 acceptanceCheck ('Return service only after recovery; submit/operation perform real queue work while context/search/inspect stay NOT_READY')."
           }
         ]
       },
@@ -97,54 +97,18 @@
           {
             "dimension": "coverage",
             "severity": "HIGH",
-            "location": "packages/project-memory/src/queue/io.ts:1",
-            "message": "Promised test 'macos-apfs-linux-ext4-node22-queue-qualification' has no corresponding test anywhere in the grounding (no test-record title, no testsReaching edge from any file hints at it).",
-            "expectationRef": "macos-apfs-linux-ext4-node22-queue-qualification",
-            "confidence": "breach",
-            "findingKind": "promised-test"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "HIGH",
-            "location": "packages/project-memory/src/runtime.ts:1",
-            "message": "Promised test 'pure-import-and-no-daemon-or-backend-storage-dependency' has no corresponding test anywhere in the grounding (no test-record title, no testsReaching edge from any file hints at it).",
-            "expectationRef": "pure-import-and-no-daemon-or-backend-storage-dependency",
-            "confidence": "breach",
-            "findingKind": "promised-test"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "HIGH",
-            "location": "packages/project-memory/src/runtime.ts:1",
-            "message": "Promised test 'package-suite-root-build-and-current-source-ci-evidence' has no corresponding test anywhere in the grounding (no test-record title, no testsReaching edge from any file hints at it; the only similarly-named title found, scripts/project-memory-s2-performance.test.ts#full-current-source-queue-resource-study-evidence, covers a different promise).",
-            "expectationRef": "package-suite-root-build-and-current-source-ci-evidence",
-            "confidence": "breach",
-            "findingKind": "promised-test"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "packages/project-memory/src/queue/admission.ts:1",
-            "message": "Promised test 'adversarial-admission-and-recycled-scope-isolation' is present but unverified: queue-crash.test.ts (which testsReaching edges show calling FileQueue.append/operation and QueueAdmission entry points — a plausible home for this test) exists in the grounding but is entirely absent from the latest test-record run, so its pass-state cannot be confirmed.",
+            "location": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+            "message": "The plan promised an integration test named 'adversarial-admission-and-recycled-scope-isolation' but no test with this name (or an equivalent title) appears anywhere in the test-record results for any file (queue-admission.test.ts, queue-replay.test.ts, queue-retirement.test.ts, etc.), nor is it listed under reportedTests.",
             "expectationRef": "adversarial-admission-and-recycled-scope-isolation",
-            "confidence": "observation",
+            "confidence": "breach",
             "findingKind": "promised-test"
           },
           {
             "dimension": "coverage",
             "severity": "MED",
-            "location": "packages/project-memory/src/queue/recovery.ts:1",
-            "message": "Promised test 'accepted-set-survives-process-kill-at-every-boundary' is present but unverified: queue-crash.test.ts and its queue-crash-peer.ts fixture (which call recoverQueue/FileQueue.start and simulate a killed peer process per testsReaching edges) exist in the grounding but queue-crash.test.ts is entirely absent from the latest test-record run, so its pass-state cannot be confirmed.",
-            "expectationRef": "accepted-set-survives-process-kill-at-every-boundary",
-            "confidence": "observation",
-            "findingKind": "promised-test"
-          },
-          {
-            "dimension": "coverage",
-            "severity": "MED",
-            "location": "packages/project-memory/src/queue/file-queue.ts:1",
-            "message": "Promised test 'packed-external-submit-crash-reopen-and-operation' is present but unverified: queue-crash.test.ts (whose testsReaching edges show it calling FileQueue.start/append/operation and acquireOwnership, matching a submit-crash-reopen scenario) exists in the grounding but is entirely absent from the latest test-record run, so its pass-state cannot be confirmed.",
-            "expectationRef": "packed-external-submit-crash-reopen-and-operation",
+            "location": "packages/project-memory/src/__tests__/contracts.test.ts",
+            "message": "The plan promised a smoke test named 'pure-import-and-no-daemon-or-backend-storage-dependency'; the only similarly-themed test in the record is contracts.test.ts#'pure-public-import-without-native-or-daemon' (passing), which checks absence of a native/daemon import but does not clearly cover the promised 'no backend storage dependency' assertion. Title and scope don't exactly match the promise, so it is unverified whether this is the same test or a distinct one that was never written.",
+            "expectationRef": "pure-import-and-no-daemon-or-backend-storage-dependency",
             "confidence": "observation",
             "findingKind": "promised-test"
           }
@@ -152,7 +116,38 @@
       },
       {
         "dimension": "quality",
-        "findings": []
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/ownership.ts:1",
+            "message": "establishOwnedLayout and ownershipGuard both call checkIdentity (which can throw on a root/file identity mismatch, e.g. a race where the directory changed after the lock file was opened) but neither lists failedAcquisition among its callees — unlike lockDescriptor, which explicitly routes checkIdentity/openLockCandidate failures through failedAcquisition to close the open FileHandle. If acquireOwnership does not wrap these two later steps in the same catch that calls failedAcquisition, a checkIdentity failure after the lock descriptor is already open will leak that file descriptor instead of closing it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/queue/codec.ts:1",
+            "message": "record()+fields() in codec.ts reimplement the same 'assert object shape with required/optional string keys' validation that checkpoint.ts's object()+fields() already implement (same parameter shapes, differing only in which never-returning error function — invalid() vs corrupt() — they call on failure). A shape-validation bug fixed in one copy (e.g. an optional-key check) will not propagate to the other.",
+            "counterpartRef": "fields",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/queue/recovery.ts:1",
+            "message": "recoverQueue is a single function wiring together ~22 distinct operations across IO (segmentName/syncDirectory/exists/list/read/write/truncate/unlink/scan), checkpoint (advance/reserveMetadata/initialCheckpoint/load/publish), retirement (verifyBarrier/finishRetirement) and indexing (indexFrame/hash/marker/tailReport/corrupt) in one place. Boot-time crash recovery is inherently order-sensitive, and concentrating this much sequencing in one routine makes it hard to verify each failure path is handled correctly and hard to unit-test the sub-steps in isolation.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "packages/project-memory/src/queue/receipts.ts:1",
+            "message": "receipts.ts's shape() is a third independent reimplementation of the same required/optional-key assertion pattern already present as codec.ts's record()+fields() and checkpoint.ts's object()+fields(), rather than reusing either.",
+            "counterpartRef": "fields",
+            "confidence": "observation"
+          }
+        ]
       },
       {
         "dimension": "functional-coverage",
@@ -180,9 +175,9 @@
     ],
     "verdict": "block",
     "counts": {
-      "high": 3,
+      "high": 2,
       "med": 4,
-      "low": 2
+      "low": 3
     }
   }
 }

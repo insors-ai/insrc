@@ -4,11 +4,11 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 48 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-02T07:02:24.067Z on commit `3aa3b89d1`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-02T11:39:57.149Z on commit `2688289f7`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: canonical-json-frame-length-checksum-and-bounded-decoding**
 
@@ -32,7 +32,7 @@ Run at 2026-11-02T07:02:24.067Z on commit `3aa3b89d1`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/queue-codec.test.ts` | 0 | 3 | 0.5 s |  |
+| `packages/project-memory/src/__tests__/queue-codec.test.ts` | 0 | 3 | 0.7 s |  |
 
 ## t2
 
@@ -84,7 +84,7 @@ Run at 2026-11-02T07:11:12.268Z on commit `e2288ef98`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-02T07:21:34.621Z on commit `b7605021b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-02T11:42:45.468Z on commit `2688289f7`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: recovery-frontier-complete-suffix-and-unaccepted-partial-tail**
 
@@ -104,7 +104,7 @@ Run at 2026-11-02T07:21:34.621Z on commit `b7605021b`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/queue-recovery.test.ts` | 0 | 4 | 2.7 s |  |
+| `packages/project-memory/src/__tests__/queue-recovery.test.ts` | 0 | 4 | 2.9 s |  |
 
 ## t5
 
@@ -266,7 +266,7 @@ Run at 2026-11-02T08:49:31.404Z on commit `4d882859c`. Tests check: **passed**. 
 
 ## t13
 
-Run at 2026-11-02T10:49:25.477Z on commit `72bf1dc57`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-02T11:48:51.653Z on commit `8e9b2be7d`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: queue-resource-and-fsync-cost-measurement**
 
@@ -279,12 +279,12 @@ Run at 2026-11-02T10:49:25.477Z on commit `72bf1dc57`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/queue-cost.test.ts` | 0 | 1 | 1.5 s |  |
+| `packages/project-memory/src/__tests__/queue-cost.test.ts` | 0 | 1 | 1.6 s |  |
 | `scripts/__tests__/project-memory-s2-performance.test.ts` | 0 | 1 | 0.4 s |  |
 
 ## t12
 
-Run at 2026-11-02T10:44:42.761Z on commit `2befc2d83`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-02T11:51:06.132Z on commit `8e9b2be7d`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: accepted-set-survives-process-kill-at-every-boundary**
 
@@ -304,5 +304,35 @@ Run at 2026-11-02T10:44:42.761Z on commit `2befc2d83`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/queue-crash.test.ts` | 0 | 2 | 18.2 s |  |
-| `scripts/__tests__/project-memory-s2-qualification.test.ts` | 0 | 2 | 0.8 s |  |
+| `packages/project-memory/src/__tests__/queue-crash.test.ts` | 0 | 2 | 15.6 s |  |
+| `scripts/__tests__/project-memory-s2-qualification.test.ts` | 0 | 2 | 0.7 s |  |
+
+## t14
+
+Run at 2026-11-02T11:08:20.448Z on commit `522ed6083`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**smoke: packed-external-submit-crash-reopen-and-operation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | packed-external-submit-crash-reopen-and-operation | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**smoke: pure-import-and-no-daemon-or-backend-storage-dependency**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | public-v1-types-and-emitted-boundary | `packages/project-memory/src/__tests__/contracts.test.ts` |
+| pass | pure-public-import-without-native-or-daemon | `packages/project-memory/src/__tests__/contracts.test.ts` |
+| pass | packed-native-missing-import-versus-open | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | tarball-public-dependency-and-asset-allowlist | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**smoke: package-suite-root-build-and-current-source-ci-evidence**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: S002/evidence/backend/local-validation.json and backend/full-sweep.json: root build passed and local project-memory 62/62 passed, 55 real SIGKILL boundaries. Full Linux Node22/ext4 CI https://github.com/insors-ai/insrc/actions/runs/41430621597 succeeded at 2befc2d (current package source unchanged): native 14, packed 4, queue 44 passed, no skips; archived evidence/linux. Backend full sweep completed 7337 cases: 7179 pass,18 fail,2 cancelled,135 skipped,3 todo, and parallel S8 advanced HEAD during run; explicitly NOT a clean fixed-revision backend qualification. Unrelated backend failures recorded separately; no off-ledger production fixes.
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/contracts.test.ts` | 0 | 2 | 1.6 s |  |
+| `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 4 | 18.4 s |  |

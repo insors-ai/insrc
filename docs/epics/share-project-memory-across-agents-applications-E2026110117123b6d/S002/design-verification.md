@@ -31,15 +31,27 @@ Measured on Apple M3 Pro, Node 22.23.2, APFS/macOS. Full data and runtime-source
 
 | Profile | Result | p50 ms | p95 ms | Fresh-process recovery ms |
 | --- | --- | ---: | ---: | ---: |
-| empty 1024 bytes | accepted; 20 samples | 21.13 | 41.95 | 17.40 |
-| empty 65536 bytes | accepted; 20 samples | 20.96 | 44.64 | 29.89 |
-| empty 1048576 bytes | accepted; 20 samples | 65.30 | 88.78 | 58.93 |
-| backlog-1k | accepted; 20 samples | 38.63 | 55.65 | 138.51 |
-| metadata-cap | rejected at 16,351-frame metadata cap | 0.07 | 0.17 | 1183.60 |
-| 16MiB-safety | accepted in 384.24 ms; one-byte excess rejected | — | — | 417.06 |
+| empty 1024 bytes | accepted; 20 samples | 18.77 | 21.71 | 17.62 |
+| empty 65536 bytes | accepted; 20 samples | 21.02 | 23.80 | 21.16 |
+| empty 1048576 bytes | accepted; 20 samples | 42.67 | 44.86 | 50.30 |
+| backlog-1k | accepted; 20 samples | 29.80 | 34.00 | 179.21 |
+| metadata-cap | rejected at 16,351-frame metadata cap | 0.07 | 0.09 | 1107.47 |
+| 16MiB-safety | accepted in 348.76 ms; one-byte excess rejected | — | — | 408.96 |
 
 Durability steps remain enabled. Backlog fixtures are constructed by a private measurement helper and fully validated by production recovery; fixture construction is not reported as ingestion latency. Recovery starts a new Node process with the OS file cache warm. Physical segment/control bytes, active/durable counters and RSS/heap snapshots are recorded; snapshots are lower bounds on peaks. Semantic commit is unimplemented, and these results do not qualify Lance atomicity or hardware power-loss durability.
 
 ## Review maintenance refactor
 
 Queue structural record/required/optional-key validation is centralized in private queue/shape.ts; codecs, checkpoint parsing and external receipts retain their respective error policies. Recovery now names its ordered phases: checkpoint loading/retirement, inventory validation, read-only scanning, durable tail repair, orphan cleanup, and synced frontier publication. The durable format, public API and interaction/ownership relationships are unchanged. Existing failure/crash tests verify those phases through the real IO boundary.
+
+## Operational limits and downstream handoff
+
+The measured single-segment metadata-cap fixture retains 16,351 frames before checkpoint reservation rejects another admission with BACKPRESSURE. This is a reservation limit for the recorded layout, not a universal event capacity: more segments, larger records, pending-byte limits and configured limits can constrain it earlier. The 16 MiB command profile is a safety-edge experiment, not a recommended production default. The queue's 32 MiB checkpoint cap and per-frame/per-segment reservations remain hard safety bounds. Reported recovery uses a fresh process with a warm OS cache; RSS/heap snapshots are lower bounds, not a peak-memory guarantee.
+
+| Owner | Required handoff before production qualification |
+| --- | --- |
+| S3 — Lance store and authoritative receipts | Implement and qualify durable terminal receipts, generation/revision matching and confirmRetirement before permitting recycling. Prove store commit precedes terminal queue bookkeeping, receipt lookup remains scope/epoch qualified after unlink/restart, and unavailable or mismatched proof fails closed. Queue-only acceptance timings establish no Lance atomicity or semantic-commit latency; measure these with real store commits. |
+| S4 — normalization/context-builder worker | Consume replay serially with bounded model/input ownership, honor ingress and durable BACKPRESSURE, and release reader pins on drain. Measure service time, backlog growth and semantic-commit latency with actual normalization/retrieval/commit work; the queue-only 1k/metadata-cap studies cannot establish worker throughput or a production queue budget. Keep CLI/Ollama calls serial and preserve exact identity/scope/epoch across retries. |
+| S9 — retention, purge, migration and corpus evaluation | Plan retention against physical control/segment bytes and metadata reservations, not event count alone. Recycle only receipt-verified terminal prefixes after reader pins release; account separately for Lance versions, tombstones and receipts. Qualify purge/migration/restart behavior, full-capacity progress and corpus fidelity on actual retained stores before selecting production defaults or SLOs; process SIGKILL evidence does not establish hardware power-loss durability. |
+
+These are follow-up obligations, not implemented S2 capabilities or new defaults. The benchmark evidence closes only the S2 queue measurement obligation.

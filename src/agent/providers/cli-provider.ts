@@ -517,7 +517,11 @@ export class CliProvider implements LLMProvider {
    await parser.end();
    const accepted=parser.result();if(accepted.accepted)return accepted.value;
    if(result.aborted)throw abortError();
-   if(result.spawnError||result.exitCode!==0)throw await parser.failure(result.spawnError?'spawn_failed':'cli_exit',result.spawnError??'Review activity CLI failed',result.exitCode);
+   if(result.spawnError||result.exitCode!==0){
+    // Retain a bounded error line, never the raw diagnostic/debug stream.
+    const detail=result.spawnError??result.stderr.split(/\r?\n/).filter(line=>/^(?:Error|Fatal|Invalid|Failed|Usage|ENOENT|EACCES|EPERM)(?:[:\s]|$)/i.test(line)).at(-1);
+    throw await parser.failure(result.spawnError?'spawn_failed':'cli_exit','Review activity CLI failed',result.exitCode,detail);
+   }
    try{return parser.completed();}catch(error){throw await parser.failure('no_valid_final',error instanceof Error?error.message:'No valid final assessment');}
   }finally{if(directory)rmSync(directory,{recursive:true,force:true});}
  }

@@ -190,3 +190,74 @@ event quota. Active tools and accepted feedback have separate state, so window
 turnover neither completes a tool nor discards an accepted assessment. UUID
 length, frame/candidate byte limits, finality and malformed-input checks remain
 in force. This applies to both Claude and Codex native review streams.
+
+## Output failures and previous-round feedback
+
+Claude and Codex activity sessions retain bounded output diagnostics through
+`onDiagnostic` and `ReviewOutputFailureError`. Schema errors come from the same
+AJV validation that accepts/rejects candidates. Claude tool errors are correlated
+to `StructuredOutput`; unrelated Read/Bash failures are not schema errors. Codex
+JSON errors apply to the final agent message after successful turn completion.
+Neither route accepts malformed output or extracts missing fields from prose.
+
+The host writes optional `review-response.failureDiagnostics` into the existing
+review checkpoint. Attribution has one phase-level entry; assessment entries
+belong to a selected task. Diagnostic receipts use the existing serial writer
+and execution fences; they never renew inactivity or complete a task. Valid
+corrected feedback marks the output diagnostic `resolved` while retaining its
+evidence. New readers accept historical checkpoints without diagnostics. Old
+strict binaries may reject new fields: do not strip/backfill history to downgrade
+an active review. No separate recovery file or retry loop is introduced.
+
+Each snapshot keeps at most eight distinct issues, bounded field/correction/error
+strings and an optional 8 KiB rejected-output preview. Only declared output
+fields are previewed; reasoning/prompt fields and arbitrary invalid-JSON prose
+are excluded. All diagnostic evidence in an attempt is bounded to 32 KiB, inside
+the existing whole-checkpoint limit. Optional excerpts/messages are removed first;
+if required compact errors still cannot fit, persistence fails visibly.
+
+The next attribution and task-assessment inputs carry structured, pointed data:
+
+```json
+{
+  "previousRoundFeedback": [
+    {
+      "attempt": 4,
+      "taskId": "t2",
+      "phase": "assessment",
+      "errors": [
+        {
+          "code": "MISSING_REQUIRED_FIELD",
+          "field": "findings",
+          "correction": "Return findings as a top-level JSON array."
+        }
+      ]
+    }
+  ]
+}
+```
+
+This projection uses the latest earlier attempt by the same reviewer party and
+only applicable unresolved tasks/phases. Exact failed-result origins retain their
+original diagnostic provenance. A newer pass or resolved output error suppresses
+older corrections. No diagnostic history means an empty array; old errors are
+not inferred from generic messages. Corrections use host templates, never native
+prose. Raw previews/messages and repeated schemas are excluded from this property
+and raw diagnostics are also removed from ordinary inline history. The feedback
+projection is at most 4 KiB; `previousRoundFeedbackTruncated` makes truncation
+explicit. Full saved evidence remains available at the checkpoint path.
+
+A native controller integration relays its diagnostic callback on the existing
+`codeReview.task.activity` exchange, with the usual task/execution/sequence
+fields and this event:
+
+```json
+{"kind":"diagnostic","phase":"assessment","diagnostic":{"provider":"codex","issues":[{"code":"INVALID_JSON","field":"/","correction":"Return one valid JSON object.","occurrences":1}]}}
+```
+
+Use the phase of the frame that started that native session (`scope` maps to
+`attribution`); a late diagnostic from another phase is rejected. Advance the
+exchange sequence only after an accepted receipt. Terminal native failures remain
+failed task results; the diagnostic event itself is evidence, not completion.
+The caller explicitly requests any subsequent attempt. The daemon still supplies
+and enforces the output schema on every new submission.

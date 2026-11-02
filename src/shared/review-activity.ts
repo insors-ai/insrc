@@ -30,10 +30,11 @@ export function validateReviewSessionOptions(opts: ReviewSessionOpts): void {
  if (opts.mode === 'activity') {
   if (opts.inactivityMs !== REVIEW_INACTIVITY_MS || opts.internalRetry !== false || !(opts.signal instanceof AbortSignal)
    || typeof opts.onActivity !== 'function' || typeof opts.onCandidate !== 'function'
+   || opts.onDiagnostic !== undefined && typeof opts.onDiagnostic !== 'function'
    || 'deadlineMs' in opts || 'stallMs' in opts || 'reviewBudget' in opts) throw new TypeError('Invalid activity review execution options');
  } else if ((opts.mode !== undefined && opts.mode !== 'bounded') || !Number.isFinite(opts.deadlineMs) || opts.deadlineMs <= 0
   || opts.stallMs !== undefined && (!Number.isFinite(opts.stallMs) || opts.stallMs <= 0)
-  || 'inactivityMs' in opts || 'onActivity' in opts || 'onCandidate' in opts) throw new TypeError('Invalid bounded review execution options');
+  || 'inactivityMs' in opts || 'onActivity' in opts || 'onCandidate' in opts || 'onDiagnostic' in opts) throw new TypeError('Invalid bounded review execution options');
 }
 export function requireReviewActivity(provider: Pick<LLMProvider, 'capabilities' | 'runReviewSession'>): void {
  if (provider.capabilities?.reviewActivity !== true || !provider.runReviewSession) throw new ReviewActivityUnsupportedError();

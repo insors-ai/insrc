@@ -31,9 +31,9 @@ export class ReviewActivityStream<T> {
  async feed(chunk: Buffer): Promise<void> { this.buffer += this.decoder.write(chunk); await this.decode(false); }
  async end(): Promise<void> { this.buffer += this.decoder.end(); await this.decode(true); }
  diagnosticSnapshot(): ReviewDiagnosticSnapshot { return this.diagnostics.snapshot(); }
- async failure(reason: string, message: string, exitCode?: number): Promise<ReviewOutputFailureError> {
+ async failure(reason: string, message: string, exitCode?: number, detail?: string): Promise<ReviewOutputFailureError> {
   const prior = this.diagnosticSnapshot().terminal;
-  this.diagnostics.terminal(prior?.reason ?? reason, prior?.message ?? message, exitCode ?? prior?.exitCode);
+  this.diagnostics.terminal(prior?.reason ?? reason, prior?.message ?? detail ?? message, exitCode ?? prior?.exitCode);
   if(!this.diagnosticSnapshot().issues.length)this.diagnostics.issue({ code: 'NATIVE_CLI_FAILURE', field: '/', correction: 'Resolve the native CLI failure before resubmitting feedback.', message });
   await this.report();
   return new ReviewOutputFailureError(message, this.diagnosticSnapshot());
@@ -100,7 +100,7 @@ export class ReviewActivityStream<T> {
   const checked=validateAgainstSchema<T>(this.schema,raw);
   if(!checked.ok){
    this.diagnostics.rejected(raw, Object.keys(this.schema['properties'] as object ?? {}));
-   for(const issue of checked.issues ?? [{code:'SCHEMA_CONSTRAINT',field:'/',correction:'Return output matching the supplied JSON schema.'}]) this.diagnostics.issue(issue);
+   for(const issue of checked.issues?.length ? checked.issues : [{code:'SCHEMA_CONFIGURATION_ERROR',field:'/',correction:'Correct the supplied review schema before resubmitting.',message:checked.errors[0]??'Schema validation failed'}]) this.diagnostics.issue(issue);
    await this.report();return;
   }
   await this.activity('feedback_submitted');

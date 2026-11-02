@@ -1,3 +1,4 @@
+import { validateReviewSessionOptions } from '../../../shared/review-activity.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, writeFileSync, chmodSync, rmSync } from 'node:fs';
@@ -81,4 +82,24 @@ test('fake native CLI exit carries diagnostics and callback failures are not ack
   const parser=new ReviewActivityStream('claude',schema,{...h.opts,onDiagnostic:()=>{throw failure;}},()=>{});
   await assert.rejects(parser.feed(line({type:'assistant',message:{content:[{type:'tool_use',name:'StructuredOutput',id:'out',input:{summary:'missing'}}]}})),e=>e===failure);
  }finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+test('schema configuration and stderr-only CLI failures preserve bounded diagnostics',async()=>{
+ const h=harness('claude'),parser=new ReviewActivityStream('claude',{type:'invalid-schema-type'},h.opts,()=>{});
+ await parser.feed(line({type:'assistant',message:{content:[{type:'tool_use',name:'StructuredOutput',input:valid}]}}));
+ assert.equal(parser.diagnosticSnapshot().issues[0]?.code,'SCHEMA_CONFIGURATION_ERROR');assert.match(parser.diagnosticSnapshot().issues[0]?.message??'',/ajv.compile/);
+ const dir=mkdtempSync(join(tmpdir(),'review-stderr-error-')),bin=join(dir,'fake.mjs');
+ try{
+  writeFileSync(bin,'#!/usr/bin/env node\nprocess.stderr.write("unrelated debug canary\\nError: native output rejected\\n");process.exit(1);');chmodSync(bin,0o755);
+  const cli=new CliProvider({kind:'codex',binPath:bin});
+  await assert.rejects(cli.runReviewSession('review',schema,{...h.opts,cwd:dir}),(e:unknown)=>e instanceof ReviewOutputFailureError&&e.diagnostic.terminal?.message==='Error: native output rejected');
+  assert.ok(!JSON.stringify(h.snapshots).includes('debug canary'));
+ }finally{rmSync(dir,{recursive:true,force:true});}
+});
+
+test('diagnostic callback options are validated before native execution',()=>{
+ const h=harness('claude');
+ assert.doesNotThrow(()=>validateReviewSessionOptions(h.opts));
+ assert.throws(()=>validateReviewSessionOptions({...h.opts,onDiagnostic:'not a callback'} as never),/Invalid activity/);
+ assert.throws(()=>validateReviewSessionOptions({mode:'bounded',cwd:'/tmp',deadlineMs:1000,onDiagnostic:()=>{}} as never),/Invalid bounded/);
 });

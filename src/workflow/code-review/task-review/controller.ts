@@ -87,11 +87,17 @@ export class ControllerTaskReview {
   const result=await assessTaskResult(this.deps.sources,assignment,raw,refs);
   this.progress.phase('feedback_persistence');
   this.assertOwner(owner);
-  this.monitor?.stop();
-  this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,result];
+  const priorTasks=this.review.attempt['review-response'].tasks,priorDiagnostics=this.review.attempt['review-response'].failureDiagnostics,priorActive=this.review.attempt.header.activeTaskId;
+  this.review.attempt['review-response'].tasks=[...priorTasks,result];
   if(result.status!=='failed')resolveFailureDiagnostics(this.review.attempt,'assessment',raw.taskId);
-  delete this.review.attempt.header.activeTaskId;this.monitor=undefined;
-  await this.persist();
+  delete this.review.attempt.header.activeTaskId;
+  try{await this.persist();}catch(error){
+   this.review.attempt['review-response'].tasks=priorTasks;
+   if(priorDiagnostics)this.review.attempt['review-response'].failureDiagnostics=priorDiagnostics;else delete this.review.attempt['review-response'].failureDiagnostics;
+   if(priorActive!==undefined)this.review.attempt.header.activeTaskId=priorActive;else delete this.review.attempt.header.activeTaskId;
+   throw error;
+  }
+  this.monitor?.stop();this.monitor=undefined;
   return this.frame(owner);
  });}
  private current(){return this.selected.find(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id));}

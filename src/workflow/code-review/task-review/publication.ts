@@ -11,7 +11,7 @@ import { prepareReviewPacket } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
-import { mergeTaskSummary, renderTaskReview, resultReferences, validateTaskBody } from './record.js';
+import { mergeTaskSummary, renderTaskReview, resultReferences, validateTaskBody, taskAttemptSummary } from './record.js';
 
 export interface PublicationDeps { readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly renderWrite?:typeof writeAtomic; }
 
@@ -38,7 +38,7 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
   validateTaskResult(result,{taskId:result.taskId,changes:prepared.changes,evidenceReferences:refs});
  }
  const storyId=prepared.packet.storyId.replace(/^STORY-[a-f0-9]{16}-/,'');
- const summary:CompletedReviewSummary={ ...(attempt['review-response'].origins ? { origins:attempt['review-response'].origins } : {}), ...(attempt.header.reassessmentSummary ? { reassessmentSummary:attempt.header.reassessmentSummary } : {}), reviewId,attempt:attempt.header.attempt,storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),reviewer:attempt.header.reviewer,status:aggregateTaskStatus(attempt['review-response'].tasks),scope:{storyId:prepared.packet.storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),documents:prepared.packet.documents,reviewSet:prepared.packet.reviewSet},tasks:attempt['review-response'].tasks,summary:`${attempt['review-response'].tasks.length} selected task assessment(s): ${aggregateTaskStatus(attempt['review-response'].tasks)}.`,completedAt:attempt.header.completedAt,...(attempt.header.buildFingerprint?{buildFingerprint:attempt.header.buildFingerprint}:{}) };
+ const summary:CompletedReviewSummary={ ...(attempt['review-response'].origins ? { origins:attempt['review-response'].origins } : {}), ...(attempt.header.reassessmentSummary ? { reassessmentSummary:attempt.header.reassessmentSummary } : {}), reviewId,attempt:attempt.header.attempt,storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),reviewer:attempt.header.reviewer,status:aggregateTaskStatus(attempt['review-response'].tasks),scope:{storyId:prepared.packet.storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),documents:prepared.packet.documents,reviewSet:prepared.packet.reviewSet},tasks:attempt['review-response'].tasks,summary:taskAttemptSummary(attempt),completedAt:attempt.header.completedAt,...(attempt.header.buildFingerprint?{buildFingerprint:attempt.header.buildFingerprint}:{}) };
  const store=deps.through.store; requireReview(store,'publication','Canonical round-writer store is required');
  const id=codeReviewArtifactId(epicHash,storyId), folder=storyRecordFolderArgs(canonical,epicHash,storyId,{},{kind:'read'});
  const paths=codeReviewArtifactPaths(canonical,epicHash,storyId,folder.epicCreatedAt,folder.workItemKind,folder.epicSlug);

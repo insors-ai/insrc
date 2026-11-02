@@ -1,3 +1,5 @@
+import { rpc } from '../shared/ipc-client.js';
+import type { CleanupResult } from './code-review/task-review/cleanup.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -542,6 +544,7 @@ export interface ApprovalResult {
 	readonly workflow:  string;
 	readonly path:      string;
 	readonly approvedAt: string;
+	readonly cleanup?: CleanupResult | undefined;
 }
 
 /**
@@ -598,6 +601,7 @@ export async function headFullSha(cwd: string): Promise<string | undefined> {
 
 /** What the approval needs besides the path: the repository's lifecycle service, who approves, and an override reason. */
 export interface ApproveOptions {
+	readonly afterBuildApproval?: ((repo: string, hash: string, story: string) => Promise<CleanupResult>) | undefined;
 	readonly overrideReview?: string | undefined;
 	readonly lifecycle:       LifecycleService;
 	/** The actor the service records; the approval gate itself when absent. */
@@ -693,7 +697,15 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 		const current = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
 		writeArtifact(jsonPath, { ...current, meta: { ...current.meta, [RANGE_BASE_KEY]: rangeBase } }, 'meta-only');
 	}
-	return { workflow: artifact.meta.workflow ?? 'unknown', path: jsonPath, approvedAt };
+	let cleanup: CleanupResult | undefined;
+	const buildMeta = artifact.meta as ApprovableArtifactMeta & { epicHash?: unknown; storyId?: unknown };
+	if (buildMeta.workflow === 'build' && typeof buildMeta.epicHash === 'string' && typeof buildMeta.storyId === 'string') {
+	 const project = dirname(dirname(dirname(jsonPath)));
+	 try {
+	  cleanup = await (opts.afterBuildApproval ?? ((repo, epicHash, storyId) => rpc<CleanupResult>('codeReview.task.cleanup', { repo, epicHash, storyId }, undefined, { closeAware: true })))(project, buildMeta.epicHash, buildMeta.storyId);
+	 } catch (error) { cleanup = { deleted: [], retained: [join(project, '.insrc/tmp/code-review')], errors: [error instanceof Error ? error.message : String(error)] }; }
+	}
+	return { workflow: artifact.meta.workflow ?? 'unknown', path: jsonPath, approvedAt, ...(cleanup ? { cleanup } : {}) };
 }
 
 /**
@@ -813,6 +825,7 @@ export class NoPendingArtifactsError extends Error {
  *  artifactPath | epicHash. `repoPath` locates the epic's `.insrc/artifacts`
  *  dir for the batch path. */
 export interface WorkflowApproveRequest {
+	readonly afterBuildApproval?: ApproveOptions['afterBuildApproval'];
 	readonly repoPath:       string;
 	readonly artifactPath?:  string;
 	readonly epicHash?:      string;
@@ -995,7 +1008,7 @@ export async function approveWorkflowTarget(
 		}
 		let completeAfter = false;
 		try {
-			approved.push({ path: jsonPath, result: await approveArtifactByJsonPath(jsonPath, { ...(approveOpts ?? {}), lifecycle, actor }) });
+			approved.push({ path: jsonPath, result: await approveArtifactByJsonPath(jsonPath, { ...(approveOpts ?? {}), lifecycle, actor, ...(req.afterBuildApproval ? { afterBuildApproval: req.afterBuildApproval } : {}) }) });
 			completeAfter = true;
 		} catch (err) {
 			if (err instanceof ReviewBlockedError) {

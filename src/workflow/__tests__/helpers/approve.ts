@@ -12,7 +12,7 @@ import type { ApprovalResult, RejectionResult, WorkflowApproveRequest } from '..
 export const repoOfHead = (jsonPath: string): string => dirname(dirname(dirname(jsonPath)));
 
 export function approveJson(jsonPath: string, overrideReview?: string): Promise<ApprovalResult> {
-	return approveArtifactByJsonPath(jsonPath, { lifecycle: createRepoLifecycle(repoOfHead(jsonPath)).service, ...(overrideReview !== undefined ? { overrideReview } : {}) });
+	return approveArtifactByJsonPath(jsonPath, { lifecycle: createRepoLifecycle(repoOfHead(jsonPath)).service, afterBuildApproval: async () => ({ deleted: [], retained: [], errors: [] }), ...(overrideReview !== undefined ? { overrideReview } : {}) });
 }
 
 export function rejectJson(jsonPath: string, reason: string): Promise<RejectionResult> {
@@ -21,5 +21,5 @@ export function rejectJson(jsonPath: string, reason: string): Promise<RejectionR
 
 /** Approve a target the way the daemon's route does, through the lifecycle of the repository it names. */
 export function approveTarget(req: Omit<WorkflowApproveRequest, 'lifecycle'>, opts?: Parameters<typeof approveWorkflowTarget>[1]): ReturnType<typeof approveWorkflowTarget> {
-	return approveWorkflowTarget({ ...req, lifecycle: createRepoLifecycle(req.repoPath).service }, opts);
+	return approveWorkflowTarget({ afterBuildApproval: async () => ({ deleted: [], retained: [], errors: [] }), ...req, lifecycle: createRepoLifecycle(req.repoPath).service }, opts);
 }

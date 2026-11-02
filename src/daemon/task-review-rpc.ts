@@ -1,3 +1,7 @@
+import { cleanupStoryCheckpoints } from '../workflow/code-review/task-review/cleanup.js';
+import { approvalStateOf } from '../workflow/artifact-core/approval-view.js';
+import { artifactJsonPath, buildArtifactId } from '../workflow/storage.js';
+import { readFile } from 'node:fs/promises';
 import { isMainThread } from 'node:worker_threads';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
@@ -13,7 +17,7 @@ import type { TrustedRpcContext } from './request-context.js';
 import type { ControllerReviewOwner } from '../workflow/code-review/task-review/controller.js';
 import type { LLMProvider } from '../shared/types.js';
 import { publishTaskCheckpoint } from '../workflow/code-review/task-review/publication.js';
-import { roundWriterFor } from './lifecycle-registry.js';
+import { lifecycleFor, roundWriterFor } from './lifecycle-registry.js';
 import { repoSchemaRefusal } from './repo-schema-guard.js';
 
 const coordinators = new Map<string, TaskReviewCoordinator>();
@@ -100,4 +104,20 @@ export async function readTaskReviewProgress(raw:unknown):Promise<unknown>{
  requireReview(typeof p['reviewId']==='string'&&Number.isSafeInteger(p['attempt'])&&Number(p['attempt'])>0,'request','Expected reviewId and positive safe attempt');
  const repo=await realpath(p['repo']);
  return coordinatorFor(repo).progress(repo,p['reviewId'],Number(p['attempt']));
+}
+
+/** Idempotent cleanup retry: authority comes from the stored approved BUILD. */
+export async function cleanupApprovedTaskReviews(raw: unknown): Promise<import('../workflow/code-review/task-review/cleanup.js').CleanupResult> {
+ requireReview(raw&&typeof raw==='object','request','Expected story cleanup request');
+ const p=raw as Record<string,unknown>;
+ requireReview(typeof p['repo']==='string'&&p['repo'].startsWith('/'),'repo','Expected absolute project');
+ const repo=await realpath(p['repo']);
+ requireReview(typeof p['epicHash']==='string'&&/^[a-f0-9]{16}$/.test(p['epicHash'])&&typeof p['storyId']==='string'&&/^s\d+$/.test(p['storyId']),'storyId','Expected canonical story identity');
+ const hash=p['epicHash'],story=p['storyId'],id=buildArtifactId(hash,story);
+ const stored=await lifecycleFor(repo).service.inspect(id);
+ requireReview(stored?.integrity.ok,'BUILD','BUILD integrity cannot be verified');
+ const build=JSON.parse(await readFile(artifactJsonPath(repo,id),'utf8')) as {meta:Record<string,unknown>};
+ requireReview(approvalStateOf(build.meta)==='approved','BUILD','Story BUILD approval is required for cleanup');
+ const fenced=await coordinatorFor(repo).withStoryCleanup(repo,hash,story,()=>cleanupStoryCheckpoints(repo,hash,story,{sources:publicationDeps(repo).sources}));
+ return fenced.busy?{deleted:[],retained:[`${repo}/.insrc/tmp/code-review`],errors:['Story review admission/execution/publication or cleanup is active; retry cleanup after it settles']}:fenced.result;
 }

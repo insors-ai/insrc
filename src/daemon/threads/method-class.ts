@@ -87,6 +87,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['codeAnalyzer.diffRuns', 'session', false],
 	['codeReview.freshness', 'session', false],
 	['codeReview.grounding', 'session', false],
+	['codeReview.task.cleanup', 'session', false],
 	['codeReview.task.start', 'session', false],
 	['codeReview.task.progress', 'session', false],
 	['codeReview.task.publish', 'session', false],
@@ -284,6 +285,7 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 
 /** These operations own process-local admission and transport lifetimes. */
 export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
+ 'workflow.approve', 'workflow.approvePipeline',
  'db.listConnections','db.listDriverKinds','db.saveConnection','db.deleteConnection','db.testConnection',
  'db.connections.v2.capabilities','db.connections.v2.drivers','db.connections.v2.list','db.connections.v2.read',
  'db.connections.v2.ticket','db.connections.v2.mutate','db.connections.v2.status','db.connections.v2.activate',
@@ -294,6 +296,6 @@ export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
 
 /** Task review state and trusted controller lifetimes have one main-daemon owner. */
 export const MAIN_DAEMON_TASK_REVIEW_METHODS: ReadonlySet<string> = new Set([
- 'codeReview.task.start', 'codeReview.task.progress', 'codeReview.task.publish',
+ 'codeReview.task.cleanup', 'codeReview.task.start', 'codeReview.task.progress', 'codeReview.task.publish',
  'codeReview.task.assignment', 'codeReview.task.scope', 'codeReview.task.result', 'codeReview.task.activity',
 ]);

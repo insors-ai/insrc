@@ -3,7 +3,7 @@ import { reviewUnavailable } from '../../review-unavailable.js';
 import { Type } from '@sinclair/typebox';
 import { isDeepStrictEqual } from 'node:util';
 import { decodeReview, StoredPacketSchema, requireReview, TaskResultSchema, TaskOriginSchema } from './contracts.js';
-import type { CompletedReviewSummary, TaskBasedCodeReviewRecord, TaskReviewResult } from './contracts.js';
+import type { CompletedReviewSummary, TaskBasedCodeReviewRecord, TaskReviewResult, ReviewAttempt } from './contracts.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 
 const text = Type.String({ minLength: 1, maxLength: 65536 });
@@ -83,4 +83,16 @@ export function renderTaskReview(bodyInput: unknown): string {
   }
  }
  return lines.join('\n')+'\n';
+}
+
+/** Permanent pointed failures only; previews and verbose native messages stay temporary. */
+export function taskAttemptSummary(attempt: ReviewAttempt): string {
+ const tasks=attempt['review-response'].tasks;
+ const base=`${tasks.length} selected task assessment(s): ${aggregateTaskStatus(tasks)}.`;
+ const diagnostics=attempt['review-response'].failureDiagnostics;
+ if(!diagnostics?.length)return base;
+ const pointed=diagnostics.map(entry=>({phase:entry.phase,...(entry.taskId?{taskId:entry.taskId}:{}),provider:entry.diagnostic.provider,resolved:entry.resolved===true,
+  errors:entry.diagnostic.issues.map(({code,field,correction,occurrences})=>({code,field,correction,occurrences})),
+  ...(entry.diagnostic.terminal?{terminal:{reason:entry.diagnostic.terminal.reason,...(entry.diagnostic.terminal.exitCode!==undefined?{exitCode:entry.diagnostic.terminal.exitCode}:{})}}:{})}));
+ return `${base}\nNative output diagnostics: ${JSON.stringify(pointed)}`;
 }

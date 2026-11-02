@@ -248,3 +248,17 @@ Take a1 for the code. Extend artifact-write-inventory.ts so each content-kind en
 - Item ts1: the Story has no acceptance criteria; ac1 to ac5 in the test strategy were derived from the Story text and need confirming at plan time
 - Reviewers and resolveComment: when the stage is in signoff, should a person who is not the holder (a reviewer) still be allowed to record comments, or is 'revise' (holder only) the rule for every comment? This design applies 'revise' to every comment, as the Story says, which refuses a non-holder reviewer
 - An extend of a Define that is not in signoff: this design asks for 'author' (which takes the claim on an unassigned Epic, as for design.epic); the alternative is 'revise' for every extend
+
+## Resolved questions
+
+- `q72dabd19` — Item ts1: the Story has no acceptance criteria; ac1 to ac5 in the test strategy were derived from the Story text and need confirming at plan time
+  - **resolved**: Accept derived ACs as-is — The user approved the LLD on 2026-11-02 with ac1 to ac5 in its test strategy. _(2026-11-02T09:33:19.969Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/team/author-gate.ts`
+- **[[c2]]** `code` `src/workflow/gates.ts:210`
+- **[[c3]]** `code` `src/workflow/resolve-comment.ts`
+- **[[c4]]** `code` `src/workflow/team/signoff.ts:254`
+- **[[c5]]** `doc` `docs/plans/team-workflow.md`
+- **[[c6]]** `code` `src/workflow/artifact-write-inventory.ts`

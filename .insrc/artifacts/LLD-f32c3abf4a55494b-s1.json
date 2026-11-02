@@ -60,7 +60,16 @@
         }
       }
     },
-    "rangeBase": "58ccc647cde5826df8aa48383596ac5de13cd3d7"
+    "rangeBase": "58ccc647cde5826df8aa48383596ac5de13cd3d7",
+    "questionResolutions": {
+      "q72dabd19": {
+        "question": "Item ts1: the Story has no acceptance criteria; ac1 to ac5 in the test strategy were derived from the Story text and need confirming at plan time",
+        "status": "resolved",
+        "choice": "Accept derived ACs as-is",
+        "rationale": "The user approved the LLD on 2026-11-02 with ac1 to ac5 in its test strategy.",
+        "resolvedAt": "2026-11-02T09:33:19.969Z"
+      }
+    }
   },
   "body": {
     "summary": {

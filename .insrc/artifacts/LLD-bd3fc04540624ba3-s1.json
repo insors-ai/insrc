@@ -1,0 +1,652 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793597748326-1qf85p",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T05:39:08.234Z",
+    "epicCreatedAt": "2026-11-02T05:39:08.234Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 199217,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd3fc04540624ba3",
+    "epicSlug": "preserve-native-review-validation-failures-next",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793597748326-1qf85p",
+    "hldEffectiveHash": "bd3fc04540624ba38459f34044e0c39adb0537b075659414e57536b6c293b09b",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "6ca948df3ba71fad4435a9f9bfc3b42050b73d7024fb1ff1e36130d7c1a6c952",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T05:46:03.406Z",
+        "override": {
+          "reason": "User explicitly approved the LLD with self-review override and proceeding to plan. Retired design-review engine remains disabled under prior user instruction. Author review found no unresolved HIGH/MED; provider/checkpoint/prompt boundaries grounded in source. Diagram source inspected; visual rendering not verified. Review notes retained only in /tmp/review-feedback-lld-self-review.md."
+        }
+      }
+    },
+    "rangeBase": "de6c688effbaceaa22af1678a4b60e44740704c4"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Capture native review output failures in the existing checkpoint, then pass concise previousRoundFeedback into subsequent reviewer inputs. Claude and Codex use the same bounded diagnostics and strict acceptance rules. Rejected output remains evidence, never an automatically repaired or accepted review."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Preserve native review validation failures as next-round feedback"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ActivityReviewSessionOpts",
+          "signature": "interface ActivityReviewSessionOpts { onDiagnostic?: (snapshot: ReviewDiagnosticSnapshot) => void | Promise<void>; /* existing fields unchanged */ }",
+          "parameters": [
+            {
+              "name": "onDiagnostic",
+              "type": "(snapshot: ReviewDiagnosticSnapshot) => void | Promise<void>",
+              "purpose": "Relay bounded output-validation failures to the owning host separately from activity and acceptance.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void | Promise<void>",
+            "meaning": "Receipt after persistence, or surfaced failure."
+          },
+          "errors": [
+            {
+              "type": "ReviewOutputFailureError",
+              "condition": "Output failure carries bounded diagnostic snapshot; diagnostic persistence failure is surfaced without acknowledging durability."
+            }
+          ],
+          "preconditions": [
+            "Existing serialized native session ownership."
+          ],
+          "postconditions": [
+            "Diagnostic receipt never renews inactivity or accepts feedback."
+          ]
+        },
+        {
+          "name": "ReviewActivityStream",
+          "signature": "class ReviewActivityStream<T> { feed(chunk: Buffer): Promise<void>; end(): Promise<void>; result(): { accepted: true; value: T } | { accepted: false }; completed(): T; }",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "ActivityReviewSessionOpts",
+              "purpose": "Existing schema/activity/candidate contract plus diagnostic sink.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "T",
+            "meaning": "Only valid final accepted feedback."
+          },
+          "errors": [
+            {
+              "type": "ReviewOutputFailureError",
+              "condition": "Native JSON/schema/protocol/terminal failure with bounded snapshot."
+            }
+          ],
+          "preconditions": [
+            "Assigned schema and serial native frames."
+          ],
+          "postconditions": [
+            "Capture Claude StructuredOutput candidate/rejection/result errors and Codex final-message JSON/schema/turn errors.",
+            "Keep finality, candidate size bounds and host semantic rejection authoritative; no XML extraction or automatic retry."
+          ]
+        },
+        {
+          "name": "validateAgainstSchema",
+          "signature": "validateAgainstSchema<T>(schema: StructuredSchema, raw: unknown): { ok: true; value: T } | { ok: false; errors: string[]; issues?: readonly ReviewValidationIssue[] }",
+          "parameters": [
+            {
+              "name": "schema",
+              "type": "StructuredSchema",
+              "purpose": "Existing supplied schema.",
+              "optional": false
+            },
+            {
+              "name": "raw",
+              "type": "unknown",
+              "purpose": "Untrusted native JSON boundary; unknown is intentional.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ValidationResult<T>",
+            "meaning": "Same validator and existing errors plus plain structured issues from that validation invocation."
+          },
+          "errors": [],
+          "preconditions": [
+            "No validator SDK types in shared contracts."
+          ],
+          "postconditions": [
+            "No duplicate/weaker validation path or inferred correction from arbitrary prose."
+          ]
+        },
+        {
+          "name": "TaskReviewCoordinator",
+          "signature": "class TaskReviewCoordinator { /* existing start/resume and candidate flow consume diagnostic snapshots */ }",
+          "parameters": [
+            {
+              "name": "snapshot",
+              "type": "ReviewDiagnosticSnapshot",
+              "purpose": "Host binds provider diagnostics to current phase/task/attempt under existing serial checkpoint writer.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Durable current-attempt diagnostic update."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError",
+              "condition": "Invalid snapshot or stale task execution."
+            }
+          ],
+          "preconditions": [
+            "Existing reservation, execution and ordering fences."
+          ],
+          "postconditions": [
+            "No old attempt/result mutation. Typed provider error retains last diagnostics if callback path fails before terminal error.",
+            "Successful durable accepted feedback survives later CLI failure."
+          ]
+        },
+        {
+          "name": "ControllerTaskReview",
+          "signature": "class ControllerTaskReview { activity(input: unknown, owner: ControllerReviewOwner, envelope: unknown): Promise<unknown>; }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "Existing activity event | { kind: 'diagnostic'; diagnostic: ReviewDiagnosticSnapshot }",
+              "purpose": "Extend existing codeReview.task.activity exchange; no new RPC or checkpoint.",
+              "optional": false
+            },
+            {
+              "name": "envelope",
+              "type": "{taskId:string;executionId:string;sequence:number}",
+              "purpose": "Existing ownership, sequence and replay fence.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<unknown>",
+            "meaning": "Validated persisted diagnostic receipt."
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError",
+              "condition": "Wrong owner/task/execution/sequence, conflicting replay or over-bound snapshot."
+            }
+          ],
+          "preconditions": [
+            "Updated native controller integration forwards onDiagnostic."
+          ],
+          "postconditions": [
+            "Same persistence/feedback behavior as daemon route. Diagnostics do not count as activity."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewDiagnosticSnapshot and ReviewOutputFailureError",
+        "change": "new",
+        "details": "New host-owned plain data/types, not model output. Snapshot: provider claude|codex; issues[{code,field,correction,message?,occurrences}]; optional terminal{reason,exitCode?,message?}; optional lastRejectedFeedback{preview,truncated}. ReviewOutputFailureError extends Error and carries this bounded snapshot across provider failures. Errors derive from JSON parser, existing AJV keyword/path details, native terminal envelopes or known host validation errors only. Static correction examples: missing required findings -> MISSING_REQUIRED_FIELD / findings / 'Return findings as a top-level JSON array.'; invalid JSON -> INVALID_JSON / '/' / 'Return one valid JSON object.' Do not invent FIELD_EMBEDDED_IN_SUMMARY from text or parse markup into missing fields. Capture only whitelisted output/error fields, never reasoning/prompts/raw tool results.",
+        "schemaDiff": "At most 8 distinct issues per snapshot; code <=64 chars; field/correction <=256 UTF-8 bytes each; message <=1024 UTF-8 bytes; preview <=8192 UTF-8 bytes. Count repeated issues rather than append. Current-attempt diagnostic total <=32 KiB. Drop preview then long message first and mark truncation. Preserve existing 4 MiB whole-checkpoint bound; if compact codes cannot fit, surface save failure rather than falsely acknowledge or silently lose them.",
+        "callSites": [
+          "src/agent/providers/review-activity-stream.ts",
+          "src/agent/providers/cli-provider.ts",
+          "src/agent/providers/structured-output.ts",
+          "src/shared/types.ts",
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts"
+        ]
+      },
+      {
+        "entity": "ReviewAttempt.review-response.failureDiagnostics",
+        "change": "field-add",
+        "details": "Optional host-owned array of {phase:'attribution'|'assessment',taskId?:string,diagnostic:ReviewDiagnosticSnapshot}. Relationship: one attempt owns zero or more entries; assessment entries each belong to exactly one selected task; one attribution entry omits taskId and applies to the selected task set. Replace latest current-execution snapshot using existing atomic serial writer and execution fences. Do not multiply shared attribution evidence per task. TaskReviewResult/native schema remains unchanged. Old checkpoints/CRs need no rewrite or backfill. This field remains in existing temporary checkpoint, cleaned by normal story BUILD approval ownership; no new recovery file/cleanup mechanism.",
+        "callSites": [
+          "src/workflow/code-review/task-review/contracts.ts",
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts"
+        ]
+      },
+      {
+        "entity": "previousRoundFeedback",
+        "change": "new",
+        "details": "Derived explicit input property {previousRoundFeedback:[{attempt,taskId,phase,errors:[{code,field,correction}]}],previousRoundFeedbackTruncated?:true}. Not submitter input. For each task/phase inspect the latest earlier same-reviewer attempt only; include supported diagnostics if that task/phase remains unresolved. A newer successful result suppresses older errors. Assignment prompt includes its task; attribution includes applicable selected tasks/shared phase. Missing/foreign/history-without-diagnostics gives []. At most 8 errors per task and 4 KiB UTF-8 across the whole projected feedback including truncation marker. Stable deduplication; no schema repetition or native/candidate snippets. Omit raw failureDiagnostics from all ordinary embedded history so another prompt section cannot reintroduce verbose evidence. Complete checkpoint remains available through existing read tools if needed.",
+        "callSites": [
+          "src/workflow/code-review/task-review/assessment.ts",
+          "src/workflow/code-review/task-review/policy.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Malformed JSON, invalid schema, or host semantic rejection",
+          "detection": "Native JSON parser, same existing AJV invocation, or host TaskReviewInputError reports a concrete field/error.",
+          "response": "Persist bounded pointed diagnostics; preserve existing rejection and truthful failed/incomplete state. Later valid output still passes normal validation; never promote rejected feedback.",
+          "userImpact": "Next round knows the exact output mistake.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Native CLI spawn/exit/terminal failure or missing successful final feedback",
+          "detection": "runInProcessGroup result and native result/turn envelope provide failure/exit metadata and parser has no accepted candidate.",
+          "response": "Preserve terminal details plus last rejection through ReviewOutputFailureError and diagnostic sink; no internal retry or full stdout retention.",
+          "userImpact": "Generic failure no longer erases actionable diagnostics.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Foreign/stale/late controller diagnostic",
+          "detection": "Owner/task/executionId/sequence/replay validation or completed durable result fence fails.",
+          "response": "Reject conflicting update; no previous task/result or attempt mutation. Exact accepted exchange replay remains idempotent.",
+          "userImpact": "No cross-session contamination.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Budget overflow or diagnostic save failure",
+          "detection": "Strict schema and UTF-8/issue/attempt/checkpoint byte accounting; atomic writer rejects.",
+          "response": "Coalesce repeated errors and explicitly truncate preview/long messages first. If compact required errors cannot fit or save fails, surface failure and retain last durable checkpoint; never acknowledge false durability.",
+          "userImpact": "Bounded storage and honest persistence.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Five identical missing-findings errors",
+          "expected": "One pointed missing-field correction plus occurrence count; no verbose explanations, repeated schema or XML extraction."
+        },
+        {
+          "input": "Invalid candidate followed by valid accepted feedback",
+          "expected": "Acceptance wins; diagnostics remain evidence and do not turn a success into failure or pollute next-round resolved task feedback."
+        },
+        {
+          "input": "No old diagnostics or wrong reviewer party",
+          "expected": "Empty previousRoundFeedback; no retrospective guessing/backfill."
+        },
+        {
+          "input": "Attribution-wide error",
+          "expected": "One stored phase entry applies to selected task set; next input includes applicable concise errors without duplicated raw evidence."
+        },
+        {
+          "input": "Disconnect/restart after saved diagnostic before result",
+          "expected": "Explicit recovery reads persisted current-attempt evidence. No automatic restart/retry or rewriting previous attempts."
+        },
+        {
+          "input": "Untrusted native text/injection/Unicode",
+          "expected": "Whitelist only output/errors; bound by UTF-8 bytes, JSON-escape fields and use static corrections. No thinking/prompts enter diagnostics or concise feedback."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Existing supplied schema, successful finality and candidate/semantic enforcement remain authoritative (s1 provider analysis).",
+          "source": "c1"
+        },
+        {
+          "text": "Existing serialized checkpoint ownership and immutable sequential attempts remain authoritative (s1 task-review analysis).",
+          "source": "c2"
+        },
+        {
+          "text": "No automatic retry, engine replacement, timeout redesign or history rewrite (approved issue and s1 located host boundaries).",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test + node:assert/strict via tsx, confirmed by direct-source fallback after off-topic analyzer test results.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Native failure capture and concise corrections for both CLIs.",
+          "subjects": [
+            "Claude missing-findings repeated five times coalesces and never accepts",
+            "Codex final JSON parse/schema failure preserves finality and diagnostics",
+            "Terminal CLI failure and host semantic rejection retain pointed fields",
+            "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair"
+          ],
+          "fixturesNeeded": [
+            "Synthetic native frames matching S2 failure",
+            "Multibyte oversized candidates/errors"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Stored data and input boundaries.",
+          "subjects": [
+            "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema",
+            "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result",
+            "Shared attribution diagnostics stored once and projected only to applicable selected scope"
+          ],
+          "fixturesNeeded": [
+            "Old/new checkpoints and both reviewer histories"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Provider-host-persistence-next-input continuity without hosted models.",
+          "subjects": [
+            "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+            "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity",
+            "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+            "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+          ],
+          "fixturesNeeded": [
+            "Existing fake CLI, local Unix IPC, temporary Git fixtures and injected writer failures"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Claude missing-findings repeated five times coalesces and never accepts",
+            "Codex final JSON parse/schema failure preserves finality and diagnostics",
+            "Terminal CLI failure and host semantic rejection retain pointed fields"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair",
+            "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+            "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+            "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "Shared attribution diagnostics stored once and projected only to applicable selected scope"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "s1 grounded parser drops invalid-candidate details and generic activity exit loses native errors; checkpoints have no explicit error feedback.",
+      "stateAfter": "Native adapters/hosts persist bounded host-owned evidence and next-attempt inputs receive concise previousRoundFeedback; strict model results/finality and all earlier attempts stay unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add optional stored diagnostic/plain issue contracts while keeping native model result schemas unchanged; verify old fixtures.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Connect both native adapters and host routes through diagnostic sink/existing activity exchange with strict execution fencing.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Project concise feedback in attribution and assessment and omit raw diagnostic history from inline context.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Deploy with normal daemon restart after BUILD approval. Do not backfill old histories or automatically start S2 review.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "New optional checkpoint fields preserve existing old data in new readers; model/submitter schemas unchanged. Updated controller native integration wires optional onDiagnostic for parity. Old strict binaries may reject new diagnostic checkpoints; do not strip/rewrite history to downgrade active runs. No legacy engine, fallback flag or new persistence mechanism.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Host-owned attempt diagnostics",
+        "oneLineSummary": "Store bounded host failures alongside task results; derive concise next-round input.",
+        "approach": "Native adapters report diagnostics to their owning host, which persists them under the existing attempt review-response. Next inputs derive previousRoundFeedback without changing the model TaskReviewResult schema.",
+        "pros": [
+          "Separates validation diagnostics from findings.",
+          "Uses existing checkpoint and validators."
+        ],
+        "cons": [
+          "Adds an optional stored field and a diagnostic exchange on existing controller activity."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Host diagnostics in task result",
+        "oneLineSummary": "Add optional host diagnostics to ordinary task results.",
+        "approach": "Extend TaskReviewResult with host-populated failures, excluding them from native model output schemas, and derive next-round input from those results.",
+        "pros": [
+          "Co-locates failure status and diagnostics."
+        ],
+        "cons": [
+          "Requires distinct host/model result schemas and extra reuse exclusion rules."
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Satisfies behavior but mixes host failures into model-authored task output."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "review-output-failure-feedback",
+      "narrative": "Output validation failures are stored by the owning host and projected as pointed feedback into a later explicitly started review. Diagnostic persistence and valid assessment acceptance remain separate.",
+      "participants": [
+        {
+          "id": "native",
+          "label": "Claude / Codex CLI",
+          "description": "Produces native review output; receives assigned schema."
+        },
+        {
+          "id": "provider",
+          "label": "Native adapter",
+          "description": "Validates final output and emits bounded diagnostics."
+        },
+        {
+          "id": "host",
+          "label": "Daemon / controller host",
+          "description": "Owns current task execution, checkpoint writes and next-attempt input."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Existing review checkpoint",
+          "description": "Stores immutable attempts and host-owned failure diagnostics."
+        },
+        {
+          "id": "next",
+          "label": "Next native review attempt",
+          "description": "Explicit subsequent attempt; receives concise previousRoundFeedback and ordinary schema."
+        }
+      ],
+      "messages": [
+        {
+          "from": "native",
+          "to": "provider",
+          "label": "Schema-invalid feedback or terminal output failure",
+          "kind": "return",
+          "description": "An invalid candidate remains rejected; raw reasoning is not diagnostic data."
+        },
+        {
+          "from": "provider",
+          "to": "host",
+          "label": "onDiagnostic: bounded issue snapshot",
+          "kind": "call",
+          "description": "Separate from activity renewal and accepted candidate callback."
+        },
+        {
+          "from": "host",
+          "to": "checkpoint",
+          "label": "Persist current attempt / task / phase diagnostic",
+          "kind": "call",
+          "description": "Existing serial atomic writer and execution fences; no extra checkpoint."
+        },
+        {
+          "from": "host",
+          "to": "checkpoint",
+          "label": "Read latest applicable prior attempt on explicit next start",
+          "kind": "call",
+          "description": "Do not rewrite old history or revive errors from resolved tasks."
+        },
+        {
+          "from": "checkpoint",
+          "to": "host",
+          "label": "Supported unresolved prior diagnostics",
+          "kind": "return",
+          "description": "Provider party, task and phase scoped data."
+        },
+        {
+          "from": "host",
+          "to": "next",
+          "label": "previousRoundFeedback: code, field, correction",
+          "kind": "call",
+          "description": "No verbose errors, rejected candidate, or repeated schema in the feedback property."
+        },
+        {
+          "from": "next",
+          "to": "host",
+          "label": "New feedback through normal validation and acceptance",
+          "kind": "return",
+          "description": "Only a valid accepted assessment can establish a new pass."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/preserve-native-review-validation-failures-next-E20261102bd3fc045/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 provider/task-review analysis: native validation boundary",
+      "quotedText": "ReviewActivityStream and validateAgainstSchema located; candidate error details dropped at provider boundary."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 provider/task-review analysis: checkpoint and host boundary",
+      "quotedText": "TaskReviewCoordinator/ControllerTaskReview and strict immutable checkpoint flow inspected."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-67a00caafa8fcb3e.json"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/agent/providers/review-activity-stream.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-output.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/shared/types.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/contracts.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/controller.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/policy.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "stakeholder",
+      "ref": "User decision: previousRoundFeedback contains pointed summaries of output mistakes, not verbose explanations; support both Claude and Codex."
+    }
+  ]
+}

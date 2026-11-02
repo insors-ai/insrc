@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8f5e08f5-1a8a-4a79-8786-2efc7c331bde",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:45.590Z",
+    "epicCreatedAt": "2026-11-02T05:39:08.234Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd3fc04540624ba3",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Capture bounded native output diagnostics for Claude and Codex",
+      "parent": {
+        "entityId": "STORY-bd3fc04540624ba3-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bd3fc04540624ba3-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a5d140c2a3a740ead5f5c99a74c6e092ab0565af2560bcb86ec011ede8f32cc3",
+        "at": "2026-11-02T06:06:45.593Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:45.594Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Capture bounded native output diagnostics for Claude and Codex",
+    "summary": "Implement the approved shared diagnostic/error types and optional activity diagnostic callback, reuse the existing AJV validation result with plain structured issues, and capture native JSON/schema/host/terminal failures plus bounded rejected-feedback evidence in ReviewActivityStream/CliProvider. Preserve existing strict acceptance, successful finality, process cancellation and memory bounds; no auto-retry or markup repair.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Both providers expose missing-field, malformed final JSON, terminal/exit and host validation failures through bounded structured diagnostics rather than only generic errors.",
+      "Repeated issues coalesce; approved UTF-8/count/preview limits and static corrections exclude prompts/reasoning and never parse summary markup into fields.",
+      "Only valid final feedback can be accepted; accepted durable feedback survives a later wrapper failure; no fixed task timer or native retry is introduced.",
+      "Claude validation errors must correlate to StructuredOutput/native terminal envelopes; unrelated Read/Bash permission/tool errors are not inferred to be output-schema errors."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Claude missing-findings repeated five times coalesces and never accepts"
+      },
+      {
+        "level": "unit",
+        "name": "Codex final JSON parse/schema failure preserves finality and diagnostics"
+      },
+      {
+        "level": "unit",
+        "name": "Terminal CLI failure and host semantic rejection retain pointed fields"
+      },
+      {
+        "level": "unit",
+        "name": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

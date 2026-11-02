@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f208c883-af6f-438b-8d87-1bfcf7d332dc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:45.595Z",
+    "epicCreatedAt": "2026-11-02T05:39:08.234Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd3fc04540624ba3",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Persist diagnostics through both task-review host routes",
+      "parent": {
+        "entityId": "STORY-bd3fc04540624ba3-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bd3fc04540624ba3-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bd3fc04540624ba3-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ff79c2995fe44849347226a073031a868400f26eac8547c3aff36bda9c6317cb",
+        "at": "2026-11-02T06:06:45.599Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:45.599Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Persist diagnostics through both task-review host routes",
+    "summary": "Add optional host-owned failureDiagnostics to the existing attempt response and connect the native callback/error fallback to daemon serial persistence. Extend the existing controller activity exchange for diagnostics with task/phase/owner/execution/sequence checks. Keep shared attribution diagnostic evidence once per attempt phase and assessment diagnostics per selected task, preserving old checkpoints, ordinary result schemas and immutable history.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Daemon and controller paths durably retain equivalent diagnostic snapshots in the existing checkpoint; no new recovery file or diagnostic RPC is introduced.",
+      "Diagnostics never renew inactivity, complete tasks, change prior results or cross owner/execution/task fences; identical accepted exchange replay is idempotent.",
+      "Attribution errors are stored once at phase scope; assessment errors require a selected task. Save/budget failures surface honestly without false acknowledgment or loss of already accepted feedback.",
+      "Historical checkpoints/CRs without diagnostics remain unchanged and readable; model-authored TaskReviewResult/native schemas do not request or accept host diagnostic fields."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema"
+      },
+      {
+        "level": "unit",
+        "name": "Shared attribution diagnostics stored once and projected only to applicable selected scope"
+      },
+      {
+        "level": "integration",
+        "name": "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity"
+      },
+      {
+        "level": "integration",
+        "name": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

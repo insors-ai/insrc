@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793596680096-ezihgw",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T05:18:52.025Z",
+    "epicCreatedAt": "2026-11-02T05:18:52.025Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 51928,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "67a00caafa8fcb3e",
+    "epicSlug": "preserve-native-review-validation-failures-next",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8e309e395c2dd67b83e2a22deef92eb473a714e7a185affbae85ec74d07cf533",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T05:28:30.929Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "67a00caafa8fcb3e",
+      "slug": "EPIC-67a00caafa8fcb3e"
+    }
+  },
+  "body": {
+    "title": "Preserve native review validation failures as next-round feedback",
+    "reproduction": "S2 review attempt 4 failed task t2 after Claude submitted feedback five times without a required root findings array. Each submission placed XML-like findings markup inside summary. Claude's schema tool reported the missing field, but the saved task contained only 'Review activity CLI failed'. The next review attempt therefore lacks pointed feedback about the previous output mistake. Codex malformed final JSON and schema-invalid candidates are likewise not retained as useful review diagnostics.",
+    "rootCause": "src/agent/providers/review-activity-stream.ts drops schema-invalid candidates, silently discards Codex JSON parse failures, and retains terminal success/failure state without structured failure details. src/agent/providers/cli-provider.ts turns nonzero activity CLI exit into a generic error. src/workflow/code-review/task-review/coordinator.ts and src/workflow/code-review/task-review/controller.ts record ordinary task failures; src/workflow/code-review/task-review/contracts.ts and prompt builders in assessment.ts/policy.ts lack explicit structured previousRoundFeedback. Detailed CLI validation failures therefore do not survive the provider-to-checkpoint-to-next-input path.",
+    "fixIntent": "For both Claude and Codex, preserve bounded JSON parse errors, schema violations, terminal CLI failure details and the last rejected feedback as diagnostics, without retaining reasoning or unbounded native output. Persist diagnostics with the failed task in the existing checkpoint and make concise structured previousRoundFeedback available in the subsequent attempt's reviewer input. Feedback should identify previous attempt/task, error code, affected field and pointed correction; do not repeat the schema or inject verbose explanations. Keep the full diagnostic evidence separate from concise prompt feedback. Preserve strict schema and semantic enforcement, finality and candidate acceptance, immutable previous attempts, truthful failed/incomplete statuses, same-party reuse provenance and daemon/controller behavior parity. Use existing validation machinery. No silent repair or promotion of rejected feedback, no automatic native retry, and no new S2 review as part of implementation. Add deterministic regressions for both providers, malformed and schema-invalid output, bounded diagnostics, checkpoint persistence/recovery, precise next-attempt feedback and successful later valid feedback."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/review-activity-stream.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/contracts.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/controller.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/policy.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S002/CR.md"
+    },
+    {
+      "id": "c9",
+      "kind": "stakeholder",
+      "ref": "User: previous review round feedback in the input structure; pointed summaries of errors, not verbose explanations; support Codex too."
+    }
+  ]
+}

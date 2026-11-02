@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0e9b3ac7-7bef-474b-9f0a-f497367994fc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T06:06:45.600Z",
+    "epicCreatedAt": "2026-11-02T05:39:08.234Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd3fc04540624ba3",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Supply concise previous-round feedback and verify recovery end to end",
+      "parent": {
+        "entityId": "STORY-bd3fc04540624ba3-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-bd3fc04540624ba3-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-bd3fc04540624ba3-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e2507a6a3a2ed32b27644dc5f64e4a9634dd3679997628f6f34b99dbecbec0ca",
+        "at": "2026-11-02T06:06:45.603Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:45.603Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Supply concise previous-round feedback and verify recovery end to end",
+    "summary": "Project explicit previousRoundFeedback into attribution and assessment inputs using latest applicable same-reviewer unresolved failures. Exclude previews/raw errors/schema repetition from this property and raw diagnostics from embedded history. Complete provider/host/recovery and subsequent valid feedback tests, preserve old failed attempts, and document the new input and diagnostic boundaries.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Next inputs contain pointed attempt/task/phase/code/field/correction data; assignments are task-scoped and attribution selected-scope, within the 4 KiB prompt budget with explicit truncation.",
+      "Latest same-party resolved results suppress older errors; absent/foreign historical diagnostics produce empty feedback without guessing or backfill.",
+      "Synthetic Claude/Codex runs prove rejected feedback -> durable checkpoint -> concise next input -> independently schema-valid next feedback on both host routes, with byte-identical earlier attempts.",
+      "Disconnect/restart, shared attribution, writer failure and accepted-feedback precedence tests preserve existing invariants. Documentation updated; no hosted S2 retry or legacy review invocation is part of this build.",
+      "Document optional diagnostic data compatibility, old strict-reader downgrade limitations and no stripping/backfill of immutable history."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result"
+      },
+      {
+        "level": "integration",
+        "name": "Fake Claude/Codex failure persists on daemon route and appears in subsequent input"
+      },
+      {
+        "level": "integration",
+        "name": "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt"
+      },
+      {
+        "level": "integration",
+        "name": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,277 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793598368062-ep6mtk",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T05:49:25.547Z",
+    "epicCreatedAt": "2026-11-02T05:39:08.234Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 196636,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd3fc04540624ba3",
+    "epicSlug": "preserve-native-review-validation-failures-next",
+    "storyId": "s1",
+    "lldRunId": "wf-1793597748326-1qf85p",
+    "lldEffectiveHash": "bd3fc04540624ba38459f34044e0c39adb0537b075659414e57536b6c293b09b",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "03b713da63bd2caba44bf15df2368765dbfff4cee8e0f5d38969b58a3f655e0b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T06:06:45.182Z"
+      }
+    },
+    "rangeBase": "58f2e841ab67f320d6e52df1d7654ad6629af82d"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Implement one bounded diagnostic path from native review output to the existing checkpoint, then derive concise previousRoundFeedback for the next attempt. Build and verify provider capture before durable host integration, and complete the input projection with deterministic recovery tests. Strict schema/finality checks and prior review results remain unchanged; no hosted S2 rerun is part of this build."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Capture bounded native output diagnostics for Claude and Codex",
+        "summary": "Implement the approved shared diagnostic/error types and optional activity diagnostic callback, reuse the existing AJV validation result with plain structured issues, and capture native JSON/schema/host/terminal failures plus bounded rejected-feedback evidence in ReviewActivityStream/CliProvider. Preserve existing strict acceptance, successful finality, process cancellation and memory bounds; no auto-retry or markup repair.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Both providers expose missing-field, malformed final JSON, terminal/exit and host validation failures through bounded structured diagnostics rather than only generic errors.",
+          "Repeated issues coalesce; approved UTF-8/count/preview limits and static corrections exclude prompts/reasoning and never parse summary markup into fields.",
+          "Only valid final feedback can be accepted; accepted durable feedback survives a later wrapper failure; no fixed task timer or native retry is introduced.",
+          "Claude validation errors must correlate to StructuredOutput/native terminal envelopes; unrelated Read/Bash permission/tool errors are not inferred to be output-schema errors."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Claude missing-findings repeated five times coalesces and never accepts"
+          },
+          {
+            "level": "unit",
+            "name": "Codex final JSON parse/schema failure preserves finality and diagnostics"
+          },
+          {
+            "level": "unit",
+            "name": "Terminal CLI failure and host semantic rejection retain pointed fields"
+          },
+          {
+            "level": "unit",
+            "name": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Persist diagnostics through both task-review host routes",
+        "summary": "Add optional host-owned failureDiagnostics to the existing attempt response and connect the native callback/error fallback to daemon serial persistence. Extend the existing controller activity exchange for diagnostics with task/phase/owner/execution/sequence checks. Keep shared attribution diagnostic evidence once per attempt phase and assessment diagnostics per selected task, preserving old checkpoints, ordinary result schemas and immutable history.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Daemon and controller paths durably retain equivalent diagnostic snapshots in the existing checkpoint; no new recovery file or diagnostic RPC is introduced.",
+          "Diagnostics never renew inactivity, complete tasks, change prior results or cross owner/execution/task fences; identical accepted exchange replay is idempotent.",
+          "Attribution errors are stored once at phase scope; assessment errors require a selected task. Save/budget failures surface honestly without false acknowledgment or loss of already accepted feedback.",
+          "Historical checkpoints/CRs without diagnostics remain unchanged and readable; model-authored TaskReviewResult/native schemas do not request or accept host diagnostic fields."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema"
+          },
+          {
+            "level": "unit",
+            "name": "Shared attribution diagnostics stored once and projected only to applicable selected scope"
+          },
+          {
+            "level": "integration",
+            "name": "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity"
+          },
+          {
+            "level": "integration",
+            "name": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Supply concise previous-round feedback and verify recovery end to end",
+        "summary": "Project explicit previousRoundFeedback into attribution and assessment inputs using latest applicable same-reviewer unresolved failures. Exclude previews/raw errors/schema repetition from this property and raw diagnostics from embedded history. Complete provider/host/recovery and subsequent valid feedback tests, preserve old failed attempts, and document the new input and diagnostic boundaries.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Next inputs contain pointed attempt/task/phase/code/field/correction data; assignments are task-scoped and attribution selected-scope, within the 4 KiB prompt budget with explicit truncation.",
+          "Latest same-party resolved results suppress older errors; absent/foreign historical diagnostics produce empty feedback without guessing or backfill.",
+          "Synthetic Claude/Codex runs prove rejected feedback -> durable checkpoint -> concise next input -> independently schema-valid next feedback on both host routes, with byte-identical earlier attempts.",
+          "Disconnect/restart, shared attribution, writer failure and accepted-feedback precedence tests preserve existing invariants. Documentation updated; no hosted S2 retry or legacy review invocation is part of this build.",
+          "Document optional diagnostic data compatibility, old strict-reader downgrade limitations and no stripping/backfill of immutable history."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result"
+          },
+          {
+            "level": "integration",
+            "name": "Fake Claude/Codex failure persists on daemon route and appears in subsequent input"
+          },
+          {
+            "level": "integration",
+            "name": "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt"
+          },
+          {
+            "level": "integration",
+            "name": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Claude missing-findings repeated five times coalesces and never accepts",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Codex final JSON parse/schema failure preserves finality and diagnostics",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Terminal CLI failure and host semantic rejection retain pointed fields",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "UTF-8/count/preview budgets and static correction mapping exclude reasoning and markup repair",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Shared attribution diagnostics stored once and projected only to applicable selected scope",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-bd3fc04540624ba3-s1 contractDetails and errorPaths"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD-bd3fc04540624ba3-s1 dataModelChanges: ReviewDiagnosticSnapshot and ReviewOutputFailureError"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD-bd3fc04540624ba3-s1 dataModelChanges: ReviewAttempt.review-response.failureDiagnostics"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-bd3fc04540624ba3-s1 dataModelChanges: previousRoundFeedback"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD-bd3fc04540624ba3-s1 testStrategy and migration"
+    }
+  ]
+}

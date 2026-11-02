@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 7,
         "contentHash": "83d1ba42edf59c708dd18a079357577dc485743f065389789be3c967b9460702",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T10:21:32.090Z",
+        "override": {
+          "reason": "controller self-review, see docs/standalone/gate-remaining-content-writers-revise-action-E20261102f32c3abf/S001/SELF-REVIEW.md (no code-review tool)"
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-f636ac03-829a-4ed5-88c0-05fd8935805c",

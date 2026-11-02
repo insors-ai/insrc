@@ -17,6 +17,7 @@ import type { UnitRef } from '../tracker/refs.js';
 import { readHolder, teamContext, teamGate, TeamGateRefusedError } from './gate.js';
 import type { GuardedAction, RefusedOutcome } from './gate.js';
 import { isUnderSignoff, settleForAttempt } from './signoff.js';
+import type { SignoffStage } from './types.js';
 
 /**
  * The stage unit an authoring run changes: a design.epic run changes the Epic, a design.story
@@ -49,11 +50,23 @@ function authorActionOf(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath'>, u
 export async function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): Promise<void> {
 	const unit = authorUnitOf(intent);
 	if (unit === undefined) return;
-	const action = authorActionOf(intent, unit);
-	const outcome = await teamGate(intent.repoPath, unit, action, intent.workflow);
+	await askGate(intent.repoPath, unit, authorActionOf(intent, unit), intent.workflow);
+}
+
+/**
+ * The gate's check for a writer that changes a draft outside an authoring run (the define extend, a recorded review comment):
+ * 'revise' when `stage` of `unit` is in signoff or was sent back from it, 'author' otherwise. Revising never takes the claim.
+ * Throws TeamGateRefusedError when the actor may not change the draft and rethrows a ToolDenied; a repo with no policy is untouched.
+ */
+export async function assertMayReviseDraft(repoPath: string, unit: UnitRef, stage: SignoffStage, authoring: string): Promise<void> {
+	await askGate(repoPath, unit, isUnderSignoff(repoPath, unit, stage) ? 'revise' : 'author', authoring);
+}
+
+async function askGate(repoPath: string, unit: UnitRef, action: GuardedAction, authoring: string): Promise<void> {
+	const outcome = await teamGate(repoPath, unit, action, authoring);
 	if (outcome.kind === 'no-issue' && outcome.allowFirstAuthor) return;   // the first draft is what creates the issue
 	if (outcome.kind !== 'allowed') throw new TeamGateRefusedError(outcome);
-	if (action === 'revise') await assertHeld(intent.repoPath, unit);
+	if (action === 'revise') await assertHeld(repoPath, unit);
 }
 
 /** The gate lets 'revise' through on an unassigned stage, as it does every action but the claiming ones; revising must not take the claim, so nobody holding the stage is refused. */

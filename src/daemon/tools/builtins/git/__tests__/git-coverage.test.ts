@@ -21,7 +21,7 @@ import { listTools } from '../../../registry.js';
 import type { ToolResult } from '../../../types.js';
 import { GIT_2_53_COMMANDS, GIT_COVERAGE, renderCoverageTable } from '../coverage.js';
 import type { CoverageRow } from '../coverage.js';
-import { git, registerForTests, richRepo, toolDeps } from './_repo.js';
+import { git, newRepo, registerForTests, richRepo, toolDeps } from './_repo.js';
 
 const MULTI_OPERATION = ['stash', 'worktree', 'remote', 'branch', 'tag', 'refs', 'reflog'];
 const baseRows = GIT_COVERAGE.filter(r => r.operation === undefined);
@@ -38,7 +38,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 42, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text from s8');
+	assert.equal(registered.size, 43, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect, git_text, git_objects from s8');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -272,6 +272,60 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 		c.git('commit', '-q', '--allow-empty', '-m', 'third');
 		const r = await c.ok('git_text', { op: 'mailsplit', content: c.git('format-patch', '--stdout', '-2') }); const d = r.data as { count: number; messages: string[] };
 		assert.equal(d.count, 2); assert.match(d.messages[0]!, /Subject: \[PATCH 1\/2\] second/); assert.match(d.messages[1]!, /Subject: \[PATCH 2\/2\] third/);
+	},
+
+	// ---- git_objects (s8)
+	'commit-tree': async c => {
+		const r = await c.ok('git_objects', { op: 'commit-tree', tree: 'HEAD^{tree}', parents: [sha(c, 'HEAD')], message: 'synthetic' }); const made = (r.data as { sha: string }).sha;
+		assert.equal(c.git('log', '-1', '--format=%s', made).trim(), 'synthetic'); assert.equal(c.git('rev-parse', `${made}^`).trim(), sha(c, 'HEAD'));
+	},
+	'mktree': async c => { const r = await c.ok('git_objects', { op: 'mktree', entries: c.git('ls-tree', 'HEAD') }); assert.deepEqual(r.data, { op: 'mktree', sha: sha(c, 'HEAD^{tree}') }); },
+	'mktag': async c => {
+		const tag = `object ${sha(c, 'HEAD')}\ntype commit\ntag v9\ntagger T <t@example.com> 1700000000 +0000\n\nmsg\n`;
+		const r = await c.ok('git_objects', { op: 'mktag', tag }); assert.equal(c.git('cat-file', '-t', (r.data as { sha: string }).sha).trim(), 'tag');
+	},
+	'write-tree': async c => { const r = await c.ok('git_objects', { op: 'write-tree' }); assert.deepEqual(r.data, { op: 'write-tree', sha: sha(c, 'HEAD^{tree}') }); },
+	'read-tree': async c => {
+		await c.ok('git_objects', { op: 'read-tree', rev: 'HEAD~1' }); assert.equal(c.git('ls-files', '-s').split(/\s+/)[1], sha(c, 'HEAD~1:a.txt'));
+		await c.ok('git_objects', { op: 'read-tree', rev: 'HEAD~1', reset: true, update: true }); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'one\n');
+	},
+	'update-index': async c => {
+		writeFileSync(join(c.repo, 'n.txt'), 'n'); await c.ok('git_objects', { op: 'update-index', add: true, paths: ['n.txt'] }); assert.match(c.git('ls-files'), /n\.txt/);
+		await c.ok('git_objects', { op: 'update-index', add: true, cacheinfo: `100644,${sha(c, 'HEAD:a.txt')},y.txt` }); assert.match(c.git('ls-files'), /y\.txt/);
+		await c.ok('git_objects', { op: 'update-index', indexInfo: `100644 ${sha(c, 'HEAD:a.txt')} 0\tz.txt\n` }); assert.match(c.git('ls-files'), /z\.txt/);
+	},
+	'replace': async c => {
+		const old = sha(c, 'HEAD~1'); const made = await c.ok('git_objects', { op: 'replace', action: 'create', object: old, replacement: sha(c, 'HEAD') });
+		assert.ok(made.success); assert.match(c.git('replace', '--list'), new RegExp(old));
+		const listed = await c.ok('git_objects', { op: 'replace', action: 'list' }); assert.match((listed.data as { text: string }).text, new RegExp(old));
+		await c.ok('git_objects', { op: 'replace', action: 'delete', object: old }); assert.equal(c.git('replace', '--list').trim(), '');
+	},
+	'notes': async c => {
+		await c.ok('git_objects', { op: 'notes', action: 'add', message: 'hi' }); assert.equal(c.git('notes', 'show', 'HEAD').trim(), 'hi');
+		await c.ok('git_objects', { op: 'notes', action: 'append', message: 'more' }); assert.match(c.git('notes', 'show', 'HEAD'), /hi\n\nmore/);
+		const shown = await c.ok('git_objects', { op: 'notes', action: 'show' }); assert.match((shown.data as { text: string }).text, /^hi\n\nmore$/);
+		const listed = await c.ok('git_objects', { op: 'notes', action: 'list' }); assert.match((listed.data as { text: string }).text, new RegExp(sha(c, 'HEAD')));
+		await c.ok('git_objects', { op: 'notes', action: 'remove' }); assert.equal(c.git('notes', 'list').trim(), '');
+		await c.ok('git_objects', { op: 'notes', action: 'prune' });
+	},
+	'fast-import': async c => {
+		const stream = 'blob\nmark :1\ndata 3\nabc\ncommit refs/heads/imp\nmark :2\ncommitter T <t@example.com> 1700000000 +0000\ndata 3\nimp\nM 100644 :1 f.txt\n\n';
+		await c.ok('git_objects', { op: 'fast-import', stream }); assert.equal(c.git('log', '-1', '--format=%s', 'imp').trim(), 'imp'); assert.equal(c.git('show', 'imp:f.txt'), 'abc');
+	},
+	'unpack-objects': async c => {
+		const pack = execFileSync('git', ['pack-objects', '--revs', '--stdout', '-q'], { cwd: c.repo, input: 'HEAD\n' }).toString('base64'); const other = newRepo();
+		try { await c.ok('git_objects', { op: 'unpack-objects', pack, cwd: other }); assert.equal(git(other, 'cat-file', '-t', sha(c, 'HEAD')).trim(), 'commit'); } finally { rmSync(other, { recursive: true, force: true }); }
+	},
+	'index-pack': async c => {
+		const pack = execFileSync('git', ['pack-objects', '--revs', '--stdout', '-q'], { cwd: c.repo, input: 'HEAD\n' }).toString('base64'); const other = newRepo();
+		try {
+			const r = await c.ok('git_objects', { op: 'index-pack', pack, cwd: other }); assert.match((r.data as { text: string }).text, /^pack\t[0-9a-f]{40}$/);
+			assert.ok(readdirSync(join(other, '.git', 'objects', 'pack')).some(f => f.endsWith('.idx'))); assert.equal(git(other, 'cat-file', '-t', sha(c, 'HEAD')).trim(), 'commit');
+		} finally { rmSync(other, { recursive: true, force: true }); }
+	},
+	'pack-objects': async c => {
+		const r = await c.ok('git_objects', { op: 'pack-objects', revs: 'HEAD\n' }); const d = r.data as { pack: string; size: number };
+		assert.equal(Buffer.from(d.pack, 'base64').subarray(0, 4).toString(), 'PACK'); assert.equal(Buffer.from(d.pack, 'base64').length, d.size);
 	},
 };
 

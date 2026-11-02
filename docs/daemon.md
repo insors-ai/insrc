@@ -1569,7 +1569,7 @@ and a test keeps this copy equal to it.
 | clone |  | assigned | s8 |
 | column |  | covered | git_text |
 | commit-graph |  | assigned | s8 |
-| commit-tree |  | assigned | s8 |
+| commit-tree |  | covered | git_objects |
 | count-objects |  | covered | git_inspect |
 | describe |  | covered | git_inspect |
 | diagnose |  | assigned | s8 |
@@ -1577,7 +1577,7 @@ and a test keeps this copy equal to it.
 | diff-index |  | covered | git_inspect |
 | diff-pairs |  | covered | git_inspect |
 | fast-export |  | assigned | s8 |
-| fast-import |  | assigned | s8 |
+| fast-import |  | covered | git_objects |
 | fmt-merge-msg |  | covered | git_text |
 | format-patch |  | assigned | s8 |
 | fsck |  | covered | git_inspect |
@@ -1585,7 +1585,7 @@ and a test keeps this copy equal to it.
 | gc |  | assigned | s8 |
 | get-tar-commit-id |  | covered | git_inspect |
 | grep |  | covered | git_inspect |
-| index-pack |  | assigned | s8 |
+| index-pack |  | covered | git_objects |
 | init |  | assigned | s8 |
 | init-db |  | assigned | s8 |
 | interpret-trailers |  | covered | git_text |
@@ -1601,13 +1601,13 @@ and a test keeps this copy equal to it.
 | merge-recursive-theirs |  | assigned | s8 |
 | merge-resolve |  | assigned | s8 |
 | merge-subtree |  | assigned | s8 |
-| mktag |  | assigned | s8 |
-| mktree |  | assigned | s8 |
+| mktag |  | covered | git_objects |
+| mktree |  | covered | git_objects |
 | multi-pack-index |  | assigned | s8 |
 | mv |  | assigned | s8 |
 | name-rev |  | covered | git_inspect |
-| notes |  | assigned | s8 |
-| pack-objects |  | assigned | s8 |
+| notes |  | covered | git_objects |
+| pack-objects |  | covered | git_objects |
 | pack-redundant |  | covered | git_inspect |
 | pack-refs |  | assigned | s8 |
 | patch-id |  | covered | git_text |
@@ -1615,9 +1615,9 @@ and a test keeps this copy equal to it.
 | prune-packed |  | assigned | s8 |
 | quiltimport |  | assigned | s8 |
 | range-diff |  | covered | git_inspect |
-| read-tree |  | assigned | s8 |
+| read-tree |  | covered | git_objects |
 | repack |  | assigned | s8 |
-| replace |  | assigned | s8 |
+| replace |  | covered | git_objects |
 | replay |  | assigned | s8 |
 | repo |  | covered | git_inspect |
 | request-pull |  | assigned | s8 |
@@ -1630,14 +1630,14 @@ and a test keeps this copy equal to it.
 | stripspace |  | covered | git_text |
 | submodule |  | assigned | s8 |
 | subtree |  | assigned | s8 |
-| unpack-objects |  | assigned | s8 |
-| update-index |  | assigned | s8 |
+| unpack-objects |  | covered | git_objects |
+| update-index |  | covered | git_objects |
 | var |  | covered | git_inspect |
 | verify-commit |  | covered | git_inspect |
 | verify-pack |  | covered | git_inspect |
 | verify-tag |  | covered | git_inspect |
 | version |  | covered | git_inspect |
-| write-tree |  | assigned | s8 |
+| write-tree |  | covered | git_objects |
 | checkout--worker |  | excluded | internal helper, not an operation |
 | credential |  | excluded | credential helper |
 | credential-cache |  | excluded | credential helper |

@@ -53,6 +53,7 @@ import { gitUpdateRefTool } from './update-ref.js';
 import { gitRmTool } from './rm.js';
 import { gitInspectTool } from './inspect.js';
 import { gitTextTool } from './text.js';
+import { gitObjectsTool } from './objects.js';
 
 export const gitToolDefinitions = [
   gitStatusTool,
@@ -97,4 +98,5 @@ export const gitToolDefinitions = [
   gitMergeTreeTool,
   gitInspectTool,
   gitTextTool,
+  gitObjectsTool,
 ] as const satisfies readonly TypedTool[];

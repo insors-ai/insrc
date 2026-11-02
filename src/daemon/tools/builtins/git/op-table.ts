@@ -28,7 +28,10 @@ export const DEFAULT_STDOUT_BYTES = 512 * 1024;
 
 /** What an op's parse sees of the finished command. */
 export interface GitRun {
+  /** The output as UTF-8 text. */
   readonly stdout: string;
+  /** The raw output, for an op whose output is binary (a pack). */
+  readonly bytes: Uint8Array;
   readonly stderr: string;
   readonly code: number;
 }
@@ -202,7 +205,7 @@ async function runIn(_id: string, spec: GitOpSpec, input: ToolInput, deps: ToolD
   const code = r.code ?? -1;
   if (!(spec.okCodes ?? [0]).includes(code)) { return fail(failureKind(r), stderrText || stdout.trim() || `exit ${code}`); }
 
-  const data = spec.parse !== undefined ? spec.parse({ stdout, stderr: r.stderr, code }, input, dir) : { text: stdout };
+  const data = spec.parse !== undefined ? spec.parse({ stdout, bytes: r.stdout, stderr: r.stderr, code }, input, dir) : { text: stdout };
   const member = answerMember(spec);
   if (data === undefined || !Value.Check(member, { op: spec.name, ...data })) {
     return withFailure({ output: `[${label}] failed: git printed what was not expected`, format: 'text', success: false, error: 'git printed what was not expected' },

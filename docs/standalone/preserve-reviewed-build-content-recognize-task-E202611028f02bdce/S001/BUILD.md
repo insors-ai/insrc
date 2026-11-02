@@ -17,8 +17,3 @@ Preserve existing reviewed BUILD during approval; use the current task-review co
 ## Tasks validated
 
 - ✓ `t1`
-
-## Changes
-
-- `src/workflow/gates.ts` — **insrc-build** (2026-11-02T09:35:07.390Z)
-- `src/workflow/__tests__/approve-task-review.test.ts` — **insrc-build** (2026-11-02T09:35:07.390Z)

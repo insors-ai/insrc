@@ -6,18 +6,30 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "28244359a380072e6d038234c370647eb5ddb997131585180a342430dc0ba7c3",
-        "at": "2026-11-02T09:35:07.716Z",
+        "number": 2,
+        "contentHash": "5769e7bc0581b424bb8eb59bfa5c2b2e1c670f72c87e4c10f2c7a6d7da8ad22e",
+        "at": "2026-11-02T09:45:37.626Z",
         "by": {
-          "id": "insrc:build",
+          "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:45:38.943Z",
+        "override": {
+          "reason": "User explicitly approved this BUILD with a self-review override and push. Author self-review found no outstanding HIGH/MED. 19 current focused tests, production build and final TypeScript compilation passed. Independent code review and daemon build verdict were not run; four old retired-format fixture failures are disclosed in BUILD."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-31f2f1f8-011c-4d3c-a011-4a8366afcc93",
@@ -29,7 +41,7 @@
     "schemaVersion": 1,
     "epicHash": "8f02bdce15c671dc",
     "storyId": "s1",
-    "revision": 1,
+    "revision": 2,
     "standalone": true,
     "sizeClass": "bugfix",
     "authoredBy": "controller",
@@ -46,22 +58,7 @@
     "focus": "Approved small bugfix ISSUE-8f02bdce15c671dc",
     "producesLld": false,
     "summary": "Preserve existing reviewed BUILD during approval; use the current task-review completion gate at artifact approval and its validated reviewer provenance. Validation: 19 current regression tests passed (/tmp/approval-fix-final-tests.log); production build passed (/tmp/approval-fix-build.log); final TypeScript compilation passed (/tmp/approval-fix-final-tsc.log). Four legacy-fixture tests in approve-build-completion.test.ts fail at the already retired review entrypoint (/tmp/approval-fix-regressions.log); no legacy behavior restored. Build tool admission could not resolve this approved no-plan bugfix: unresolved-target; workflow build start unsupported. This is locally verified builder evidence, not a daemon build verdict or independent review.",
-    "changeLog": [
-      {
-        "target": {
-          "file": "src/workflow/gates.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T09:35:07.390Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/__tests__/approve-task-review.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-02T09:35:07.390Z"
-      }
-    ],
+    "changeLog": [],
     "commit": "cdd8e0d06"
   },
   "citations": []

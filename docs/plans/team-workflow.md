@@ -330,3 +330,33 @@ The plan PLAN-315d510cb28100e2-s9 was approved on 2026-11-02 and built in tasks 
    - An unparseable `github.json` is read by the lenient loader as no setting (tracker off), as the terminal approve reads it. The malformed configuration the draft hook reports as not-ready is an entry with `type: github` and no target that the origin remote cannot supply.
    - The chain report's per-Story `artifactId` and `revision` are those of the Story's LLD (0 when it has none); the Epic's are those of the Define.
    - The hooks take the registered repositories from the daemon's repo registry (`registerTrackerRefreshHooks` in the daemon start-up).
+
+## s9 outcome (2026-11-02)
+
+**Built:** t1 the `status-read` capability and `readIssueStatus` on the tracker port and the GitHub adapter; t2 `refreshTrackerStatus` (120-second Deadline, signal to the gh calls) and `syncTracker` over the port, with `tracker.sync` routed through it; t3 the two post-success hooks on `git_pull` and `git_push`; t4 issues at first draft for a repo with no team policy whose tracker is on; t5 the artifact id and revision in the chain report and the explicit refresh as the sync-tracker next action; t6 the amendments and documentation.
+
+**Sweep (once, after t6, in foreground chunks; compared by test name with the tree before s9, commit 7a7e9b9b1, checked out beside it).**
+
+| Chunk | Tests | Failed |
+| :--- | :--- | :--- |
+| src/workflow | 2172 | 45 |
+| src/daemon/__tests__ | 389 | 20 |
+| src/daemon/threads | 86 | 2 |
+| src/daemon/steps (without peer-state-store-leakfree) | 322 | 16 |
+| src/daemon/tools | 634 | 2 |
+| src/daemon/db | 547 | 11 |
+| src/mcp | 122 | 29 |
+| src/cli | 240 | 10 |
+| src/config | 161 | 3 |
+| src/shared | 120 | 13 |
+| src/db | 597 | 3 |
+| src/analyze | 1197 | 18 |
+| src/agent, src/understanding, src/docgen, src/design, src/indexer | 642 | 0 |
+
+No new failure: every failing test name also fails in the tree before s9 (src/workflow compared as a whole run; the other chunks by running each failing file in both trees). The pre-existing failures are the approval and review-gate suites, the daemon lifecycle and CLI process suites, and the MCP and shared suites above; none is in a file this Story changed. `peer-state-store-leakfree.test.ts` never finishes, before and after s9. A first run of src/workflow showed 125 failures, mostly in the approval suites; they passed in isolation and a second full run matched the 45 of the earlier tree, so that run is treated as load noise. No new skipped test: src/workflow skips 1 test before and after, the s9 test files skip none, and the other skips are the live-test and probe suites that need a model, a database or credentials. The skipped names of the other chunks were not compared one by one.
+
+**Open items.**
+- The smoke test of the LLD (a sandbox GitHub repo: write a draft in a repo with no team policy, see the Epic issue, change its state on GitHub, run `git_pull` through the daemon tool, see the status in `meta.tracker`) is not run: it needs a real sandbox repository and creates real issues. It is to be run by a person or with their go-ahead.
+- `AMD-315d510cb28100e2-31` and `-32` are drafts and are approved in the amendment store when the Story is completed; `-29` and `-30` are stale duplicates.
+- A git-hook installer for git run outside the daemon's tools is a later Story (decision 1 above).
+- The rules read the registered repositories at each call; the refresh runs inside the git tool's result, so a slow tracker holds the tool result for up to the 120-second budget plus one call's own limit.

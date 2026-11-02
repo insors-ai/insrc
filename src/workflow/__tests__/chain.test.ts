@@ -20,16 +20,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
-import { defineArtifactPaths, hldArtifactPaths, lldArtifactPaths, writeAtomic } from '../storage.js';
 import { buildChainReport, formatChainReport } from '../chain.js';
 import { computeHldEffectiveHash } from '../artifacts/lld.js';
 import { proposeAmendment } from '../amendments/store.js';
 import type { AmendmentRecord } from '../amendments/types.js';
-import { markApprovedSync } from './lifecycle-fixtures.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md-path resolver
@@ -38,73 +36,7 @@ const CREATED = '2026-07-17T07:42:28.275Z';   // stable anchor for the nested md
 // Fixtures
 // ---------------------------------------------------------------------------
 
-/** A fixture that is already approved: its head carries an approved lifecycle. */
-function approveReviewed(jsonPath: string): void {
-	markApprovedSync(jsonPath);
-}
-
-function writeDefine(repo: string, epicHash: string, opts: { stories: string[] } = { stories: ['s1', 's2'] }): string {
-	const paths = defineArtifactPaths(repo, epicHash, CREATED, 'epic');
-	mkdirSync(dirname(paths.json), { recursive: true });
-	writeAtomic(paths.json, JSON.stringify({
-		meta: {
-			workflow: 'define', runId: 'def-1', schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic', createdAt: CREATED, epicCreatedAt: CREATED,
-		},
-		body: {
-			flavor: 'enhancement',
-			problem: 'x', nonGoals: [], assumptions: [], constraints: [],
-			stories: opts.stories.map(id => ({
-				id, title: `Story ${id}`, userValue: 'v', acceptanceCriteria: [],
-			})),
-			openQuestions: [],
-		},
-		citations: [],
-	}, null, 2));
-	return paths.json;
-}
-
-function writeHld(repo: string, epicHash: string, runId: string): { path: string; runId: string } {
-	const paths = hldArtifactPaths(repo, epicHash, CREATED, 'epic');
-	mkdirSync(dirname(paths.json), { recursive: true });
-	writeAtomic(paths.json, JSON.stringify({
-		meta: {
-			workflow: 'design.epic', runId, schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic', createdAt: CREATED, epicCreatedAt: CREATED,
-		},
-		body: {
-			frameworkSummary: 'x', architectureShape: 'x',
-			sharedContracts: [],
-			storyBoundaries: [{ storyId: 's1', owns: [], depends: [], internal: 'x' }, { storyId: 's2', owns: [], depends: [], internal: 'x' }],
-			nonFunctional: {},
-			rolloutOverview: { phases: [], orderingRationale: '', riskyBits: [] },
-			alternativesConsidered: [], chosenAlternative: '', openQuestions: [],
-		},
-		citations: [],
-	}, null, 2));
-	return { path: paths.json, runId };
-}
-
-function writeLld(repo: string, epicHash: string, storyId: string, hldRunId: string, effectiveHash: string): string {
-	const paths = lldArtifactPaths(repo, epicHash, storyId, CREATED, 'epic');
-	mkdirSync(dirname(paths.json), { recursive: true });
-	writeAtomic(paths.json, JSON.stringify({
-		meta: {
-			workflow: 'design.story', runId: `lld-${storyId}`, schemaVersion: 1,
-			epicHash, epicSlug: 'test-epic', storyId, createdAt: CREATED, epicCreatedAt: CREATED,
-			hldBaseRunId: hldRunId, hldEffectiveHash: effectiveHash, hldAmendmentsApplied: [],
-		},
-		body: {
-			hldContextSlice: {}, contractDetails: { surfaceLevel: 'internal', api: [] },
-			dataModelChanges: [], interactionWithShared: [],
-			errorPaths: { errorCases: [], edgeCases: [], invariantsToPreserve: [] },
-			testStrategy: { testLevels: [], acceptanceMapping: [], testFramework: 'x' },
-			alternativesConsidered: [], chosenAlternative: 'a1', openQuestions: [],
-		},
-		citations: [],
-	}, null, 2));
-	return paths.json;
-}
+import { approveReviewed, writeDefine, writeHld, writeLld } from './helpers/chain-fixtures.js';
 
 function pendingAmendment(epicHash: string, id: string, baseRunId: string): AmendmentRecord {
 	return {

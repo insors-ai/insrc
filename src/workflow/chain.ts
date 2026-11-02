@@ -21,7 +21,7 @@ import { approvalStateOf } from './artifact-core/approval-view.js';
 import { signoffViewOf, type SignoffViewState } from './team/signoff.js';
 import type { DefineArtifact } from './artifacts/define.js';
 import type { HldArtifact } from './artifacts/hld.js';
-import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
+import { artifactJsonPath, defineArtifactId, defineArtifactPaths, hldArtifactId, hldArtifactPaths, lldArtifactId, lldArtifactPaths, readRevision, workItemAnchorCreatedAt, workItemKindOf } from './storage.js';
 import { listAmendments } from './amendments/store.js';
 import { unitIssueOf } from './tracker/unit-head.js';
 import { scanLldStaleness } from './amendments/staleness.js';
@@ -68,6 +68,11 @@ export interface ChainReport {
 		readonly pushed:      boolean;
 		readonly epicRef?:    string;
 		readonly lastSyncedAt?: string;
+		/** The Define's artifact id and its revision (0 when absent). Shown only: nothing here is stored in `meta.tracker`. */
+		readonly artifactId?: string;
+		readonly revision?:   number;
+		/** Each Story that has an issue, with its LLD's artifact id and revision (0 when it has no LLD or no revision). Shown only. */
+		readonly stories?:    readonly { readonly id: string; readonly issue: string; readonly artifactId: string; readonly revision: number }[];
 	};
 	readonly nextAction: NextAction;
 }
@@ -229,11 +234,25 @@ function readTrackerMeta(repoPath: string, epicHash: string, define?: DefineArti
 	const epicRef = unitIssueOf(repoPath, epicHash);
 	if (epicRef === undefined) return { pushed: false };
 	const meta = define.meta as { tracker?: { lastSyncedAt?: string } };
+	const stories = define.body.stories.flatMap(s => {
+		const issue = unitIssueOf(repoPath, epicHash, s.id);
+		if (issue === undefined) return [];
+		const artifactId = lldArtifactId(epicHash, s.id);
+		return [{ id: s.id, issue, artifactId, revision: revisionOnDisk(repoPath, artifactId) }];
+	});
 	return {
 		pushed:  true,
 		epicRef,
 		...(typeof meta.tracker?.lastSyncedAt === 'string' ? { lastSyncedAt: meta.tracker.lastSyncedAt } : {}),
+		artifactId: defineArtifactId(epicHash),
+		revision:   readRevision(define),
+		stories,
 	};
+}
+
+/** `meta.revision` of the artifact stored under `artifactId`; 0 when it is absent, unreadable or has none. */
+function revisionOnDisk(repoPath: string, artifactId: string): number {
+	try { return readRevision(JSON.parse(readFileSync(artifactJsonPath(repoPath, artifactId), 'utf8'))); } catch { return 0; }
 }
 
 // ---------------------------------------------------------------------------
@@ -325,7 +344,7 @@ function computeNextAction(epicHash: string, s: NextActionInput): NextAction {
 	if (s.tracker.lastSyncedAt === undefined) {
 		return {
 			kind: 'sync-tracker',
-			command: `insrc_workflow_step phase=start workflow=tracker.sync focus="sync ${epicHash} from GitHub" params={"epicHash":"${epicHash}"}`,
+			command: `insrc workflow sync ${epicHash}`,
 		};
 	}
 	return { kind: 'chain-complete' };
@@ -372,6 +391,8 @@ export function formatChainReport(r: ChainReport): string {
 	if (r.tracker.pushed) {
 		lines.push(`  - pushed: ${r.tracker.epicRef}`);
 		if (r.tracker.lastSyncedAt !== undefined) lines.push(`  - lastSyncedAt: ${r.tracker.lastSyncedAt}`);
+		if (r.tracker.artifactId !== undefined) lines.push(`  - ${r.tracker.artifactId} revision ${r.tracker.revision ?? 0}`);
+		for (const st of r.tracker.stories ?? []) lines.push(`  - ${st.id}: ${st.issue} (${st.artifactId} revision ${st.revision})`);
 	} else {
 		lines.push('  - not yet pushed');
 	}

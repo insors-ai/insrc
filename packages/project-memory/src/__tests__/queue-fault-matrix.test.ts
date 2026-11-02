@@ -87,3 +87,21 @@ nativeTest(import.meta.url, 'maximum-qualified-identities-preserve-scope-and-epo
     assert.equal(modelCalls, 0); assert.doesNotMatch(JSON.stringify(logs), /secret payload|producerId|eventId/);
   } finally { await service.close(); await rm(root, { recursive: true, force: true }); }
 });
+
+nativeTest(import.meta.url, 'wall-clock-changes-preserve-sequence-and-clamp-age', async context => {
+  let wall = 10_000;
+  context.mock.method(Date, 'now', () => wall);
+  const root = await realpath(await mkdtemp(join(tmpdir(), 'memory-clock-'))), owner = await acquireOwnership(options(root));
+  const queue = new FileQueue(owner, root, limits);
+  try {
+    await queue.start(); const admission = new QueueAdmission(queue, policy);
+    await admission.append(command('first')); assert.equal(queue.stats().oldestPendingMs, 0);
+    wall = 2000; assert.equal(queue.stats().oldestPendingMs, 0, 'backward clock cannot yield negative age');
+    await admission.append(command('second'));
+    const observed: { sequence: string; time: number }[] = [];
+    for await (const frame of admission.replay()) observed.push({ sequence: frame.sequence, time: frame.admittedAtMs });
+    assert.deepEqual(observed, [{ sequence: '1', time: 10_000 }, { sequence: '2', time: 2000 }]);
+    wall = 25_000; assert.equal(queue.stats().oldestPendingMs, 23_000);
+    assert.equal(queue.writer.current.lastSequence, '2');
+  } finally { await queue.close(); await owner.close(); await rm(root, { recursive: true, force: true }); }
+});

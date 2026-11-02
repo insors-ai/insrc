@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T08:35:50.529Z",
+    "updatedAt": "2026-11-02T08:43:53.453Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -669,6 +669,107 @@
               },
               {
                 "title": "queue-limit-validation-precedes-directory-ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "8915a2cdc",
+        "ranAt": "2026-11-02T08:43:53.453Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "write-sync-rename-unlink-failure-fences-the-lane",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "write-sync-rename-unlink-failure-fences-the-lane",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "partial-bootstrap-header-and-event-writes-recover-explicitly",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "adversarial-admission-and-recycled-scope-isolation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "maximum-qualified-identities-preserve-scope-and-epoch",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4200,
+            "titles": [
+              {
+                "title": "write-sync-rename-unlink-failure-fences-the-lane",
+                "result": "pass"
+              },
+              {
+                "title": "partial-bootstrap-header-and-event-writes-recover-explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "maximum-qualified-identities-preserve-scope-and-epoch",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3613,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
                 "result": "pass"
               }
             ],

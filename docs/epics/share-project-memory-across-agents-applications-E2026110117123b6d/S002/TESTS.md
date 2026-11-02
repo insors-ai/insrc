@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 36 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -236,3 +236,29 @@ Run at 2026-11-02T08:35:50.529Z on commit `5cebe413a`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/runtime.test.ts` | 0 | 5 | 1.6 s |  |
+
+## t11
+
+Run at 2026-11-02T08:43:53.453Z on commit `8915a2cdc`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: write-sync-rename-unlink-failure-fences-the-lane**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | write-sync-rename-unlink-failure-fences-the-lane | `packages/project-memory/src/__tests__/queue-fault-matrix.test.ts` |
+| pass | partial-bootstrap-header-and-event-writes-recover-explicitly | `packages/project-memory/src/__tests__/queue-fault-matrix.test.ts` |
+| pass | retirement-resumes-after-intent-unlink-and-successor-creation | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+
+**integration: adversarial-admission-and-recycled-scope-isolation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | maximum-qualified-identities-preserve-scope-and-epoch | `packages/project-memory/src/__tests__/queue-fault-matrix.test.ts` |
+| pass | verified-terminal-ack-retirement-and-reader-pins | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-fault-matrix.test.ts` | 0 | 3 | 4.2 s |  |
+| `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 5 | 3.6 s |  |

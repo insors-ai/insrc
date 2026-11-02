@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "9d8b55429378a3be",
+    "storyId": "S001",
+    "createdAt": "2026-11-02T07:33:53.688Z",
+    "updatedAt": "2026-11-02T07:33:53.688Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T07:01:36.648Z",
+    "epicSlug": "resolve-sql-table-view-references-across"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "13948e28c",
+        "ranAt": "2026-11-02T07:33:53.688Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "SQL references resolved by the cross-file pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/cross-file-sql-references.test.ts",
+                "title": "a reference to a table or view defined in exactly one other file resolves inferred -- qualified or bare, whatever its case",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/cross-file-sql-references.test.ts",
+                "title": "several candidates leave the reference ambiguous with its candidates and no edge; a qualified name never matches a bare definition",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/cross-file-sql-references.test.ts",
+                "title": "a name no file defines is classed no-candidate (no-match), not not-attempted",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/cross-file-sql-references.test.ts",
+                "title": "a settle that commits the file defining a table resolves a waiting reference of an unchanged file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SQL repository through IndexerService",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-index.test.ts",
+                "title": "s9 t8 (ac2): SQL files indexed through IndexerService store a table or view per definition beside the document, and REFERENCES per foreign key and per relation a view selects from",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/sql-index.test.ts",
+                "title": "a settle that commits the file defining a table resolves a reference waiting on it in an unchanged file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/cross-file-sql-references.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1393,
+            "titles": [
+              {
+                "title": "a reference to a table or view defined in exactly one other file resolves inferred -- qualified or bare, whatever its case",
+                "result": "pass"
+              },
+              {
+                "title": "several candidates leave the reference ambiguous with its candidates and no edge; a qualified name never matches a bare definition",
+                "result": "pass"
+              },
+              {
+                "title": "a name no file defines is classed no-candidate (no-match), not not-attempted",
+                "result": "pass"
+              },
+              {
+                "title": "a settle that commits the file defining a table resolves a waiting reference of an unchanged file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/sql-index.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 920,
+            "titles": [
+              {
+                "title": "s9 t8 (ac2): SQL files indexed through IndexerService store a table or view per definition beside the document, and REFERENCES per foreign key and per relation a view selects from",
+                "result": "pass"
+              },
+              {
+                "title": "a settle that commits the file defining a table resolves a reference waiting on it in an unchanged file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,262 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793612094289-lisom4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:37:04.641Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 128179,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "epicSlug": "gate-remaining-content-writers-revise-action",
+    "storyId": "s1",
+    "lldRunId": "wf-1793611542462-nl097c",
+    "lldEffectiveHash": "f32c3abf4a55494b5c0fc2e58aafcee463c0168c8419fbeaaf1bdb89a1f6e2e4",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building this Story adds one shared check to the team author gate and calls it before the first write of the two content writers that had no gate: the define run that extends an existing Epic and the review-comment recorder. The write inventory then names the gate behind every content writer, with a test that fails for one that has none. The work ends with the decisions recorded and one full sweep."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the shared revise-or-author check to the author gate",
+        "summary": "Add assertMayReviseDraft(repoPath, unit, stage, authoring) to src/workflow/team/author-gate.ts: it asks teamGate for 'revise' when isUnderSignoff(repoPath, unit, stage) holds and for 'author' otherwise, keeps the first-author exception for a stage with no issue, applies assertHeld for 'revise', throws TeamGateRefusedError for any other outcome and rethrows a ToolDenied. assertMayAuthor calls it for the unit and stage it already finds, so its behaviour and its three call sites do not change.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the helper asks for 'revise' when the stage is in signoff or changes-requested and for 'author' otherwise, and applies assertHeld for 'revise'",
+          "a repo with no team policy resolves with no tracker call",
+          "a ToolDenied is rethrown and every other refusal is a TeamGateRefusedError",
+          "the existing assertMayAuthor tests pass unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft asks teamGate for revise when the stage is in signoff or changes-requested and for author otherwise, and applies assertHeld for revise"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft resolves with no tracker call in a repo with no team policy"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft rethrows a ToolDenied and throws TeamGateRefusedError for every other refusal"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Gate the define extend path before its first write",
+        "summary": "In finalizeDefineExtend (src/workflow/orchestrator.ts), after the Epic anchor is resolved and before appendStoryToDefine, call assertMayReviseDraft for the unit {epic, repoPath, epicHash}, stage DEF and authoring 'define'. A refusal throws before the Story, the amendment or the EXT record is written; every existing validation failure still returns first, so the gate does not run for a request that fails anyway. The first define of a fresh Epic is not gated. The test drives the existing define-extend test harness (the orchestrator entry the existing extend tests use) with a stand-in policy reader and tracker port through the gate's test seams; no new export is added unless that harness cannot reach the function.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "an extend by someone who is not the holder, while the Define is in signoff, is refused and writes no Story, no amendment and no EXT record",
+          "the holder's extend, and an extend in a repo with no team policy, are written as today",
+          "a duplicate Story id or an unapproved Epic still fails before the gate is asked",
+          "a ToolDenied from the gate stops the run and is not turned into a refusal"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/define-extend-gate.test.ts: the define extend path refuses a non-holder while the Define is in signoff and writes nothing, and the holder's extend is written as today"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/define-extend-gate.test.ts: a repo with no team policy makes no tracker call and the extend is written as today"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/define-extend-gate.test.ts: a duplicate Story id or an unapproved Epic fails before the gate is asked, and a denied tracker call in the gate stops the run"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Gate the review-comment recorder before its first record",
+        "summary": "In handleResolveComment (src/workflow/resolve-comment.ts), after the artifact is found and before the first recordResolution, call assertMayReviseDraft once, mapping parseArtifactId's define and hld to the Epic (stages DEF, HLD) and lld to the Story (stage LLD). A TeamGateRefusedError becomes an { error } naming the gate's reason with nothing recorded; a ToolDenied is rethrown. ResolveCommentDeps gains an optional gate seam for tests. Outside signoff the rule asks for 'author', so a comment on an unassigned stage takes the claim as any author turn does; this is tested, not assumed.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a comment from someone who may not revise the stage is answered with an { error } and records nothing",
+          "the gate is asked once for several comments and maps define, hld and lld to the right unit and stage",
+          "a comment outside signoff by the holder, or on an unassigned stage, behaves as an author turn would (claim taken), and a stage held by someone else is refused",
+          "a repo with no team policy records as today",
+          "a ToolDenied is rethrown and is not an { error }"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: handleResolveComment answers an error and records nothing when the actor may not revise the stage"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: the gate is asked once for several comments and maps define, hld and lld to the Epic and Story stages"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: outside signoff a comment behaves as an author turn, and a repo with no team policy records as today"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: a denied tracker call in the gate is rethrown and is not an error result"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Name the gate behind every content writer in the write inventory",
+        "summary": "Add the optional gatedBy field to InventoryEntry and WriteSite in src/workflow/artifact-write-inventory.ts (an entry point name, or an object with an exemption reason), fill it for the eight content places (synthesize.ts, workflow-rpc.ts, resolve-comment.ts, unit-head.ts, standalone-record.ts, test-record.ts, task-set.ts and the appendStoryToDefine site), and add the test in src/workflow/__tests__/artifact-write-inventory.test.ts that fails for a content entry or site with neither.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "every content entry and site names a gate or an exemption with a reason",
+          "the test fails for a content writer with neither, shown by a fixture entry",
+          "appendStoryToDefine is recorded as gated by finalizeDefineExtend and resolve-comment.ts by handleResolveComment",
+          "the existing inventory rules still pass"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: every content entry and site names a gatedBy entry point or an exemption with a reason, including appendStoryToDefine"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: a content writer with neither a gate nor an exemption is reported"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Record the decisions and run the full sweep once",
+        "summary": "Write the decisions of this Story (resolveComment holder-only revise for every comment, the extend gated as author outside signoff, the exemptions) and the outcome in docs/plans/team-workflow.md, then run the full test sweep once in foreground chunks and compare by test name with the tree before this Story.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the decisions and the outcome are written in docs/plans/team-workflow.md",
+          "no new failure and no new skipped test against the tree before this Story, with the pre-existing failures listed"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/team/__tests__/revise-writers-record.test.ts: the revise-writers section of team-workflow.md records the decisions, the exemptions, the sweep result and the open items"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "assertMayReviseDraft asks teamGate for 'revise' when the stage is in signoff or changes-requested and for 'author' otherwise, applies assertHeld for 'revise', rethrows a ToolDenied and resolves with no tracker call in a repo with no team policy",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the write inventory names a gatedBy entry point or an exemption with a reason for every content entry and site, and the test fails for a content writer with neither",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the define extend path refuses when the Epic's Define is in signoff and the actor is not the holder, and writes no Story, no amendment and no EXT record; the holder is allowed and the extend is written as today",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "handleResolveComment answers an { error } with the gate's reason and records no comment when the stage is in signoff and the actor is not the holder, asks the gate once for several comments, maps define and hld to the Epic and lld to the Story, and records as today in a repo with no team policy",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a denied tracker call in the gate is rethrown by both entry points and is not an { error }",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract: assertMayReviseDraft, finalizeDefineExtend, handleResolveComment, appendStoryToDefine"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: the gatedBy field of the write inventory"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 error paths: TeamGateRefusedError, ToolDenied, the error result of the recorder"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 test strategy: levels, subjects and acceptance mapping ac1 to ac5"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration: the three steps and the backward compatibility"
+    }
+  ]
+}

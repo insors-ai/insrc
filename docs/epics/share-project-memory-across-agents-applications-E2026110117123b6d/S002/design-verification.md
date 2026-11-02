@@ -23,3 +23,18 @@ The public sc1/sc2/sc3 signatures remain unchanged. The following private detail
 | Small control publication | Recovery reports and the write-once receipt barrier stage through the unaccepted `checkpoint.next` candidate, then rename and directory sync. They never overwrite `checkpoint.json`; a crash during report/barrier writing cannot publish a partial control record. |
 | Logical admission quota | Immutable pass-through policy output reuses its already validated snapshot. Node charges are logical units (16 bytes plus encoded/key bytes), with the separately enforced node/call/depth caps; these counters do not claim to measure V8 RSS. |
 | Code organization | Private receipt validation, index metadata and retirement helpers live in `packages/project-memory/src/queue/receipts.ts`, `packages/project-memory/src/queue/index-record.ts` and `packages/project-memory/src/queue/retirement.ts`. They add no backend/store import or runtime dependency. |
+
+## Queue cost study
+
+Measured on Apple M3 Pro, Node 22.23.2, APFS/macOS. Full data and runtime-source fingerprints are in `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/performance/queue-cost.json`. These measurements approve no production default or latency SLO.
+
+| Profile | Result | p50 ms | p95 ms | Fresh-process recovery ms |
+| --- | --- | ---: | ---: | ---: |
+| empty 1024 bytes | accepted; 20 samples | 19.84 | 20.94 | 22.57 |
+| empty 65536 bytes | accepted; 20 samples | 20.93 | 23.85 | 23.58 |
+| empty 1048576 bytes | accepted; 20 samples | 38.64 | 43.17 | 50.26 |
+| backlog-1k | accepted; 20 samples | 29.88 | 33.02 | 115.84 |
+| metadata-cap | rejected at 16,351-frame metadata cap | 0.07 | 0.08 | 1067.54 |
+| 16MiB-safety | accepted in 351.27 ms; one-byte excess rejected | — | — | 402.51 |
+
+Durability steps remain enabled. Backlog fixtures are constructed by a private measurement helper and fully validated by production recovery; fixture construction is not reported as ingestion latency. Recovery starts a new Node process with the OS file cache warm. Physical segment/control bytes, active/durable counters and RSS/heap snapshots are recorded; snapshots are lower bounds on peaks. Semantic commit is unimplemented, and these results do not qualify Lance atomicity or hardware power-loss durability.

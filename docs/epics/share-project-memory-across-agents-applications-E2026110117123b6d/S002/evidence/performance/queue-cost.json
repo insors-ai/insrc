@@ -1,0 +1,290 @@
+{
+  "mode": "full",
+  "capturedAt": "2026-11-02T09:03:13.603Z",
+  "source": {
+    "benchmarks/queue-cost.mjs": "100df82a192d23b4f3679e4ceeebbd5aa3d1189db5c8afc2ca96ce931daf4b0d",
+    "src/configuration.ts": "c9648b79eb9ef2721a069373b8381a7e4418ec35a163c92bfe1e0f4bdde83a26",
+    "src/errors.ts": "4ef853da3c18fc4db41a4b304948a9340b694a42b14ed62c1e746a9032a8147e",
+    "src/host-node.ts": "cc00d296184ebfb74d4fa48a459c2fbb5a4079c33370de2da7ea835bc09181c1",
+    "src/index.ts": "4b93dd63f2fbf4619eaa41abb1dd862b4f115e77899e7c9aec9f4a6eaaab19b4",
+    "src/model-dispatcher.ts": "9d89796744663b6c8504844f3dd2ae93e3fac53ac202d45d6d09ead35853deaf",
+    "src/native.ts": "375bb260295a539f17be429c1562895296a325a4f0961632b4b98ba58b5bb5c1",
+    "src/ownership.ts": "be5b08a8a236283f786e475edcb91a3f2e0ee7b692eb55d84c59bb30854ef141",
+    "src/private-file.ts": "478d8e394efa5e08f8ffddad2be6fdfb8755f977817a59b20ceb43b41def4d67",
+    "src/queue/admission.ts": "64e8c969790bf6eedce7fc28fd84f001228ac10bd107f921867098646e6e7cf3",
+    "src/queue/checkpoint.ts": "92d557009224894b1b7e4ec69b5ba7fadc7147ebcc5e30374e01f05a273153d5",
+    "src/queue/codec.ts": "a29c331bf1102a1e3a57ff862cb71f11483d1b9bdc24c048573514ace6681942",
+    "src/queue/file-queue.ts": "9a2e016ea15e234bbe0a843da213eaac2c03a6f2544eae3605f4217855214592",
+    "src/queue/index-record.ts": "199b90ac36b3d0719fab98d51ba429818b17805062cf44400b04ccab951fe891",
+    "src/queue/io.ts": "8df77796ca078848a1b4512a63be30358c9ca16d35cd8840ca181063a80aef40",
+    "src/queue/receipts.ts": "74d09d7e5ddf75440b9b904848fade4f300ac7c5ede9b9327c1ee2e607afa98b",
+    "src/queue/recovery.ts": "0dd77fbb248740b5b6a0c450c7df15ecb40ed2e107bc92f44868f49959bf8fd8",
+    "src/queue/retirement.ts": "080ee26c70d91256d59c4afa764a3305b8721f05fe731a9a8e72a965a9ebf139",
+    "src/queue/types.ts": "6699597b9f011f9d73bd7eeec75da471cf382831dd9d1b449bef7033aace8f31",
+    "src/runtime.ts": "6daf69d8aa4e2a187ea897f0a2e9b7424f0cf398cc8998dcec94f2bb51447856",
+    "src/types.ts": "30567525504ff5ca9095337f4589797a5ad1d1c51e5b4ad87d6685e0db942b09"
+  },
+  "hardware": {
+    "cpu": "Apple M3 Pro",
+    "logicalCpus": 12,
+    "memoryBytes": 38654705664,
+    "platform": "darwin",
+    "release": "27.0.0",
+    "arch": "arm64",
+    "node": "22.23.2",
+    "filesystem": "APFS (qualified native host)"
+  },
+  "limits": {
+    "maxEventBytes": 16777216,
+    "segmentBytes": 16777216,
+    "maxPendingBytes": 67108864,
+    "modelTimeoutMs": 1000
+  },
+  "profiles": [
+    {
+      "name": "empty",
+      "commandBytes": 1024,
+      "samples": 20,
+      "p50Ms": 19.839166999999975,
+      "p95Ms": 20.938583000000108,
+      "counters": {
+        "durable": {
+          "pendingBytes": 1700,
+          "pendingEvents": 1,
+          "oldestPendingMs": 21
+        },
+        "activeOwnedWork": 0
+      },
+      "physical": {
+        "segmentBytes": 1700,
+        "controlBytes": 801,
+        "totalQueueBytes": 2501
+      },
+      "processCold": {
+        "recoveryMs": 22.571959,
+        "pendingEvents": 1,
+        "memory": {
+          "rss": 48087040,
+          "heapTotal": 10551296,
+          "heapUsed": 6869256,
+          "external": 2341537,
+          "arrayBuffers": 81847
+        },
+        "physical": {
+          "segmentBytes": 1700,
+          "controlBytes": 801,
+          "totalQueueBytes": 2501
+        }
+      }
+    },
+    {
+      "name": "empty",
+      "commandBytes": 65536,
+      "samples": 20,
+      "p50Ms": 20.933207999999922,
+      "p95Ms": 23.846374999999625,
+      "counters": {
+        "durable": {
+          "pendingBytes": 66213,
+          "pendingEvents": 1,
+          "oldestPendingMs": 26
+        },
+        "activeOwnedWork": 0
+      },
+      "physical": {
+        "segmentBytes": 66213,
+        "controlBytes": 803,
+        "totalQueueBytes": 67016
+      },
+      "processCold": {
+        "recoveryMs": 23.579000000000008,
+        "pendingEvents": 1,
+        "memory": {
+          "rss": 50003968,
+          "heapTotal": 10813440,
+          "heapUsed": 5791112,
+          "external": 2417923,
+          "arrayBuffers": 158233
+        },
+        "physical": {
+          "segmentBytes": 66213,
+          "controlBytes": 803,
+          "totalQueueBytes": 67016
+        }
+      }
+    },
+    {
+      "name": "empty",
+      "commandBytes": 1048576,
+      "samples": 20,
+      "p50Ms": 38.635749999999916,
+      "p95Ms": 43.1674579999999,
+      "counters": {
+        "durable": {
+          "pendingBytes": 1049255,
+          "pendingEvents": 1,
+          "oldestPendingMs": 35
+        },
+        "activeOwnedWork": 0
+      },
+      "physical": {
+        "segmentBytes": 1049255,
+        "controlBytes": 807,
+        "totalQueueBytes": 1050062
+      },
+      "processCold": {
+        "recoveryMs": 50.258666,
+        "pendingEvents": 1,
+        "memory": {
+          "rss": 65273856,
+          "heapTotal": 23248896,
+          "heapUsed": 13169448,
+          "external": 4384211,
+          "arrayBuffers": 2124521
+        },
+        "physical": {
+          "segmentBytes": 1049255,
+          "controlBytes": 807,
+          "totalQueueBytes": 1050062
+        }
+      }
+    },
+    {
+      "name": "backlog-1k",
+      "fixtureEvents": 1000,
+      "commandBytes": 1024,
+      "samples": 20,
+      "p50Ms": 29.88116700000046,
+      "p95Ms": 33.022124999999505,
+      "counters": {
+        "durable": {
+          "pendingBytes": 1484260,
+          "pendingEvents": 1020,
+          "oldestPendingMs": 828
+        },
+        "activeOwnedWork": 0
+      },
+      "physical": {
+        "segmentBytes": 1484260,
+        "controlBytes": 300740,
+        "totalQueueBytes": 1785000
+      },
+      "fixtureBuildAndOpenMs": 863.2096250000004,
+      "processCold": {
+        "recoveryMs": 115.844959,
+        "pendingEvents": 1020,
+        "memory": {
+          "rss": 68861952,
+          "heapTotal": 25231360,
+          "heapUsed": 10811760,
+          "external": 2742792,
+          "arrayBuffers": 502821
+        },
+        "physical": {
+          "segmentBytes": 1484260,
+          "controlBytes": 300740,
+          "totalQueueBytes": 1785000
+        }
+      }
+    },
+    {
+      "name": "metadata-cap",
+      "fixtureEvents": 16351,
+      "outcome": "BACKPRESSURE",
+      "samples": 20,
+      "p50Ms": 0.06779199999982666,
+      "p95Ms": 0.07833299999947485,
+      "counters": {
+        "durable": {
+          "pendingBytes": 23812548,
+          "pendingEvents": 16351,
+          "oldestPendingMs": 2635
+        },
+        "activeOwnedWork": 0
+      },
+      "physical": {
+        "segmentBytes": 23812548,
+        "controlBytes": 2450928,
+        "totalQueueBytes": 26263476
+      },
+      "fixtureBuildAndOpenMs": 2668.463667,
+      "processCold": {
+        "recoveryMs": 1067.544459,
+        "pendingEvents": 16351,
+        "memory": {
+          "rss": 131874816,
+          "heapTotal": 80019456,
+          "heapUsed": 59730392,
+          "external": 5411785,
+          "arrayBuffers": 3171814
+        },
+        "physical": {
+          "segmentBytes": 23812548,
+          "controlBytes": 2450928,
+          "totalQueueBytes": 26263476
+        }
+      }
+    },
+    {
+      "name": "16MiB-safety",
+      "commandBytes": 16777216,
+      "acceptanceMs": 351.2659590000003,
+      "oversizeRejected": true,
+      "counters": {
+        "durable": {
+          "pendingBytes": 16777896,
+          "pendingEvents": 1,
+          "oldestPendingMs": 325
+        },
+        "activeOwnedWork": 0
+      },
+      "physical": {
+        "segmentBytes": 16777896,
+        "controlBytes": 809,
+        "totalQueueBytes": 16778705
+      },
+      "processCold": {
+        "recoveryMs": 402.50608300000005,
+        "pendingEvents": 1,
+        "memory": {
+          "rss": 275152896,
+          "heapTotal": 174260224,
+          "heapUsed": 139378768,
+          "external": 35821776,
+          "arrayBuffers": 33581805
+        },
+        "physical": {
+          "segmentBytes": 16777896,
+          "controlBytes": 809,
+          "totalQueueBytes": 16778705
+        }
+      }
+    }
+  ],
+  "resources": {
+    "before": {
+      "rss": 44990464,
+      "heapTotal": 8978432,
+      "heapUsed": 6230928,
+      "external": 2312432,
+      "arrayBuffers": 109828
+    },
+    "after": {
+      "rss": 318734336,
+      "heapTotal": 184877056,
+      "heapUsed": 128193792,
+      "external": 21811190,
+      "arrayBuffers": 19577213
+    },
+    "observedMaxRss": 292732928,
+    "observedMaxHeap": 95599240
+  },
+  "qualifications": [
+    "All measured acceptance paths include production data sync and checkpoint/backup/directory sync.",
+    "Backlog fixtures use test-only bulk journal/checkpoint construction followed by full production recovery; their build times are not ingestion latency.",
+    "Process-cold recovery starts a fresh Node process; OS filesystem cache remains warm.",
+    "Observed RSS/heap snapshots are lower bounds on peak use, not V8 allocation guarantees.",
+    "Metadata-cap latency is rejection latency, not acceptance.",
+    "Semantic commit is unimplemented. No production defaults, latency SLO, Lance atomicity or hardware power-loss claim."
+  ]
+}

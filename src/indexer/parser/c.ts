@@ -104,15 +104,18 @@ export function handleInclude(node: SyntaxNode, ctx: CWalkCtx): void {
 	}
 }
 
-/** CALLS by name from `fromId` for every plain-named call under `body`. */
-export function collectCalls(body: SyntaxNode, fromId: string, ctx: CWalkCtx): void {
+/** The callee node types a call is recorded by: a plain name, or a qualified one in C++. */
+const C_CALLEE_TYPES: ReadonlySet<string> = new Set(['identifier', 'qualified_identifier']);
+
+/** CALLS by name from `fromId` for every call under `body` whose callee is one of `calleeTypes`. */
+export function collectCalls(body: SyntaxNode, fromId: string, ctx: CWalkCtx, calleeTypes: ReadonlySet<string> = C_CALLEE_TYPES): void {
 	const stack: SyntaxNode[] = [body];
 	const seen = new Set<string>();
 	while (stack.length > 0) {
 		const n = stack.pop()!;
 		if (n.type === 'call_expression') {
 			const fn = n.childForFieldName('function');
-			const name = fn !== null && (fn.type === 'identifier' || fn.type === 'qualified_identifier') ? fn.text : undefined;
+			const name = fn !== null && calleeTypes.has(fn.type) ? fn.text : undefined;
 			if (name !== undefined && !seen.has(name)) {
 				seen.add(name);
 				ctx.relations.push({ kind: 'CALLS', from: fromId, to: name, resolved: false, meta: { file: ctx.filePath, repo: ctx.repo } });

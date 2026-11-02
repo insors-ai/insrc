@@ -34,16 +34,17 @@ function untouchable(name: string): never {
 }
 
 test('s9 t2: a reader whose grammar load throws is not registered and is listed unavailable with the error; a reader loaded after it still registers', () => {
-	const failed = loadReader('rust', ['.probe-rs'], () => { throw new Error("Cannot find module 'tree-sitter-probe'"); });
+	const failed = loadReader('proto', ['.probe-proto'], () => { throw new Error("Cannot find module 'tree-sitter-probe'"); });
 	assert.equal(failed, null);
-	assert.equal(getParser('/x/a.probe-rs'), null, 'its files are not read');
+	assert.equal(getParser('/x/a.probe-proto'), null, 'its files are not read');
 
 	const stand = { extensions: ['.probe-ok'], language: 'csharp', parse: () => ({ entities: [], relations: [] }) } as unknown as CodeParser;
 	assert.equal(loadReader('csharp', ['.probe-ok'], () => stand), stand);
 	assert.equal(getParser('/x/a.probe-ok'), stand, 'the next reader registers');
 
-	const rust = listReaders(languageOfExtension).find(r => r.language === 'rust');
-	assert.deepEqual(rust, { language: 'rust', extensions: ['.probe-rs'], available: false, reason: "Cannot find module 'tree-sitter-probe'" });
+	// A language no reader reads (rust, the first probe, has a reader since t6).
+	const proto = listReaders(languageOfExtension).find(r => r.language === 'proto');
+	assert.deepEqual(proto, { language: 'proto', extensions: ['.probe-proto'], available: false, reason: "Cannot find module 'tree-sitter-probe'" });
 });
 
 test('s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker', async () => {

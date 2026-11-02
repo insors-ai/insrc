@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fb340a9e-fb5c-4d38-bdef-836db622ae13",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:03:46.403Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Verify and document the normal end-to-end review lifecycle",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a0ab21166e55ec239f2875e6c6e8b61fd0b6ff6371974022d0d9504f4aac3114",
+        "at": "2026-11-02T11:03:46.403Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:03:46.404Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify and document the normal end-to-end review lifecycle",
+    "summary": "Exercise compiled normal MCP/daemon worker routes and both reviewer adapters using fake native CLI and real local IPC/Git/filesystem, covering scoped review, progress, concurrent sessions, interruption/re-review and post-approval cleanup. Record production build and smoke evidence. Document deployment restart and explicit retry of already-approved S2 cleanup as rollout step, without another S2 model review; no broad full-project sweep or hosted accuracy claims from fake transport tests.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Compiled normal entrypoint smoke proves duplicate rejection, different-id activity overlap, per-review order and actual disconnect semantics.",
+      "Pinned after-only selected scope, mandatory coverage inspection, optional execution and native diagnostic feedback remain identical through both normal reviewer parties.",
+      "Restart requires explicit resume; existing terminal attempts/pinned history cannot be rewritten and CR remains after cleanup.",
+      "Production build and focused tests recorded honestly; fake-provider mechanics distinguished from hosted review evidence; updated docs describe cleanup retries and unchanged design review boundary."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Production transport and worker routing smoke validates progress, restart/retrigger and design review remains unavailable"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

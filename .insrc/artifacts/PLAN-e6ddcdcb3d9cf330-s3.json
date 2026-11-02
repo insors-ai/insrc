@@ -1,0 +1,276 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793616594788-jef2lu",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T10:51:44.081Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 108600,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "epicSlug": "review-committed-work-task-checkpoints",
+    "storyId": "s3",
+    "lldRunId": "wf-1793616089066-m9k5hb",
+    "lldEffectiveHash": "9644e9acbe9122fac83d4724e95c884c8e899db063e5af06cd791ad2c55fabf0",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "daf18e5d432e1736011727b9ce7a77a35d4a686ff8498dde10116305d809aea2",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:03:46.032Z"
+      }
+    },
+    "rangeBase": "7a27679773f55b25e0ad8abb0d62c6081faf6363"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build the normal review interface on the existing task-review engine, then connect story approval to safe checkpoint cleanup. Keep review ownership shared across session workers and preserve current scope, diagnostics and recovery rules. Verify actual transport and filesystem behavior with focused fixtures before deployment.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Route task reviews through one daemon owner across session workers",
+        "summary": "Keep one canonical project/review-id admission and execution owner in src/daemon/task-review-rpc.ts; connect worker/session/direct paths through existing trusted main-services/router facilities. Add minimal story cleanup admission fence reusable by t3. Preserve actual trusted controller connection lifetimes, independent daemon ownership, serial per-review provider calls and existing progress/diagnostic behavior. No thread subsystem, worker-local coordinator copies or new persistent leases.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Same-id duplicate start/resume across two sessions and worker/direct routes returns already-running before duplicate provider/writer work.",
+          "Different ids may overlap native execution without global review queue; all per-review provider calls remain serial and CR publication merges through existing lifecycle owner.",
+          "Controller disconnect fences late exchanges and explicit resume skips durable tasks; daemon observer disconnect does not cancel admitted work.",
+          "Story admission/cleanup fence accounts for in-flight admission and publication, not only active assessment; release guaranteed after failures."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Cross-session and worker/direct duplicate review-id admission starts exactly one execution"
+          },
+          {
+            "level": "integration",
+            "name": "Different review ids overlap with serial per-review provider calls and merged CR history"
+          },
+          {
+            "level": "integration",
+            "name": "Daemon observer disconnect survives; controller disconnect fences late results and explicit resume skips durable tasks"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Expose the current task-review protocol through normal MCP requests",
+        "summary": "Replace only normal code-review stub with a typed thin adapter and daemon step-host forwarding to t1. Reuse start/resume/progress/publish and assignment/scope/activity/result schemas; own persistent connection per live MCP review/controller lifetime. Update schema discovery, code-review guide and steering with exact phase inputs and checkpoint progress behavior; preserve inactive design review and retired invocation rejection. No inferred HEAD scope, auto attempts or waiting for model completion inside tool timeout.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Normal insrc_code_review_step registration, insrc_schema, guide and actual host routing agree on exact reused task protocol.",
+          "Start requires committed packet and returns durable acknowledgement promptly; progress is read-only and explicit resume uses pinned input.",
+          "Both actual reviewer parties reach same scope/coverage/status/diagnostic validation; controller uses live connection with execution/sequence fencing, never a relabelled CLI.",
+          "MCP session shutdown/cancellation releases controller connection ownership without cancelling detached daemon review; reconnection requires explicit retrigger.",
+          "Design review remains unavailable and old review-engine routes stay rejected.",
+          "Cancellation of one review closes only its owned controller connection and leaves other review ids in the MCP process active."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes"
+          },
+          {
+            "level": "integration",
+            "name": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Clean preserved story checkpoints after successful BUILD approval",
+        "summary": "Integrate post-success BUILD approval and retry cleanup with t1 authority and existing lifecycle. Under short story fence enumerate bounded no-follow literal checkpoint files; derive canonical project/Plan epic/story identity and validate all completed attempts against durable task CR before unlink. Preserve unfinished/unrepresented/unknown/foreign files and active work with explicit retained/retryable metadata. No caller deletion paths, artifact schema changes or cleanup before success; preserve current BUILD approval freshness fixes. Use a reusable canonical post-success approval hook with injected delegation to owner, not daemon imports in workflow domain code; direct/outer single/batch routes share it.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Single, batch and direct story BUILD approval trigger cleanup only after approval succeeds and required CR history is preserved; earlier task validation/CR publication/rejected approval cannot delete files.",
+          "All safe matching task/story review ids are deleted; unrelated projects/stories, symlinks, corrupt/future/oversized files and unfinished/unrepresented history remain with reasons.",
+          "Concurrent starts/admissions/publications cannot race deletion; active same-story work defers cleanup without revoking approval or blocking unrelated stories.",
+          "Per-file unlink failures report deleted/retained/errors; repeated approval retries without model calls, BUILD regeneration or changed review fingerprints."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints"
+          },
+          {
+            "level": "integration",
+            "name": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence"
+          },
+          {
+            "level": "integration",
+            "name": "Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup"
+          },
+          {
+            "level": "integration",
+            "name": "Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Verify and document the normal end-to-end review lifecycle",
+        "summary": "Exercise compiled normal MCP/daemon worker routes and both reviewer adapters using fake native CLI and real local IPC/Git/filesystem, covering scoped review, progress, concurrent sessions, interruption/re-review and post-approval cleanup. Record production build and smoke evidence. Document deployment restart and explicit retry of already-approved S2 cleanup as rollout step, without another S2 model review; no broad full-project sweep or hosted accuracy claims from fake transport tests.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Compiled normal entrypoint smoke proves duplicate rejection, different-id activity overlap, per-review order and actual disconnect semantics.",
+          "Pinned after-only selected scope, mandatory coverage inspection, optional execution and native diagnostic feedback remain identical through both normal reviewer parties.",
+          "Restart requires explicit resume; existing terminal attempts/pinned history cannot be rewritten and CR remains after cleanup.",
+          "Production build and focused tests recorded honestly; fake-provider mechanics distinguished from hosted review evidence; updated docs describe cleanup retries and unchanged design review boundary."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Production transport and worker routing smoke validates progress, restart/retrigger and design review remains unavailable"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cross-session and worker/direct duplicate review-id admission starts exactly one execution",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Different review ids overlap with serial per-review provider calls and merged CR history",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Daemon observer disconnect survives; controller disconnect fences late results and explicit resume skips durable tasks",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Production transport and worker routing smoke validates progress, restart/retrigger and design review remains unavailable",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails and interactionWithShared"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths and testStrategy"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges and migration"
+    }
+  ]
+}

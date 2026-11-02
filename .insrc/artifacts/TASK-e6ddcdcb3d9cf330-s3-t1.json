@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0efcb946-8a8f-4d72-b517-4e3edd79096a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:03:46.398Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Route task reviews through one daemon owner across session workers",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9c7d48a76a7405586344e98763358d8775add6c4e30b6ecf19e83ab15db68ef9",
+        "at": "2026-11-02T11:03:46.398Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:03:46.399Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route task reviews through one daemon owner across session workers",
+    "summary": "Keep one canonical project/review-id admission and execution owner in src/daemon/task-review-rpc.ts; connect worker/session/direct paths through existing trusted main-services/router facilities. Add minimal story cleanup admission fence reusable by t3. Preserve actual trusted controller connection lifetimes, independent daemon ownership, serial per-review provider calls and existing progress/diagnostic behavior. No thread subsystem, worker-local coordinator copies or new persistent leases.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Same-id duplicate start/resume across two sessions and worker/direct routes returns already-running before duplicate provider/writer work.",
+      "Different ids may overlap native execution without global review queue; all per-review provider calls remain serial and CR publication merges through existing lifecycle owner.",
+      "Controller disconnect fences late exchanges and explicit resume skips durable tasks; daemon observer disconnect does not cancel admitted work.",
+      "Story admission/cleanup fence accounts for in-flight admission and publication, not only active assessment; release guaranteed after failures."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Cross-session and worker/direct duplicate review-id admission starts exactly one execution"
+      },
+      {
+        "level": "integration",
+        "name": "Different review ids overlap with serial per-review provider calls and merged CR history"
+      },
+      {
+        "level": "integration",
+        "name": "Daemon observer disconnect survives; controller disconnect fences late results and explicit resume skips durable tasks"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

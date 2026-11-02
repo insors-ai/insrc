@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3a87f456-168e-4c9b-ba9a-9218cc4c99b1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:03:46.402Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Clean preserved story checkpoints after successful BUILD approval",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b6c7f51b0ed6e8243cd41fa431454a71f8230d036fd118ba6331b3028e2e87a7",
+        "at": "2026-11-02T11:03:46.402Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:03:46.402Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Clean preserved story checkpoints after successful BUILD approval",
+    "summary": "Integrate post-success BUILD approval and retry cleanup with t1 authority and existing lifecycle. Under short story fence enumerate bounded no-follow literal checkpoint files; derive canonical project/Plan epic/story identity and validate all completed attempts against durable task CR before unlink. Preserve unfinished/unrepresented/unknown/foreign files and active work with explicit retained/retryable metadata. No caller deletion paths, artifact schema changes or cleanup before success; preserve current BUILD approval freshness fixes. Use a reusable canonical post-success approval hook with injected delegation to owner, not daemon imports in workflow domain code; direct/outer single/batch routes share it.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Single, batch and direct story BUILD approval trigger cleanup only after approval succeeds and required CR history is preserved; earlier task validation/CR publication/rejected approval cannot delete files.",
+      "All safe matching task/story review ids are deleted; unrelated projects/stories, symlinks, corrupt/future/oversized files and unfinished/unrepresented history remain with reasons.",
+      "Concurrent starts/admissions/publications cannot race deletion; active same-story work defers cleanup without revoking approval or blocking unrelated stories.",
+      "Per-file unlink failures report deleted/retained/errors; repeated approval retries without model calls, BUILD regeneration or changed review fingerprints."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints"
+      },
+      {
+        "level": "integration",
+        "name": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence"
+      },
+      {
+        "level": "integration",
+        "name": "Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup"
+      },
+      {
+        "level": "integration",
+        "name": "Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

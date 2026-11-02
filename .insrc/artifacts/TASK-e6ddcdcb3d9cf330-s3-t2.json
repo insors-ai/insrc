@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fad0faba-9c07-4608-8adf-37436e9d93b5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T11:03:46.400Z",
+    "epicCreatedAt": "2026-10-30T18:42:58.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e6ddcdcb3d9cf330",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Expose the current task-review protocol through normal MCP requests",
+      "parent": {
+        "entityId": "STORY-e6ddcdcb3d9cf330-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e6ddcdcb3d9cf330-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e6ddcdcb3d9cf330-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0fdf850b40d599a25c31787134a9b565f72eb2ea62c494730d2b7cb444179e8f",
+        "at": "2026-11-02T11:03:46.400Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:03:46.401Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose the current task-review protocol through normal MCP requests",
+    "summary": "Replace only normal code-review stub with a typed thin adapter and daemon step-host forwarding to t1. Reuse start/resume/progress/publish and assignment/scope/activity/result schemas; own persistent connection per live MCP review/controller lifetime. Update schema discovery, code-review guide and steering with exact phase inputs and checkpoint progress behavior; preserve inactive design review and retired invocation rejection. No inferred HEAD scope, auto attempts or waiting for model completion inside tool timeout.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Normal insrc_code_review_step registration, insrc_schema, guide and actual host routing agree on exact reused task protocol.",
+      "Start requires committed packet and returns durable acknowledgement promptly; progress is read-only and explicit resume uses pinned input.",
+      "Both actual reviewer parties reach same scope/coverage/status/diagnostic validation; controller uses live connection with execution/sequence fencing, never a relabelled CLI.",
+      "MCP session shutdown/cancellation releases controller connection ownership without cancelling detached daemon review; reconnection requires explicit retrigger.",
+      "Design review remains unavailable and old review-engine routes stay rejected.",
+      "Cancellation of one review closes only its owned controller connection and leaves other review ids in the MCP process active."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes"
+      },
+      {
+        "level": "integration",
+        "name": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

@@ -37,7 +37,7 @@ export class QueueIo {
   #closed = false;
   #fenced = false;
   constructor(owner: DirectoryOwnership, root: string, hooks: IoHooks = {}) {
-    if (!isAbsolute(root)) throw new MemoryError('INVALID_REQUEST', 'An explicit memory root is required.');
+    if (!isAbsolute(root) || root !== owner.directory) throw new MemoryError('INVALID_REQUEST', 'The queue root must be the canonical owned memory directory.');
     this.#owner = owner; this.#root = root; this.#hooks = hooks;
   }
   get fenced(): boolean { return this.#fenced; }

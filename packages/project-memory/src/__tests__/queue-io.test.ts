@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, realpath, readFile, rename, readdir, rm, symlink, link, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, readFile, rename, readdir, rm, symlink, unlink, link, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { acquireOwnership } from '../ownership.js';
@@ -91,4 +91,21 @@ nativeTest(import.meta.url, 'file-sync-failure-preserves-written-bytes-and-owner
     assert.equal(await readFile(join(root, 'queue', 'recovery.json'), 'utf8'), 'written');
     await io.close(); await owner.assertOwned();
   } finally { await io.close(); await owner.close(); await rm(root, { recursive: true, force: true }); }
+});
+
+nativeTest(import.meta.url, 'retargeted-input-alias-cannot-redirect-owned-queue', async () => {
+  const parent = await realpath(await mkdtemp(join(tmpdir(), 'memory-owned-alias-')));
+  const a = join(parent, 'a'), b = join(parent, 'b'), alias = join(parent, 'alias');
+  await mkdir(a, { mode: 0o700 }); await mkdir(b, { mode: 0o700 }); await symlink(a, alias);
+  const owner = await acquireOwnership(options(alias));
+  let io: QueueIo | undefined;
+  try {
+    assert.equal(owner.directory, a); assert.equal(Object.isFrozen(owner), true);
+    await unlink(alias); await symlink(b, alias);
+    assert.throws(() => new QueueIo(owner, b), (e: unknown) => e instanceof MemoryError && e.code === 'INVALID_REQUEST');
+    assert.deepEqual(await readdir(b), []);
+    io = new QueueIo(owner, owner.directory); await io.start(); await io.bootstrap();
+    assert.equal((await readdir(join(a, 'queue'))).includes('format.json'), true);
+    assert.deepEqual(await readdir(b), []);
+  } finally { await io?.close(); await owner.close(); await rm(parent, { recursive: true, force: true }); }
 });

@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T08:49:31.404Z",
+    "updatedAt": "2026-11-02T09:05:30.730Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -779,6 +779,60 @@
               },
               {
                 "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "e21c32c2a",
+        "ranAt": "2026-11-02T09:05:30.730Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "queue-resource-and-fsync-cost-measurement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-cost.test.ts",
+                "title": "queue-resource-and-fsync-cost-measurement",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/project-memory-s2-performance.test.ts",
+                "title": "full-current-source-queue-resource-study-evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-cost.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1655,
+            "titles": [
+              {
+                "title": "queue-resource-and-fsync-cost-measurement",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/project-memory-s2-performance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 391,
+            "titles": [
+              {
+                "title": "full-current-source-queue-resource-study-evidence",
                 "result": "pass"
               }
             ],

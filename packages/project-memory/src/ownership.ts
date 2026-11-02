@@ -11,6 +11,8 @@ import { assertPrivateFile } from './private-file.js';
 import { MemoryError } from './errors.js';
 
 export interface DirectoryOwnership {
+  /** Canonical path selected and inode-verified by this guard, never re-resolved from an alias. */
+  readonly directory: string;
   assertOwned(): Promise<void>;
   close(): Promise<void>;
 }
@@ -106,6 +108,7 @@ async function establishOwnedLayout(root: RootIdentity, file: FileHandle): Promi
 function ownershipGuard(root: RootIdentity, owned: FileHandle): DirectoryOwnership {
   let closing: Promise<void> | undefined;
   return Object.freeze({
+    directory: root.path,
     async assertOwned() {
       if (closing) throw new MemoryError('NOT_READY', 'Memory ownership is closing.');
       try { await checkIdentity(root, owned); }

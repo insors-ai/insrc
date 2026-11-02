@@ -16,7 +16,7 @@ test('idempotent-drain-close-and-provider-ownership', async () => {
   let resolve!: (value: null) => void; let closed = 0; let active = false;
   const opts = options('/unused');
   const models = new ModelDispatcher({ ...opts.models, async complete() { active = true; return new Promise<null>(done => { resolve = done; }); } }, 1000);
-  const service = new EmbeddedMemoryService({ async assertOwned() {}, async close() { closed++; } }, models, { write() { throw new Error('logger failure'); } });
+  const service = new EmbeddedMemoryService({ directory: '/unused', async assertOwned() {}, async close() { closed++; } }, models, { write() { throw new Error('logger failure'); } });
   const call = models.complete({ role: 'normalize', input: null, schema: {}, signal: new AbortController().signal });
   const result = call.catch(error => error);
   await tick(); assert.ok(active);
@@ -27,7 +27,7 @@ test('idempotent-drain-close-and-provider-ownership', async () => {
   await assert.rejects(service.ready(), MemoryError);
 
   let released = false;
-  const failure = new EmbeddedMemoryService({ async assertOwned() {}, async close() { released = true; } }, new ModelDispatcher(opts.models, 1000), opts.logger, [{ stopAdmission() {}, pending() { return 1; }, async drain() { throw new Error('private work error'); }, async close() {} }]);
+  const failure = new EmbeddedMemoryService({ directory: '/unused', async assertOwned() {}, async close() { released = true; } }, new ModelDispatcher(opts.models, 1000), opts.logger, [{ stopAdmission() {}, pending() { return 1; }, async drain() { throw new Error('private work error'); }, async close() {} }]);
   await assert.rejects(failure.close(), MemoryError); assert.equal(released, false);
 });
 
@@ -65,7 +65,7 @@ test('all-quiescent-participants-close-before-unverified-ownership-is-retained',
     async drain() { events.push('drain' + id); },
     async close() { events.push('close' + id); if (id !== 1) throw Error('private cleanup error'); },
   }));
-  const service = new EmbeddedMemoryService({ async assertOwned() {}, async close() { released = true; } }, new ModelDispatcher(opts.models, 1000), opts.logger, work);
+  const service = new EmbeddedMemoryService({ directory: '/unused', async assertOwned() {}, async close() { released = true; } }, new ModelDispatcher(opts.models, 1000), opts.logger, work);
   const closing = service.close();
   await assert.rejects(closing, (error: unknown) => error instanceof MemoryError && error.code === 'STORE_UNAVAILABLE' && !error.message.includes('private'));
   assert.deepEqual(events, ['stop0', 'stop1', 'stop2', 'drain0', 'drain1', 'drain2', 'close0', 'close1', 'close2']);

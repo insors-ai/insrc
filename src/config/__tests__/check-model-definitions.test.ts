@@ -56,5 +56,11 @@ test('check-model-definitions.test.ts: the build gate exits non-zero naming the 
 
 	// The gate runs after tsc and before copy-assets in the build.
 	const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')) as { scripts: Record<string, string> };
-	assert.equal(pkg.scripts['build'], 'tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs');
+	const steps = pkg.scripts['build']!.split(/\s*&&\s*/);
+	const compile = steps.findIndex(step => /^tsc(?:\s|$)/.test(step));
+	const validate = steps.indexOf('node scripts/check-model-definitions.mjs');
+	const copy = steps.indexOf('node copy-assets.mjs');
+	// Workspace builds may precede the backend compile. Preserve the gate's
+	// required ordering without freezing unrelated build preparation steps.
+	assert.ok(compile >= 0 && validate > compile && copy > validate);
 });

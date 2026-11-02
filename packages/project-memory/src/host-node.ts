@@ -1,4 +1,3 @@
-import { realpath } from 'node:fs/promises';
 import type { MemoryFactory as FactoryContract, MemoryOptions } from './types.js';
 import { MemoryError } from './errors.js';
 import { validateOptions } from './configuration.js';
@@ -16,7 +15,7 @@ export const MemoryFactory: FactoryContract = Object.freeze({
     const owner = await acquireOwnership(config);
     let queue: FileQueue | undefined;
     try {
-      queue = new FileQueue(owner, await realpath(config.dataDirectory), config.limits);
+      queue = new FileQueue(owner, owner.directory, config.limits);
       await queue.start();
       const admission = new QueueAdmission(queue, config.policy);
       const models = new ModelDispatcher(config.models, config.limits.modelTimeoutMs);

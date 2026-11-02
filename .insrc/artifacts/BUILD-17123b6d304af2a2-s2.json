@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T08:49:31.404Z",
+    "updatedAt": "2026-11-02T09:05:30.730Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -54,9 +54,13 @@
       {
         "id": "t11",
         "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
       }
     ],
-    "summary": "Completed before/after durability faults, maximum scope/identity and clock-jump coverage; explicit backward/forward wall-clock tests preserve sequence and clamp diagnostic age.",
+    "summary": "Measured full durability-enabled acceptance/recovery on Apple M3 Pro Node22/APFS for 1KiB/64KiB/1MiB inputs, 1000-event and 16351-frame capped backlogs, and the 16MiB boundary. Recorded physical bytes/counters and RSS/heap limits without inventing latency SLOs; full current-source evidence is in S002/evidence/performance/queue-cost.json.",
     "testRecord": {
       "md": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/TESTS.md"
     },
@@ -66,177 +70,254 @@
           "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-io.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/io.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/checkpoint.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/recovery.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-append.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/file-queue.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/admission.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-replay.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/receipts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/design-verification.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/index-record.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/retirement.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/runtime.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/host-node.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T08:49:31.404Z"
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/project-memory.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/queue-crash.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/queue-crash.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/queue-crash-peer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/queue-crash-ports.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/queue-crash.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/project-memory-s2-qualification.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/performance/queue-cost.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/benchmarks/queue-cost.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/queue-cost.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/project-memory-s2-performance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:05:30.730Z"
       }
     ],
-    "commit": "4d882859c"
+    "commit": "e21c32c2a"
   }
 }

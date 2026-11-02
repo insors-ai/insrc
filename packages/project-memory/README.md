@@ -53,7 +53,8 @@ from index/other stores and from overlapping cleanup roots.
 `policy.bind` must authorize the requested project/session and return its
 absolute root and stable scope epoch. `policy.admit` must validate eligibility
 and the producer/event namespace before persistence; it may redact payload but
-cannot change command identity, scope, kind or revision. There is no permissive
+cannot change command identity, scope, kind or revision. Policy receives an
+immutable snapshot; return a new JSON command when redacting. There is no permissive
 fallback. All policy and append work shares invocation FIFO order. The module
 never logs event payloads or calls a model during S2 ingestion.
 
@@ -108,7 +109,8 @@ The qualified runtime is Node >=22.22.1 and <23 on local APFS/macOS or ext4/Linu
 subject to current-source qualification. Other runtimes, remote/shared
 filesystems and unrecognized layouts are refused. All processes/copies must
 cooperate with ownership; external renames/deletion of a live directory are
-unsupported. Do not delete the lock file to clear contention. Process death
+unsupported. Queue paths come from the guard's canonical owned directory;
+retargeting the input alias cannot redirect its writer. Do not delete the lock file to clear contention. Process death
 releases kernel ownership; a stopped live process retains it.
 
 Native ownership uses nonwaiting `flockSync(fd, 'exnb')`. The asynchronous

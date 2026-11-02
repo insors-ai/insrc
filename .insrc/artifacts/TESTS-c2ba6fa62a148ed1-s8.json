@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s8",
+    "createdAt": "2026-11-02T09:26:38.830Z",
+    "updatedAt": "2026-11-02T09:26:38.830Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f1c1e5b0a",
+        "ranAt": "2026-11-02T09:26:38.830Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystem tables and migration to schema 8",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: a v7 store opens at version 8 with the subsystem tables and its rows unchanged; a fresh store has them",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: a write replaces the set in one transaction, stamped with the generation; a subsystem whose id was stored keeps its summary",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: readSubsystems returns a repository set or the subsystems holding the given files, and nothing of another repository",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: a write that fails part-way leaves the previous set intact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/subsystem-tables.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1476,
+            "titles": [
+              {
+                "title": "s8 t1: a v7 store opens at version 8 with the subsystem tables and its rows unchanged; a fresh store has them",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t1: a write replaces the set in one transaction, stamped with the generation; a subsystem whose id was stored keeps its summary",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t1: readSubsystems returns a repository set or the subsystems holding the given files, and nothing of another repository",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t1: a write that fails part-way leaves the previous set intact",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

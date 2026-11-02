@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1793598103783-07qdun",
+    "runId": "wf-1793599888907-mgb1d3",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-02T05:41:44.279Z",
+    "createdAt": "2026-11-02T06:11:29.268Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 462,
+    "elapsedMs": 333,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
@@ -24,7 +24,204 @@
     "hldBaseRunId": "wf-1793536573467-3p0dt6",
     "hldEffectiveHash": "18ac1fc6f9d6876c125e243762b023f8b6fc223d9c20904cdbbee1c8e5588af9",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's §7 acceptance mapping covers both DEF-approved acceptance criteria for S002 (ac1: durable, recoverable, ordered identity with no duplicate on retry; ac2: disk-budget exhaustion, rotation, backpressure, and explicit corruption/truncation recovery).",
+          "evidence": "docs/epics/.../DEF.md lines 113-116 define S002 ac1/ac2 exactly as described. LLD §7's acceptance-mapping table maps ac1 to concurrent-admission-fifo-and-idempotent-retry, accepted-set-survives-process-kill-at-every-boundary, recovery-frontier-complete-suffix-and-unaccepted-partial-tail, scoped-identity-exact-retry-and-conflicting-reuse, packed-external-submit-crash-reopen-and-operation; ac2 to retained-byte-and-worst-case-metadata-reservations, published-checkpoint-and-sealed-corruption-fail-closed, rotation-orphan-successor-and-checkpoint-replacement-matrix, verified-terminal-ack-retirement-and-reader-pins, write-sync-rename-unlink-failure-fences-the-lane, macos-apfs-linux-ext4-node22-queue-qualification. Both DEF criteria are fully covered. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md]",
+          "action": "Read DEF.md around the S002 story section and cross-checked against the LLD §7 acceptance-mapping table.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design implements only S2's owned scope (sc3) and does not build work reserved to other stories (semantic processing, Lance commit, recall, IPC, agent adapters).",
+          "evidence": "LLD §1 'Adjacent scope' explicitly excludes s1/s3-s9 work and reproduces the HLD's own story-boundary wording verbatim; §3.7 states 'S2 does not import sc4/store code or design its physical schema'; §2.2 keeps context/search/inspect as NOT_READY (unimplemented), matching current code and HLD rollout phase A scope. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md, packages/project-memory/src/runtime.ts]",
+          "action": "Compared LLD §1 adjacent-scope text against HLD §6 story-boundary text and against the current NOT_READY behavior in runtime.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today, submit/context/search/inspect/operation on EmbeddedMemoryService all reject with a fixed NOT_READY MemoryError, and the LLD proposes changing only submit and operation while leaving context/search/inspect NOT_READY as stated.",
+          "evidence": "runtime.ts lines 14-15, 98-102: `unavailable()` builds `new MemoryError('NOT_READY', ...)` and every one of submit/context/search/inspect/operation currently returns `Promise.reject(unavailable())`. [files: packages/project-memory/src/runtime.ts]",
+          "action": "Read packages/project-memory/src/runtime.ts in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc1 already exposes a DirectoryOwnership guard with assertOwned()/close() that the LLD claims to reuse unchanged throughout queue startup/mutation/recovery/close.",
+          "evidence": "ownership.ts lines 13-16 declare `DirectoryOwnership { assertOwned(): Promise<void>; close(): Promise<void>; }` and lines 106-119 implement `ownershipGuard` with exactly those two methods, verifying file/inode identity on `assertOwned()` and failing `STORE_UNAVAILABLE` on mismatch. [files: packages/project-memory/src/ownership.ts]",
+          "action": "Read packages/project-memory/src/ownership.ts in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The seven proposed queue/*.ts files (types.ts, codec.ts, io.ts, checkpoint.ts, recovery.ts, file-queue.ts, admission.ts) under packages/project-memory/src/queue/ are genuinely new -- no such directory or files exist today.",
+          "evidence": "Glob for packages/project-memory/src/queue/** returned no matches, and the full project-memory src Glob lists only types.ts, errors.ts, native.ts, runtime.ts, configuration.ts, host-node.ts, ownership.ts, model-dispatcher.ts, index.ts, private-file.ts plus __tests__ -- no queue/ subtree. [files: packages/project-memory/src/]",
+          "action": "Ran Glob over packages/project-memory/src/queue/** and over packages/project-memory/**/*.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The sc1/sc2 types the design claims to reuse unchanged (MemoryCommand, OperationReceipt, Scope, SourceIdentity, the MemoryService method signatures) match the real types.ts shapes field-for-field.",
+          "evidence": "types.ts lines 13-24 define exactly `MemoryCommand{version:1; scope; source; kind; payload; expectedRevision?}`, `OperationReceipt{operationId; eventId; state; generation?; errorCode?}`, `Scope{projectId; sessionId?; branch?; environment?}`, `SourceIdentity{producerId; eventId; sessionId; turnId; sourceVersion}`, and `MemoryService` with submit/context/search/inspect/operation -- matching the HLD sc2 sketch and the LLD's §2.2 claims with no signature change. [files: packages/project-memory/src/types.ts]",
+          "action": "Read packages/project-memory/src/types.ts in full and compared against HLD §5.2 sc2 sketch.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "All call-site files the design names (host-node.ts, ownership.ts, configuration.ts, runtime.ts, __tests__/ownership.test.ts, __tests__/runtime.test.ts, __tests__/packed.test.ts) exist in the real source tree.",
+          "evidence": "Glob of packages/project-memory/**/*.ts lists host-node.ts, ownership.ts, configuration.ts, runtime.ts, __tests__/ownership.test.ts, __tests__/runtime.test.ts, __tests__/packed.test.ts exactly as named in the LLD's call-site lists and §9 references. [files: packages/project-memory/src/]",
+          "action": "Ran Glob across packages/project-memory/**/*.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "host-node.ts's current MemoryFactory.open composes validateOptions -> acquireOwnership -> new EmbeddedMemoryService(owner, models, logger) with an empty work array, so the design's claim that this site must be modified to construct and pass a queue OwnedWork participant is a real, still-open change site rather than one already satisfied.",
+          "evidence": "host-node.ts lines 8-20 call `new EmbeddedMemoryService(owner, new ModelDispatcher(...), config.logger)` with no fourth `work` argument (runtime.ts's constructor defaults `work = []`), confirming no queue participant is wired in today. [files: packages/project-memory/src/host-node.ts, packages/project-memory/src/runtime.ts]",
+          "action": "Read packages/project-memory/src/host-node.ts and cross-checked the EmbeddedMemoryService constructor signature in runtime.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No prior queue-format data exists to migrate, and adding a new queue/ subdirectory to an already-owned data directory is compatible with S1's existing layout classification, which only scans directory contents on the as-yet-unestablished 'new' path and does not re-scan or reject extra entries once a layout is 'existing'.",
+          "evidence": "configuration.ts `classifyLayout` (lines 85-99): if LAYOUT_FILE is present it immediately returns 'existing' without inspecting other directory entries; the 'unrecognized nonempty directory' rejection (line 93) only fires on the pre-layout 'new' branch, before any queue/ directory would exist. Combined with the confirmed absence of any queue/ directory today, there is no legacy on-disk queue data requiring a migration path, and the design's own versioning fields (formatVersion:1, checkpoint version, UNSUPPORTED_VERSION) provide forward compatibility for later format changes. [files: packages/project-memory/src/configuration.ts]",
+          "action": "Read classifyLayout in configuration.ts and reasoned through the new-vs-existing layout branches against the proposed queue/ subdirectory addition.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's 'Adjacent scope' section (work owned by s1 and s3-s9) is an unmodified restatement of the HLD's own story-boundary text, not a redesign of it.",
+          "evidence": "HLD §6.4 (s4): 'Private bounded source-context expansion, slot normalization, candidate retrieval, authority and equivalence classification, fidelity checks and serial model scheduling. No normalization result becomes active before the guarded store commit.' LLD §1's s4 entry reproduces this sentence verbatim (plus '-- owns sc5'); spot-checking other stories (s1, s3, s6-s9) shows the same verbatim-reuse pattern. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "Diffed the LLD §1 adjacent-scope paragraphs against HLD §6 Story boundaries section.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The private ReceiptVerifier port the LLD defines for its own sc3 implementation does not redesign s3's owned sc4 physical commit schema (CommitPlan/TypedMemoryRow/MemoryStore.commit) -- it only narrows s3's already-HLD-named lookup capability.",
+          "evidence": "HLD §5.4 sc4 sketch already includes `receipt(scope, operationId): Promise<OperationReceipt | null>` as part of `MemoryStore`, owned by s3. The LLD's §3.7 ReceiptVerifier is a narrower, consumer-defined lookup-only seam (`{operationId, identityDigest, payloadHash, scope, scopeEpoch, generation, receipt, queueTerminal}`) that the LLD explicitly states is implemented later by S3; it never touches `CommitPlan`, `TypedMemoryRow`, or `MemoryStore.commit`, so it does not redesign sc4's physical encoding or single-writer mutation path. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "Compared LLD §3.7's ReceiptVerifier shape and stated obligations against the HLD §5.4 sc4 interface sketch.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "All MemoryError codes used in the error-paths table (INVALID_REQUEST, UNBOUND_PROJECT, POLICY_DENIED, NOT_READY, REVISION_CONFLICT, BACKPRESSURE, STORE_UNAVAILABLE, UNSUPPORTED_VERSION) are real members of the MemoryFailureCode union, not invented codes.",
+          "evidence": "types.ts line 25: `MemoryFailureCode = 'INVALID_REQUEST' | 'UNBOUND_PROJECT' | 'POLICY_DENIED' | 'BACKPRESSURE' | 'NOT_READY' | 'UNSUPPORTED_VERSION' | 'OWNERSHIP_CONFLICT' | 'REVISION_CONFLICT' | 'STORE_UNAVAILABLE' | 'CONTEXT_OVERFLOW' | 'DEADLINE_EXCEEDED'` contains every code the LLD's error-paths section uses. [files: packages/project-memory/src/types.ts]",
+          "action": "Read packages/project-memory/src/types.ts MemoryFailureCode union and cross-checked every code cited in LLD §6.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'ownership changed / close failure' error path's detection step (sc1 assertOwned / file-identity check fails) matches the real sc1 behavior it claims to reuse.",
+          "evidence": "ownership.ts lines 109-113: `assertOwned()` calls `checkIdentity(root, owned)` and on any failure throws `new MemoryError('STORE_UNAVAILABLE', 'Memory ownership cannot be verified.')`, matching the LLD's described detection ('sc1 assertOwned/file identity fails') and response ('STORE_UNAVAILABLE') exactly. [files: packages/project-memory/src/ownership.ts]",
+          "action": "Re-read the ownershipGuard implementation in ownership.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The stated test framework ('node:test ... via node --import tsx --test, as verified in the package source and package.json') matches the real package.json test script and the conventions actually used by existing test files.",
+          "evidence": "package.json line 27: `\"test\": \"node --import tsx --test src/__tests__/*.test.ts\"`. ownership.test.ts and packed.test.ts both import from `node:assert/strict` and `node:test`, matching the claimed convention. [files: packages/project-memory/package.json, packages/project-memory/src/__tests__/ownership.test.ts, packages/project-memory/src/__tests__/packed.test.ts]",
+          "action": "Read packages/project-memory/package.json and the opening imports of ownership.test.ts and packed.test.ts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every test name cited in the ac1/ac2 acceptance-mapping table is actually declared as a Subject in the LLD's own unit/integration/contract/smoke test-level lists -- no dangling reference to an undeclared test.",
+          "evidence": "ac1's cited tests (concurrent-admission-fifo-and-idempotent-retry, accepted-set-survives-process-kill-at-every-boundary, recovery-frontier-complete-suffix-and-unaccepted-partial-tail, scoped-identity-exact-retry-and-conflicting-reuse, packed-external-submit-crash-reopen-and-operation) and ac2's cited tests (retained-byte-and-worst-case-metadata-reservations, published-checkpoint-and-sealed-corruption-fail-closed, rotation-orphan-successor-and-checkpoint-replacement-matrix, verified-terminal-ack-retirement-and-reader-pins, write-sync-rename-unlink-failure-fences-the-lane, macos-apfs-linux-ext4-node22-queue-qualification) all appear verbatim as declared Subjects in the integration/smoke test-level entries earlier in LLD §7.",
+          "action": "Cross-referenced every test name in the acceptance-mapping table against the Subjects lists in the Test levels section of LLD §7.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 15,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-02T06:11:40.567Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {
@@ -370,7 +567,7 @@
           "packages/project-memory/src/runtime.ts",
           "packages/project-memory/src/host-node.ts"
         ],
-        "details": "Validate/copy caller input at invocation, not after awaiting policy. Accept only bounded acyclic JSON data, plain own data properties, dense arrays and finite numbers; reject accessors, unsupported prototypes, malformed Unicode, symbols and unknown envelope fields. No raw object/string is logged. Canonical encoding sorts object keys by fixed UTF-16 order, preserves arrays/string content without Unicode/path normalization, and uses deterministic JSON number encoding (including explicit -0 preservation). Validate the complete sc2 v1 envelope and kind set; strings used as identities are nonempty and bounded, with <=512 UTF-8 bytes per identity/qualifier and <=256 for sourceVersion/scopeEpoch. maxEventBytes bounds both raw snapshot and policy-returned command; nesting <=32 and nodes <=65536. HostPolicy.bind(projectId, scope.sessionId) must return the same project and valid root/epoch; HostPolicy.admit receives the bound complete command before durable writes. Revalidate its JSON output; only payload redaction is allowed, not identity/scope/kind/version/revision changes. Typed policy refusal maps to UNBOUND_PROJECT/POLICY_DENIED; unknown host failures are sanitized NOT_READY. No permissive default. Calls are processed in invocation FIFO, including policy awaits. A policy promise that never settles blocks the lane and causes drain deadlines to report incomplete; it is never treated as accepted. Identity key = canonical {version:1, projectId, producerId, eventId}; operationId = SHA256(domain-separator plus key), not queue cursor/random nonce. Compare payloadHash plus recorded scopeEpoch for retries. Same key/content/epoch returns the stable accepted receipt; changed content or epoch is REVISION_CONFLICT without overwriting the first event. Perform dedup lookup before physical-budget refusal so an exact retry needs no new journal space. Append retries rebind and re-admit. Operation status rebinds the requested project/session and validates any supplied session/branch/environment qualifiers against the stored scope; a mismatch is indistinguishable from unknown. Status never persists or invokes payload-redaction as a mutation. [[c1]] [[c2]]"
+        "details": "Validate/copy caller input at invocation, not after awaiting policy. Accept only bounded acyclic JSON data, plain own data properties, dense arrays and finite numbers; reject accessors, unsupported prototypes, malformed Unicode, symbols and unknown envelope fields. No raw object/string is logged. Canonical encoding sorts object keys by fixed UTF-16 order, preserves arrays/string content without Unicode/path normalization, and uses deterministic JSON number encoding (including explicit -0 preservation). Validate the complete sc2 v1 envelope and kind set; strings used as identities are nonempty and bounded, with <=512 UTF-8 bytes per identity/qualifier and <=256 for sourceVersion/scopeEpoch. maxEventBytes bounds both raw snapshot and policy-returned command; nesting <=32 and nodes <=65536. HostPolicy.bind(projectId, scope.sessionId) must return the same project and valid root/epoch; HostPolicy.admit receives the bound complete command before durable writes. Revalidate its JSON output; only payload redaction is allowed, not identity/scope/kind/version/revision changes. Typed policy refusal maps to UNBOUND_PROJECT/POLICY_DENIED; unknown host failures are sanitized NOT_READY. No permissive default. Calls are processed in invocation FIFO, including policy awaits. A policy promise that never settles blocks the lane and causes drain deadlines to report incomplete; it is never treated as accepted. Identity key = canonical {version:1, projectId, producerId, eventId}; operationId = SHA256(domain-separator plus key), not queue cursor/random nonce. Compare payloadHash plus recorded scopeEpoch for retries. Same key/content/epoch returns the stable accepted receipt; changed content or epoch is REVISION_CONFLICT without overwriting the first event. Perform dedup lookup before physical-budget refusal so an exact retry needs no new journal space. Append retries rebind and re-admit. Operation status rebinds the requested project/session. Every qualifier present on the stored Scope must be present and equal on the request; omitting a stored session/branch/environment qualifier does not broaden access. A project-global event can be queried from an authorized narrower context. SourceIdentity.sessionId is provenance, distinct from Scope.sessionId visibility. A mismatch is indistinguishable from unknown. Host admission must verify producer/event namespace ownership. Status never persists or invokes payload-redaction as a mutation. [[c1]] [[c2]] types.ts is a read-only import/source reference in this change-site list, not an edit target: S2 leaves its sc1/sc2 declarations unchanged. All new private admission, framing and receipt-proof types live under the proposed queue/types.ts."
       },
       {
         "entity": "Framed JSONL codec and bounded resource accounting",
@@ -379,7 +576,7 @@
           "packages/project-memory/src/types.ts",
           "packages/project-memory/src/configuration.ts"
         ],
-        "details": "Each physical line is canonical JSON {bytes:<body UTF-8 length>, checksum:<64 lower-case SHA256 hex>, frame:<body without checksum>} followed by LF. This is JSONL with explicit framing metadata, not newline-only durability. The initial segment-header line uses the same envelope with formatVersion=1, recordType='segment', queueId, segmentId and firstSequence; event bodies carry QueueFrame fields except checksum, with recordType='event'. Verify exact bytes/length/checksum/version, field allowlists, strict UTF-8, canonical representation and contiguous sequence before use. No JSON.parse or allocation from an untrusted length precedes a cap check; stream bounded chunks and reject overlong lines. Event commands are capped by caller maxEventBytes; qualify maxEventBytes <=16 MiB as a supported implementation ceiling, no new default. Allow at most maxEventBytes + 4096 physical bytes per event frame; metadata bounds above make this envelope overhead finite. maxPendingBytes counts actual retained segment bytes (headers and resolved prefixes included) plus reserved in-flight append bytes, not only payload sizes. Never evict accepted events. segmentBytes is a target: rotate before adding a frame that would cross it; a single valid frame larger than the target gets a dedicated bounded segment, still subject to maxPendingBytes. This preserves the S1 option relationship without pretending envelope overhead is zero. Private caps: 64 admitted/in-flight calls, 65536 indexed frames and 65536 segments; ingress accounting <=min(64 MiB, maxPendingBytes, 4*maxEventBytes), with incremental encoded-byte/key/node charges reserved before copying each item and refunded on failure. This is a bounded logical quota, not a promise about V8 RSS; the caller's existing heap and hostile JavaScript execution are outside the module sandbox. Exceeding any cap is explicit BACKPRESSURE. Checkpoint decoding <=32 MiB, with bounded per-frame retry/retirement metadata; control files are outside maxPendingBytes but separately bounded to at most four checkpoint-sized files plus small markers/reports. Report that physical overhead; maxPendingBytes is not a promise that total directory size equals that value. Release gates measure actual resource use; no arbitrary production segment/event default is selected. To guarantee future control-state transitions fit, reserve checkpoint capacity before acknowledging each frame/segment: 64 KiB fixed allowance plus 2048 bytes per retained frame and 512 per segment must fit the 32 MiB checkpoint cap. Codec tests must prove every allowed retry/terminal/retirement representation fits that allowance; metadata-cap backpressure may occur before the outer 65536-entry ceiling. Generation/receipt metadata strings are <=128 UTF-8 bytes; identity/checksum digests have fixed lengths. Retire one segment at a time, so transition state is bounded. These are implementation safety ceilings, not operational defaults or measured performance claims. Queue-specific limit validation is pure and occurs before acquiring sc1 ownership: maxEventBytes <=16 MiB and maxPendingBytes >=512 bytes (the qualified empty-segment header upper bound). No operational default is added. The segment target may be below header/frame size, but actual encoded bytes always count toward the retained-byte budget. A <=512-byte header bound and per-entry reservation bounds are proving tests, not assumptions. [[c1]] [[c2]]"
+        "details": "Each physical line is canonical JSON {bytes:<body UTF-8 length>, checksum:<64 lower-case SHA256 hex>, frame:<body without checksum>} followed by LF. This is JSONL with explicit framing metadata, not newline-only durability. The initial segment-header line uses the same envelope with formatVersion=1, recordType='segment', queueId, segmentId and firstSequence; event bodies carry QueueFrame fields except checksum, with recordType='event'. Verify exact bytes/length/checksum/version, field allowlists, strict UTF-8, canonical representation and contiguous sequence before use. No JSON.parse or allocation from an untrusted length precedes a cap check; stream bounded chunks and reject overlong lines. Event commands are capped by caller maxEventBytes; qualify maxEventBytes <=16 MiB as a supported implementation ceiling, no new default. Allow at most maxEventBytes + 4096 physical bytes per event frame; metadata bounds above make this envelope overhead finite. maxPendingBytes counts actual retained segment bytes (headers and resolved prefixes included) plus reserved in-flight append bytes, not only payload sizes. Never evict accepted events. segmentBytes is a target: rotate before adding a frame that would cross it; a single valid frame larger than the target gets a dedicated bounded segment, still subject to maxPendingBytes. This preserves the S1 option relationship without pretending envelope overhead is zero. Private caps: 64 admitted/in-flight calls, 65536 indexed frames and 65536 segments; ingress accounting <=min(64 MiB, maxPendingBytes, 4*maxEventBytes), with incremental encoded-byte/key/node charges reserved before copying each item and refunded on failure. This is a bounded logical quota, not a promise about V8 RSS; the caller's existing heap and hostile JavaScript execution are outside the module sandbox. Exceeding any cap is explicit BACKPRESSURE. Checkpoint decoding <=32 MiB, with bounded per-frame retry/retirement metadata; control files are outside maxPendingBytes but separately bounded to at most four checkpoint-sized files plus small markers/reports. Report that physical overhead; maxPendingBytes is not a promise that total directory size equals that value. Release gates measure actual resource use; no arbitrary production segment/event default is selected. To guarantee future control-state transitions fit, reserve checkpoint capacity before acknowledging each frame/segment: 64 KiB fixed allowance plus 2048 bytes per retained frame and 512 per segment must fit the 32 MiB checkpoint cap. Codec tests must prove every allowed retry/terminal/retirement representation fits that allowance; metadata-cap backpressure may occur before the outer 65536-entry ceiling. Generation and machine error-code strings are <=128 UTF-8 bytes; scope fields retain the earlier <=512-byte identity/qualifier and <=256-byte epoch limits. Identity/checksum digests have fixed lengths. Lookup proof scope is transient authorization metadata, not a second persisted receipt copy. Retire one segment at a time, so transition state is bounded. These are implementation safety ceilings, not operational defaults or measured performance claims. Queue-specific limit validation is pure and occurs before acquiring sc1 ownership: maxEventBytes <=16 MiB and maxPendingBytes >=512 bytes (the qualified empty-segment header upper bound). No operational default is added. The segment target may be below header/frame size, but actual encoded bytes always count toward the retained-byte budget. A <=512-byte header bound and per-entry reservation bounds are proving tests, not assumptions. [[c1]] [[c2]]"
       },
       {
         "entity": "Serialized append and durable acceptance frontier",
@@ -416,7 +613,7 @@
           "packages/project-memory/src/runtime.ts",
           "packages/project-memory/src/types.ts"
         ],
-        "details": "Proposed private sc3-owned ReceiptVerifier port (in queue/types.ts) performs side-effect-free lookup by stable identity and lookup by operationId; results distinguish absent from unavailable and return minimal {operationId, identityDigest, payloadHash, scopeEpoch, generation, receipt, queueTerminal:true}. S3 implements this port from authoritative retained receipts/tombstones; A verified receipt may report committed, durably terminal failed/quarantined, or cleanup-pending when logical processing is complete; the explicit queueTerminal flag, matching generation and identity are required. Cleanup-pending is not a claim that physical purge is complete, and a transient failed attempt is not terminal. S2 does not import sc4/store code or design its physical schema. Every future store-backed append consults it before inferring absence. markResolved verifies a durable logical-processing terminal receipt matching accepted identity/hash/epoch and requested generation, then durably checkpoints terminal bookkeeping. An arbitrary generation string, processing flag, timeout or retry counter cannot resolve an event. S2 queue-only mode has no verifier: it can accept/replay pending commands but cannot mark terminal or recycle. Before first retirement, durably create the write-once receipt-barrier.json marker; a queue requiring that capability cannot be reopened for queue-only admission without it. This prevents downgrade/recycle from losing retry barriers. Pick only sealed, fully proven terminal segments with zero reader pins. Publish a retiring checkpoint with bounded identity/generation references before any unlink; unlink exact verified files and fsync segments directory, then publish final removal while retaining receipt-barrier requirement. If interrupted, recovery finishes the recorded retirement or stops on unavailable proof; it never replays an intentionally retired missing file. The final queue checkpoint drops retired frame identities; S3 receipts remain authoritative for duplicate/forget replay boundaries beyond recycling. S9 owns when receipt/tombstone compaction is safe. No second permanent queue receipt store or invented producer-watermark protocol is introduced. [[c1]] [[c2]]"
+        "details": "Proposed private sc3-owned ReceiptVerifier port (in queue/types.ts) performs side-effect-free lookup by stable identity and lookup by operationId; results distinguish absent from unavailable and return minimal {operationId, identityDigest, payloadHash, scope: Scope, scopeEpoch, generation, receipt, queueTerminal:true}. S3 implements this port from authoritative retained receipts/tombstones; A verified receipt may report committed, durably terminal failed/quarantined, or cleanup-pending when logical processing is complete; the explicit queueTerminal flag, matching generation and identity are required. Cleanup-pending is not a claim that physical purge is complete, and a transient failed attempt is not terminal. S2 does not import sc4/store code or design its physical schema. Lookup by operation receives the requested Scope; both callback and queue validate the returned scope before exposing status, including recycled identities. Missing/insufficient scope proof is unavailable, never assumed project-global. Every future store-backed append consults the verifier first, even for retained events, so a lost queue acknowledgement cannot hide a known terminal receipt; only verified absence permits queue-index/new-event handling. markResolved verifies a durable logical-processing terminal receipt matching accepted identity/hash/epoch and requested generation, then durably checkpoints terminal bookkeeping. An arbitrary generation string, processing flag, timeout or retry counter cannot resolve an event. S2 queue-only mode has no verifier: it can accept/replay pending commands but cannot mark terminal or recycle. Before first retirement, durably create the write-once receipt-barrier.json marker; a queue requiring that capability cannot be reopened for queue-only admission without it. This prevents downgrade/recycle from losing retry barriers. Pick only sealed, fully proven terminal segments with zero reader pins. Publish a retiring checkpoint with bounded identity/generation references before any unlink; unlink exact verified files and fsync segments directory, then publish final removal while retaining receipt-barrier requirement. If interrupted, recovery finishes the recorded retirement or stops on unavailable proof; it never replays an intentionally retired missing file. The final queue checkpoint drops retired frame identities; S3 receipts remain authoritative for duplicate/forget replay boundaries beyond recycling. S9 owns when receipt/tombstone compaction is safe. No second permanent queue receipt store or invented producer-watermark protocol is introduced. [[c1]] [[c2]]"
       },
       {
         "entity": "S2 service composition and incremental capability",
@@ -427,7 +624,7 @@
           "packages/project-memory/src/types.ts",
           "packages/project-memory/src/__tests__/runtime.test.ts"
         ],
-        "details": "Consume sc1/sc2 without signature changes. The host first validates options and acquires S1 ownership, constructs a private queue owner with tracked partial-startup resources, awaits queue recovery, and only then returns a service with an ingress delegate and queue OwnedWork participant. Queue startup/close failures are awaited; the factory releases ownership only after all queue I/O/handles are verified quiescent. Failure to verify cleanup retains ownership and reports STORE_UNAVAILABLE. Queue never closes the host's provider/policy/logger or ownership guard itself. submit is now real durable acceptance only; operation is an authorized read of retained queue status, never a new writer. context/search/inspect remain NOT_READY. With no S3/S4 processor, events remain accepted and replayable; this is explicitly queue readiness, not semantic availability. stopAdmission disables new external appends but permits already-owned internal resolution bookkeeping until worker quiescence in later composition. Queue drain waits for admitted calls and I/O/snapshot leases, not for durable pending backlog to become semantic memory; backlog remains on disk at close. Deadline counts active owned work separately from QueueStats.pendingEvents. Close seals/syncs and closes queue handles only after the lane and readers settle; an ignored host-policy promise or unreturned internal replay iterator can make drain incomplete and close wait, retaining ownership safely. Later S3/S4 composition drains producers/worker before queue release. New tests must distinguish participant work.drain from service.drain; they are not a recursive service call. [[c1]] [[c2]]"
+        "details": "Consume sc1/sc2 without signature changes. The host first validates options and acquires S1 ownership, constructs a private queue owner with tracked partial-startup resources, awaits queue recovery, and only then returns a service with an ingress delegate and queue OwnedWork participant. Queue startup/close failures are awaited; the factory releases ownership only after all queue I/O/handles are verified quiescent. Failure to verify cleanup retains ownership and reports STORE_UNAVAILABLE. Queue never closes the host's provider/policy/logger or ownership guard itself. submit is now real durable acceptance only; operation is an authorized read of retained queue status, never a new writer. context/search/inspect remain NOT_READY. With no S3/S4 processor, events remain accepted and replayable; this is explicitly queue readiness, not semantic availability. stopAdmission disables new public appends/status calls and new replay snapshots, while already admitted readers drain; it permits already-owned internal resolution bookkeeping until worker quiescence in later composition. Queue drain waits for admitted calls and I/O/snapshot leases, not for durable pending backlog to become semantic memory; backlog remains on disk at close. Deadline counts active owned work separately from QueueStats.pendingEvents. Close seals/syncs and closes queue handles only after the lane and readers settle; an ignored host-policy promise or unreturned internal replay iterator can make drain incomplete and close wait, retaining ownership safely. Later S3/S4 composition drains producers/worker before queue release. New tests must distinguish participant work.drain from service.drain; they are not a recursive service call. [[c1]] [[c2]]"
       }
     ],
     "interactionWithShared": [
@@ -667,7 +864,8 @@
             "Fake policy/model/logger ports with invocation counters: no model calls, no payload logging, denied/unbound input produces no journal event.",
             "Caller mutation while policy is paused; policy identity/scope mutation; invalid policy output; repeated policy refusal for retries.",
             "Authorized operation queries versus wrong project/session/branch/environment, unknown operation, and unavailable required verifier.",
-            "S3 integration obligation: receipt-before-inference/commit-before-ack and deletion barriers must later pass against actual Lance; fake-port tests do not satisfy that future lead-story evidence."
+            "S3 integration obligation: receipt-before-inference/commit-before-ack and deletion barriers must later pass against actual Lance; fake-port tests do not satisfy that future lead-story evidence.",
+            "Operation lookup after recycling must verify authoritative proof.scope: project-only requests cannot reveal session/branch/environment-scoped receipts by omitting qualifiers; authorized narrower requests may see project-global events. Missing proof scope is unavailable, not fabricated broad access."
           ]
         },
         {
@@ -997,7 +1195,7 @@
           "from": "lane",
           "to": "receipts",
           "label": "lookup when installed",
-          "description": "Consult retained queue identity and, when configured, authoritative receipts before treating an identity as new.",
+          "description": "Consult retained identity and, when configured, scoped authoritative receipts first; validate returned scope/provenance before treating identity as new or returning a receipt.",
           "kind": "call",
           "note": "S2 queue-only has no store verifier; no segment retirement is allowed. Exact retries return existing receipt without append."
         },

@@ -430,6 +430,15 @@ export const MIGRATION_V6_TO_V7: Migration = {
 	},
 };
 
+export const MIGRATION_V7_TO_V8: Migration = {
+	from: 7,
+	to:   8,
+	description: "subsystem and subsystem_by_file databases (s8); opened with the store, empty until a repository's first subsystem pass",
+	run: () => {
+		log.info('v7->v8: subsystem tables available; repositories are grouped on their next complete generation');
+	},
+};
+
 /**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
@@ -464,6 +473,7 @@ export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V4_TO_V5,
 	MIGRATION_V5_TO_V6,
 	MIGRATION_V6_TO_V7,
+	MIGRATION_V7_TO_V8,
 ];
 
 /**

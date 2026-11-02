@@ -273,6 +273,32 @@ export const encodeIndexStateRow = (r: IndexStateRow): Buffer => encode(r);
 export const decodeIndexStateRow = (b: Buffer): IndexStateRow => decode(b);
 
 // ---------------------------------------------------------------------------
+// Subsystem rows (Epic c2ba6fa6 s8)
+// ---------------------------------------------------------------------------
+
+/** One subsystem's summed relationship weight to another, with counts by kind. */
+export interface SubsystemConnection {
+	readonly to:     string;
+	readonly weight: number;
+	readonly kinds:  Readonly<Partial<Record<RelationKind, number>>>;
+}
+
+/** A row of the subsystem table: one group of a repository's code files. */
+export interface SubsystemRow {
+	readonly id:                   string;
+	readonly name:                 string;
+	readonly files:                readonly string[];   // repo-relative, sorted
+	readonly entityCount:          number;
+	readonly connections:          readonly SubsystemConnection[];
+	readonly summary:              string | null;
+	readonly summaryModel?:        string | undefined;
+	readonly computedAtGeneration: number;
+}
+
+export const encodeSubsystemRow = (r: SubsystemRow): Buffer => encode(r);
+export const decodeSubsystemRow = (b: Buffer): SubsystemRow => decode(b);
+
+// ---------------------------------------------------------------------------
 // Plan + plan_step rows
 // ---------------------------------------------------------------------------
 

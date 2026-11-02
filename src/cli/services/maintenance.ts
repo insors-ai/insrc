@@ -11,7 +11,8 @@
  *
  * `update` targets the daemon install root — `$INSRC_DAEMON_ROOT` or
  * `~/.insrc/daemon` — and does: fast-forward sync against origin →
- * `npm install` when the lockfile changed → `npm run build`. It does
+ * `npm install` unless the install marker records a successful install of
+ * this lockfile → `npm run build`. It does
  * NOT (re)start the daemon. `restart` does a drained stop then a start
  * of the daemon spawned from the running tree.
  *
@@ -21,9 +22,9 @@
  */
 
 import { spawn } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { rpc } from '../client.js';
 import type { RegisteredRepo } from '../../shared/types.js';
@@ -35,6 +36,30 @@ import { refreshSteeringAcrossRepos, type SteeringRefreshDeps, type SteeringRefr
 
 /** Where the installed daemon checkout lives. */
 export const DAEMON_ROOT = process.env['INSRC_DAEMON_ROOT'] ?? join(homedir(), '.insrc', 'daemon');
+
+/**
+ * The install marker (ISSUE-ca9883ca): a file in node_modules holding the git
+ * blob hash of the package-lock.json the last SUCCESSFUL npm install ran from.
+ * It is removed before an install and written only after npm exits 0, so a
+ * failed or interrupted install -- or a deleted node_modules -- leaves no
+ * marker and the next update installs again. scripts/daemon-ctl.sh and the
+ * installer scripts read and write the same file with the same content.
+ */
+export const INSTALL_MARKER = join('node_modules', '.insrc-install-ok');
+
+/**
+ * The C++ standard every daemon npm install asks for: native dependencies whose
+ * build file sets none (fs-ext) do not compile against the Node 22.22.1 headers
+ * pinned in .npmrc without it. The value the project-memory package qualified
+ * (packages/project-memory/README.md).
+ */
+export const NATIVE_CXX_STD = '-std=c++17';
+
+/** The environment for a daemon npm install: the caller's, with {@link NATIVE_CXX_STD} appended to CXXFLAGS. */
+export function nativeBuildEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+	const prior = env['CXXFLAGS']?.trim() ?? '';
+	return { ...env, CXXFLAGS: prior === '' ? NATIVE_CXX_STD : `${prior} ${NATIVE_CXX_STD}` };
+}
 
 export interface UpdateOptions {
 	readonly skipSync?:    boolean;
@@ -84,7 +109,6 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 
 	try {
 		const branch = opts.branch ?? (await capture('git', ['-C', root, 'rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
-		const lockBefore = (await capture('git', ['-C', root, 'hash-object', 'package-lock.json'])).stdout.trim();
 
 		if (opts.skipSync !== true) {
 			onLog(`syncing ${root} against origin/${branch}`);
@@ -118,16 +142,30 @@ export async function update(opts: UpdateOptions, onLog: LogFn): Promise<Mainten
 			steps.push('sync');
 		}
 
-		const lockAfter = (await capture('git', ['-C', root, 'hash-object', 'package-lock.json'])).stdout.trim();
-		const lockChanged = lockBefore !== lockAfter || !existsSync(join(root, 'node_modules'));
-		if (opts.skipInstall !== true && lockChanged) {
-			onLog('npm install (lockfile changed)');
-			if (await stream('npm', ['install'], onLog, root) !== 0) {
-				return { ok: false, steps, error: 'npm install failed' };
+		if (opts.skipInstall !== true) {
+			// The synced lockfile's blob hash, taken before npm rewrites it; empty
+			// when there is none, which never matches and writes no marker.
+			const lockHash = (await capture('git', ['-C', root, 'hash-object', 'package-lock.json'])).stdout.trim();
+			const markerPath = join(root, INSTALL_MARKER);
+			const marker = existsSync(markerPath) ? readFileSync(markerPath, 'utf8').trim() : undefined;
+			if (lockHash !== '' && marker === lockHash) {
+				onLog('npm install: the install marker matches package-lock.json; skipping');
+			} else {
+				onLog(`npm install (${lockHash === '' ? 'package-lock.json not found' : marker === undefined ? 'no install marker' : 'the install marker is for another package-lock.json'})`);
+				rmSync(markerPath, { force: true });
+				if (await stream('npm', ['install'], onLog, root, nativeBuildEnv()) !== 0) {
+					return { ok: false, steps, error: 'npm install failed' };
+				}
+				if (lockHash !== '') {
+					try {
+						mkdirSync(dirname(markerPath), { recursive: true });
+						writeFileSync(markerPath, `${lockHash}\n`);
+					} catch (err) {
+						return { ok: false, steps, error: `npm install succeeded but the install marker could not be written: ${err instanceof Error ? err.message : String(err)}` };
+					}
+				}
+				steps.push('install');
 			}
-			steps.push('install');
-		} else if (opts.skipInstall !== true) {
-			onLog('npm install: package-lock.json unchanged; skipping');
 		}
 
 		if (opts.skipBuild !== true) {
@@ -321,9 +359,9 @@ export function listReposFromDaemon(): Promise<readonly RegisteredRepo[]> {
 
 /** Run a command, streaming each output line to `onLog`; resolves the
  *  exit code. */
-function stream(cmd: string, args: readonly string[], onLog: LogFn, cwd?: string): Promise<number> {
+function stream(cmd: string, args: readonly string[], onLog: LogFn, cwd?: string, env?: NodeJS.ProcessEnv): Promise<number> {
 	return new Promise<number>(resolve => {
-		const child = spawn(cmd, args as string[], { stdio: ['ignore', 'pipe', 'pipe'], ...(cwd !== undefined ? { cwd } : {}) });
+		const child = spawn(cmd, args as string[], { stdio: ['ignore', 'pipe', 'pipe'], ...(cwd !== undefined ? { cwd } : {}), ...(env !== undefined ? { env } : {}) });
 		const emit = (chunk: Buffer): void => {
 			for (const line of chunk.toString().split(/\r?\n/)) {
 				const t = line.trimEnd();

@@ -1,3 +1,4 @@
+import { validateFailureDiagnostics } from './diagnostics.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
@@ -31,6 +32,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   requireReview(saved.attempts.every((entry, index) => entry.header.attempt === index + 1), 'attempt', 'Attempt history must be contiguous');
   for (const [index, entry] of saved.attempts.entries()) {
    requireReview(Number.isFinite(Date.parse(entry.header.createdAt)) && (!entry.header.completedAt || Number.isFinite(Date.parse(entry.header.completedAt))), 'checkpoint', 'Invalid attempt timestamp');
+   validateFailureDiagnostics(entry);
    const prepared = await prepareReviewPacket(entry.submitted, sources, true);
    requireReview(!priorPrepared || priorPrepared.epicHash === prepared.epicHash, 'scope', 'Attempt belongs to another epic');
    requireReview(canonicalReviewStory(saved.storyId, prepared.epicHash) === canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) && saved.taskId === prepared.packet.taskId, 'scope', 'Attempt belongs to another story/task');

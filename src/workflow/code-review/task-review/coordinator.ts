@@ -1,3 +1,6 @@
+import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
+import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
+import type { FailureDiagnostic } from './diagnostic-schema.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import type { ReviewProgressView } from './progress-view.js';
 import { ReviewProgressTracker } from './progress.js';
@@ -137,19 +140,23 @@ export class TaskReviewCoordinator {
    const commitResult=async(result:TaskReviewResult,origin?:TaskResultOrigin):Promise<void>=>{
     if(durable){requireReview(isDeepStrictEqual(durable,result),'result','Conflicting accepted submission replay');return;}
     tracker.phase('feedback_persistence');progress.boundary();
-    const priorTasks=entry['review-response'].tasks,priorOrigins=entry['review-response'].origins;
+    const priorTasks=entry['review-response'].tasks,priorOrigins=entry['review-response'].origins,priorDiagnostics=entry['review-response'].failureDiagnostics;
     entry['review-response'].tasks=[...priorTasks,result];
+    if(result.status!=='failed')resolveFailureDiagnostics(entry,'assessment',task.id);
     if(origin)entry['review-response'].origins=[...(priorOrigins??[]),origin];
     delete entry.header.activeTaskId;
     try{await save(path,checkpoint);}catch(error){
      entry['review-response'].tasks=priorTasks;
+     if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;
      if(priorOrigins)entry['review-response'].origins=priorOrigins;else delete entry['review-response'].origins;
      entry.header.activeTaskId=task.id;persistenceError=error;throw error;
     }
     durable=result;tracker.phase('task_review',entry['review-response'].tasks.length);
    };
-   const options=(candidate:(raw:unknown)=>Promise<{accepted:boolean}>):ReviewSessionOpts=>({
+   let nativePhase:FailureDiagnostic['phase']='attribution';
+   const options=(phase:FailureDiagnostic['phase'],candidate:(raw:unknown)=>Promise<{accepted:boolean}>):ReviewSessionOpts=>({
     mode:'activity',cwd:checkpoint.project,inactivityMs:REVIEW_INACTIVITY_MS,internalRetry:false,signal:cancellation.signal,
+    onDiagnostic:snapshot=>serial(async()=>{check();if(persistenceError)throw persistenceError;if(durable||phase==='attribution'&&assignments)return;try{await persistFailureDiagnostic(review,phase,phase==='assessment'?task.id:undefined,snapshot,()=>save(path,checkpoint));}catch(error){persistenceError=error;throw error;}}),
     codeTaskCommands:codeTaskCommands(prepared,review),onActivity:event=>{if(monitor.observe(event)){const prior=tracker.snapshot().phase;tracker.activity(event,monitor.snapshot().tools.length);progress.request(prior!==tracker.snapshot().phase);}},onCandidate:candidate,
    });
    const flow=(async()=>{
@@ -158,8 +165,17 @@ export class TaskReviewCoordinator {
      if(attributionFailure)throw attributionFailure.error;
      assignments=directReviewAssignments(review);
      if(!assignments){
-      const acceptScope=(raw:unknown)=>serial(async()=>{check();assignments=reviewAssignments(review,raw);return{accepted:true};});
-      const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options(acceptScope));
+      const acceptScope=(raw:unknown)=>serial(async()=>{
+       check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary;
+       assignments=reviewAssignments(review,raw);
+       if(resolveFailureDiagnostics(entry,'attribution'))try{await save(path,checkpoint);}catch(error){
+        if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;
+        if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;
+        assignments=undefined;persistenceError=error;throw error;
+       }
+       return{accepted:true};
+      });
+      const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options('attribution',acceptScope));
       check();if(!assignments)assignments=reviewAssignments(review,raw);
      }
     }
@@ -170,17 +186,19 @@ export class TaskReviewCoordinator {
      const reused=await reuseAssessment(review,assignment,this.deps.sources,references);
      await serial(async()=>{check();await commitResult(reused.result,reused.origin);});return;
     }
+    nativePhase='assessment';
     const acceptTask=(raw:unknown)=>serial(async()=>{
      check();const assessed=await assessTaskResult(this.deps.sources,assignment,raw,references);
      await commitResult(assessed);return{accepted:true};
     });
-    const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options(acceptTask));
+    const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options('assessment',acceptTask));
     if(!durable)await acceptTask(raw);
    })();
    try{await Promise.race([expired,flow]);}
    catch(error){
     if(persistenceError)throw persistenceError;
     if(!durable){
+     if(error instanceof ReviewOutputFailureError)await serial(()=>persistFailureDiagnostic(review,nativePhase,nativePhase==='assessment'?task.id:undefined,error.diagnostic,()=>save(path,checkpoint)));
      const inherited=attributionFailure?.timedOut===true&&error===attributionFailure.error;
      const timedOut=inherited||error instanceof ReviewInactivityError||error instanceof ReviewSessionTimeoutError;
      if(!assignments)attributionFailure={error,timedOut};

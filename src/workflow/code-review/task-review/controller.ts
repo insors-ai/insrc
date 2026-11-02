@@ -1,3 +1,5 @@
+import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
+import { DiagnosticSnapshotSchema } from './diagnostic-schema.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { ReviewProgressTracker } from './progress.js';
 import { ReviewProgressPersistence } from './progress-persistence.js';
@@ -67,7 +69,13 @@ export class ControllerTaskReview {
    }
    this.finished=true;await this.complete();this.retire(false);return this.base('done');
   }
-  this.checkTime();this.assignments=assignments;
+  this.checkTime();
+  const priorDiagnostics=this.review.attempt['review-response'].failureDiagnostics;
+  if(resolveFailureDiagnostics(this.review.attempt,'attribution'))try{await this.persist();}catch(error){
+   if(priorDiagnostics)this.review.attempt['review-response'].failureDiagnostics=priorDiagnostics;else delete this.review.attempt['review-response'].failureDiagnostics;
+   throw error;
+  }
+  this.assignments=assignments;
   return this.frame(owner);
  });}
  submit(input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<ControllerFrame>{return this.exchange('result',input,owner,envelope,async()=>{
@@ -81,6 +89,7 @@ export class ControllerTaskReview {
   this.assertOwner(owner);
   this.monitor?.stop();
   this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,result];
+  if(result.status!=='failed')resolveFailureDiagnostics(this.review.attempt,'assessment',raw.taskId);
   delete this.review.attempt.header.activeTaskId;this.monitor=undefined;
   await this.persist();
   return this.frame(owner);
@@ -102,9 +111,16 @@ export class ControllerTaskReview {
  activity(input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<unknown>{
   return this.exchange('activity',input,owner,envelope,async()=>{
    const event=decodeReview(Type.Union([
+    Type.Object({kind:Type.Literal('diagnostic'),phase:Type.Union([Type.Literal('attribution'),Type.Literal('assessment')]),diagnostic:DiagnosticSnapshotSchema},{additionalProperties:false}),
     Type.Object({kind:Type.Literal('model_output')},{additionalProperties:false}),
     Type.Object({kind:Type.Union([Type.Literal('tool_started'),Type.Literal('tool_completed')]),toolId:Type.String({minLength:1,maxLength:256})},{additionalProperties:false}),
    ]),input);
+   if(event.kind==='diagnostic'){
+    requireReview(this.monitor,'executionId','No active diagnostic execution');
+    requireReview(event.phase===(this.assignments?'assessment':'attribution'),'diagnostic','Stale diagnostic phase');
+    await persistFailureDiagnostic(this.review,this.assignments?'assessment':'attribution',this.assignments?this.current()!.id:undefined,event.diagnostic,()=>this.persist());
+    return{reviewId:this.review.checkpoint.reviewId,attempt:this.review.attempt.header.attempt,taskId:this.current()!.id,executionId:this.executionId,acceptedSequence:this.sequence,inactivityRemainingMs:this.remaining()};
+   }
    const native={sessionId:this.executionId!,sequence:this.sequence+1,...event};
    requireReview(this.monitor?.observe(native),'activity','Invalid or duplicate native activity');
    const prior=this.progress.snapshot().phase;this.progress.activity(native,this.monitor!.snapshot().tools.length);this.progressPersistence.request(prior!==this.progress.snapshot().phase);

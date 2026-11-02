@@ -1,3 +1,4 @@
+import { validateFailureDiagnostics } from './diagnostics.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { open, mkdir, rename, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -12,6 +13,7 @@ export function checkpointPath(project: string, id: string): string {
 }
 /** A poller always sees an entire file; a completed task is flushed before advancing. */
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint): Promise<void> {
+ for (const attempt of checkpoint.attempts) validateFailureDiagnostics(attempt);
  const serialized = JSON.stringify(decodeReview(CheckpointSchema, checkpoint), null, 2) + '\n';
  requireReview(Buffer.byteLength(serialized) <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'JSON exceeds limit');
  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -38,6 +40,8 @@ export async function loadCheckpoint(path: string): Promise<ReviewCheckpoint | u
  try {
   const stat = await file.stat();
   requireReview(stat.isFile() && stat.size <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'Expected bounded checkpoint file');
-  return decodeReview(CheckpointSchema, JSON.parse(await file.readFile('utf8')));
+  const checkpoint = decodeReview(CheckpointSchema, JSON.parse(await file.readFile('utf8')));
+  for (const attempt of checkpoint.attempts) validateFailureDiagnostics(attempt);
+  return checkpoint;
  } finally { await file.close(); }
 }

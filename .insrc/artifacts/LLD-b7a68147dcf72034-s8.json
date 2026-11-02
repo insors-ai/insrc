@@ -36,7 +36,47 @@
       "AMD-b7a68147dcf72034-12"
     ],
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "932169bc860f281a83c81960bdd1ec31f7937973094f32e6883cd4fc8400788b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T11:06:23.842Z",
+        "override": {
+          "reason": "Daemon review unavailable; controller self-review at docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S008/SELF-REVIEW.md (verdict pass). User approved explicitly in chat."
+        }
+      }
+    },
+    "questionResolutions": {
+      "q4e06d056": {
+        "question": "Exclusion of for-each-repo, hook and filter-branch: confirm they stay excluded as commands that run an arbitrary command (a raw passthrough), as the coverage table has recorded since the s4 split",
+        "status": "resolved",
+        "choice": "Confirm exclusion as-is",
+        "rationale": "User decision 2026-11-02: for-each-repo, hook and filter-branch stay excluded as raw passthrough.",
+        "resolvedAt": "2026-11-02T11:16:29.678Z"
+      }
+    }
   },
   "body": {
     "summary": {

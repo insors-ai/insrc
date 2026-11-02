@@ -317,3 +317,17 @@ Group the assigned commands into the same families as a2, but write each family 
 - Exclusion of for-each-repo, hook and filter-branch: confirm they stay excluded as commands that run an arbitrary command (a raw passthrough), as the coverage table has recorded since the s4 split
 - The merge strategy drivers (merge-octopus, merge-ours, merge-recursive, merge-recursive-ours, merge-recursive-theirs, merge-resolve, merge-subtree), quiltimport, request-pull and the contrib subtree command: offered through a family, or excluded as helpers a person does not run directly? Recommended: exclude the merge strategy drivers and subtree (git merge runs them) and keep request-pull and quiltimport only if a program needs them
 - The missing operations of git_stash, git_worktree, git_remote, git_branch and git_tag: this design adds them to those tools as new values of their op enum (additive, existing inputs unchanged); the alternative is new tools for them
+
+## Resolved questions
+
+- `q4e06d056` — Exclusion of for-each-repo, hook and filter-branch: confirm they stay excluded as commands that run an arbitrary command (a raw passthrough), as the coverage table has recorded since the s4 split
+  - **resolved**: Confirm exclusion as-is — User decision 2026-11-02: for-each-repo, hook and filter-branch stay excluded as raw passthrough. _(2026-11-02T11:16:29.678Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/daemon/tools/builtins/git/definitions.ts`
+- **[[c2]]** `code` `src/daemon/tools/shell-helper.ts:250`
+- **[[c3]]** `code` `src/daemon/tools/builtins/git/coverage.ts`
+- **[[c4]]** `code` `src/daemon/tools/builtins/gh/op-table.ts`
+- **[[c5]]** `doc` `docs/plans/tool-registry.md`
+- **[[c6]]** `code` `src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts`

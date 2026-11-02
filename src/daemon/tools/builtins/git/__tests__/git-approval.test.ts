@@ -14,7 +14,14 @@ import { fileURLToPath } from 'node:url';
 import { executeTool } from '../../../executor.js';
 import { resolveApprovalClass } from '../../../approval-policy.js';
 import { listTools } from '../../../registry.js';
-import { git, newRepo, registerForTests, toolDeps } from './_repo.js';
+import { git, newRepo, registerForTests, richRepo, toolDeps } from './_repo.js';
+import { gitBranchExtended, gitRemoteExtended, gitStashExtended, gitTagExtended, gitWorktreeExtended } from '../extended.js';
+import { gitBranchTool } from '../branch.js';
+import { gitRemoteTool } from '../remote.js';
+import { gitStashTool } from '../stash.js';
+import { gitTagTool } from '../tag.js';
+import { gitWorktreeTool } from '../worktree.js';
+import type { Tool, ToolInput } from '../../../types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const snapshot = (JSON.parse(readFileSync(join(HERE, '..', '..', '..', '__tests__', 'fixtures', 'approval-snapshot.json'), 'utf8')) as {
@@ -27,6 +34,28 @@ const GIT_IDS = ['git_status', 'git_log', 'git_diff', 'git_show', 'git_blame', '
 /** Optional inputs the s9 audit added after the snapshot (Story s9, task t24); the snapshot stays pinned. */
 const ADDED_BY_S9 = new Map([['git_status', ['paths', 'untrackedFiles']], ['git_log', ['firstParent']], ['git_diff', ['againstWorktree', 'excludeDeleted']], ['git_worktree', ['startPoint']], ['git_stage', ['force']], ['git_show', ['excludeDeleted']]]);
 
+/**
+ * What Story s8 added to the five multi-operation tools: new optional inputs and new values of `op`. Nothing the schemas
+ * had before changed; the snapshot stays pinned and these are taken off the live schema before it is compared.
+ */
+const ADDED_BY_S8 = new Map<string, { inputs: string[]; ops: string[] }>([
+	['git_stash', { inputs: ['branchName', 'commit', 'toRef'], ops: ['branch', 'create', 'store', 'export', 'import'] }],
+	['git_worktree', { inputs: ['reason', 'repairPaths'], ops: ['lock', 'unlock', 'repair'] }],
+	['git_remote', { inputs: ['remote', 'query', 'dryRun', 'remotes', 'pruneRefs', 'headBranch', 'auto', 'deleteHead', 'branches', 'addBranches', 'newUrl', 'urlPattern'], ops: ['show', 'prune', 'update', 'set-head', 'set-branches', 'set-url-add', 'set-url-delete'] }],
+	['git_branch', { inputs: ['fromName', 'toName', 'upstream', 'branchName', 'description'], ops: ['rename', 'copy', 'set-upstream-to', 'unset-upstream', 'edit-description'] }],
+	['git_tag', { inputs: ['tagNames', 'tagName', 'target', 'key'], ops: ['verify', 'sign'] }],
+]);
+
+/** The live schema of a tool without what s8 added. */
+function withoutS8(id: string, schema: { properties: Record<string, unknown> }): unknown {
+	const added = ADDED_BY_S8.get(id);
+	if (added === undefined) { return schema; }
+	for (const name of added.inputs) { delete schema.properties[name]; }
+	const op = schema.properties['op'] as { enum: string[] };
+	op.enum = op.enum.filter(v => !added.ops.includes(v));
+	return schema;
+}
+
 test('every typebox input schema serialises to the same JSON as the schema it replaced', () => {
 	registerForTests();
 	const live = new Map(listTools().map(t => [t.id, t]));
@@ -37,7 +66,7 @@ test('every typebox input schema serialises to the same JSON as the schema it re
 		const schema = JSON.parse(JSON.stringify(live.get(id)?.inputSchema)) as { properties: Record<string, unknown> };
 		if (id === 'git_push') { delete schema.properties['configured']; }
 		for (const added of ADDED_BY_S9.get(id) ?? []) { delete schema.properties[added]; }
-		assert.deepEqual(schema, before.inputSchema, id);
+		assert.deepEqual(withoutS8(id, schema), before.inputSchema, id);
 	}
 });
 
@@ -183,4 +212,49 @@ test('git_push deletes and forced refspecs, branch and tag delete, stash drop an
 			assert.notEqual(classOf(id, bad as Record<string, unknown>), 'none', `${id} ${JSON.stringify(bad)}`);
 		}
 	}
+});
+
+test('git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8', () => {
+	registerForTests();
+	const live = new Map(listTools().map(t => [t.id, t]));
+	assert.deepEqual([...ADDED_BY_S8.keys()].sort(), ['git_branch', 'git_remote', 'git_stash', 'git_tag', 'git_worktree']);
+	for (const [id, added] of ADDED_BY_S8) {
+		const now = JSON.parse(JSON.stringify(live.get(id)?.inputSchema)) as { properties: Record<string, { enum?: string[] }>; required?: string[] };
+		const before = snapshot.find(s => s.id === id)?.inputSchema as { properties: Record<string, { enum?: string[] }>; required?: string[] };
+		// every input and every op value that was there is still there, and `required` has not moved
+		for (const name of Object.keys(before.properties)) { assert.ok(name in now.properties, `${id}.${name} is still an input`); }
+		for (const value of before.properties['op']?.enum ?? []) { assert.ok(now.properties['op']?.enum?.includes(value), `${id} op ${value} is still accepted`); }
+		assert.deepEqual(now.required, before.required, `${id}: what is required is unchanged`);
+		// what is new is exactly what is listed as added by s8
+		const newInputs = Object.keys(now.properties).filter(n => !(n in before.properties)).sort();
+		const addedByS9 = ADDED_BY_S9.get(id) ?? [];
+		assert.deepEqual(newInputs.filter(n => !addedByS9.includes(n)), [...added.inputs].sort(), `${id}: the new inputs are the ones listed`);
+		assert.deepEqual((now.properties['op']?.enum ?? []).filter(v => !(before.properties['op']?.enum ?? []).includes(v)), added.ops, `${id}: the new ops are the ones listed`);
+	}
+});
+
+test('git-approval.test.ts: the five extended tools give the class and the result they gave before for every old input', async () => {
+	const pairs: Array<[Tool, Tool]> = [[gitStashTool, gitStashExtended], [gitWorktreeTool, gitWorktreeExtended], [gitRemoteTool, gitRemoteExtended], [gitBranchTool, gitBranchExtended], [gitTagTool, gitTagExtended]];
+	const klass = (tool: Tool, input: ToolInput): unknown => (typeof tool.approval === 'function' ? tool.approval(input) : tool.approval);
+	for (const [base, extended] of pairs) {
+		const ops = (base.inputSchema as { properties: { op: { enum: string[] } } }).properties.op.enum;
+		for (const op of ops) {
+			for (const extra of [{}, { force: true }, { name: 'x' }]) {
+				const input = { op, ...extra };
+				assert.equal(klass(extended, input), klass(base, input), `${base.id} ${JSON.stringify(input)}`);
+			}
+		}
+		assert.equal(klass(extended, {}), klass(base, {}), `${base.id} with no op`);
+	}
+	const { repo, wt, remote } = richRepo();
+	try {
+		const d = toolDeps(repo);
+		for (const [base, extended] of pairs) {
+			const input = { cwd: repo, op: 'list' };
+			const before = await base.execute(input, d);
+			const after = await extended.execute(input, d);
+			assert.equal(after.success, before.success, `${base.id} list`);
+			assert.deepEqual(after.data, before.data, `${base.id} list gives the same answer`);
+		}
+	} finally { rmSync(repo, { recursive: true, force: true }); rmSync(remote, { recursive: true, force: true }); rmSync(dirname(wt), { recursive: true, force: true }); }
 });

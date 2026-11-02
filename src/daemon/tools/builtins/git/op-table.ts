@@ -10,7 +10,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Type } from '@sinclair/typebox';
+import { OptionalKind, Type } from '@sinclair/typebox';
 import type { TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import type { TypedTool } from '../../call-tool.js';
@@ -278,7 +278,10 @@ export function extendGitTool<T extends TypedTool>(base: T, extra: readonly GitO
     if (baseOps.includes(name)) { throw new Error(`${base.id}: op ${name} already exists`); }
   }
   const props: Record<string, TSchema> = { ...baseProps };
-  props['op'] = Type.Optional(Type.Unsafe<string>({ type: 'string', enum: [...baseOps, ...extraByName.keys()], description: (baseProps['op'] as { description?: string } | undefined)?.description ?? 'Which operation to run.' }));
+  // the op keeps what the base said of it: its description, and whether it is optional (git_stash defaults to push)
+  const baseOpSchema = baseProps['op'] as ({ description?: string } & Record<symbol, unknown>) | undefined;
+  const opSchema = Type.Unsafe<string>({ type: 'string', enum: [...baseOps, ...extraByName.keys()], ...(baseOpSchema?.description !== undefined ? { description: baseOpSchema.description } : {}) });
+  props['op'] = baseOpSchema !== undefined && OptionalKind in baseOpSchema ? Type.Optional(opSchema) : opSchema;
   for (const [k, f] of collectFields(extra)) {
     const schema = fieldSchema(f);
     const prior = baseProps[k];

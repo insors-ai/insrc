@@ -12,7 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -67,7 +67,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 	if (unknown.length > 0) { console.error(`git lists commands the table does not know (update coverage.ts): ${unknown.join(', ')}`); }
 });
 
-test('multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8', () => {
+test('multi-operation commands are tracked per subcommand and the operations s8 added are covered', () => {
 	for (const command of MULTI_OPERATION) {
 		const ops = opRows.filter(r => r.command === command);
 		assert.ok(ops.length > 0, `${command} has a row per operation`);
@@ -77,13 +77,14 @@ test('multi-operation commands are tracked per subcommand and the operations the
 		if (base.owner === 'covered') { assert.ok(ops.some(r => r.owner === 'covered'), `${command} covers at least one operation`); }
 	}
 	const owner = (command: string, operation: string): string | undefined => opRows.find(r => r.command === command && r.operation === operation)?.owner;
-	// operations named by the LLD that the existing tool schemas do not offer
+	// the operations s8 added to the five existing tools are covered by those tools
 	for (const [c, op] of [['stash', 'branch'], ['stash', 'create'], ['stash', 'store'], ['stash', 'export'], ['stash', 'import'],
 		['worktree', 'lock'], ['worktree', 'unlock'], ['worktree', 'repair'],
 		['remote', 'show'], ['remote', 'prune'], ['remote', 'update'], ['remote', 'set-head'], ['remote', 'set-branches'], ['remote', 'set-url --add'], ['remote', 'set-url --delete'],
 		['branch', 'rename'], ['branch', 'copy'], ['branch', 'set-upstream-to'], ['branch', 'unset-upstream'], ['branch', 'edit-description'],
-		['tag', 'verify'], ['tag', 'sign']] as const) {
-		assert.equal(owner(c, op), 'assigned', `${c} ${op} is assigned to s8`);
+		['tag', 'verify'], ['tag', 'sign'], ['refs', 'verify'], ['refs', 'migrate'], ['refs', 'optimize'],
+		['reflog', 'show'], ['reflog', 'expire'], ['reflog', 'delete'], ['reflog', 'write']] as const) {
+		assert.equal(owner(c, op), 'covered', `${c} ${op} is covered`);
 	}
 	// the reads that git branch has and git_for_each_ref serves, and the two refs operations s4 covers
 	for (const op of ['merged', 'no-merged', 'points-at', 'contains']) { assert.equal(owner('branch', op), 'covered', `branch ${op}`); }
@@ -112,6 +113,14 @@ interface Ctx {
 }
 
 const sha = (c: Ctx, rev: string): string => c.git('rev-parse', rev).trim();
+
+/** Sign with a throwaway ssh key, so a tag can be signed and verified without gpg. */
+function sshSigning(c: Ctx): void {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-sshkey-')); const key = join(dir, 'k');
+	execFileSync('ssh-keygen', ['-q', '-t', 'ed25519', '-N', '', '-f', key, '-C', 't@example.com']);
+	const pub = readFileSync(`${key}.pub`, 'utf8').trim(); writeFileSync(join(dir, 'allowed'), `t@example.com ${pub}\n`);
+	c.git('config', 'gpg.format', 'ssh'); c.git('config', 'user.signingkey', `${key}.pub`); c.git('config', 'gpg.ssh.allowedSignersFile', join(dir, 'allowed'));
+}
 
 /** Pack the repository and return the path of its pack index. */
 function packIndex(c: Ctx): string {
@@ -511,6 +520,70 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 	},
 	'reflog write': async c => {
 		await c.ok('git_reflog', { op: 'write', ref: 'refs/heads/main', oldOid: sha(c, 'HEAD~1'), newOid: sha(c, 'HEAD'), message: 'manual entry' }); assert.match(c.git('reflog', 'show', 'main'), /manual entry/);
+	},
+
+	// ---- the operations s8 added to the five existing tools
+	'stash branch': async c => {
+		c.git('checkout', '-q', '--', 'a.txt'); await c.ok('git_stash', { op: 'branch', branchName: 'fromstash' });
+		assert.equal(c.git('symbolic-ref', '--short', 'HEAD').trim(), 'fromstash'); assert.equal(readFileSync(join(c.repo, 'a.txt'), 'utf8'), 'stashed\n'); assert.equal(c.git('stash', 'list').trim(), '');
+	},
+	'stash create': async c => {
+		const r = await c.ok('git_stash', { op: 'create', message: 'snap' }); const made = (r.data as { sha: string }).sha;
+		assert.equal(c.git('cat-file', '-t', made).trim(), 'commit'); assert.equal(c.git('stash', 'list').trim().split('\n').length, 1, 'the stack is unchanged');
+	},
+	'stash store': async c => {
+		const made = c.git('stash', 'create').trim(); await c.ok('git_stash', { op: 'store', commit: made, message: 'stored' });
+		assert.equal(c.git('stash', 'list').trim().split('\n').length, 2); assert.match(c.git('stash', 'list'), /stored/);
+	},
+	'stash export': async c => { await c.ok('git_stash', { op: 'export', toRef: 'refs/stash-export' }); assert.equal(c.git('cat-file', '-t', 'refs/stash-export').trim(), 'commit'); },
+	'stash import': async c => {
+		c.git('stash', 'export', '--to-ref', 'refs/stash-export'); c.git('stash', 'clear'); await c.ok('git_stash', { op: 'import', commit: sha(c, 'refs/stash-export') });
+		assert.equal(c.git('stash', 'list').trim().split('\n').length, 1);
+	},
+	'worktree lock': async c => { await c.ok('git_worktree', { op: 'lock', path: c.wt, reason: 'busy' }); assert.match(c.git('worktree', 'list', '--porcelain'), /locked busy/); },
+	'worktree unlock': async c => { c.git('worktree', 'lock', c.wt); await c.ok('git_worktree', { op: 'unlock', path: c.wt }); assert.doesNotMatch(c.git('worktree', 'list', '--porcelain'), /locked/); },
+	'worktree repair': async c => {
+		const moved = c.wt + '-moved'; renameSync(c.wt, moved);
+		try { await c.ok('git_worktree', { op: 'repair', repairPaths: [moved] }); assert.match(c.git('worktree', 'list'), new RegExp(moved)); } finally { rmSync(moved, { recursive: true, force: true }); }
+	},
+	'remote show': async c => { const r = await c.ok('git_remote', { op: 'show', remote: 'origin' }); assert.match((r.data as { text: string }).text, /Fetch URL:/); },
+	'remote prune': async c => {
+		git(c.remote, 'branch', '-D', 'b'); assert.match(c.git('branch', '-r'), /origin\/b/);
+		const dry = await c.ok('git_remote', { op: 'prune', remote: 'origin', dryRun: true }); assert.match((dry.data as { text: string }).text, /Would prune|would prune/i); assert.match(c.git('branch', '-r'), /origin\/b/);
+		await c.ok('git_remote', { op: 'prune', remote: 'origin' }); assert.doesNotMatch(c.git('branch', '-r'), /origin\/b/);
+	},
+	'remote update': async c => { git(c.remote, 'branch', 'zz', 'main'); await c.ok('git_remote', { op: 'update' }); assert.match(c.git('branch', '-r'), /origin\/zz/); },
+	'remote set-head': async c => {
+		await c.ok('git_remote', { op: 'set-head', remote: 'origin', headBranch: 'b' }); assert.equal(c.git('symbolic-ref', 'refs/remotes/origin/HEAD').trim(), 'refs/remotes/origin/b');
+		await c.ok('git_remote', { op: 'set-head', remote: 'origin', deleteHead: true }); assert.throws(() => c.git('symbolic-ref', 'refs/remotes/origin/HEAD'));
+	},
+	'remote set-branches': async c => { await c.ok('git_remote', { op: 'set-branches', remote: 'origin', branches: ['main'] }); assert.equal(c.git('config', '--get-all', 'remote.origin.fetch').trim(), '+refs/heads/main:refs/remotes/origin/main'); },
+	'remote set-url --add': async c => { await c.ok('git_remote', { op: 'set-url-add', remote: 'origin', newUrl: '/second/url' }); assert.deepEqual(c.git('remote', 'get-url', '--all', 'origin').trim().split('\n'), [c.remote, '/second/url']); },
+	'remote set-url --delete': async c => {
+		c.git('remote', 'set-url', '--add', 'origin', '/second/url'); await c.ok('git_remote', { op: 'set-url-delete', remote: 'origin', urlPattern: 'second' });
+		assert.deepEqual(c.git('remote', 'get-url', '--all', 'origin').trim().split('\n'), [c.remote]);
+	},
+	'branch rename': async c => {
+		await c.ok('git_branch', { op: 'rename', fromName: 'b', toName: 'bb' }); assert.equal(c.git('branch', '--list', 'b').trim(), ''); assert.match(c.git('branch', '--list', 'bb'), /bb/);
+		const clash = await executeTool('git_branch', { cwd: c.repo, op: 'rename', fromName: 'bb', toName: 'wtb' }, { ...toolDeps(c.repo), approvalMode: 'auto' as const }); assert.equal(clash.success, false, 'no force: an existing name is not overwritten');
+	},
+	'branch copy': async c => { await c.ok('git_branch', { op: 'copy', fromName: 'b', toName: 'bc' }); assert.equal(sha(c, 'bc'), sha(c, 'b')); assert.match(c.git('branch', '--list', 'b'), /b/); },
+	'branch set-upstream-to': async c => { await c.ok('git_branch', { op: 'set-upstream-to', branchName: 'b', upstream: 'origin/b' }); assert.equal(c.git('config', 'branch.b.remote').trim(), 'origin'); },
+	'branch unset-upstream': async c => {
+		c.git('branch', '--set-upstream-to=origin/b', 'b'); await c.ok('git_branch', { op: 'unset-upstream', branchName: 'b' }); assert.throws(() => c.git('config', 'branch.b.remote'));
+	},
+	'branch edit-description': async c => {
+		await c.ok('git_branch', { op: 'edit-description', branchName: 'b', description: 'hello there' }); assert.equal(c.git('config', 'branch.b.description').trim(), 'hello there');
+		await c.ok('git_branch', { op: 'edit-description', branchName: 'b', description: '' }); assert.throws(() => c.git('config', 'branch.b.description'));
+	},
+	'tag verify': async c => {
+		sshSigning(c); c.git('tag', '-s', '-m', 'signed', 'vs');
+		const good = await c.ok('git_tag', { op: 'verify', tagNames: ['vs'] }); assert.equal((good.data as { verified: boolean }).verified, true);
+		const bad = await c.ok('git_tag', { op: 'verify', tagNames: ['t'] }); assert.equal((bad.data as { verified: boolean }).verified, false);
+	},
+	'tag sign': async c => {
+		sshSigning(c); await c.ok('git_tag', { op: 'sign', tagName: 'v1', message: 'signed release', target: 'b' });
+		assert.equal(c.git('cat-file', '-t', 'v1').trim(), 'tag'); assert.match(c.git('cat-file', '-p', 'v1'), /BEGIN SSH SIGNATURE/); assert.equal(sha(c, 'v1^{commit}'), sha(c, 'b'));
 	},
 };
 

@@ -16,7 +16,6 @@ import { gitLogTool } from './log.js';
 import { gitDiffTool } from './diff.js';
 import { gitShowTool } from './show.js';
 import { gitBlameTool } from './blame.js';
-import { gitBranchTool } from './branch.js';
 import { gitStageTool } from './stage.js';
 import { gitCommitTool } from './commit.js';
 import { gitAmendTool } from './amend.js';
@@ -26,13 +25,9 @@ import { gitFetchTool } from './fetch.js';
 import { gitCheckoutTool } from './checkout.js';
 import { gitMergeTool } from './merge.js';
 import { gitRebaseTool } from './rebase.js';
-import { gitStashTool } from './stash.js';
 import { gitResetTool } from './reset.js';
 import { gitRevertTool } from './revert.js';
 import { gitCherryPickTool } from './cherry-pick.js';
-import { gitTagTool } from './tag.js';
-import { gitRemoteTool } from './remote.js';
-import { gitWorktreeTool } from './worktree.js';
 import { gitForEachRefTool } from './for-each-ref.js';
 import { gitCatFileTool } from './cat-file.js';
 import { gitLsTreeTool } from './ls-tree.js';
@@ -52,6 +47,7 @@ import { gitLsRemoteTool } from './ls-remote.js';
 import { gitUpdateRefTool } from './update-ref.js';
 import { gitRmTool } from './rm.js';
 import { gitInspectTool } from './inspect.js';
+import { gitBranchExtended, gitRemoteExtended, gitStashExtended, gitTagExtended, gitWorktreeExtended } from './extended.js';
 import { gitTextTool } from './text.js';
 import { gitObjectsTool } from './objects.js';
 import { gitPatchTool } from './patch.js';
@@ -67,7 +63,7 @@ export const gitToolDefinitions = [
   gitDiffTool,
   gitShowTool,
   gitBlameTool,
-  gitBranchTool,
+  gitBranchExtended,
   gitStageTool,
   gitCommitTool,
   gitAmendTool,
@@ -77,13 +73,13 @@ export const gitToolDefinitions = [
   gitCheckoutTool,
   gitMergeTool,
   gitRebaseTool,
-  gitStashTool,
+  gitStashExtended,
   gitResetTool,
   gitRevertTool,
   gitCherryPickTool,
-  gitTagTool,
-  gitRemoteTool,
-  gitWorktreeTool,
+  gitTagExtended,
+  gitRemoteExtended,
+  gitWorktreeExtended,
   gitForEachRefTool,
   gitCatFileTool,
   gitLsTreeTool,

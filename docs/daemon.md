@@ -1495,33 +1495,33 @@ and a test keeps this copy equal to it.
 | stash | apply | covered | git_stash |
 | stash | drop | covered | git_stash |
 | stash | clear | covered | git_stash |
-| stash | branch | assigned | s8 |
-| stash | create | assigned | s8 |
-| stash | store | assigned | s8 |
-| stash | export | assigned | s8 |
-| stash | import | assigned | s8 |
+| stash | branch | covered | git_stash |
+| stash | create | covered | git_stash |
+| stash | store | covered | git_stash |
+| stash | export | covered | git_stash |
+| stash | import | covered | git_stash |
 | stash | save | excluded | deprecated spelling of stash push |
 | worktree | list | covered | git_worktree |
 | worktree | add | covered | git_worktree |
 | worktree | move | covered | git_worktree |
 | worktree | remove | covered | git_worktree |
 | worktree | prune | covered | git_worktree |
-| worktree | lock | assigned | s8 |
-| worktree | unlock | assigned | s8 |
-| worktree | repair | assigned | s8 |
+| worktree | lock | covered | git_worktree |
+| worktree | unlock | covered | git_worktree |
+| worktree | repair | covered | git_worktree |
 | remote | list | covered | git_remote |
 | remote | get-url | covered | git_remote |
 | remote | add | covered | git_remote |
 | remote | rename | covered | git_remote |
 | remote | remove | covered | git_remote |
 | remote | set-url | covered | git_remote |
-| remote | show | assigned | s8 |
-| remote | prune | assigned | s8 |
-| remote | update | assigned | s8 |
-| remote | set-head | assigned | s8 |
-| remote | set-branches | assigned | s8 |
-| remote | set-url --add | assigned | s8 |
-| remote | set-url --delete | assigned | s8 |
+| remote | show | covered | git_remote |
+| remote | prune | covered | git_remote |
+| remote | update | covered | git_remote |
+| remote | set-head | covered | git_remote |
+| remote | set-branches | covered | git_remote |
+| remote | set-url --add | covered | git_remote |
+| remote | set-url --delete | covered | git_remote |
 | branch | list | covered | git_branch |
 | branch | create | covered | git_branch |
 | branch | delete | covered | git_branch |
@@ -1530,16 +1530,16 @@ and a test keeps this copy equal to it.
 | branch | points-at | covered | git_for_each_ref |
 | branch | contains | covered | git_for_each_ref |
 | branch | show-current | covered | git_rev_parse |
-| branch | rename | assigned | s8 |
-| branch | copy | assigned | s8 |
-| branch | set-upstream-to | assigned | s8 |
-| branch | unset-upstream | assigned | s8 |
-| branch | edit-description | assigned | s8 |
+| branch | rename | covered | git_branch |
+| branch | copy | covered | git_branch |
+| branch | set-upstream-to | covered | git_branch |
+| branch | unset-upstream | covered | git_branch |
+| branch | edit-description | covered | git_branch |
 | tag | list | covered | git_tag |
 | tag | create | covered | git_tag |
 | tag | delete | covered | git_tag |
-| tag | verify | assigned | s8 |
-| tag | sign | assigned | s8 |
+| tag | verify | covered | git_tag |
+| tag | sign | covered | git_tag |
 | refs | list | covered | git_for_each_ref |
 | refs | exists | covered | git_show_ref |
 | refs | verify | covered | git_refs |

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793611037330-2xjiok",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:18:08.375Z",
+    "epicCreatedAt": "2026-11-02T09:18:08.375Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 51044,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "8f02bdce15c671dc",
+    "epicSlug": "preserve-reviewed-build-content-recognize-task",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "022d9677fd8f4e5f273fdb1e10a330215b6157cf47e0ec0f6fd745b2dce6f7db",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:31:58.200Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "8f02bdce15c671dc",
+      "slug": "EPIC-8f02bdce15c671dc"
+    }
+  },
+  "body": {
+    "title": "Preserve reviewed BUILD content and recognize task-based review approval",
+    "reproduction": "S2 review-e6ddcdcb3d9cf330-s2-final attempt 5 passed with 0 HIGH/MED. Approving BUILD-e6ddcdcb3d9cf330-s2 rewrote commit 2850809c9 to audit commit 48abed2fb and added eight PLAN/TASK ledger targets, changing fingerprint b9a819299ee133762e20c358af3bc331aa4b1c12285116ad7313e0cb3e86641f. Restoring only commit/changeLog reestablished that fingerprint, but artifact-level approval then rejected the schemaVersion 2 CR as unverifiable. Expected: unchanged reviewed BUILD approves without override or another model review.",
+    "rootCause": "src/workflow/gates.ts approveWorkflowTarget unconditionally runs the completion BUILD writer before review validation, regenerating existing reviewed content. Its otherPartyReviewGap separately applies legacy reviewBuildGap to task-based CR bodies instead of reusing src/workflow/code-review/task-review/completion.ts inspectTaskCompletion, so the two approval checks disagree.",
+    "fixIntent": "Preserve an existing BUILD during approval and retain creation for missing BUILD records. Recognize task-based CRs through the existing strict completion validator, retaining whole-story task coverage, current BUILD fingerprint, reviewer provenance and other-party checks. Add focused regressions for normal and direct approval, stable bookkeeping, missing record creation, and stale/incomplete/foreign review rejection. No schema change, review override, retired-engine restoration or additional S2 model review."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/completion.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/CR-e6ddcdcb3d9cf330-s2.json"
+    }
+  ]
+}

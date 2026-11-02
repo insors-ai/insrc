@@ -29,7 +29,6 @@ import { listApprovedAmendments } from './amendments/store.js';
 import { renderDefineMarkdown } from './artifacts/define.js';
 import type { DefineArtifact, DefineStory } from './artifacts/define.js';
 import { enforceCodeReviewGate } from './code-review/gate.js';
-import { reviewBuildGap } from './code-review/build-freshness.js';
 import type { CodeReviewGateResult } from './code-review/gate.js';
 import type { HldArtifact }    from './artifacts/hld.js';
 import { computeHldEffectiveHash, extractHldContextSlice } from './artifacts/lld.js';
@@ -765,13 +764,13 @@ function otherPartyReviewGap(jsonPath: string, meta: ApprovableArtifactMeta, lif
 				summary: 'completion requires a code review; none was run',
 			};
 		}
-		// the party of a code review is its lifecycle review's, when it has one, else its own label
-		const gap = reviewBuildGap(readJsonOrUndefined(jsonPath), cr, dirname(dirname(dirname(jsonPath))));
-		if (gap !== undefined) return {
-			message: `Completion requires a current code review: ${gap}. Run insrc_code_review_step again.`,
+		// Use the same task-review validator as the outer approval gate.
+		const gate = enforceCodeReviewGate(dirname(dirname(dirname(jsonPath))), String(m.epicHash), String(m.storyId));
+		if (gate.status !== 'pass') return {
+			message: `Completion requires a current code review: ${gate.status === 'blocked' ? gate.message : 'No valid task-based review'}.`,
 			summary: 'code review is out of date or does not cover the BUILD',
 		};
-		reviewer = reviewerPartyOf(lifecycleReviewOf(cr.meta) ?? cr.meta);
+		reviewer = reviewerPartyOf(cr.meta);
 	} else if (lifecycleReview !== undefined) {
 		reviewer = reviewerPartyOf(lifecycleReview);
 	} else if (required === 'design') {
@@ -949,7 +948,7 @@ export async function approveWorkflowTarget(
 	/** The BUILD record hook; with a service its content goes through the service's store, so the log stays in step. */
 	const runBuildHook = async (jsonPath: string): Promise<void> => {
 		const ref = buildRefFor(jsonPath);
-		if (ref === undefined) return;
+		if (ref === undefined || existsSync(jsonPath)) return;
 		await ensureBuildRecordOnCompletion(req.repoPath, ref, undefined, { writer: lifecycle, actor });
 	};
 	/**
@@ -1016,8 +1015,8 @@ export async function approveWorkflowTarget(
 	if (req.artifactPath !== undefined) {
 		const jsonPath = jsonPathForMd(req.artifactPath);
 		// Completion hook: a controller-side build skips the validate phase, so its
-		// BUILD ledger record may not exist yet. CREATE-or-MERGE it from the changed
-		// set BEFORE the existsSync/approve so the artifact is present to stamp.
+		// BUILD ledger record may not exist yet. Create it when missing, preserving
+		// any existing reviewed content before checking its review binding.
 		if (basename(jsonPath).startsWith('BUILD-')) {
 			// Authorize BEFORE the record is created or merged: a refused target changes nothing.
 			if (await refuseBeforeRecord(jsonPath)) return { approved, skipped, codeReview };

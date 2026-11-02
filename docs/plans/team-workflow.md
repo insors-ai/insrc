@@ -361,3 +361,46 @@ No new failure: every failing test name also fails in the tree before s9 (src/wo
 - `AMD-315d510cb28100e2-31` and `-32` were approved on 2026-11-02 together with the BUILD (override: controller self-review, `S009/SELF-REVIEW.md`); `-29` and `-30` are stale duplicates and stay drafts.
 - A git-hook installer for git run outside the daemon's tools is a later Story (decision 1 above).
 - The rules read the registered repositories at each call; the refresh runs inside the git tool's result, so a slow tracker holds the tool result for up to the 120-second budget plus one call's own limit.
+
+## Revise writers: gating the remaining content writers (2026-11-02)
+
+Story `f32c3abf4a55494b/s1` (standalone, LLD `LLD-f32c3abf4a55494b-s1`) closes the s8 deferrals: the define extend of an existing Epic and the review-comment recorder now ask the team gate before they write, as the authoring runs already did.
+
+**Decisions.**
+1. **One shared check.** `assertMayReviseDraft(repoPath, unit, stage, authoring)` in `src/workflow/team/author-gate.ts` asks the gate for `revise` when the stage is in signoff or was sent back from it (`isUnderSignoff`) and for `author` otherwise, and applies the holder rule for `revise` (revising never takes the claim). `assertMayAuthor` uses it for design.epic (HLD) and design.story (LLD); a define run and a plan run keep the plain `author` path.
+2. **Define extend.** `finalizeDefineExtend` (orchestrator.ts) asks for the Epic and stage DEF after every validation and before the first write, so a refusal writes no Story and no amendment (the EXT record is written by the synthesize phase from what finalize returns). A first define of a fresh Epic has no unit and is not gated. `appendStoryToDefine` stays a synchronous pure write whose only caller is gated.
+3. **Comments are holder-only (decided by the user).** `handleResolveComment` asks the gate once per request, so while the stage is in signoff only the holder may record comments; a non-holder reviewer is refused with an `{ error }` and nothing is recorded. The framework recommended a carve-out for reviewers in signoff; it was not chosen and can be a later change.
+4. **An extend or comment outside signoff is gated as `author`** (decided by the user), so it takes the claim on an unassigned stage as any author turn does, and a stage held by someone else is refused.
+5. **The write inventory names the gate.** Every content entry and site carries `gatedBy` (a file or `file:function` that uses `assertMayAuthor` or `assertMayReviseDraft`) or an exemption with a reason, and a test fails for a content writer with neither. Exemptions: the head of a unit that has none (`unit-head.ts`), the BUILD and TESTS records (machine output of the build gate, gated by `assertMayBuild`) and the Task records (`task-set.ts`).
+
+**Deviations from the LLD.**
+- `finalizeByWorkflow` turned every thrown error into a retryable schema failure ("malformed body"). It now lets a `TeamGateRefusedError` and a `ToolDenied` through unchanged, so a refusal stops the stage as it does at the other gate entries and a denied tracker call is never swallowed.
+- A duplicate Story id cannot occur on the extend path (`nextStoryId` mints an unused id). The id is now computed and guarded before the gate so the order holds if the id source changes; that guard has no runtime test.
+- The gate seam of `ResolveCommentDeps` is `gate`, defaulting to `assertMayReviseDraft`.
+
+**Sweep (once, after t4, foreground chunks; compared by test name with the tree before the Story, commit 9061e64a7).**
+
+| Chunk | Tests | Failed |
+| :--- | :--- | :--- |
+| src/workflow | 2254 | 50 |
+| src/daemon/__tests__ | 389 | 16 |
+| src/daemon/threads | 86 | 2 |
+| src/daemon/steps (without peer-state-store-leakfree) | 322 | 18 |
+| src/daemon/tools | 634 | 2 |
+| src/daemon/db | 522 | 11 |
+| src/mcp | 122 | 29 |
+| src/cli | 240 | 10 |
+| src/config | 161 | 3 |
+| src/shared | 120 | 12 |
+| src/db | 597 | 3 |
+| src/analyze | 1161 | 12 |
+| src/agent, src/understanding, src/docgen, src/design, src/indexer | 648 | 0 |
+
+No new failure: every failing test name also fails in the tree before the Story, except `git-calls.test.ts: each failure kind maps to the site fallback...` (one run of src/workflow), which passes alone three times in the Story's tree and is load flakiness, and `daemon.status queue fields reflect the code-indexing worker's real lanes`, whose file (`indexing-port.test.ts`) fails in both trees with a different mix of tests each run. The pre-existing failures are the approval and review-gate suites, the daemon lifecycle and CLI process suites and the MCP and shared suites; none is in a file this Story changed. `peer-state-store-leakfree.test.ts` never finishes, before and after. No new skipped test: src/workflow skips 1 test before and after, the Story's test files skip none, and the other skips are the live and probe suites (compared by count, not name, outside src/workflow).
+
+**Open items.**
+- A non-holder reviewer cannot record comments while a stage is in signoff (decision 3); a reviewer carve-out is a possible later change.
+- A comment outside signoff claims an unassigned stage (decision 4); that side effect is tested, not designed away.
+- The head-ahead-of-log defect of raw design-run writes (`synthesize.ts`, core-data-model.md item 3) is not in this Story and still open.
+- The tracker label create of the draft hook (`gh_label` with `force`) always asks for approval, so a first draft in a repo with the tracker on needs a connected client: a separate bugfix, not started.
+- The build has no independent code review (the tool is unavailable): the approval needs a controller self-review override.

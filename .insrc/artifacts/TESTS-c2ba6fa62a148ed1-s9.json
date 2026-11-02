@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:27:53.386Z",
+    "updatedAt": "2026-11-02T05:34:48.328Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -390,6 +390,104 @@
               },
               {
                 "title": "s9 t6: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "b8a2832cf",
+        "ranAt": "2026-11-02T05:34:48.328Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C# reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/csharp.test.ts",
+                "title": "s9 t7: a .cs fixture yields its types and members and its using, call and base-list relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/csharp.test.ts",
+                "title": "s9 t7: a same-file call resolves (extracted); a call into another file through a namespace stays pending",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/csharp.test.ts",
+                "title": "s9 t7: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "mixed Rust/C#/C/C++ repository through IndexerService",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+                "title": "s9 t7 (ac1): a Rust, C#, C and C++ repository indexed through IndexerService stores, per language, file, function and type entities",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+                "title": "s9 t7 (ac1): each language stores its IMPORTS -- files for includes and Rust modules, module stubs for external crates, system headers and namespaces",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+                "title": "s9 t7 (ac1): each language stores its CALLS -- same-file calls extracted, Rust and C-to-header calls across files inferred, a C# call through a namespace pending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1416,
+            "titles": [
+              {
+                "title": "s9 t7 (ac1): a Rust, C#, C and C++ repository indexed through IndexerService stores, per language, file, function and type entities",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7 (ac1): each language stores its IMPORTS -- files for includes and Rust modules, module stubs for external crates, system headers and namespaces",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7 (ac1): each language stores its CALLS -- same-file calls extracted, Rust and C-to-header calls across files inferred, a C# call through a namespace pending",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/csharp.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 655,
+            "titles": [
+              {
+                "title": "s9 t7: a .cs fixture yields its types and members and its using, call and base-list relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7: a same-file call resolves (extracted); a call into another file through a namespace stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
                 "result": "pass"
               }
             ],

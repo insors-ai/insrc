@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 25 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -131,3 +131,30 @@ Run at 2026-11-02T05:27:53.386Z on commit `d031e5656`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/parser/__tests__/rust.test.ts` | 0 | 3 | 0.6 s |  |
+
+## t7
+
+Run at 2026-11-02T05:34:48.328Z on commit `b8a2832cf`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: C# reader**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t7: a .cs fixture yields its types and members and its using, call and base-list relationships | `src/indexer/parser/__tests__/csharp.test.ts` |
+| pass | s9 t7: a same-file call resolves (extracted); a call into another file through a namespace stays pending | `src/indexer/parser/__tests__/csharp.test.ts` |
+| pass | s9 t7: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked | `src/indexer/parser/__tests__/csharp.test.ts` |
+
+**integration: mixed Rust/C#/C/C++ repository through IndexerService**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t7 (ac1): a Rust, C#, C and C++ repository indexed through IndexerService stores, per language, file, function and type entities | `src/indexer/__tests__/mixed-native-languages.test.ts` |
+| pass | s9 t7 (ac1): each language stores its IMPORTS -- files for includes and Rust modules, module stubs for external crates, system headers and namespaces | `src/indexer/__tests__/mixed-native-languages.test.ts` |
+| pass | s9 t7 (ac1): each language stores its CALLS -- same-file calls extracted, Rust and C-to-header calls across files inferred, a C# call through a namespace pending | `src/indexer/__tests__/mixed-native-languages.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/mixed-native-languages.test.ts` | 0 | 3 | 1.4 s |  |
+| `src/indexer/parser/__tests__/csharp.test.ts` | 0 | 3 | 0.7 s |  |

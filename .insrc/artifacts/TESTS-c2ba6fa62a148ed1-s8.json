@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T09:26:38.830Z",
+    "updatedAt": "2026-11-02T09:33:49.424Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -66,6 +66,96 @@
               },
               {
                 "title": "s8 t1: a write that fails part-way leaves the previous set intact",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "98f28962f",
+        "ranAt": "2026-11-02T09:33:49.424Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystem grouping",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: every file is in exactly one group",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: the same graph gives the same groups, also with its edges and files shuffled",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: two dense clusters joined by one weak edge are two groups; a file with no relationships joins its directory through the same-directory edge",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: ids are the hash of the sorted members, names the longest common directory, and connections sum the edges between groups",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: a file tied between two groups joins the smaller one, whatever the edge order",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: groups aggregate: modules strongly linked in pairs end as one group per pair",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: connections count only relationships, never the same-directory edges, even between groups of one directory",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 525,
+            "titles": [
+              {
+                "title": "s8 t2: every file is in exactly one group",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: the same graph gives the same groups, also with its edges and files shuffled",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: two dense clusters joined by one weak edge are two groups; a file with no relationships joins its directory through the same-directory edge",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: ids are the hash of the sorted members, names the longest common directory, and connections sum the edges between groups",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: a file tied between two groups joins the smaller one, whatever the edge order",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: groups aggregate: modules strongly linked in pairs end as one group per pair",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: connections count only relationships, never the same-directory edges, even between groups of one directory",
                 "result": "pass"
               }
             ],

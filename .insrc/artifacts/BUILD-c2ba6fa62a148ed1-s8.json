@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s8",
     "createdAt": "2026-11-02T09:26:38.830Z",
-    "updatedAt": "2026-11-02T09:26:38.830Z",
+    "updatedAt": "2026-11-02T09:33:49.424Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Added the subsystem store module (src/db/subsystems.ts). writeSubsystems replaces a repository's set in one transaction, stamped with the generation; an id already stored keeps its summary. readSubsystems reads a repository's set, or the subsystems holding the given files. The 'subsystem' and 'subsystem_by_file' databases are opened with the store, listed as structural so sessions can read them, and come with MIGRATION_V7_TO_V8 (SCHEMA_VERSION 8). Tests that pinned schema 7 and the 37-database count now say 8 and 39.",
+    "summary": "Added groupSubsystems (src/indexer/subsystems.ts), a pure, deterministic Louvain-style modularity grouping of a file graph. Local moves visit nodes in path order, and a tie within 1e-12 goes to the smaller group. Aggregation numbers groups by their first member and repeats until nothing moves. There is no randomness. Ids are the sha256 of the sorted members (hex-32); names are the longest common directory, or the file's own path for a single file. Connections sum relationship edges and their kind counts, following edge direction, and leave out the kind-less same-directory edges. directoryEdges builds those 0.1 same-directory edges for the pass to use.",
     "testRecord": {
       "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/TESTS.md"
     },
@@ -26,72 +30,86 @@
           "file": "src/db/__tests__/search-evidence.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/__tests__/subsystem-tables.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/graph/__tests__/operational.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/graph/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/graph/migrations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/graph/store.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/db/subsystems.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
       },
       {
         "target": {
           "file": "src/understanding/__tests__/storage.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:26:38.830Z"
+        "timestamp": "2026-11-02T09:33:49.424Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-grouping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:33:49.424Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/subsystems.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:33:49.424Z"
       }
     ],
-    "commit": "f1c1e5b0a"
+    "commit": "98f28962f"
   }
 }

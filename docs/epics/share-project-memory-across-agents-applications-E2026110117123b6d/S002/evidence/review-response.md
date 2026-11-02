@@ -10,3 +10,13 @@ All blocking findings concern evidence registration or missing task mappings, ra
 - Full evidence: local memory suite 62/62; root build passes; Linux full CI run 41430621597 at 2befc2d passes native lifecycle 14, packed 4 and queue 44 without skips. Backend sweep results and their revision-change limitation are recorded separately in backend/full-sweep.json and local-validation.json; no clean backend result is claimed.
 
 The two LOW identifier suggestions refer to embedded QueueAcknowledgement/MemoryCommand value objects. Their identity comes from the owning frame and qualified operation; neither is an independent entity/table requiring a new public id field. Public v1 types remain unchanged.
+
+## Round 3 source checks and requested fresh round
+
+The user authorized another round after round 3. The first new start returned the same prior runId `cr-1793616825371-ey6n50`; it did not execute a new evaluation. The operation registry deliberately reuses a completed operation for identical input fingerprints. This evidence update records the source checks before admitting a fresh independent review.
+
+- `packages/project-memory/src/runtime.ts:104-111`: submit calls `this.#ingress.submit(command)` and operation calls `this.#ingress.operation(request)` when ready and ingress exists; only the unavailable branch rejects. `host-node.ts:18-24` constructs FileQueue, starts recovery, binds QueueAdmission.append/operation into ingress and supplies it to EmbeddedMemoryService. The missing dynamic-call graph edges do not establish missing forwarding.
+- `scripts/__tests__/project-memory-s2-performance.test.ts:8` registers its actual node:test case. It checks measured hardware/corpus and current source hashes against the full benchmark report. TESTS.md task t13 records both this case and the actual quick benchmark case as passing.
+- TESTS.md task t11 explicitly maps `adversarial-admission-and-recycled-scope-isolation` to three passing cases. `queue-fault-matrix.test.ts:74-88` checks long adversarial identity strings, exact retry, cross-scope operation rejection and changed epoch. `queue-retirement.test.ts:41-57` retires and removes frames, confirms terminal retry/status via authoritative receipts, then rejects the same operation under the wrong scope before reopening. A plan-level requirement name is not required to equal each mapped node:test title.
+
+No implementation or approved-contract changes were made for these findings. Existing package and Linux qualification evidence still covers the same code. The independent reviewer retains authority to assess the actual evidence and any remaining gap.

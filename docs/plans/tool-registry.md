@@ -533,3 +533,39 @@ Built on `v2`, not pushed. The 24 remaining git, gh and shell call sites in 17 f
 - The review-timeout change (`REVIEW_WORK_UNIT_MS` 10 to 5 minutes) that was committed inside the s10 t16 commit `7a2fef08e` is not s9's and has not been moved out.
 - The handler-runtime key-set drift is unchanged.
 - `session-source-inventory.json` was regenerated mechanically; the classifications of the files other stories added have not been reviewed.
+
+## s8 decisions (2026-11-02, the user, in chat)
+
+1. **`for-each-repo`, `hook` and `filter-branch` stay excluded** as commands that run an arbitrary command (a raw passthrough). The coverage table had recorded this since the s4 split.
+2. **The merge strategy drivers** (`merge-octopus`, `merge-ours`, `merge-recursive`, `merge-recursive-ours`, `merge-recursive-theirs`, `merge-resolve`, `merge-subtree`) **and `subtree` are excluded** (`git merge` runs them), and **`request-pull` and `quiltimport` are excluded** because no program needs them.
+3. **The five existing multi-operation tools are extended** with the operations they lacked, as new values of their `op` enum (additive); there are no new tools for them.
+
+## s8 outcome (2026-11-02)
+
+Built on `v2`, not pushed. The git family now has 49 tools (40 before, plus nine family tools); all 169 commands of git 2.53.0 and all their operations have a row in the coverage table, and every row is `covered` by a case that runs it through `executeTool` in a temporary repository, or `excluded` with a reason. No row is `assigned`; `git-coverage.test.ts` fails for one.
+
+- **One builder**: `git/op-table.ts` (`buildGitFamilyTool`, `extendGitTool`, `GitOpSpec`) builds a tool from a list of ops: a flat input schema with an `op` enum, an output union whose members carry the literal `op`, the input rules, the class (fixed or a function of the input), the time limit and the typed failure. It imports the field helpers and `refuseInput` of `gh/op-table.ts` and changes no gh file.
+- **New tools**: `git_inspect` (27 read-only ops), `git_text` (7 filters that read standard input), `git_objects` (12), `git_patch` (8), `git_tree` (10), `git_maintenance` (9), `git_setup` (init, init-db, clone), `git_refs` (verify, migrate, optimize) and `git_reflog` (show, list, exists, expire, delete, write).
+- **Extended tools** (`git/extended.ts`): `git_stash` (branch, create, store, export, import), `git_worktree` (lock, unlock, repair), `git_remote` (show, prune, update, set-head, set-branches, set-url-add, set-url-delete), `git_branch` (rename, copy, set-upstream-to, unset-upstream, edit-description) and `git_tag` (verify, sign). Every input that was valid before is valid and gives the same result and class; `git-approval.test.ts` pins this and lists the new inputs as added by s8.
+- **Destructive**: `read-tree` with reset or update, `replace` delete or force, `notes` remove, prune and add force, `format-patch` with an output directory, `archive` with an output file, `bundle create`, `fast-export` with export marks, `diagnose` and `bugreport` with an output directory, `clean` (not a dry run), `restore` of the working tree, `checkout-index` force, `mv` force, `submodule` deinit and update force, `merge-file` in place, `replay` with ref-action update, `gc` with pruneNow, `prune` (not a dry run), `maintenance` with the reflog-expire task, `reflog` expire and delete (not a dry run), `remote prune` (not a dry run), `branch` rename and copy with force. All ask every time and are denied with no client; each pair (destructive input, safe input) is tested.
+
+### Deviations from the approved LLD and PLAN, and why
+
+- **Tools were registered in the task that built them**, not all in t9, because each task's coverage cases run through the registry. t9 added the exclusions, the no-assigned-row test and the inventory update.
+- **New operations of the five extended tools have their own input names** (`remote`, `branchName`, `fromName`, `toName`, `tagName`, `target`, `commit`, `toRef`...), each with the safety pattern, instead of reusing the old `name`, `url` and `ref`, which have no pattern and cannot be tightened without changing what was valid. The few fields they share (`force`, `push`, `message`, `path`, the stash `ref`) are declared exactly as before.
+- **Operation names**: the coverage operations `set-url --add` and `set-url --delete` are the ops `set-url-add` and `set-url-delete`.
+- **`branch edit-description`** sets `branch.<name>.description` with `git config` (an empty description removes it), because `git branch --edit-description` opens an editor.
+- **`git maintenance`**: only `run` is offered. `start`, `stop`, `register` and `unregister` change the scheduler or global settings outside the repository.
+- **`git var`** has no `-l` (it would list the configuration); only the six logical variables.
+- **Binary input and output** (a tar for `get-tar-commit-id`, a pack or index for `unpack-objects`, `index-pack`, `show-index`, and the pack of `pack-objects`, the archive of `archive`) travel as base64.
+- **Builder additions the LLD did not name**: `stdinEncoding` (base64), a `scratch` directory for the ops that write files as their answer (`mailinfo`, `mailsplit`), a per-op `env` (`git bugreport` runs with `GIT_EDITOR=true`, since it opens an editor once the report is written), `GitRun.bytes`, and the sentence "the tool's table is written for git 2.53.0; this git may be older" on a command that an older git lacks.
+- **`git clone`** passes `-c protocol.ext.allow=never` and refuses `ext::` urls and urls that start with `-`.
+- **Reviews**: the daemon review framework was not working, so the design and code reviews were done by the controller (see `S008/SELF-REVIEW.md` for the LLD; the code review is in `S008/CODE-SELF-REVIEW.md`) and approval needs an explicit override.
+
+### Open items
+
+- `git stash export` writes to the ref the call names and `git fast-import` can move refs; both are class common (they add objects and refs) and were not marked destructive.
+- `git read-tree` without reset replaces the index (staged changes are lost); it is class common, as the LLD says.
+- `git submodule add` needs the file transport allowed for a local url; the coverage case sets `GIT_CONFIG_COUNT` for its process.
+- `git backfill` and `git refs migrate` were run in a partial clone and a fresh repository; a repository with linked worktrees cannot migrate (git refuses).
+

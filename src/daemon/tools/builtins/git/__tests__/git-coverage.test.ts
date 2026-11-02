@@ -668,3 +668,21 @@ test('git-coverage.test.ts: the ls-files coverage case still passes and the git_
 	const row = GIT_COVERAGE.find(r => r.command === 'ls-files');
 	assert.deepEqual(row?.toolIds, ['git_ls_files']);
 });
+
+test('git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row', () => {
+	registerForTests();
+	assert.deepEqual(GIT_COVERAGE.filter(r => r.owner === 'assigned').map(r => `${r.command} ${r.operation ?? ''}`.trim()), [], 'no row is left assigned');
+	for (const r of GIT_COVERAGE.filter(x => x.owner === 'excluded')) { assert.ok((r.reason ?? '').length > 0, `${r.command} says why it is excluded`); }
+	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) { assert.ok(r.operation !== undefined || (r.cases ?? []).length > 0 || GIT_COVERAGE.some(o => o.command === r.command && o.operation !== undefined), `${r.command} has a case`); }
+	const rows = new Set(baseRows.map(r => r.command));
+	assert.deepEqual(GIT_2_53_COMMANDS.filter(c => !rows.has(c)), [], 'every command of the recorded list has a row');
+	// the commands the user decided on 2026-11-02 are excluded, each with its reason
+	for (const c of ['for-each-repo', 'hook', 'filter-branch', 'merge-octopus', 'merge-ours', 'merge-recursive', 'merge-recursive-ours', 'merge-recursive-theirs', 'merge-resolve', 'merge-subtree', 'subtree', 'request-pull', 'quiltimport']) {
+		const row = baseRows.find(r => r.command === c);
+		assert.equal(row?.owner, 'excluded', `${c} is excluded`);
+		assert.equal(row?.toolIds, undefined);
+		assert.ok((row?.reason ?? '').length > 10);
+	}
+	// no owner other than covered or excluded is used, so a row cannot be put back to assigned without failing here
+	assert.deepEqual([...new Set(GIT_COVERAGE.map(r => r.owner))].sort(), ['covered', 'excluded']);
+});

@@ -18,6 +18,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { gitToolDefinitions, registerGitTools } from '../builtins/git/index.js';
+import { definitionOf } from '../provenance.js';
 import { _resetRegistryForTests, listTools } from '../registry.js';
 
 const GIT_DIR = join(dirname(fileURLToPath(import.meta.url)), '../builtins/git');
@@ -41,7 +42,9 @@ async function exportsOf(dir: string, skip: readonly string[]): Promise<Exported
 /** The problems of a list against what the files export, in both directions. */
 function compareInventory(exported: readonly Exported[], listed: readonly unknown[]): string[] {
 	const problems: string[] = [];
-	for (const e of exported) if (!listed.includes(e.value)) problems.push(`exported but not listed: ${e.where} (${e.id})`);
+	// a tool that s8 replaced by its extended version is listed through that version, which remembers it (extendGitTool)
+	const listedBases = listed.map(l => definitionOf(l as never));
+	for (const e of exported) if (!listed.includes(e.value) && !listedBases.includes(e.value as never)) problems.push(`exported but not listed: ${e.where} (${e.id})`);
 	for (const l of listed) if (!exported.some(e => e.value === l)) problems.push(`listed but not exported by a tool file: ${(l as { id: string }).id}`);
 	return problems;
 }
@@ -51,13 +54,24 @@ afterEach(() => { _resetRegistryForTests(); });
 test('typed-git-tools.test.ts: the list and the tool files agree in both directions, ids are unique and the registered ids equal the list', async () => {
 	const exported = await exportsOf(GIT_DIR, NOT_TOOL_FILES);
 	assert.deepEqual(compareInventory(exported, gitToolDefinitions), []);
-	assert.ok(gitToolDefinitions.length >= 34, `the list holds ${gitToolDefinitions.length} definitions`);
+	assert.equal(gitToolDefinitions.length, 49, 'the list holds the 40 tools from before s8 and the 9 family tools');
+	for (const [id, added] of [['git_stash', 'import'], ['git_worktree', 'repair'], ['git_remote', 'set-url-delete'], ['git_branch', 'edit-description'], ['git_tag', 'sign']] as const) {
+		const tool = gitToolDefinitions.find(d => d.id === id)!;
+		assert.ok((tool.inputSchema as unknown as { properties: { op: { enum: string[] } } }).properties.op.enum.includes(added), `${id} is the extended tool`);
+	}
+	for (const id of ['git_inspect', 'git_text', 'git_objects', 'git_patch', 'git_tree', 'git_maintenance', 'git_setup', 'git_refs', 'git_reflog']) { assert.ok(gitToolDefinitions.some(d => d.id === id), id); }
 	const ids = gitToolDefinitions.map(t => t.id);
 	assert.equal(new Set(ids).size, ids.length, 'ids are unique');
 	_resetRegistryForTests();
 	registerGitTools();
 	assert.deepEqual(listTools().map(t => t.id).sort(), [...ids].sort());
 	assert.deepEqual(listTools().map(t => t.id), ids, 'registered in the order of the list');
+	// each is registered as withFailureNet(its definition): a copy that remembers the definition it was made from
+	for (const def of gitToolDefinitions) {
+		const registered = listTools().find(r => r.id === def.id)!;
+		assert.notEqual(registered, def, `${def.id} is registered as a wrapper`);
+		assert.equal(definitionOf(registered), def, `${def.id} is withFailureNet(its definition)`);
+	}
 });
 
 test('typed-git-tools.test.ts: every listed tool declares typebox input and output schemas at run time', () => {

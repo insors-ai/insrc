@@ -1594,13 +1594,13 @@ and a test keeps this copy equal to it.
 | mailsplit |  | covered | git_text |
 | maintenance |  | covered | git_maintenance |
 | merge-file |  | covered | git_tree |
-| merge-octopus |  | assigned | s8 |
-| merge-ours |  | assigned | s8 |
-| merge-recursive |  | assigned | s8 |
-| merge-recursive-ours |  | assigned | s8 |
-| merge-recursive-theirs |  | assigned | s8 |
-| merge-resolve |  | assigned | s8 |
-| merge-subtree |  | assigned | s8 |
+| merge-octopus |  | excluded | a merge strategy driver that git merge runs itself (git merge -s octopus); a person does not run it directly |
+| merge-ours |  | excluded | a merge strategy driver that git merge runs itself (git merge -s ours); a person does not run it directly |
+| merge-recursive |  | excluded | a merge strategy driver that git merge runs itself (git merge -s recursive); a person does not run it directly |
+| merge-recursive-ours |  | excluded | a merge strategy driver that git merge runs itself (git merge -s recursive -X ours); a person does not run it directly |
+| merge-recursive-theirs |  | excluded | a merge strategy driver that git merge runs itself (git merge -s recursive -X theirs); a person does not run it directly |
+| merge-resolve |  | excluded | a merge strategy driver that git merge runs itself (git merge -s resolve); a person does not run it directly |
+| merge-subtree |  | excluded | a merge strategy driver that git merge runs itself (git merge -s subtree); a person does not run it directly |
 | mktag |  | covered | git_objects |
 | mktree |  | covered | git_objects |
 | multi-pack-index |  | covered | git_maintenance |
@@ -1613,14 +1613,14 @@ and a test keeps this copy equal to it.
 | patch-id |  | covered | git_text |
 | prune |  | covered | git_maintenance |
 | prune-packed |  | covered | git_maintenance |
-| quiltimport |  | assigned | s8 |
+| quiltimport |  | excluded | applies a quilt patch series; no program needs it (the user's decision, 2026-11-02) |
 | range-diff |  | covered | git_inspect |
 | read-tree |  | covered | git_objects |
 | repack |  | covered | git_maintenance |
 | replace |  | covered | git_objects |
 | replay |  | covered | git_tree |
 | repo |  | covered | git_inspect |
-| request-pull |  | assigned | s8 |
+| request-pull |  | excluded | prints a summary for an email and changes nothing; no program needs it (the user's decision, 2026-11-02) |
 | rerere |  | covered | git_tree |
 | restore |  | covered | git_tree |
 | shortlog |  | covered | git_inspect |
@@ -1629,7 +1629,7 @@ and a test keeps this copy equal to it.
 | sparse-checkout |  | covered | git_tree |
 | stripspace |  | covered | git_text |
 | submodule |  | covered | git_tree |
-| subtree |  | assigned | s8 |
+| subtree |  | excluded | a contrib script, not part of core git and not always installed; git merge -s subtree covers the merge (the user's decision, 2026-11-02) |
 | unpack-objects |  | covered | git_objects |
 | update-index |  | covered | git_objects |
 | var |  | covered | git_inspect |
@@ -1647,11 +1647,11 @@ and a test keeps this copy equal to it.
 | difftool |  | excluded | needs a person at a terminal or a GUI |
 | difftool--helper |  | excluded | internal helper, not an operation |
 | fetch-pack |  | excluded | server or transport role |
-| filter-branch |  | excluded | runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed |
-| for-each-repo |  | excluded | runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed |
+| filter-branch |  | excluded | runs an arbitrary command (raw passthrough); confirmed by the user on 2026-11-02 |
+| for-each-repo |  | excluded | runs an arbitrary command (raw passthrough); confirmed by the user on 2026-11-02 |
 | fsmonitor--daemon |  | excluded | internal helper, not an operation |
 | help |  | excluded | needs a person at a terminal or a GUI |
-| hook |  | excluded | runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed |
+| hook |  | excluded | runs an arbitrary command (raw passthrough); confirmed by the user on 2026-11-02 |
 | http-backend |  | excluded | server or transport role |
 | http-fetch |  | excluded | server or transport role |
 | http-push |  | excluded | server or transport role |

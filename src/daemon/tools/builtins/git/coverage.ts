@@ -4,13 +4,14 @@
  *
  *   covered   this Story: a tool serves it, and a case (git-coverage.test.ts) runs it through executeTool in a temporary
  *             repository and checks the result and the effect
- *   assigned  Story s8: no tool yet; the test never counts it as covered
+ *   assigned  (no row is assigned any more: Story s8 covered or excluded every row it was given; the test fails for one)
  *   excluded  not offered, with the reason
  *
  * DEF s4 ac1 ('an operation that git supports') is met by s4 and s8 together; s4 alone does not claim it. The excluded
  * commands are the ones the user accepted (a person at a terminal or a GUI, mail, a server or transport role, credential
  * helpers) plus internal helpers; the three that run an arbitrary command (for-each-repo, hook, filter-branch) are
- * excluded as a raw passthrough and are to be confirmed when s8 is designed.
+ * excluded as a raw passthrough, confirmed by the user on 2026-11-02 together with the merge strategy drivers, subtree,
+ * request-pull and quiltimport.
  */
 
 export type CoverageOwner = 'covered' | 'assigned' | 'excluded';
@@ -213,7 +214,6 @@ const coveredByS7 = (command: string, toolId: string): CoverageRow =>
 /** A row of a tool Story s9 built (the commands s8 would have built, that the build runners needed first). */
 const coveredByS9 = (command: string, toolId: string): CoverageRow =>
   ({ command, owner: 'covered', toolIds: [toolId], cases: [{ id: command, tool: toolId }], builtBy: 's9' });
-const assigned = (command: string, operation?: string): CoverageRow => ({ command, ...(operation !== undefined ? { operation } : {}), owner: 'assigned' });
 const excluded = (command: string, reason: string, operation?: string): CoverageRow => ({ command, ...(operation !== undefined ? { operation } : {}), owner: 'excluded', reason });
 
 export const GIT_COVERAGE: readonly CoverageRow[] = [
@@ -327,7 +327,7 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('reflog', ['git_reflog'], [{ id: 'reflog delete', tool: 'git_reflog' }], 'delete'),
   covered('reflog', ['git_reflog'], [{ id: 'reflog write', tool: 'git_reflog' }], 'write'),
   covered('reflog', ['git_reflog']),
-  // ---- assigned to s8
+  // ---- covered by Story s8
   covered('am', ['git_patch'], [{ id: 'am', tool: 'git_patch' }]),
   covered('apply', ['git_patch'], [{ id: 'apply', tool: 'git_patch' }]),
   covered('archive', ['git_patch'], [{ id: 'archive', tool: 'git_patch' }]),
@@ -370,13 +370,13 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('mailsplit', ['git_text'], [{ id: 'mailsplit', tool: 'git_text' }]),
   covered('maintenance', ['git_maintenance'], [{ id: 'maintenance', tool: 'git_maintenance' }]),
   covered('merge-file', ['git_tree'], [{ id: 'merge-file', tool: 'git_tree' }]),
-  assigned('merge-octopus'),
-  assigned('merge-ours'),
-  assigned('merge-recursive'),
-  assigned('merge-recursive-ours'),
-  assigned('merge-recursive-theirs'),
-  assigned('merge-resolve'),
-  assigned('merge-subtree'),
+  excluded('merge-octopus', 'a merge strategy driver that git merge runs itself (git merge -s octopus); a person does not run it directly'),
+  excluded('merge-ours', 'a merge strategy driver that git merge runs itself (git merge -s ours); a person does not run it directly'),
+  excluded('merge-recursive', 'a merge strategy driver that git merge runs itself (git merge -s recursive); a person does not run it directly'),
+  excluded('merge-recursive-ours', 'a merge strategy driver that git merge runs itself (git merge -s recursive -X ours); a person does not run it directly'),
+  excluded('merge-recursive-theirs', 'a merge strategy driver that git merge runs itself (git merge -s recursive -X theirs); a person does not run it directly'),
+  excluded('merge-resolve', 'a merge strategy driver that git merge runs itself (git merge -s resolve); a person does not run it directly'),
+  excluded('merge-subtree', 'a merge strategy driver that git merge runs itself (git merge -s subtree); a person does not run it directly'),
   covered('mktag', ['git_objects'], [{ id: 'mktag', tool: 'git_objects' }]),
   covered('mktree', ['git_objects'], [{ id: 'mktree', tool: 'git_objects' }]),
   covered('multi-pack-index', ['git_maintenance'], [{ id: 'multi-pack-index', tool: 'git_maintenance' }]),
@@ -389,14 +389,14 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('patch-id', ['git_text'], [{ id: 'patch-id', tool: 'git_text' }]),
   covered('prune', ['git_maintenance'], [{ id: 'prune', tool: 'git_maintenance' }]),
   covered('prune-packed', ['git_maintenance'], [{ id: 'prune-packed', tool: 'git_maintenance' }]),
-  assigned('quiltimport'),
+  excluded('quiltimport', "applies a quilt patch series; no program needs it (the user's decision, 2026-11-02)"),
   covered('range-diff', ['git_inspect'], [{ id: 'range-diff', tool: 'git_inspect' }]),
   covered('read-tree', ['git_objects'], [{ id: 'read-tree', tool: 'git_objects' }]),
   covered('repack', ['git_maintenance'], [{ id: 'repack', tool: 'git_maintenance' }]),
   covered('replace', ['git_objects'], [{ id: 'replace', tool: 'git_objects' }]),
   covered('replay', ['git_tree'], [{ id: 'replay', tool: 'git_tree' }]),
   covered('repo', ['git_inspect'], [{ id: 'repo', tool: 'git_inspect' }]),
-  assigned('request-pull'),
+  excluded('request-pull', "prints a summary for an email and changes nothing; no program needs it (the user's decision, 2026-11-02)"),
   covered('rerere', ['git_tree'], [{ id: 'rerere', tool: 'git_tree' }]),
   covered('restore', ['git_tree'], [{ id: 'restore', tool: 'git_tree' }]),
   covered('shortlog', ['git_inspect'], [{ id: 'shortlog', tool: 'git_inspect' }]),
@@ -405,7 +405,7 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   covered('sparse-checkout', ['git_tree'], [{ id: 'sparse-checkout', tool: 'git_tree' }]),
   covered('stripspace', ['git_text'], [{ id: 'stripspace', tool: 'git_text' }]),
   covered('submodule', ['git_tree'], [{ id: 'submodule', tool: 'git_tree' }]),
-  assigned('subtree'),
+  excluded('subtree', "a contrib script, not part of core git and not always installed; git merge -s subtree covers the merge (the user's decision, 2026-11-02)"),
   covered('unpack-objects', ['git_objects'], [{ id: 'unpack-objects', tool: 'git_objects' }]),
   covered('update-index', ['git_objects'], [{ id: 'update-index', tool: 'git_objects' }]),
   covered('var', ['git_inspect'], [{ id: 'var', tool: 'git_inspect' }]),
@@ -424,11 +424,11 @@ export const GIT_COVERAGE: readonly CoverageRow[] = [
   excluded('difftool', 'needs a person at a terminal or a GUI'),
   excluded('difftool--helper', 'internal helper, not an operation'),
   excluded('fetch-pack', 'server or transport role'),
-  excluded('filter-branch', 'runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed'),
-  excluded('for-each-repo', 'runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed'),
+  excluded('filter-branch', 'runs an arbitrary command (raw passthrough); confirmed by the user on 2026-11-02'),
+  excluded('for-each-repo', 'runs an arbitrary command (raw passthrough); confirmed by the user on 2026-11-02'),
   excluded('fsmonitor--daemon', 'internal helper, not an operation'),
   excluded('help', 'needs a person at a terminal or a GUI'),
-  excluded('hook', 'runs an arbitrary command (raw passthrough); to be confirmed when s8 is designed'),
+  excluded('hook', 'runs an arbitrary command (raw passthrough); confirmed by the user on 2026-11-02'),
   excluded('http-backend', 'server or transport role'),
   excluded('http-fetch', 'server or transport role'),
   excluded('http-push', 'server or transport role'),

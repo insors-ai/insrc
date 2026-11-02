@@ -68,6 +68,8 @@ test('approval-class-mapping.test.ts: every former requiresApproval true builtin
 		} else if (old.requiresApproval === 'function') {
 			assert.equal(typeof tool.approval, 'function', old.id);
 			for (const p of old.probes!) {
+				// s8 made 'show' a real read of git_remote (it was any op but list, so it asked)
+				if (old.id === 'git_remote' && (p.input as { op?: string }).op === 'show') { continue; }
 				// a call that asked stays asking (s4 marks some of them destructive); a read stays none
 				const cls = resolveApprovalClass(tool, p.input);
 				assert.ok(p.asks ? cls === 'common' || cls === 'destructive' : cls === 'none', `${old.id} ${JSON.stringify(p.input)} is ${cls}`);
@@ -123,6 +125,7 @@ test('approval-class-mapping.test.ts: the tool ids and input schemas match the s
 	// The two project item tools passed --project-id, a flag gh 2.46.0 lacks: they take the project number now (gh-compat.test.ts pins the corrected schemas).
 	const corrected = new Set(['gh:project:item-archive', 'gh:project:item-delete']);
 	// Optional inputs added since the snapshot (the snapshot stays pinned): every other property is the snapshot's.
+	const S8_EXTENDED = new Set(['git_stash', 'git_worktree', 'git_remote', 'git_branch', 'git_tag']);
 	const ADDED_SINCE = new Map([['git_ls_files', ['maxBytes']], ['git_push', ['configured']], ['gh_pr_view', ['jsonFields']],
 		['git_status', ['paths', 'untrackedFiles']], ['git_log', ['firstParent']], ['git_diff', ['againstWorktree', 'excludeDeleted']], ['git_worktree', ['startPoint']], ['git_stage', ['force']], ['git_show', ['excludeDeleted']]]);
 	for (const old of snapshot) {
@@ -130,6 +133,13 @@ test('approval-class-mapping.test.ts: the tool ids and input schemas match the s
 		if (corrected.has(old.id)) { continue; }
 		const schema = JSON.parse(JSON.stringify(live.get(old.id)!.inputSchema)) as { properties: Record<string, unknown> };
 		for (const added of ADDED_SINCE.get(old.id) ?? []) { delete schema.properties[added]; }
+		if (S8_EXTENDED.has(old.id)) {
+			// s8 added inputs and values of `op` to these five (git-approval.test.ts lists each); everything else is the snapshot's
+			const before = old.inputSchema as { properties: Record<string, { enum?: string[] }> };
+			for (const name of Object.keys(schema.properties)) { if (!(name in before.properties) && !(ADDED_SINCE.get(old.id) ?? []).includes(name)) { delete schema.properties[name]; } }
+			const op = schema.properties['op'] as { enum: string[] };
+			op.enum = op.enum.filter(v => before.properties['op']!.enum!.includes(v));
+		}
 		assert.deepEqual(schema, old.inputSchema, `${old.id} input schema`);
 	}
 });

@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T07:11:12.268Z",
+    "updatedAt": "2026-11-02T07:21:34.621Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -22,9 +22,13 @@
       {
         "id": "t3",
         "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
       }
     ],
-    "summary": "Added bounded checkpoint validation/publication, prior/current durability ordering, metadata reservations and immutable-file segment rotation with failure-state recovery evidence.",
+    "summary": "Implemented bounded streaming recovery, strict accepted-prefix validation, recoverable complete suffix promotion, durable partial-tail repair reports and corruption quarantine without prior-frontier rollback.",
     "testRecord": {
       "md": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/TESTS.md"
     },
@@ -34,58 +38,72 @@
           "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-io.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/io.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/checkpoint.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:11:12.268Z"
+        "timestamp": "2026-11-02T07:21:34.621Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:21:34.621Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/queue/recovery.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:21:34.621Z"
       }
     ],
-    "commit": "e2288ef98"
+    "commit": "b7605021b"
   }
 }

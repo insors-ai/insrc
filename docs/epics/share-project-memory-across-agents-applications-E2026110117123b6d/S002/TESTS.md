@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -81,3 +81,27 @@ Run at 2026-11-02T07:11:12.268Z on commit `e2288ef98`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-checkpoint.test.ts` | 0 | 4 | 1.6 s |  |
+
+## t4
+
+Run at 2026-11-02T07:21:34.621Z on commit `b7605021b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: recovery-frontier-complete-suffix-and-unaccepted-partial-tail**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | recovery-frontier-complete-suffix-and-unaccepted-partial-tail | `packages/project-memory/src/__tests__/queue-recovery.test.ts` |
+| pass | partial-tail-intent-resumes-before-and-after-truncate | `packages/project-memory/src/__tests__/queue-recovery.test.ts` |
+
+**integration: published-checkpoint-and-sealed-corruption-fail-closed**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | published-checkpoint-and-sealed-corruption-fail-closed | `packages/project-memory/src/__tests__/queue-recovery.test.ts` |
+| pass | exact-header-only-orphan-recovers-event-bearing-orphan-does-not | `packages/project-memory/src/__tests__/queue-recovery.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-recovery.test.ts` | 0 | 4 | 2.7 s |  |

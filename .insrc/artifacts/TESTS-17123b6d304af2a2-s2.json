@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T07:11:12.268Z",
+    "updatedAt": "2026-11-02T07:21:34.621Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -215,6 +215,77 @@
               },
               {
                 "title": "checkpoint-publication-faults-preserve-current-or-complete-next",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b7605021b",
+        "ranAt": "2026-11-02T07:21:34.621Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "partial-tail-intent-resumes-before-and-after-truncate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "published-checkpoint-and-sealed-corruption-fail-closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "published-checkpoint-and-sealed-corruption-fail-closed",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "exact-header-only-orphan-recovers-event-bearing-orphan-does-not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2721,
+            "titles": [
+              {
+                "title": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+                "result": "pass"
+              },
+              {
+                "title": "published-checkpoint-and-sealed-corruption-fail-closed",
+                "result": "pass"
+              },
+              {
+                "title": "exact-header-only-orphan-recovers-event-bearing-orphan-does-not",
+                "result": "pass"
+              },
+              {
+                "title": "partial-tail-intent-resumes-before-and-after-truncate",
                 "result": "pass"
               }
             ],

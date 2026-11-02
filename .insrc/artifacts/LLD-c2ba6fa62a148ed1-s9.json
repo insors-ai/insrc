@@ -189,6 +189,13 @@
         "choice": "Unify c/cpp as one family (proposed)",
         "rationale": "User decision 2026-11-02: C and C++ are one family. .h headers are read with the C++ reader, and the cross-file pass treats 'c' and 'cpp' as one language family when it matches call targets, so a C caller links to a declaration in a header.",
         "resolvedAt": "2026-11-02T04:46:40.906Z"
+      },
+      "qa7870f0b": {
+        "question": "OPEN: SQL references to objects defined in other files. The reader resolves same-file references itself; a reference to another file is written pending by name, and the cross-file pass (Story s1's) resolves only CALLS/INHERITS/IMPLEMENTS. Proposed: add REFERENCES-by-name for language 'sql' to the cross-file pass (match a schema-qualified or bare table/view name among the repository's SQL entities; several candidates stay ambiguous); alternative: leave them pending (no-candidate) in this Story. Decide before the plan.",
+        "status": "resolved",
+        "choice": "Leave all cross-file SQL references pending in this Story",
+        "rationale": "User decision 2026-11-02: same-file SQL references are resolved by the reader; references to tables/views defined in other files stay pending by name in s9. Recorded as a pending item: teach the cross-file pass to match SQL table and view names (a small addition to Story s1's pass), with several candidates staying ambiguous.",
+        "resolvedAt": "2026-11-02T04:48:31.406Z"
       }
     }
   },

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "906e8cd02cc3aa90a792b4ff25aab1916b7c55751140dbd99850671023a4397b",
+        "at": "2026-11-02T13:58:03.469Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-745e7e34-3703-4e4c-80f6-987f563485ff",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T13:53:38.250Z",
+    "epicCreatedAt": "2026-11-02T13:40:44.403Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "921ed5bc6e27e50f",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue -> build (ISSUE-921ed5bc6e27e50f, approved): one call site.",
+    "epicSlug": "create-tracker-labels-without-force-so",
+    "updatedAt": "2026-11-02T13:56:50.544Z"
+  },
+  "body": {
+    "focus": "Create tracker labels without force so a push needs no approval: ghCreateLabel in src/workflow/tracker/registry-table.ts drops force; a failed create counts as success when a list for the exact name finds the label (case-insensitive); a denial is still thrown; other failures answer false. Update registry-table.test.ts and tracker.test.ts for the unforced create.",
+    "producesLld": false,
+    "commit": "1a1deec14",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "ghCreateLabel creates without force (common, no approval); an existing label counts as created via a list for the exact name; a denial is still thrown; other failures answer false. Tests: registry-table (create unforced, exists, other failures, asks no approval), tracker-push-registry, setup, tracker pass.",
+    "testRecord": {
+      "md": "docs/standalone/create-tracker-labels-without-force-so-E20261102921ed5bc/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/registry-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:56:50.544Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/setup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:56:50.544Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/__tests__/tracker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:56:50.544Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/tracker/registry-table.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:56:50.544Z"
+      }
+    ]
+  },
+  "citations": []
+}

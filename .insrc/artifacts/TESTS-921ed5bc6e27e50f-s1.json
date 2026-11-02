@@ -1,0 +1,326 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "00d00d25942a59984f843f513e2e304d1f69e2b032416989f76f6392ed022b7c",
+        "at": "2026-11-02T13:56:50.605Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "921ed5bc6e27e50f",
+    "storyId": "s1",
+    "createdAt": "2026-11-02T13:56:50.544Z",
+    "updatedAt": "2026-11-02T13:56:50.544Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T13:40:44.403Z",
+    "epicSlug": "create-tracker-labels-without-force-so",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "1a1deec14",
+        "ranAt": "2026-11-02T13:56:50.544Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/tracker/__tests__/registry-table.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/tracker/__tests__/registry-table.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/setup.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/tracker/__tests__/setup.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/tracker/__tests__/tracker.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/tracker/__tests__/tracker.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/tracker/__tests__/registry-table.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1622,
+            "titles": [
+              {
+                "title": "ghCreateLabel: creates without force and answers true; an existing label counts as created; false for any other gh failure",
+                "result": "pass"
+              },
+              {
+                "title": "ghCreateLabel asks no approval: it is common, not destructive, so a push with no client attached is not denied",
+                "result": "pass"
+              },
+              {
+                "title": "ghCreateIssue: the ref from the printed url; an unrecognized url throws; a gh failure throws",
+                "result": "pass"
+              },
+              {
+                "title": "ghCreateIssueTyped: typed, then untyped once only when the type is rejected; any other failure throws without a second POST",
+                "result": "pass"
+              },
+              {
+                "title": "ghLinkSubIssue, ghGetIssueId: the sub-issue link and the REST id, with a malformed ref refused",
+                "result": "pass"
+              },
+              {
+                "title": "ghGetIssueBody, ghEditIssueBody, ghComment, ghCloseIssue, ghAttachMilestone: the issue tools with the repo and the number",
+                "result": "pass"
+              },
+              {
+                "title": "ghListIssueComments: every comment ascending by time and id, with since; a bad line throws and is never read as no comments",
+                "result": "pass"
+              },
+              {
+                "title": "ghPostCommentReturningId: the new comment id",
+                "result": "pass"
+              },
+              {
+                "title": "ghGetIssueState: lower-case state with the label names",
+                "result": "pass"
+              },
+              {
+                "title": "ghFindIssueByLabels and its Strict form: the first issue; none is undefined; a gh failure is undefined only for the non-strict form",
+                "result": "pass"
+              },
+              {
+                "title": "ghListIssuesByLabelsStrict and ghListIssuesByTitleTokenStrict: ascending refs; the title filter keeps the token and the token followed by a dash only",
+                "result": "pass"
+              },
+              {
+                "title": "ghEnsureMilestone: best effort, a gh failure (including already exists) is swallowed",
+                "result": "pass"
+              },
+              {
+                "title": "queryTasks and listMyOpenTasks: the search string, the page size cap, the cursor, the task projection and the current login",
+                "result": "pass"
+              },
+              {
+                "title": "every row, on a gh failure, gives its old failure: a thrown GhCommandError of the right kind, or its best-effort result; void rows resolve to undefined on success",
+                "result": "pass"
+              },
+              {
+                "title": "a denial is thrown, never swallowed, in every kind of row (best effort or not)",
+                "result": "pass"
+              },
+              {
+                "title": "a schema mismatch throws a rejected error even in a best-effort row (no row of this table converts text, so conversion-failed cannot arise here)",
+                "result": "pass"
+              },
+              {
+                "title": "registry-table.test.ts: one case per issue, comment, label, milestone and task-query row, including best-effort rows and the rule that a denial is thrown, never swallowed",
+                "result": "pass"
+              },
+              {
+                "title": "ghTokenScopes: the scopes from the header, an absent header is an empty list, a gh failure is ok:false with the old reason",
+                "result": "pass"
+              },
+              {
+                "title": "ghCurrentLogin: the login; a gh failure throws; an empty answer throws",
+                "result": "pass"
+              },
+              {
+                "title": "ghListOrgIssueTypes: the names; [] only when gh fails",
+                "result": "pass"
+              },
+              {
+                "title": "ghCreateOrgIssueType: true; false only when gh fails; a denial is thrown",
+                "result": "pass"
+              },
+              {
+                "title": "ghCreateProject: number and url; null only when gh fails; a denial is thrown",
+                "result": "pass"
+              },
+              {
+                "title": "ghFindProjectByTitle: the open board with the exact title; null when none or when gh fails; a schema failure throws (the listing is a read, so it is never asked for approval)",
+                "result": "pass"
+              },
+              {
+                "title": "ghAddProjectSingleSelectField: true; false only when gh fails; a denial is thrown",
+                "result": "pass"
+              },
+              {
+                "title": "ghListRepoIssueUrls: the urls up to the limit; [] only when gh fails",
+                "result": "pass"
+              },
+              {
+                "title": "ghAddProjectItem: true; false only when gh fails; a denial is thrown",
+                "result": "pass"
+              },
+              {
+                "title": "the best-effort helper turns only gh failures into the fallback: a denial, a conversion failure and a schema mismatch throw",
+                "result": "pass"
+              },
+              {
+                "title": "registry-table.test.ts: one case per organisation, project, scope, login and url row, with null, false and [] only for gh failures",
+                "result": "pass"
+              },
+              {
+                "title": "ghAuthOk: ok when gh answers for the signed-in user; ok:false with the old reason when it does not; a missing gh is ok:false too",
+                "result": "pass"
+              },
+              {
+                "title": "gitOriginOwnerRepo: owner and repo from https and ssh origins; null with no origin, a non-GitHub origin or a non-repository",
+                "result": "pass"
+              },
+              {
+                "title": "the attach tracked check: a committed file is tracked, clean and has its last commit; an untracked file is not tracked; a modified or staged tracked file has changes",
+                "result": "pass"
+              },
+              {
+                "title": "registry-table.test.ts: ghAuthOk form, gitOriginOwnerRepo form and the attach tracked-check rows",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/setup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1737,
+            "titles": [
+              {
+                "title": "all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0",
+                "result": "pass"
+              },
+              {
+                "title": "missing scopes: issue-types + project are manual carrying the refresh command",
+                "result": "pass"
+              },
+              {
+                "title": "missing config: the config step writes github.json and reports done",
+                "result": "pass"
+              },
+              {
+                "title": "project views step is always manual with the UI click-list",
+                "result": "pass"
+              },
+              {
+                "title": "ensureLabels with a timing-out label create records the label as failed and continues",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/tracker/__tests__/tracker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1544,
+            "titles": [
+              {
+                "title": "parseGithubRemoteUrl handles ssh + https + .git suffix",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl keeps dots in repo names",
+                "result": "pass"
+              },
+              {
+                "title": "parseGithubRemoteUrl rejects non-github urls",
+                "result": "pass"
+              },
+              {
+                "title": "ref parse/build/url/line",
+                "result": "pass"
+              },
+              {
+                "title": "mapIssueStatus follows the convention (closed overrides)",
+                "result": "pass"
+              },
+              {
+                "title": "renderEpicBody links slug-based docs (not hash)",
+                "result": "pass"
+              },
+              {
+                "title": "render*Body emit clickable blob links with a repo ref, bare paths without",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts stages, commits, and pushes present files",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts reports committed-not-pushed on push failure",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts is a no-op when nothing is staged",
+                "result": "pass"
+              },
+              {
+                "title": "commitAndPushArtifacts no-ops when no file is present",
+                "result": "pass"
+              },
+              {
+                "title": "renderStoryBody back-refs the Epic + links the slug LLD",
+                "result": "pass"
+              },
+              {
+                "title": "updateEpicTaskList splices the link + is idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null",
+                "result": "pass"
+              },
+              {
+                "title": "resolveWorkflowRef: issue# and hierarchical-id forms resolve identically with or without opts.epicHash",
+                "result": "pass"
+              },
+              {
+                "title": "out and silent keep their current results",
+                "result": "pass"
+              },
+              {
+                "title": "migrated wrappers run the same argv and keep their failure results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

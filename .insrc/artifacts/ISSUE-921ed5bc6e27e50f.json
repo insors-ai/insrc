@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "afb25d2da79e31e48dce05c8038f8ffa04deb82c792a6967d4c73ee74aed51a9",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T13:53:20.166Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "921ed5bc6e27e50f",
+      "slug": "EPIC-921ed5bc6e27e50f"
+    }
   },
   "body": {
     "title": "Create tracker labels without force so a push needs no approval",

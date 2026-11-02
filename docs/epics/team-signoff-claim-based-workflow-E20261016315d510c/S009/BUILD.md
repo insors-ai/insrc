@@ -4,7 +4,7 @@
 
 **Standalone:** no  ·  **Created:** 2026-11-02T06:08:57.571Z  ·  **Updated:** 2026-11-02T09:01:17.206Z
 
-**Commit:** 62640e413
+**Commit:** 193057385
 
 ## Tasks validated
 
@@ -20,24 +20,26 @@
 
 ## Changes
 
-- `src/workflow/tracker/__tests__/github-adapter.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/tracker/__tests__/port.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/tracker/github-adapter.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/tracker/port.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/daemon/__tests__/tracker-sync-method.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/daemon/tracker-setup-handlers.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/tracker/__tests__/refresh.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/tracker/sync.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/daemon/index.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/tracker/__tests__/refresh-hooks.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/tracker/refresh-hooks.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/__tests__/draft-issues.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/draft-issues.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/__tests__/chain-report-tracker.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/__tests__/chain.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/__tests__/helpers/chain-fixtures.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/chain.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `docs/plans/team-workflow.md` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `docs/workflow.md` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/team/__tests__/s9-docs-record.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
-- `src/workflow/team/__tests__/s9-sweep-record.test.ts` — **insrc-build** (2026-11-02T09:01:17.206Z)
+- `src/workflow/tracker/__tests__/github-adapter.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/tracker/__tests__/port.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/tracker/github-adapter.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/tracker/port.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/daemon/__tests__/tracker-sync-method.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/daemon/tracker-setup-handlers.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/tracker/__tests__/refresh.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/tracker/sync.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/daemon/index.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/tracker/__tests__/refresh-hooks.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/tracker/refresh-hooks.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/__tests__/draft-issues.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/draft-issues.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/__tests__/chain-report-tracker.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/__tests__/chain.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/__tests__/helpers/chain-fixtures.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/chain.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `docs/plans/team-workflow.md` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `docs/workflow.md` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/team/__tests__/s9-docs-record.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `src/workflow/team/__tests__/s9-sweep-record.test.ts` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `.insrc/artifacts/TASKS-315d510cb28100e2-s9.log.jsonl` — **insrc-build** (2026-11-02T09:16:31.353Z)
+- `docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S009/SELF-REVIEW.md` — **insrc-build** (2026-11-02T09:16:31.353Z)

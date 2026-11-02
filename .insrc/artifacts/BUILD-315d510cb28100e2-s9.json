@@ -6,18 +6,30 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
-        "number": 8,
-        "contentHash": "74fc3e1edaf4f65d1160f3e76c6ed79680d6c457d6cbb0fcda960e215c4a87c7",
-        "at": "2026-11-02T09:02:52.352Z",
+        "number": 9,
+        "contentHash": "70af73badc9efd0ab1f5f34d7414fa5868de8ebd0416f3831f92677f6e9f0080",
+        "at": "2026-11-02T09:16:33.772Z",
         "by": {
-          "id": "insrc:build",
+          "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 9,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:16:37.904Z",
+        "override": {
+          "reason": "controller self-review, see docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S009/SELF-REVIEW.md (the code-review tool is unavailable)"
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-6df0f410-ed87-4ded-8ac3-8c70071a25a8",
@@ -29,7 +41,7 @@
     "schemaVersion": 1,
     "epicHash": "315d510cb28100e2",
     "storyId": "s9",
-    "revision": 8,
+    "revision": 9,
     "updatedAt": "2026-11-02T09:01:17.206Z",
     "authoredBy": "controller",
     "epicSlug": "team-signoff-claim-based-workflow"
@@ -74,150 +86,164 @@
           "file": "src/workflow/tracker/__tests__/github-adapter.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/port.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/github-adapter.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/port.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/tracker-sync-method.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/daemon/tracker-setup-handlers.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/refresh.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/sync.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/daemon/index.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/__tests__/refresh-hooks.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/tracker/refresh-hooks.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/draft-issues.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/draft-issues.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/chain-report-tracker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/chain.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/__tests__/helpers/chain-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/chain.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "docs/plans/team-workflow.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "docs/workflow.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/s9-docs-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
       },
       {
         "target": {
           "file": "src/workflow/team/__tests__/s9-sweep-record.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T09:01:17.206Z"
+        "timestamp": "2026-11-02T09:16:31.353Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-315d510cb28100e2-s9.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:16:31.353Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/team-signoff-claim-based-workflow-E20261016315d510c/S009/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T09:16:31.353Z"
       }
     ],
-    "commit": "62640e413"
+    "commit": "193057385"
   },
   "citations": []
 }

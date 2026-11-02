@@ -37,20 +37,20 @@ export function authorUnitOf(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath
 }
 
 /**
- * The action an authoring run asks the gate for. A design.epic run writes the HLD and a design.story run the LLD: while that artifact
- * is in signoff or was sent back from it, the run revises work other people are reviewing, which is the 'revise' action (Story s8).
- * A define run and a plan run are not covered: neither has a signoff stage of its own to revise.
+ * The stage artifact an authoring run writes: a design.epic run writes the HLD and a design.story run the LLD, which may be in signoff
+ * (Story s8), so those runs go through {@link assertMayReviseDraft}. A define run and a plan run have no signoff stage of their own to revise.
  */
-function authorActionOf(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath'>, unit: UnitRef): GuardedAction {
-	const stage = intent.workflow === 'design.epic' ? 'HLD' : intent.workflow === 'design.story' ? 'LLD' : undefined;
-	return stage !== undefined && isUnderSignoff(intent.repoPath, unit, stage) ? 'revise' : 'author';
+function authorStageOf(workflow: string): SignoffStage | undefined {
+	return workflow === 'design.epic' ? 'HLD' : workflow === 'design.story' ? 'LLD' : undefined;
 }
 
 /** Throws TeamGateRefusedError when the actor may not author this run's stage. A repo with no policy is untouched. */
 export async function assertMayAuthor(intent: Pick<WorkflowIntent, 'workflow' | 'repoPath' | 'params'>): Promise<void> {
 	const unit = authorUnitOf(intent);
 	if (unit === undefined) return;
-	await askGate(intent.repoPath, unit, authorActionOf(intent, unit), intent.workflow);
+	const stage = authorStageOf(intent.workflow);
+	if (stage !== undefined) await assertMayReviseDraft(intent.repoPath, unit, stage, intent.workflow);
+	else await askGate(intent.repoPath, unit, 'author', intent.workflow);
 }
 
 /**

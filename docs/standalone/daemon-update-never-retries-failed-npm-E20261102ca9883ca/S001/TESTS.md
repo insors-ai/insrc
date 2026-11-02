@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -95,3 +95,17 @@ Run at 2026-11-02T12:20:21.207Z on commit `4d2eeda98`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/config/__tests__/installer-defs.test.ts` | 0 | 2 | 1.9 s |  |
+
+## t4
+
+Run at 2026-11-02T13:06:49.464Z on commit `81da97b73`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: S001 t4: clean install under Node 22 builds fs-ext and the native modules**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-clean-install-t4.md
+
+**smoke: S001 t4: the installed daemon's update installs once, then skips**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-installed-update-t4.md

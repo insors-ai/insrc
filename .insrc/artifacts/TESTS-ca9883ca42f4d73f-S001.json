@@ -4,7 +4,7 @@
     "epicHash": "ca9883ca42f4d73f",
     "storyId": "S001",
     "createdAt": "2026-11-02T12:14:26.040Z",
-    "updatedAt": "2026-11-02T12:20:21.207Z",
+    "updatedAt": "2026-11-02T13:06:49.464Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:42:30.446Z",
     "epicSlug": "daemon-update-never-retries-failed-npm"
@@ -241,6 +241,38 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "81da97b73",
+        "ranAt": "2026-11-02T13:06:49.464Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t4: clean install under Node 22 builds fs-ext and the native modules",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-clean-install-t4.md"
+            }
+          },
+          {
+            "name": "S001 t4: the installed daemon's update installs once, then skips",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-installed-update-t4.md"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

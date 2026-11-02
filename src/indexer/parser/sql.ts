@@ -19,7 +19,8 @@
  *    (user decision 2026-11-02; a recorded pending item)
  *
  * Unquoted names match case-insensitively, as SQL compares them. A file over
- * the artifact reader's size limit is skipped, as it was before.
+ * the artifact reader's size limit is skipped, as it was before. When the
+ * grammar cannot load, a .sql file is still stored as its document.
  *
  * Left out: other statements (indexes, functions, triggers, inserts) are not
  * entities; references from DML outside a view are not recorded.
@@ -29,8 +30,8 @@ import { createRequire } from 'node:module';
 import { basename } from 'node:path';
 import type { CodeParser, ParseResult } from './base.js';
 import { makeEntityId } from './base.js';
-import type { Entity, Relation } from '../../shared/types.js';
-import { loadReader } from './registry.js';
+import type { Entity, Language, Relation } from '../../shared/types.js';
+import { loadReader, registerParser } from './registry.js';
 
 type SyntaxNode = import('tree-sitter').SyntaxNode;
 
@@ -81,14 +82,21 @@ function viewReferences(stmt: SyntaxNode): string[] {
 	return names;
 }
 
-class SqlParser implements CodeParser {
+/**
+ * The SQL reader. Built without a grammar (`null`) it is the fallback for a
+ * machine where the grammar cannot load: it writes the file and document
+ * entities only, as the artifact reader did, and is listed under 'config' so
+ * the languages request still says SQL is not read, with the load error.
+ */
+export class SqlParser implements CodeParser {
 	readonly extensions = ['.sql'];
-	readonly language = 'sql' as const;
-	private readonly tsParser: import('tree-sitter');
+	readonly language: Language;
+	private readonly tsParser: import('tree-sitter') | null;
 
-	constructor(Parser: typeof import('tree-sitter'), grammar: unknown) {
-		this.tsParser = new Parser();
-		(this.tsParser as { setLanguage(l: unknown): void }).setLanguage(grammar);
+	constructor(Parser: typeof import('tree-sitter') | null, grammar: unknown) {
+		this.tsParser = Parser === null ? null : new Parser();
+		(this.tsParser as { setLanguage(l: unknown): void } | null)?.setLanguage(grammar);
+		this.language = this.tsParser === null ? 'config' : 'sql';
 	}
 
 	parse(filePath: string, source: string, repo: string, repoId: number): ParseResult {
@@ -96,13 +104,13 @@ class SqlParser implements CodeParser {
 		const name = basename(filePath);
 		const now = new Date().toISOString();
 		const lines = source.split('\n').length;
-		const tree = (this.tsParser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
+		const root = (this.tsParser as { parse(s: string): { rootNode: SyntaxNode } } | null)?.parse(source).rootNode;
 
 		const fileId = makeEntityId(repo, filePath, 'file', filePath);
 		const base = { language: 'sql' as const, repoId, repo, file: filePath, embedding: [], indexedAt: now };
 		const entities: Entity[] = [
 			{ ...base, id: fileId, kind: 'file', name, startLine: 1, endLine: lines, body: '', artifact: true,
-				...(tree.rootNode.hasError ? { signature: 'parse-error' } : {}) },
+				...(root?.hasError === true ? { signature: 'parse-error' } : {}) },
 			{ ...base, id: makeEntityId(repo, filePath, 'document', name), kind: 'document', name, startLine: 1, endLine: lines, body: truncate(source), artifact: true },
 		];
 		const relations: Relation[] = [{ kind: 'DEFINES', from: fileId, to: entities[1]!.id, resolved: true }];
@@ -110,7 +118,7 @@ class SqlParser implements CodeParser {
 		// Every CREATE TABLE / VIEW, ERROR regions included.
 		const defs: { id: string; refs: string[] }[] = [];
 		const byName = new Map<string, string>();
-		for (const stmt of [...descendants(tree.rootNode, 'create_table'), ...descendants(tree.rootNode, 'create_view')]) {
+		for (const stmt of root === undefined ? [] : [...descendants(root, 'create_table'), ...descendants(root, 'create_view')]) {
 			const ref = stmt.namedChildren.find(c => c.type === 'object_reference');
 			if (ref === undefined) continue;
 			const objName = objectName(ref);
@@ -147,3 +155,6 @@ export const sqlParser: SqlParser | null = loadReader('sql', ['.sql'], () => {
 	const grammar = _require('@derekstride/tree-sitter-sql') as unknown;
 	return new SqlParser(Parser, grammar);
 });
+
+// Without the grammar a .sql file is still stored as the document it always was.
+if (sqlParser === null) registerParser(new SqlParser(null, null));

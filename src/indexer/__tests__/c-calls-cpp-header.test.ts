@@ -4,8 +4,8 @@
  * resolved by the per-file resolver, written to a real temporary store and
  * settled by the real cross-file pass: main.c includes util.h (read as
  * 'cpp') and calls the function the header declares; the call links to it
- * through the family rule ('inferred'), and a call to a static header
- * function does not.
+ * through the family rule ('inferred'), a static header function's too --
+ * every including file compiles its own copy.
  *
  * Run: npx tsx --test src/indexer/__tests__/c-calls-cpp-header.test.ts
  */
@@ -65,6 +65,6 @@ test('s9 t5: a C caller of a function declared in an included .h header resolves
 
 	const main = makeEntityId(repo, join(repo, 'src/main.c'), 'function', 'main');
 	const callees = await findCallees(null, main);
-	assert.deepEqual(callees.map(e => `${e.name} (${e.language}): ${e.evidence}`), ['util_add (cpp): inferred']);
-	assert.equal(callees[0]!.file, join(repo, 'src/util.h'));
+	assert.deepEqual(callees.map(e => `${e.name} (${e.language}): ${e.evidence}`).sort(), ['util_add (cpp): inferred', 'util_private (cpp): inferred']);
+	assert.ok(callees.every(e => e.file === join(repo, 'src/util.h')));
 });

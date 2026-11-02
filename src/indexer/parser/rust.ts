@@ -17,7 +17,9 @@
  *    from this module's directory or its parent's
  *  - `use serde::X` / `extern crate log` -> IMPORTS to a module stub under
  *    'cargo', named by the crate
- *  - CALLS by callee name (`run()`, `Circle::new()`) from each fn
+ *  - CALLS by callee name (`run()`, `Circle::new()`) from each fn, named by
+ *    the entity of this file it reaches from the fn's scope: `helper()` or
+ *    `Self::helper()` in `impl Circle` is `Circle::helper` when the file has it
  *  - `impl Trait for Type` -> IMPLEMENTS from the type, when it is in this file
  *
  * A pub item (any visibility, pub(crate) included) is exported; a member of
@@ -34,7 +36,7 @@ import { makeEntityId } from './base.js';
 import type { Entity } from '../../shared/types.js';
 import { loadReader } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
-import { type CWalkCtx, collectCalls, fileEntity, pushEntity } from './c.js';
+import { type CWalkCtx, addEntity, collectCalls, fileEntity, pushEntity, qualifyCalls } from './c.js';
 
 type SyntaxNode = import('tree-sitter').SyntaxNode;
 
@@ -58,7 +60,11 @@ interface Pending {
 interface RustCtx extends CWalkCtx {
 	readonly pending:  Pending[];
 	readonly modNames: Set<string>;             // modules this file declares (`mod x;`)
+	readonly imports:  Set<string>;             // IMPORTS targets written so far
 }
+
+/** Expressions, bodies and macro token trees hold no items; not walking them keeps a deep expression off the stack. */
+const NO_ITEMS = /_expression$|_literal$|^(block|arguments|token_tree|macro_invocation)$/;
 
 const isPub = (node: SyntaxNode): boolean => node.namedChildren.some(c => c.type === 'visibility_modifier');
 
@@ -84,20 +90,19 @@ export function usePaths(node: SyntaxNode, prefix = ''): string[] {
 
 function moduleStub(ctx: RustCtx, crate: string): void {
 	const moduleId = makeEntityId('cargo', '', 'module', crate);
-	if (!ctx.entities.some(e => e.id === moduleId)) {
-		ctx.entities.push({
-			id: moduleId, kind: 'module', name: crate, language: 'rust', repoId: SHARED_MODULES_REPO_ID.cargo,
-			repo: '', file: '', startLine: 0, endLine: 0, body: '', embedding: [], indexedAt: ctx.now,
-		});
-	}
-	if (!ctx.relations.some(r => r.kind === 'IMPORTS' && r.to === moduleId)) {
-		ctx.relations.push({ kind: 'IMPORTS', from: ctx.fileId, to: moduleId, resolved: true });
-	}
+	addEntity(ctx, {
+		id: moduleId, kind: 'module', name: crate, language: 'rust', repoId: SHARED_MODULES_REPO_ID.cargo,
+		repo: '', file: '', startLine: 0, endLine: 0, body: '', embedding: [], indexedAt: ctx.now,
+	});
+	if (ctx.imports.has(moduleId)) return;
+	ctx.imports.add(moduleId);
+	ctx.relations.push({ kind: 'IMPORTS', from: ctx.fileId, to: moduleId, resolved: true });
 }
 
 /** An IMPORTS of the file a module path names, resolved by the per-file resolver. */
 function moduleImport(ctx: RustCtx, path: string): void {
-	if (ctx.relations.some(r => r.kind === 'IMPORTS' && r.to === path)) return;
+	if (ctx.imports.has(path)) return;
+	ctx.imports.add(path);
 	ctx.relations.push({ kind: 'IMPORTS', from: ctx.fileId, to: path, resolved: false, meta: { isRelative: true, file: ctx.filePath, repo: ctx.repo } });
 }
 
@@ -175,7 +180,7 @@ function walk(node: SyntaxNode, ctx: RustCtx, scope: Scope): void {
 				if (body !== null) walk(body, ctx, { prefix: scope.prefix, ownerId: null, owner, exported: trait !== undefined ? true : null });
 				break;
 			}
-			default: walk(n, ctx, scope); break;
+			default: if (!NO_ITEMS.test(n.type)) walk(n, ctx, scope); break;
 		}
 	}
 }
@@ -183,7 +188,7 @@ function walk(node: SyntaxNode, ctx: RustCtx, scope: Scope): void {
 /** DEFINES and IMPLEMENTS from a type declared anywhere in the file; members of a type declared elsewhere hang from the file. */
 function settle(ctx: RustCtx): void {
 	for (const p of ctx.pending) {
-		const typeId = ['class', 'interface'].map(k => makeEntityId(ctx.repo, ctx.filePath, k, p.typeName)).find(id => ctx.entities.some(e => e.id === id));
+		const typeId = ['class', 'interface'].map(k => makeEntityId(ctx.repo, ctx.filePath, k, p.typeName)).find(id => ctx.ids.has(id));
 		if (p.childId !== undefined) ctx.relations.push({ kind: 'DEFINES', from: typeId ?? ctx.fileId, to: p.childId, resolved: true });
 		if (p.trait !== undefined && typeId !== undefined) {
 			ctx.relations.push({ kind: 'IMPLEMENTS', from: typeId, to: p.trait, resolved: false, meta: { file: ctx.filePath, repo: ctx.repo } });
@@ -205,9 +210,9 @@ class RustParser implements CodeParser {
 		const tree = (this.tsParser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
 		const ctx: RustCtx = {
 			repo, repoId, filePath, fileId: makeEntityId(repo, filePath, 'file', filePath),
-			now: new Date().toISOString(), language: 'rust', entities: [] as Entity[], relations: [], pending: [], modNames: new Set(),
+			now: new Date().toISOString(), language: 'rust', entities: [] as Entity[], relations: [], ids: new Set(), pending: [], modNames: new Set(), imports: new Set(),
 		};
-		ctx.entities.push(fileEntity(ctx, source, tree.rootNode.hasError));
+		addEntity(ctx, fileEntity(ctx, source, tree.rootNode.hasError));
 		// A `use` of a module this file declares may come before its `mod x;`.
 		for (const n of tree.rootNode.namedChildren) {
 			if (n.type === 'mod_item' && n.childForFieldName('body') === null) {
@@ -217,6 +222,7 @@ class RustParser implements CodeParser {
 		}
 		walk(tree.rootNode, ctx, { prefix: '', ownerId: null, owner: null, exported: null });
 		settle(ctx);
+		qualifyCalls(ctx, '::', 'Self');
 		return { entities: ctx.entities, relations: ctx.relations };
 	}
 }

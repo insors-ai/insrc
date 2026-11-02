@@ -97,7 +97,7 @@ test('s9 t5: a .h header is read as cpp and its declarations are functions a cal
 	assert.equal(r.entities.find(e => e.kind === 'file')!.language, 'cpp');
 	assert.deepEqual(of(r, 'function'), ['util_add', 'util_private']);
 	assert.equal(ent(r, 'util_add').isExported, true);
-	assert.equal(ent(r, 'util_private').isExported, false);
+	assert.equal(ent(r, 'util_private').isExported, true, 'a static function in a header is compiled into every file that includes it');
 	assert.deepEqual(of(r, 'class'), ['pair']);
 	assert.deepEqual(of(r, 'type'), ['pair_t']);
 	assert.ok(rels(r, 'DEFINES').includes(`${H} -> util_add`));
@@ -113,4 +113,23 @@ int after(int x) { return before() + x; }
 	assert.deepEqual(of(r, 'function'), ['after', 'before', 'broken']);
 	assert.deepEqual(of(r, 'method'), ['Ok::m']);
 	assert.ok(rels(r, 'CALLS').includes('after -> before'), 'the call after the broken region is read');
+});
+
+test('s9 review: a call is named by the entity of this file it reaches from its scope, innermost first; a header shows its anonymous-namespace functions to includers', () => {
+	const r = parse(CPP, `class Shape { public: double area(); double twice() { return area() * 2; } };
+namespace geo { int helper(); int f() { return helper(); } }
+int helper();
+int g() { return helper(); }
+`);
+	assert.deepEqual(rels(r, 'CALLS'), ['Shape::twice -> Shape::area', 'g -> helper', 'geo::f -> geo::helper']);
+
+	const src = 'namespace { inline int anon() { return 1; } }\n';
+	assert.equal(ent(parse('/repo/src/x.hpp', src), 'anon').isExported, true, 'every file that includes the header compiles it');
+	assert.equal(ent(parse(CPP, src), 'anon').isExported, false);
+});
+
+test('s9 review: a deeply nested expression does not overflow the reader', () => {
+	const terms = Array.from({ length: 20_000 }, (_v, i) => String(i)).join(' + ');
+	const r = parse(CPP, `int x = ${terms};\nint after() { return 1; }\n`);
+	assert.deepEqual(of(r, 'function'), ['after']);
 });

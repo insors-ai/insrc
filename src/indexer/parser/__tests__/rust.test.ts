@@ -15,7 +15,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 import { rustParser } from '../rust.js';
 import { makeEntityId } from '../base.js';
@@ -27,14 +27,16 @@ const dir  = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-s9-rust-')));
 const REPO = join(dir, 'repo');
 const SRC  = join(REPO, 'src');
 const at = (rel: string) => join(SRC, rel);
-for (const d of ['util', 'net', 'only']) mkdirSync(at(d), { recursive: true });
+for (const d of ['util', 'net', 'only', 'deep/inner', 'bin']) mkdirSync(at(d), { recursive: true });
+mkdirSync(join(REPO, 'tests', 'common'), { recursive: true });
 writeFileSync(join(REPO, 'Cargo.toml'), '[package]\nname = "demo"\n');
-for (const f of ['main.rs', 'util.rs', 'util/mod.rs', 'model.rs', 'net/mod.rs', 'net/http.rs', 'only/mod.rs']) writeFileSync(at(f), '');
+for (const f of ['main.rs', 'util.rs', 'util/mod.rs', 'model.rs', 'net/mod.rs', 'net/http.rs', 'only/mod.rs', 'deep/mod.rs', 'deep/inner.rs', 'deep/inner/leaf.rs', 'bin/tool.rs', 'bin/helper.rs']) writeFileSync(at(f), '');
+for (const f of ['it.rs', 'common/mod.rs']) writeFileSync(join(REPO, 'tests', f), '');
 // A crate with both a library and a binary root.
 const BOTH = join(dir, 'both', 'src');
 mkdirSync(BOTH, { recursive: true });
 writeFileSync(join(dir, 'both', 'Cargo.toml'), '[package]\nname = "both"\n');
-for (const f of ['main.rs', 'lib.rs', 'a.rs']) writeFileSync(join(BOTH, f), '');
+for (const f of ['main.rs', 'lib.rs', 'a.rs', 'config.rs']) writeFileSync(join(BOTH, f), '');
 test.after(() => { rmSync(dir, { recursive: true, force: true }); });
 const MAIN = at('main.rs');
 
@@ -64,7 +66,7 @@ impl Area for Circle {
 
 impl Circle {
 	pub fn new(r: f64) -> Self { Circle { r } }
-	fn secret(&self) {}
+	fn secret(&self) { Self::new(1.0); }
 }
 
 pub(crate) fn main() { let c = Circle::new(1.0); run(); }
@@ -111,7 +113,7 @@ test('s9 t6: a .rs fixture yields its items and its mod/use, call and impl relat
 		assert.ok(defines.includes(d), d);
 	}
 	assert.deepEqual(rels(r, 'IMPLEMENTS'), ['Circle -> Area']);
-	assert.deepEqual(rels(r, 'CALLS'), ['Area::describe -> String::new', 'Circle::area -> helper', 'Circle::area -> util::go', 'main -> Circle::new', 'main -> run']);
+	assert.deepEqual(rels(r, 'CALLS'), ['Area::describe -> String::new', 'Circle::area -> helper', 'Circle::area -> util::go', 'Circle::secret -> Circle::new', 'main -> Circle::new', 'main -> run']);
 
 	const stub = r.entities.find(e => e.id === makeEntityId('cargo', '', 'module', 'serde'));
 	assert.equal(stub?.repoId, SHARED_MODULES_REPO_ID.cargo);
@@ -156,4 +158,27 @@ fn after(x: u8) -> u8 { before() + x }
 	assert.deepEqual(of(r, 'function'), ['after', 'before', 'broken']);
 	assert.deepEqual(of(r, 'class'), ['Ok']);
 	assert.ok(rels(r, 'CALLS').includes('after -> before'), 'the call after the broken region is read');
+});
+
+/** Where each IMPORTS of `file` lands after the per-file resolver, relative to `root`, or pending. */
+function landed(root: string, file: string, source: string): string[] {
+	const r = parse(file, source);
+	return resolveRelations(r.relations, file, root, r.entities).filter(x => x.kind === 'IMPORTS')
+		.map(x => x.resolved ? relative(root, String(x.meta?.['targetFile'])) : `pending ${x.to}`).sort();
+}
+
+test('s9 review: a module file counts only under its exact name; super chains and crates under src/bin and tests resolve from their own directories', () => {
+	const both = join(dir, 'both');
+	// macOS's default file system would answer Config.rs for config.rs.
+	assert.deepEqual(landed(both, join(BOTH, 'a.rs'), 'use crate::Config;\nuse crate::config::Thing;\n'), ['src/config.rs', 'src/lib.rs']);
+	assert.deepEqual(landed(both, join(BOTH, 'lib.rs'), 'use crate::Config;\n'), ['pending crate::Config']);
+	assert.deepEqual(landed(REPO, at('deep/inner/leaf.rs'), 'use super::super::X;\nuse super::Y;\n'), ['src/deep/inner.rs', 'src/deep/mod.rs']);
+	assert.deepEqual(landed(REPO, at('bin/tool.rs'), 'mod helper;\nuse crate::helper::run;\n'), ['src/bin/helper.rs', 'src/bin/helper.rs']);
+	assert.deepEqual(landed(REPO, join(REPO, 'tests', 'it.rs'), 'mod common;\nuse crate::common::f;\n'), ['tests/common/mod.rs', 'tests/common/mod.rs']);
+});
+
+test('s9 review: a deeply nested expression does not overflow the reader', () => {
+	const terms = Array.from({ length: 20_000 }, (_v, i) => String(i)).join(' + ');
+	const r = parse(MAIN, `const X: i32 = ${terms};\npub fn after() {}\n`);
+	assert.deepEqual(of(r, 'function'), ['after']);
 });

@@ -123,3 +123,15 @@ test('s9 t7: a fixture with a syntax error still yields the declarations outside
 	assert.deepEqual(of(r, 'method'), ['N.After.Go', 'N.After.Run', 'N.Broken.M', 'N.Ok.Before']);
 	assert.ok(rels(r, 'CALLS').includes('N.After.Run -> N.After.Go'), 'the call after the broken region is read');
 });
+
+test('s9 review: a record inherits its first class base, a primary-constructor base included', () => {
+	const r = parse('record Base { }\nrecord R1 : Base { }\nrecord R2(int X) : Base(X), IFoo;\nrecord R3 : IFoo { }\n');
+	assert.deepEqual(rels(r, 'INHERITS'), ['R1 -> Base', 'R2 -> Base']);
+	assert.deepEqual(rels(r, 'IMPLEMENTS'), ['R2 -> IFoo', 'R3 -> IFoo']);
+});
+
+test('s9 review: a deeply nested expression does not overflow the reader', () => {
+	const terms = Array.from({ length: 20_000 }, (_v, i) => String(i)).join(' + ');
+	const r = parse(`class D { int x = ${terms}; void After() { } }\n`);
+	assert.deepEqual(of(r, 'method'), ['D.After']);
+});

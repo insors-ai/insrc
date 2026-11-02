@@ -1,5 +1,5 @@
-import { existsSync } from 'node:fs';
-import { basename, resolve, dirname, extname, join } from 'node:path';
+import { existsSync, readdirSync } from 'node:fs';
+import { basename, resolve, dirname, extname, join, relative, sep } from 'node:path';
 import type { Entity, Relation, Language } from '../shared/types.js';
 import { makeEntityId } from './parser/base.js';
 
@@ -210,44 +210,75 @@ function resolvePythonRelativeImport(
   return null;
 }
 
+/** Whether `path` is on disk under exactly this name: macOS's default file system ignores case, a module path does not. */
+function existsExact(path: string): boolean {
+  if (!existsSync(path)) return false;
+  try { return readdirSync(dirname(path)).includes(basename(path)); } catch { return false; }
+}
+
+/** Where the files of `fromFile`'s crate hang from, and whether `fromFile` is that crate's root file. */
+function rustCrateOf(fromFile: string, repo: string): { dir: string; isRoot: boolean } | null {
+  let cargo: string | null = null;
+  for (let dir = dirname(fromFile); dir.startsWith(repo); dir = dirname(dir)) {
+    if (existsSync(join(dir, 'Cargo.toml'))) { cargo = dir; break; }
+    if (dir === dirname(dir)) break;
+  }
+  if (cargo === null) return null;
+  const rel = relative(cargo, fromFile).split(sep);
+  // build.rs; a file directly in tests/, examples/, benches/ or src/bin/; or <that>/<name>/main.rs is a crate of its own.
+  if (rel.length === 1) return { dir: cargo, isRoot: rel[0] === 'build.rs' };
+  const top = rel[0] === 'src' && rel[1] === 'bin' ? 2 : (['tests', 'examples', 'benches'].includes(rel[0]!) ? 1 : 0);
+  if (top > 0) {
+    const topDir = join(cargo, ...rel.slice(0, top));
+    if (rel.length === top + 1) return { dir: topDir, isRoot: true };
+    const sub = join(topDir, rel[top]!);
+    if (existsExact(join(sub, 'main.rs'))) return { dir: sub, isRoot: rel.length === top + 2 && rel[top + 1] === 'main.rs' };
+    return { dir: topDir, isRoot: false };
+  }
+  const src = join(cargo, 'src');
+  return { dir: src, isRoot: dirname(fromFile) === src && ['lib.rs', 'main.rs'].includes(basename(fromFile)) };
+}
+
 /**
  * The file a Rust module path names (Epic c2ba6fa6 s9). The path is read from
- * a base directory -- the crate's src/ for `crate::`, the declaring module's
- * directory for `self::`, its parent's for `super::` -- and the longest
- * prefix of its segments that is a module file wins, `a/b.rs` before
- * `a/b/mod.rs` (so `mod util;` is util.rs over util/mod.rs). When no segment
- * is a module file the path names an item of the base module itself: for
- * `crate::` and `super::` that module's file is returned; for `self::` it is
- * the importing file, so there is nothing to link.
+ * a base directory -- the crate's directory for `crate::` (src/, or its own
+ * for a crate under src/bin/, tests/, examples/ or benches/), the declaring
+ * module's directory for `self::`, one level up per `super::` -- and the
+ * longest prefix of its segments that is a module file wins, `a/b.rs` before
+ * `a/b/mod.rs` (so `mod util;` is util.rs over util/mod.rs). A file counts
+ * only under its exact name. When no segment is a module file the path names
+ * an item of the base module itself: for `crate::` and `super::` that
+ * module's file is returned; for `self::` (or `crate::` from the crate root)
+ * it is the importing file, so there is nothing to link.
  */
 function resolveRustModulePath(fromFile: string, path: string, repo: string): string | null {
-  const [head, ...segs] = path.split('::');
+  const parts = path.split('::');
+  const crate = rustCrateOf(fromFile, repo);
   const stem = basename(fromFile, '.rs');
-  const selfDir = ['main', 'lib', 'mod'].includes(stem) ? dirname(fromFile) : join(dirname(fromFile), stem);
-  let base: string | null;
-  if (head === 'crate') {
-    base = null;
-    for (let dir = dirname(fromFile); dir.startsWith(repo); dir = dirname(dir)) {
-      if (existsSync(join(dir, 'Cargo.toml'))) { base = join(dir, 'src'); break; }
-      if (dir === dirname(dir)) break;
-    }
+  // A crate root's and a mod.rs's child modules sit beside it; any other module's in a directory named after it.
+  const selfDir = crate?.isRoot === true || ['main', 'lib', 'mod'].includes(stem) ? dirname(fromFile) : join(dirname(fromFile), stem);
+  let base: string;
+  let i = 0;
+  if (parts[0] === 'crate') {
+    if (crate === null) return null;
+    base = crate.dir; i = 1;
   } else {
-    base = head === 'super' ? dirname(selfDir) : selfDir;
+    base = selfDir;
+    for (; parts[i] === 'self' || parts[i] === 'super'; i++) if (parts[i] === 'super') base = dirname(base);
   }
-  if (base === null || !base.startsWith(repo)) return null;
+  const segs = parts.slice(i);
+  if (!base.startsWith(repo)) return null;
 
   // The longest module file wins; when that is the importing file, the path
   // names one of its own items and there is nothing to link.
-  const found = (candidates: string[]): string | undefined =>
-    candidates.find(c => c.startsWith(repo) && existsSync(c));
+  const found = (candidates: string[]): string | undefined => candidates.find(c => c.startsWith(repo) && existsExact(c));
   for (let k = segs.length; k >= 1; k--) {
     const mod = join(base, ...segs.slice(0, k));
     const hit = found([`${mod}.rs`, join(mod, 'mod.rs')]);
     if (hit !== undefined) return hit === fromFile ? null : hit;
   }
-  // An item of `self`, or of `crate` from the crate root file, is in the
-  // importing file itself: nothing to link.
-  if (head === 'self' || (head === 'crate' && dirname(fromFile) === base && ['main', 'lib'].includes(stem))) return null;
+  if (base === selfDir && !parts.includes('super') && parts[0] !== 'crate') return null;
+  if (parts[0] === 'crate' && crate?.isRoot === true) return null;
   const root = found([`${base}.rs`, join(base, 'mod.rs'), join(base, 'lib.rs'), join(base, 'main.rs')]);
   return root === undefined || root === fromFile ? null : root;
 }

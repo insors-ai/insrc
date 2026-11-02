@@ -18,8 +18,8 @@
  *    another file through a namespace stays pending: a namespace is not a
  *    file, and this Story maps no namespace to files (the stated limitation).
  *  - base lists -> INHERITS / IMPLEMENTS by name. The syntax does not say
- *    which base is a class: for a class the first base INHERITS unless it is
- *    named like an interface (`IArea`), the rest IMPLEMENTS; an interface's
+ *    which base is a class: for a class or record the first base INHERITS
+ *    unless it is named like an interface (`IArea`), the rest IMPLEMENTS; an interface's
  *    bases INHERITS; a struct's IMPLEMENTS.
  *
  * Exported: a type or member marked public, internal or protected; a type
@@ -36,7 +36,7 @@ import { makeEntityId } from './base.js';
 import type { Entity } from '../../shared/types.js';
 import { loadReader } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
-import { type CWalkCtx, fileEntity, pushEntity } from './c.js';
+import { type CWalkCtx, addEntity, fileEntity, pushEntity } from './c.js';
 
 type SyntaxNode = import('tree-sitter').SyntaxNode;
 
@@ -63,6 +63,9 @@ const TYPE_KINDS: Readonly<Record<string, 'class' | 'interface' | 'type'>> = {
 	interface_declaration: 'interface', enum_declaration: 'type', delegate_declaration: 'type',
 };
 
+/** Expressions and bodies hold no declarations; not walking them keeps a deep expression off the stack. */
+const NO_DECLARATIONS = /_expression$|_literal$|^(block|argument_list|arrow_expression_clause|initializer_expression|equals_value_clause)$/;
+
 const modifiers = (node: SyntaxNode): string[] => node.namedChildren.filter(c => c.type === 'modifier').map(c => c.text);
 const visibleOutside = (mods: string[]): boolean => mods.some(m => m === 'public' || m === 'internal' || m === 'protected');
 const join = (...parts: string[]): string => parts.filter(p => p !== '').join('.');
@@ -73,8 +76,8 @@ function handleUsing(node: SyntaxNode, ctx: CsCtx): void {
 	if (target === undefined) return;
 	const name = target.text.replace(/\s+/g, '');
 	const moduleId = makeEntityId('nuget', '', 'module', name);
-	if (ctx.entities.some(e => e.id === moduleId)) return;
-	ctx.entities.push({
+	if (ctx.ids.has(moduleId)) return;
+	addEntity(ctx, {
 		id: moduleId, kind: 'module', name, language: 'csharp', repoId: SHARED_MODULES_REPO_ID.nuget,
 		repo: '', file: '', startLine: 0, endLine: 0, body: '', embedding: [], indexedAt: ctx.now,
 	});
@@ -94,12 +97,15 @@ function handleType(node: SyntaxNode, ctx: CsCtx, scope: Scope): void {
 	});
 	ctx.relations.push({ kind: 'DEFINES', from: outer?.id ?? ctx.fileId, to: id, resolved: true });
 
-	const bases = node.namedChildren.find(c => c.type === 'base_list')?.namedChildren
-		.filter(c => c.type === 'identifier' || c.type === 'qualified_name' || c.type === 'generic_name') ?? [];
+	// A record's base with constructor arguments (`record C(int X) : A(X)`) names its type in a field.
+	const bases = (node.namedChildren.find(c => c.type === 'base_list')?.namedChildren ?? [])
+		.map(c => c.type === 'primary_constructor_base_type' ? c.childForFieldName('type') : c)
+		.filter((c): c is SyntaxNode => c !== null && (c.type === 'identifier' || c.type === 'qualified_name' || c.type === 'generic_name'));
+	const classLike = node.type === 'class_declaration' || node.type === 'record_declaration';
 	bases.forEach((b, i) => {
 		const base = typeName(b);
 		const last = base.split('.').pop()!;
-		const inherits = kind === 'interface' || (node.type === 'class_declaration' && i === 0 && !/^I[A-Z]/.test(last));
+		const inherits = kind === 'interface' || (classLike && i === 0 && !/^I[A-Z]/.test(last));
 		ctx.refs.push({ kind: inherits ? 'INHERITS' : 'IMPLEMENTS', from: id, name: base, scope });
 	});
 
@@ -194,7 +200,7 @@ function walk(node: SyntaxNode, ctx: CsCtx, scope: Scope): void {
 			case 'constructor_declaration': handleMethod(n, ctx, current); break;
 			default:
 				if (TYPE_KINDS[n.type] !== undefined) handleType(n, ctx, current);
-				else walk(n, ctx, current);
+				else if (!NO_DECLARATIONS.test(n.type)) walk(n, ctx, current);
 				break;
 		}
 	}
@@ -214,9 +220,9 @@ class CSharpParser implements CodeParser {
 		const tree = (this.tsParser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
 		const ctx: CsCtx = {
 			repo, repoId, filePath, fileId: makeEntityId(repo, filePath, 'file', filePath),
-			now: new Date().toISOString(), language: 'csharp', entities: [] as Entity[], relations: [], refs: [],
+			now: new Date().toISOString(), language: 'csharp', entities: [] as Entity[], relations: [], ids: new Set(), refs: [],
 		};
-		ctx.entities.push(fileEntity(ctx, source, tree.rootNode.hasError));
+		addEntity(ctx, fileEntity(ctx, source, tree.rootNode.hasError));
 		walk(tree.rootNode, ctx, { namespace: '', types: [] });
 		settleRefs(ctx);
 		return { entities: ctx.entities, relations: ctx.relations };

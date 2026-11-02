@@ -14,7 +14,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { sqlParser } from '../sql.js';
+import { SqlParser, sqlParser } from '../sql.js';
 import { makeEntityId } from '../base.js';
 import { getParser } from '../registry.js';
 import { resolveRelations } from '../../resolver.js';
@@ -124,4 +124,14 @@ test('s9 t8: definitions inside a transaction block are read', () => {
 	const r = parse('BEGIN;\nCREATE TABLE t (id int);\nCREATE VIEW tv AS SELECT * FROM t;\nEND;\n');
 	assert.deepEqual(of(r, 'table'), ['t']);
 	assert.deepEqual(refs(r), ['tv -> t']);
+});
+
+test('s9 review: without the grammar a .sql file is still stored as its document, and SQL is not listed as read', () => {
+	const fallback = new SqlParser(null, null);
+	assert.equal(fallback.language, 'config', 'listed under config, so the languages request keeps sql unavailable');
+	const artifact = getParser('/repo/a.toml')!;
+	const strip = (es: ReturnType<typeof parse>['entities']) => es.map(({ indexedAt: _t, ...rest }) => rest);
+	const r = fallback.parse(FILE, SOURCE, REPO, 1);
+	assert.deepEqual(strip(r.entities), strip(artifact.parse(FILE, SOURCE, REPO, 1).entities));
+	assert.deepEqual(r.relations.map(x => x.kind), ['DEFINES']);
 });

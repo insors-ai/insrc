@@ -24,12 +24,14 @@
  *  - CALLS by callee name (plain or qualified) from each function and method
  *
  * Names are folded with their namespaces (`geo::Shape::area`). A function in
- * an anonymous namespace, or declared static, is not exported.
+ * an anonymous namespace, or declared static, is not exported -- except in a
+ * header, whose functions every including file compiles. A call is named by
+ * the entity of this file it reaches from its scope (`area()` inside
+ * `Shape::twice` is `Shape::area`), else as written.
  *
  * Left out: a call through an object (`obj.m()`) is not recorded -- its
- * target cannot be named without types -- and an unqualified call or base
- * inside a namespace is recorded as written, so it matches only a target of
- * that exact name.
+ * target cannot be named without types -- and a base class is recorded as
+ * written.
  */
 
 import { createRequire } from 'node:module';
@@ -37,8 +39,9 @@ import type { CodeParser, ParseResult } from './base.js';
 import { makeEntityId } from './base.js';
 import type { Entity } from '../../shared/types.js';
 import { loadReader } from './registry.js';
+import { extname } from 'node:path';
 import {
-	type CWalkCtx, collectCalls, declaratorName, fileEntity, functionDeclarator, handleInclude, pushEntity,
+	type CWalkCtx, addEntity, collectCalls, declaratorName, fileEntity, functionDeclarator, handleInclude, pushEntity, qualifyCalls,
 } from './c.js';
 
 type SyntaxNode = import('tree-sitter').SyntaxNode;
@@ -62,9 +65,19 @@ interface Prototype {
 
 interface CppCtx extends CWalkCtx {
 	readonly prototypes: Prototype[];
+	/** A header's functions are compiled into every file that includes it, `static` ones too. */
+	readonly header:     boolean;
 }
 
 const CPP_EXTENSIONS = ['.cpp', '.cc', '.cxx', '.hpp', '.hh', '.hxx', '.h'];
+const HEADER_EXTENSIONS: ReadonlySet<string> = new Set(['.h', '.hpp', '.hh', '.hxx']);
+
+/** Expressions and bodies hold no declarations; not walking them keeps a deep expression off the stack. */
+const NO_DECLARATIONS = /_expression$|_literal$|^(compound_statement|argument_list|initializer_list|condition_clause)$/;
+
+/** Whether a function or member is visible to other files: a header's include its static and anonymous-namespace ones. */
+const visible = (node: SyntaxNode, ctx: CppCtx, scope: Scope): boolean =>
+	(ctx.header || (scope.exported && !isStatic(node))) && (scope.classId === null || scope.access === 'public');
 
 const isStatic = (node: SyntaxNode): boolean =>
 	node.namedChildren.some(c => c.type === 'storage_class_specifier' && c.text === 'static');
@@ -78,7 +91,7 @@ function handleClass(node: SyntaxNode, ctx: CppCtx, scope: Scope): void {
 	if (nameNode === null || body === null) return;
 	const name = `${scope.prefix}${nameNode.text}`;
 	const id = pushEntity(ctx, node, 'class', name, {
-		isExported: scope.exported && scope.access === 'public',
+		isExported: (ctx.header || scope.exported) && scope.access === 'public',
 		signature: `${node.type === 'struct_specifier' ? 'struct' : 'class'} ${name}`,
 	});
 	ctx.relations.push({ kind: 'DEFINES', from: scope.classId ?? ctx.fileId, to: id, resolved: true });
@@ -104,12 +117,11 @@ function handleDefinition(node: SyntaxNode, ctx: CppCtx, scope: Scope): void {
 	const ownerName = scope.classId === null && local.includes('::') ? name.slice(0, cut) : undefined;
 	const ownerId = ownerName !== undefined ? makeEntityId(ctx.repo, ctx.filePath, 'class', ownerName) : undefined;
 	const kind = scope.classId !== null || ownerName !== undefined ? 'method' : 'function';
-	const exported = scope.exported && !isStatic(node) && (scope.classId === null || scope.access === 'public');
 	const id = pushEntity(ctx, node, kind, name, {
-		isExported: exported,
+		isExported: visible(node, ctx, scope),
 		signature: `${node.childForFieldName('type')?.text ?? ''} ${decl.text}`.trim(),
 	});
-	const parent = scope.classId ?? (ownerId !== undefined && ctx.entities.some(e => e.id === ownerId) ? ownerId : ctx.fileId);
+	const parent = scope.classId ?? (ownerId !== undefined && ctx.ids.has(ownerId) ? ownerId : ctx.fileId);
 	ctx.relations.push({ kind: 'DEFINES', from: parent, to: id, resolved: true });
 	const body = node.childForFieldName('body');
 	if (body !== null) collectCalls(body, id, ctx);
@@ -125,7 +137,7 @@ function handleDeclaration(node: SyntaxNode, ctx: CppCtx, scope: Scope): void {
 		kind: scope.classId !== null ? 'method' : 'function',
 		name: `${scope.prefix}${local}`,
 		parentId: scope.classId ?? ctx.fileId,
-		exported: scope.exported && !isStatic(node) && (scope.classId === null || scope.access === 'public'),
+		exported: visible(node, ctx, scope),
 	});
 }
 
@@ -165,18 +177,19 @@ function walk(node: SyntaxNode, ctx: CppCtx, scope: Scope): void {
 			case 'union_specifier':
 			case 'type_definition':
 			case 'alias_declaration':   handleType(n, ctx, scope); if (n.type === 'type_definition') walk(n, ctx, scope); break;
-			default:                    walk(n, ctx, scope); break;
+			default:                    if (!NO_DECLARATIONS.test(n.type)) walk(n, ctx, scope); break;
 		}
 	}
 }
 
 /** Write each prototype no definition took, and narrow a definition's export to its declared access. */
 function settlePrototypes(ctx: CppCtx): void {
+	const defined = new Map(ctx.entities.map(e => [e.id, e]));
 	for (const p of ctx.prototypes) {
 		const id = makeEntityId(ctx.repo, ctx.filePath, p.kind, p.name);
-		const defined = ctx.entities.find(e => e.id === id);
-		if (defined !== undefined) {
-			if (!p.exported) (defined as { isExported?: boolean }).isExported = false;
+		if (ctx.ids.has(id)) {
+			const def = defined.get(id);
+			if (def !== undefined && !p.exported) (def as { isExported?: boolean }).isExported = false;
 			continue;
 		}
 		pushEntity(ctx, p.node, p.kind, p.name, { isExported: p.exported, signature: p.node.text.replace(/\s+/g, ' ').slice(0, 200) });
@@ -198,11 +211,13 @@ class CppParser implements CodeParser {
 		const tree = (this.tsParser as { parse(s: string): { rootNode: SyntaxNode } }).parse(source);
 		const ctx: CppCtx = {
 			repo, repoId, filePath, fileId: makeEntityId(repo, filePath, 'file', filePath),
-			now: new Date().toISOString(), language: 'cpp', entities: [] as Entity[], relations: [], prototypes: [],
+			now: new Date().toISOString(), language: 'cpp', entities: [] as Entity[], relations: [], ids: new Set(), prototypes: [],
+			header: HEADER_EXTENSIONS.has(extname(filePath).toLowerCase()),
 		};
-		ctx.entities.push(fileEntity(ctx, source, tree.rootNode.hasError));
+		addEntity(ctx, fileEntity(ctx, source, tree.rootNode.hasError));
 		walk(tree.rootNode, ctx, { prefix: '', classId: null, exported: true, access: 'public' });
 		settlePrototypes(ctx);
+		qualifyCalls(ctx, '::');
 		return { entities: ctx.entities, relations: ctx.relations };
 	}
 }

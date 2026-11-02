@@ -373,6 +373,10 @@ async function main(): Promise<void> {
 	const { registerBuiltinTools } = await import('./tools/builtins/index.js');
 	registerBuiltinTools();
 
+	// 6b'. The two rules that refresh the tracker status after a git pull or push in a registered repo (Story s9).
+	const { registerTrackerRefreshHooks } = await import('../workflow/tracker/refresh-hooks.js');
+	registerTrackerRefreshHooks({ registeredRepos: async () => new Set((await listRepos(db)).map(r => r.path)) });
+
 	// 6c. Register data-driver kinds (plans/data-driver.md phase 1).
 	//     Drivers self-register at import time; pulling the barrel
 	//     once is the bootstrap.

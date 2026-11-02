@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -105,3 +105,21 @@ Run at 2026-11-02T07:21:34.621Z on commit `b7605021b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-recovery.test.ts` | 0 | 4 | 2.7 s |  |
+
+## t5
+
+Run at 2026-11-02T07:27:05.062Z on commit `f14a8ef95`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: durable-append-frontier-and-full-queue-refusal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | durable-append-frontier-and-full-queue-refusal | `packages/project-memory/src/__tests__/queue-append.test.ts` |
+| pass | oversized-single-frame-rotates-without-exceeding-retained-budget | `packages/project-memory/src/__tests__/queue-append.test.ts` |
+| pass | ambiguous-append-fences-and-reopen-deduplicates | `packages/project-memory/src/__tests__/queue-append.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-append.test.ts` | 0 | 3 | 1.5 s |  |

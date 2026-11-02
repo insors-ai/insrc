@@ -1,0 +1,11 @@
+# S2 design verification
+
+- Scope: owns sc3; consumes unchanged sc1/sc2. No S2 implementation, Lance schema, semantic pipeline, IPC process or IDE UI change is included.
+- Existing source integration and public types were located through insrc_analyze_step, then read directly. The graph's missing data-model fields and incomplete caller edges are explicitly treated as limitations. The broad test lookup returned unrelated JetBrains results; the package manifest/test source is the framework fallback.
+- Generated definitions are in the LLD JSON. The engine authored both companion references and their diagrams. Every modeled entity/attribute and sequence participant/message has a description.
+- Visual inspection used isolated local headless Chrome after CUA reported no available browser. Sequence preview: nine participants and 24 messages, including accepted only after frontier directory sync, future receipt proof before terminal bookkeeping and retirement before unlink. ER preview: six entities and lifecycle-aware ownership/reference relationships; bootstrap may have no child segments/checkpoints, while ready requires an active segment/current checkpoint.
+- Presentation repair: generated companion HTML emitted embedded font-face CSS outside a style element. The author enclosed that CSS without changing definitions, SVG content or companion references. Regeneration requires the same presentation verification until the independent renderer issue is corrected. The generated Markdown's display date was aligned to its authoritative epicCreatedAt metadata; identity/hash/path are unchanged.
+- Both generated HTML files contain inline SVG and embedded fonts with no external scripts. Source/metadata and diagram relationships were checked; generated styling is a presentation correction, not a memory-module software change.
+- API/durability design uses Node 22 filesystem documentation and Linux fsync/rename specifications. These support primitive semantics only: S2 crash, resource and latency qualification remains future build evidence, not claimed as complete here.
+- Required qualification covers macOS/APFS and Linux/ext4 under Node >=22.22.1 <23. SIGKILL/fault injection does not establish hardware power-loss guarantees.
+- Planning/build and LLD approval remain separate user gates after independent design review.

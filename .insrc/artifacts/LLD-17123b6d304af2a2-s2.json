@@ -1,0 +1,1232 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793598103783-07qdun",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T05:41:44.279Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 462,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicHash": "17123b6d304af2a2",
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1793536573467-3p0dt6",
+    "hldEffectiveHash": "18ac1fc6f9d6876c125e243762b023f8b6fc223d9c20904cdbbee1c8e5588af9",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "S2 makes eligible submissions durable before returning accepted, using a separate bounded, rotating file journal inside the standalone memory package. Recovery preserves accepted identities and order, explicitly isolates incomplete unaccepted tails, and stops on corruption instead of skipping accepted data. Semantic processing and authoritative receipts remain with S3/S4; S2 never equates queue acceptance with canonical memory activation. [[c1]] [[c2]]"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: ports-and-adapters library with optional local service host. The library owns one queue, one context-builder processing loop and one dedicated Lance connection per resolved data directory. Admission, project policy and source identity are common to both hosts. Standalone and embedded execution must pass the same behavioral and failure suite. [[c1]] [[c2]]",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "Durable ingestion and replay",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "purpose": "Serialize admission, expose durable event identity and safely recycle only fully resolved segments.",
+          "interfaceSketch": "interface QueueFrame { formatVersion: 1; sequence: string; operationId: string; command: MemoryCommand; checksum: string; payloadHash: string; }\ninterface QueueCursor { segmentId: string; byteOffset: string; }\ninterface QueueStats { pendingBytes: number; oldestPendingMs: number; pendingEvents: number; }\ninterface DurableQueue { append(command: MemoryCommand): Promise<OperationReceipt>; replay(): AsyncIterable<QueueFrame>; markResolved(operationId: string, generation: string): Promise<void>; stats(): QueueStats; seal(): Promise<void>; recycleResolvedSegments(): Promise<void>; close(): Promise<void>; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Host ports and package lifecycle",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "purpose": "Versioned dependency boundary for independent embedded execution; no backend imports, implicit globals or ownership of supplied providers. All module model requests use a module-local dispatcher; supplied ports do not imply an existing daemon-wide scheduler.",
+          "interfaceSketch": "type Json = null | boolean | number | string | Json[] | { [key: string]: Json };\ninterface ProjectBinding { projectId: string; root: string; scopeEpoch: string; }\ninterface ModelRequest { role: 'normalize' | 'reconcile' | 'compress' | 'validate'; input: Json; schema: Json; signal: AbortSignal; }\ninterface ModelPort { complete(request: ModelRequest): Promise<Json>; embed(text: string, signal: AbortSignal): Promise<readonly number[]>; readonly embeddingModel: string; readonly embeddingDimension: number; }\ninterface HostPolicy { bind(projectId: string, sessionId?: string): Promise<ProjectBinding>; admit(binding: ProjectBinding, event: Json): Promise<Json>; }\ninterface MemoryOptions { dataDirectory: string; models: ModelPort; policy: HostPolicy; logger: MemoryLogger; limits: MemoryLimits; }\ninterface MemoryLogger { write(level: 'debug' | 'info' | 'warn' | 'error', event: string, fields: Record<string, string | number | boolean>): void; }\ninterface MemoryLimits { maxEventBytes: number; maxPendingBytes: number; segmentBytes: number; modelTimeoutMs: number; }\ninterface MemoryLifecycle { ready(): Promise<void>; drain(deadlineMs: number): Promise<DrainResult>; close(): Promise<void>; }\ninterface DrainResult { completed: boolean; pending: number; }\ninterface MemoryFactory { open(options: MemoryOptions): Promise<MemoryService>; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Application service and domain wire types",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "purpose": "One versioned typed command/query model shared by embedded, IPC and insrc adapters; all mutation paths enqueue.",
+          "interfaceSketch": "type OperationState = 'accepted' | 'processing' | 'committed' | 'failed' | 'quarantined' | 'cleanup-pending';\ninterface Scope { projectId: string; sessionId?: string; branch?: string; environment?: string; }\ninterface SourceIdentity { producerId: string; eventId: string; sessionId: string; turnId: string; sourceVersion: string; }\ninterface MemoryCommand { version: 1; scope: Scope; source: SourceIdentity; kind: 'capture' | 'correct' | 'forget' | 'resolve' | 'maintenance' | 'delivery'; payload: Json; expectedRevision?: string; }\ninterface OperationReceipt { operationId: string; eventId: string; state: OperationState; generation?: string; errorCode?: string; }\ninterface ReadRequest { scope: Scope; budgetTokens: number; afterOperationId?: string; deadlineMs?: number; }\ninterface SearchRequest extends ReadRequest { query: string; limit: number; }\ninterface InspectRequest { scope: Scope; memoryId: string; }\ninterface ContextResult { generation: string; items: readonly MemoryView[]; overflow: boolean; degraded: boolean; }\ninterface MemoryView { id: string; revision: string; kind: string; text: string; status: string; sourceIds: readonly string[]; }\ninterface OperationRequest { scope: Scope; operationId: string; }\ninterface MemoryService extends MemoryLifecycle { submit(command: MemoryCommand): Promise<OperationReceipt>; context(request: ReadRequest): Promise<ContextResult>; search(request: SearchRequest): Promise<ContextResult>; inspect(request: InspectRequest): Promise<Json>; operation(request: OperationRequest): Promise<OperationReceipt>; }\ninterface MemoryFailure { code: 'INVALID_REQUEST' | 'UNBOUND_PROJECT' | 'POLICY_DENIED' | 'BACKPRESSURE' | 'NOT_READY' | 'UNSUPPORTED_VERSION' | 'OWNERSHIP_CONFLICT' | 'REVISION_CONFLICT' | 'STORE_UNAVAILABLE' | 'CONTEXT_OVERFLOW' | 'DEADLINE_EXCEEDED'; retryable: boolean; operationId?: string; }",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Private segment framing, append/fsync scheduling, checkpoint replacement, tail recovery and disk accounting. Producer source keys are retained through authoritative store receipts; queue recycling alone never authorizes forgetting retry identity."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Private lifecycle state machine, directory canonicalization and OS ownership guard. Public v1 types describe the final service; incremental builds must report unsupported/not-ready behavior explicitly rather than accept unimplemented work. Module-local model dispatch serialization is private to this foundation and covers all callers, including read embeddings."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private Arrow/Lance physical row encoding, receipt lookup, single-table commit, current generation, revision checks and tombstone matching. No other story obtains a direct mutation handle."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Private bounded source-context expansion, slot normalization, candidate retrieval, authority and equivalence classification, fidelity checks and serial model scheduling. No normalization result becomes active before the guarded store commit."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "Private exact/lexical/vector ranking, mandatory-directive selection, generation-keyed caches and budget packing. Inspect and search share project binding and deletion filters."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private local-socket framing, connection limits, version handshake, transport cancellation and process signal handling in the executable only. Embedded API import installs no handlers. Remote client disconnect never stops the server."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc8"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private insrc registry binding, temporary-execution refusal, host provider translation and managed turn ownership. VS Code/JetBrains/MCP remain IPC clients; backend integration does not expose index/LMDB handles to the package. This story owns the explicit host admission/coordination design for daemon and memory model work; no existing global scheduler is assumed."
+        },
+        {
+          "storyId": "s8",
+          "owns": [
+            "sc9"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8"
+          ],
+          "internal": "Private CLI-version qualification, trusted hook bootstrap, incremental transcript parser, local spool qualification and capability reporting. Adapter installation requires explicit host configuration; user approval and tool transcripts are not promoted to standing directives."
+        },
+        {
+          "storyId": "s9",
+          "owns": [
+            "sc10"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8",
+            "sc9"
+          ],
+          "internal": "Private retention planning, purge accounting, Lance version cleanup, migrations, source-qualified lesson proposals and corpus evaluation orchestration. No maintenance timer writes outside the command/worker path."
+        }
+      ],
+      "rolloutPhase": "A — Independent durable foundation",
+      "nonFunctional": {
+        "performance": "Bound source expansion, event size, pending disk bytes, candidate counts, model timeouts, IPC frames and context token budgets. Queue acceptance latency measures append+fsync separately from semantic commit latency. Initial target is bounded memory and nonblocking request handling; p50/p95 acceptance, commit, recall and cold-open thresholds must be measured on named hardware/corpus in LLDs before release. Accuracy takes precedence over throughput. Embedding/model calls are serial; cached reads perform no inference.",
+        "security": "Project/session binding and eligibility before enqueue; per-request scope validation and local endpoint access restrictions. No raw prompts/queue content in routine logs. Memory is subordinate context; no hidden reasoning, credentials or automatic cloud REST. Different projects and directories remain isolated. Temp/session-memory execution restrictions remain enforced in insrc and explicit equivalent policy is required of other hosts.",
+        "observability": "Bounded metadata: operation/event identity, project pseudonym, queue backlog/oldest age, processing stage/retries, generation, duration, privacy-safe failure code and capture/delivery capability state. Distinguish unavailable/empty, accepted/committed, prepared/delivered, logical delete/physical cleanup. Provide explicit inspection rather than routine payload logging.",
+        "durability": "No acknowledged event loss in the supported crash model; at-least-once replay with idempotent committed effects. OS process death, partial writes, fsync failure, lost IPC replies, commit-before-ack, ownership contention and shutdown require fault-injection evidence. Disk/controller failure outside the qualified fsync contract and external native transcript/backups have explicit limits. Lance atomicity/reader freshness are mandatory s3 evidence gates, not assumptions."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DurableQueue",
+          "signature": "interface DurableQueue { append(command: MemoryCommand): Promise<OperationReceipt>; replay(): AsyncIterable<QueueFrame>; markResolved(operationId: string, generation: string): Promise<void>; stats(): QueueStats; seal(): Promise<void>; recycleResolvedSegments(): Promise<void>; close(): Promise<void>; }",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "MemoryCommand",
+              "purpose": "append: immutable v1 envelope, validated and admitted through the same policy path as MemoryService.submit.",
+              "optional": false
+            },
+            {
+              "name": "operationId",
+              "type": "string",
+              "purpose": "markResolved: previously accepted deterministic operation identity, never an arbitrary cursor.",
+              "optional": false
+            },
+            {
+              "name": "generation",
+              "type": "string",
+              "purpose": "markResolved: committed generation which the receipt verifier must corroborate.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<OperationReceipt> | AsyncIterable<QueueFrame> | QueueStats | Promise<void>",
+            "meaning": "New appends return accepted only after event and frontier durability. Exact retries return the existing receipt (accepted in queue-only S2; an authoritative terminal state only from the verifier). replay yields pinned pending frames in sequence. Queue bookkeeping never proves a store mutation."
+          },
+          "errors": [
+            {
+              "type": "MemoryError(INVALID_REQUEST|UNSUPPORTED_VERSION)",
+              "condition": "Malformed/oversized/non-JSON command, unsupported frame/schema version, unsafe queue path or noncanonical encoding."
+            },
+            {
+              "type": "MemoryError(UNBOUND_PROJECT|POLICY_DENIED|NOT_READY)",
+              "condition": "Binding/eligibility refusal, unavailable policy, closed admission, absent required receipt capability or unsupported incremental capability."
+            },
+            {
+              "type": "MemoryError(REVISION_CONFLICT)",
+              "condition": "The project/producer/event identity is reused with different admitted command content or binding epoch."
+            },
+            {
+              "type": "MemoryError(BACKPRESSURE)",
+              "condition": "RAM admission, frame-count, segment-count or retained-journal-byte budget would be exceeded; existing accepted work is retained."
+            },
+            {
+              "type": "MemoryError(STORE_UNAVAILABLE)",
+              "condition": "Uncertain write/sync outcome, unsafe ownership change, corrupt accepted data, invalid published checkpoint, receipt lookup failure or unverified cleanup."
+            }
+          ],
+          "preconditions": [
+            "Existing sc1 ownership guard is held throughout queue startup, mutation, recovery and close; no competing writer is opened.",
+            "Queue lives only at dataDirectory/queue; no backend/global storage helper is imported.",
+            "The queue-owned receipt-verification port is mandatory before terminal acknowledgement/recycling and after the durable receipt barrier has been installed."
+          ],
+          "postconditions": [
+            "No accepted acknowledgement precedes data sync and durable publication of the accepted frontier.",
+            "All queue mutations share one FIFO; no failed or timed-out wrapper permits overlapping file mutation.",
+            "A sealed segment is removed only after durable terminal proof, retirement publication, and reader-pin release.",
+            "Caller retries retain stable identity; identical accepted submissions do not append another logical event."
+          ]
+        },
+        {
+          "name": "MemoryService",
+          "signature": "interface MemoryService extends MemoryLifecycle { submit(command: MemoryCommand): Promise<OperationReceipt>; operation(request: OperationRequest): Promise<OperationReceipt>; context(request: ReadRequest): Promise<ContextResult>; search(request: SearchRequest): Promise<ContextResult>; inspect(request: InspectRequest): Promise<Json>; }",
+          "parameters": [
+            {
+              "name": "command",
+              "type": "MemoryCommand",
+              "purpose": "submit: eligible source/control command to persist, not a canonical-memory write.",
+              "optional": false
+            },
+            {
+              "name": "request",
+              "type": "OperationRequest",
+              "purpose": "operation: bound scope and stable operation ID for side-effect-free status lookup.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<OperationReceipt>",
+            "meaning": "S2 submit returns accepted for durable pending work. S2 operation returns accepted for an authorized retained event; future verified terminal state comes only from the receipt port. Context/search/inspect continue to reject NOT_READY until their owning stories exist."
+          },
+          "errors": [
+            {
+              "type": "MemoryError",
+              "condition": "Uses the unchanged sc2 codes and sanitized messages from durable ingress; unknown operation in an unrecycled queue is INVALID_REQUEST, unavailable required receipt lookup is NOT_READY/STORE_UNAVAILABLE rather than fabricated absence."
+            }
+          ],
+          "preconditions": [
+            "S1 options validation, dedicated directory ownership and queue recovery have completed.",
+            "Binding and eligibility run before persistence; operation rebinds and checks requested scope before any receipt is returned. There is no implicit permissive policy."
+          ],
+          "postconditions": [
+            "Admission cannot change project/source identity, scope qualifiers, kind, version or expectedRevision; policy may redact payload, after which the complete returned command is revalidated.",
+            "No provider inference, semantic extraction, Lance connection or canonical-memory success is introduced in S2.",
+            "Shutdown stops new append admission, finishes or safely fences in-flight work, leaves accepted backlog replayable, closes queue resources, then releases sc1 ownership."
+          ]
+        },
+        {
+          "name": "QueueFrame",
+          "signature": "interface QueueFrame { readonly formatVersion: 1; readonly recordType: 'event'; readonly sequence: string; readonly operationId: string; readonly command: MemoryCommand; readonly checksum: string; readonly payloadHash: string; readonly queueId: string; readonly admittedAtMs: number; readonly scopeEpoch: string; }",
+          "parameters": [],
+          "returns": {
+            "type": "QueueFrame",
+            "meaning": "Owned sc3 frame extends the HLD sketch with required provenance for recovery and later revalidation. Every frame belongs to exactly one segment; command is the immutable admitted sc2 envelope."
+          },
+          "errors": [
+            {
+              "type": "MemoryError(STORE_UNAVAILABLE|UNSUPPORTED_VERSION)",
+              "condition": "Checksum/length/queue ID/sequence/canonical-byte mismatch or unsupported on-disk version."
+            }
+          ],
+          "preconditions": [
+            "Decode bounded bytes before JSON parsing; verify the full envelope and exact canonical re-encoding."
+          ],
+          "postconditions": [
+            "Sequence is canonical unsigned-64 decimal, starting at 1; no Number conversion or wrap/reset.",
+            "payloadHash is SHA-256 of the canonical admitted command; checksum covers the entire remaining frame body including provenance.",
+            "The public receipt shape and source occurrence-time evidence remain unchanged; admittedAtMs is arrival time only."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Queue format, files and safety boundaries",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/host-node.ts",
+          "packages/project-memory/src/ownership.ts",
+          "packages/project-memory/src/configuration.ts"
+        ],
+        "details": "Proposed implementation files: packages/project-memory/src/queue/types.ts; packages/project-memory/src/queue/codec.ts; packages/project-memory/src/queue/io.ts; packages/project-memory/src/queue/checkpoint.ts; packages/project-memory/src/queue/recovery.ts; packages/project-memory/src/queue/file-queue.ts; packages/project-memory/src/queue/admission.ts. These are proposals, not existing helpers. Modify the existing host/runtime only to compose this owned participant and ingress. Disk layout: queue/format.json (immutable version/queue UUID), queue/segments/<20-digit-segment-id>.jsonl, queue/checkpoint.json, queue/checkpoint.prev, queue/checkpoint.next, queue/checkpoint.prev.next, and bounded queue/recovery.json or queue/fault.json. receipt-barrier.json is a write-once requirement marker installed before first retirement. There is no Lance/LMDB/receipt database here. Directory and files are owned-uid, private, regular/single-link, no-follow; queue directory cannot be a symlink. Assert sc1 ownership before mutations; verify file/directory identity around publication. Recycle uses verified basenames and unlink only, never recursive parent cleanup. Unknown nonempty queue content is refused. Initial empty queue creation fsyncs new children and parent entries before readiness; recognized interrupted bootstrap with no published checkpoint may recover only header-only/temporary files, never discard event-bearing files. [[c1]] [[c2]]"
+      },
+      {
+        "entity": "Admission snapshot and stable retry identity",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/types.ts",
+          "packages/project-memory/src/runtime.ts",
+          "packages/project-memory/src/host-node.ts"
+        ],
+        "details": "Validate/copy caller input at invocation, not after awaiting policy. Accept only bounded acyclic JSON data, plain own data properties, dense arrays and finite numbers; reject accessors, unsupported prototypes, malformed Unicode, symbols and unknown envelope fields. No raw object/string is logged. Canonical encoding sorts object keys by fixed UTF-16 order, preserves arrays/string content without Unicode/path normalization, and uses deterministic JSON number encoding (including explicit -0 preservation). Validate the complete sc2 v1 envelope and kind set; strings used as identities are nonempty and bounded, with <=512 UTF-8 bytes per identity/qualifier and <=256 for sourceVersion/scopeEpoch. maxEventBytes bounds both raw snapshot and policy-returned command; nesting <=32 and nodes <=65536. HostPolicy.bind(projectId, scope.sessionId) must return the same project and valid root/epoch; HostPolicy.admit receives the bound complete command before durable writes. Revalidate its JSON output; only payload redaction is allowed, not identity/scope/kind/version/revision changes. Typed policy refusal maps to UNBOUND_PROJECT/POLICY_DENIED; unknown host failures are sanitized NOT_READY. No permissive default. Calls are processed in invocation FIFO, including policy awaits. A policy promise that never settles blocks the lane and causes drain deadlines to report incomplete; it is never treated as accepted. Identity key = canonical {version:1, projectId, producerId, eventId}; operationId = SHA256(domain-separator plus key), not queue cursor/random nonce. Compare payloadHash plus recorded scopeEpoch for retries. Same key/content/epoch returns the stable accepted receipt; changed content or epoch is REVISION_CONFLICT without overwriting the first event. Perform dedup lookup before physical-budget refusal so an exact retry needs no new journal space. Append retries rebind and re-admit. Operation status rebinds the requested project/session and validates any supplied session/branch/environment qualifiers against the stored scope; a mismatch is indistinguishable from unknown. Status never persists or invokes payload-redaction as a mutation. [[c1]] [[c2]]"
+      },
+      {
+        "entity": "Framed JSONL codec and bounded resource accounting",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/types.ts",
+          "packages/project-memory/src/configuration.ts"
+        ],
+        "details": "Each physical line is canonical JSON {bytes:<body UTF-8 length>, checksum:<64 lower-case SHA256 hex>, frame:<body without checksum>} followed by LF. This is JSONL with explicit framing metadata, not newline-only durability. The initial segment-header line uses the same envelope with formatVersion=1, recordType='segment', queueId, segmentId and firstSequence; event bodies carry QueueFrame fields except checksum, with recordType='event'. Verify exact bytes/length/checksum/version, field allowlists, strict UTF-8, canonical representation and contiguous sequence before use. No JSON.parse or allocation from an untrusted length precedes a cap check; stream bounded chunks and reject overlong lines. Event commands are capped by caller maxEventBytes; qualify maxEventBytes <=16 MiB as a supported implementation ceiling, no new default. Allow at most maxEventBytes + 4096 physical bytes per event frame; metadata bounds above make this envelope overhead finite. maxPendingBytes counts actual retained segment bytes (headers and resolved prefixes included) plus reserved in-flight append bytes, not only payload sizes. Never evict accepted events. segmentBytes is a target: rotate before adding a frame that would cross it; a single valid frame larger than the target gets a dedicated bounded segment, still subject to maxPendingBytes. This preserves the S1 option relationship without pretending envelope overhead is zero. Private caps: 64 admitted/in-flight calls, 65536 indexed frames and 65536 segments; ingress accounting <=min(64 MiB, maxPendingBytes, 4*maxEventBytes), with incremental encoded-byte/key/node charges reserved before copying each item and refunded on failure. This is a bounded logical quota, not a promise about V8 RSS; the caller's existing heap and hostile JavaScript execution are outside the module sandbox. Exceeding any cap is explicit BACKPRESSURE. Checkpoint decoding <=32 MiB, with bounded per-frame retry/retirement metadata; control files are outside maxPendingBytes but separately bounded to at most four checkpoint-sized files plus small markers/reports. Report that physical overhead; maxPendingBytes is not a promise that total directory size equals that value. Release gates measure actual resource use; no arbitrary production segment/event default is selected. To guarantee future control-state transitions fit, reserve checkpoint capacity before acknowledging each frame/segment: 64 KiB fixed allowance plus 2048 bytes per retained frame and 512 per segment must fit the 32 MiB checkpoint cap. Codec tests must prove every allowed retry/terminal/retirement representation fits that allowance; metadata-cap backpressure may occur before the outer 65536-entry ceiling. Generation/receipt metadata strings are <=128 UTF-8 bytes; identity/checksum digests have fixed lengths. Retire one segment at a time, so transition state is bounded. These are implementation safety ceilings, not operational defaults or measured performance claims. Queue-specific limit validation is pure and occurs before acquiring sc1 ownership: maxEventBytes <=16 MiB and maxPendingBytes >=512 bytes (the qualified empty-segment header upper bound). No operational default is added. The segment target may be below header/frame size, but actual encoded bytes always count toward the retained-byte budget. A <=512-byte header bound and per-entry reservation bounds are proving tests, not assumptions. [[c1]] [[c2]]"
+      },
+      {
+        "entity": "Serialized append and durable acceptance frontier",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/runtime.ts",
+          "packages/project-memory/src/ownership.ts"
+        ],
+        "details": "All append, retry bookkeeping, seal, checkpoint and retirement mutations use one bounded FIFO. After policy/dedup, reserve full encoded bytes and private index capacity, validate ownership/file identity, then loop FileHandle.write until every byte is written (zero progress/short-write errors fail). Sync the segment; new-file creation also syncs its parent. Publish a checkpoint containing segment durable byte offsets/counts, last accepted sequence and pending identity/status metadata after data sync. Only after checkpoint replacement plus required directory sync succeeds may accepted be returned. A lost reply does not undo the frame. Any write/sync/rename uncertainty fences further mutations: return retryable STORE_UNAVAILABLE with deterministic operationId when available, wait for all underlying I/O to settle, and require close/reopen recovery. Do not append again after a failed partial write in the same live instance. Group commit is not implemented initially. Node FileHandle.write/sync API semantics are supported by https://nodejs.org/download/release/v22.22.1/docs/api/fs.html; directory durability is a distinct step per https://man7.org/linux/man-pages/man2/fsync.2.html. These references motivate the proposed protocol, not a claim that it has already passed crash qualification. [[c1]] [[c2]]"
+      },
+      {
+        "entity": "Checkpoint publication and segment rotation",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/configuration.ts",
+          "packages/project-memory/src/ownership.ts"
+        ],
+        "details": "Checkpoint v1 contains queueId, canonical decimal generation, active segment, referenced segments with accepted offsets/counts/first-last sequences and sealed/retiring state, terminal bitmaps, bounded retry records, last accepted sequence, and receipt-barrier requirement. It never proves a store mutation committed. Each serialized replacement first writes the prior validated current bytes to checkpoint.prev.next, loops writes, syncs, renames to checkpoint.prev and syncs queue directory; then writes/syncs checkpoint.next, renames over checkpoint.json and syncs directory. Retain previous valid bytes through publication. Published invalid current metadata is fail-closed corruption, not permission to roll acceptance back to an older checkpoint; previous remains for explicit repair/inspection. Unpublished .next data is never an accepted frontier. Filesystem rename atomicity is distinct from durability (https://man7.org/linux/man-pages/man2/rename.2.html). Rotation does not rename active data files: segment identity/filename stays fixed and checkpoint marks sealed/active. Sync the old segment, create/sync a successor header and its directory entry, publish old sealed/new empty active, then append. Header-only orphan successor at exactly the expected next ID may be removed/reused by qualified recovery; an event-bearing unreferenced segment or an unknown name is a fault. Never overwrite a referenced segment. Initial bootstrap has no accepted event until a valid checkpoint exists; a missing checkpoint after event-bearing history is not reset to empty. [[c1]] [[c2]]"
+      },
+      {
+        "entity": "Recovery, reader snapshots and retry bookkeeping",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/runtime.ts",
+          "packages/project-memory/src/__tests__/ownership.test.ts",
+          "packages/project-memory/src/__tests__/runtime.test.ts"
+        ],
+        "details": "Startup under ownership validates format/IDs/paths and all published checkpoint metadata before readiness. Stream every referenced sealed segment strictly to expected end; validate active bytes through its durable accepted frontier. Missing/truncated/checksum-invalid content at or before that frontier, bad published metadata, sequence gaps, or any duplicate physical identity (even if hashes agree) is explicit STORE_UNAVAILABLE: preserve bytes in place, write bounded fault metadata if possible, quarantine the queue logically and do not expose partial success. Beyond the accepted active frontier, recover complete canonical valid contiguous frames as possibly-unacknowledged events; sync and publish their recovered frontier before exposing them. Only a final unterminated partial frame starting beyond the frontier may be removed: publish a bounded recovery intent/report with original size, truncate offset and suffix hash (no payload), then truncate/sync and publish state; recovery can resume this intent idempotently. Any complete corrupt line, sealed corruption or unreferenced event-bearing file is never skipped. Rebuild identity index from validated retained frames, not a second authoritative database. replay snapshots only durable pending entries, yields ascending sequence, and pins referenced segments against recycling until iterator return/finally. One context-builder replay consumer is supported; future S4 may schedule unrelated scopes, but S2 assigns total ingress order and never reorders itself. Private recordRetry metadata persists attempt count/nextEligibleAt/error code through the same checkpoint lane; S4 owns retry/backoff/causal scheduling decisions. Retry state does not mark an event resolved, and a poison event remains retained until a verified durable terminal disposition. oldestPendingMs uses saved admission wall time for diagnostics only; sequence defines ordering. [[c1]] [[c2]]"
+      },
+      {
+        "entity": "Store-backed terminal proof and recycling",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/runtime.ts",
+          "packages/project-memory/src/types.ts"
+        ],
+        "details": "Proposed private sc3-owned ReceiptVerifier port (in queue/types.ts) performs side-effect-free lookup by stable identity and lookup by operationId; results distinguish absent from unavailable and return minimal {operationId, identityDigest, payloadHash, scopeEpoch, generation, receipt, queueTerminal:true}. S3 implements this port from authoritative retained receipts/tombstones; A verified receipt may report committed, durably terminal failed/quarantined, or cleanup-pending when logical processing is complete; the explicit queueTerminal flag, matching generation and identity are required. Cleanup-pending is not a claim that physical purge is complete, and a transient failed attempt is not terminal. S2 does not import sc4/store code or design its physical schema. Every future store-backed append consults it before inferring absence. markResolved verifies a durable logical-processing terminal receipt matching accepted identity/hash/epoch and requested generation, then durably checkpoints terminal bookkeeping. An arbitrary generation string, processing flag, timeout or retry counter cannot resolve an event. S2 queue-only mode has no verifier: it can accept/replay pending commands but cannot mark terminal or recycle. Before first retirement, durably create the write-once receipt-barrier.json marker; a queue requiring that capability cannot be reopened for queue-only admission without it. This prevents downgrade/recycle from losing retry barriers. Pick only sealed, fully proven terminal segments with zero reader pins. Publish a retiring checkpoint with bounded identity/generation references before any unlink; unlink exact verified files and fsync segments directory, then publish final removal while retaining receipt-barrier requirement. If interrupted, recovery finishes the recorded retirement or stops on unavailable proof; it never replays an intentionally retired missing file. The final queue checkpoint drops retired frame identities; S3 receipts remain authoritative for duplicate/forget replay boundaries beyond recycling. S9 owns when receipt/tombstone compaction is safe. No second permanent queue receipt store or invented producer-watermark protocol is introduced. [[c1]] [[c2]]"
+      },
+      {
+        "entity": "S2 service composition and incremental capability",
+        "change": "invariant-change",
+        "callSites": [
+          "packages/project-memory/src/host-node.ts",
+          "packages/project-memory/src/runtime.ts",
+          "packages/project-memory/src/types.ts",
+          "packages/project-memory/src/__tests__/runtime.test.ts"
+        ],
+        "details": "Consume sc1/sc2 without signature changes. The host first validates options and acquires S1 ownership, constructs a private queue owner with tracked partial-startup resources, awaits queue recovery, and only then returns a service with an ingress delegate and queue OwnedWork participant. Queue startup/close failures are awaited; the factory releases ownership only after all queue I/O/handles are verified quiescent. Failure to verify cleanup retains ownership and reports STORE_UNAVAILABLE. Queue never closes the host's provider/policy/logger or ownership guard itself. submit is now real durable acceptance only; operation is an authorized read of retained queue status, never a new writer. context/search/inspect remain NOT_READY. With no S3/S4 processor, events remain accepted and replayable; this is explicitly queue readiness, not semantic availability. stopAdmission disables new external appends but permits already-owned internal resolution bookkeeping until worker quiescence in later composition. Queue drain waits for admitted calls and I/O/snapshot leases, not for durable pending backlog to become semantic memory; backlog remains on disk at close. Deadline counts active owned work separately from QueueStats.pendingEvents. Close seals/syncs and closes queue handles only after the lane and readers settle; an ignored host-policy promise or unreturned internal replay iterator can make drain incomplete and close wait, retaining ownership safely. Later S3/S4 composition drains producers/worker before queue release. New tests must distinguish participant work.drain from service.drain; they are not a recursive service call. [[c1]] [[c2]]"
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Use unchanged S1 options, ownership guard, explicit data directory, supplied host resources, lifecycle and serialized model dispatcher. S2 performs no model calls, adds no process handlers or backend imports, and composes queue work through private lifecycle participants."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Use unchanged command/source/scope/receipt/failure types. Implement durable accepted submission and authorized queue status only; validate host-policy output before persistence. No committed/empty-read success is fabricated."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Own frame/cursor/stats, serialization, fsync frontier, checkpoint/rotation/recovery, retry bookkeeping and receipt-verified retirement. Internal verifier port is owned here and implemented later by S3, avoiding reverse dependency or a second authoritative store."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Malformed, mutable or oversized command",
+          "detection": "The bounded snapshot/canonical encoder checks own-data fields, prototype/array shape, cycles, depth/node/UTF-8 caps, v1 enum/required fields and identities before policy/I/O.",
+          "response": "Reject INVALID_REQUEST before persisting; release RAM reservation and never log payload.",
+          "userImpact": "No acceptance is reported.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unbound/denied or invalid host-policy result",
+          "detection": "Binding result project/root/epoch validation, typed policy refusal, or immutable envelope comparison after admit fails.",
+          "response": "Return UNBOUND_PROJECT/POLICY_DENIED; unknown port failure is sanitized NOT_READY. No queue write; a never-settling callback keeps its lane/ownership and drain reports incomplete.",
+          "userImpact": "Prohibited source never reaches queue, telemetry or models.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Retry identity reused with changed admitted content or epoch",
+          "detection": "Index/receipt lookup finds same project-producer-event key with different canonical payload hash or recorded scope epoch.",
+          "response": "REVISION_CONFLICT; preserve original event and receipt. Same content returns the existing state without another append.",
+          "userImpact": "No silent overwrite or duplicate logical event.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Ingress, journal or metadata capacity exhausted",
+          "detection": "Reservation checks include snapshot bytes/call count, full encoded frame/header bytes, retained physical segments and worst-case checkpoint growth.",
+          "response": "BACKPRESSURE before mutation; allow exact dedup retry after policy even when journal space is full. Pending events are not evicted.",
+          "userImpact": "Producer gets visible retry/defer signal.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Partial write, zero-progress write, ENOSPC or sync failure",
+          "detection": "writeAll observes byte counts/errors; sync/rename/directory-sync promises reject or ownership/identity checks fail.",
+          "response": "No accepted reply. Fence the mutation lane, settle underlying I/O, return STORE_UNAVAILABLE with operationId when known, and recover on close/reopen. Failed/uncertain submissions may later be found durable; error does not promise absence.",
+          "userImpact": "Caller queries/retries stable identity, never blindly assigns a new one.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Crash after full append but before acceptance-frontier publication or reply",
+          "detection": "Recovery sees valid contiguous complete suffix frames beyond a verified checkpoint frontier.",
+          "response": "Sync and publish the recovered frontier before exposing those events. Caller retry returns same operation identity. An incomplete EOF suffix is treated separately.",
+          "userImpact": "Complete possibly-unacknowledged work is recoverable; no duplicate logical event.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Provably incomplete unaccepted EOF suffix",
+          "detection": "Active file ends without a complete canonical LF-terminated frame, and its start is strictly at/after the verified accepted offset; all prior accepted bytes validate.",
+          "response": "Persist bounded recovery intent/hash/offset, truncate only that suffix and sync; finish intent idempotently after restart. Never truncate within the accepted frontier.",
+          "userImpact": "Only unaccepted incomplete bytes are isolated; complete accepted events remain.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Corrupt accepted data, complete bad line, missing referenced file or sequence gap",
+          "detection": "Bounded decoder/checkpoint validation detects checksum/length/queue-ID/canonical-byte/sequence/count/offset mismatch, including corruption inside a published frontier or sealed file.",
+          "response": "Fail readiness/admission with STORE_UNAVAILABLE, preserve original bytes and logically quarantine; write only bounded fault metadata if possible. No skip-to-next-line or automatic reset.",
+          "userImpact": "Operator sees explicit unavailable/recovery-required state rather than partial success.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Uncertain/invalid published checkpoint or unsupported format",
+          "detection": "Current/previous canonical checkpoint validation fails or published generation/version/state references are inconsistent. Temporary next files are distinguished by exact names.",
+          "response": "UNSUPPORTED_VERSION or STORE_UNAVAILABLE. Do not roll an accepted frontier back merely because an older file parses; retain prior bytes for explicit inspection/repair.",
+          "userImpact": "No acknowledged event is silently reclassified as discardable tail.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Receipt absent, pending, mismatched or unavailable during terminal marking",
+          "detection": "Verifier distinguishes absent/unavailable, validates receipt generation, key/hash/epoch and queueTerminal=true against the accepted event.",
+          "response": "Unavailable -> STORE_UNAVAILABLE; nonterminal -> NOT_READY; mismatch -> REVISION_CONFLICT. No terminal bit, retirement or deletion. No verifier in S2 means no terminal marking/recycling.",
+          "userImpact": "Canonical commit is never inferred from a queue cursor or supplied generation string.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Crash during segment retirement or missing receipt capability on reopen",
+          "detection": "Recovery reads a durable receipt-barrier marker and retiring checkpoint with exact bounded segment/operation references.",
+          "response": "Require the verifier, complete only the recorded retirement after proof/reader checks, sync unlink directory, then publish final removal. Without capability return NOT_READY; do not reset or reinterpret missing retired files as new work.",
+          "userImpact": "Recycled identity history remains protected by S3 receipts.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Ownership changed, close failure, ignored policy promise or abandoned replay iterator",
+          "detection": "sc1 assertOwned/file identity fails, handle close rejects, or lifecycle deadline expires with active lane/leases.",
+          "response": "Stop admission, retain ownership until quiescence and queue handle cleanup are verified; drain returns completed:false/pending>0 for deadlines. Never close host ports or release lock early.",
+          "userImpact": "Safe failure may require host intervention; accepted backlog stays replayable.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A canonical valid event frame exceeds segmentBytes but fits maxEventBytes and retained-byte budget.",
+          "expected": "Use a dedicated bounded segment; segmentBytes is a rotation target, not a promise that envelope overhead vanishes."
+        },
+        {
+          "input": "Exact retry when the queue byte budget is full.",
+          "expected": "After binding/policy, find matching index/receipt first and return existing receipt without disk growth."
+        },
+        {
+          "input": "Two producers submit simultaneously; one fails eligibility.",
+          "expected": "Invocation FIFO serializes policy and append; sequence is assigned only to durable candidate frames. Invalid work does not reserve a permanent sequence."
+        },
+        {
+          "input": "Another source field changes while reusing producer/event ID.",
+          "expected": "Full admitted-command hash detects the change and rejects; identity namespace is project+producer+event."
+        },
+        {
+          "input": "Another process owns the same directory or an alias.",
+          "expected": "Existing S1 ownership refusal applies; no queue writer is opened."
+        },
+        {
+          "input": "Same source identity reused in a different project.",
+          "expected": "A different scoped key/operationId; project binding must authorize it independently."
+        },
+        {
+          "input": "Wall clock goes backward or forward.",
+          "expected": "Saved admission time is diagnostics only; clamp negative oldest age to zero and preserve sequence ordering. Source occurrence evidence is untouched."
+        },
+        {
+          "input": "Shutdown with thousands of accepted events but no semantic worker yet.",
+          "expected": "Drain flushes active admission/I/O, not the durable backlog; close leaves pending frames for later replay."
+        },
+        {
+          "input": "A replay reader is paused while a sealed segment becomes terminal.",
+          "expected": "Keep the segment pinned; recycling waits for iterator return/finally. Lifecycle reports incomplete if an owned reader never releases."
+        },
+        {
+          "input": "Poison event blocks its subject while unrelated work completes later.",
+          "expected": "replay exposes total sequence; S4 owns causal scheduling. Queue permits out-of-order verified terminal acknowledgements, retains unresolved holes and cannot recycle a mixed pending segment."
+        },
+        {
+          "input": "A logical forget receipt is cleanup-pending.",
+          "expected": "Only explicit verified queueTerminal=true permits queue acknowledgement; physical purge remains pending and is not reported complete by S2."
+        },
+        {
+          "input": "A later version has recycled events, but an older queue-only host opens the directory.",
+          "expected": "The durable receipt-barrier requirement prevents admission without authoritative identity lookup; no second permanent receipt ledger is invented."
+        },
+        {
+          "input": "Maximum uint64 sequence/segment/checkpoint generation is reached.",
+          "expected": "Fence/reject further mutation explicitly; never wrap/reset identifiers. A later reviewed format/migration is required."
+        },
+        {
+          "input": "Complete unknown schema/version frame appears after the accepted active frontier.",
+          "expected": "Do not assume it is disposable tail; fail closed as unsupported/corrupt content."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Public sc1/sc2 signatures, pure import, explicit directory selection and host-owned supplied resources remain unchanged.",
+          "source": "c3"
+        },
+        {
+          "text": "One canonical directory has one OS-held owner; no file is recycled while work can still use it.",
+          "source": "c4"
+        },
+        {
+          "text": "Accepted is distinct from canonical commit; authoritative receipt/deletion state belongs to S3, beyond queue recycling.",
+          "source": "c1"
+        },
+        {
+          "text": "Privacy and eligibility precede durable enqueue; no raw payload routine logging or provider calls in this story.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with strict TypeScript/ESM via node --import tsx --test, as verified in the package source and package.json after test.locate returned off-topic JetBrains hits. Reuse the S1 Node22 subprocess fixture and real native ownership/process fixtures; no real LLM is required.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Deterministic codec, limits and identity behavior without claiming filesystem durability.",
+          "subjects": [
+            "canonical-json-frame-length-checksum-and-bounded-decoding",
+            "immutable-policy-snapshot-before-persistence",
+            "scoped-identity-exact-retry-and-conflicting-reuse",
+            "retained-byte-and-worst-case-metadata-reservations",
+            "checkpoint-schema-generation-and-retry-state-validation"
+          ],
+          "fixturesNeeded": [
+            "Adversarial cyclic/accessor/prototype/Unicode/NaN/depth/node-count inputs and valid equivalent key orderings.",
+            "Exact UTF-8 command/frame/header byte measurements at each limit; malformed lengths and very large declared lengths.",
+            "Bounded index/checkpoint/retirement metadata sizing corpus; no parser allocation based on an untrusted length."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Qualify real queue I/O and failure ordering under the existing S1 ownership guard.",
+          "subjects": [
+            "concurrent-admission-fifo-and-idempotent-retry",
+            "accepted-set-survives-process-kill-at-every-boundary",
+            "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+            "published-checkpoint-and-sealed-corruption-fail-closed",
+            "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+            "write-sync-rename-unlink-failure-fences-the-lane",
+            "verified-terminal-ack-retirement-and-reader-pins",
+            "recycled-identity-requires-authoritative-receipt-capability",
+            "retry-holes-do-not-authorize-mixed-segment-deletion",
+            "drain-close-startup-failure-preserve-backlog-and-ownership",
+            "macos-apfs-linux-ext4-node22-queue-qualification"
+          ],
+          "fixturesNeeded": [
+            "Real temporary APFS/macOS and ext4/Linux roots under Node >=22.22.1 <23, using actual fs-ext owner guard; unsupported or skipped runs never count as qualified.",
+            "Child barrier protocol around each write/sync/checkpoint backup/rename/directory sync/rotation/retire/unlink; parent records actual accepted responses as the recovery oracle.",
+            "Private I/O test seam forwards real filesystem operations and injects short/zero writes and errors before/after each boundary; no production fault option.",
+            "Durably persisted test-only fake receipt verifier outside queue files, simulating S3 outcomes including absent/unavailable/nonterminal/cleanup-pending and mismatched generation; this is not Lance atomicity evidence.",
+            "Changed/hardlinked/symlinked metadata and queue directories, missing referenced segments, corrupt published checkpoint, stale temp files, event-bearing orphan and oversized/unterminated lines.",
+            "Force-killed versus stopped live owner, duplicate package/worker/process attempts, ignored policy promise and paused replay iterator."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Preserve sc1/sc2 and define the sc3/S3 seam without implementing another story's store.",
+          "subjects": [
+            "public-service-accepted-status-and-unavailable-semantic-capabilities",
+            "sc3-receipt-verifier-proof-and-causal-order-contract",
+            "privacy-binding-and-scope-status-isolation-before-enqueue"
+          ],
+          "fixturesNeeded": [
+            "Fake policy/model/logger ports with invocation counters: no model calls, no payload logging, denied/unbound input produces no journal event.",
+            "Caller mutation while policy is paused; policy identity/scope mutation; invalid policy output; repeated policy refusal for retries.",
+            "Authorized operation queries versus wrong project/session/branch/environment, unknown operation, and unavailable required verifier.",
+            "S3 integration obligation: receipt-before-inference/commit-before-ack and deletion barriers must later pass against actual Lance; fake-port tests do not satisfy that future lead-story evidence."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Prove independent consumption and honest incremental behavior after S2.",
+          "subjects": [
+            "packed-external-submit-crash-reopen-and-operation",
+            "pure-import-and-no-daemon-or-backend-storage-dependency",
+            "package-suite-root-build-and-current-source-ci-evidence"
+          ],
+          "fixturesNeeded": [
+            "Normally installed tarball and declared dependencies in isolated Node22 TS/ESM consumer, no NODE_PATH/workspace symlink/backend config; explicit policy and dedicated directory.",
+            "Submit accepted, kill/reopen, retry stable identity, query accepted; search/context/inspect remain NOT_READY; natural process exit after close.",
+            "Focused package checks and root build once after integrated changes; each build task runs only relevant tests, broader feature sweep stays with S9."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Close OD-02 with measured format/resource evidence and explicit unresolved operational SLOs, not invented latency claims.",
+          "subjects": [
+            "queue-resource-and-fsync-cost-measurement"
+          ],
+          "fixturesNeeded": [
+            "Named hardware/OS/Node/filesystem corpus of 1 KiB, 64 KiB and 1 MiB commands plus 16 MiB safety ceiling; empty, 1k and metadata-cap backlog profiles.",
+            "Record p50/p95 accepted latency separately from semantic commit (not implemented), cold recovery time, actual segment/control bytes, RSS/heap and private admission counters.",
+            "No production event/segment defaults or acceptance-latency SLO is approved here. Publish measurements with actual durability steps enabled; release may not claim unmeasured performance. Hardware power-loss durability is not established by SIGKILL/injected-I/O tests."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "concurrent-admission-fifo-and-idempotent-retry",
+            "accepted-set-survives-process-kill-at-every-boundary",
+            "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+            "scoped-identity-exact-retry-and-conflicting-reuse",
+            "packed-external-submit-crash-reopen-and-operation"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "retained-byte-and-worst-case-metadata-reservations",
+            "published-checkpoint-and-sealed-corruption-fail-closed",
+            "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+            "verified-terminal-ack-retirement-and-reader-pins",
+            "write-sync-rename-unlink-failure-fences-the-lane",
+            "macos-apfs-linux-ext4-node22-queue-qualification"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Framed JSONL segments with a durable acceptance frontier",
+        "oneLineSummary": "One serialized journal lane, bounded event frames and a small versioned checkpoint protocol using Node filesystem primitives.",
+        "approach": "Consume sc1/sc2 unchanged; implement sc3 inside the independent package. A bounded canonical JSONL envelope carries command, scoped identity, byte length, sequence and checksum. Durable append publishes a checkpoint frontier after data sync before acknowledging. Recovery validates the frontier and scans complete unacknowledged suffixes; only proven incomplete suffixes beyond it may be truncated. Terminal bookkeeping and segment recycling consume a queue-owned receipt-verification port implemented later by s3; queue-only s2 never invents store commits. No backend helper is imported. This is the smallest shape meeting recorded segmented-JSONL direction; bounded discovery found no qualified standalone helper.",
+        "pros": [
+          "Direct fit to the approved queue direction and S1 package boundary.",
+          "Makes accepted-region corruption distinguishable from an unaccepted partial tail.",
+          "No new runtime dependency; receipt authority remains with s3."
+        ],
+        "cons": [
+          "Data and checkpoint durability must be qualified at each crash point.",
+          "S2 must bound checkpoint/index memory and fail closed on uncertain published metadata."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Segmented JSONL with append-only acceptance/control journal",
+        "oneLineSummary": "Separate data segments and a second append-only control log whose committed records define admission, resolution and retirement.",
+        "approach": "Preserve sc3 and S1 contracts; frame JSONL data independently and publish accepted/resolved/retiring control records in a separate checksummed serialized log after data sync. A compact checkpoint accelerates replay of the control log. Store receipts remain authoritative and must verify terminal outcomes; the second log is queue bookkeeping only. It fits the same library architecture but adds its own rotation, compaction and crash-order protocol.",
+        "pros": [
+          "Avoids replacing a whole bookkeeping checkpoint for every accepted submission.",
+          "Control-event history can aid deterministic recovery inspection."
+        ],
+        "cons": [
+          "Two rotating journals and control-log compaction increase failure states and metadata accounting.",
+          "No grounded reusable helper supplies this protocol; more machinery than s2 needs before performance evidence justifies it."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Meets the same logical contract but introduces a second rotating control journal and its compaction lifecycle without demonstrated need."
+      },
+      {
+        "id": "a3",
+        "name": "Fixed-size preallocated JSONL segment slots",
+        "oneLineSummary": "Use bounded frame slots and durable slot/frontier metadata to avoid variable-tail ambiguity.",
+        "approach": "Keep line-framed versioned JSON records in fixed-sized slots in each independent queue segment; serialize allocation, data sync and durable frontier publication. Sc3 hides slot addressing. Every public event still uses stable identity and store-backed terminal proof. This remains a segmented file queue, but frame maximum determines physical allocation instead of actual payload size.",
+        "pros": [
+          "Predictable physical offsets and bounded recovery reads.",
+          "A torn slot cannot shift following frame boundaries."
+        ],
+        "cons": [
+          "Large space amplification for small captures competes with pending-byte budgets.",
+          "Variable host event limits complicate layout compatibility and conversion; no measured need supports the extra format."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Can meet durability but fixed-slot amplification is a partial fit to configurable pending-byte budgets and the narrow JSONL direction."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "s2-durable-queue-model",
+      "narrative": "Lifecycle overview of physical queue ownership and checkpoint references. Bootstrap can temporarily have zero segments/checkpoints; once ready, at least one segment and exactly one active/current checkpoint are required. Segments own immutable frames, while queue acknowledgements remain references rather than authoritative store receipts.",
+      "classes": {
+        "QueueInstance": {
+          "description": "One queue inside one sc1-owned directory, including opening/bootstrap and ready states; temporary replacement candidates are not logical checkpoints.",
+          "attributes": {
+            "queueId": {
+              "description": "Immutable UUID used to reject cross-queue file substitution.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "segments": {
+              "description": "Owned retained segments; bootstrap may have none, ready has at least one and exactly one active segment.",
+              "range": "QueueSegment",
+              "required": false,
+              "multivalued": true,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 65536
+            },
+            "checkpoints": {
+              "description": "Zero before bootstrap completes; thereafter one current and at most one prior logical generation, excluding temporary files.",
+              "range": "QueueCheckpoint",
+              "required": false,
+              "multivalued": true,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 2
+            }
+          }
+        },
+        "QueueSegment": {
+          "description": "Stable numbered JSONL file, sealed or active; no rename-based data identity.",
+          "attributes": {
+            "segmentId": {
+              "description": "Canonical padded unsigned-64 identifier within this queue.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "frames": {
+              "description": "Immutable admitted event frames owned by this segment; an empty successor has none.",
+              "range": "QueueFrame",
+              "multivalued": true,
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 65536
+            },
+            "physicalBytes": {
+              "description": "Encoded retained bytes including header, counted against journal budget.",
+              "range": "integer",
+              "required": true
+            },
+            "sealed": {
+              "description": "Only sealed fully resolved unpinned segments qualify for retirement.",
+              "range": "boolean",
+              "required": true
+            }
+          }
+        },
+        "QueueFrame": {
+          "description": "Owned sc3 immutable event identity, content and integrity envelope.",
+          "attributes": {
+            "operationId": {
+              "description": "Deterministic identity derived from project, producer and source event.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "sequence": {
+              "description": "Durable total ingress sequence, decimal string, never floating-point.",
+              "range": "string",
+              "required": true
+            },
+            "command": {
+              "description": "Immutable admitted sc2 command embedded in exactly one event frame.",
+              "range": "MemoryCommand",
+              "required": true
+            },
+            "payloadHash": {
+              "description": "Digest of canonical admitted command used for exact retry/conflict checks.",
+              "range": "string",
+              "required": true
+            },
+            "checksum": {
+              "description": "Digest covering the complete frame body including queue/provenance fields.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "QueueCheckpoint": {
+          "description": "Queue durability and replay bookkeeping, never proof of canonical store commit.",
+          "attributes": {
+            "generation": {
+              "description": "Monotonic checkpoint publication generation.",
+              "range": "string",
+              "identifier": true,
+              "required": true
+            },
+            "activeSegment": {
+              "description": "Exactly one active segment and its accepted frontier are referenced.",
+              "range": "QueueSegment",
+              "required": true
+            },
+            "acceptedThrough": {
+              "description": "Last durable accepted ingress sequence.",
+              "range": "string",
+              "required": true
+            },
+            "acknowledgements": {
+              "description": "Terminal bookkeeping installed only after external receipt verification.",
+              "range": "QueueAcknowledgement",
+              "multivalued": true
+            },
+            "retiringSegments": {
+              "description": "Persisted retirement intent precedes unlink and survives a crash.",
+              "range": "QueueSegment",
+              "multivalued": true
+            }
+          }
+        },
+        "QueueAcknowledgement": {
+          "description": "Bounded operation/generation reference or terminal bitmap entry; no canonical memory content or receipt database.",
+          "attributes": {
+            "event": {
+              "description": "Exactly one retained event whose authoritative terminal receipt was verified.",
+              "range": "QueueFrame",
+              "required": true
+            },
+            "generation": {
+              "description": "Store generation corroborated by the queue-owned verifier port.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "MemoryCommand": {
+          "description": "Existing sc2 versioned wire command owned by S1; this diagram references it without changing its schema."
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "id": "s2-admission-and-retirement",
+      "narrative": "The new-event path shows exactly which durable boundary precedes accepted. The later terminal path is conditional on S3's read-only receipt verifier; queue-only S2 never invents commit proof or deletes pending segments.",
+      "participants": [
+        {
+          "id": "caller",
+          "label": "Caller",
+          "description": "An embedded consumer; the same service will be used by IPC later."
+        },
+        {
+          "id": "service",
+          "label": "MemoryService",
+          "description": "Existing sc2 API with S2 durable submit and authorized status."
+        },
+        {
+          "id": "lane",
+          "label": "Queue lane",
+          "description": "One bounded serialized owner of admission and all queue mutations."
+        },
+        {
+          "id": "policy",
+          "label": "Host policy",
+          "description": "Injected project binding and pre-persistence eligibility/redaction."
+        },
+        {
+          "id": "segment",
+          "label": "Segment file",
+          "description": "Stable numbered JSONL data file and its directory entries."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Checkpoint writer",
+          "description": "Qualified prior/current temp-sync-rename publication."
+        },
+        {
+          "id": "directory",
+          "label": "Queue directories",
+          "description": "Explicit directory sync for creation, checkpoint replacement and deletion."
+        },
+        {
+          "id": "worker",
+          "label": "Future worker",
+          "description": "Later S3/S4 context-builder; shown only as a consumer of sc3."
+        },
+        {
+          "id": "receipts",
+          "label": "Future receipt verifier",
+          "description": "S3 implements the sc3 read-only proof port from authoritative durable receipts."
+        }
+      ],
+      "messages": [
+        {
+          "from": "caller",
+          "to": "service",
+          "label": "submit command",
+          "description": "The caller supplies the existing sc2 envelope and stable source identity.",
+          "kind": "call"
+        },
+        {
+          "from": "service",
+          "to": "lane",
+          "label": "reserve and snapshot",
+          "description": "Validate and capture bounded immutable JSON at invocation; FIFO preserves producer order.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "policy",
+          "label": "bind and admit",
+          "description": "No event bytes have been persisted; policy may redact payload but not change identity.",
+          "kind": "call"
+        },
+        {
+          "from": "policy",
+          "to": "lane",
+          "label": "eligible command",
+          "description": "The lane revalidates policy output and scope epoch.",
+          "kind": "return"
+        },
+        {
+          "from": "lane",
+          "to": "receipts",
+          "label": "lookup when installed",
+          "description": "Consult retained queue identity and, when configured, authoritative receipts before treating an identity as new.",
+          "kind": "call",
+          "note": "S2 queue-only has no store verifier; no segment retirement is allowed. Exact retries return existing receipt without append."
+        },
+        {
+          "from": "lane",
+          "to": "segment",
+          "label": "write complete frame",
+          "description": "New-identity path only: reserve full encoded bytes and metadata capacity, then handle every short write.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "segment",
+          "label": "sync data",
+          "description": "The event must be durable before its accepted frontier can be published.",
+          "kind": "call"
+        },
+        {
+          "from": "segment",
+          "to": "directory",
+          "label": "sync new entry if needed",
+          "description": "Creation/rotation must also persist the containing directory entry.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "checkpoint",
+          "label": "retain prior checkpoint",
+          "description": "Write/sync prior bytes to a backup candidate and replace the prior checkpoint.",
+          "kind": "call"
+        },
+        {
+          "from": "checkpoint",
+          "to": "directory",
+          "label": "sync backup rename",
+          "description": "Preserve the last valid checkpoint before publishing a replacement.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "checkpoint",
+          "label": "publish accepted frontier",
+          "description": "Write/sync the next canonical checkpoint, then rename over current.",
+          "kind": "call"
+        },
+        {
+          "from": "checkpoint",
+          "to": "directory",
+          "label": "sync frontier rename",
+          "description": "No accepted response is allowed before this required sync completes.",
+          "kind": "call"
+        },
+        {
+          "from": "checkpoint",
+          "to": "lane",
+          "label": "frontier durable",
+          "description": "The exact frame/sequence is now covered by the durable accepted checkpoint.",
+          "kind": "return"
+        },
+        {
+          "from": "lane",
+          "to": "service",
+          "label": "accepted receipt",
+          "description": "Stable operation identity; this is not canonical memory activation.",
+          "kind": "return"
+        },
+        {
+          "from": "service",
+          "to": "caller",
+          "label": "accepted",
+          "description": "A lost response is reconciled by retrying/querying the same identity.",
+          "kind": "return"
+        },
+        {
+          "from": "worker",
+          "to": "lane",
+          "label": "markResolved(op, generation)",
+          "description": "Later worker requests queue bookkeeping only after its store-side processing outcome.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "receipts",
+          "label": "verify terminal proof",
+          "description": "Check operation, key/hash/epoch, logical terminal flag and generation.",
+          "kind": "call"
+        },
+        {
+          "from": "receipts",
+          "to": "lane",
+          "label": "verified disposition",
+          "description": "Unavailable/nonterminal/mismatched proof prevents acknowledgement and deletion.",
+          "kind": "return",
+          "note": "cleanup-pending may be logically terminal; it does not claim physical purge complete."
+        },
+        {
+          "from": "lane",
+          "to": "checkpoint",
+          "label": "publish terminal bookkeeping",
+          "description": "Retry counters or processing flags alone cannot set terminal state.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "checkpoint",
+          "label": "publish retirement intent",
+          "description": "Only sealed fully terminal unpinned segments; install receipt-barrier requirement before first retirement.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "segment",
+          "label": "unlink exact retired file",
+          "description": "No recursive cleanup and no removal of mixed pending segments.",
+          "kind": "call"
+        },
+        {
+          "from": "segment",
+          "to": "directory",
+          "label": "sync deletion",
+          "description": "Persist file removal before the retirement is finalized.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "checkpoint",
+          "label": "publish final removal",
+          "description": "Drop queue references while authoritative replay-prevention receipts remain in S3.",
+          "kind": "call"
+        },
+        {
+          "from": "lane",
+          "to": "worker",
+          "label": "queue bookkeeping complete",
+          "description": "Recovery can resume an interrupted retirement from durable intent.",
+          "kind": "return"
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-er",
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/reqs/shared-project-memory.html#queue"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "packages/project-memory/src/types.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "packages/project-memory/src/ownership.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "packages/project-memory/src/runtime.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "packages/project-memory/src/host-node.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "packages/project-memory/package.json"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "https://nodejs.org/download/release/v22.22.1/docs/api/fs.html"
+    },
+    {
+      "id": "c9",
+      "kind": "doc",
+      "ref": "https://man7.org/linux/man-pages/man2/fsync.2.html"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "https://man7.org/linux/man-pages/man2/rename.2.html"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "packages/project-memory/src/__tests__/ownership.test.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "packages/project-memory/src/__tests__/packed.test.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md"
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "docs/reqs/shared-project-memory.html#P-03"
+    }
+  ]
+}

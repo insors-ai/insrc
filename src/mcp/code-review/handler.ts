@@ -22,6 +22,6 @@ export class CodeReviewConnections {
    const value=JSON.parse(response.content[0]?.text??'null') as {kind?:string;crPublication?:string}|null;
    if(value?.crPublication==='complete'){owner.close();this.owners.delete(key);}
    return response;
-  }catch(error){owner.close();if(this.owners.get(key)===owner)this.owners.delete(key);return errorEnvelope('review-request-failed','TaskReviewError',error instanceof Error?error.message:String(error),false);}
+  }catch(error){if(owner.closed||signal?.aborted){owner.close();if(this.owners.get(key)===owner)this.owners.delete(key);}return errorEnvelope('review-request-failed','TaskReviewError',error instanceof Error?error.message:String(error),false);}
  }
 }

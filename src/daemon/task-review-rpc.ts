@@ -118,6 +118,6 @@ export async function cleanupApprovedTaskReviews(raw: unknown): Promise<import('
  requireReview(stored?.integrity.ok,'BUILD','BUILD integrity cannot be verified');
  const build=JSON.parse(await readFile(artifactJsonPath(repo,id),'utf8')) as {meta:Record<string,unknown>};
  requireReview(approvalStateOf(build.meta)==='approved','BUILD','Story BUILD approval is required for cleanup');
- const fenced=await coordinatorFor(repo).withStoryCleanup(repo,hash,story,()=>cleanupStoryCheckpoints(repo,hash,story,{sources:publicationDeps(repo).sources}));
+ const fenced=await coordinatorFor(repo).withStoryCleanup(repo,hash,story,()=>cleanupStoryCheckpoints(repo,hash,story,{sources:publicationDeps(repo).sources,onDeleted:id=>coordinatorFor(repo).forgetCheckpoint(repo,id)}));
  return fenced.busy?{deleted:[],retained:[`${repo}/.insrc/tmp/code-review`],errors:['Story review admission/execution/publication or cleanup is active; retry cleanup after it settles']}:fenced.result;
 }

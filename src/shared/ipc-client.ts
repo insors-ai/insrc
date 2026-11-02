@@ -251,6 +251,7 @@ export function createPersistentIpcClient(connect: () => Socket = () => createCo
  });
  socket.on('error', error => close(error)); socket.on('close', () => close());
  return {
+  get closed(): boolean { return closed; },
   close: () => close(),
   call<T>(method: string, params: unknown, opts: { signal?: AbortSignal | undefined; stream?: boolean | undefined } = {}): Promise<T> {
    if (closed) return Promise.reject(new Error('daemon connection closed; explicit review resume required'));

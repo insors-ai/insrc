@@ -54,6 +54,8 @@ test('Normal controller/daemon routes preserve coverage/status/diagnostic policy
   assert.equal(h.schemaRegistry.get('insrc_code_review_step')!.rawShape,CODE_REVIEW_INPUT);
   const guide=readWorkflowGuide(readFileSync('src/prompts/steering-block.md','utf8'),'code-review');assert.ok(guide);for(const phase of CODE_REVIEW_PHASES)assert.ok(guide.includes(phase));
   const frame=decode(await h.client.callTool({name:'insrc_code_review_step',arguments:{...common,phase:'start',packet:f.packet}}));assert.equal(frame.kind,'task');assert.match(frame.prompt,/coverage/i);
+  const duplicate=await h.client.callTool({name:'insrc_code_review_step',arguments:{...common,phase:'start',packet:f.packet}});assert.equal(duplicate.isError,true);
+  const stillOwned=decode(await h.client.callTool({name:'insrc_code_review_step',arguments:{...common,phase:'assignment'}}));assert.equal(stillOwned.executionId,frame.executionId);
   const envelope={taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence};
   const diag=decode(await h.client.callTool({name:'insrc_code_review_step',arguments:{...common,...envelope,phase:'activity',event:{kind:'diagnostic',phase:'assessment',diagnostic:{provider:'codex',issues:[{code:'MISSING_REQUIRED_FIELD',field:'findings',correction:'Return findings as a top-level JSON array.',occurrences:1}]}}}}));
   assert.equal(diag.acceptedSequence,envelope.sequence);

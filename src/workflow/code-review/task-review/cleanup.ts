@@ -10,7 +10,7 @@ import { artifactJsonPath, codeReviewArtifactId } from '../../storage.js';
 
 export interface CleanupResult { deleted: string[]; retained: string[]; errors: string[]; }
 /** Called under the daemon owner's story fence, after BUILD approval. No models. */
-export async function cleanupStoryCheckpoints(project:string,hash:string,story:string,deps:{sources:ReviewSources;unlink?:typeof unlink}):Promise<CleanupResult>{
+export async function cleanupStoryCheckpoints(project:string,hash:string,story:string,deps:{sources:ReviewSources;unlink?:typeof unlink;onDeleted?:(id:string)=>void}):Promise<CleanupResult>{
  const result:CleanupResult={deleted:[],retained:[],errors:[]},directory=join(project,'.insrc/tmp/code-review');
  try{
   const info=await lstat(directory);requireReview(info.isDirectory()&&!info.isSymbolicLink()&&await realpath(directory)===directory,'cleanup','Unsafe checkpoint directory');
@@ -40,9 +40,10 @@ export async function cleanupStoryCheckpoints(project:string,hash:string,story:s
    requireReview(before.ino===after.ino&&before.dev===after.dev&&before.mtimeMs===after.mtimeMs&&before.size===after.size&&!after.isSymbolicLink(),'checkpoint','Checkpoint changed during cleanup');
    requireReview(isDeepStrictEqual(await loadCheckpoint(path),saved),'checkpoint','Checkpoint changed during cleanup');
    await(deps.unlink??unlink)(path);result.deleted.push(path);
+   try{deps.onDeleted?.(saved.reviewId);}catch{result.errors.push(`${entry.name}: deleted, but terminal replay cache release failed`);}
   }catch(error){
    if((error as NodeJS.ErrnoException).code==='ENOENT')continue;
-   result.retained.push(path);result.errors.push(`${entry.name}: ${error instanceof Error?error.message:String(error)}`);
+   result.retained.push(path);result.errors.push(`${entry.name}: ${error instanceof SyntaxError?'Invalid JSON; retained':error instanceof Error?error.message:String(error)}`);
   }
  }
  return result;

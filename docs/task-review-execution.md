@@ -261,3 +261,69 @@ exchange sequence only after an accepted receipt. Terminal native failures remai
 failed task results; the diagnostic event itself is evidence, not completion.
 The caller explicitly requests any subsequent attempt. The daemon still supplies
 and enforces the output schema on every new submission.
+
+## Normal MCP requests and story approval cleanup
+
+`insrc_code_review_step` now exposes `start`, `resume`, `progress`, `publish`,
+`assignment`, `scope`, `activity` and `result`. Use `insrc_schema` for the registered
+input and `insrc_guide({ workflow: 'code-review' })` for the procedure. Every call
+carries project, epic hash, review ID and attempt. Create the committed packet
+before `start`: after-version blocks/deletion anchors alone define finding scope;
+commit pointers never authorize a generic HEAD diff. Complete test details and
+mandatory inspection of code/modules and relevant assertions remain required.
+Optional test, integration and build execution remains nonblocking advice.
+
+Start returns after admission/checkpoint creation; it does not wait for a model.
+Poll progress/checkpoint separately. Controller exchanges use the live MCP
+review-owner connection and exact task/execution/sequence envelope returned by the
+host. Each review ID gets its own connection, so cancellation cannot disconnect a
+different review. MCP session closure interrupts controller work, preserving durable
+task results; explicitly resume after reconnect. Daemon reviews survive observer
+loss. Neither process restart nor polling automatically resumes work. Terminal
+failed/incomplete tasks are handled only in a later sequential attempt.
+
+Task-review requests and code-review step calls stay with one main-daemon owner
+through the existing worker router. Different review IDs can overlap native CLI
+execution, while each review's task/provider calls remain serial. No worker-local
+coordinator, additional thread pool, lease database or global model-review queue is
+introduced. Design review and retired dimension/chunk routes remain unavailable.
+
+Successful story BUILD approval invokes the canonical post-approval cleanup hook
+for direct, single and batch approval. Approval returns `result.cleanup` containing
+`deleted`, `retained` and `errors`; cleanup failure does not revoke approval. A short
+story fence covers admissions, running reviews and publication retries. Active
+matching work defers cleanup; repeat explicit approval of the same BUILD after it
+settles. Missing daemon/cleanup support is reported as retained/errors rather than
+silently dropping temporary history. A direct approval client delegates deletion
+to the daemon; it does not create a separate cleanup owner.
+
+Only bounded, literal regular checkpoint files in the canonical project directory
+are candidates. Every saved attempt must be terminal, published and matched to
+permanent version-2 CR history, including scope, results and origins. Unfinished,
+unrepresented, malformed, future, foreign and symlinked files remain with reasons.
+New CR summaries retain pointed native output failures (provider, task/phase,
+code/field/correction/count and terminal code), omitting previews and verbose native
+messages. Historical diagnostic-bearing checkpoints whose older CR lacks that
+summary are retained; cleanup does not backfill or rewrite immutable attempts.
+Unlink failures are per-file and retryable; permanent CR records survive deletion.
+Terminal controller replay state is released only after its checkpoint is deleted.
+
+Reproduce the compiled local integration smoke with Node 22:
+
+```sh
+npm run build
+node scripts/smoke-task-review.mjs
+```
+
+The harness uses temporary Git/artifact files, real MCP and Unix sockets, an actual
+worker route, a child-process restart, and a fake native Codex CLI. It verifies two
+independent overlapping reviews, per-review ordering, duplicate rejection, native
+validation failure followed by corrected next-attempt input, live-controller
+interruption/explicit resume, unavailable design review, and approval-driven cleanup.
+It calls no hosted model and claims no actual code-review accuracy or live test
+coverage from its synthetic results. It does not touch the user's running daemon.
+
+Deployment: push the reviewed/approved implementation, update and restart the
+daemon, and restart/reconnect the MCP server so the advertised schema is refreshed.
+Then explicitly repeat approval of the already-approved S2 BUILD to retry its
+cleanup; inspect retained/errors rather than running another S2 model review.

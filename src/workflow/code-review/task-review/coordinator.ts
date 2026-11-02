@@ -146,6 +146,12 @@ export class TaskReviewCoordinator {
    return admitted;
   } catch (error) { this.release(path); throw error; }
  }
+ /** Drop terminal controller replay state only after its checkpoint was deleted. */
+ forgetCheckpoint(project: string, reviewId: string): void {
+  const path = checkpointPath(project, reviewId);
+  requireReview(!this.active.has(path), 'reviewId', 'already-running');
+  this.controllers.delete(path);
+ }
  /** Used by shutdown/tests, never awaited by start or attached to a caller's cancellation. */
  isActive(project: string, reviewId: string): boolean { return this.active.has(checkpointPath(project, reviewId)); }
  async settled(project: string, reviewId: string): Promise<void> { await this.active.get(checkpointPath(project, reviewId))?.done; }

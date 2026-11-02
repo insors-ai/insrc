@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ae5987fb-a293-491f-b7ba-20f0caeef8bf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:40:22.040Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Gate the review-comment recorder before its first record",
+      "parent": {
+        "entityId": "STORY-f32c3abf4a55494b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f32c3abf4a55494b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f32c3abf4a55494b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "771ff1e31f218258a64634685080795c2598d548938f20283e173f01897ef4f3",
+        "at": "2026-11-02T09:40:22.043Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:40:22.044Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gate the review-comment recorder before its first record",
+    "summary": "In handleResolveComment (src/workflow/resolve-comment.ts), after the artifact is found and before the first recordResolution, call assertMayReviseDraft once, mapping parseArtifactId's define and hld to the Epic (stages DEF, HLD) and lld to the Story (stage LLD). A TeamGateRefusedError becomes an { error } naming the gate's reason with nothing recorded; a ToolDenied is rethrown. ResolveCommentDeps gains an optional gate seam for tests. Outside signoff the rule asks for 'author', so a comment on an unassigned stage takes the claim as any author turn does; this is tested, not assumed.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a comment from someone who may not revise the stage is answered with an { error } and records nothing",
+      "the gate is asked once for several comments and maps define, hld and lld to the right unit and stage",
+      "a comment outside signoff by the holder, or on an unassigned stage, behaves as an author turn would (claim taken), and a stage held by someone else is refused",
+      "a repo with no team policy records as today",
+      "a ToolDenied is rethrown and is not an { error }"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: handleResolveComment answers an error and records nothing when the actor may not revise the stage"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: the gate is asked once for several comments and maps define, hld and lld to the Epic and Story stages"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: outside signoff a comment behaves as an author turn, and a repo with no team policy records as today"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/resolve-comment-gate.test.ts: a denied tracker call in the gate is rethrown and is not an error result"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d59c504-dca9-4cda-b1bd-8d3bd363a82d",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:40:22.045Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Name the gate behind every content writer in the write inventory",
+      "parent": {
+        "entityId": "STORY-f32c3abf4a55494b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f32c3abf4a55494b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f32c3abf4a55494b-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-f32c3abf4a55494b-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fb1c8175e605310effa439fe77de7efea9eda1793c51070a132c1f9d13bbed67",
+        "at": "2026-11-02T09:40:22.048Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:40:22.049Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Name the gate behind every content writer in the write inventory",
+    "summary": "Add the optional gatedBy field to InventoryEntry and WriteSite in src/workflow/artifact-write-inventory.ts (an entry point name, or an object with an exemption reason), fill it for the eight content places (synthesize.ts, workflow-rpc.ts, resolve-comment.ts, unit-head.ts, standalone-record.ts, test-record.ts, task-set.ts and the appendStoryToDefine site), and add the test in src/workflow/__tests__/artifact-write-inventory.test.ts that fails for a content entry or site with neither.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "every content entry and site names a gate or an exemption with a reason",
+      "the test fails for a content writer with neither, shown by a fixture entry",
+      "appendStoryToDefine is recorded as gated by finalizeDefineExtend and resolve-comment.ts by handleResolveComment",
+      "the existing inventory rules still pass"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: every content entry and site names a gatedBy entry point or an exemption with a reason, including appendStoryToDefine"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: a content writer with neither a gate nor an exemption is reported"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

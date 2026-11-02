@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b873eb08-6738-414e-92ee-2a2eceb6dbda",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:40:22.036Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Gate the define extend path before its first write",
+      "parent": {
+        "entityId": "STORY-f32c3abf4a55494b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f32c3abf4a55494b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f32c3abf4a55494b-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7099542eeba0f2f95a215d24265e7befe82c34be88eda59f5e6cb2f6be9f11b4",
+        "at": "2026-11-02T09:40:22.039Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:40:22.039Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Gate the define extend path before its first write",
+    "summary": "In finalizeDefineExtend (src/workflow/orchestrator.ts), after the Epic anchor is resolved and before appendStoryToDefine, call assertMayReviseDraft for the unit {epic, repoPath, epicHash}, stage DEF and authoring 'define'. A refusal throws before the Story, the amendment or the EXT record is written; every existing validation failure still returns first, so the gate does not run for a request that fails anyway. The first define of a fresh Epic is not gated. The test drives the existing define-extend test harness (the orchestrator entry the existing extend tests use) with a stand-in policy reader and tracker port through the gate's test seams; no new export is added unless that harness cannot reach the function.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "an extend by someone who is not the holder, while the Define is in signoff, is refused and writes no Story, no amendment and no EXT record",
+      "the holder's extend, and an extend in a repo with no team policy, are written as today",
+      "a duplicate Story id or an unapproved Epic still fails before the gate is asked",
+      "a ToolDenied from the gate stops the run and is not turned into a refusal"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/define-extend-gate.test.ts: the define extend path refuses a non-holder while the Define is in signoff and writes nothing, and the holder's extend is written as today"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/define-extend-gate.test.ts: a repo with no team policy makes no tracker call and the extend is written as today"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/__tests__/define-extend-gate.test.ts: a duplicate Story id or an unapproved Epic fails before the gate is asked, and a denied tracker call in the gate stops the run"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

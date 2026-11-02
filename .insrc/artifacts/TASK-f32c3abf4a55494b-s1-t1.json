@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-93486c46-6d76-4719-a240-6376d0a81a2b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:40:22.031Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the shared revise-or-author check to the author gate",
+      "parent": {
+        "entityId": "STORY-f32c3abf4a55494b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f32c3abf4a55494b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a9169361335ebfaf8d7180140040192ca89464a37f465c2fcab118fbbd1d945",
+        "at": "2026-11-02T09:40:22.034Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:40:22.035Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the shared revise-or-author check to the author gate",
+    "summary": "Add assertMayReviseDraft(repoPath, unit, stage, authoring) to src/workflow/team/author-gate.ts: it asks teamGate for 'revise' when isUnderSignoff(repoPath, unit, stage) holds and for 'author' otherwise, keeps the first-author exception for a stage with no issue, applies assertHeld for 'revise', throws TeamGateRefusedError for any other outcome and rethrows a ToolDenied. assertMayAuthor calls it for the unit and stage it already finds, so its behaviour and its three call sites do not change.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "the helper asks for 'revise' when the stage is in signoff or changes-requested and for 'author' otherwise, and applies assertHeld for 'revise'",
+      "a repo with no team policy resolves with no tracker call",
+      "a ToolDenied is rethrown and every other refusal is a TeamGateRefusedError",
+      "the existing assertMayAuthor tests pass unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft asks teamGate for revise when the stage is in signoff or changes-requested and for author otherwise, and applies assertHeld for revise"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft resolves with no tracker call in a repo with no team policy"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/revise-draft-gate.test.ts: assertMayReviseDraft rethrows a ToolDenied and throws TeamGateRefusedError for every other refusal"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-20cf7c89-d818-4be4-b2b2-5e26576828d9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-02T09:40:22.049Z",
+    "epicCreatedAt": "2026-11-02T09:29:49.749Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f32c3abf4a55494b",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record the decisions and run the full sweep once",
+      "parent": {
+        "entityId": "STORY-f32c3abf4a55494b-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-f32c3abf4a55494b-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-f32c3abf4a55494b-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5800f07ef15ac606e54df8d9294a6e1bdc4823e110ece7feb0b7fe1cb1f84fb3",
+        "at": "2026-11-02T09:40:22.052Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-02T09:40:22.053Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the decisions and run the full sweep once",
+    "summary": "Write the decisions of this Story (resolveComment holder-only revise for every comment, the extend gated as author outside signoff, the exemptions) and the outcome in docs/plans/team-workflow.md, then run the full test sweep once in foreground chunks and compare by test name with the tree before this Story.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "the decisions and the outcome are written in docs/plans/team-workflow.md",
+      "no new failure and no new skipped test against the tree before this Story, with the pre-existing failures listed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/team/__tests__/revise-writers-record.test.ts: the revise-writers section of team-workflow.md records the decisions, the exemptions, the sweep result and the open items"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

@@ -6,8 +6,10 @@
 /**
  * The draft hook (sc3): right after a Define, HLD, LLD or plan draft is written,
  * make sure every unit it covers has its tracker issue, so the stage can be
- * claimed (ac15 to ac18). Team mode only; a repo with no policy, or with
- * teamMode false, is untouched and sees no tracker call (k4).
+ * claimed (ac15 to ac18). A team repo loads its tracker strictly. A repo with no
+ * policy, or with teamMode false, gets its issues only when its tracker setting
+ * is on (the lenient check and port the terminal approve uses); with the tracker
+ * off it is untouched and sees no tracker call (k4).
  *
  *   Define / HLD  the Epic
  *   LLD           the Epic, then the Story
@@ -22,7 +24,8 @@
 import { readFileSync } from 'node:fs';
 
 import { getLogger } from '../shared/logger.js';
-import { loadTracker } from './tracker/github-adapter.js';
+import { GithubConfigError, resolveGithubConfig, type ResolvedGithubConfig } from './config/github.js';
+import { createGithubTracker, loadTracker } from './tracker/github-adapter.js';
 import type { Capability, IssueRef, PortFailureKind, PortResult, TrackerPort } from './tracker/port.js';
 import type { UnitRef } from './tracker/refs.js';
 import { ensureUnitIssueDetailed, isUnitSettled, resolveUnitIssueLocal, unitKey, type EnsureIssueDeps } from './tracker/unit-issue.js';
@@ -57,6 +60,10 @@ export interface DraftHookDeps {
 	readonly readPolicy?:  PolicyReader | undefined;
 	readonly loadTracker?: ((repo: string, needed: ReadonlySet<Capability>) => PortResult<TrackerPort> | Promise<PortResult<TrackerPort>>) | undefined;
 	readonly ensure?:      EnsureIssueDeps | undefined;
+	/** The lenient tracker setting of a repo with no team policy. */
+	readonly resolveConfig?: ((repo: string) => Promise<ResolvedGithubConfig>) | undefined;
+	/** The lenient port of a repo with no team policy. */
+	readonly createTracker?: ((owner: string, repo: string, repoPath: string) => TrackerPort) | undefined;
 }
 
 interface DraftMeta {
@@ -108,7 +115,19 @@ export async function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = 
 		const repoPath = meta.repoPath as string;
 		const policy = await (deps.readPolicy ?? policyReader)(repoPath);
 		if (!policy.ok) return notReady(unitKey(units[0]!), 'policy-unreadable', true, `the team policy cannot be read: ${policy.reason}`, []);
-		if (policy.value === 'none' || !policy.value.teamMode) return { status: 'not-applicable', reason: 'no-team-policy' };
+		const team = policy.value !== 'none' && policy.value.teamMode;
+		// No team policy: the tracker setting decides. Off makes no call; a setting that cannot be read is reported, never guessed.
+		let solo: { readonly owner: string; readonly repo: string } | undefined;
+		if (!team) {
+			try {
+				const cfg = await (deps.resolveConfig ?? resolveGithubConfig)(repoPath);
+				if (cfg.type === 'none') return { status: 'not-applicable', reason: 'no-team-policy' };
+				solo = { owner: cfg.owner, repo: cfg.repo };
+			} catch (err) {
+				if (!(err instanceof GithubConfigError)) throw err;
+				return notReady(unitKey(units[0]!), 'rejected', true, err.message, []);
+			}
+		}
 
 		if (noTasks) return { status: 'ready', units: [] };
 		// A plan whose Story already has its issue needs no Epic check: the Tasks hang under the Story (team repos only: this may reconcile records).
@@ -124,7 +143,9 @@ export async function ensureDraftIssues(jsonPath: string, deps: DraftHookDeps = 
 		}
 		if (units.length === 0) return { status: 'ready', units: [] };
 
-		const loaded = await (deps.loadTracker ?? loadTracker)(repoPath, new Set<Capability>(['issue-create']));
+		const loaded: PortResult<TrackerPort> = solo !== undefined
+			? { ok: true, value: (deps.createTracker ?? ((owner, repo, path) => createGithubTracker(owner, repo, { repoPath: path })))(solo.owner, solo.repo, repoPath) }
+			: await (deps.loadTracker ?? loadTracker)(repoPath, new Set<Capability>(['issue-create']));
 		if (!loaded.ok) {
 			const firstMissing = units[local.findIndex(ref => ref === null)]!;
 			return notReady(unitKey(firstMissing), loaded.kind, true, loaded.reason, ready);

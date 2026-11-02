@@ -24,6 +24,8 @@ import type { ResolvedGithubConfig } from '../config/github.js';
 import { titleMatchesToken, type CreatedIssue, type IssueRef, type IssueSpec, type PortFailureKind, type PortResult, type TrackerPort } from '../tracker/port.js';
 import type { PolicyReader, TeamPolicy } from '../team/types.js';
 import { seedBoundUnits } from './helpers/task-heads.js';
+import { ToolDenied } from '../tracker/tool-denied.js';
+import { _setAutoPushDepsForTests, autoPushStoryOnLld } from '../tracker-auto.js';
 
 const HASH = 'a3f4b8c9d1e2f3a4';
 const SLUG = 'tag-filtering';
@@ -41,11 +43,11 @@ const teamOff: PolicyReader = async () => ({ ok: true, value: { teamMode: false 
 // An in-memory tracker and a loader that counts how often it is used
 // ---------------------------------------------------------------------------
 
-interface Over { failFind?: boolean; failCreateAt?: number; loadFails?: { kind: PortFailureKind; reason: string } }
+interface Over { soloConfig?: ResolvedGithubConfig; failFind?: boolean; failCreateAt?: number; loadFails?: { kind: PortFailureKind; reason: string } }
 
 function harness(over: Over = {}) {
 	const issues: Array<{ ref: IssueRef; spec: IssueSpec }> = [];
-	const seen = { loads: 0, creates: 0, finds: 0 };
+	const seen = { loads: 0, creates: 0, finds: 0, solo: 0 };
 	const port = {
 		kind: 'github', capabilities: new Set(['issue-create']),
 		findIssues: (labels: string[]): PortResult<IssueRef[]> => ({ ok: true, value: issues.filter(i => labels.every(l => i.spec.labels.includes(l))).map(i => i.ref) }),
@@ -71,8 +73,11 @@ function harness(over: Over = {}) {
 		readPolicy: policy,
 		loadTracker: () => { seen.loads += 1; return over.loadFails !== undefined ? { ok: false, ...over.loadFails } : { ok: true, value: port }; },
 		ensure: { readConfig: () => CFG, now: () => '2026-10-18T00:00:00.000Z' },
+		// a repo with no team policy: the tracker setting is off unless a test turns it on
+		resolveConfig: async () => over.soloConfig ?? { type: 'none', source: 'default-config' },
+		createTracker: () => { seen.solo += 1; return port; },
 	});
-	return { deps, seen, issues };
+	return { deps, seen, issues, port };
 }
 
 // ---------------------------------------------------------------------------
@@ -243,4 +248,110 @@ test('a plan whose Story is recorded needs no Epic, and an issue that cannot be 
 		assert.match(r.status === 'not-ready' ? r.message : '', /no issue was created for epic because the head of EPIC-[0-9a-f]+ could not be made/);
 		assert.equal(h.seen.creates, 0);
 	} finally { chmodSync(join(fy.repo, '.insrc', 'artifacts'), 0o755); fy.cleanup(); }
+});
+
+// ---------------------------------------------------------------------------
+// Story s9: a repo with no team policy gets its issues when the tracker is on
+// ---------------------------------------------------------------------------
+
+test("a team repo creates the stage's issue as before", async () => {
+	const fx = seed();
+	try {
+		const h = harness({ soloConfig: CFG });
+		const r = await ensureDraftIssues(fx.define, h.deps(team));
+		assert.deepEqual(r, { status: 'ready', units: [{ unit: 'epic', issue: 'acme/demo#1', created: true }] });
+		assert.equal(h.seen.loads, 1, 'the strict loader is used');
+		assert.equal(h.seen.solo, 0, 'and the lenient port is not');
+	} finally { fx.cleanup(); }
+});
+
+test('a repo with no team policy and a tracker that is on creates the Epic and Story issues', async () => {
+	const fx = seed();
+	try {
+		for (const policy of [none, teamOff]) {
+			const h = harness({ soloConfig: CFG });
+			const r = await ensureDraftIssues(fx.lld, h.deps(policy));
+			assert.equal(r.status, 'ready');
+			assert.deepEqual(r.status === 'ready' ? r.units.map(u => [u.unit, u.created]) : null, [['epic', true], ['story:s1', true]]);
+			assert.equal(h.seen.solo, 1);
+			assert.equal(h.seen.loads, 0, 'the strict loader is not used');
+			assert.equal(h.issues.length, 2);
+			// a second write creates none
+			const again = await ensureDraftIssues(fx.lld, h.deps(policy));
+			assert.equal(again.status, 'ready');
+			assert.equal(h.issues.length, 2);
+			break;
+		}
+	} finally { fx.cleanup(); }
+});
+
+test('tracker type none makes no tracker call, a malformed github.json is not-ready, an entry with no type agrees with the lenient port, and a declined call is rethrown', async () => {
+	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const fx = seed();
+	const cfg = join(fx.repo, 'github.json');
+	process.env['INSRC_GITHUB_CONFIG'] = cfg;
+	try {
+		// type none: nothing is called and the draft sees no new field
+		writeFileSync(cfg, JSON.stringify({ repos: { [fx.repo]: { type: 'none' } } }));
+		const off = harness();
+		const offDeps = { ...off.deps(none) }; delete (offDeps as { resolveConfig?: unknown }).resolveConfig;   // the real resolver reads the file
+		assert.deepEqual(await ensureDraftIssues(fx.define, offDeps), { status: 'not-applicable', reason: 'no-team-policy' });
+		assert.deepEqual([off.seen.solo, off.seen.loads, off.seen.finds, off.seen.creates], [0, 0, 0, 0]);
+
+		// a malformed entry (type github with no target and no origin remote to take one from): not-ready with the reason, nothing created.
+		// An unparseable file is read by the lenient loader as no setting, as the terminal approve reads it: tracker off.
+		writeFileSync(cfg, JSON.stringify({ repos: { [fx.repo]: { type: 'github' } } }));
+		const bad = harness();
+		const badDeps = { ...bad.deps(none) }; delete (badDeps as { resolveConfig?: unknown }).resolveConfig;
+		const r = await ensureDraftIssues(fx.define, badDeps);
+		assert.equal(r.status, 'not-ready');
+		if (r.status === 'not-ready') { assert.equal(r.outcomeKnown, true); assert.match(r.reason, /no owner\/repo is set/); assert.equal(readinessFields(r).notice, r.message); }
+		assert.equal(bad.seen.solo, 0);
+
+		// an entry that names owner and repo but no type: the lenient check turns it on and the lenient port gets that target
+		writeFileSync(cfg, JSON.stringify({ repos: { [fx.repo]: { owner: 'acme', repo: 'demo' } } }));
+		const typeless = harness();
+		const targets: string[] = [];
+		const typelessDeps = { ...typeless.deps(none), createTracker: (owner: string, repo: string) => { targets.push(`${owner}/${repo}`); return typeless.port; } };
+		delete (typelessDeps as { resolveConfig?: unknown }).resolveConfig;
+		assert.equal((await ensureDraftIssues(fx.define, typelessDeps)).status, 'ready');
+		assert.deepEqual(targets, ['acme/demo']);
+		assert.equal(typeless.issues.length, 1);
+
+		// a declined registry call is rethrown, not made not-ready
+		const denied = new ToolDenied('gh_tracker', 'declined', {});
+		const refusing = new Proxy({ kind: 'github', capabilities: new Set(['issue-create']) }, { get: (t, k) => (k in t ? (t as never)[k] : () => { throw denied; }) }) as unknown as TrackerPort;
+		const fx2 = seed();
+		try {
+			writeFileSync(join(fx2.repo, 'github.json'), JSON.stringify({ repos: { [fx2.repo]: { owner: 'acme', repo: 'demo' } } }));
+			process.env['INSRC_GITHUB_CONFIG'] = join(fx2.repo, 'github.json');
+			await assert.rejects(() => ensureDraftIssues(fx2.define, { readPolicy: none, createTracker: () => refusing, ensure: { now: () => '2026-10-18T00:00:00.000Z' } }), (e: unknown) => e === denied);
+		} finally { fx2.cleanup(); }
+	} finally {
+		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		fx.cleanup();
+	}
+});
+
+test('the terminal approve over issues the daemon already created creates nothing and no duplicate', async () => {
+	const prior = process.env['INSRC_GITHUB_CONFIG'];
+	const fx = seed();
+	const cfg = join(fx.repo, 'github.json');
+	try {
+		writeFileSync(cfg, JSON.stringify({ repos: { [fx.repo]: { type: 'github', owner: 'acme', repo: 'demo', pushTasks: false } } }));
+		process.env['INSRC_GITHUB_CONFIG'] = cfg;
+		const h = harness({ soloConfig: CFG });
+		assert.equal((await ensureDraftIssues(fx.lld, h.deps(none))).status, 'ready');
+		assert.equal(h.issues.length, 2, 'the draft hook made the Epic and Story issues');
+
+		_setAutoPushDepsForTests({ policy: none, port: h.port });
+		const approved = await autoPushStoryOnLld(fx.lld);
+		assert.equal(approved.status, 'already-exists');
+		assert.equal(h.issues.length, 2, 'the approve created no issue and no duplicate');
+		assert.equal(h.seen.creates, 2);
+	} finally {
+		_setAutoPushDepsForTests();
+		if (prior === undefined) delete process.env['INSRC_GITHUB_CONFIG']; else process.env['INSRC_GITHUB_CONFIG'] = prior;
+		fx.cleanup();
+	}
 });

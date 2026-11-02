@@ -1214,6 +1214,14 @@
 		"class": "per-thread",
 		"reason": "The fixed byte-to-relation-kind table of the withEvidence neighbour reads (Epic c2ba6fa6 s7), built once from a constant and never written, so a per-thread copy is correct."
 	},
+	"src/indexer/parser/registry.ts#parsers": {
+		"class": "per-thread",
+		"reason": "The registered readers: each thread that indexes imports the reader modules, which register into their own thread's registry at import; a per-thread copy is correct."
+	},
+	"src/indexer/parser/registry.ts#unavailable": {
+		"class": "per-thread",
+		"reason": "Readers whose grammar failed to load in this thread (Epic c2ba6fa6 s9), filled at import beside #parsers; the languages request is answered by the code-indexing worker from its own copy."
+	},
 	"src/db/graph/codec.ts#EVIDENCE_OF_BYTE": {
 		"class": "per-thread",
 		"reason": "The fixed byte-to-evidence table of the edge-row codec (Epic c2ba6fa6 s7), built once from a constant and never written, so a per-thread copy is correct."

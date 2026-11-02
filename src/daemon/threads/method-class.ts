@@ -45,6 +45,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['repo.reindex', 'indexing', false],
 	['repo.stats', 'indexing', false],
 	['index.file', 'indexing', false],
+	['index.languages', 'indexing', false],
 	['config.enqueue', 'indexing', false],
 	['config.reindex', 'indexing', false],
 	['daemon.compact', 'indexing', false],

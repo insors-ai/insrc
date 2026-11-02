@@ -68,7 +68,7 @@ import { getLogger } from '../../shared/logger.js';
 import type { CodeParser, ParseResult } from './base.js';
 import { makeEntityId } from './base.js';
 import type { Entity, Relation } from '../../shared/types.js';
-import { registerParser } from './registry.js';
+import { loadReader } from './registry.js';
 import { SHARED_MODULES_REPO_ID } from '../../shared/repo-namespaces.js';
 import { matchHttpClient, emitCallsHttp, fileImportsHttpLibrary } from './http-client-shapes.js';
 import { matchMessagingClient, emitMessaging, fileImportsMessagingLibrary } from './messaging-client-shapes.js';
@@ -627,19 +627,9 @@ class KotlinParser implements CodeParser {
 // ---------------------------------------------------------------------------
 
 /** The registered parser, or `null` when the native grammar failed to load. */
-export const kotlinParser: KotlinParser | null = (() => {
-	try {
-		const _require = createRequire(import.meta.url);
-		const Parser  = _require('tree-sitter')        as typeof import('tree-sitter');
-		const grammar = _require('tree-sitter-kotlin') as unknown;
-		const parser = new KotlinParser(Parser, grammar);
-		registerParser(parser);
-		return parser;
-	} catch (e) {
-		log.warn(
-			{ err: e instanceof Error ? e.message : String(e) },
-			'tree-sitter-kotlin failed to load; Kotlin files will not be indexed (other parsers unaffected)',
-		);
-		return null;
-	}
-})();
+export const kotlinParser: KotlinParser | null = loadReader('kotlin', ['.kt', '.kts'], () => {
+	const _require = createRequire(import.meta.url);
+	const Parser  = _require('tree-sitter')        as typeof import('tree-sitter');
+	const grammar = _require('tree-sitter-kotlin') as unknown;
+	return new KotlinParser(Parser, grammar);
+});

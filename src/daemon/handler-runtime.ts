@@ -1258,6 +1258,14 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
+		// The languages the index reads, from the registry of the worker that
+		// indexes (Epic c2ba6fa6 s9, ac4): availability, and why a reader is missing.
+		'index.languages': async () => {
+			const { listReaders } = await import('../indexer/parser/registry.js');
+			const { languageOfExtension } = await import('../indexer/resolver.js');
+			return { languages: listReaders(languageOfExtension) };
+		},
+
 		// ----- Config management -----
 
 		'system.info': async () => {

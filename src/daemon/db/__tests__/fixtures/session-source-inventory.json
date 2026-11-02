@@ -13588,6 +13588,14 @@
      "import"
     ],
     [
+     "unresolved-call",
+     "import"
+    ],
+    [
+     "unresolved-call",
+     "import"
+    ],
+    [
      "serialization",
      "JSON.parse"
     ],
@@ -13904,9 +13912,9 @@
      "writeFileSync"
     ]
    ],
-   "siteCount": 190,
-   "sitesDigest": "37a93c8e79aacbe14e585782ea2113082685f719b0488a8f982b922c4ac9a5c3",
-   "sourceDigest": "49ea57bd115abbdff62ac97093a9e36fa5b87847b5cbcf23c749e5ef8ccdfe2b",
+   "siteCount": 192,
+   "sitesDigest": "d3e62d2375cf1ad3bb2e0edefa5ad6c034d97a3205d8bad9d20548fe41b91cff",
+   "sourceDigest": "5954fd403f4bb51537a66a910326c9e128648cf1fb4b83e8aa5ab0030b5b4cc5",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -32279,17 +32287,13 @@
      "getLogger"
     ],
     [
-     "diagnostic",
-     "log.warn"
-    ],
-    [
      "unresolved-call",
      "Parser"
     ]
    ],
-   "siteCount": 3,
-   "sitesDigest": "d9567abaff57d51e999999038aac9391e8832600702ef4fda9df62ae5f5375ae",
-   "sourceDigest": "bd275e1208074ede4ccdbf9df95e34fa8b3506f685327486a518363f5dd94072",
+   "siteCount": 2,
+   "sitesDigest": "4f7f0a102659f4de6abe854e4ea4f5997e7ac820e0b5da37b25d09c50bed0321",
+   "sourceDigest": "60bce018bd0cb2a141585c650eccf668d214cfb9d9d6df494b17ba25ba0330ce",
    "boundaries": [
     "diagnostic",
     "unresolved-call"

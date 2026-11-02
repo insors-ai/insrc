@@ -262,6 +262,11 @@ function buildCandidates(base: string, language: Language): string[] {
 // otherwise fall back to extension-based mapping.
 // ---------------------------------------------------------------------------
 
+/** The language an extension names, where the index reads it as code (Epic c2ba6fa6 s9). */
+export function languageOfExtension(ext: string): Language | undefined {
+  return EXT_TO_LANG[ext.toLowerCase()];
+}
+
 function detectLanguage(filePath: string, entities?: Entity[]): Language {
   if (entities) {
     const fileEntity = entities.find(e => e.kind === 'file' && e.file === filePath);

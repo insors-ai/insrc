@@ -151,6 +151,7 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			['daemon.backup', { path: join(backupDir, 'b') }],
 			['repo.reindex', { path: REPO }],
 			['index.file', { filePath: join(REPO, 'src', 'a.ts'), event: 'update' }],
+			['index.languages', {}],
 			['config.enqueue', { filePath: join(HOME, 'none.md'), scope: { kind: 'global' }, event: 'update' }],
 			['config.reindex', { scope: { kind: 'global' } }],
 			['docSummary.restoreFromBackup', { backupPath: 42 }],
@@ -163,6 +164,8 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 		const ok = (r: ReplyEnvelope): void => { assert.equal(r.error, undefined); assert.deepEqual(r.result, { ok: true }); };
 		const expect: Record<string, (r: ReplyEnvelope) => void> = {
 			'repo.stats': r => { assert.equal(r.error, undefined); assert.ok(Array.isArray(r.result) && (r.result as { repoPath: string }[]).some(x => x.repoPath === REPO)); },
+			// The worker's own registry (Epic c2ba6fa6 s9): its readers are loaded there.
+			'index.languages': r => { assert.equal(r.error, undefined); assert.ok((r.result as { languages: { language: string; available: boolean }[] }).languages.some(l => l.language === 'typescript' && l.available)); },
 			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
 			'mcp.register': r => assert.equal(r.error, 'Cannot register providers: repo path must be a string (got number)', 'its own validation ran'),
 			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },

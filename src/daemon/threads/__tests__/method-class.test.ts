@@ -29,7 +29,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 
 const ADMIN = ['daemon.status', 'daemon.debug-status', 'daemon.shutdown', 'daemon.update', 'daemon.updateOutcome',
 	'repo.list', 'mcp.status', 'config.show', 'config.catalog', 'guide.list', 'guide.get'];
-const INDEXING = ['repo.add', 'mcp.register', 'repo.remove', 'repo.reindex', 'repo.stats', 'index.file',
+const INDEXING = ['repo.add', 'mcp.register', 'repo.remove', 'repo.reindex', 'repo.stats', 'index.file', 'index.languages',
 	'config.enqueue', 'config.reindex', 'daemon.compact', 'daemon.backup', 'docSummary.restoreFromBackup'];
 
 /** The methods the daemon serves: the tables buildHandlerRuntime constructs, after every merge. */
@@ -51,7 +51,7 @@ function differences(tables: { rpc: string[]; stream: string[] }): { missing: st
 	return { missing, stale };
 }
 
-test('classOf/entries: the eleven admin and eleven indexing methods have their class, every other entry is session, entries unique', () => {
+test('classOf/entries: the eleven admin and twelve indexing methods have their class, every other entry is session, entries unique', () => {
 	for (const m of ADMIN) assert.equal(methodClasses.classOf(m), 'admin', m);
 	for (const m of INDEXING) assert.equal(methodClasses.classOf(m), 'indexing', m);
 	const entries = methodClasses.entries();

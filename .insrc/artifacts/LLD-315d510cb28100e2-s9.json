@@ -76,6 +76,13 @@
         "choice": "Confirm scope as written",
         "rationale": "The approved LLD scopes ac5 to the daemon's git_pull and git_push hooks plus the explicit refresh; a git-hook installer is a later Story. Flagged to the user in the plan summary.",
         "resolvedAt": "2026-11-02T05:39:26.184Z"
+      },
+      "q71b0bc75": {
+        "question": "int1 (ambiguous): the HLD context slice lists no shared contracts, so sc1 and sc3 cannot be checked against a list; they are the contracts the adjacent Stories s1 and s4 own.",
+        "status": "resolved",
+        "choice": "Ground sc1/sc3 against s1/s4's own artifacts",
+        "rationale": "Check sc1 (the tracker port) and sc3 (meta.revision) against the built code and the s1 and s4 LLDs.",
+        "resolvedAt": "2026-11-02T05:40:25.323Z"
       }
     }
   },

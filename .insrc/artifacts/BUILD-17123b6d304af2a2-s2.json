@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T07:02:24.067Z",
+    "updatedAt": "2026-11-02T07:07:03.756Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -14,9 +14,13 @@
       {
         "id": "t1",
         "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
       }
     ],
-    "summary": "Implemented private sc3 queue types, canonical checksummed framing and bounded immutable command snapshots with stable retry identities; public contracts remain unchanged.",
+    "summary": "Added owned safe queue I/O, bounded reads, short-write loops, explicit data/directory sync, fenced failure behavior and isolated format/segment bootstrap.",
     "testRecord": {
       "md": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/TESTS.md"
     },
@@ -26,30 +30,44 @@
           "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:02:24.067Z"
+        "timestamp": "2026-11-02T07:07:03.756Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/queue-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:02:24.067Z"
+        "timestamp": "2026-11-02T07:07:03.756Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:02:24.067Z"
+        "timestamp": "2026-11-02T07:07:03.756Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/queue/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T07:02:24.067Z"
+        "timestamp": "2026-11-02T07:07:03.756Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/queue-io.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:07:03.756Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/queue/io.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T07:07:03.756Z"
       }
     ],
-    "commit": "3aa3b89d1"
+    "commit": "e66611df5"
   }
 }

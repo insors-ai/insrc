@@ -1,0 +1,148 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s2",
+    "createdAt": "2026-11-02T07:02:24.067Z",
+    "updatedAt": "2026-11-02T07:07:03.756Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "3aa3b89d1",
+        "ranAt": "2026-11-02T07:02:24.067Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "canonical-json-frame-length-checksum-and-bounded-decoding",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+                "title": "canonical-json-frame-length-checksum-and-bounded-decoding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "immutable-policy-snapshot-before-persistence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+                "title": "immutable-policy-snapshot-before-persistence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scoped-identity-exact-retry-and-conflicting-reuse",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+                "title": "scoped-identity-exact-retry-and-conflicting-reuse",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 496,
+            "titles": [
+              {
+                "title": "canonical-json-frame-length-checksum-and-bounded-decoding",
+                "result": "pass"
+              },
+              {
+                "title": "immutable-policy-snapshot-before-persistence",
+                "result": "pass"
+              },
+              {
+                "title": "scoped-identity-exact-retry-and-conflicting-reuse",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e66611df5",
+        "ranAt": "2026-11-02T07:07:03.756Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "owned-bootstrap-short-write-and-directory-sync",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "owned-bootstrap-short-write-and-directory-sync",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "uncertain-write-fences-without-unsafe-cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "unsafe-queue-files-and-directory-replacement-are-refused",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "file-sync-failure-preserves-written-bytes-and-ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1920,
+            "titles": [
+              {
+                "title": "owned-bootstrap-short-write-and-directory-sync",
+                "result": "pass"
+              },
+              {
+                "title": "uncertain-write-fences-without-unsafe-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "unsafe-queue-files-and-directory-replacement-are-refused",
+                "result": "pass"
+              },
+              {
+                "title": "file-sync-failure-preserves-written-bytes-and-ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

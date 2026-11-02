@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:15:46.960Z",
+    "updatedAt": "2026-11-02T05:20:51.601Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -256,6 +256,86 @@
               },
               {
                 "title": "s9 t4: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b0e4f9d74",
+        "ranAt": "2026-11-02T05:20:51.601Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C++ reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/cpp.test.ts",
+                "title": "s9 t5: a .cpp fixture yields classes, methods and functions with namespaces folded in, and its include, call and inheritance relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/cpp.test.ts",
+                "title": "s9 t5: a .h header is read as cpp and its declarations are functions a caller in another file can link to",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/cpp.test.ts",
+                "title": "s9 t5: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "C caller resolves to a C++ header declaration",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts",
+                "title": "s9 t5: a C caller of a function declared in an included .h header resolves to it across files through the family rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 991,
+            "titles": [
+              {
+                "title": "s9 t5: a C caller of a function declared in an included .h header resolves to it across files through the family rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/cpp.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 607,
+            "titles": [
+              {
+                "title": "s9 t5: a .cpp fixture yields classes, methods and functions with namespaces folded in, and its include, call and inheritance relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t5: a .h header is read as cpp and its declarations are functions a caller in another file can link to",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t5: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
                 "result": "pass"
               }
             ],

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -88,3 +88,28 @@ Run at 2026-11-02T05:15:46.960Z on commit `effcc80ac`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/parser/__tests__/c.test.ts` | 0 | 4 | 0.7 s |  |
+
+## t5
+
+Run at 2026-11-02T05:20:51.601Z on commit `b0e4f9d74`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: C++ reader**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t5: a .cpp fixture yields classes, methods and functions with namespaces folded in, and its include, call and inheritance relationships | `src/indexer/parser/__tests__/cpp.test.ts` |
+| pass | s9 t5: a .h header is read as cpp and its declarations are functions a caller in another file can link to | `src/indexer/parser/__tests__/cpp.test.ts` |
+| pass | s9 t5: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked | `src/indexer/parser/__tests__/cpp.test.ts` |
+
+**integration: C caller resolves to a C++ header declaration**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | s9 t5: a C caller of a function declared in an included .h header resolves to it across files through the family rule | `src/indexer/__tests__/c-calls-cpp-header.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/c-calls-cpp-header.test.ts` | 0 | 1 | 1 s |  |
+| `src/indexer/parser/__tests__/cpp.test.ts` | 0 | 3 | 0.6 s |  |

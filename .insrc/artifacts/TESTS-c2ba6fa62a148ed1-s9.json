@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s9",
     "createdAt": "2026-11-02T05:01:33.548Z",
-    "updatedAt": "2026-11-02T05:09:48.138Z",
+    "updatedAt": "2026-11-02T05:15:46.960Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -193,6 +193,69 @@
             "titles": [
               {
                 "title": "s9 t3: a C caller resolves to a function declared in an included .h read as cpp; a Python caller still never resolves to a same-named Go function",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "effcc80ac",
+        "ranAt": "2026-11-02T05:15:46.960Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a .c fixture yields its functions and types, with DEFINES, and its include and call relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a quoted include of a file on disk is an IMPORTS to that file (extracted); an angle include is an IMPORTS to a native module stub; a missing one stays pending",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a same-file call is resolved (extracted); a call to another file stays pending for the cross-file pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/c.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 717,
+            "titles": [
+              {
+                "title": "s9 t4: a .c fixture yields its functions and types, with DEFINES, and its include and call relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t4: a quoted include of a file on disk is an IMPORTS to that file (extracted); an angle include is an IMPORTS to a native module stub; a missing one stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t4: a same-file call is resolved (extracted); a call to another file stays pending for the cross-file pass",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t4: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
                 "result": "pass"
               }
             ],

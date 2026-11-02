@@ -557,6 +557,7 @@ Reviewer-executed full-repo typecheck against current checkout; zero diagnostic 
 Scope: whole story · reviewer: daemon · 2026-11-02T07:43:22.310Z
 
 4 selected task assessment(s): passed.
+Native output diagnostics: [{"phase":"assessment","taskId":"t2","provider":"claude","resolved":true,"errors":[{"code":"MISSING_REQUIRED_FIELD","field":"taskId","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"status","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"summary","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"findings","correction":"Return findings as a top-level JSON array.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"testCoverage","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"limitations","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"advice","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"inspectedReferences","correction":"Return the required field in the JSON object.","occurrences":1}]}]
 
 ### Submitted scope
 

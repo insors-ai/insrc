@@ -20,18 +20,18 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "632c2c9f9f3d5d02b5161922cfb55f9953d83d14e036323b8f6237c6aaa9d818",
-        "at": "2026-11-02T07:43:33.787Z",
+        "number": 6,
+        "contentHash": "b455c55951ef8ce1ba7094df12533ea276051b2599014e9b60fab15d5da05918",
+        "at": "2026-11-02T12:15:04.106Z",
         "by": {
-          "id": "insrc:code-review",
+          "id": "insrc:operator-recovery",
           "kind": "system",
           "properties": {}
         }
       },
       "signoffs": []
     },
-    "revision": 5
+    "revision": 6
   },
   "body": {
     "kind": "code-review",
@@ -5172,7 +5172,7 @@
             ]
           }
         ],
-        "summary": "4 selected task assessment(s): passed.",
+        "summary": "4 selected task assessment(s): passed.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"t2\",\"provider\":\"claude\",\"resolved\":true,\"errors\":[{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"taskId\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"status\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"summary\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"findings\",\"correction\":\"Return findings as a top-level JSON array.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"testCoverage\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"limitations\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"advice\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"inspectedReferences\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1}]}]",
         "completedAt": "2026-11-02T07:43:22.310Z",
         "buildFingerprint": "b9a819299ee133762e20c358af3bc331aa4b1c12285116ad7313e0cb3e86641f"
       }

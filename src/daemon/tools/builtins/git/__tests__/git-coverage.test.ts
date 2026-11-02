@@ -12,7 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -38,7 +38,7 @@ test('every command of the recorded list has exactly one owner, an assigned row 
 
 	// (2) a covered row names registered tools and has a case; every registered git tool is in a covered row
 	const registered = new Set(listTools().map(t => t.id).filter(id => id.startsWith('git_') || id === 'git:cherry-pick'));
-	assert.equal(registered.size, 40, '22 existing, 12 from s4, 4 from s7 and 2 from s9');
+	assert.equal(registered.size, 41, '22 existing, 12 from s4, 4 from s7, 2 from s9 and git_inspect from s8');
 	const inCovered = new Set<string>();
 	for (const r of GIT_COVERAGE.filter(x => x.owner === 'covered')) {
 		assert.ok((r.toolIds ?? []).length > 0, `${r.command} ${r.operation ?? ''} names its tools`);
@@ -112,6 +112,13 @@ interface Ctx {
 }
 
 const sha = (c: Ctx, rev: string): string => c.git('rev-parse', rev).trim();
+
+/** Pack the repository and return the path of its pack index. */
+function packIndex(c: Ctx): string {
+	c.git('gc', '-q');
+	const dir = join(c.repo, '.git', 'objects', 'pack');
+	return join(dir, readdirSync(dir).find(f => f.endsWith('.idx'))!);
+}
 
 /** The runner of each case id of the table: it runs the tool through executeTool and checks the result and the effect. */
 const RUN: Record<string, (c: Ctx) => Promise<void>> = {
@@ -187,6 +194,61 @@ const RUN: Record<string, (c: Ctx) => Promise<void>> = {
 	'tag delete': async c => { await c.ok('git_tag', { op: 'delete', name: 't' }); assert.equal(c.git('tag', '--list', 't').trim(), ''); },
 	'refs list': async c => { const r = await c.ok('git_for_each_ref', {}); assert.ok((r.data as { refs: unknown[] }).refs.length >= 4); },
 	'refs exists': async c => { const yes = await c.ok('git_show_ref', { ref: 'refs/heads/main', exists: true }); assert.equal((yes.data as { refs: unknown[] }).refs.length, 1); const no = await c.ok('git_show_ref', { ref: 'refs/heads/none', exists: true }); assert.deepEqual(no.data, { refs: [] }); },
+
+	// ---- git_inspect (s8)
+	'describe': async c => { const r = await c.ok('git_inspect', { op: 'describe', tags: true }); assert.deepEqual(r.data, { op: 'describe', text: 't' }); },
+	'name-rev': async c => { const r = await c.ok('git_inspect', { op: 'name-rev', rev: 'HEAD' }); assert.match((r.data as { text: string }).text, /main|tags\/t/); },
+	'cherry': async c => {
+		const same = await c.ok('git_inspect', { op: 'cherry', upstream: 'main', head: 'b' }); assert.deepEqual(same.data, { op: 'cherry', count: 0, items: [] });
+		c.git('checkout', '-q', '-b', 'x'); c.git('commit', '-q', '--allow-empty', '-m', 'only on x');
+		const r = await c.ok('git_inspect', { op: 'cherry', upstream: 'main', head: 'x' }); assert.deepEqual((r.data as { items: unknown[] }).items, [{ sign: '+', sha: sha(c, 'x') }]);
+	},
+	'shortlog': async c => { const r = await c.ok('git_inspect', { op: 'shortlog', summary: true, numbered: true }); assert.match((r.data as { text: string }).text, /^2\s+T$/); },
+	'show-branch': async c => { const r = await c.ok('git_inspect', { op: 'show-branch', refs: ['main', 'b'] }); assert.match((r.data as { text: string }).text, /second/); },
+	'grep': async c => {
+		const hit = await c.ok('git_inspect', { op: 'grep', pattern: 'dirty' }); assert.deepEqual(hit.data, { op: 'grep', found: true, matches: ['a.txt:1:dirty'] });
+		const none = await c.ok('git_inspect', { op: 'grep', pattern: 'zzz' }); assert.deepEqual(none.data, { op: 'grep', found: false, matches: [] });
+	},
+	'last-modified': async c => { const r = await c.ok('git_inspect', { op: 'last-modified', paths: ['a.txt'] }); assert.deepEqual((r.data as { items: unknown[] }).items, [{ sha: sha(c, 'HEAD'), path: 'a.txt' }]); },
+	'count-objects': async c => { const r = await c.ok('git_inspect', { op: 'count-objects', verbose: true }); assert.match((r.data as { text: string }).text, /^count: \d+/m); },
+	'var': async c => { const r = await c.ok('git_inspect', { op: 'var', variable: 'GIT_AUTHOR_IDENT' }); assert.match((r.data as { text: string }).text, /^T <t@example\.com> \d+ /); },
+	'version': async c => { const r = await c.ok('git_inspect', { op: 'version' }); assert.match((r.data as { text: string }).text, /^git version \d/); },
+	'check-attr': async c => { const r = await c.ok('git_inspect', { op: 'check-attr', attrs: ['text'], paths: ['a.txt'] }); assert.deepEqual((r.data as { items: unknown[] }).items, [{ path: 'a.txt', attr: 'text', value: 'unspecified' }]); },
+	'check-ignore': async c => {
+		writeFileSync(join(c.repo, '.gitignore'), '*.log\n');
+		const hit = await c.ok('git_inspect', { op: 'check-ignore', paths: ['x.log', 'a.txt'] }); assert.deepEqual(hit.data, { op: 'check-ignore', found: true, paths: ['x.log'] });
+		const none = await c.ok('git_inspect', { op: 'check-ignore', paths: ['a.txt'] }); assert.deepEqual(none.data, { op: 'check-ignore', found: false, paths: [] });
+	},
+	'check-mailmap': async c => { const r = await c.ok('git_inspect', { op: 'check-mailmap', contacts: ['T <t@example.com>'] }); assert.deepEqual(r.data, { op: 'check-mailmap', count: 1, lines: ['T <t@example.com>'] }); },
+	'check-ref-format': async c => {
+		const yes = await c.ok('git_inspect', { op: 'check-ref-format', name: 'refs/heads/ok' }); assert.deepEqual(yes.data, { op: 'check-ref-format', valid: true });
+		const no = await c.ok('git_inspect', { op: 'check-ref-format', name: 'refs/heads/a..b' }); assert.deepEqual(no.data, { op: 'check-ref-format', valid: false });
+	},
+	'get-tar-commit-id': async c => {
+		const archive = execFileSync('git', ['archive', 'HEAD'], { cwd: c.repo, maxBuffer: 16 * 1024 * 1024 }).toString('base64');
+		const r = await c.ok('git_inspect', { op: 'get-tar-commit-id', archive }); assert.deepEqual(r.data, { op: 'get-tar-commit-id', found: true, sha: sha(c, 'HEAD') });
+	},
+	'diff-files': async c => { const r = await c.ok('git_inspect', { op: 'diff-files' }); assert.deepEqual(r.data, { op: 'diff-files', count: 1, items: [{ status: 'M', path: 'a.txt' }] }); },
+	'diff-index': async c => {
+		const r = await c.ok('git_inspect', { op: 'diff-index', rev: 'HEAD' }); assert.deepEqual((r.data as { items: unknown[] }).items, [{ status: 'M', path: 'a.txt' }]);
+		const staged = await c.ok('git_inspect', { op: 'diff-index', rev: 'HEAD', cached: true }); assert.equal((staged.data as { count: number }).count, 0);
+	},
+	'diff-pairs': async c => { const r = await c.ok('git_inspect', { op: 'diff-pairs', raw: c.git('diff-tree', '-r', '-z', 'HEAD~1', 'HEAD') }); assert.match((r.data as { text: string }).text, /^diff --git a\/a\.txt b\/a\.txt/); },
+	'range-diff': async c => { const r = await c.ok('git_inspect', { op: 'range-diff', rangeA: 'main~1..main', rangeB: 'main~1..b' }); assert.match((r.data as { text: string }).text, /1:\s+\w+ = 1:\s+\w+ second/); },
+	'show-index': async c => {
+		const idx = packIndex(c);
+		const r = await c.ok('git_inspect', { op: 'show-index', index: readFileSync(idx).toString('base64') }); assert.ok((r.data as { text: string }).text.includes(sha(c, 'HEAD')));
+	},
+	'verify-commit': async c => { const r = await c.ok('git_inspect', { op: 'verify-commit', rev: 'HEAD' }); assert.equal((r.data as { verified: boolean }).verified, false); },
+	'verify-tag': async c => { const r = await c.ok('git_inspect', { op: 'verify-tag', rev: 't' }); assert.equal((r.data as { verified: boolean }).verified, false); },
+	'verify-pack': async c => { const r = await c.ok('git_inspect', { op: 'verify-pack', pack: packIndex(c), verbose: true }); assert.match((r.data as { text: string }).text, /: ok$/m); },
+	'fsck': async c => { const r = await c.ok('git_inspect', { op: 'fsck' }); assert.equal(typeof (r.data as { text: string }).text, 'string'); c.git('fsck'); },
+	'fsck-objects': async c => { const r = await c.ok('git_inspect', { op: 'fsck-objects', noDangling: true }); assert.equal(typeof (r.data as { text: string }).text, 'string'); },
+	'pack-redundant': async c => { packIndex(c); const r = await c.ok('git_inspect', { op: 'pack-redundant' }); assert.equal((r.data as { text: string }).text, ''); },
+	'repo': async c => {
+		const info = await c.ok('git_inspect', { op: 'repo', what: 'info', keys: ['layout.bare'] }); assert.deepEqual(info.data, { op: 'repo', text: 'layout.bare=false' });
+		const shape = await c.ok('git_inspect', { op: 'repo', what: 'structure' }); assert.match((shape.data as { text: string }).text, /References/);
+	},
 };
 
 test('every covered row\'s case runs through executeTool and matches its assertion', async () => {

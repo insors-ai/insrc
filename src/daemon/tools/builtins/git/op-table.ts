@@ -48,6 +48,8 @@ export interface GitOpSpec {
   readonly argv: (input: ToolInput) => readonly string[];
   /** The field that holds the content sent on standard input; it must be declared in `fields`. */
   readonly stdin?: string;
+  /** How the stdin field's string becomes bytes: 'utf8' (default) or 'base64' for binary input (a tar, a pack, an index file). */
+  readonly stdinEncoding?: 'utf8' | 'base64';
   /** The approval class of the op, or a function of the input for an op that is only sometimes destructive. */
   readonly cls: ApprovalClass | ((input: ToolInput) => ApprovalClass);
   /** True when the op changes something (default: its class is not none, and a function class counts as changing). */
@@ -71,6 +73,14 @@ export interface GitFamilySpec {
 }
 
 const DEFAULT_ANSWER: Readonly<Record<string, TSchema>> = { text: Type.String() };
+
+/** The parse of an op whose answer is its output without the trailing newline. */
+export const trimmedText = (run: GitRun): Record<string, unknown> => ({ text: run.stdout.trim() });
+/** The non-blank lines of an output, each trimmed of its newline only. */
+export const lineList = (stdout: string): string[] => stdout.split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.length > 0);
+/** The answer members and parse of an op whose answer is the list of its lines. */
+export const LINES_ANSWER: Readonly<Record<string, TSchema>> = { count: Type.Number(), lines: Type.Array(Type.String()) };
+export const linesParse = (run: GitRun): Record<string, unknown> => { const lines = lineList(run.stdout); return { count: lines.length, lines }; };
 
 export function classOf(spec: GitOpSpec, input: ToolInput): ApprovalClass {
   return typeof spec.cls === 'function' ? spec.cls(input) : spec.cls;
@@ -147,7 +157,8 @@ async function runOp(id: string, spec: GitOpSpec, input: ToolInput, deps: ToolDe
   for (const k of spec.paths ?? []) { for (const v of values(input[k])) { assertSafeArg(v, 'path'); } }
 
   const mutating = isMutating(spec);
-  const content = spec.stdin !== undefined && typeof input[spec.stdin] === 'string' ? (input[spec.stdin] as string) : undefined;
+  const given = spec.stdin !== undefined && typeof input[spec.stdin] === 'string' ? (input[spec.stdin] as string) : undefined;
+  const content = given !== undefined && spec.stdinEncoding === 'base64' ? Buffer.from(given, 'base64') : given;
   if (content !== undefined && Buffer.byteLength(content) > MAX_STDIN_BYTES) {
     return rejectInput(label, `${spec.stdin} is larger than the ${MAX_STDIN_BYTES} bytes a call may send`);
   }

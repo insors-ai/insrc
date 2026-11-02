@@ -22,3 +22,6 @@ export const SAFE_PATH = '^[^\\u0000]*$';
 
 /** A dotted git config key such as user.email or branch.main.remote. */
 export const CONFIG_KEY = '^[A-Za-z][A-Za-z0-9-]*(\\.[A-Za-z0-9_-]+)+$';
+
+/** A revision expression (HEAD~2, a..b, main^{tree}, a:path): not empty, no leading '-', no whitespace or control character. */
+export const SAFE_REV = '^(?!-)[^\\s\\u0000-\\u001f\\u007f\\\\]+$';

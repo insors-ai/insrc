@@ -4,7 +4,7 @@
     "epicHash": "ca9883ca42f4d73f",
     "storyId": "S001",
     "createdAt": "2026-11-02T12:14:26.040Z",
-    "updatedAt": "2026-11-02T12:17:38.611Z",
+    "updatedAt": "2026-11-02T12:20:21.207Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:42:30.446Z",
     "epicSlug": "daemon-update-never-retries-failed-npm"
@@ -195,6 +195,46 @@
               },
               {
                 "title": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "4d2eeda98",
+        "ranAt": "2026-11-02T12:20:21.207Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/installer-defs.test.ts",
+                "title": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/installer-defs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1890,
+            "titles": [
+              {
+                "title": "installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies",
                 "result": "pass"
               }
             ],

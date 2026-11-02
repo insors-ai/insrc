@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -79,3 +79,19 @@ Run at 2026-11-02T12:17:38.611Z on commit `15f44dc79`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/services/__tests__/daemon-ctl-install-marker.test.ts` | 0 | 4 | 5.1 s |  |
+
+## t3
+
+Run at 2026-11-02T12:20:21.207Z on commit `4d2eeda98`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies | `src/config/__tests__/installer-defs.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/config/__tests__/installer-defs.test.ts` | 0 | 2 | 1.9 s |  |

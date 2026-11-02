@@ -4,7 +4,7 @@
     "epicHash": "ca9883ca42f4d73f",
     "storyId": "S001",
     "createdAt": "2026-11-02T12:14:26.040Z",
-    "updatedAt": "2026-11-02T12:17:38.611Z",
+    "updatedAt": "2026-11-02T12:20:21.207Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:42:30.446Z",
@@ -19,9 +19,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "daemon-ctl.sh npm_install_if_needed now uses the same install marker as maintenance.update (removed before npm install, written after a successful one) and builds with -std=c++17 appended to CXXFLAGS; SYNC_LOCK_HASH_BEFORE removed. Integration tests drive the real script over a scratch checkout with a fake npm, including cross-compatibility with maintenance.update; mutation-checked.",
+    "summary": "Both identical installer copies run npm install with -std=c++17 appended to CXXFLAGS, remove an earlier install marker first and write the lockfile blob hash marker after the install. The test dry-runs the installer's real step-3 block with a fake npm; mutations applied to both copies at once.",
     "testRecord": {
       "md": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/TESTS.md"
     },
@@ -31,16 +35,37 @@
           "file": "scripts/daemon-ctl.sh"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T12:17:38.611Z"
+        "timestamp": "2026-11-02T12:20:21.207Z"
       },
       {
         "target": {
           "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-02T12:17:38.611Z"
+        "timestamp": "2026-11-02T12:20:21.207Z"
+      },
+      {
+        "target": {
+          "file": "scripts/insrc-daemon-install.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:20:21.207Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/installer-defs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:20:21.207Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/assets/insrc-daemon-install.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T12:20:21.207Z"
       }
     ],
-    "commit": "15f44dc79"
+    "commit": "4d2eeda98"
   }
 }

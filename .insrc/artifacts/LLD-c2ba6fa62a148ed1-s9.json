@@ -210,6 +210,13 @@
         "choice": "Accept as LLD-concrete (adopt as canonical)",
         "rationale": "The HLD names the request only by purpose; registerUnavailableReader and 'index.languages' are the LLD's concrete names. Default stated to the user 2026-11-02.",
         "resolvedAt": "2026-11-02T04:50:33.112Z"
+      },
+      "qe7326d3d": {
+        "question": "NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc2; the Epic constraints the criteria operationalize (k1, k2, k6) were not scored separately.",
+        "status": "resolved",
+        "choice": "Defer and flag as known gap",
+        "rationale": "As for the same note on s2 and s7: k1/k2/k6 are the constraints ac1-ac4 operationalize (the DEF's own 'operationalizes' fields), so their scores follow from the criteria. Default stated to the user 2026-11-02.",
+        "resolvedAt": "2026-11-02T04:50:56.835Z"
       }
     }
   },

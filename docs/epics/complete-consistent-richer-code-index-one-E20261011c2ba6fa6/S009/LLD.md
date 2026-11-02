@@ -358,6 +358,8 @@ Rust/C#/C/C++ readers as in a1. The SQL reader splits a file into statements and
   - **resolved**: Ship with documented limitation — As stated in the approved LLD (2026-11-02): C# calls reached only through a 'using' namespace stay pending; no namespace-to-file mapping in s9. Default stated to the user. _(2026-11-02T04:49:44.386Z)_
 - `q0ed1e247` — NOTE (s8 cd1 partial): registerUnavailableReader and the 'index.languages' request are new names this Story introduces (the HLD names the request only by purpose).
   - **resolved**: Accept as LLD-concrete (adopt as canonical) — The HLD names the request only by purpose; registerUnavailableReader and 'index.languages' are the LLD's concrete names. Default stated to the user 2026-11-02. _(2026-11-02T04:50:33.112Z)_
+- `qe7326d3d` — NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc2; the Epic constraints the criteria operationalize (k1, k2, k6) were not scored separately.
+  - **resolved**: Defer and flag as known gap — As for the same note on s2 and s7: k1/k2/k6 are the constraints ac1-ac4 operationalize (the DEF's own 'operationalizes' fields), so their scores follow from the criteria. Default stated to the user 2026-11-02. _(2026-11-02T04:50:56.835Z)_
 
 ## Citations
 

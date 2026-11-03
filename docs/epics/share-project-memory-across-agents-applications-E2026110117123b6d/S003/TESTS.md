@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -99,3 +99,37 @@ Run at 2026-11-03T12:58:15.256Z on commit `5cd990bd1`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-native.test.ts` | 0 | 1 | 4 s |  |
+
+## t4
+
+Run at 2026-11-03T13:31:34.831Z on commit `dc79c4151`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-directory-separation-and-no-empty-replacement**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-initialization-fresh-profile-and-read-only-reopen | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-refuses-queue-only-and-unknown-roots-without-replacement | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-validates-pending-markers-and-native-directory-identity | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+
+**integration: store-startup-rollback-every-open-boundary**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-initialization-resumes-only-recognized-generation-zero | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-rolls-back-each-acquired-native-resource | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-unverified-close-is-explicit-and-owner-stays-held | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+
+**integration: store-embedding-profile-reopen-plan-query-compatibility**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-initialization-preserves-missing-corrupt-and-mismatched-profile-data | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-fresh-profile-and-read-only-reopen | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 8 | 6.2 s |  |

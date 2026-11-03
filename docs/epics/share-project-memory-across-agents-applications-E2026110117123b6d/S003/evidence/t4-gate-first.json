@@ -1,0 +1,171 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t4",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Only pristine roots initialize; existing S2 queue-only roots retain every byte and return explicit unavailable status.",
+        "satisfied": true,
+        "evidence": "format.ts rejects unknown and queue-only roots before native loading. The tests append a real queued event, snapshot file digests, assert NOT_READY, and verify unchanged bytes. Ready stores missing native data or control rows are refused without replacement."
+      },
+      {
+        "check": "Missing/mismatched marker/root/runtime profile refuses before queue recovery; partial native handles close or owner remains held.",
+        "satisfied": false,
+        "evidence": "Marker/root/profile rejection and native rollback are implemented and tested, including cross-process ownership retention after failed cleanup. However, refusal before queue recovery is not established: the tests call OwnedLanceStore directly, while host-node.ts still starts FileQueue without store validation."
+      },
+      {
+        "check": "integration: store-embedding-profile-reopen-plan-query-compatibility",
+        "satisfied": false,
+        "evidence": "Both mapped cases exist and passed, but exercise initialization/reopen and profile tampering only. Neither exercises vector-bearing plan compatibility or stored/query preprocessing compatibility. The required named test is therefore only partially covered."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The scoped implementation is real, but queue-recovery ordering and the required plan/query compatibility coverage are not objectively established.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd packages/project-memory && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 8584,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd packages/project-memory && npx tsc --noEmit): clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-aAL65o/report.tap packages/project-memory/src/__tests__/store-initialization.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 6156,
+        "outputTail": "TAP version 13\n# Subtest: store-initialization-fresh-profile-and-read-only-reopen\nok 1 - store-initialization-fresh-profile-and-read-only-reopen\n  ---\n  duration_ms: 1188.215917\n  type: 'test'\n  ...\n# Subtest: store-initialization-refuses-queue-only-and-unknown-roots-without-replacement\nok 2 - store-initialization-refuses-queue-only-and-unknown-roots-without-replacement\n  ---\n  duration_ms: 410.864916\n  type: 'test'\n  ...\n# Subtest: store-initialization-preserves-missing-corrupt-and-mismatched-profile-data\nok 3 - store-initialization-preserves-missing-corrupt-and-mismatched-profile-data\n  ---\n  duration_ms: 532.91575\n  type: 'test'\n  ...\n# Subtest: store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table\nok 4 - store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table\n  ---\n  duration_ms: 595.443792\n  type: 'test'\n  ...\n# Subtest: store-initialization-resumes-only-recognized-generation-zero\nok 5 - store-initialization-resumes-only-recognized-generation-zero\n  ---\n  duration_ms: 663.239125\n  type: 'test'\n  ...\n# Subtest: store-initialization-validates-pending-markers-and-native-directory-identity\nok 6 - store-initialization-validates-pending-markers-and-native-directory-identity\n  ---\n  duration_ms: 520.985042\n  type: 'test'\n  ...\n# Subtest: store-initialization-rolls-back-each-acquired-native-resource\nok 7 - store-initialization-rolls-back-each-acquired-native-resource\n  ---\n  duration_ms: 719.481\n  type: 'test'\n  ...\n# Subtest: store-initialization-unverified-close-is-explicit-and-owner-stays-held\nok 8 - store-initialization-unverified-close-is-explicit-and-owner-stays-held\n  ---\n  duration_ms: 1105.982292\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 5739.9205\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-aAL65o/report.tap packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6156,
+            "titles": [
+              {
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/packages_project-memory_src___tests___store-initialization.test.ts.1793712694829.82821.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "store-directory-separation-and-no-empty-replacement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-startup-rollback-every-open-boundary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-profile-reopen-plan-query-compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/TESTS.md"
+    }
+  },
+  "passed": false
+}

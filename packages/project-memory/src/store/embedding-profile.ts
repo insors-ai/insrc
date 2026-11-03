@@ -38,3 +38,10 @@ export function embeddingVector(value: unknown, profile: EmbeddingProfile): read
     return Math.fround(n);
   }));
 }
+/** Query preprocessing uses precisely the persisted store profile, before native access. */
+export function embeddingQuery(input: unknown, expected: EmbeddingProfile, maxBytes: number): { readonly text: string; readonly vector: readonly number[]; readonly profile: EmbeddingProfile } {
+  const copy = snapshotJson(input, maxBytes + expected.dimension * 32 + 4096).value;
+  shape(invalid, copy, ['text', 'vector', 'profile']);
+  requireProfile(copy.profile, expected);
+  return Object.freeze({ text: embeddingText(copy.text, maxBytes), vector: embeddingVector(copy.vector, expected), profile: embeddingProfile(expected.model, expected.dimension) });
+}

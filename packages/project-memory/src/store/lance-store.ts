@@ -48,6 +48,14 @@ export class OwnedLanceStore {
   private constructor(owner: DirectoryOwnership, profile: EmbeddingProfile, storeId: string, resources: Resources, identity: { dev: bigint; ino: bigint }, hooks: StoreOpenHooks) {
     this.#owner = owner; this.profile = profile; this.storeId = storeId; this.#resources = resources; this.#identity = identity; this.#hooks = hooks;
   }
+  /** Package-private composition barrier. Recovery cannot run against unverified authority.
+   * The recovery callback owns rollback of its own partial resources. Host wiring is separate.
+   */
+  static async beforeRecovery<T>(owner: DirectoryOwnership, profile: EmbeddingProfile, recover: (store: OwnedLanceStore) => Promise<T>): Promise<{ store: OwnedLanceStore; recovered: T }> {
+    const store = await OwnedLanceStore.open(owner, profile);
+    try { return { store, recovered: await recover(store) }; }
+    catch (error) { await store.close(); throw error; }
+  }
   static async open(owner: DirectoryOwnership, supplied: EmbeddingProfile, hooks: StoreOpenHooks = {}): Promise<OwnedLanceStore> {
     validateProfile(supplied); const profile = embeddingProfile(supplied.model, supplied.dimension); requireProfile(supplied, profile);
     const resources: Resources = {}; let nativeWriteUncertain = false;

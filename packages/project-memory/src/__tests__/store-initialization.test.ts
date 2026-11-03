@@ -11,18 +11,67 @@ import { MemoryError } from '../errors.js';
 import { FileQueue } from '../queue/file-queue.js';
 import { QueueAdmission } from '../queue/admission.js';
 import { digest } from '../queue/codec.js';
-import { embeddingProfile } from '../store/embedding-profile.js';
-import { arrowSchema, encodeRow, rootRow } from '../store/codec.js';
+import { embeddingProfile, embeddingQuery } from '../store/embedding-profile.js';
+import { arrowSchema, encodeRow, rootRow, snapshotPlanRows } from '../store/codec.js';
 import { formatText, STORE_DIRECTORY, STORE_FORMAT, STORE_PENDING } from '../store/format.js';
 import type { StoreFormat } from '../store/format.js';
 import { OwnedLanceStore, storeCleanupUnverified } from '../store/lance-store.js';
 import type { StoreOpenPoint } from '../store/lance-store.js';
 import { nativeTest } from './fixtures/node22.js';
 import { options } from './fixtures/options.js';
-import { profile } from './fixtures/store-rows.js';
-import { openNative } from './fixtures/store-native.js';
+import { profile, storeRows } from './fixtures/store-rows.js';
+import { decodedNative, openNative } from './fixtures/store-native.js';
 
 const denied = (code?: string) => (e: unknown) => e instanceof MemoryError && (code === undefined || e.code === code);
+nativeTest(import.meta.url, 'store-initialization-gates-real-queue-recovery-on-validated-authority', async () => {
+  await fixture(async (root, owner) => {
+    const config = options(root); let recoveries = 0;
+    const recover = async () => {
+      recoveries++;
+      const queue = new FileQueue(owner, root, config.limits);
+      try { await queue.start(); return queue; } catch (error) { await queue.close(); throw error; }
+    };
+    const opened = await OwnedLanceStore.beforeRecovery(owner, profile, recover);
+    assert.equal(recoveries, 1); await opened.recovered.close(); await opened.store.close();
+    const original = await marker(root);
+    await writeFile(join(root, STORE_FORMAT), formatText({ ...original, storeId: '00000000-0000-0000-0000-000000000000' }));
+    const before = await bytes(root);
+    await assert.rejects(OwnedLanceStore.beforeRecovery(owner, profile, recover), denied());
+    assert.equal(recoveries, 1); assert.deepEqual(await bytes(root), before);
+    await writeFile(join(root, STORE_FORMAT), formatText(original));
+    await assert.rejects(OwnedLanceStore.beforeRecovery(owner, embeddingProfile('wrong', 2), recover), denied('UNSUPPORTED_VERSION'));
+    assert.equal(recoveries, 1);
+    await rm(join(root, STORE_FORMAT));
+    await assert.rejects(OwnedLanceStore.beforeRecovery(owner, profile, recover), denied());
+    assert.equal(recoveries, 1);
+  });
+});
+nativeTest(import.meta.url, 'store-initialization-reopened-profile-prepares-matching-plan-and-native-query', async () => {
+  await fixture(async (root, owner) => {
+    const initial = await OwnedLanceStore.open(owner, profile); await initial.close();
+    const reopened = await OwnedLanceStore.open(owner, profile);
+    try {
+      const current = storeRows().find(row => row.rowKind === 'current')!;
+      const rows = snapshotPlanRows({ rows: [current], embeddingProfile: reopened.profile }, reopened.profile, 32768).rows;
+      const text = 'e\u0301\r\n😀 ';
+      const query = embeddingQuery({ text, vector: [1 + 1e-9, 0], profile }, reopened.profile, 32768);
+      assert.equal(query.text, text); assert.deepEqual(query.vector, rows[0]!.embedding);
+      for (const incompatible of [embeddingProfile('other', 2), embeddingProfile(profile.model, 3), { ...profile, normalizationVersion: 'semantic-v1' }]) {
+        assert.throws(() => snapshotPlanRows({ rows: [current], embeddingProfile: incompatible }, reopened.profile, 32768), denied('UNSUPPORTED_VERSION'));
+        assert.throws(() => embeddingQuery({ text, vector: [1, 0], profile: incompatible }, reopened.profile, 32768), denied('UNSUPPORTED_VERSION'));
+      }
+      const native = await openNative(root);
+      try {
+        // Test-only SDK mutation: production CommitPlan/writer is task 5/6.
+        await native.table.mergeInsert('rowId').whenMatchedUpdateAll().whenNotMatchedInsertAll().useLsm(false).execute(rows.map(row => ({ ...encodeRow(row, reopened.profile) })));
+        const found = await native.table.vectorSearch(Array.from(query.vector)).where("rowKind = 'current'").limit(1).toArray();
+        assert.equal(found.length, 1);
+        const clean = { ...found[0] }; delete clean['_distance'];
+        assert.deepEqual(decodedNative(clean).embedding, query.vector);
+      } finally { native.close(); }
+    } finally { await reopened.close(); }
+  });
+});
 async function fixture(run: (root: string, owner: DirectoryOwnership) => Promise<void>) {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'memory-store-open-'))); const owner = await acquireOwnership(options(root));
   try { await run(root, owner); } finally { await owner.close(); await rm(root, { recursive: true, force: true }); }

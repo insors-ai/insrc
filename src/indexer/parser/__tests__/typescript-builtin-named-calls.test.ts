@@ -72,11 +72,20 @@ export function shadowed(): void {
 export function shadowedParam(registry: number[]): void {
 	registry.filter(Boolean);
 }
+export function shadowedDestructured(value: any): void {
+	const { ns, cfg: renamed } = value;
+	const [registry] = value;
+	ns.find(1);
+	registry.find(1);
+	for (const st of value) st.push(1);
+	for (const [cfg] of value) cfg.parse('x');
+}
 `);
 	assert.deepEqual(calls(r, 'all'), ['emit', 'find', 'process']);
 	assert.deepEqual(calls(r, 'viaImports'), ['create', 'parse', 'push', 'resolve']);
 	assert.deepEqual(calls(r, 'shadowed'), [], 'a local named like an import is not the import');
 	assert.deepEqual(calls(r, 'shadowedParam'), [], 'nor is a parameter');
+	assert.deepEqual(calls(r, 'shadowedDestructured'), [], 'nor a destructured local or a for-of binding');
 });
 
 test('S001 t1: built-in-named member calls on untyped locals and built-in objects record no row, and import bindings do not leak to the next file', () => {

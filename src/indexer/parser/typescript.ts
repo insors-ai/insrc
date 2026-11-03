@@ -903,7 +903,12 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
           const fn = value.childForFieldName('function');
           if (fn && normalizeCallee(fn.text) === 'axios.create') axios.add(nameNode.text);
         }
+      } else if (nameNode) {
+        collectPatternIdentifiers(nameNode, declared);   // const { a, b } = ... / const [a] = ...
       }
+    } else if (n.type === 'for_in_statement' && n.childForFieldName('kind')) {
+      const left = n.childForFieldName('left');           // for (const x of / in ...)
+      if (left) collectPatternIdentifiers(left, declared);
     }
     for (const c of n.namedChildren) stack.push(c);
   }

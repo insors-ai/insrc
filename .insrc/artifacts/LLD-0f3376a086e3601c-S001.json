@@ -115,7 +115,9 @@
       "reviewedAt": "2026-11-03T10:05:25.542Z",
       "model": "cli-codex:gpt-6.1-sol",
       "reviewedBy": "daemon"
-    }
+    },
+    "approvedAt": "2026-11-03T10:15:19.931Z",
+    "rangeBase": "86b9a9db9e33a5b1af5ab10f56712b48abf33875"
   },
   "body": {
     "summary": {

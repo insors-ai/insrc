@@ -1,0 +1,247 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793700936159-2su7ee",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T10:16:27.668Z",
+    "epicCreatedAt": "2026-11-02T11:44:58.736Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 51505,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f3376a086e3601c",
+    "epicSlug": "sql-references-miss-across-2-3",
+    "storyId": "S001",
+    "lldRunId": "wf-1793697841311-bsjwgf",
+    "lldEffectiveHash": "952fdaafbdea56ae446df55b3f9c7314d28de7ae28b0705df7f1daa9407226c6",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this fix means adding one SQL name rule and using it everywhere names are compared: first the reader (stored names keep meaningful quoting; same-file and CTE matching by key), then the resolver's suffix matching and the store's re-pend rules, then a settle that retries only what its files can affect and consumes the re-pend marker, then the settle's re-check of same-named inferred edges, and finally a check on the installed daemon and the full sweep.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "SQL name key and the reader",
+        "summary": "Add the shared SQL name helper (segments from the grammar's identifiers; double-quoted exact, backtick and bare folded; collision-free JSON key; folded last segment). In src/indexer/parser/sql.ts the stored name writes each double-quoted segment whose quoting matters in double quotes; same-file references and CTE names match by key; rawTo and referencesIn keep names as written. Update the three sql.test.ts assertions that encoded the old conflation, add positive and negative quoting and collision cases, and pin the grammar limits with real-parser tests.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The key folds bare and backtick segments, keeps double-quoted segments exact, and [\"a.b\"] differs from [\"a\",\"b\"]",
+          "Users and \"Users\", a.b and \"a.b\", in one file are distinct entities with distinct ids, each reference linked to its own; ids of names whose quoting does not matter are unchanged",
+          "A view's CTE and same-file references match by key; pending rawTo and referencesIn keep quotes",
+          "[Sales.Q1], \"a\"\"b\" and `a.b` give the same entities and references as before"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "S001 t1: the SQL name key folds bare and backtick segments, keeps double-quoted ones exact, and never collides"
+          },
+          {
+            "level": "unit",
+            "name": "S001 t1: the reader keeps meaningful quoting in stored names, matches same-file references and CTEs by key, and keeps written names in rawTo and referencesIn"
+          },
+          {
+            "level": "unit",
+            "name": "S001 t1: names the grammar cannot read give the same entities and references as before"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Resolver suffix matching and the store's re-pend rules",
+        "summary": "Replace sqlByName/sqlByLastSegment with one index by folded last segment; sqlCandidates filters by the segment-suffix rule (a longer reference needs a qualified definition) using keys read from stored names; resolveSqlReference unchanged. sqlByNameRows keeps a holder's name when it meets the removed target by key OR by folded text, skips names the holder's own file defines, and marks every row it writes. Integration tests for L4 and L3 resolution and for removal.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "db.app.users and app.users meet both ways; audit.users does not meet a bare users; users with two qualified definitions stays ambiguous",
+          "\"Users\" and users resolve to their own definitions",
+          "A removed definition's references return to pending through the folded-or-key match, never for a name the holder's file defines, and carry the marker",
+          "A stored definition with an unquoted name (as every definition was before the change) meets references by its folded key, as today"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t2: qualified names meet by segment suffix and quoted names resolve to their own definitions"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t2: a removed definition's references return to pending by folded-or-key match, never for a locally defined name, and carry the marker"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Targeted settle selection and the marker's lifecycle",
+        "summary": "sqlReferencesAwaitingCommitted selects only pending SQL rows whose folded last segment matches a definition in a committed file, ambiguous rows whose candidates include an entity no longer stored, and marked rows; after the settle's resolution pass the marker is cleared on every selected marked row whatever the outcome (a meta-delete beside updateUnresolvedMetaBatch). Integration tests observe the selected rows directly and run a two-settle sequence.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A settle selects exactly the rows matching the saved files' names, ambiguous rows with a removed candidate, and marked rows; an unrelated pending row is not selected",
+          "A marked row is selected by the next settle and its marker cleared whether it resolves or not; an unrelated later save does not select it"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t3: a settle selects only the pending SQL rows the saved files can affect"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t3: the re-pend marker is consumed by the next settle, so an unrelated later save does not retry the row"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Settle re-check of same-named inferred edges",
+        "summary": "Before the settle's resolution pass, for each table/view defined in a committed file, return to pending by name (sqlByNameRows rules, marked) the inbound inferred REFERENCES edges of every stored table/view with the same folded last segment, the committed definitions included, whose holder is outside the committed files; they are re-attempted in the same settle. Integration tests for a new candidate, a different name, a quote-only edit, a segment-boundary edit, the upgrade path, the legacy collision and mixed ownership.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "An inferred edge becomes ambiguous when a saved file adds a same-named definition; a different name leaves it",
+          "Quote-only and segment-boundary edits return another file's inferred edge to pending",
+          "Upgrade and legacy-collision: re-reading only the definition file leaves the external reference linked to the right entity",
+          "Mixed ownership: no pending row for a name the holder's file resolves locally"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t4: a saved definition re-checks same-named inferred edges, including quote-only and segment-boundary edits"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t4: upgrade, legacy-collision and mixed-ownership cases resolve correctly"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Installed-daemon smoke and the full sweep",
+        "summary": "After the push, update and restart the installed daemon; a small SQL repository shows resolved qualified and quoted references and an inferred edge turning ambiguous after a settle that adds a same-named definition. Record as evidence, then run the full sweep per directory.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Smoke evidence file on the installed daemon",
+          "Full sweep recorded with every failure classified"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "S001 t5: the installed daemon resolves qualified and quoted SQL references and re-checks an inferred edge on a new definition"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the SQL name key helper",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SqlParser.parse and SqlParser.referencesIn",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "SQL reference resolution in full and settle modes",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges SQL name key"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api SqlParser.parse / referencesIn"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api sqlCandidates / sqlReferencesAwaitingCommitted"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api sqlByNameRows"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges re-pend marker and settle re-check"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration"
+    }
+  ]
+}

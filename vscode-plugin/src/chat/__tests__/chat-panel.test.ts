@@ -2492,13 +2492,14 @@ test('S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-bl
   fcT.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => turnEvents(fcT).some((e) => e.kind === 'done'));
   const beforeT = runsT.length;
-  const postsT = fcT.posted.length;
+  // E202611031bd72813:S001 t3: status changes also repost active-list; count only the other posts here.
+  const postsT = fcT.posted.filter((m) => m.payload.type !== 'active-list').length;
   const echoesT = fcT.posted.filter((m) => m.payload.type === 'user-row').length;
   fcT.send(env('permission-decision', { requestId: 'req-t', decision: 'deny' }));
   await new Promise((r) => setTimeout(r, 30));
   assert.equal(runsT.length, beforeT, 'tool-gate deny never re-runs');
   // S003 (ux polish): deny now records a rejected permission-outcome — exactly ONE new post, no echo.
-  assert.equal(fcT.posted.length, postsT + 1, 'tool-gate deny posts exactly the rejected outcome');
+  assert.equal(fcT.posted.filter((m) => m.payload.type !== 'active-list').length, postsT + 1, 'tool-gate deny posts exactly the rejected outcome');
   assert.equal(fcT.posted.filter((m) => m.payload.type === 'user-row').length, echoesT, 'deny posts no user-row echo');
   const outT = turnEvents(fcT).filter((e) => e.kind === 'permission-outcome');
   assert.equal(outT.length, 1, 'one permission-outcome event');
@@ -2521,11 +2522,11 @@ test('S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-bl
   fcD.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => turnEvents(fcD).some((e) => e.kind === 'done'));
   const beforeD = runsD.length;
-  const postsD = fcD.posted.length;
+  const postsD = fcD.posted.filter((m) => m.payload.type !== 'active-list').length; // t3: status changes repost active-list
   fcD.send(env('permission-decision', { requestId: 'req-d', decision: 'deny' }));
   await new Promise((r) => setTimeout(r, 30));
   assert.equal(runsD.length, beforeD, 'dir-block deny never re-runs');
-  assert.equal(fcD.posted.length, postsD + 1, 'dir-block deny posts exactly the rejected outcome');
+  assert.equal(fcD.posted.filter((m) => m.payload.type !== 'active-list').length, postsD + 1, 'dir-block deny posts exactly the rejected outcome');
   const outD = turnEvents(fcD).filter((e) => e.kind === 'permission-outcome');
   assert.equal(outD.length, 1, 'one permission-outcome event for the dir-block deny');
   assert.equal((outD[0] as { decision: string }).decision, 'rejected');

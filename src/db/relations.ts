@@ -566,7 +566,10 @@ export async function promoteResolvedBatch(
 			}
 			const toU64 = lookupU64ByStringId(s, targetEntityId);
 			if (toU64 === undefined) {
-				const meta = withEvidence({ ...(stored?.meta ?? unresolved.meta) }, evidence);
+				// An awaiting row holds an id, not a name: the SQL re-pend marker does not carry over.
+				const { [SQL_REPEND_MARKER]: _marker, ...kept } = stored?.meta ?? unresolved.meta;
+				void _marker;
+				const meta = withEvidence(kept, evidence);
 				removePendingRowInTxn(s, unresolved.id);
 				writePendingRowInTxn(s, awaitingRowFor(s, fromU64, unresolved.fromEntity, unresolved.kind, targetEntityId, meta, now));
 				result.keptAwaiting++;
@@ -627,6 +630,8 @@ export async function clearUnresolvedMetaKeyBatch(_db: DbClient, ids: readonly s
  * resolution pass decides it again by the name rule. An edge none of whose
  * holder's names fits, and every edge the reader linked in its own file
  * ('extracted'), is left as it is. Returns the number of edges returned.
+ * Its own transaction: if the settle fails after it, the returned edges stay
+ * pending (marked) and the next SQL settle or full index re-resolves them.
  */
 export async function returnInferredSqlReferencesToPending(
 	_db: DbClient,
@@ -739,7 +744,10 @@ function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, 
 		const e = decodeEntityRow(buf as Buffer);
 		if (e.language === 'sql' && (e.kind === 'table' || e.kind === 'view')) local.add(sqlNameKey(e.name));
 	}
-	const names = [...new Set(sqlReferenceReader(holder.body) ?? [])]
+	// One row per name key, under its first spelling -- as the reader writes them.
+	const byKey = new Map<string, string>();
+	for (const n of sqlReferenceReader(holder.body) ?? []) if (!byKey.has(sqlNameKey(n))) byKey.set(sqlNameKey(n), n);
+	const names = [...byKey.values()]
 		.filter(n => !local.has(sqlNameKey(n)))
 		.filter(n => sqlNamesMeet(n, target.name) || sqlNamesMeet(sqlFoldedText(n), sqlFoldedText(target.name)));
 	if (names.length === 0) return undefined;

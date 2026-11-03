@@ -170,6 +170,14 @@ test('S001 t2: a removed definition\'s references return to pending by folded-or
 	await pass('settle', ['db/old.sql']);
 	assert.deepEqual(await edges(h.get('h')!, now), ['"Users"@db/old.sql: inferred'], 're-resolved by key');
 
+	// A name written two ways is one reference, as the reader writes it: one returned row.
+	await save('db/two.sql', 'CREATE TABLE app.accounts (id int);');
+	const tw = await save('db/tw.sql', 'CREATE VIEW tw AS SELECT * FROM accounts a JOIN ACCOUNTS b ON true;');
+	await pass();
+	assert.equal((await edges(tw.get('tw')!)).length, 1);
+	await save('db/two.sql', '-- gone\n');
+	assert.deepEqual((await pendingOf(tw.get('tw')!)).map(r => [r.rawTo, r.meta[SQL_REPEND_MARKER]]), [['accounts', true]]);
+
 	// By key where the folded text cannot be read: a quoted name holding a delimiter ("x[y" folds to x[y, an open bracket).
 	await save('db/k.sql', 'CREATE TABLE app."x[y" (id int);');
 	const kh = await save('db/kh.sql', 'CREATE VIEW kh AS SELECT * FROM "x[y";');

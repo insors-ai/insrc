@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T14:26:11.136Z",
+    "updatedAt": "2026-11-03T14:35:41.123Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -790,8 +790,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "b68bff504",
-        "ranAt": "2026-11-03T14:26:11.136Z",
+        "commit": "38bc67cfe",
+        "ranAt": "2026-11-03T14:35:41.123Z",
         "testsPassed": true,
         "tests": [
           {
@@ -833,7 +833,7 @@
             "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4584,
+            "durationMs": 4670,
             "titles": [
               {
                 "title": "verified-terminal-ack-retirement-and-reader-pins",
@@ -866,7 +866,7 @@
             "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4279,
+            "durationMs": 4874,
             "titles": [
               {
                 "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",

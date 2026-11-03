@@ -11,8 +11,11 @@ import { embeddingProfile, requireProfile, validateProfile } from './embedding-p
 import { loadFormat, STORE_DIRECTORY, writeFormat } from './format.js';
 import { AtomicWriter } from './writer.js';
 import { receiptVerifier } from './receipts.js';
+import { forgetTarget, frameProtection, loadProtections } from './barriers.js';
+import type { FrameEligibility } from './barriers.js';
+import type { GuardLookup } from './guards.js';
 import type { WriterHooks } from './writer.js';
-import { rowIdPredicate } from './plan.js';
+import { admittedPayload, rowIdPredicate, snapshotAdmittedFrame } from './plan.js';
 import { decimal, validateQueueLimits } from '../queue/codec.js';
 import type { EmbeddingProfile, RootPayload, StoreRow } from './types.js';
 
@@ -55,10 +58,13 @@ export class OwnedLanceStore {
   readonly #identity: { dev: bigint; ino: bigint };
   readonly #writer: AtomicWriter;
   readonly #receipts: ReceiptVerifier;
+  readonly #guard: GuardLookup;
+  readonly #maxEventBytes: number;
   #observedVersion: number | undefined;
   #closing: Promise<void> | undefined;
   private constructor(owner: DirectoryOwnership, profile: EmbeddingProfile, storeId: string, resources: Resources, identity: { dev: bigint; ino: bigint }, hooks: StoreOpenHooks, limits: MemoryLimits) {
     this.#owner = owner; this.profile = profile; this.storeId = storeId; this.#resources = resources; this.#identity = identity; this.#hooks = hooks;
+    this.#maxEventBytes = limits.maxEventBytes;
     const table = () => { if (!resources.table) unavailable(); return resources.table; };
     const get = async (id: string) => {
       await this.#checkIdentity(); const rows = await table().query().where(rowIdPredicate(id)).limit(2).toArray(); await this.#checkIdentity();
@@ -71,20 +77,20 @@ export class OwnedLanceStore {
       if (!rows.length) return null;
       const row = this.#decodeNative(rows[0]); if (row.rowKind !== 'receipt') unavailable(); return row;
     };
+    const tombstones = async (project: string, epoch: string) => {
+      await this.#checkIdentity();
+      const rows = await table().query().where("rowKind = 'tombstone'").limit(STORE_LIMITS.maxReferences + 1).toArray(); await this.#checkIdentity();
+      if (rows.length > STORE_LIMITS.maxReferences) throw new MemoryError('CONTEXT_OVERFLOW', 'Memory protection scan exceeds its bound.');
+      return rows.map(row => this.#decodeNative(row)).filter(row => row.projectId === project && row.scopeEpoch === epoch);
+    };
+    this.#guard = { get, tombstones };
     this.#writer = new AtomicWriter({
       get,
       refresh: async () => { await this.#checkIdentity(); await table().checkoutLatest(); await this.#assertVersion(); await this.#checkIdentity(); },
       root: () => this.#authorityRoot(),
       version: async () => { await this.#checkIdentity(); await this.#assertVersion(); const version = await table().version(); await this.#checkIdentity(); return version; },
       receiptByIdentity: hash => receiptWhere('identityDigest', hash),
-      tombstones: async (project, epoch) => {
-        // Project and epoch never enter SQL: match decoded metadata after a bounded
-        // protection scan. Task 8 adds broad lifecycle matching, not raw SQL.
-        await this.#checkIdentity();
-        const rows = await table().query().where("rowKind = 'tombstone'").limit(STORE_LIMITS.maxReferences + 1).toArray(); await this.#checkIdentity();
-        if (rows.length > STORE_LIMITS.maxReferences) throw new MemoryError('CONTEXT_OVERFLOW', 'Memory protection scan exceeds its bound.');
-        return rows.map(row => this.#decodeNative(row)).filter(row => row.projectId === project && row.scopeEpoch === epoch);
-      },
+      tombstones,
       publish: async rows => {
         await this.#checkIdentity(); await hooks.point?.('before-write'); await this.#checkIdentity();
         await table().checkoutLatest(); await this.#assertVersion();
@@ -203,7 +209,7 @@ export class OwnedLanceStore {
     const rows = await table.query().where("rowId = '" + ROOT_ROW_ID + "'").limit(2).toArray();
     await this.#checkIdentity(); if (rows.length !== 1) unavailable();
     const row = decodeRow({ ...rows[0] }, this.profile);
-    if (row.rowKind !== 'control' || row.payload.kind !== 'root' || row.payload.storeId !== this.storeId) unavailable();
+    if (row.rowKind !== 'control' || row.payload.kind !== 'root' || row.payload.storeId !== this.storeId || row.payload.generation === '0' && row.payload.queueId !== null) unavailable();
     return row.payload;
   }
   async #authorityRoot(): Promise<RootPayload> {
@@ -265,6 +271,23 @@ export class OwnedLanceStore {
   pendingWrites(): number { return this.#writer.pending(); }
   drainWrites(): Promise<void> { return this.#writer.drain(); }
   receiptVerifier(): ReceiptVerifier { return this.#receipts; }
+  async validateFrameEligibility(input: unknown): Promise<FrameEligibility> {
+    try {
+      if (this.#closing || !this.#writer.accepting()) unavailable();
+      const frame = snapshotAdmittedFrame(input, this.#maxEventBytes); admittedPayload(frame); forgetTarget(frame);
+      return await this.#writer.orderedRead(async () => {
+        const table = this.#resources.table; if (!table) unavailable();
+        await table.checkoutLatest(); await this.#assertVersion();
+        const root = await this.#authorityRoot();
+        const markers = await loadProtections(frame, root, this.profile, this.#guard);
+        const result = frameProtection(frame, markers, frame.command.kind === 'forget');
+        await this.#checkIdentity(); await this.#assertVersion(); return result;
+      });
+    } catch (error) {
+      if (error instanceof MemoryError && error.code === 'CONTEXT_OVERFLOW') throw error;
+      unavailable();
+    }
+  }
   close(): Promise<void> {
     this.#closing ??= (async () => {
       this.#writer.stopAdmission(); await this.#writer.drain();

@@ -76,6 +76,16 @@ export function snapshotPlan(input: unknown, profile: EmbeddingProfile, maxEvent
   prepared.add(result); return result;
 }
 export function requirePrepared(value: PreparedPlan): void { if (!prepared.has(value)) invalidPlan(); }
+/** Protection can terminalize an admitted frame without retaining/re-copying its
+ * speculative domain rows. Only verified store-side barrier IDs enter this path. */
+export function blockedPlan(original: PreparedPlan, generation: string, ids: readonly string[]): PreparedPlan {
+  requirePrepared(original);
+  if (!decimal(generation) || !ids.length || ids.length > STORE_LIMITS.maxReferences || new Set(ids).size !== ids.length) invalidPlan();
+  for (const id of ids) domainId('tombstone', id);
+  const plan: CommitPlan = Object.freeze({ ...original.plan, expectedGeneration: generation, expectedRevisions: Object.freeze({}), rows: Object.freeze([]),
+    disposition: Object.freeze({ state: 'failed', errorCode: 'POLICY_DENIED', rejectedByTombstoneIds: Object.freeze([...ids].sort()) }) });
+  const result = Object.freeze({ ...original, plan }); prepared.add(result); return result;
+}
 export function rowScope(row: { projectId: string; sessionId: string | null; branch: string | null; environment: string | null }): Scope {
   return { projectId: row.projectId, ...(row.sessionId === null ? {} : { sessionId: row.sessionId }), ...(row.branch === null ? {} : { branch: row.branch }), ...(row.environment === null ? {} : { environment: row.environment }) };
 }

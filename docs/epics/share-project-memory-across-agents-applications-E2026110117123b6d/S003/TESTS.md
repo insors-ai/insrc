@@ -229,7 +229,7 @@ Run at 2026-11-03T14:13:08.824Z on commit `40b1b5ab1`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-03T14:26:11.136Z on commit `b68bff504`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-03T14:35:41.123Z on commit `38bc67cfe`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: store-proof-port-retained-and-recycled**
 
@@ -245,5 +245,5 @@ Run at 2026-11-03T14:26:11.136Z on commit `b68bff504`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 6 | 4.6 s |  |
-| `packages/project-memory/src/__tests__/store-receipts.test.ts` | 0 | 4 | 4.3 s |  |
+| `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 6 | 4.7 s |  |
+| `packages/project-memory/src/__tests__/store-receipts.test.ts` | 0 | 4 | 4.9 s |  |

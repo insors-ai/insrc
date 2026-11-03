@@ -5,7 +5,8 @@ import type { Reservation } from '../queue/codec.js';
 import { encodeRow, makeRow, namespaceKey, physicalId, ROOT_ROW_ID, snapshotRows, STORE_LIMITS } from './codec.js';
 import { guardEffects, revisionConflict } from './guards.js';
 import type { GuardLookup } from './guards.js';
-import { canonical, rowScope, snapshotPlan } from './plan.js';
+import { blockedPlan, canonical, rowScope, snapshotPlan } from './plan.js';
+import { planProtection } from './barriers.js';
 import type { PreparedPlan } from './plan.js';
 import type { EmbeddingProfile, EncodedRow, ReceiptPayload, RootPayload, StoreRow } from './types.js';
 
@@ -42,6 +43,7 @@ export class AtomicWriter {
   pending(): number { return this.#budget.calls + (!this.#settlementVerified && this.#budget.calls === 0 ? 1 : 0); }
   async drain(): Promise<void> { await this.#tail; if (!this.#settlementVerified) throw unavailable(); }
   isFenced(): boolean { return this.#fenced; }
+  accepting(): boolean { return !this.#stopped && !this.#fenced; }
   /** Queue proof reads remain admitted after mutation stop, until the store owner
    * closes their facade. They share the lane but never call back into the queue. */
   orderedRead<T>(read: () => Promise<T>): Promise<T> {
@@ -79,7 +81,8 @@ export class AtomicWriter {
     return result;
   }
   async #execute(prepared: PreparedPlan, reservation: Reservation, resolve: (receipt: OperationReceipt) => void, reject: (error: unknown) => void): Promise<void> {
-    const { plan, identityDigest } = prepared, io = this.#io;
+    let { plan } = prepared;
+    const { identityDigest } = prepared, io = this.#io;
     await io.refresh();
     const root = await io.root();
     const previousReceipt = await io.receiptByIdentity(identityDigest);
@@ -95,6 +98,8 @@ export class AtomicWriter {
       if (!cache.has(id)) cache.set(id, await io.get(id) as StoreRow | null);
       return cache.get(id)!;
     };
+    const protection = await planProtection(prepared, root, this.#profile, { get, tombstones: io.tombstones.bind(io) });
+    if (!protection.eligible) { prepared = blockedPlan(prepared, root.generation, protection.rejectedByTombstoneIds); plan = prepared.plan; }
     const effects = await guardEffects(prepared, root, this.#profile, { get, tombstones: io.tombstones.bind(io) }, now);
     const receipt: ReceiptPayload = { schemaVersion: 1, operationId: plan.operationId, eventId: plan.frame.command.source.eventId, identityDigest, payloadHash: plan.commandHash, scope: plan.scope, scopeEpoch: plan.scopeEpoch,
       state: plan.disposition.state, generation: effects.generation, queueTerminal: true, affectedRevisions: effects.affectedRevisions, sourceIds: effects.sourceIds, tombstoneIds: effects.tombstoneIds,

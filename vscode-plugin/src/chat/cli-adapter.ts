@@ -1329,8 +1329,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       }
     } catch (err) {
       if (err instanceof SegmentGone) {
-        // The file rolled over past this turn: there is nothing left to resume.
+        // The file rolled over past this turn's segment: report an OBSERVATION failure (not a
+        // terminal) so the caller can re-anchor into an older retained generation and replay.
         log.warn(`[chat:${mapper.id}] ${err.message}`);
+        yield { kind: 'error', turnId, message: err.message, observationFailure: true };
         return;
       }
       yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}`, observationFailure: true };

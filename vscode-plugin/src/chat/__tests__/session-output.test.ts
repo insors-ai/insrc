@@ -257,3 +257,34 @@ test('E202611031bd72813:S001 t5: a registered cursor pins its generation across 
   await so.remove('s1');
   rmSync(root, { recursive: true, force: true });
 });
+
+test('E202611031bd72813:S001 t5: a pinned generation replays its payload losslessly after rollover, and recoverTurn re-anchors a lost turn into it', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5r-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 }); // tiny cap: every beginTurn rolls over
+  const seg1 = await so.beginTurn('s1', 't1');
+  // payload written by the CLI into generation 1 (two NDJSON lines)
+  appendFileSync(seg1.outPath, json({ type: 'assistant', message: { content: [{ type: 'text', text: 'hello' }] } }) + '\n');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  so.registerCursor(seg1.cursor); // the observer's pin
+  // roll over twice: without the pin, generation 1 would be discarded at the second rollover
+  const seg2 = await so.beginTurn('s1', 't2');
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  const seg3 = await so.beginTurn('s1', 't3');
+  assert.ok(seg3.cursor.generation > seg1.cursor.generation + 1 || seg3.cursor.generation !== seg1.cursor.generation);
+  // lossless replay: tail from the pinned cursor returns BOTH payload lines, not SegmentGone
+  const lines: string[] = [];
+  for await (const { line } of so.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['assistant', 'result'], 'the archived generation replays its full payload');
+  // recoverTurn re-anchors the lost turn into the oldest retained generation that holds it
+  const rc = await so.recoverTurn('s1', 't1');
+  assert.ok(rc !== undefined, 'recoverTurn finds the turn in a retained generation');
+  assert.equal(rc!.generation, seg1.cursor.generation, 're-anchored into the archived generation');
+  const replay: string[] = [];
+  for await (const { line } of so.tail(rc!, { finished: () => true })) replay.push(line);
+  assert.deepEqual(replay.map((l) => JSON.parse(l).type), ['assistant', 'result'], 'tail from the recovered cursor replays the turn from its start');
+  assert.equal(await so.recoverTurn('s1', 'no-such-turn'), undefined, 'a turn no retained file holds is unrecoverable');
+  so.unregisterCursor(seg1.cursor);
+  await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});

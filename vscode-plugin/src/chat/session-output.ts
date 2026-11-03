@@ -174,6 +174,12 @@ export interface SessionOutput {
   unregisterCursor(cursor: SegmentCursor): void;
   /** The oldest generation still retained for a session (for SegmentGone replay recovery). */
   oldestRetainedGeneration(sessionId: string): Promise<number | undefined>;
+  /**
+   * E202611031bd72813:S001 t5: re-anchors a turn whose segment was lost (SegmentGone) into the
+   * oldest retained generation that still contains its turn-start marker. Returns undefined when
+   * no retained file holds the turn.
+   */
+  recoverTurn(sessionId: string, turnId: string): Promise<SegmentCursor | undefined>;
 }
 
 export const DEFAULT_MAX_BYTES = 4 * 1024 * 1024;
@@ -280,6 +286,21 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         if (key.startsWith(`${sessionId}:`)) gens.push(Number(key.slice(sessionId.length + 1)));
       }
       return gens.length === 0 ? undefined : Math.min(...gens);
+    },
+    async recoverTurn(sessionId: string, turnId: string): Promise<SegmentCursor | undefined> {
+      const p = paths(sessionId);
+      // oldest retained first: archived generations (sorted), then previous, then current
+      const archKeys = [...archived.keys()].filter((k) => k.startsWith(`${sessionId}:`)).sort((a, b) => Number(a.slice(sessionId.length + 1)) - Number(b.slice(sessionId.length + 1)));
+      const candidates: { generation: number; path: string }[] = archKeys.map((k) => ({ generation: Number(k.slice(sessionId.length + 1)), path: archived.get(k)! }));
+      const prev = await generationOf(p.previous);
+      if (prev !== undefined) candidates.push({ generation: prev, path: p.previous });
+      const cur = await generationOf(p.current);
+      if (cur !== undefined) candidates.push({ generation: cur, path: p.current });
+      for (const c of candidates) {
+        const offset = await turnStartOffset(c.path, turnId);
+        if (offset !== undefined) return { sessionId, turnId, generation: c.generation, offset };
+      }
+      return undefined;
     },
     async beginTurn(sessionId: string, turnId: string): Promise<TurnSegment> {
       const p = paths(sessionId);

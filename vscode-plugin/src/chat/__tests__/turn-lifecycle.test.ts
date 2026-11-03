@@ -1417,3 +1417,17 @@ test('E202611031bd72813:S001 t2: an output-read failure ends the follow as obser
   h.lc.follow(h.session, { onEvent: () => {}, onEnd: () => {} });
   await waitFor(() => resumes.length === 2);
 });
+
+test('E202611031bd72813:S001 t5: starting a new turn clears the observer checkpoint (it is turn-scoped)', async () => {
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  h.session.observerCheckpoint = { turnId: 'old-turn', generation: 2, offset: 100, selectionSeq: 3 };
+  const a = recSink();
+  const p = h.lc.start(h.session, REQ, a.sink);
+  await waitFor(() => runs.length === 1);
+  assert.equal(h.session.liveTurn?.cursor.turnId, 't1', 'the new turn owns the cursor');
+  assert.equal(h.session.observerCheckpoint, undefined, 'the old turn\'s observer checkpoint is invalidated on the new turn');
+  runs[0]!.feed.push(done('t1'));
+  await p;
+  runs[0]!.proc.exitNow();
+});

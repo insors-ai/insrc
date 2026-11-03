@@ -188,6 +188,8 @@ export interface PersistedRequest {
  * any split selectionBuffer fragment), plus already-dispatched presentation declaration ids.
  */
 export interface ObserverCheckpoint {
+  /** The turn this checkpoint belongs to — a checkpoint of another turn is never reused. */
+  readonly turnId: string;
   readonly generation: number;
   readonly offset: number;
   readonly selectionSeq: number;

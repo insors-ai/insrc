@@ -625,90 +625,109 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (s === undefined || live === undefined) continue;
       if (live.ownerHostPid === hostPid) continue; // this host's own live/followed turn: the lifecycle owns it
       if (deps.isAlive !== undefined && live.ownerHostPid !== 0 && deps.isAlive(live.ownerHostPid)) continue; // another live window owns it
-      const cp = s.observerCheckpoint ?? { generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: 0 };
-      const cursor = { sessionId: s.id, turnId: live.cursor.turnId, generation: cp.generation, offset: cp.offset };
-      let decoderSeq = cp.selectionSeq;
-      let decoderBuf = cp.selectionBuffer ?? '';
-      out.registerCursor(cursor); // retention: this generation is not discarded under us
-      let adapter;
+      const turnId = live.cursor.turnId;
+      // The checkpoint is turn-scoped: a checkpoint of ANOTHER turn is never reused — the observer
+      // re-anchors from the liveTurn cursor instead.
+      const cpRaw = s.observerCheckpoint;
+      const cp = cpRaw !== undefined && cpRaw.turnId === turnId
+        ? cpRaw
+        : { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: 0 };
+      let ad;
       try {
-        adapter = deps.providers.get(s.provider);
+        ad = deps.providers.get(s.provider);
       } catch {
-        out.unregisterCursor(cursor);
         continue;
       }
-      if (typeof adapter.resume !== 'function') {
-        out.unregisterCursor(cursor);
-        continue;
-      }
-      const ctl = new AbortController();
-      const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
-      let sawTerminal = false; // a REAL terminal (done, or a non-observation error)
-      let sawObservationFailure = false;
-      let abortedByBudget = false;
-      let lastCursor = cursor;
-      let ingestedAny = false;
-      try {
-        const events = adapter.resume(
-          { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: cp.selectionSeq, ...(cp.selectionBuffer !== undefined ? { selectionBuffer: cp.selectionBuffer } : {}) } },
-          {
-            signal: ctl.signal,
-            onProgress: (cur) => {
-              lastCursor = { ...cursor, offset: cur.offset };
-              if (Date.now() > deadline && !ctl.signal.aborted) {
-                abortedByBudget = true;
-                ctl.abort(); // per-tick budget: pause, never discard
-              }
+      if (typeof ad.resume !== 'function') continue;
+      const resume = ad.resume.bind(ad);
+      // One ingest pass from `from` with the given decoder state. Pins its generation for retention
+      // while it runs and records it in `pins` (dropped only when the pass caught up or reached a
+      // real terminal — between ticks an unread generation stays pinned, never archived away).
+      const pins: { sessionId: string; turnId: string; generation: number; offset: number }[] = [];
+      const ingest = async (from: { generation: number; offset: number }, decSeq: number, decBuf: string) => {
+        const cursor = { sessionId: s.id, turnId, generation: from.generation, offset: from.offset };
+        out.registerCursor(cursor);
+        pins.push(cursor);
+        const ctl = new AbortController();
+        const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
+        const st = { sawTerminal: false, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf };
+        try {
+          const events = resume(
+            { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) } },
+            {
+              signal: ctl.signal,
+              onProgress: (cur) => {
+                st.last = { ...cursor, offset: cur.offset };
+                if (Date.now() > deadline && !ctl.signal.aborted) {
+                  st.abortedByBudget = true;
+                  ctl.abort(); // per-tick budget: pause, never discard
+                }
+              },
+              onDecoderState: (ds) => {
+                st.seq = ds.selectionSeq;
+                st.buf = ds.selectionBuffer;
+              },
             },
-            onDecoderState: (ds) => {
-              decoderSeq = ds.selectionSeq;
-              decoderBuf = ds.selectionBuffer;
-            },
-          },
-        );
-        for await (const ev of events) {
-          ingestedAny = true;
-          if (ev.kind === 'approval-request') {
-            persistRequest(s, { requestId: ev.requestId, kind: 'approval', turnId: ev.turnId, title: ev.title, detail: ev.detail, ...(ev.toolName !== undefined ? { toolName: ev.toolName } : {}), ...(ev.command !== undefined ? { command: ev.command } : {}), resolved: false });
-            setChatStatus(s, 'waiting-input');
-          } else if (ev.kind === 'selection-request') {
-            persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false });
-            setChatStatus(s, 'waiting-input');
-          } else if (ev.kind === 'error') {
-            if (ev.observationFailure === true) sawObservationFailure = true;
-            else sawTerminal = true;
-          } else if (ev.kind === 'done') {
-            sawTerminal = true;
+          );
+          for await (const ev of events) {
+            st.ingestedAny = true;
+            if (ev.kind === 'approval-request') {
+              persistRequest(s, { requestId: ev.requestId, kind: 'approval', turnId: ev.turnId, title: ev.title, detail: ev.detail, ...(ev.toolName !== undefined ? { toolName: ev.toolName } : {}), ...(ev.command !== undefined ? { command: ev.command } : {}), resolved: false });
+              setChatStatus(s, 'waiting-input');
+            } else if (ev.kind === 'selection-request') {
+              persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false });
+              setChatStatus(s, 'waiting-input');
+            } else if (ev.kind === 'error') {
+              if (ev.observationFailure === true) st.sawObservationFailure = true;
+              else st.sawTerminal = true;
+            } else if (ev.kind === 'done') {
+              st.sawTerminal = true;
+            }
+            if (Date.now() > deadline && !ctl.signal.aborted) {
+              st.abortedByBudget = true;
+              ctl.abort();
+            }
           }
-          if (Date.now() > deadline && !ctl.signal.aborted) {
-            abortedByBudget = true;
-            ctl.abort();
-          }
+        } catch {
+          if (!ctl.signal.aborted) st.threw = true; // the cursor stays; recovery below re-anchors
         }
-      } catch {
-        // SegmentGone or an adapter throw: the cursor stays; next tick replays from the oldest
-        // retained generation (retention above keeps it readable while registered).
+        return { ...st, cursor };
+      };
+      let pass = await ingest({ generation: cp.generation, offset: cp.offset }, cp.selectionSeq, cp.selectionBuffer ?? '');
+      // SegmentGone / output-read failure recovery: re-anchor into the oldest retained generation
+      // that still holds this turn and replay from its start with a FRESH decoder. Replay is
+      // lossless, not duplicating: persisted requests dedupe by requestId on re-ingest.
+      if (pass.sawObservationFailure && !pass.sawTerminal && !pass.abortedByBudget && !pass.threw) {
+        try {
+          const oldest = await out.oldestRetainedGeneration(s.id);
+          const rc = oldest !== undefined ? await out.recoverTurn(s.id, turnId) : undefined;
+          if (rc !== undefined && (rc.generation !== pass.cursor.generation || rc.offset !== pass.cursor.offset)) {
+            pass = await ingest(rc, 0, '');
+          }
+        } catch { /* keep the failed pass */ }
       }
-      // caught up = the iterator drained to the end of the available output without a budget abort
-      // and without an observation failure
-      const caughtUp = ingestedAny && !abortedByBudget && !sawObservationFailure;
-      // persist the checkpoint (own cursor + decoder progress)
+      // caught up = the iterator drained to the end of the available output without a budget abort,
+      // an observation failure, or a thrown pass
+      const caughtUp = pass.ingestedAny && !pass.abortedByBudget && !pass.sawObservationFailure && !pass.threw;
+      // persist the checkpoint (turn-scoped: own cursor + decoder progress)
       try {
-        s.observerCheckpoint = { generation: lastCursor.generation, offset: lastCursor.offset, selectionSeq: decoderSeq, ...(decoderBuf !== '' ? { selectionBuffer: decoderBuf } : {}) };
+        s.observerCheckpoint = { turnId, generation: pass.last.generation, offset: pass.last.offset, selectionSeq: pass.seq, ...(pass.buf !== '' ? { selectionBuffer: pass.buf } : {}) };
         deps.store.save(s);
       } catch { /* best-effort */ }
-      out.unregisterCursor(cursor);
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a
-      // real terminal, or verified process death WITH a caught-up observer; budget exhaustion and
-      // observation failures keep the last known status
-      const pidDead = live.pid === undefined || deps.isAlive === undefined || !deps.isAlive(live.pid);
-      if (sawTerminal || (pidDead && caughtUp)) {
+      // real terminal, or VERIFIED process death (isAlive present and reporting the pid dead) WITH a
+      // caught-up observer; budget exhaustion and observation failures keep the last known status
+      const pidDead = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
+      if (pass.sawTerminal || (pidDead && caughtUp)) {
         try {
           delete s.liveTurn;
           deps.store.save(s);
         } catch { /* best-effort */ }
         setChatStatus(s, (s.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
       }
+      // retention ends only when there is nothing left to protect: a caught-up pass or a real
+      // terminal drops every pin this tick made; otherwise the unread generation stays archived
+      if (caughtUp || pass.sawTerminal) for (const p of pins) out.unregisterCursor(p);
     }
   };
 

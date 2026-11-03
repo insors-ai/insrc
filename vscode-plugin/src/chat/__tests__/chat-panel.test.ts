@@ -5886,3 +5886,97 @@ test('E202611031bd72813:S001 t5 integration: observer ingests a REAL session-out
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('E202611031bd72813:S001 t5: the observer resumes from the PERSISTED checkpoint across passes — a split marker consumed up to the checkpoint offset resolves via the restored decoder buffer+seq (request id sel-<turn>-5)', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs2-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn in this test'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    const selJson = JSON.stringify({ prompt: 'Pick one', options: [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }], multi: true });
+    const marker = '```insrc:select\n' + selJson + '\n```';
+    const half = Math.floor(marker.length / 2);
+    const initLine = JSON.stringify({ type: 'system', subtype: 'init', session_id: 'n-obs' }) + '\n';
+    const frag1Line = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(0, half) }] } }) + '\n';
+    const frag2Line = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(half) }] } }) + '\n';
+    const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'n-obs' }) + '\n';
+    appendFileSync(seg.outPath, initLine + frag1Line + frag2Line + resultLine);
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    // a PREVIOUS observer pass consumed init+frag1 and persisted this checkpoint (offset after
+    // frag1, the partial marker as the decoder buffer, selectionSeq 5) — this pass must resume
+    // from it, not re-read from offset 0 with an empty decoder
+    const cpOffset = seg.cursor.offset + Buffer.byteLength(initLine) + Buffer.byteLength(frag1Line);
+    cur.observerCheckpoint = { turnId: 't-obs', generation: seg.cursor.generation, offset: cpOffset, selectionSeq: 5, selectionBuffer: marker.slice(0, half) };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.status === 'waiting-input', 5000, 'resumed pass resolved the split marker -> waiting-input');
+    const after = store.get(s.id)!;
+    const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
+    assert.equal(sels.length, 1, 'exactly one selection request (no duplicate from a re-read)');
+    assert.equal(sels[0]!.requestId, 'sel-t-obs-5', 'the persisted selectionSeq was restored into the decoder (id uses seq 5, not 0)');
+    assert.equal(sels[0]!.prompt, 'Pick one', 'the restored buffer + second fragment completed the marker');
+    assert.deepEqual(sels[0]!.options, ['Alpha', 'Beta']);
+    assert.equal(after.liveTurn, undefined, 'terminal cleared the cursor');
+    assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs' && after.observerCheckpoint.selectionSeq === 6, 'checkpoint persisted turn-scoped with the advanced seq');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('E202611031bd72813:S001 t5: the observer ignores a checkpoint of ANOTHER turn and recovers a gone segment via oldestRetainedGeneration/recoverTurn (SegmentGone -> replay -> done)', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs3-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn in this test'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'system', subtype: 'init', session_id: 'n-obs' }) + '\n');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'n-obs' }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    // the recorded segment generation is GONE (rolled away unpinned) — resume hits SegmentGone
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation + 100, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    // a STALE checkpoint of another turn must be ignored (turn identity is validated)
+    cur.observerCheckpoint = { turnId: 'some-other-turn', generation: seg.cursor.generation + 100, offset: 5, selectionSeq: 7 };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'SegmentGone recovered by replay from the oldest retained generation -> terminal cleared the cursor');
+    const after = store.get(s.id)!;
+    assert.equal(after.status, 'done', 'result line replayed -> done (no unresolved requests)');
+    assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs', 'checkpoint re-persisted for THIS turn (stale one not reused)');
+    assert.equal(after.observerCheckpoint!.generation, seg.cursor.generation, 'recovered into the retained generation, not the gone one');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

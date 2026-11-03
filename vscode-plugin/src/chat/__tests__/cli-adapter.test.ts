@@ -1431,10 +1431,14 @@ test('resume() from a saved offset yields only the later events, ends at the ter
   assert.deepEqual(gone.map((e) => e.kind), ['status', 'error']);
   assert.match((gone[1] as { message: string }).message, /the turn ended without a result/);
 
-  // A cursor whose generation is gone (rolled over past it) ends at once with nothing to resume.
+  // A cursor whose generation is gone (rolled over past it) ends at once, reporting the loss as
+  // an OBSERVATION failure (so an observer can re-anchor and replay), never as a terminal.
   const lost: TurnEvent[] = [];
   for await (const ev of adapter.resume({ cursor: { ...seg2.cursor, generation: 99 }, pid: process.pid, startedAt: null })) lost.push(ev);
-  assert.deepEqual(lost, [], 'nothing to resume, no hang');
+  assert.equal(lost.length, 1, 'one event, no hang');
+  assert.equal(lost[0]!.kind, 'error');
+  assert.equal((lost[0] as { observationFailure?: boolean }).observationFailure, true, 'SegmentGone is an observation failure, not a terminal');
+  assert.match((lost[0] as { message: string }).message, /no longer kept/);
 });
 
 test("resume()'s handed-over process stops the recorded pid's group only while its start time matches", async () => {
@@ -1814,4 +1818,21 @@ test('E202611031bd72813:S001 t2: resume() marks an output-read failure as observ
   assert.ok(err !== undefined && err.kind === 'error', 'an error event is yielded');
   assert.equal(err.observationFailure, true, 'the read failure is marked observationFailure');
   assert.match(err.message, /could not be read/);
+});
+
+test('E202611031bd72813:S001 t5: resume() on a segment that rolled away (SegmentGone) reports an observationFailure, not a terminal, and the turn stays recoverable', async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const out = createSessionOutput({ root, pollMs: 5 });
+  const seg = await out.beginTurn('s1', 't1');
+  await out.endTurn('s1', 't1', { code: 0, signal: null });
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+  const gone = { sessionId: 's1', turnId: 't1', generation: seg.cursor.generation + 100, offset: 0 };
+  const evs = await collect(adapter.resume({ cursor: gone, pid: undefined, startedAt: null }));
+  const err = evs.find((e) => e.kind === 'error');
+  assert.ok(err !== undefined && err.kind === 'error', 'an error event is yielded for the gone segment');
+  assert.equal(err.observationFailure, true, 'SegmentGone is an observation failure, not a real terminal');
+  assert.match(err.message, /no longer kept/);
+  assert.ok(evs.every((e) => e.kind !== 'done'), 'no done is fabricated for a lost segment');
+  const rc = await out.recoverTurn('s1', 't1');
+  assert.ok(rc !== undefined && rc.generation === seg.cursor.generation, 'the turn is recoverable from the retained generation');
 });

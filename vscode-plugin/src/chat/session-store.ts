@@ -134,6 +134,56 @@ export interface ChatSession {
    * back-compat.
    */
   liveTurn?: LiveTurn;
+  /**
+   * E202611031bd72813:S001: active-chat lifecycle status shown in the chat panel's active
+   * dropdown (red/yellow/green). Optional for back-compat: old rows without it are not-active
+   * until a turn sets a status.
+   */
+  status?: ChatStatus | undefined;
+  /** E202611031bd72813:S001: ms epoch of the last status-affecting event; drives the 30-min purge. */
+  lastActivityAt?: number | undefined;
+  /** E202611031bd72813:S001: persisted approval/selection requests (full payload + resolution). */
+  pendingRequests?: PersistedRequest[] | undefined;
+  /** E202611031bd72813:S001: durable checkpoint of the detached-session observer cursor/decoder. */
+  observerCheckpoint?: ObserverCheckpoint | undefined;
+}
+
+/** E202611031bd72813:S001 — active-chat lifecycle status: working | waiting-input | done. */
+export type ChatStatus = 'working' | 'waiting-input' | 'done';
+
+/**
+ * E202611031bd72813:S001 — one persisted approval/selection request. Carries the full
+ * actionable payload (QueuedApproval fields + batch/grant context for approvals; the complete
+ * normalized SelectionRequestEvent for selections) plus resolution state, so a restored chat
+ * can show its resolvable card again even when its LiveTurn is gone.
+ */
+export interface PersistedRequest {
+  readonly requestId: string;
+  readonly kind: 'approval' | 'selection';
+  readonly turnId?: string | undefined;
+  readonly title?: string | undefined;
+  readonly detail?: string | undefined;
+  readonly blockKind?: string | undefined;
+  readonly toolName?: string | undefined;
+  readonly command?: string | undefined;
+  readonly prompt?: string | undefined;
+  readonly options?: readonly string[] | undefined;
+  readonly multi?: boolean | undefined;
+  readonly resolved: boolean;
+  readonly outcome?: string | undefined;
+}
+
+/**
+ * E202611031bd72813:S001 — durable checkpoint for one session's background observer: the
+ * output segment generation + cursor offset + stateful decoder state (selectionSeq counter and
+ * any split selectionBuffer fragment), plus already-dispatched presentation declaration ids.
+ */
+export interface ObserverCheckpoint {
+  readonly generation: number;
+  readonly offset: number;
+  readonly selectionSeq: number;
+  readonly selectionBuffer?: string | undefined;
+  readonly declaredIds?: readonly string[] | undefined;
 }
 
 /** A turn still being read from the session output file. */
@@ -170,6 +220,11 @@ export interface ChatSessionStore {
   list(): ReadonlyArray<ChatSummary>;
   append(id: string, entry: TranscriptEntry): void;
   save(session: ChatSession): void;
+  /**
+   * E202611031bd72813:S001: set the active-chat lifecycle status, stamping `lastActivityAt`
+   * with the current time (monotonic per session — callers must not move it backwards).
+   */
+  setStatus(id: string, status: ChatStatus): void;
 }
 
 /** The slice of vscode.Memento this store needs (kept structural so the store is vscode-free). */
@@ -253,7 +308,22 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
   };
 
   const save = (session: ChatSession): void => {
-    void memento.update(SESSION_PREFIX + session.id, session);
+    // E202611031bd72813:S001: never regress the active-chat fields — a stale session object
+    // saved by another writer must not drop a newer status or move lastActivityAt backwards.
+    const existing = get(session.id);
+    let toWrite = session;
+    if (existing !== undefined) {
+      const status = session.status ?? existing.status;
+      const lastActivityAt = Math.max(session.lastActivityAt ?? 0, existing.lastActivityAt ?? 0);
+      if (status !== session.status || (lastActivityAt > 0 && lastActivityAt !== session.lastActivityAt)) {
+        toWrite = {
+          ...session,
+          ...(status !== undefined ? { status } : {}),
+          ...(lastActivityAt > 0 ? { lastActivityAt } : {}),
+        };
+      }
+    }
+    void memento.update(SESSION_PREFIX + toWrite.id, toWrite);
     const ids = readIndex();
     if (maxSessions === undefined) {
       // S003 unbounded behaviour, preserved byte-for-byte when no cap is set.
@@ -316,6 +386,14 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
       save(s);
     },
     save,
+    setStatus(id: string, status: ChatStatus): void {
+      const s = get(id);
+      if (s === undefined) return; // corrupt/missing -> no-op, never throw
+      // monotonic guard: lastActivityAt never moves backwards (an older observer tick must not
+      // resurrect a stale status), while the status itself always applies
+      const last = Math.max(s.lastActivityAt ?? 0, Date.now());
+      save({ ...s, status, lastActivityAt: last });
+    },
   };
 }
 

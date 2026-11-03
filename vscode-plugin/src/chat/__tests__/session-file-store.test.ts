@@ -857,3 +857,24 @@ test('run config persists in the session head file and reads back (old heads wit
   assert.equal(old?.model, undefined);
   assert.equal(old?.effort, undefined);
 });
+
+test('E202611031bd72813:S001 t1: file store setStatus persists status+lastActivityAt into the head; pendingRequests survive a fresh-store reload; stale save does not regress them', () => {
+  const { store, fake } = makeStore();
+  const s = store.create('claude' as never);
+  assert.equal(store.get(s.id)?.status, undefined); // old-row compat: head without the fields loads
+  store.setStatus(s.id, 'working');
+  store.save({ ...store.get(s.id)!, pendingRequests: [{ requestId: 'r9', kind: 'selection', resolved: false, prompt: 'pick', options: ['a', 'b'], multi: true }] });
+  // persisted head contents carry the new fields
+  const head = JSON.parse(fake.fs.readText(headPath(s.id))!);
+  assert.equal(head.status, 'working');
+  assert.equal(typeof head.lastActivityAt, 'number');
+  assert.equal(head.pendingRequests[0].requestId, 'r9');
+  // reload through a FRESH store over the same fs: fields survive
+  const reloaded = createFileChatSessionStore({ root: ROOT, fs: fake.fs, genId: () => 'other', now: () => '2026-01-02T00:00:00.000Z' });
+  assert.equal(reloaded.get(s.id)?.status, 'working');
+  assert.equal(reloaded.get(s.id)?.pendingRequests?.[0]?.multi, true);
+  // backwards timestamp: a stale object saved later must not regress status/lastActivityAt
+  store.save({ ...s, title: 'stale write' });
+  assert.equal(store.get(s.id)?.status, 'working');
+  store.setStatus('nope', 'working'); // unknown id: no-op, never throws
+});

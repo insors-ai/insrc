@@ -370,3 +370,33 @@ test('run config: draft/create carry model+effort; save/get round-trips them; ab
   assert.equal(created.model, 'glm-5-3');
   assert.equal(created.effort, undefined);
 });
+
+test('E202611031bd72813:S001 t1: setStatus persists status+lastActivityAt; old rows without them load unchanged (back-compat)', () => {
+  const { memento } = fakeMemento();
+  const store = createMementoChatSessionStore({ memento, ...fixed });
+  const s = store.create('claude' as never);
+  // old-row compat: a stored record without the new fields still passes isSession and loads
+  assert.equal(store.get(s.id)?.status, undefined);
+  store.setStatus(s.id, 'working');
+  const after = store.get(s.id);
+  assert.equal(after?.status, 'working');
+  assert.equal(typeof after?.lastActivityAt, 'number');
+  // monotonic guard: lastActivityAt never moves backwards
+  const first = after!.lastActivityAt!;
+  store.setStatus(s.id, 'waiting-input');
+  const second = store.get(s.id);
+  assert.equal(second?.status, 'waiting-input');
+  assert.ok(second!.lastActivityAt! >= first);
+  // pendingRequests + observerCheckpoint round-trip
+  store.save({ ...second!, pendingRequests: [{ requestId: 'r1', kind: 'approval', resolved: false }], observerCheckpoint: { generation: 1, offset: 42, selectionSeq: 2 } });
+  const third = store.get(s.id);
+  assert.equal(third?.pendingRequests?.[0]?.requestId, 'r1');
+  assert.equal(third?.observerCheckpoint?.offset, 42);
+  // a stale object saved later must not regress or drop the newer status/lastActivityAt
+  store.save({ ...s, title: 'stale write' }); // s has no status fields
+  const fourth = store.get(s.id);
+  assert.equal(fourth?.status, 'waiting-input');
+  assert.ok(fourth!.lastActivityAt! >= first);
+  // unknown id: no-op, never throws
+  store.setStatus('nope', 'done');
+});

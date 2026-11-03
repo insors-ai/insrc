@@ -32,6 +32,7 @@ import {
   updatedAtOf,
   type ChatSession,
   type ChatSessionStore,
+  type ChatStatus,
   type ChatSummary,
   type MementoLike,
   type RunConfig,
@@ -313,7 +314,25 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
     }
   };
 
-  const save = (s: ChatSession): void => {
+  const save = (incoming: ChatSession): void => {
+    // E202611031bd72813:S001: never regress the active-chat fields — a stale session object
+    // saved by another writer must not drop a newer status or move lastActivityAt backwards.
+    // Read the existing HEAD directly: a side-effect-free read, so the rowsSeen/cache bookkeeping
+    // below is untouched.
+    const p0 = paths(incoming.id);
+    const existingHead = readHead(fs, p0.head);
+    let s = incoming;
+    if (existingHead !== undefined) {
+      const status = incoming.status ?? existingHead.status;
+      const lastActivityAt = Math.max(incoming.lastActivityAt ?? 0, existingHead.lastActivityAt ?? 0);
+      if (status !== incoming.status || (lastActivityAt > 0 && lastActivityAt !== incoming.lastActivityAt)) {
+        s = {
+          ...incoming,
+          ...(status !== undefined ? { status } : {}),
+          ...(lastActivityAt > 0 ? { lastActivityAt } : {}),
+        };
+      }
+    }
     const p = paths(s.id);
     fs.mkdir(deps.root);
     const t = tracked.get(s);
@@ -404,6 +423,13 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
       save(s);
     },
     save,
+    setStatus(id: string, status: ChatStatus): void {
+      const s = get(id);
+      if (s === undefined) return; // missing or damaged: a no-op, as in the Memento store
+      // monotonic guard: lastActivityAt never moves backwards; the status itself always applies
+      const last = Math.max(s.lastActivityAt ?? 0, Date.now());
+      save({ ...s, status, lastActivityAt: last });
+    },
   };
 }
 

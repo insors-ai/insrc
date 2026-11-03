@@ -51,22 +51,19 @@ jobs:
           npm run build
           npm ls --all --json > "$RUNNER_TEMP/memory-evidence/dependency-graph.json"
           cp package-lock.json "$RUNNER_TEMP/memory-evidence/package-lock.json"
-      - name: Native ownership and lifecycle qualification
-        if: inputs.suite == 'full'
-        shell: bash
-        run: |
-          cd "$RUNNER_TEMP/project-memory"
-          node --import tsx --test --test-reporter=tap src/__tests__/native.test.ts src/__tests__/configuration.test.ts src/__tests__/ownership.test.ts src/__tests__/runtime.test.ts src/__tests__/contention.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/native-lifecycle.tap"
-      - name: Packed consumer and natural exit qualification
+      - name: Complete standalone package regression
         if: inputs.suite == 'full'
         shell: bash
         env:
-          CXXFLAGS: -std=c++17
+          INSRC_MEMORY_CRASH_EVIDENCE: ${{ runner.temp }}/memory-evidence/queue-crash.json
+          INSRC_MEMORY_STORE_PRIMITIVE_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-sdk.json
+          INSRC_MEMORY_STORE_INTEGRATION_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-integration.json
+          INSRC_MEMORY_PACKAGE_EVIDENCE: ${{ runner.temp }}/memory-evidence/package.json
         run: |
           cd "$RUNNER_TEMP/project-memory"
-          node --import tsx --test --test-reporter=tap src/__tests__/packed.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/packed-consumer.tap"
+          node --import tsx --test --test-concurrency=1 --test-reporter=tap src/__tests__/*.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/full-package.tap"
       - name: Durable queue and process crash qualification
-        if: inputs.suite == 'full' || inputs.suite == 'queue'
+        if: inputs.suite == 'queue'
         shell: bash
         env:
           INSRC_MEMORY_CRASH_EVIDENCE: ${{ runner.temp }}/memory-evidence/queue-crash.json
@@ -74,7 +71,7 @@ jobs:
           cd "$RUNNER_TEMP/project-memory"
           node --import tsx --test --test-reporter=tap src/__tests__/queue-*.test.ts src/__tests__/runtime.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/queue-suite.tap"
       - name: Native store SDK and process crash qualification
-        if: inputs.suite != 'queue'
+        if: inputs.suite == 'store-sdk' || inputs.suite == 'store-integration'
         shell: bash
         env:
           INSRC_MEMORY_STORE_PRIMITIVE_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-sdk.json
@@ -82,7 +79,7 @@ jobs:
           cd "$RUNNER_TEMP/project-memory"
           node --import tsx --test --test-reporter=tap src/__tests__/store-codec.test.ts src/__tests__/store-embedding-profile.test.ts src/__tests__/store-native.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/store-sdk.tap"
       - name: Production store and real queue process crash integration
-        if: inputs.suite == 'full' || inputs.suite == 'store-integration'
+        if: inputs.suite == 'store-integration'
         shell: bash
         env:
           INSRC_MEMORY_STORE_INTEGRATION_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-integration.json

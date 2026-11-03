@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T17:12:17.056Z",
+    "updatedAt": "2026-11-03T18:25:42.152Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -2439,6 +2439,42 @@
             "titles": [
               {
                 "title": "project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "107b8526f",
+        "ranAt": "2026-11-03T18:25:42.152Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-resource-and-latency-study",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/project-memory-resource-evidence.test.ts",
+                "title": "project-memory-resource-study-has-current-source-complete-corpora-and-honest-bounds",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/project-memory-resource-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 616,
+            "titles": [
+              {
+                "title": "project-memory-resource-study-has-current-source-complete-corpora-and-honest-bounds",
                 "result": "pass"
               }
             ],

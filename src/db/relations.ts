@@ -673,8 +673,7 @@ function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, 
 	}
 	const names = [...new Set(sqlReferenceReader(holder.body) ?? [])]
 		.filter(n => !local.has(sqlNameKey(n)))
-		// The folded texts meeting is the wider test: it holds whenever the keys meet.
-		.filter(n => sqlNamesMeet(sqlFoldedText(n), sqlFoldedText(target.name)));
+		.filter(n => sqlNamesMeet(n, target.name) || sqlNamesMeet(sqlFoldedText(n), sqlFoldedText(target.name)));
 	if (names.length === 0) return undefined;
 	const { awaitsId: _a, class: _c, reason: _r, ...rest } = awaiting.meta;
 	void _a; void _c; void _r;

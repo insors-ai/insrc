@@ -155,6 +155,14 @@ test('S001 t2: a removed definition\'s references return to pending by folded-or
 	await pass('settle', ['db/old.sql']);
 	assert.deepEqual(await edges(h.get('h')!, now), ['"Users"@db/old.sql: inferred'], 're-resolved by key');
 
+	// By key where the folded text cannot be read: a quoted name holding a delimiter ("x[y" folds to x[y, an open bracket).
+	await save('db/k.sql', 'CREATE TABLE app."x[y" (id int);');
+	const kh = await save('db/kh.sql', 'CREATE VIEW kh AS SELECT * FROM "x[y";');
+	await pass();
+	assert.equal((await edges(kh.get('kh')!)).length, 1, '"x[y" meets app."x[y"');
+	await save('db/k.sql', '-- gone\n');
+	assert.deepEqual((await pendingOf(kh.get('kh')!)).map(r => [r.rawTo, r.meta[SQL_REPEND_MARKER]]), [['"x[y"', true]]);
+
 	// A name that cannot mean the removed target is not returned: the edge awaits the id, as before.
 	await save('db/p.sql', 'CREATE TABLE app.payments (id int);');
 	const y = await save('db/y.sql', 'CREATE VIEW y AS SELECT * FROM audit.payments;');

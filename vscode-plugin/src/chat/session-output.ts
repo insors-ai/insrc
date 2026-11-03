@@ -207,7 +207,12 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   /** The generation a file holds (from its header line), or undefined when it is missing. */
   const generationOf = async (path: string): Promise<number | undefined> => {
     if ((await fs.size(path)) === undefined) return undefined;
-    const head = (await fs.readRange(path, 0, 4096)).toString('utf8');
+    let head: string;
+    try {
+      head = (await fs.readRange(path, 0, 4096)).toString('utf8');
+    } catch {
+      return undefined; // renamed away between size and read (rollover) — not here any more
+    }
     const first = head.slice(0, head.indexOf('\n') === -1 ? head.length : head.indexOf('\n'));
     const m = parseMarker(first);
     return m?.kind === 'file' ? m.generation : undefined;
@@ -251,8 +256,14 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   // directory on first use, so a recreated store (window reload) still discovers them (lossless
   // recovery must not depend on one process's memory).
   let archivesScanned: Promise<void> | undefined;
-  const scanArchives = (): Promise<void> => {
-    archivesScanned ??= (async () => {
+  const scanArchives = (force = false): Promise<void> => {
+    if (!force) {
+      archivesScanned ??= scanArchives(true);
+      return archivesScanned;
+    }
+    // Always re-read the directory: ANOTHER writer may have archived a generation since the last
+    // scan, and a cached scan would make that generation unreadable (SegmentGone) here.
+    const p = (async () => {
       let names: string[];
       try {
         names = await fs.readdir(deps.root);
@@ -266,17 +277,22 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         if (!archived.has(key)) archived.set(key, `${deps.root}/${name}`);
       }
     })();
-    return archivesScanned;
+    archivesScanned = p;
+    return p;
   };
 
   /** The file currently holding a cursor's generation. */
   const fileFor = async (cursor: SegmentCursor): Promise<string> => {
-    await scanArchives();
     const p = paths(cursor.sessionId);
     if ((await generationOf(p.current)) === cursor.generation) return p.current;
     if ((await generationOf(p.previous)) === cursor.generation) return p.previous;
-    const arch = archived.get(`${sessionFileName(cursor.sessionId)}:${cursor.generation}`);
-    if (arch !== undefined && (await generationOf(arch)) === cursor.generation) return arch;
+    const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
+    const hit = async (): Promise<string | undefined> => {
+      const arch = archived.get(key);
+      return arch !== undefined && (await generationOf(arch)) === cursor.generation ? arch : undefined;
+    };
+    const found = (await hit()) ?? (await scanArchives(true).then(hit));
+    if (found !== undefined) return found;
     throw new SegmentGone(cursor);
   };
 
@@ -309,7 +325,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     async oldestRetainedGeneration(sessionId: string): Promise<number | undefined> {
       const p = paths(sessionId);
       const base = sessionFileName(sessionId);
-      await scanArchives();
+      await scanArchives(true); // recovery paths always re-scan: another writer may have archived since
       const gens: number[] = [];
       const cur = await generationOf(p.current);
       if (cur !== undefined) gens.push(cur);
@@ -323,7 +339,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     async recoverTurn(sessionId: string, turnId: string): Promise<SegmentCursor | undefined> {
       const p = paths(sessionId);
       const base = sessionFileName(sessionId);
-      await scanArchives();
+      await scanArchives(true); // recovery paths always re-scan: another writer may have archived since
       // oldest retained first: archived generations (sorted), then previous, then current
       const archKeys = [...archived.keys()].filter((k) => k.startsWith(`${base}:`)).sort((a, b) => Number(a.slice(base.length + 1)) - Number(b.slice(base.length + 1)));
       const candidates: { generation: number; path: string }[] = archKeys.map((k) => ({ generation: Number(k.slice(base.length + 1)), path: archived.get(k)! }));
@@ -397,7 +413,12 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         file = await fileFor(cursor);
         // Read finished() BEFORE reading, so bytes written just before the writer finished are not missed.
         const done = opts.finished();
-        const chunk = await fs.readRange(file, offset + pending.length, READ_CHUNK);
+        let chunk: Buffer;
+        try {
+          chunk = await fs.readRange(file, offset + pending.length, READ_CHUNK);
+        } catch {
+          chunk = Buffer.alloc(0); // renamed away between resolve and read: re-resolve next iteration
+        }
         if (chunk.length > 0) {
           pending = pending.length === 0 ? chunk : Buffer.concat([pending, chunk]);
           for (let nl = pending.indexOf(0x0a); nl !== -1; nl = pending.indexOf(0x0a)) {

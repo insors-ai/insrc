@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createSessionOutput, parseMarker, SegmentGone, type SegmentCursor } from '../session-output.js';
+import { createSessionOutput, nodeSessionOutputFs, parseMarker, SegmentGone, type SegmentCursor, type SessionOutputFs } from '../session-output.js';
 import { tick, waitFor } from './fixtures.js';
 
 const root = (): string => join(mkdtempSync(join(tmpdir(), 'chat-output-')), 'chat-output');
@@ -314,27 +314,30 @@ test('E202611031bd72813:S001 t5: pinned archives are discovered from disk by a R
 
 test('E202611031bd72813:S001 t5: an in-progress pinned reader follows a rollover rename (re-resolves its generation every read) and never switches generations mid-read', async () => {
   const dir = join(mkdtempSync(join(tmpdir(), 'out-t5n-')), 'out');
-  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  // a slow readRange keeps the reader genuinely MID-FILE when the rename happens (a fast reader
+  // would drain the whole file between two polls)
+  const slowFs: SessionOutputFs = { ...nodeSessionOutputFs, readRange: async (p, st, len) => { await new Promise((r) => setTimeout(r, 40)); return nodeSessionOutputFs.readRange(p, st, len); } };
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5, fs: slowFs });
   const seg1 = await so.beginTurn('s1', 't1');
-  // >64 KiB of payload so the reader is mid-file (multiple chunks) when the rename happens
-  const filler = Array.from({ length: 3000 }, (_, i) => json({ g: 1, i }) + '\n').join('');
-  appendFileSync(seg1.outPath, filler);
+  // >64 KiB (READ_CHUNK) of payload: chunk 1 read, chunk 2 still unread when the rename happens
+  appendFileSync(seg1.outPath, Array.from({ length: 6000 }, (_, i) => json({ g: 1, i }) + '\n').join(''));
   so.registerCursor(seg1.cursor); // pin gen 1
-  const seg2 = await so.beginTurn('s1', 't2'); // gen 1 -> previous; also closes t1's segment
-  // the new generation's file is LARGER than the reader's mid-file offset, so a stale path
-  // resolution would silently read gen 2's bytes instead of erroring
-  appendFileSync(seg2.outPath, Array.from({ length: 3000 }, (_, i) => json({ g: 2, i }) + '\n').join(''));
   const lines: string[] = [];
   const read = (async () => {
     for await (const { line } of so.tail(seg1.cursor, { finished: () => false })) lines.push(line);
   })();
-  await waitFor(() => lines.length > 0, 3000, 'the reader consumed the first chunk of gen 1');
-  // rollover archives gen 1: the path (previous) is RENAMED to .pinned.1.ndjson mid-read
+  await waitFor(() => lines.length > 0, 5000, 'the reader consumed the first chunk of gen 1');
+  assert.ok(lines.length < 6000, 'the reader is mid-file, not done, when the rollover happens');
+  // rollover: gen 1 (current) closes t1 and is renamed to previous; a second rollover archives
+  // it to .pinned.1.ndjson — the new generations' files are larger than the reader's offset, so
+  // a stale path resolution would silently read THEIR bytes instead of erroring
+  const seg2 = await so.beginTurn('s1', 't2');
+  appendFileSync(seg2.outPath, Array.from({ length: 6000 }, (_, i) => json({ g: 2, i }) + '\n').join(''));
   const seg3 = await so.beginTurn('s1', 't3');
   assert.ok(seg3.cursor.generation > seg2.cursor.generation);
   await read; // returns at t1's turn-end marker inside the archived generation
-  assert.equal(lines.length, 3000, 'the reader got every payload line of gen 1');
-  assert.ok(lines.every((l) => JSON.parse(l).g === 1), 'no line came from another generation — the rename was followed, not crossed');
+  assert.equal(lines.length, 6000, 'the reader got every payload line of gen 1');
+  assert.ok(lines.every((l) => JSON.parse(l).g === 1), 'no line came from another generation — the renames were followed, not crossed');
   await so.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });

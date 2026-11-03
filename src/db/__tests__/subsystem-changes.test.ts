@@ -101,6 +101,22 @@ test('S001 t1: every change site records its source file in the same transaction
 	assert.deepEqual(await recorded(), ['src/a.ts', 'src/b.ts']);
 	await clear();
 
+	// The outgoing sweep of a removed entity's grouping edge: the holder's file is recorded (with its entity's
+	// removal), the edge's target file is not -- it lost an incoming edge, which is not its own grouping input.
+	const e = await save('src/e.ts', "import { fa } from './a.js';\nexport function fe(): number { return fa(); }\n");
+	await upsertRelations(null, [{ kind: 'CALLS', from: e.get('fe')!.id, to: a.get('fa')!.id, resolved: true, evidence: 'inferred', meta: { repo } }]);
+	await clear();
+	await deleteEntitiesById(null, [e.get('fe')!.id]);
+	assert.deepEqual(await recorded(), ['src/e.ts']);
+	await clear();
+
+	// The record is part of the change's transaction: a transaction that fails after recording leaves no entry
+	// (read back after reopening the store, as rollback evidence must be).
+	await assert.rejects(withWriteTxn(w => { recordChangedFileInTxn(w, repoId, 'src/rolled-back.ts'); throw new Error('the change fails'); }));
+	await closeGraphStore();
+	setGraphStorePath(join(dir, 'graph.lmdb'));
+	assert.deepEqual(await recorded(), [], 'the failed transaction recorded nothing');
+
 	// The SQL re-check records the holder whose inferred edge it returns.
 	assert.ok(sqlParser, 'the SQL reader is loaded');
 	const t = await save('src/t.sql', 'CREATE TABLE app.ledger (id int);\n');

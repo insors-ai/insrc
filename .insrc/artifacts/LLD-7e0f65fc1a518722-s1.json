@@ -1,0 +1,479 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793687550721-3iahoq",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T06:36:22.620Z",
+    "epicCreatedAt": "2026-11-02T14:12:18.721Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 229801,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0f65fc1a518722",
+    "epicSlug": "keep-artifact-log-step-raw-content",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793687550721-3iahoq",
+    "hldEffectiveHash": "cc7b166644d5ed4dea1ca40bf5b18287f86a95eaa2b53f8e3d7092f74123fe9d",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "When a raw writer changes the content of a head that already has history, the head ends one revision past its log and the lifecycle service refuses to approve, review or complete it. The service now recognises that state when it checks integrity: if the head's own hash holds and its content differs from the last logged revision, it logs the head's revision as an update by the system actor, marked as an adopted raw write, in the same queue slot, and then runs the operation. A hand-edited revision number, a hash mismatch and a log ahead of the head are still refused. No writer changes."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Keep the artifact log in step with raw content writes (ISSUE-7e0f65fc1a518722): a content change a raw writer (writeArtifact kind 'content') makes to a head that has history must leave the log in step with the head, so LifecycleService approves, reviews and completes the new revision."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "LifecycleService.apply",
+          "signature": "apply(id: string, op: Operation, by: Actor, detail?: TransitionDetail, ctx?: EvidenceContext): Promise<ApplyResult>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact whose lifecycle operation is applied",
+              "optional": false
+            },
+            {
+              "name": "op",
+              "type": "Operation",
+              "purpose": "For approve, review and complete the integrity of the head against its log is checked first",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "The actor of the operation; an adopted entry is by the system actor, not by this one",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ApplyResult>",
+            "meaning": "Unchanged"
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "thrown with reason hash-mismatch, log-ahead-of-head, or head-ahead-of-log when the head's content hash equals the last logged revision's (a changed number alone); nothing is written or logged"
+            }
+          ],
+          "preconditions": [
+            "For approve, review and complete the head has its own hash intact (checkHeadIntegrity is ok)"
+          ],
+          "postconditions": [
+            "When the head was ahead of the log with changed content, the log ends with an 'update' entry for the head's revision and hash by insrc:system, with outcome result 'adopted', appended before the operation's own entry and under the same per-artifact queue slot",
+            "After the adoption the integrity check passes and the operation proceeds as for any head in step",
+            "A head in step, an unlogged head and every refusal leave the log exactly as before (no entry is added)"
+          ]
+        },
+        {
+          "name": "checkIntegrity",
+          "signature": "checkIntegrity(a: ContentView, log: ChangeLogEntry | readonly ChangeLogEntry[] | undefined): Integrity",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "ContentView",
+              "purpose": "The head's description, payload and lifecycle",
+              "optional": false
+            },
+            {
+              "name": "log",
+              "type": "ChangeLogEntry | readonly ChangeLogEntry[] | undefined",
+              "purpose": "The log, or the entry to compare with",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Integrity",
+            "meaning": "Unchanged: it still answers head-ahead-of-log for a head later than the log; the decision to adopt is the caller's"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged for every input; the service calls it again with the adopted entry appended"
+          ]
+        },
+        {
+          "name": "History.appendLog",
+          "signature": "appendLog(id: string, e: ChangeLogEntry): Promise<void>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The artifact id",
+              "optional": false
+            },
+            {
+              "name": "e",
+              "type": "ChangeLogEntry",
+              "purpose": "The adopted 'update' entry",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Consumed as it is"
+          },
+          "errors": [
+            {
+              "type": "HistoryEntryError",
+              "condition": "the entry is malformed"
+            }
+          ],
+          "preconditions": [
+            "The caller holds the artifact's queue, so no store write interleaves"
+          ],
+          "postconditions": [
+            "The entry is the last revision-bearing entry of the log"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ChangeLogEntry (an adopted raw write)",
+        "change": "invariant-change",
+        "details": "A new use of the existing entry shape, no new field: operation 'update', actor insrc:system (kind system), revision {number, contentHash} copied from the head, outcome {result: 'adopted', summary: 'a content change written outside the store was logged when the head was approved, reviewed or completed'}, no status change. The entry's timestamp is the time of the adoption, not the time of the raw write. It is appended only when the head is later than the last revision-bearing entry, its stored hash matches its own content, and its content hash differs from that entry's.",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle-service.ts",
+          "src/workflow/artifact-core/types.ts",
+          "src/workflow/artifact-core/history.ts"
+        ]
+      },
+      {
+        "entity": "Integrity rule for approve, review and complete",
+        "change": "invariant-change",
+        "details": "head-ahead-of-log is no longer final for a head with changed content and an intact hash: the service logs it and re-checks. It stays final for a head whose number is ahead but whose content hash equals the last logged one, and hash-mismatch and log-ahead-of-head are unchanged. The check function itself does not change.",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle.ts",
+          "src/workflow/artifact-core/lifecycle-service.ts",
+          "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts",
+          "src/daemon/__tests__/lifecycle-wiring.test.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The revision number of a head was edited by hand and its content did not change",
+          "detection": "In LifecycleService.apply the head's content hash equals the content hash of the last revision-bearing log entry while its number is higher (checkIntegrity answers head-ahead-of-log)",
+          "response": "LifecycleConflictError head-ahead-of-log as before; nothing is written or logged",
+          "userImpact": "A person has to resolve it; the head is not approved",
+          "recoverable": true
+        },
+        {
+          "scenario": "The body of a head was edited by hand without recomputing the stored hash",
+          "detection": "checkHeadIntegrity: the stored contentHash differs from the hash of the head's own content",
+          "response": "LifecycleConflictError hash-mismatch before any adoption is considered; nothing is written or logged",
+          "userImpact": "A person has to resolve it",
+          "recoverable": true
+        },
+        {
+          "scenario": "The log is ahead of the head (a merge brought in a later revision)",
+          "detection": "checkIntegrity: the head's revision number is below the last logged one",
+          "response": "LifecycleConflictError log-ahead-of-head as before; no adoption",
+          "userImpact": "A conflict-resolved write is needed",
+          "recoverable": true
+        },
+        {
+          "scenario": "The adopted entry cannot be appended (the sidecar write fails, or the entry is malformed)",
+          "detection": "History.appendLog throws inside the store.updateAndLog callback",
+          "response": "The error is thrown out of apply; the head is not written and the operation is not applied; the log keeps whatever the failed append left (an append is one record)",
+          "userImpact": "The operation fails and can be retried; the next attempt finds the head still ahead of the log and adopts again",
+          "recoverable": true
+        },
+        {
+          "scenario": "A raw writer changes the head again between the adoption and the operation",
+          "detection": "None needed: adoption and the operation run under the artifact's one queue slot in store.updateAndLog, and a raw write that lands before or after is seen by the next call as a head ahead of the log again",
+          "response": "The later raw write is adopted by the next approve, review or complete; the operation that ran judged the content it read",
+          "userImpact": "A draft changed after a review is not covered by it: the revision moves, so the review is stale",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A head with no revision-bearing log entry (never approved or reviewed)",
+          "expected": "No history, so checkIntegrity passes and nothing is adopted or logged, as before"
+        },
+        {
+          "input": "Two raw content writes in a row on a head with history (revisions 2 and 3, log at 1)",
+          "expected": "One adopted entry at revision 3 and its hash; revision 2 is not logged, and the integrity check passes afterwards"
+        },
+        {
+          "input": "A raw write changes the content and a second raw write restores the logged content, so the head is at revision 3 with the revision-1 hash",
+          "expected": "The content hash equals the last logged one, so it is not adopted and head-ahead-of-log is refused; a person resolves it"
+        },
+        {
+          "input": "A head is approved after adoption",
+          "expected": "The log ends with the adopted update at the head's revision followed by the approve at the same revision; the next integrity check finds head and log equal"
+        },
+        {
+          "input": "A complete on a unit whose members are checked",
+          "expected": "Each member is checked the same way where the service checks it (lifecycle-service.ts line 260 path); a member with a raw write is adopted under its own queue slot, or refused for the other reasons"
+        },
+        {
+          "input": "apply of an operation that is not approve, review or complete",
+          "expected": "No integrity check, so no adoption; such operations run as before"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A head whose stored hash does not match its content is never approved, reviewed or completed (hash-mismatch is refused before any adoption)",
+          "source": "c2"
+        },
+        {
+          "text": "A log ahead of the head (log-ahead-of-head) is refused",
+          "source": "c2"
+        },
+        {
+          "text": "A refused operation writes nothing and logs nothing",
+          "source": "c4"
+        },
+        {
+          "text": "A head with no revision-bearing log entry is approved normally",
+          "source": "c2"
+        },
+        {
+          "text": "A content change by a raw writer still returns the head to draft and keeps its Signoff entries; nothing in storage.ts changes",
+          "source": "c1"
+        },
+        {
+          "text": "ArtifactStore.write still tolerates head-ahead-of-log on an ordinary write and refuses the other integrity reasons",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with tsx (npx tsx --test), tests in src/workflow/artifact-core/__tests__ using the store-kit and lifecycle-kit fixtures (kit, artifact, service, stubEvidence), and src/daemon/__tests__/lifecycle-wiring.test.ts for the daemon path",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The adoption rule of LifecycleService.apply: when it adopts, when it refuses, what it logs",
+          "subjects": [
+            "a head that a raw writeArtifact content change moved one revision past its log is approved: the log ends with an update by insrc:system with outcome result adopted at the head's revision and hash, followed by the approve at the same revision, and the head is approved",
+            "the same head is reviewed and then completed through apply with the same adoption, one adopted entry per raw write",
+            "a head whose number alone was raised by hand (content hash equal to the last logged one) is refused with head-ahead-of-log and nothing is written or logged",
+            "a hash-mismatch head and a log-ahead-of-head head are refused as before, with no adopted entry",
+            "a head with no revision-bearing log entry is approved with no adopted entry",
+            "two raw content writes in a row are adopted as one entry at the last revision",
+            "a raw write that restores the logged content (revision 3, the revision-1 hash) is refused, not adopted",
+            "an adopted entry whose append fails (a History that throws) fails the operation, writes no head and leaves the next attempt able to adopt"
+          ],
+          "fixturesNeeded": [
+            "kit() with a store and a sidecar",
+            "service() with stubEvidence([])",
+            "a raw writeArtifact content change on a head written by ArtifactStore.write",
+            "a History wrapper that throws on the first appendLog"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "A real content change on a head with history, through the daemon's approve path and the review path",
+          "subjects": [
+            "lifecycle-wiring: an approved artifact is redrafted by a raw content write and approved again through the daemon approve handler; the approval succeeds and the log holds the adopted entry",
+            "a redraft by the design-run writer (synthesize writes the head with writeArtifact content) on an approved LLD, then insrc approval of the new draft, ends approved at the new revision",
+            "the review-decision step reviews a redrafted head: the review is recorded at the new revision (no head-ahead-of-log)"
+          ],
+          "fixturesNeeded": [
+            "the lifecycle-wiring daemon fixture with a registered temporary repository"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "The existing refusals keep their tests",
+          "subjects": [
+            "lifecycle-service.test.ts keeps its head-ahead-of-log case for a hand-edited number, and its hash-mismatch and log-ahead-of-head cases, unchanged"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "a head moved past its log by a raw content write is approved, reviewed and completed with one adopted entry, then the operation's own entry (unit)",
+            "an approved artifact redrafted by a raw write is approved again through the daemon approve handler (integration)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "a hand-edited number is refused with nothing written (unit)",
+            "hash-mismatch and log-ahead-of-head are refused as before with no adopted entry (unit)",
+            "a raw write that restores the logged content is refused (unit)",
+            "lifecycle-service.test.ts keeps its integrity cases unchanged (contract)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "the adoption is in LifecycleService.apply, so it holds for whichever raw writer moved the head: a redraft by the design-run writer, and a resolve-comment revise (integration)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "a real content change on a head with existing history is approved and reviewed through the service (unit and integration)",
+            "an adopted entry that cannot be appended fails the operation and leaves the next attempt able to adopt (unit)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "A raw content write (writeArtifact kind content, src/workflow/storage.ts) on a head that already has a revision-bearing log entry moves the head one revision past its log; checkIntegrity (src/workflow/artifact-core/lifecycle.ts) answers head-ahead-of-log and LifecycleService.apply (src/workflow/artifact-core/lifecycle-service.ts) refuses to approve, review or complete it and writes nothing, as reproduced on 2026-11-02. ArtifactStore.write tolerates the state on an ordinary write (src/workflow/artifact-core/store.ts).",
+      "stateAfter": "LifecycleService.apply, for approve, review and complete, first logs a head that is ahead of its log with intact hash and changed content as an update by insrc:system with outcome adopted, in the same queue slot, and then applies the operation as for a head in step. The refusals for a hand-edited number, a hash mismatch and a log ahead of the head are unchanged. No writer and no stored head changes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the adoption step to LifecycleService.apply before the integrity refusal: when checkIntegrity answers head-ahead-of-log, the head's own hash holds and its content hash differs from the last revision-bearing entry, append the adopted update through the store's history and check again",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the tests: a raw write on a head with history approved, reviewed and completed; the refusals that must stay; the failing append; the daemon approve path",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Record the decision and the limit (the adopted entry carries the time and actor of the adoption) in docs/plans/core-data-model.md item 3 and docs/plans/team-workflow.md, and update the write inventory note of the raw content writers",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored data changes and no API signature changes. A head that was refused before with head-ahead-of-log and a real content change is now approved, reviewed or completed; that is the fix. Heads already stuck in that state are adopted the next time they are approved, reviewed or completed, with an adopted entry dated at that time. A log with adopted entries is read by the same code, since the entry uses the existing update operation and outcome fields.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "The service adopts a raw content write when it judges integrity",
+        "oneLineSummary": "LifecycleService.apply, finding a head ahead of its log whose own hash holds and whose content differs from the last logged revision, first logs that revision as an update by a system actor, then runs the operation.",
+        "approach": "In LifecycleService.apply, inside the store.updateAndLog callback that already runs checkIntegrity for approve, review and complete, a head-ahead-of-log result is no longer final. When the head's stored hash matches its own content (checkHeadIntegrity is ok) and the head's content hash differs from the content hash of the last revision-bearing log entry, the head is a raw content write that was never logged: the service appends an 'update' entry at the head's revision, hash and time, by the system actor, with an outcome saying a raw write was adopted, in the same queue slot, and then checks the operation as before. A head whose number is ahead but whose content hash equals the logged one (a hand edit of the number), a hash-mismatch and a log-ahead-of-head stay refused. No writer changes.",
+        "pros": [
+          "One place, no change to the many synchronous writers, and every present and future raw writer is covered",
+          "The history gains the missing entry, so the log is in step afterwards and later checks pass without a special case",
+          "Keeps the refusal for a hand-edited number, a hash mismatch and a log ahead of the head"
+        ],
+        "cons": [
+          "The entry is written at the next lifecycle operation, not at the time of the write, so the log's timestamp and actor for that revision are the adopter's",
+          "The service decides that an unlogged content change is legitimate; it cannot tell a raw writer from someone who edited the body and recomputed the hash"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Move every raw content writer onto the store",
+        "oneLineSummary": "Replace writeArtifact kind 'content' at each caller with ArtifactStore.write, which logs the revision as it writes.",
+        "approach": "Each raw content writer (synthesize, the workflow rpc, the gates, resolve-comment, the tracker unit head, the two build ledger writers) obtains the repository's ArtifactStore and calls its async write with an actor, so the head and the log move together under the store's queue and journal. writeArtifact keeps only the meta-only kind. The callers that are synchronous become async.",
+        "pros": [
+          "The log is written at the time of the change with the real actor",
+          "One rule for every write: the store; the integrity states cannot arise from a content write"
+        ],
+        "cons": [
+          "Many call sites in different modules become async, with their tests; callers that run without a daemon (library use, tests) have no store to call",
+          "The store takes a repository registry entry and a sidecar the library code does not have; a large change for a defect with one visible symptom",
+          "Writers that run before any lifecycle operation (build ledger, unit head) gain history they never needed"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "The log is exact, but it changes many synchronous callers and needs a store where there is none; a large change across modules for one symptom."
+      },
+      {
+        "id": "a3",
+        "name": "writeArtifact appends the log entry itself",
+        "oneLineSummary": "writeArtifact, after a content write that mints a revision on a head with history, appends a revision-bearing entry to the sidecar from the path.",
+        "approach": "writeArtifact derives the repository root and the sidecar from the artifact path and appends an 'update' entry for the new revision through a synchronous variant of the history append, so no caller changes.",
+        "pros": [
+          "No caller changes; the log is written at the time of the write",
+          "Covers every raw writer"
+        ],
+        "cons": [
+          "It bypasses the store's queue and journal, so a raw write racing a store operation can interleave and reintroduce an integrity conflict",
+          "writeArtifact has no actor and no repository registry; the path-to-sidecar rule would be a second copy of the registry's",
+          "The history API is asynchronous; a synchronous append is a new surface"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Bypasses the store's queue and journal and needs a synchronous history surface; it risks creating the opposite conflict."
+      },
+      {
+        "id": "a4",
+        "name": "Raw writers call an adopt step after writing",
+        "oneLineSummary": "A new ArtifactStore method logs the head's current revision as an update; each raw content writer that runs where a store exists calls it after writeArtifact.",
+        "approach": "ArtifactStore gains an adopt(id, actor) that, under the queue, appends an 'update' entry for the head's current revision when the head is ahead of the log with its own hash intact. The daemon-side raw writers (synthesize, the workflow rpc, resolve-comment) call it right after writeArtifact; the library-only writers are left, which still leaves them able to produce the state.",
+        "pros": [
+          "The entry is written at the time of the change by the writer's own actor",
+          "No change in the integrity rules"
+        ],
+        "cons": [
+          "Every daemon writer must remember to call it, and a new one that forgets reproduces the defect",
+          "Writers without a store (gates, the build ledger) are not covered, so the defect stays reachable"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Better timing than a1 but depends on every writer remembering a call, and leaves the library writers uncovered."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "src/workflow/artifact-core/types.ts is listed as a call site of the adopted ChangeLogEntry but was not cited in an s1 analyze bundle; confirm it when building.",
+      "The Story carries no formal acceptance criteria: ac1 to ac4 and the constraints that the alternatives were scored against are derived from the approved issue's fix intent.",
+      "The adopted entry carries the time and actor (insrc:system) of the adoption, not of the raw write; confirm that this is acceptable for the history, or have the raw writers log at write time in a later change."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle-service.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts"
+    }
+  ]
+}

@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "28b35628466a0a6824097b12585a8a0bf4ef6cc6b86b822d46647be2d588058a",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T06:32:02.642Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "7e0f65fc1a518722",
+      "slug": "EPIC-7e0f65fc1a518722"
+    }
   },
   "body": {
     "title": "Keep the artifact log in step with raw content writes",

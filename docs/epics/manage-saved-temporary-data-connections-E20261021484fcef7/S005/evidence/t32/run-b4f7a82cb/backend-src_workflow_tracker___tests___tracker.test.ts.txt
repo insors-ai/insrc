@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: parseGithubRemoteUrl handles ssh + https + .git suffix
+ok 1 - parseGithubRemoteUrl handles ssh + https + .git suffix
+  ---
+  duration_ms: 1.860583
+  type: 'test'
+  ...
+# Subtest: parseGithubRemoteUrl keeps dots in repo names
+ok 2 - parseGithubRemoteUrl keeps dots in repo names
+  ---
+  duration_ms: 0.204541
+  type: 'test'
+  ...
+# Subtest: parseGithubRemoteUrl rejects non-github urls
+ok 3 - parseGithubRemoteUrl rejects non-github urls
+  ---
+  duration_ms: 0.069417
+  type: 'test'
+  ...
+# Subtest: ref parse/build/url/line
+ok 4 - ref parse/build/url/line
+  ---
+  duration_ms: 0.15875
+  type: 'test'
+  ...
+# Subtest: mapIssueStatus follows the convention (closed overrides)
+ok 5 - mapIssueStatus follows the convention (closed overrides)
+  ---
+  duration_ms: 0.116459
+  type: 'test'
+  ...
+# Subtest: renderEpicBody links slug-based docs (not hash)
+ok 6 - renderEpicBody links slug-based docs (not hash)
+  ---
+  duration_ms: 0.561625
+  type: 'test'
+  ...
+# Subtest: render*Body emit clickable blob links with a repo ref, bare paths without
+ok 7 - render*Body emit clickable blob links with a repo ref, bare paths without
+  ---
+  duration_ms: 0.378167
+  type: 'test'
+  ...
+# Subtest: commitAndPushArtifacts stages, commits, and pushes present files
+ok 8 - commitAndPushArtifacts stages, commits, and pushes present files
+  ---
+  duration_ms: 1.53025
+  type: 'test'
+  ...
+# Subtest: commitAndPushArtifacts reports committed-not-pushed on push failure
+ok 9 - commitAndPushArtifacts reports committed-not-pushed on push failure
+  ---
+  duration_ms: 0.641041
+  type: 'test'
+  ...
+# Subtest: commitAndPushArtifacts is a no-op when nothing is staged
+ok 10 - commitAndPushArtifacts is a no-op when nothing is staged
+  ---
+  duration_ms: 0.823125
+  type: 'test'
+  ...
+# Subtest: commitAndPushArtifacts no-ops when no file is present
+ok 11 - commitAndPushArtifacts no-ops when no file is present
+  ---
+  duration_ms: 0.214708
+  type: 'test'
+  ...
+# Subtest: renderStoryBody back-refs the Epic + links the slug LLD
+ok 12 - renderStoryBody back-refs the Epic + links the slug LLD
+  ---
+  duration_ms: 0.162125
+  type: 'test'
+  ...
+# Subtest: updateEpicTaskList splices the link + is idempotent
+ok 13 - updateEpicTaskList splices the link + is idempotent
+  ---
+  duration_ms: 0.080959
+  type: 'test'
+  ...
+# Subtest: resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)
+ok 14 - resolveWorkflowRef: scoped label resolves in a multi-epic dir (full hash + 8-char prefix)
+  ---
+  duration_ms: 3.099
+  type: 'test'
+  ...
+# Subtest: resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)
+ok 15 - resolveWorkflowRef: a multi-epic dir where only ONE epic holds the label resolves it unscoped (S001/t5)
+  ---
+  duration_ms: 2.442291
+  type: 'test'
+  ...
+# Subtest: resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped
+ok 16 - resolveWorkflowRef: unscoped label still null in a multi-epic dir; single-epic still resolves unscoped
+  ---
+  duration_ms: 3.278833
+  type: 'test'
+  ...
+# Subtest: resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null
+ok 17 - resolveWorkflowRef: epicHash matching zero epics → null; a prefix matching >1 → null
+  ---
+  duration_ms: 2.368292
+  type: 'test'
+  ...
+# Subtest: resolveWorkflowRef: issue\# and hierarchical-id forms resolve identically with or without opts.epicHash
+ok 18 - resolveWorkflowRef: issue\# and hierarchical-id forms resolve identically with or without opts.epicHash
+  ---
+  duration_ms: 5.060708
+  type: 'test'
+  ...
+# Subtest: out and silent keep their current options
+ok 19 - out and silent keep their current options
+  ---
+  duration_ms: 0.195833
+  type: 'test'
+  ...
+# Subtest: migrated wrappers run the same argv and keep their failure results
+ok 20 - migrated wrappers run the same argv and keep their failure results
+  ---
+  duration_ms: 0.484709
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 232.480584

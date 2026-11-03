@@ -22,13 +22,15 @@ import { join } from 'node:path';
 import { _setModelCatalogDirForTests } from '../model-catalog.js';
 import { projectDefinitions } from '../model-definitions.js';
 import {
+	familyForClient,
 	getModelRegistry,
+	profileProblem,
 	_resetModelRegistryForTests,
 	_setApprovedModelsPathForTests,
 	type ApprovedProfile,
 } from '../model-registry.js';
 
-/** The baseline fixture: all three families, one alias-named default with an effort. */
+/** The baseline fixture: all families, one alias-named default with an effort. */
 function baseline(): Record<string, any> {
 	return {
 		version: 1,
@@ -53,6 +55,16 @@ function baseline(): Record<string, any> {
 				id: 'ollama', displayName: 'Ollama',
 				models: [{ id: 'qwen:1b', efforts: [], inputLimit: { unit: 'tokens', max: 8192 } }],
 				toolLoopModel: 'qwen:1b',
+			},
+			{
+				id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama',
+				models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }],
+			},
+			{
+				id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe',
+				models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }, { id: 'vibe-s', efforts: ['low'] }],
+				tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-s' } },
+				summariserModel: 'vibe-s',
 			},
 		],
 	};
@@ -86,7 +98,7 @@ afterEach(() => {
 test('model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture', () => {
 	use(baseline());
 	const r = getModelRegistry();
-	assert.deepEqual(r.families().map(f => f.id), ['cli-claude', 'cli-codex', 'ollama']);
+	assert.deepEqual(r.families().map(f => f.id), ['cli-claude', 'cli-codex', 'ollama', 'ollama-claude', 'cli-vibe']);
 	assert.equal(r.defaultFamily(), 'cli-claude');
 	assert.deepEqual(r.models('cli-claude').map(m => [m.id, m.family, m.source]), [
 		['claude-big', 'cli-claude', 'shipped'], ['claude-small', 'cli-claude', 'shipped'],
@@ -104,8 +116,11 @@ test('model-registry.test.ts: families/defaultFamily/models/find/tierDefault/sum
 	assert.equal(r.toolLoopModel().id, 'qwen:1b');
 	assert.equal(r.cliKind('cli-claude'), 'claude');
 	assert.equal(r.cliKind('cli-codex'), 'codex');
+	assert.equal(r.cliKind('cli-vibe'), 'vibe');
 	assert.equal(r.cliKind('ollama'), undefined);
+	assert.equal(r.summariserModel('cli-vibe').id, 'vibe-s');
 	assert.deepEqual(r.rejected('cli-codex'), []);
+	assert.deepEqual(r.rejected('cli-vibe'), []);
 });
 
 test('model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()', () => {
@@ -162,8 +177,8 @@ test('model-registry.test.ts: effortLevels includes an approved-only effort afte
 		profile({ modelId: 'gpt-old', status: 'rejected', decidedAt: '2026-10-03T00:00:00Z' }),
 		profile({ modelId: 'gpt-a', status: 'approved', efforts: ['shadow'], decidedAt: '2026-10-01T00:00:00Z' }),
 	] });
-	// claude shipped (low, high), codex shipped (ultra), then codex approved (warp); ollama adds none.
-	assert.deepEqual(getModelRegistry().effortLevels(), ['low', 'high', 'ultra', 'warp']);
+	// claude shipped (low, high), codex shipped (ultra) then approved (warp), vibe shipped (max); ollama adds none.
+	assert.deepEqual(getModelRegistry().effortLevels(), ['low', 'high', 'ultra', 'warp', 'max']);
 });
 
 test('model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default\'s effort is returned and accepted', () => {
@@ -252,4 +267,151 @@ test('model-registry.test.ts: getModelRegistry() returns the same cached registr
 	const second = getModelRegistry();
 	assert.equal(second, first);
 	assert.deepEqual(second.models('cli-codex').map(m => m.id), ['gpt-a', 'gpt-b']);
+});
+
+test('model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips', () => {
+	const valid = profile({ modelId: 'gpt-x', status: 'approved', decidedAt: '2026-10-01T00:00:00Z', efforts: ['high'], inputLimit: { unit: 'tokens', max: 1000 } });
+	assert.equal(profileProblem(valid), undefined);
+	const invalid: Array<[unknown, RegExp]> = [
+		['a string', /not an object/],
+		[[valid], /not an object/],
+		[{ ...valid, family: 'ollama' }, /unknown family 'ollama'/],
+		[{ ...valid, modelId: '' }, /missing modelId/],
+		[{ ...valid, status: 'pending' }, /status 'pending'/],
+		[{ ...valid, efforts: [1] }, /efforts is not a list of strings/],
+		[{ ...valid, decidedAt: 'yesterday' }, /decidedAt is not a date/],
+		[{ ...valid, cliVersion: 2 }, /missing cliVersion/],
+		[{ ...valid, inputLimit: { unit: 'bytes', max: 1 } }, /inputLimit is not \{ unit, max \}/],
+		[{ ...valid, inputLimit: { unit: 'tokens', max: 0 } }, /inputLimit is not \{ unit, max \}/],
+	];
+	for (const [entry, reason] of invalid) assert.match(profileProblem(entry) ?? '', reason, JSON.stringify(entry));
+
+	// The reader applies the same rule: only the valid entry survives a store holding all of them.
+	const { storeFile } = use(baseline());
+	writeFileSync(storeFile, JSON.stringify({ version: 1, profiles: [...invalid.map(([e]) => e), valid] }));
+	_resetModelRegistryForTests();
+	assert.deepEqual(getModelRegistry().models('cli-codex').filter(m => m.source === 'user-approved').map(m => m.id), ['gpt-x']);
+});
+
+// ── the Ollama-hosted family (Epic b220bb61, Story s1 · t2) ──────────────────
+
+/** The baseline with a host family of two models: an aliased cloud model with efforts and a local one with none. */
+function withHost(): Record<string, any> {
+	const defs = baseline();
+	defs.families[3].models = [
+		{ id: 'glm:cloud', aliases: ['glm'], efforts: ['low', 'high'], hosting: 'cloud' },
+		{ id: 'qwen:local', efforts: [], hosting: 'local' },
+	];
+	return defs;
+}
+
+test("model-registry.test.ts: host() is 'ollama' only for ollama-claude and cliKind() is 'claude' for it", () => {
+	use(withHost());
+	const r = getModelRegistry();
+	assert.equal(r.host('ollama-claude'), 'ollama');
+	assert.equal(r.cliKind('ollama-claude'), 'claude');
+	for (const id of ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama'] as const) assert.equal(r.host(id), undefined, id);
+});
+
+test('model-registry.test.ts: resolveTier on a host family resolves a declared model and alias', () => {
+	use(withHost());
+	const r = getModelRegistry();
+	const byId = r.resolveTier('mid', { runner: 'ollama-claude', model: 'qwen:local' });
+	assert.deepEqual([byId.family, byId.model?.id, byId.model?.hosting, byId.fallback], ['ollama-claude', 'qwen:local', 'local', undefined]);
+	const byAlias = r.resolveTier('core', { runner: 'ollama-claude', model: 'glm', effort: 'high' });
+	assert.deepEqual([byAlias.family, byAlias.model?.id, byAlias.model?.hosting, byAlias.effort, byAlias.fallback],
+		['ollama-claude', 'glm:cloud', 'cloud', 'high', undefined]);
+});
+
+test('model-registry.test.ts: an effort a host model does not list is dropped', () => {
+	use(withHost());
+	const r = getModelRegistry();
+	const unlisted = r.resolveTier('core', { runner: 'ollama-claude', model: 'glm:cloud', effort: 'max' });
+	assert.deepEqual([unlisted.model?.id, unlisted.effort, unlisted.droppedEffort, unlisted.fallback], ['glm:cloud', undefined, 'max', undefined]);
+	const none = r.resolveTier('cheap', { runner: 'ollama-claude', model: 'qwen:local', effort: 'low' });
+	assert.deepEqual([none.model?.id, none.effort, none.droppedEffort], ['qwen:local', undefined, 'low'], 'efforts: [] accepts none');
+});
+
+test("model-registry.test.ts: resolveTier on a host family with an undeclared model returns model undefined and fallback 'model-not-supported' and substitutes nothing", () => {
+	use(withHost(), { version: 1, profiles: [
+		// An approved claude profile of the same id must not leak into the host family.
+		profile({ family: 'cli-claude', modelId: 'kimi:cloud', status: 'approved', efforts: ['low'], decidedAt: '2026-10-01T00:00:00Z' }),
+	] });
+	const r = getModelRegistry();
+	for (const model of ['kimi:cloud', 'claude-big', 'big']) {
+		const res = r.resolveTier('core', { runner: 'ollama-claude', model, effort: 'low' });
+		assert.deepEqual(res, { family: 'ollama-claude', model: undefined, fallback: { reason: 'model-not-supported', requested: model } }, model);
+	}
+});
+
+test('model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged with a host family present, including the unlisted and rejected fallbacks', () => {
+	const settings = [
+		['core', { runner: 'cli-claude', model: 'small', effort: 'high' }],
+		['mid', { runner: 'cli-codex', model: 'gpt-a', effort: 'ultra' }],
+		['cheap', { runner: 'cli-codex', model: 'gpt-rej' }],
+		['mid', { runner: 'cli-codex', model: 'gpt-9' }],
+		['core', { runner: 'cli-claude', model: 'claude-unknown', effort: 'low' }],
+		['mid', { runner: 'ollama', model: 'llama:70b' }],
+		['core', { runner: 'ollama', model: 'qwen:1b', effort: 'high' }],
+	] as const;
+	const store = { version: 1, profiles: [profile({ modelId: 'gpt-rej', status: 'rejected', decidedAt: '2026-10-01T00:00:00Z' })] };
+	const resolveAll = (defs: Record<string, any>) => {
+		use(defs, store);
+		const r = getModelRegistry();
+		const out = settings.map(([tier, s]) => r.resolveTier(tier, s));
+		_resetModelRegistryForTests();
+		return out;
+	};
+	// The same values the pre-host resolveTier test asserts; no result names the host family.
+	const withHostFamily = resolveAll(withHost());
+	for (const res of withHostFamily) assert.notEqual(res.family, 'ollama-claude');
+	assert.deepEqual(withHostFamily.map(x => x.fallback?.reason), [undefined, undefined, 'rejected-model', 'unlisted-model', 'unlisted-model', 'unlisted-model', undefined]);
+	assert.deepEqual(withHostFamily.map(x => [x.family, x.model?.id, x.effort, x.droppedEffort]), [
+		['cli-claude', 'claude-small', undefined, 'high'],
+		['cli-codex', 'gpt-a', 'ultra', undefined],
+		['cli-codex', 'gpt-b', undefined, undefined],
+		['cli-codex', 'gpt-a', undefined, undefined],
+		['cli-claude', 'claude-big', 'high', undefined],
+		['cli-claude', 'claude-big', undefined, undefined],
+		['ollama', 'qwen:1b', undefined, 'high'],
+	]);
+});
+
+test('model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today', () => {
+	// The host family listed BEFORE its vendor family, and a default whose CLI kind differs from the client.
+	const defs = withHost();
+	const host = defs.families.splice(3, 1)[0];
+	defs.families.unshift(host);
+	defs.defaultFamily = 'cli-codex';
+	use(defs);
+	const r = getModelRegistry();
+	assert.equal(familyForClient('claude', r), 'cli-claude');
+	assert.equal(familyForClient('codex', r), 'cli-codex');
+	assert.equal(familyForClient('vibe', r), 'cli-vibe');
+	assert.equal(familyForClient(undefined, r), undefined);
+});
+
+test("model-registry.test.ts: effortLevels over five families keeps today's levels and order", () => {
+	use(baseline());
+	const today = getModelRegistry().effortLevels();
+	_resetModelRegistryForTests();
+	const defs = withHost();
+	defs.families[3].models[1].efforts = ['max', 'low'];
+	use(defs);
+	assert.deepEqual(getModelRegistry().effortLevels(), today, 'host efforts that add no new level leave the union as it was');
+	assert.deepEqual(today, ['low', 'high', 'ultra', 'max']);
+});
+
+test('model-registry.test.ts: an approved-model store entry naming ollama-claude is skipped', () => {
+	const hostEntry = profile({ family: 'ollama-claude' as never, modelId: 'kimi:cloud', status: 'approved', efforts: ['low'], decidedAt: '2026-10-01T00:00:00Z' });
+	assert.equal(profileProblem(hostEntry), "unknown family 'ollama-claude'");
+	use(withHost(), { version: 1, profiles: [
+		hostEntry,
+		profile({ family: 'ollama-claude' as never, modelId: 'glm:cloud', status: 'rejected', decidedAt: '2026-10-02T00:00:00Z' }),
+	] });
+	const r = getModelRegistry();
+	assert.deepEqual(r.models('ollama-claude').map(m => [m.id, m.source]), [['glm:cloud', 'shipped'], ['qwen:local', 'shipped']]);
+	assert.equal(r.find('ollama-claude', 'kimi:cloud'), undefined);
+	assert.equal(r.resolveTier('core', { runner: 'ollama-claude', model: 'kimi:cloud' }).fallback?.reason, 'model-not-supported');
+	assert.equal(r.resolveTier('core', { runner: 'ollama-claude', model: 'glm:cloud' }).model?.id, 'glm:cloud', 'a rejected entry does not hide a declared model');
 });

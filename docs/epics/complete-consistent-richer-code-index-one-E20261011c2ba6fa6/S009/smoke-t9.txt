@@ -1,0 +1,15 @@
+s9 t9 smoke on the installed daemon @ b26dd1cd, 2026-11-02
+index.languages:
+[('c', True), ('cpp', True), ('csharp', True), ('go', True), ('java', True), ('javascript', True), ('kotlin', True), ('python', True), ('rust', True), ('scala', True), ('sql', True), ('typescript', True)]
+per-file entities and callees (repo /tmp/insrc-s9-smoke, status ready, 35 entities, 39 relations):
+rust/src/main.rs: class:Config(rust), file:/tmp/insrc-s9-smoke/rust/src/main.rs(rust), function:local(rust), function:main(rust)
+  main -> local [extracted], run [inferred]
+c/main.c: file:/tmp/insrc-s9-smoke/c/main.c(c), function:helper(c), function:main(c), type:point(c)
+  main -> helper [extracted], util_add [inferred]
+c/util.h: file:/tmp/insrc-s9-smoke/c/util.h(cpp), function:util_add(cpp)
+cpp/shape.cpp: file:/tmp/insrc-s9-smoke/cpp/shape.cpp(cpp), function:scale(cpp), method:Shape::area(cpp)
+  Shape::area -> scale [extracted]
+cpp/shape.hpp: class:Shape(cpp), file:/tmp/insrc-s9-smoke/cpp/shape.hpp(cpp), method:Shape::area(cpp)
+cs/App.cs: class:Geo.App.App(csharp), file:/tmp/insrc-s9-smoke/cs/App.cs(csharp), method:Geo.App.App.Local(csharp), method:Geo.App.App.Run(csharp)
+  Geo.App.App.Run -> Geo.App.App.Local [extracted]
+db/schema.sql: document:schema.sql(sql), file:schema.sql(sql), table:orgs(sql), table:users(sql), view:org_users(sql)

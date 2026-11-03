@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the review subject holds only the Story's own files and records attribution story-trailer
+ok 1 - the review subject holds only the Story's own files and records attribution story-trailer
+  ---
+  duration_ms: 259.9025
+  type: 'test'
+  ...
+# Subtest: a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree
+ok 2 - a Story's review subject is its trailered commits plus edits of its own files; unrelated uncommitted files are left out and listed in excludedFromScope, and the attribution is never working-tree
+  ---
+  duration_ms: 428.741208
+  type: 'test'
+  ...
+# Subtest: with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree
+ok 3 - with no resolvable range base, or git failing on the anchored derivation, the review declines with no-build-record and never reviews the working tree
+  ---
+  duration_ms: 193.049458
+  type: 'test'
+  ...
+# Subtest: a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record
+ok 4 - a file another Story's excluded commit also changed is listed in sharedWithExcluded on the subject and the record
+  ---
+  duration_ms: 255.863084
+  type: 'test'
+  ...
+# Subtest: a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched
+ok 5 - a pre-trailer Story's review leaves out an uncommitted edit of a file only a commit after its recorded build commit touched
+  ---
+  duration_ms: 213.030958
+  type: 'test'
+  ...
+# Subtest: a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record
+ok 6 - a Story with no attributable change declines with no-build-record on the graph path and both diff-only callers, runs no judge and writes no record
+  ---
+  duration_ms: 245.976625
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2028.966083

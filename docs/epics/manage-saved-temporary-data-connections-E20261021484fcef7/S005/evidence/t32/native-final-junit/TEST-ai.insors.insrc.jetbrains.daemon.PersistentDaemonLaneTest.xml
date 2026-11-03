@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.553">
+  <properties/>
+  <testcase name="malformed unsolicited duplicate and invalid UTF8 close owned lane()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.013"/>
+  <testcase name="queued deadline and canceled blocked write drain without leaking()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.203"/>
+  <testcase name="queued cancellation and capacity never write refused calls()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.003"/>
+  <testcase name="cancel late reply never aliases another request()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.001"/>
+  <testcase name="production Unix factory coexists with original one shot call()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.004"/>
+  <testcase name="bounded request data and aggregate capacity()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.101"/>
+  <testcase name="actual socket multiplexing partial writes and split UTF8()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.003"/>
+  <testcase name="ID exhaustion teardown and independent sockets()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.001"/>
+  <testcase name="deadline and partial write failures retain uncertainty()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.152"/>
+  <testcase name="oversized receive frame fails before decoding()" classname="ai.insors.insrc.jetbrains.daemon.PersistentDaemonLaneTest" time="0.069"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

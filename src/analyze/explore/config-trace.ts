@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -118,16 +119,13 @@ export async function runConfigTrace(
 		};
 	});
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:     ctx.runId,
 			key:       params.key,
 			backend:   data.usedRipgrep ? 'ripgrep' : 'node',
 			hits:      hits.length,
 			truncated: data.truncated,
-		},
-		'config.trace: complete',
-	);
+	}, 'config.trace: complete']);
 
 	return {
 		type:      'config.trace',

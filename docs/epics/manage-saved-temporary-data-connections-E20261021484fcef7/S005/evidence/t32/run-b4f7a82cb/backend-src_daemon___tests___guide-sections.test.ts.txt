@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: guideMarkerStart/End produce the exact insrc:guide marker strings
+ok 1 - guideMarkerStart/End produce the exact insrc:guide marker strings
+  ---
+  duration_ms: 0.762625
+  type: 'test'
+  ...
+# Subtest: readWorkflowGuide returns the trimmed section for a known workflow (ac1)
+ok 2 - readWorkflowGuide returns the trimmed section for a known workflow (ac1)
+  ---
+  duration_ms: 0.077208
+  type: 'test'
+  ...
+# Subtest: readWorkflowGuide keeps a decoy inner marker verbatim, not mis-sliced
+ok 3 - readWorkflowGuide keeps a decoy inner marker verbatim, not mis-sliced
+  ---
+  duration_ms: 0.105542
+  type: 'test'
+  ...
+# Subtest: readWorkflowGuide returns null for an unknown key
+ok 4 - readWorkflowGuide returns null for an unknown key
+  ---
+  duration_ms: 0.035708
+  type: 'test'
+  ...
+# Subtest: readWorkflowGuide returns null for a half-present pair (start, no end)
+ok 5 - readWorkflowGuide returns null for a half-present pair (start, no end)
+  ---
+  duration_ms: 0.048833
+  type: 'test'
+  ...
+# Subtest: readWorkflowGuide returns null for an inverted pair (end before start)
+ok 6 - readWorkflowGuide returns null for an inverted pair (end before start)
+  ---
+  duration_ms: 0.036542
+  type: 'test'
+  ...
+# Subtest: listWorkflowGuides returns COMPLETE-pair keys only, in document order
+ok 7 - listWorkflowGuides returns COMPLETE-pair keys only, in document order
+  ---
+  duration_ms: 1.427125
+  type: 'test'
+  ...
+# Subtest: listWorkflowGuides returns [] for text with no pairs (Phase-A empty)
+ok 8 - listWorkflowGuides returns [] for text with no pairs (Phase-A empty)
+  ---
+  duration_ms: 0.108958
+  type: 'test'
+  ...
+# Subtest: guideGetResult: known key -> Ok { workflow, guidance }
+ok 9 - guideGetResult: known key -> Ok { workflow, guidance }
+  ---
+  duration_ms: 0.323833
+  type: 'test'
+  ...
+# Subtest: guideGetResult: omitted workflow -> Error { validWorkflows }
+ok 10 - guideGetResult: omitted workflow -> Error { validWorkflows }
+  ---
+  duration_ms: 0.374625
+  type: 'test'
+  ...
+# Subtest: guideGetResult: unknown workflow -> Error { validWorkflows }
+ok 11 - guideGetResult: unknown workflow -> Error { validWorkflows }
+  ---
+  duration_ms: 0.086625
+  type: 'test'
+  ...
+# Subtest: guideGetResult: read-seam throws -> Error { validWorkflows: [] }, never escapes
+ok 12 - guideGetResult: read-seam throws -> Error { validWorkflows: [] }, never escapes
+  ---
+  duration_ms: 0.057417
+  type: 'test'
+  ...
+# Subtest: guideListResult: returns { workflows } in document order
+ok 13 - guideListResult: returns { workflows } in document order
+  ---
+  duration_ms: 0.050334
+  type: 'test'
+  ...
+# Subtest: guideListResult: read-seam throws -> { workflows: [] }, never escapes
+ok 14 - guideListResult: read-seam throws -> { workflows: [] }, never escapes
+  ---
+  duration_ms: 0.089167
+  type: 'test'
+  ...
+# Subtest: shipped steering-block.md enumerates bugfix without disturbing the existing keys/order
+ok 15 - shipped steering-block.md enumerates bugfix without disturbing the existing keys/order
+  ---
+  duration_ms: 0.104833
+  type: 'test'
+  ...
+# Subtest: guideGetResult({workflow:"bugfix"}) returns the bugfix section from the shipped asset
+ok 16 - guideGetResult({workflow:"bugfix"}) returns the bugfix section from the shipped asset
+  ---
+  duration_ms: 0.048
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 215.194917

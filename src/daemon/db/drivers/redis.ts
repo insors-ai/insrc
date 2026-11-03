@@ -43,6 +43,8 @@ export class RedisDriver implements KvDriver {
 	readonly kind: string;
 
 	private readonly client: Redis;
+	#connecting: Promise<void> | undefined;
+	#closed = false;
 
 	constructor(
 		readonly id: string,
@@ -67,12 +69,23 @@ export class RedisDriver implements KvDriver {
 	}
 
 	async probeReachability(): Promise<void> {
-		if (this.client.status === 'wait') await this.client.connect();
+		await this.connect();
 		await this.client.ping();
+	}
+
+	/** Read calls must connect too: the connection tester owns a different SDK instance. */
+	private async connect(): Promise<void> {
+		if (this.#closed) throw new Error('Redis connection is closed.');
+		if (this.client.status === 'wait' && !this.#connecting) {
+			this.#connecting = this.client.connect().finally(() => { this.#connecting = undefined; });
+		}
+		await this.#connecting;
+		if (this.#closed) throw new Error('Redis connection is closed.');
 	}
 
 	async scan(opts: ScanOpts): Promise<KeyList> {
 		assertNamespaceAllowed(this.config, opts);
+		await this.connect();
 		const limit = clampScanLimit(opts.limit);
 		const pattern = opts.pattern ?? (opts.prefix === undefined ? '*' : `${opts.prefix}*`);
 
@@ -96,6 +109,7 @@ export class RedisDriver implements KvDriver {
 		if (typeof key !== 'string') {
 			throw new Error(`data-driver: redis keys are plain strings, got ${typeof key}`);
 		}
+		await this.connect();
 		const type = await this.client.type(key);
 		if (type === 'none') {
 			return { key, value: null, type: 'null' };
@@ -111,6 +125,7 @@ export class RedisDriver implements KvDriver {
 
 	async sampleShape(opts: ScanOpts): Promise<ShapeReport> {
 		assertNamespaceAllowed(this.config, opts);
+		await this.connect();
 		const limit = clampSampleShapeLimit(opts.limit);
 		const pattern = opts.pattern ?? (opts.prefix === undefined ? '*' : `${opts.prefix}*`);
 
@@ -138,6 +153,7 @@ export class RedisDriver implements KvDriver {
 	}
 
 	async close(): Promise<void> {
+		this.#closed = true;
 		if (this.client.status === 'wait' || this.client.status === 'end') { this.client.disconnect(); return; }
 		try { await this.client.quit(); }
 		catch { /* A silent/disconnected server cannot prevent local disposal. */ }
@@ -145,6 +161,7 @@ export class RedisDriver implements KvDriver {
 	}
 
 	async listNamespaces(opts?: { readonly limit?: number }): Promise<KvNamespaceList> {
+		await this.connect();
 		// Redis has no native namespace concept; we derive one by
 		// SCANning a small sample of keys and grouping by the first
 		// `:` separator (a near-universal Redis convention).
@@ -175,6 +192,7 @@ export class RedisDriver implements KvDriver {
 	}
 
 	async describeNamespace(name: string, opts?: { readonly sampleSize?: number }): Promise<KvNamespaceDescription> {
+		await this.connect();
 		const limit = Math.min(Math.max(1, Math.floor(opts?.sampleSize ?? 50)), 200);
 		const pattern = `${name}:*`;
 		const keys: string[] = [];

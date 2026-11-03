@@ -1,0 +1,47 @@
+TAP version 13
+# Subtest: listFilesForConnection
+    # Subtest: non-recursive returns only top-level visible files
+    ok 1 - non-recursive returns only top-level visible files
+      ---
+      duration_ms: 16.039958
+      type: 'test'
+      ...
+    # Subtest: recursive walks subdirectories but skips hidden ones
+    ok 2 - recursive walks subdirectories but skips hidden ones
+      ---
+      duration_ms: 2.098625
+      type: 'test'
+      ...
+    # Subtest: pattern filter narrows by basename
+    ok 3 - pattern filter narrows by basename
+      ---
+      duration_ms: 1.375625
+      type: 'test'
+      ...
+    # Subtest: limit truncates and flags
+    ok 4 - limit truncates and flags
+      ---
+      duration_ms: 0.513792
+      type: 'test'
+      ...
+    # Subtest: single-file connection returns a single empty-path entry
+    ok 5 - single-file connection returns a single empty-path entry
+      ---
+      duration_ms: 0.305708
+      type: 'test'
+      ...
+    1..5
+ok 1 - listFilesForConnection
+  ---
+  duration_ms: 21.207792
+  type: 'suite'
+  ...
+1..1
+# tests 5
+# suites 1
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 250.149792

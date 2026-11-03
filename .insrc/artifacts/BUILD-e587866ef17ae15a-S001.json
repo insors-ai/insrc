@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "e587866ef17ae15a",
+    "storyId": "S001",
+    "createdAt": "2026-10-31T03:18:04.236Z",
+    "updatedAt": "2026-10-31T03:33:33.781Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Filed bugfix ISSUE, magnitude small.",
+    "epicCreatedAt": "2026-10-29T15:05:47.642Z",
+    "epicSlug": "answer-abort-finished-run-status-board",
+    "approvedAt": "2026-10-31T04:08:21.377Z",
+    "reviewOverride": {
+      "reason": "insrc_code_review_step is not used while the code-review framework is being rewritten (standing project rule). Two manual code reviews were run instead via a general-purpose subagent: round 1 over commit a1c6abdc9 found a real concurrency gap (fan-out targets never marked busy, risking the idle sweep releasing the owning worker mid-broadcast); fixed in 0b79d0161; round 2 confirmed the fix is correct and complete. tsc clean, named tests pass, full daemon suite re-run (6642 pass / 14 pre-existing unrelated fail, none touching src/daemon/threads/*). User explicitly approved.",
+      "at": "2026-10-31T04:08:21.377Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/answer-abort-finished-run-status-board-E20261029e587866e/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/analyze-run-owner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:33:33.781Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:33:33.781Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router-thread-view.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:33:33.781Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/session-pool.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:33:33.781Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/router.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:33:33.781Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/session-pool.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T03:33:33.781Z"
+      }
+    ],
+    "commit": "0b79d0161"
+  }
+}

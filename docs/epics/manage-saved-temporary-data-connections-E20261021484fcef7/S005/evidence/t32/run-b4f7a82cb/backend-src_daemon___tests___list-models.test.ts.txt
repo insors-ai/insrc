@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: list-models.test.ts: CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged
+ok 1 - list-models.test.ts: CLI families from the projection without calling the lister; ollama installed-and-listed only; available:false + [] on a rejecting lister; invalid params unchanged
+  ---
+  duration_ms: 5.829708
+  type: 'test'
+  ...
+# Subtest: list-models.test.ts: for every family listModels agrees with models.definitions, and an installed unlisted Ollama model appears in neither
+ok 2 - list-models.test.ts: for every family listModels agrees with models.definitions, and an installed unlisted Ollama model appears in neither
+  ---
+  duration_ms: 2.221417
+  type: 'test'
+  ...
+# Subtest: list-models.test.ts: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel
+ok 3 - list-models.test.ts: no file under src imports getCuratedCatalog, CuratedCatalog or CatalogModel
+  ---
+  duration_ms: 321.151417
+  type: 'test'
+  ...
+# Subtest: read-only: the injected deps expose only read methods (no config-write path reachable)
+ok 4 - read-only: the injected deps expose only read methods (no config-write path reachable)
+  ---
+  duration_ms: 6.165583
+  type: 'test'
+  ...
+# Subtest: source-scan: list-models.ts imports no cloud-REST / provider-SDK path (k1/ac4)
+ok 5 - source-scan: list-models.ts imports no cloud-REST / provider-SDK path (k1/ac4)
+  ---
+  duration_ms: 3.951584
+  type: 'test'
+  ...
+# Subtest: handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)
+ok 6 - handler map: 'providers.listModels' is a real handler delegating to listModels, not offlineRpc (lc1)
+  ---
+  duration_ms: 3.420667
+  type: 'test'
+  ...
+# Subtest: integration: listModels(cli-claude) with the default deps lists the shipped Claude models
+ok 7 - integration: listModels(cli-claude) with the default deps lists the shipped Claude models
+  ---
+  duration_ms: 5.283
+  type: 'test'
+  ...
+# Subtest: list-models.test.ts: providers.listModels admits exactly the registry's family ids with the unchanged invalid-params error
+ok 8 - list-models.test.ts: providers.listModels admits exactly the registry's family ids with the unchanged invalid-params error
+  ---
+  duration_ms: 7.000709
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 812.554958

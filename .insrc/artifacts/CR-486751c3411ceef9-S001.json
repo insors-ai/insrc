@@ -1,0 +1,162 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793426063051-s7flsk",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-31T05:54:21.222Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 221742,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "486751c3411ceef9",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "486751c3411ceef9",
+      "storyId": "S001",
+      "author": "controller",
+      "sourceDigest": "b87c5be7418fbcd086bfba197c7357304f638aa2a5f6ff3888dc8ecb2f907757",
+      "contractDigest": "fff3661103c0294b89da4ce3a94d43c52409d388ed456231aaa80be3e5956f66",
+      "buildDigest": "6c2dd6f5ab792d54fdb7423f978ef2ba4b5eefd435eeeede72df2a297bb5f398",
+      "testsDigest": "5fe63d64709e1a353b2658dde617969b8bbcddae8b589df36ab02748009b9e3b",
+      "digest": "5114b6bcadfc28d6b1f4ea2c176832b233de7a471cb7f0d8c2818da2b1b27e20"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-10-30T19:19:13.160Z",
+    "epicSlug": "shared-insors-branded-light-dark-mermaid",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "486751c3411ceef9",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        ".vibe/config.toml",
+        "plans/mermaid-theme-and-readability-requirements.md",
+        "src/artifact-theme/__tests__/contrast.test.ts",
+        "src/artifact-theme/__tests__/fonts.test.ts",
+        "src/artifact-theme/__tests__/perf.integration.test.ts",
+        "src/artifact-theme/__tests__/theme.test.ts",
+        "src/artifact-theme/__tests__/viewer-script.test.ts",
+        "src/artifact-theme/fonts.ts",
+        "src/artifact-theme/theme.ts",
+        "src/assets/artifacts/companion/panzoom.js",
+        "src/assets/fonts/poppins/OFL.txt",
+        "src/assets/fonts/poppins/poppins-400.woff2",
+        "src/assets/fonts/poppins/poppins-600.woff2",
+        "src/assets/fonts/poppins/poppins-700.woff2",
+        "src/cli/services/__tests__/debug-mcp.test.ts",
+        "src/daemon/threads/__tests__/admin-worker.test.ts",
+        "src/daemon/threads/__tests__/indexing-worker.test.ts",
+        "src/docgen/render/__tests__/fallback.test.ts",
+        "src/docgen/render/__tests__/narrative-band.test.ts",
+        "src/docgen/render/__tests__/shell.test.ts",
+        "src/docgen/render/fallback.ts",
+        "src/docgen/render/shell.ts",
+        "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts",
+        "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+        "src/workflow/artifacts/companion/shell.ts",
+        "src/docgen/extract/__tests__/narrative.test.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/threads/__tests__/router-session.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/threads/__tests__/router-session.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/docgen/render/fallback.ts",
+            "message": "oversized() has a testsReaching edge to src/docgen/render/__tests__/fallback.test.ts, but that file does not appear in the build gate's test-record results, so its pass-state is unverified for this run (present but unverified, not confirmed passing).",
+            "expectationRef": "oversized",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "813880"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/docgen/render/fallback.ts",
+            "message": "toGraphvizDot() has a testsReaching edge to src/docgen/render/__tests__/fallback.test.ts, but that file does not appear in the build gate's test-record results, so its pass-state is unverified for this run (present but unverified, not confirmed passing).",
+            "expectationRef": "toGraphvizDot",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "813882"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/docgen/render/fallback.ts",
+            "message": "assembleFallbackShell() reaches tests in fallback.test.ts, narrative-band.test.ts and code-ref-script.test.ts, none of which appear in the build gate's test-record results, so its pass-state is unverified for this run (present but unverified, not confirmed passing).",
+            "expectationRef": "assembleFallbackShell",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "813890"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/docgen/render/shell.ts",
+            "message": "docgenAssetDir() has a testsReaching edge to src/docgen/__tests__/asset-validator.test.ts, but that file does not appear in the build gate's test-record results, so its pass-state is unverified for this run (present but unverified, not confirmed passing).",
+            "expectationRef": "docgenAssetDir",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "813897"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/docgen/render/shell.ts:1",
+            "message": "shell.ts defines its own escapeHtml(s: string): string (used by buildHtml) while src/docgen/render/fallback.ts already defines an escapeHtml(s: string): string with the identical signature/purpose (used by assembleFallbackShell). Both live under src/docgen/render/ and should share one implementation instead of two independently-maintained HTML-escaping routines that can drift (e.g. one gets a bugfix/extra-entity escaped and the other doesn't).",
+            "counterpartRef": "fallback.ts#escapeHtml",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/artifact-theme/theme.ts:1",
+            "message": "diagramRoles calls asDiagramRole directly and also calls isRole, which itself only wraps asDiagramRole. Having diagramRoles reach asDiagramRole through two different paths (direct and via isRole) for what looks like the same role-validity check is avoidable indirection that makes the role-filtering logic harder to follow than a single consistent path.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/docgen/render/shell.ts:1",
+            "message": "buildHtml composes the mermaid boot sequence inline by calling mermaidConfigFor, fontFaceCssForArtifacts and viewerBootScript directly, while src/workflow/artifacts/companion/shell.ts factors the equivalent composition (mermaidConfigFor + viewerBootScript) into a dedicated bootScript() helper. The same 'assemble theme config + boot script' logic is expressed two different ways across the two render pipelines instead of sharing one helper.",
+            "counterpartRef": "workflow/artifacts/companion/shell.ts#bootScript",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 5,
+      "low": 2
+    }
+  }
+}

@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)
+ok 1 - the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)
+  ---
+  duration_ms: 2.326167
+  type: 'test'
+  ...
+# Subtest: only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)
+ok 2 - only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)
+  ---
+  duration_ms: 1.855625
+  type: 'test'
+  ...
+# Subtest: the extension entry passes the daemon lifecycle controller into the activation
+ok 3 - the extension entry passes the daemon lifecycle controller into the activation
+  ---
+  duration_ms: 0.314292
+  type: 'test'
+  ...
+# Subtest: the extension entry runs the settings pull, the update check and onboarding only after activation has settled
+ok 4 - the extension entry runs the settings pull, the update check and onboarding only after activation has settled
+  ---
+  duration_ms: 0.244042
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 163.537833

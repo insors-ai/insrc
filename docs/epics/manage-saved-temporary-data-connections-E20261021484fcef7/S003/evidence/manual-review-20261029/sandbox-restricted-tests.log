@@ -1,0 +1,361 @@
+TAP version 13
+# (node:18663) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [06:32:12] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:32:12] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:32:12] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:32:12] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:32:12] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [06:32:13] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ZHRIO9/root"
+#     [35mcount[39m: 0
+# [06:32:13] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ZHRIO9/root"
+#     [35mcount[39m: 0
+# [06:32:13] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ZHRIO9/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+not ok 1 - CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 114.553167
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:3337'
+  failureType: 'testCodeFailure'
+  error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-ZHRIO9/race.sock'
+  code: 'EPERM'
+  stack: |-
+    Server.setupListenHandle [as _listen2] (node:net:1919:21)
+    listenInCluster (node:net:1998:12)
+    Server.listen (node:net:2120:5)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+    new Promise (<anonymous>)
+    IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+    serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:33:160)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:48:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# [06:32:13] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-9qelpB/root"
+#     [35mcount[39m: 0
+# [06:32:13] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-9qelpB/root"
+#     [35mcount[39m: 0
+# [06:32:13] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-9qelpB/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+not ok 2 - CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 97.776709
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:3337'
+  failureType: 'testCodeFailure'
+  error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-9qelpB/race.sock'
+  code: 'EPERM'
+  stack: |-
+    Server.setupListenHandle [as _listen2] (node:net:1919:21)
+    listenInCluster (node:net:1998:12)
+    Server.listen (node:net:2120:5)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+    new Promise (<anonymous>)
+    IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+    serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:33:160)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:48:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# [06:32:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Kv1zPo/root"
+#     [35mcount[39m: 0
+# [06:32:14] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Kv1zPo/root"
+#     [35mcount[39m: 0
+# [06:32:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Kv1zPo/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+not ok 3 - CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 91.599084
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:3337'
+  failureType: 'testCodeFailure'
+  error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Kv1zPo/race.sock'
+  code: 'EPERM'
+  stack: |-
+    Server.setupListenHandle [as _listen2] (node:net:1919:21)
+    listenInCluster (node:net:1998:12)
+    Server.listen (node:net:2120:5)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+    new Promise (<anonymous>)
+    IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+    serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:33:160)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:48:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# [06:32:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cpGcmj/root"
+#     [35mcount[39m: 0
+# [06:32:14] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cpGcmj/root"
+#     [35mcount[39m: 0
+# [06:32:14] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cpGcmj/root"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+not ok 4 - CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 91.036125
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:3337'
+  failureType: 'testCodeFailure'
+  error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-cpGcmj/race.sock'
+  code: 'EPERM'
+  stack: |-
+    Server.setupListenHandle [as _listen2] (node:net:1919:21)
+    listenInCluster (node:net:1998:12)
+    Server.listen (node:net:2120:5)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+    new Promise (<anonymous>)
+    IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+    serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:33:160)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:48:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+not ok 5 - CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 1.879917
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:3337'
+  failureType: 'testCodeFailure'
+  error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Ctkynd/race.sock'
+  code: 'EPERM'
+  stack: |-
+    Server.setupListenHandle [as _listen2] (node:net:1919:21)
+    listenInCluster (node:net:1998:12)
+    Server.listen (node:net:2120:5)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+    new Promise (<anonymous>)
+    IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+    serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:33:160)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:48:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+not ok 6 - CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes
+  ---
+  duration_ms: 2.287208
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:3337'
+  failureType: 'testCodeFailure'
+  error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Zxz1ag/race.sock'
+  code: 'EPERM'
+  stack: |-
+    Server.setupListenHandle [as _listen2] (node:net:1919:21)
+    listenInCluster (node:net:1998:12)
+    Server.listen (node:net:2120:5)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+    new Promise (<anonymous>)
+    IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+    serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:33:160)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:48:19)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+not ok 7 - CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends
+  ---
+  duration_ms: 3.862
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:7019'
+  failureType: 'testCodeFailure'
+  error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-TXblBb/owners.sock'
+  code: 'EPERM'
+  stack: |-
+    Server.setupListenHandle [as _listen2] (node:net:1919:21)
+    listenInCluster (node:net:1998:12)
+    Server.listen (node:net:2120:5)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+    new Promise (<anonymous>)
+    IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+    serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:33:160)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:82:18)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+not ok 8 - CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+  ---
+  duration_ms: 25018.962375
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:1:8673'
+  failureType: 'testCodeFailure'
+  error: |-
+    (node:18699) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    TAP version 13
+    # Subtest: CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+    not ok 1 - CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate
+      ---
+      duration_ms: 7.427666
+      type: 'test'
+      location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/fixtures/session-namespace-child.ts:1:3354'
+      failureType: 'testCodeFailure'
+      error: 'listen EPERM: operation not permitted /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-VoS5oF/namespace.sock'
+      code: 'EPERM'
+      stack: |-
+        Server.setupListenHandle [as _listen2] (node:net:1919:21)
+        listenInCluster (node:net:1998:12)
+        Server.listen (node:net:2120:5)
+        <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:289:19)
+        new Promise (<anonymous>)
+        IpcServer.listen (/Users/subhagho/work/projects/insors/insrc/src/daemon/server.ts:282:12)
+        serverFixture (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/fixtures/session-namespace-child.ts:33:160)
+        TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/fixtures/session-namespace-child.ts:48:18)
+        async Test.run (node:internal/test_runner/test:1054:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+      ...
+    
+    
+    null !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/connection-reservations.test.ts:97:147)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...

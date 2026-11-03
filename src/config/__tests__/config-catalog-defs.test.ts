@@ -26,7 +26,6 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { buildConfigCatalog, CONFIG_CATALOG, RETIRED_PATHS, type ConfigOption } from '../config-catalog.js';
 import { deriveModelDefaults, SHIPPED_MODEL_DEFAULTS } from '../model-defaults.js';
-import { DEFAULT_TIERS, TIER_EFFORTS } from '../analyze.js';
 import type { ModelDefinitionsFile } from '../../daemon/model-catalog.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -88,11 +87,11 @@ test('config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/mode
 	assert.equal(row(CONFIG_CATALOG, 'models.tiers.core.model')!.default, def.tierDefaults!.core.model);
 	assert.equal(row(CONFIG_CATALOG, 'models.local.coreModel')!.default, shipped.families.find(f => f.id === 'ollama')!.toolLoopModel);
 
-	// The temporary DEFAULT_TIERS / TIER_EFFORTS exports are derived from the same file.
+	// The shipped defaults are derived from the same file.
 	for (const tier of ['core', 'mid', 'cheap'] as const) {
-		assert.deepEqual(DEFAULT_TIERS[tier], { runner: shipped.defaultFamily, model: def.tierDefaults![tier].model, ...(def.tierDefaults![tier].effort !== undefined ? { effort: def.tierDefaults![tier].effort } : {}) });
+		assert.deepEqual(SHIPPED_MODEL_DEFAULTS.tiers[tier], { runner: shipped.defaultFamily, model: def.tierDefaults![tier].model, effort: def.tierDefaults![tier].effort ?? '' });
 	}
-	assert.deepEqual([...TIER_EFFORTS], [...SHIPPED_MODEL_DEFAULTS.efforts]);
+	assert.deepEqual(SHIPPED_MODEL_DEFAULTS, deriveModelDefaults(shipped));
 
 	// The updater's loader accepts the COMPILED catalog: tsc emits config-catalog.js and the
 	// shipped JSON into a temp outDir, and a plain node process (no tsx) loads it through the
@@ -173,4 +172,17 @@ test('config-catalog-defs.test.ts: model-defaults and config-catalog import no l
 		assert.equal(row(catalog, 'models.tiers.cheap.model')!.default, '', label);
 		assert.deepEqual(row(catalog, 'models.tiers.cheap.effort')!.enumValues, [''], label);
 	}
+});
+
+test("config-catalog-defs.test.ts: deriveModelDefaults lists five familyIds, keeps the default family's tier defaults and 'ollama' as the local family", () => {
+	const shipped = JSON.parse(readFileSync(join(SRC, 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as ModelDefinitionsFile;
+	const d = deriveModelDefaults(shipped);
+	assert.deepEqual(d.familyIds, ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama', 'ollama-claude']);
+	assert.equal(d.defaultFamily, 'cli-claude');
+	const claude = shipped.families.find(f => f.id === 'cli-claude')!;
+	for (const tier of ['core', 'mid', 'cheap'] as const) {
+		assert.deepEqual(d.tiers[tier], { runner: 'cli-claude', model: claude.tierDefaults![tier].model, effort: claude.tierDefaults![tier].effort ?? '' }, tier);
+	}
+	const local = shipped.families.find(f => f.id === 'ollama')!;
+	assert.equal(d.toolLoopModel, local.toolLoopModel, "the local family is still 'ollama' (the host family carries a CLI kind)");
 });

@@ -1,15 +1,15 @@
-# CLAUDE.md — insrc backend
+# AGENTS.md — insrc backend
 
 Standalone backend for the insrc code-knowledge system. Split from
 [`insors-ai/insrc-ide`](https://github.com/insors-ai/insrc-ide) on
-2026-07-14. The IDE fork clones this repo into `~/.insrc/daemon/`
-and spawns the compiled entry — the IPC contract is the only surface
-the IDE consumes.
+2026-07-14. The insrc-ide fork is deprecated (user clarification,
+2026-10-29). Current IDE clients are `vscode-plugin/` and `jetbrains-plugin/`
+in this repository; both consume the daemon through IPC.
 
 ## Project principles
 
 - **Accuracy is primary; cost is the least priority.** When choosing between an accurate-but-expensive path (more LLM calls, bigger context, slower pipeline) and a cheap-but-lossy one, choose accuracy. The system's value is correctness, not throughput. Cost optimizations are valid only when they preserve accuracy; otherwise the cheap path is the wrong path. **Where this is enforced:** the per-role model tiering (see [`docs/daemon.md#model-tiering`](docs/daemon.md)) applies this principle concretely — accuracy governs the **critical** roles (design, review, build, validate), which the `coreFloor` guarantees are never served below the high tier, while **peripheral** roles (classification, narrow probes, tracker rendering, summaries) may trade capability for cost and speed on cheaper local models. Cost is traded only on roles where a weaker model does not erode correctness.
-- **No direct cloud REST calls from our process.** Cloud LLM access happens through the locally-installed `claude` and `codex` CLI binaries (via `CliProvider`). Auth + quota stay with the user's CLI OAuth sessions. Direct REST providers to Anthropic / OpenAI / Gemini / Mistral must not be reintroduced.
+- **No direct cloud REST calls from our process.** Cloud LLM access happens through the locally-installed `claude`, `codex` and `vibe` CLI binaries (via `CliProvider`). Auth + quota stay with the user's CLI sessions. Direct REST providers to Anthropic / OpenAI / Gemini / Mistral must not be reintroduced.
 
 ## What lives here
 
@@ -17,19 +17,18 @@ the IDE consumes.
 - Daemon core (IPC, repo registry, queue, lifecycle, file-watcher)
 - Storage (LMDB graph + Lance vectors, DuckDB query engine for data drivers)
 - Built-in tools (~110 capability wrappers: file/git/shell/http/web/gh/k8s/pkg/ssh/test/notify/search/graph/db/data/code/cloud)
-- `CliProvider` (`claude` + `codex` CLI subprocess wrapper, structured-output aware)
+- `CliProvider` (`claude` + `codex` + `vibe` CLI subprocess wrapper, structured-output aware)
 - `OllamaProvider` (local LLM + embeddings)
 - Analyze framework (`insrc_analyze` + `insrc_analyze_step` MCP tools; 20 exploration recipes; context builder)
 - Workflow framework (`define` → `design.epic` → `design.story` → `tracker` chain; `insrc_workflow_step` MCP tool)
 - `insrc` interactive CLI — a full-screen ink (React) TUI with Daemon /
   Repos / Workflows / Setup panes (replaced the old commander subcommands)
 
-The IDE fork owns: the VSCode workbench + `src/vs/workbench/contrib/insrc/`
-IDE contributions (sidebar panes, service impls, RPC clients) +
-`src/vs/platform/insrc/electron-main/insrcDaemonInstaller.ts` which
-clones + builds this repo into `~/.insrc/daemon/`. IPC method names,
-socket path (`~/.insrc/daemon.sock`), and payload shapes stay in
-lock-step across the two repos via mirrored types.
+The live IDE clients are the standalone VS Code extension (`vscode-plugin/`)
+and JetBrains plugin (`jetbrains-plugin/`). Keep their daemon IPC method names
+and payload shapes aligned with this backend. Do not add work, compatibility
+requirements or release gates for the deprecated insrc-ide fork.
+
 
 ## Tech stack
 
@@ -63,7 +62,7 @@ src/
   agent/
     providers/
       ollama.ts            Local provider (LLM + embeddings)
-      cli-provider.ts      Subprocess wrapper for claude + codex CLI binaries
+      cli-provider.ts      Subprocess wrapper for claude + codex + vibe CLI binaries
       structured-output.ts ajv + retry helpers
   analyze/         Analyze framework (20 exploration recipes, decomposer, synthesizer, context builder)
   workflow/        Workflow framework (define, design.epic, design.story, tracker, amendments, gates)
@@ -118,7 +117,7 @@ CliProvider suites) and skip cleanly when unset.
 ### LLM provider abstraction
 
 - All LLM interaction goes through the `LLMProvider` interface in `shared/types.ts`
-- Two implementations: `OllamaProvider` (local) and `CliProvider` (subprocess wrapper for claude + codex)
+- Two implementations: `OllamaProvider` (local) and `CliProvider` (subprocess wrapper for claude + codex + vibe)
 - Never `Promise.all` anything that reaches an LLM provider (cloud or local Ollama embed / complete); always serial `for...of` with sequential awaits.
   - The daemon's index queue has an index lane and a document-summary lane (`src/daemon/queue.ts`, Story b94cf2c9). The summary lane yields to code work: it starts a summary only while the index lane is idle (Story 0f0e4f45, after measured contention on 2026-10-17), so the two reach Ollama together only for the one summary already in progress when code work arrives.
 
@@ -157,6 +156,34 @@ CliProvider suites) and skip cleanly when unset.
 
 <!-- insrc:steering:start -->
 ## insrc — front door (insrc MCP server)
+
+### Hard gates — never skipped, whatever the host agent
+
+These apply to every agent (Claude Code, Codex, Vibe, …) working in this repo.
+If a gate cannot be satisfied, stop and ask the user — do not improvise around it.
+
+1. **Approval is a human gate.** Never call `insrc_workflow_approve` unless the
+   user gave an explicit in-chat yes in the same turn, for the specific artifact:
+   the yes names the artifact id/path, or answers "yes" to the summary you just
+   presented after `insrc_present`. A blanket "approve all" covers ONLY the
+   artifacts you declared with `insrc_present` in that same turn — list them.
+   Never batch-approve via `{ epicHash }` without naming each artifact and
+   getting a yes for that batch. Never approve via raw daemon IPC/socket —
+   only through the registered `insrc_workflow_approve` MCP tool.
+2. **Present before you ask.** `insrc_present` must report every declared name
+   as `presented` before you ask for approval. If it errors, or any name comes
+   back `notPending`, correct the name and call again; if it cannot succeed,
+   STOP and tell the user — do not approve anything that was not presented.
+3. **Mandatory reviews only, max three rounds each** (DEF/HLD/LLD review before
+   approval; code review before BUILD completion). After the third round, stop
+   and ask the user.
+4. **Never patch off-ledger.** Every feature and every defect goes through
+   triage → tracked artifact → approval → build → review → approve. No direct
+   commits that implement tracked work without the chain's records.
+5. **Workflows run only via `insrc_workflow_step`**, turn-by-turn, preserving
+   the opaque `state` token. Never `insrc_workflow_run`, never raw IPC.
+6. **If `insrc_schema` / `insrc_guide` / `insrc_present` are unavailable or
+   error, do not improvise their content from memory — say so and ask the user.**
 
 This is the SKELETON. It names every insrc surface and routes an intent to the
 right one; it does NOT inline each workflow's full procedure. Two on-demand
@@ -282,13 +309,20 @@ These checks stay within the existing three-round review limit.
 ### Approval discipline (applies to every workflow artifact)
 
 Never auto-approve and never send the user to the TUI. When a `done` response
-carries a `pendingApproval` block (or a build or review step leaves a record to
-approve), first DECLARE what you are about to show: call
-`insrc_present({ documents: [...] })` with each document's artifact id (for
-example `LLD-<hash>-s1`) or repo-relative path. Then PRESENT a concise summary
-(give the document's path in your message too) and ASK the user; only on their
-explicit in-chat yes call `insrc_workflow_approve({ artifactPath })` (or
-`{ epicHash }` to batch). Review a DEF, HLD or LLD before you approve it — see
+carries a `pendingApproval` block — or any step you drove leaves a record
+pending (check `insrc_workflow_step`'s done response and the pending list) —
+the gate is the same every time: first DECLARE what you are about to show by
+calling `insrc_present({ documents: [...] })` with each document's artifact id
+(for example `LLD-<hash>-s1`) or repo-relative path, and require every name
+to come back `presented`; then PRESENT a concise summary (give the document's
+path in your message too) and ASK the user. Only then, on the user's explicit
+in-chat yes **for that artifact** (the message names its id/path, or answers
+"yes" to the summary you just presented), call
+`insrc_workflow_approve({ artifactPath })`. A blanket "approve all" authorizes
+only the artifacts you presented in that same turn. Never batch via
+`{ epicHash }` without listing each artifact and getting a yes for the batch.
+Never call `insrc_workflow_approve` through raw daemon IPC or a socket — only
+through the MCP tool. Review a DEF, HLD or LLD before you approve it — see
 `insrc_guide({ workflow: 'review' })`.
 
 ### Review discipline (applies to every review)
@@ -310,7 +344,8 @@ The chat opens exactly the documents you declare with `insrc_present`; it does
 not work out what to open from tool output, so a document you do not declare is
 not opened for the user. The answer lists each name as `presented` or
 `notPending` (misspelt, already approved, or with no document file yet): correct
-a `notPending` name and call again. Declaring is steering-only for now, and a
-missed call shows up as nothing opening; if that proves unreliable, revisit it
-(a reminder from the daemon in tool responses, or detection of a missing call).
+a `notPending` name and call again, and require every declared name to be
+`presented` before you ask for approval. If `insrc_present` itself is
+unavailable or errors, do not approve anything that turn — report the tool
+failure and ask the user instead.
 <!-- insrc:steering:end -->

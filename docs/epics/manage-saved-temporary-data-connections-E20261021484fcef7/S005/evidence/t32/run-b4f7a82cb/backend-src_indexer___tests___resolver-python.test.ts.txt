@@ -1,0 +1,65 @@
+TAP version 13
+# Subtest: resolveRelations -- Python relative imports
+    # Subtest: `from .b import x` from pkg/a.py resolves to pkg/b.py
+    ok 1 - `from .b import x` from pkg/a.py resolves to pkg/b.py
+      ---
+      duration_ms: 1.671667
+      type: 'test'
+      ...
+    # Subtest: `from .sub.c import x` resolves to pkg/sub/c.py
+    ok 2 - `from .sub.c import x` resolves to pkg/sub/c.py
+      ---
+      duration_ms: 0.251125
+      type: 'test'
+      ...
+    # Subtest: `from .sub import x` resolves to pkg/sub/__init__.py
+    ok 3 - `from .sub import x` resolves to pkg/sub/__init__.py
+      ---
+      duration_ms: 0.194125
+      type: 'test'
+      ...
+    # Subtest: `from . import x` from pkg/a.py resolves to pkg/__init__.py
+    ok 4 - `from . import x` from pkg/a.py resolves to pkg/__init__.py
+      ---
+      duration_ms: 0.096334
+      type: 'test'
+      ...
+    # Subtest: `from .. import x` from pkg/sub/c.py resolves to pkg/__init__.py
+    ok 5 - `from .. import x` from pkg/sub/c.py resolves to pkg/__init__.py
+      ---
+      duration_ms: 0.089875
+      type: 'test'
+      ...
+    # Subtest: `from ..a import x` from pkg/sub/c.py resolves to pkg/a.py
+    ok 6 - `from ..a import x` from pkg/sub/c.py resolves to pkg/a.py
+      ---
+      duration_ms: 0.117542
+      type: 'test'
+      ...
+    # Subtest: missing target stays unresolved
+    ok 7 - missing target stays unresolved
+      ---
+      duration_ms: 0.173792
+      type: 'test'
+      ...
+    # Subtest: does not escape the repo root
+    ok 8 - does not escape the repo root
+      ---
+      duration_ms: 0.118333
+      type: 'test'
+      ...
+    1..8
+ok 1 - resolveRelations -- Python relative imports
+  ---
+  duration_ms: 3.269666
+  type: 'suite'
+  ...
+1..1
+# tests 8
+# suites 1
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 201.53475

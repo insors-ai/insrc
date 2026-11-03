@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793618821259-tzdq72",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T11:26:56.235Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 400748,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "17123b6d304af2a2",
+      "storyId": "s2",
+      "author": "controller",
+      "sourceDigest": "64504cdf2b4a5fa7639da6e38210de7505d60a571cdc3d3d6a48bc1331f9122c",
+      "contractDigest": "7fe40afe84aef82cd50f4e0a260fc69267d94b8e4d9055fe02e68aedd7d7de37",
+      "buildDigest": "8c87d64e85be97dc072b49a165f007cc27a8816e2fdd0d6d93fc6795f7c7d6fd",
+      "testsDigest": "9ecfce20a4783d5f1204b6b1f1b0d32b409b5d46d17df6a459cf9a058e79dc87",
+      "digest": "bc4dc83e66141faefd16f3d7c45191e0a42760541d0f88ecf454ded994f1e8ad"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s2",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "packages/project-memory/src/__tests__/queue-codec.test.ts",
+        "packages/project-memory/src/queue/codec.ts",
+        "packages/project-memory/src/queue/types.ts",
+        "packages/project-memory/src/__tests__/queue-io.test.ts",
+        "packages/project-memory/src/queue/io.ts",
+        "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+        "packages/project-memory/src/queue/checkpoint.ts",
+        "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+        "packages/project-memory/src/queue/recovery.ts",
+        "packages/project-memory/src/__tests__/queue-append.test.ts",
+        "packages/project-memory/src/queue/file-queue.ts",
+        "packages/project-memory/src/__tests__/queue-admission.test.ts",
+        "packages/project-memory/src/queue/admission.ts",
+        "packages/project-memory/src/__tests__/queue-replay.test.ts",
+        "packages/project-memory/src/__tests__/queue-receipts.test.ts",
+        "packages/project-memory/src/queue/receipts.ts",
+        "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+        "packages/project-memory/src/queue/index-record.ts",
+        "packages/project-memory/src/queue/retirement.ts",
+        "packages/project-memory/src/__tests__/runtime.test.ts",
+        "packages/project-memory/src/host-node.ts",
+        "packages/project-memory/src/runtime.ts",
+        "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+        ".github/workflows/project-memory.yml",
+        "packages/project-memory/src/__tests__/fixtures/queue-crash-peer.ts",
+        "packages/project-memory/src/__tests__/fixtures/queue-crash-ports.ts",
+        "packages/project-memory/src/__tests__/queue-crash.test.ts",
+        "scripts/__tests__/project-memory-s2-qualification.test.ts",
+        "packages/project-memory/benchmarks/queue-cost.mjs",
+        "packages/project-memory/src/__tests__/queue-cost.test.ts",
+        "scripts/__tests__/project-memory-s2-performance.test.ts",
+        "packages/project-memory/README.md",
+        "packages/project-memory/src/__tests__/contracts.test.ts",
+        "packages/project-memory/src/__tests__/packed.test.ts",
+        "packages/project-memory/src/ownership.ts",
+        "src/config/__tests__/check-model-definitions.test.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "HIGH",
+            "location": "packages/project-memory/src/runtime.ts:EmbeddedMemoryService.submit",
+            "message": "EmbeddedMemoryService.submit and EmbeddedMemoryService.operation both resolve purely by calling the local `unavailable()` helper — the same helper used by context/search/inspect — with no call edge into the queue/admission layer (FileQueue/QueueAdmission.append or .operation). By contrast, EmbeddedMemoryService.drain/close do call queue-shaped lifecycle methods (`pending`, `stop`) on their owned participants, showing the composition seam exists for lifecycle but was never wired for the data path. This means submit/operation still report NOT_READY/unavailable exactly like the explicitly-deferred context/search/inspect capabilities, instead of performing real durable queue work.",
+            "expectationRef": "LLD dataModelChanges 'S2 service composition and incremental capability' postcondition ('submit is now real durable acceptance only; operation is an authorized read of retained queue status, never a new writer... context/search/inspect remain NOT_READY') and PLAN task t10 acceptanceCheck ('Return service only after recovery; submit/operation perform real queue work while context/search/inspect stay NOT_READY')."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "HIGH",
+            "location": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+            "message": "The plan promised an integration test named 'adversarial-admission-and-recycled-scope-isolation' but no test with this name (or an equivalent title) appears anywhere in the test-record results for any file (queue-admission.test.ts, queue-replay.test.ts, queue-retirement.test.ts, etc.), nor is it listed under reportedTests.",
+            "expectationRef": "adversarial-admission-and-recycled-scope-isolation",
+            "confidence": "breach",
+            "findingKind": "promised-test"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "packages/project-memory/src/__tests__/contracts.test.ts",
+            "message": "The plan promised a smoke test named 'pure-import-and-no-daemon-or-backend-storage-dependency'; the only similarly-themed test in the record is contracts.test.ts#'pure-public-import-without-native-or-daemon' (passing), which checks absence of a native/daemon import but does not clearly cover the promised 'no backend storage dependency' assertion. Title and scope don't exactly match the promise, so it is unverified whether this is the same test or a distinct one that was never written.",
+            "expectationRef": "pure-import-and-no-daemon-or-backend-storage-dependency",
+            "confidence": "observation",
+            "findingKind": "promised-test"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/ownership.ts:1",
+            "message": "establishOwnedLayout and ownershipGuard both call checkIdentity (which can throw on a root/file identity mismatch, e.g. a race where the directory changed after the lock file was opened) but neither lists failedAcquisition among its callees — unlike lockDescriptor, which explicitly routes checkIdentity/openLockCandidate failures through failedAcquisition to close the open FileHandle. If acquireOwnership does not wrap these two later steps in the same catch that calls failedAcquisition, a checkIdentity failure after the lock descriptor is already open will leak that file descriptor instead of closing it.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/queue/codec.ts:1",
+            "message": "record()+fields() in codec.ts reimplement the same 'assert object shape with required/optional string keys' validation that checkpoint.ts's object()+fields() already implement (same parameter shapes, differing only in which never-returning error function — invalid() vs corrupt() — they call on failure). A shape-validation bug fixed in one copy (e.g. an optional-key check) will not propagate to the other.",
+            "counterpartRef": "fields",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/queue/recovery.ts:1",
+            "message": "recoverQueue is a single function wiring together ~22 distinct operations across IO (segmentName/syncDirectory/exists/list/read/write/truncate/unlink/scan), checkpoint (advance/reserveMetadata/initialCheckpoint/load/publish), retirement (verifyBarrier/finishRetirement) and indexing (indexFrame/hash/marker/tailReport/corrupt) in one place. Boot-time crash recovery is inherently order-sensitive, and concentrating this much sequencing in one routine makes it hard to verify each failure path is handled correctly and hard to unit-test the sub-steps in isolation.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "packages/project-memory/src/queue/receipts.ts:1",
+            "message": "receipts.ts's shape() is a third independent reimplementation of the same required/optional-key assertion pattern already present as codec.ts's record()+fields() and checkpoint.ts's object()+fields(), rather than reusing either.",
+            "counterpartRef": "fields",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "functional-coverage",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": [
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "erDefinition:classes.QueueAcknowledgement",
+            "message": "class 'QueueAcknowledgement' declares no identifier slot (identifier:true) — the entity has no primary key",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "erDefinition:classes.MemoryCommand",
+            "message": "class 'MemoryCommand' declares no identifier slot (identifier:true) — the entity has no primary key",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "block",
+    "counts": {
+      "high": 2,
+      "med": 4,
+      "low": 3
+    }
+  }
+}

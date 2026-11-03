@@ -1,0 +1,43 @@
+{
+  "task": "t18",
+  "node": "22.23.2",
+  "focused": {
+    "tests": 11,
+    "pass": 11,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "hostRendererCases": 4,
+  "backendTypecheck": "pass",
+  "extensionTypecheck": "pass",
+  "sourceSha256": {
+    "vscode-plugin/src/connections/types.ts": "32ada181735e1c17d10a212e8e100eed48aecd047efb98daf315a2ad501713c6",
+    "vscode-plugin/src/connections/host.ts": "c1ba2137e66285cca78872eb12b1cd6fcd67693d658336ca891e34cc478535c2",
+    "vscode-plugin/src/connections/renderer.ts": "8f2e4fe5c22c6d44023e2dcf8cce49e3a62311368e656d7ee3ab448df839abc3",
+    "vscode-plugin/src/connections/__tests__/host.test.ts": "9fec824f87a23fd51f3a8a5534b3795b1e299cbba28c1cad0883a0b828ccc0fb",
+    "vscode-plugin/src/connections/__tests__/fixtures/renderer.ts": "b9b783128f7a0d195adf9ae74e5cd2d9a605ac870a2a97d541b86f1572b95d31",
+    "src/shared/connection-manager/model.ts": "baaf42ea685f34280ae6becef7e21acfa6df68826b7b5a1bcfb6245e4d7c7ca3",
+    "src/shared/__tests__/connection-manager-model.test.ts": "da092ea82ecc35c7fc79a725ccc1fd94c6a4c9ba2c800f71138ea39ba42ecd3b"
+  },
+  "reuse": "Existing panel nonce/escaping, ChatPanelChannel type, and domain model/draft/mutation/probe/removal owners. Dedicated exact-key intent protocol and CSP DOM renderer; no generic RPC bridge.",
+  "coverage": [
+    "Explicit registered-root selection; no implicit first root.",
+    "All 29 schema forms, typed quote union, arrays and masked credential address lists without raw JSON.",
+    "All eight list states; last-good rows stale/nonactionable; scope counts before search.",
+    "Nonce CSP, textContent/value rendering and malicious label inertness.",
+    "Strict shapes/accessor/prototype/authority-field refusal; current panel and generation guards.",
+    "Dirty Cancel zero effects, physical close/reopen retains private workbench draft, hide cancels probes and clears DOM password fields.",
+    "Hidden-document ready can request only a fresh safe projection; stale/hidden intents cannot issue operations.",
+    "Bad replacement clears the previous write-only value and blocks Save; no secret echo in host render frames.",
+    "Late repository list from a closed panel cannot overwrite its successor.",
+    "Temporary owner revocation erases rows/input and rejects pending old reads."
+  ],
+  "internalRevocationEvent": "temporary-ended is internal host/reducer state only; native panel counterpart is task19. No IPC or persistent-schema change.",
+  "limits": [
+    "Actual command/Settings wiring is task20.",
+    "DOM harness executes real script but is not live VS Code theme/keyboard acceptance; task26 remains pending.",
+    "Full sweeps deferred until all implementation tasks, per user instruction."
+  ],
+  "interventions": []
+}

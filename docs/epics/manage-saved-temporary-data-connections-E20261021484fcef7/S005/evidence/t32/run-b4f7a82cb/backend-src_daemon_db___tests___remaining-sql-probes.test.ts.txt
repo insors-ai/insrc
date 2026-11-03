@@ -1,0 +1,38 @@
+TAP version 13
+# (node:7877) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [2026-10-30T04:43:00.189Z][ERROR][@clickhouse/client][Connection] Query: HTTP request error. 
+# Arguments: {
+#   operation: 'Query',
+#   connection_id: '527547f7-e6ae-4034-9bfa-8a2200d392f2',
+#   query_id: '1fd47ac4-341a-467b-9f91-6fadecac44de',
+#   with_abort_signal: false,
+#   session_id: undefined,
+#   decompress_response: undefined,
+#   clickhouse_settings: {}
+# } 
+# Caused by: Error: Access denied
+#     at parseError (/Users/subhagho/work/projects/insors/insrc/node_modules/@clickhouse/client/src/common/error/error.ts:47:35)
+#     at ClientRequest.onResponse (/Users/subhagho/work/projects/insors/insrc/node_modules/@clickhouse/client/src/connection/socket_pool.ts:333:25)
+#     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+# Subtest: CM-S2-A4: SQLite and ClickHouse await readonly probes and reject missing or inaccessible sources
+ok 1 - CM-S2-A4: SQLite and ClickHouse await readonly probes and reject missing or inaccessible sources
+  ---
+  duration_ms: 237.944458
+  type: 'test'
+  ...
+# Subtest: CM-S2-A4: MSSQL and Oracle SDK-boundary probes await execution and release connections on failure
+ok 2 - CM-S2-A4: MSSQL and Oracle SDK-boundary probes await execution and release connections on failure
+  ---
+  duration_ms: 1.888875
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1055.348

@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner
+ok 1 - dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner
+  ---
+  duration_ms: 11.50025
+  type: 'test'
+  ...
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request x.read"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request x.read"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request x.stream"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "job full"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [04:40:40] [31mERROR[39m: [36m[queue] job failed: the graph store lost its locks[39m
+#     [35mmodule[39m: "queue"
+#     err: {
+#       "type": "LmdbStoreLocksLostError",
+#       "message": "The graph store can no longer be used by this process (found during: job full). Its locks were removed by another process that opened and closed the store after this process had lost its file lock on the store's lock file. Nothing more can be read or written until the daemon is restarted.: MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)",
+#       "stack":
+#           LmdbStoreLocksLostError: The graph store can no longer be used by this process (found during: job full). Its locks were removed by another process that opened and closed the store after this process had lost its file lock on the store's lock file. Nothing more can be read or written until the daemon is restarted.
+#               at IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:345:72)
+#               at runNextTicks (node:internal/process/task_queues:64:5)
+#               at process.processImmediate (node:internal/timers:452:9)
+#               at async IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:306:5)
+#               at async TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:115:3)
+#               at async Test.run (node:internal/test_runner/test:1054:7)
+#               at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+#           caused by: Error: MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)
+#               at lockFailure (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:44:23)
+#               at <anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:113:65)
+#               at IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:338:15)
+#               at runNextTicks (node:internal/process/task_queues:64:5)
+#               at process.processImmediate (node:internal/timers:452:9)
+#               at async IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:306:5)
+#               at async TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:115:3)
+#               at async Test.run (node:internal/test_runner/test:1054:7)
+#               at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+#       "name": "LmdbStoreLocksLostError"
+#     }
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request x.read"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot"
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request x.read"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot"
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request x.stream"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot"
+# [04:40:40] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "job full"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot"
+# [04:40:40] [31mERROR[39m: [36m[queue] job failed: the graph store lost its locks[39m
+#     [35mmodule[39m: "queue"
+#     err: {
+#       "type": "LmdbStoreLocksLostError",
+#       "message": "The graph store can no longer be used by this process (found during: job full). Its locks were removed by another process that opened and closed the store after this process had lost its file lock on the store's lock file. Nothing more can be read or written until the daemon is restarted.: Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot",
+#       "stack":
+#           LmdbStoreLocksLostError: The graph store can no longer be used by this process (found during: job full). Its locks were removed by another process that opened and closed the store after this process had lost its file lock on the store's lock file. Nothing more can be read or written until the daemon is restarted.
+#               at IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:345:72)
+#               at async IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:306:5)
+#               at async TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:115:3)
+#               at async Test.run (node:internal/test_runner/test:1054:7)
+#               at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+#           caused by: Error: Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot
+#               at badRslot (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:47:23)
+#               at <anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:113:65)
+#               at IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:338:15)
+#               at async IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:306:5)
+#               at async TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:115:3)
+#               at async Test.run (node:internal/test_runner/test:1054:7)
+#               at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+#       "name": "LmdbStoreLocksLostError"
+#     }
+# [04:40:40] [31mERROR[39m: [36m[queue] job failed[39m
+#     [35mmodule[39m: "queue"
+#     err: {
+#       "type": "Error",
+#       "message": "boom",
+#       "stack":
+#           Error: boom
+#               at <anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:126:64)
+#               at IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:338:15)
+#               at async IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:306:5)
+#               at async TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/store-failure-dispatch.test.ts:128:2)
+#               at async Test.run (node:internal/test_runner/test:1054:7)
+#               at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+#     }
+# Subtest: detection through the real wrappers: a read through the dispatcher records at once
+ok 2 - detection through the real wrappers: a read through the dispatcher records at once
+  ---
+  duration_ms: 1688.381958
+  type: 'test'
+  ...
+# Subtest: periodic check records locks-lost when no request or write has met the failure
+ok 3 - periodic check records locks-lost when no request or write has met the failure
+  ---
+  duration_ms: 1931.466041
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3900.561875

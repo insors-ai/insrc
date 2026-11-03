@@ -58,6 +58,9 @@ import {
   listUnresolvedRelations,
   promoteResolvedBatch,
   updateUnresolvedMetaBatch,
+  clearUnresolvedMetaKeyBatch,
+  returnInferredSqlReferencesToPending,
+  SQL_REPEND_MARKER,
   type UnresolvedRelation,
 } from '../db/relations.js';
 import { inNeighbors, outNeighbors } from '../db/graph/edges.js';
@@ -65,10 +68,11 @@ import { BOUNDARY_RELATION_KINDS, zeroPending } from '../db/graph/pending-class.
 import type { PendingClass } from '../db/graph/codec.js';
 import { readIndexState } from '../db/index-state.js';
 import type { SourceRoots } from './source-roots.js';
-import { selectFile } from './file-selection.js';
+import { selectFile, type FileSelection } from './file-selection.js';
 import { resolveImportPath } from './resolver.js';
 import { listExportNames } from '../db/export-names.js';
-import { resolveRepoIgnore } from './repo-ignore-config.js';
+import { createFileFilter, type FileFilter } from './file-filter.js';
+import { sqlFoldedLastSegment, sqlLastSegmentKey, sqlNamesMeet } from './parser/sql-names.js';
 
 const log = getLogger('cross-file-resolver');
 
@@ -113,6 +117,9 @@ export interface CrossFileResolveOpts {
   readonly mode?:        CrossFileMode | undefined;
   /** Required in 'settle' mode: the files committed since the last settle (absolute paths). */
   readonly committedFiles?: readonly string[] | undefined;
+  /** The repository's FileFilter when the caller holds one (the indexer's
+   *  cached instance); absent, one is built for the file-target classing. */
+  readonly fileFilter?: FileFilter | undefined;
 }
 
 export interface CrossFileResolveResult {
@@ -128,7 +135,8 @@ export interface CrossFileResolveResult {
 }
 
 /** Pass 2 resolves these kinds by name; a row of another code-symbol kind is not attempted. */
-const PASS2_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>(['CALLS', 'INHERITS', 'IMPLEMENTS']);
+// REFERENCES: a SQL table or view naming one defined in another file (Story 9d8b5542).
+const PASS2_KINDS: ReadonlySet<RelationKind> = new Set<RelationKind>(['CALLS', 'INHERITS', 'IMPLEMENTS', 'REFERENCES']);
 
 export async function runCrossFileResolver(
   opts: CrossFileResolveOpts,
@@ -213,6 +221,7 @@ async function runPass0(opts: CrossFileResolveOpts, mode: CrossFileMode, index: 
   for (const row of rows) {
     if (BOUNDARY_RELATION_KINDS.has(row.kind) || row.meta['awaitsId'] !== true) continue;
     if (await entityU64ForId(row.rawTo) === undefined) continue;
+    // No evidence passed: the row's own (carried) evidence is stored (s7).
     items.push({ unresolved: row, targetEntityId: row.rawTo });
   }
   const result = await promoteResolvedBatch(opts.db, items);
@@ -233,13 +242,15 @@ async function runPass0(opts: CrossFileResolveOpts, mode: CrossFileMode, index: 
  * 'full' mode classes the repository's rows, 'settle' mode the committed files'.
  */
 async function classifyFileTargets(opts: CrossFileResolveOpts, mode: CrossFileMode): Promise<void> {
-  const ignore = resolveRepoIgnore(opts.repoRoot);
+  // FileFilter is the one rule (Epic c2ba6fa6 s6): the same filter the full
+  // walk and the file event use decides 'excluded-by-ignore'.
+  const filter = opts.fileFilter ?? createFileFilter(opts.repoRoot);
   const updates: { id: string; meta: Record<string, unknown> }[] = [];
   for (const row of await rowsInScope({ ...opts, scopeFile: undefined }, mode)) {
     const target = row.meta['targetFile'];
     if (row.meta['awaitsId'] !== true || typeof target !== 'string') continue;
     if (await entityU64ForId(row.rawTo) !== undefined) continue;
-    const selection = selectFile(target, opts.repoRoot, ignore);
+    const selection: FileSelection = selectFile(target, filter);
     const meta = selection === 'not-code'
       ? { class: 'no-candidate', reason: 'target-not-code' }
       : { class: 'awaiting-target', reason: selection === 'excluded-by-ignore' ? 'target-excluded-by-ignore' : 'target-not-committed' };
@@ -285,6 +296,8 @@ export function rewireImportRelation(r: Rewire, repoRoot: string, byId: Readonly
   return {
     kind: 'IMPORTS', from: r.fromId, to: r.targetFileId, resolved: true,
     meta: { repo: repoRoot, file: byId.get(r.fromId)?.file ?? repoRoot },
+    // Located across files, not read from the importing file alone (s7).
+    evidence: 'inferred',
   };
 }
 
@@ -440,7 +453,7 @@ async function runPass1b(opts: CrossFileResolveOpts, mode: CrossFileMode, index:
     .filter(r => r.kind === 'EXPORTS' && r.meta['awaitsId'] !== true);
   if (pending.length === 0) return 0;
   const exports = await listExportNames();
-  const promotes: { unresolved: UnresolvedRelation; targetEntityId: string; exportName: string }[] = [];
+  const promotes: { unresolved: UnresolvedRelation; targetEntityId: string; exportName: string; evidence: 'inferred' }[] = [];
   const classUpdates: { id: string; meta: Record<string, unknown> }[] = [];
   const settle = (row: UnresolvedRelation, meta: Record<string, unknown>): void => {
     const update = classUpdate(row, meta);
@@ -461,7 +474,7 @@ async function runPass1b(opts: CrossFileResolveOpts, mode: CrossFileMode, index:
       const exportedAs = typeof row.meta['exportedAs'] === 'string' ? row.meta['exportedAs'] as string : row.rawTo;
       const targets = row.rawTo === '*' ? [source] : exportedTargets(source.id, row.rawTo, index, exports);
       if (targets.length === 1) {
-        promotes.push({ unresolved: row, targetEntityId: targets[0]!.id, exportName: exportedAs });
+        promotes.push({ unresolved: row, targetEntityId: targets[0]!.id, exportName: exportedAs, evidence: 'inferred' });
         addExport(exports, barrel.id, exportedAs, targets[0]!.id);
         progress = true;
       } else if (targets.length > 1) {
@@ -512,8 +525,10 @@ async function runPass2(
 ): Promise<{ resolved: number; ambiguous: number; stillUnresolved: number }> {
   // Step 1 -- prefetch UnresolvedRelation rows + the file->file IMPORTS
   // map (one DB read each; per-row helpers below are pure-sync).
+  if (mode === 'settle') await recheckSqlReferences(opts, index);
   const tList = Date.now();
   const unresolved = await rowsInScope(opts, mode);
+  if (mode === 'settle') unresolved.push(...await sqlReferencesAwaitingCommitted(opts, unresolved, index));
   log.info(
     { repo: opts.repoRoot, rows: unresolved.length, elapsedMs: Date.now() - tList },
     'cross-file Pass 2: listUnresolvedRelations done',
@@ -528,7 +543,7 @@ async function runPass2(
   );
 
   // Step 2 -- in-memory loop over unresolved rows. Accumulate intents.
-  const promotes:         { unresolved: UnresolvedRelation; targetEntityId: string }[] = [];
+  const promotes:         { unresolved: UnresolvedRelation; targetEntityId: string; evidence: 'inferred' }[] = [];
   // Every attempted row that stays pending gets its class, in every mode.
   const classUpdates:     { id: string; meta: Record<string, unknown> }[]              = [];
 
@@ -549,11 +564,20 @@ async function runPass2(
       processed++;
       continue;
     }
+    // A REFERENCES row is attempted only from a SQL entity still in the index.
+    if (row.kind === 'REFERENCES' && fromEntityOf(row, index)?.language !== 'sql') {
+      processed++;
+      continue;
+    }
     const intent: ResolveIntent = row.kind === 'CALLS'
       ? resolveCall(opts, row, index, importsByFile, exports)
-      : resolveInheritance(opts, row, index, importsByFile);
+      : row.kind === 'REFERENCES'
+        ? resolveSqlReference(row, index)
+        : resolveInheritance(opts, row, index, importsByFile);
     if (intent.kind === 'resolved') {
-      promotes.push({ unresolved: row, targetEntityId: intent.targetId });
+      // Resolved by name across files (s7). An ambiguous name writes no edge:
+      // it stays pending with its candidates, so 'chosen' is never written.
+      promotes.push({ unresolved: row, targetEntityId: intent.targetId, evidence: 'inferred' });
       resolved++;
     } else if (intent.kind === 'ambiguous') {
       const update = classUpdate(row, { ...intent.meta, class: 'ambiguous' });
@@ -591,6 +615,10 @@ async function runPass2(
       'cross-file Pass 2: class batch flushed',
     );
   }
+  // A re-pended SQL reference has had its re-attempt: whatever came of it, a
+  // later settle selects it only if its own files can affect it (ISSUE-0f3376a0).
+  const promoted = new Set(promotes.map(p => p.unresolved.id));
+  await clearUnresolvedMetaKeyBatch(opts.db, unresolved.filter(r => r.meta[SQL_REPEND_MARKER] === true && !promoted.has(r.id)).map(r => r.id), SQL_REPEND_MARKER);
 
   return { resolved, ambiguous, stillUnresolved };
 }
@@ -672,7 +700,7 @@ function resolveInheritance(
   // Same-file
   for (const kind of targetKinds) {
     const sameFile = (index.byFile.get(row.fromFile) ?? [])
-      .filter(e => e.language === language && e.kind === kind && e.name === row.rawTo);
+      .filter(e => sameFamily(e.language, language) && e.kind === kind && e.name === row.rawTo);
     if (sameFile.length === 1) return { kind: 'resolved', targetId: sameFile[0]!.id };
     if (sameFile.length > 1) {
       return { kind: 'ambiguous', meta: { ...row.meta, candidates: sameFile.map(e => e.id) } };
@@ -721,7 +749,7 @@ function resolveCall(
 
   // Same-file
   const sameFile = (index.byFile.get(row.fromFile) ?? [])
-    .filter(e => e.language === language
+    .filter(e => sameFamily(e.language, language)
               && CALL_TARGET_KINDS.includes(e.kind)
               && e.name === row.rawTo
               && e.id !== row.fromEntity);
@@ -749,7 +777,7 @@ function resolveCall(
     const imported = index.fileEntities.get(path);
     if (imported === undefined) continue;
     for (const e of exportedTargets(imported.id, row.rawTo, index, exports)) {
-      if (e.language === language && CALL_TARGET_KINDS.includes(e.kind)) found.set(e.id, e);
+      if (sameFamily(e.language, language) && CALL_TARGET_KINDS.includes(e.kind)) found.set(e.id, e);
     }
   }
   const candidates = [...found.values()];
@@ -759,6 +787,112 @@ function resolveCall(
     return { kind: 'ambiguous', meta: { ...row.meta, candidates: candidates.map(e => e.id) } };
   }
   return UNRESOLVED;
+}
+
+// ---------------------------------------------------------------------------
+// SQL references across files (Story 9d8b5542)
+// ---------------------------------------------------------------------------
+
+function fromEntityOf(row: UnresolvedRelation, index: EntityIndex): Entity | undefined {
+  return (index.byFile.get(row.fromFile) ?? []).find(e => e.id === row.fromEntity) ?? index.byId.get(row.fromEntity);
+}
+
+/**
+ * The repository's SQL tables and views a name can mean, by the SQL name rule
+ * (ISSUE-0f3376a0; sql-names.ts): every definition with the same last-segment
+ * key whose segments meet the name's from the end -- `users` meets
+ * `app.users`, `db.app.users` meets `app.users`, `audit.users` does not meet
+ * a bare `users`. The schema search path decides between several, so several
+ * stay several.
+ */
+function sqlCandidates(name: string, index: EntityIndex): Entity[] {
+  return (index.sqlByLastSegment.get(sqlLastSegmentKey(name)) ?? []).filter(e => sqlNamesMeet(name, e.name));
+}
+
+/**
+ * Resolve a SQL REFERENCES row by name among the repository's tables and
+ * views. The same file's references were linked by the reader, so a match
+ * here is another file's: one is the target ('inferred'), several stay
+ * ambiguous, none is no-candidate. The from-entity is never its own target.
+ */
+function resolveSqlReference(row: UnresolvedRelation, index: EntityIndex): ResolveIntent {
+  const candidates = sqlCandidates(row.rawTo, index).filter(e => e.id !== row.fromEntity);
+  if (candidates.length === 1) return { kind: 'resolved', targetId: candidates[0]!.id };
+  if (candidates.length > 1) return { kind: 'ambiguous', meta: { ...row.meta, candidates: candidates.map(e => e.id) } };
+  return UNRESOLVED;
+}
+
+const isSqlDefinition = (e: Entity): boolean => e.language === 'sql' && (e.kind === 'table' || e.kind === 'view');
+
+/**
+ * In settle mode: when a committed file is a SQL file (saved or removed), the
+ * repository's pending SQL references beyond the rows already in scope that
+ * the committed files can affect (ISSUE-0f3376a0): a row whose last-segment
+ * key is that of a table or view now defined in a committed file (a new
+ * candidate), an ambiguous row one of whose candidates is no longer stored,
+ * and a row the store returned to pending by name (it carries
+ * SQL_REPEND_MARKER: a definition it met was moved, renamed or removed). Any
+ * other pending reference cannot change, so it is not re-attempted. Reads
+ * nothing when no committed file is a SQL file -- a marked row is written
+ * only by the commit of a SQL definition's file, which its settle lists.
+ */
+async function sqlReferencesAwaitingCommitted(
+  opts:    CrossFileResolveOpts,
+  inScope: readonly UnresolvedRelation[],
+  index:   EntityIndex,
+): Promise<UnresolvedRelation[]> {
+  if (!(opts.committedFiles ?? []).some(f => f.toLowerCase().endsWith('.sql'))) return [];
+  const names = new Set<string>();
+  for (const file of opts.committedFiles ?? []) {
+    for (const e of index.byFile.get(file) ?? []) if (isSqlDefinition(e)) names.add(sqlLastSegmentKey(e.name));
+  }
+  const goneCandidate = (r: UnresolvedRelation): boolean =>
+    r.meta['class'] === 'ambiguous' && Array.isArray(r.meta['candidates']) && (r.meta['candidates'] as unknown[]).some(id => typeof id !== 'string' || !index.byId.has(id));
+  const seen = new Set(inScope.map(r => r.id));
+  return (await listUnresolvedRelations(opts.db, opts.repoRoot))
+    .filter(r => r.kind === 'REFERENCES' && r.meta['awaitsId'] !== true && !seen.has(r.id))
+    .filter(r => r.meta[SQL_REPEND_MARKER] === true || names.has(sqlLastSegmentKey(r.rawTo)) || goneCandidate(r));
+}
+
+/**
+ * In settle mode, before the resolution pass: a table or view defined in a
+ * committed file can change what another file's inferred reference means --
+ * a second candidate, or a quoting edit whose id survived (a legacy file that
+ * stored Users and "Users" as one Users). So every 'inferred' REFERENCES edge
+ * into a stored table/view whose last segment folds (case and quotes
+ * ignored) to that of a committed definition -- the committed definitions
+ * included -- returns to pending by name, marked, unless its holder is in a
+ * committed file (re-read, so already re-attempted); the pass then decides
+ * it by the name rule: one candidate re-resolves, several are ambiguous.
+ * Edges the reader linked in its own file ('extracted') are never touched.
+ */
+async function recheckSqlReferences(opts: CrossFileResolveOpts, index: EntityIndex): Promise<void> {
+  const committed = (opts.committedFiles ?? []).filter(f => f.toLowerCase().endsWith('.sql'));
+  if (committed.length === 0) return;
+  const folded = new Set<string>();
+  const holders = new Set<string>();
+  for (const file of committed) {
+    for (const e of index.byFile.get(file) ?? []) {
+      holders.add(e.id);
+      if (isSqlDefinition(e)) folded.add(sqlFoldedLastSegment(e.name));
+    }
+  }
+  if (folded.size === 0) return;
+  const targets: string[] = [];
+  for (const [key, defs] of index.sqlByLastSegment) if (folded.has(key.toLowerCase())) targets.push(...defs.map(e => e.id));
+  const t = Date.now();
+  const returned = await returnInferredSqlReferencesToPending(opts.db, targets, holders);
+  log.info({ repo: opts.repoRoot, targets: targets.length, returned, elapsedMs: Date.now() - t }, 'cross-file Pass 2: SQL references re-checked');
+}
+
+/**
+ * The pending SQL references a settle for `opts.committedFiles` re-attempts
+ * beyond the committed files' own rows -- the selection Pass 2 makes, read
+ * without resolving anything (for diagnostics and tests).
+ */
+export async function sqlReferencesForSettle(opts: CrossFileResolveOpts): Promise<UnresolvedRelation[]> {
+  const index = buildEntityIndex(await listEntitiesForRepo(opts.db, opts.repoRoot));
+  return sqlReferencesAwaitingCommitted(opts, await rowsInScope(opts, 'settle'), index);
 }
 
 // ---------------------------------------------------------------------------
@@ -934,6 +1068,8 @@ interface EntityIndex {
   readonly fileEntities:   Map<string, Entity>;
   /** `<lang>:<kind>:<name>` -> entities matching that triple. */
   readonly byNameKindLang: Map<string, Entity[]>;
+  /** SQL tables and views, qualified or not, by the key of their last segment (`users`, `Users` for `"Users"`). */
+  readonly sqlByLastSegment: Map<string, Entity[]>;
 }
 
 function buildEntityIndex(entities: readonly Entity[]): EntityIndex {
@@ -941,6 +1077,8 @@ function buildEntityIndex(entities: readonly Entity[]): EntityIndex {
   const byFile         = new Map<string, Entity[]>();
   const fileEntities   = new Map<string, Entity>();
   const byNameKindLang = new Map<string, Entity[]>();
+  const sqlByLastSegment = new Map<string, Entity[]>();
+  const add = (m: Map<string, Entity[]>, k: string, e: Entity) => { const a = m.get(k); if (a === undefined) m.set(k, [e]); else a.push(e); };
 
   for (const e of entities) {
     byId.set(e.id, e);
@@ -961,12 +1099,27 @@ function buildEntityIndex(entities: readonly Entity[]): EntityIndex {
     let fileArr = byFile.get(e.file);
     if (fileArr === undefined) { fileArr = []; byFile.set(e.file, fileArr); }
     fileArr.push(e);
+
+    if (e.language === 'sql' && (e.kind === 'table' || e.kind === 'view')) add(sqlByLastSegment, sqlLastSegmentKey(e.name), e);
   }
 
-  return { byId, byFile, fileEntities, byNameKindLang };
+  return { byId, byFile, fileEntities, byNameKindLang, sqlByLastSegment };
 }
 
 function entityKey(lang: Language, kind: EntityKind, name: string): string {
-  return `${lang}:${kind}:${name}`;
+  return `${languageFamily(lang)}:${kind}:${name}`;
+}
+
+/**
+ * The family a language's names resolve within (Epic c2ba6fa6 s9): C and C++
+ * are one -- a C caller links to a function declared in a header read by the
+ * C++ reader (user decision 2026-11-02). Every other language is its own family.
+ */
+function languageFamily(lang: Language): Language {
+  return lang === 'cpp' ? 'c' : lang;
+}
+
+function sameFamily(a: Language, b: Language): boolean {
+  return languageFamily(a) === languageFamily(b);
 }
 

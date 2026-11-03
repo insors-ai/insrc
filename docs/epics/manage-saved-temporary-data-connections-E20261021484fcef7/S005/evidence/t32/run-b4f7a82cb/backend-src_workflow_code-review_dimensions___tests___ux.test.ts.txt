@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: hasUxAcceptance: true for a uxDefinition, an adherence selection incl 'ux', or a ux-mock companion; false otherwise
+ok 1 - hasUxAcceptance: true for a uxDefinition, an adherence selection incl 'ux', or a ux-mock companion; false otherwise
+  ---
+  duration_ms: 0.647125
+  type: 'test'
+  ...
+# Subtest: adherenceSelectionOf: reads the recorded selection ([] when absent)
+ok 2 - adherenceSelectionOf: reads the recorded selection ([] when absent)
+  ---
+  duration_ms: 0.8145
+  type: 'test'
+  ...
+# Subtest: hasDiagramReferences: FALSE for a ux-mock-only subject (excludes ux-mock; counts only diagram-*)
+ok 3 - hasDiagramReferences: FALSE for a ux-mock-only subject (excludes ux-mock; counts only diagram-*)
+  ---
+  duration_ms: 0.104708
+  type: 'test'
+  ...
+# Subtest: judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs
+ok 4 - judgeUx: a schema-valid uxDefinition → dimension:ux, only completeness LOWs
+  ---
+  duration_ms: 25.360375
+  type: 'test'
+  ...
+# Subtest: judgeUx: adherence requires 'ux' but no uxDefinition / no ux-mock evidence → HIGH breach (ac2)
+ok 5 - judgeUx: adherence requires 'ux' but no uxDefinition / no ux-mock evidence → HIGH breach (ac2)
+  ---
+  duration_ms: 0.567333
+  type: 'test'
+  ...
+# Subtest: judgeUx: a schema-invalid uxDefinition folds a HIGH breach through the dimension
+ok 6 - judgeUx: a schema-invalid uxDefinition folds a HIGH breach through the dimension
+  ---
+  duration_ms: 0.350042
+  type: 'test'
+  ...
+# Subtest: judgeUx: a referenced-but-absent ux-mock companion file → HIGH breach
+ok 7 - judgeUx: a referenced-but-absent ux-mock companion file → HIGH breach
+  ---
+  duration_ms: 1.001208
+  type: 'test'
+  ...
+# Subtest: judgeUx: a present ux-mock companion file → no absent-file breach
+ok 8 - judgeUx: a present ux-mock companion file → no absent-file breach
+  ---
+  duration_ms: 2.305041
+  type: 'test'
+  ...
+# Subtest: judgeUx: an unknown recorded adherence member → HIGH breach
+ok 9 - judgeUx: an unknown recorded adherence member → HIGH breach
+  ---
+  duration_ms: 0.637583
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 342.483834

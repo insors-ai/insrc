@@ -2,7 +2,7 @@
  * Story E20260921ad0d45c9:S001 / t6 — activation shell tests.
  * Uses fakes for the ipc client + status surface; no VS Code host.
  */
-import { test } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,11 @@ import type { StatusSnapshot, StatusSurface } from '../surfaces/status-surface.j
 import type { IpcClient, DaemonReachability, DaemonStatus } from '../../../src/shared/ipc-client.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+// VS Code owns the real event loop; this standalone fixture owns a ref while
+// exercising production's intentionally unrefed probe deadlines.
+let keepAlive:ReturnType<typeof setInterval>;
+before(()=>{keepAlive=setInterval(()=>{},1000);});
+after(()=>clearInterval(keepAlive));
 const PKG = join(HERE, '..');
 
 class FakeStatus implements StatusSurface {

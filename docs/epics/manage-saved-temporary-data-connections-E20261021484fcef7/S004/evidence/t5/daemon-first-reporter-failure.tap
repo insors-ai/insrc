@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+not ok 1 - CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+  ---
+  duration_ms: 3055.221542
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-cleanup.test.ts:1:1540'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /# pass 24\b/. Input:
+    
+    '✔ native constructor and use drain across end (34.550375ms)\n' +
+      '✔ native constructor and use drain across deadline (13.586709ms)\n' +
+      '✔ native constructor and use drain across shutdown (13.286792ms)\n' +
+      '✔ native constructor and use drain across restart (144.638917ms)\n' +
+      '✔ actual native use is held across end and cannot publish after revocation (9.1285ms)\n' +
+      '✔ actual native use is held across deadline and cannot publish after revocation (7.690083ms)\n' +
+      '✔ actual native use is held across restart and cannot publish after revocation (137.10825ms)\n' +
+      '✔ native close failure retains cleanup ownership across end (2.812917ms)\n' +
+      '✔ native close failure retains cleanup ownership across deadline (2.065542ms)\n' +
+      '✔ native close failure retains cleanup ownership across restart (131.648041ms)\n' +
+      '✔ actual converted file and DuckDB close failures retain native handles and decoder budget until cleanup retry (50.216458ms)\n' +
+      '✔ before-deadline control resume preserves entries and revokes an actual held callback generation (2.604958ms)\n' +
+      '✔ actual daemon shutdown waits for owned use and reports close failure=false (22.967625ms)\n' +
+      '✔ actual daemon shutdown waits for owned use and reports close failure=true (15.344791ms)\n' +
+      '✔ shutdown backstop refuses success while actual owned callback work remains held (38.7905ms)\n' +
+      '✔ rejected queue drain still closes native resources and ends once with failure (4.744708ms)\n' +
+      '✔ periodic cleanup retry releases a failed owner handle while daemon admission stays open (1007.987958ms)\n' +
+      '✔ actual converted decoder end during work, native close failure=false (26.388917ms)\n' +
+      '✔ actual converted decoder end during work, native close failure=true (11.756959ms)\n' +
+      '✔ actual converted decoder deadline during work, native close failure=false (10.61975ms)\n' +
+      '✔ actual converted decoder deadline during work, native close failure=true (9.29975ms)\n' +
+      '✔ actual converted decoder restart during work, native close failure=false (158.157375ms)\n' +
+      '✔ actual converted decoder restart during work, native close failure=true (273.999958ms)\n' +
+      '✔ native query queued after the first interrupt is canceled before resource disposal completes (24.935583ms)\n' +
+      'ℹ tests 24\n' +
+      'ℹ suites 0\n' +
+      'ℹ pass 24\n' +
+      'ℹ fail 0\n' +
+      'ℹ cancelled 0\n' +
+      'ℹ skipped 0\n' +
+      'ℹ todo 0\n' +
+      'ℹ duration_ms 2161.409667\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    ✔ native constructor and use drain across end (34.550375ms)
+    ✔ native constructor and use drain across deadline (13.586709ms)
+    ✔ native constructor and use drain across shutdown (13.286792ms)
+    ✔ native constructor and use drain across restart (144.638917ms)
+    ✔ actual native use is held across end and cannot publish after revocation (9.1285ms)
+    ✔ actual native use is held across deadline and cannot publish after revocation (7.690083ms)
+    ✔ actual native use is held across restart and cannot publish after revocation (137.10825ms)
+    ✔ native close failure retains cleanup ownership across end (2.812917ms)
+    ✔ native close failure retains cleanup ownership across deadline (2.065542ms)
+    ✔ native close failure retains cleanup ownership across restart (131.648041ms)
+    ✔ actual converted file and DuckDB close failures retain native handles and decoder budget until cleanup retry (50.216458ms)
+    ✔ before-deadline control resume preserves entries and revokes an actual held callback generation (2.604958ms)
+    ✔ actual daemon shutdown waits for owned use and reports close failure=false (22.967625ms)
+    ✔ actual daemon shutdown waits for owned use and reports close failure=true (15.344791ms)
+    ✔ shutdown backstop refuses success while actual owned callback work remains held (38.7905ms)
+    ✔ rejected queue drain still closes native resources and ends once with failure (4.744708ms)
+    ✔ periodic cleanup retry releases a failed owner handle while daemon admission stays open (1007.987958ms)
+    ✔ actual converted decoder end during work, native close failure=false (26.388917ms)
+    ✔ actual converted decoder end during work, native close failure=true (11.756959ms)
+    ✔ actual converted decoder deadline during work, native close failure=false (10.61975ms)
+    ✔ actual converted decoder deadline during work, native close failure=true (9.29975ms)
+    ✔ actual converted decoder restart during work, native close failure=false (158.157375ms)
+    ✔ actual converted decoder restart during work, native close failure=true (273.999958ms)
+    ✔ native query queued after the first interrupt is canceled before resource disposal completes (24.935583ms)
+    ℹ tests 24
+    ℹ suites 0
+    ℹ pass 24
+    ℹ fail 0
+    ℹ cancelled 0
+    ℹ skipped 0
+    ℹ todo 0
+    ℹ duration_ms 2161.409667
+    
+  operator: 'match'
+  stack: |-
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-cleanup.test.ts:16:180)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-cleanup.test.ts:20:147)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+not ok 2 - CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+  ---
+  duration_ms: 0.087583
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-cleanup.test.ts:1:1752'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input did not match the regular expression /# pass 24\b/. Input:
+    
+    '✔ native constructor and use drain across end (34.550375ms)\n' +
+      '✔ native constructor and use drain across deadline (13.586709ms)\n' +
+      '✔ native constructor and use drain across shutdown (13.286792ms)\n' +
+      '✔ native constructor and use drain across restart (144.638917ms)\n' +
+      '✔ actual native use is held across end and cannot publish after revocation (9.1285ms)\n' +
+      '✔ actual native use is held across deadline and cannot publish after revocation (7.690083ms)\n' +
+      '✔ actual native use is held across restart and cannot publish after revocation (137.10825ms)\n' +
+      '✔ native close failure retains cleanup ownership across end (2.812917ms)\n' +
+      '✔ native close failure retains cleanup ownership across deadline (2.065542ms)\n' +
+      '✔ native close failure retains cleanup ownership across restart (131.648041ms)\n' +
+      '✔ actual converted file and DuckDB close failures retain native handles and decoder budget until cleanup retry (50.216458ms)\n' +
+      '✔ before-deadline control resume preserves entries and revokes an actual held callback generation (2.604958ms)\n' +
+      '✔ actual daemon shutdown waits for owned use and reports close failure=false (22.967625ms)\n' +
+      '✔ actual daemon shutdown waits for owned use and reports close failure=true (15.344791ms)\n' +
+      '✔ shutdown backstop refuses success while actual owned callback work remains held (38.7905ms)\n' +
+      '✔ rejected queue drain still closes native resources and ends once with failure (4.744708ms)\n' +
+      '✔ periodic cleanup retry releases a failed owner handle while daemon admission stays open (1007.987958ms)\n' +
+      '✔ actual converted decoder end during work, native close failure=false (26.388917ms)\n' +
+      '✔ actual converted decoder end during work, native close failure=true (11.756959ms)\n' +
+      '✔ actual converted decoder deadline during work, native close failure=false (10.61975ms)\n' +
+      '✔ actual converted decoder deadline during work, native close failure=true (9.29975ms)\n' +
+      '✔ actual converted decoder restart during work, native close failure=false (158.157375ms)\n' +
+      '✔ actual converted decoder restart during work, native close failure=true (273.999958ms)\n' +
+      '✔ native query queued after the first interrupt is canceled before resource disposal completes (24.935583ms)\n' +
+      'ℹ tests 24\n' +
+      'ℹ suites 0\n' +
+      'ℹ pass 24\n' +
+      'ℹ fail 0\n' +
+      'ℹ cancelled 0\n' +
+      'ℹ skipped 0\n' +
+      'ℹ todo 0\n' +
+      'ℹ duration_ms 2161.409667\n'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    ✔ native constructor and use drain across end (34.550375ms)
+    ✔ native constructor and use drain across deadline (13.586709ms)
+    ✔ native constructor and use drain across shutdown (13.286792ms)
+    ✔ native constructor and use drain across restart (144.638917ms)
+    ✔ actual native use is held across end and cannot publish after revocation (9.1285ms)
+    ✔ actual native use is held across deadline and cannot publish after revocation (7.690083ms)
+    ✔ actual native use is held across restart and cannot publish after revocation (137.10825ms)
+    ✔ native close failure retains cleanup ownership across end (2.812917ms)
+    ✔ native close failure retains cleanup ownership across deadline (2.065542ms)
+    ✔ native close failure retains cleanup ownership across restart (131.648041ms)
+    ✔ actual converted file and DuckDB close failures retain native handles and decoder budget until cleanup retry (50.216458ms)
+    ✔ before-deadline control resume preserves entries and revokes an actual held callback generation (2.604958ms)
+    ✔ actual daemon shutdown waits for owned use and reports close failure=false (22.967625ms)
+    ✔ actual daemon shutdown waits for owned use and reports close failure=true (15.344791ms)
+    ✔ shutdown backstop refuses success while actual owned callback work remains held (38.7905ms)
+    ✔ rejected queue drain still closes native resources and ends once with failure (4.744708ms)
+    ✔ periodic cleanup retry releases a failed owner handle while daemon admission stays open (1007.987958ms)
+    ✔ actual converted decoder end during work, native close failure=false (26.388917ms)
+    ✔ actual converted decoder end during work, native close failure=true (11.756959ms)
+    ✔ actual converted decoder deadline during work, native close failure=false (10.61975ms)
+    ✔ actual converted decoder deadline during work, native close failure=true (9.29975ms)
+    ✔ actual converted decoder restart during work, native close failure=false (158.157375ms)
+    ✔ actual converted decoder restart during work, native close failure=true (273.999958ms)
+    ✔ native query queued after the first interrupt is canceled before resource disposal completes (24.935583ms)
+    ℹ tests 24
+    ℹ suites 0
+    ℹ pass 24
+    ℹ fail 0
+    ℹ cancelled 0
+    ℹ skipped 0
+    ℹ todo 0
+    ℹ duration_ms 2161.409667
+    
+  operator: 'match'
+  stack: |-
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-cleanup.test.ts:16:180)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-cleanup.test.ts:20:147)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+ok 3 - CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+  ---
+  duration_ms: 2.803833
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+ok 4 - CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+  ---
+  duration_ms: 0.214958
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 2
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3060.418459
+# 
+# npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.

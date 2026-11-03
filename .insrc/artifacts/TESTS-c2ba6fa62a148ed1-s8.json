@@ -1,0 +1,504 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s8",
+    "createdAt": "2026-11-02T09:26:38.830Z",
+    "updatedAt": "2026-11-02T10:48:02.439Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f1c1e5b0a",
+        "ranAt": "2026-11-02T09:26:38.830Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystem tables and migration to schema 8",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: a v7 store opens at version 8 with the subsystem tables and its rows unchanged; a fresh store has them",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: a write replaces the set in one transaction, stamped with the generation; a subsystem whose id was stored keeps its summary",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: readSubsystems returns a repository set or the subsystems holding the given files, and nothing of another repository",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/subsystem-tables.test.ts",
+                "title": "s8 t1: a write that fails part-way leaves the previous set intact",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/subsystem-tables.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1476,
+            "titles": [
+              {
+                "title": "s8 t1: a v7 store opens at version 8 with the subsystem tables and its rows unchanged; a fresh store has them",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t1: a write replaces the set in one transaction, stamped with the generation; a subsystem whose id was stored keeps its summary",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t1: readSubsystems returns a repository set or the subsystems holding the given files, and nothing of another repository",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t1: a write that fails part-way leaves the previous set intact",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "98f28962f",
+        "ranAt": "2026-11-02T09:33:49.424Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystem grouping",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: every file is in exactly one group",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: the same graph gives the same groups, also with its edges and files shuffled",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: two dense clusters joined by one weak edge are two groups; a file with no relationships joins its directory through the same-directory edge",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: ids are the hash of the sorted members, names the longest common directory, and connections sum the edges between groups",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: a file tied between two groups joins the smaller one, whatever the edge order",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: groups aggregate: modules strongly linked in pairs end as one group per pair",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+                "title": "s8 t2: connections count only relationships, never the same-directory edges, even between groups of one directory",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 525,
+            "titles": [
+              {
+                "title": "s8 t2: every file is in exactly one group",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: the same graph gives the same groups, also with its edges and files shuffled",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: two dense clusters joined by one weak edge are two groups; a file with no relationships joins its directory through the same-directory edge",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: ids are the hash of the sorted members, names the longest common directory, and connections sum the edges between groups",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: a file tied between two groups joins the smaller one, whatever the edge order",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: groups aggregate: modules strongly linked in pairs end as one group per pair",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t2: connections count only relationships, never the same-directory edges, even between groups of one directory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "90a7d68c2",
+        "ranAt": "2026-11-02T09:39:41.527Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystem pass over a stored graph",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-pass.test.ts",
+                "title": "s8 t3: an incomplete graph is not grouped and nothing is written",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-pass.test.ts",
+                "title": "s8 t3: the stored set follows the stored relationships and their evidence; module stubs and other repositories are not edges",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-pass.test.ts",
+                "title": "s8 t3: a second pass at one generation does nothing; after a file changes, the new generation is regrouped",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-pass.test.ts",
+                "title": "s8 t3: every code entity of the repository has exactly one subsystem, through its file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-pass.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2225,
+            "titles": [
+              {
+                "title": "s8 t3: an incomplete graph is not grouped and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t3: the stored set follows the stored relationships and their evidence; module stubs and other repositories are not edges",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t3: a second pass at one generation does nothing; after a file changes, the new generation is regrouped",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t3: every code entity of the repository has exactly one subsystem, through its file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "7182d1d58",
+        "ranAt": "2026-11-02T09:46:53.914Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystem summaries through the cheap-tier provider",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+                "title": "s8 t4: summaries are written only for new memberships; an unchanged subsystem keeps its summary and causes no call",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+                "title": "s8 t4: the summary calls are made one at a time",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+                "title": "s8 t4: a failing call leaves that summary empty and the others written",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+                "title": "s8 t4: a generation that advances while summaries are written stops further writes",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+                "title": "s8 t4: a summary is stored only on the subsystem rows of the generation it was written for",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3164,
+            "titles": [
+              {
+                "title": "s8 t4: summaries are written only for new memberships; an unchanged subsystem keeps its summary and causes no call",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t4: the summary calls are made one at a time",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t4: a failing call leaves that summary empty and the others written",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t4: a generation that advances while summaries are written stops further writes",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t4: a summary is stored only on the subsystem rows of the generation it was written for",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "72314d819",
+        "ranAt": "2026-11-02T09:51:03.089Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "subsystems job queued and run in the summary lane",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: the subsystems job runs in the summary lane, after code work, and is handed to the summary worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: queued subsystems jobs for one repository collapse to one",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: a full index that leaves the graph complete enqueues one subsystems job; an incomplete one enqueues none; the job runs the pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-job.test.ts",
+                "title": "s8 t5: a settle and a clean-up that leave the graph complete enqueue the job; an incomplete graph does not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystems-job.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1689,
+            "titles": [
+              {
+                "title": "s8 t5: the subsystems job runs in the summary lane, after code work, and is handed to the summary worker",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t5: queued subsystems jobs for one repository collapse to one",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t5: a full index that leaves the graph complete enqueues one subsystems job; an incomplete one enqueues none; the job runs the pass",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t5: a settle and a clean-up that leave the graph complete enqueue the job; an incomplete graph does not",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "674989914",
+        "ranAt": "2026-11-02T09:55:10.020Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "index.subsystems through IndexerService",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystems-request.test.ts",
+                "title": "s8 t6 (ac1): a complete, grouped repository returns its subsystems with their connections, every code entity in exactly one",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-request.test.ts",
+                "title": "s8 t6 (ac5): an incomplete graph says the groups rest on an incomplete graph; an older generation is stale; an ungrouped repository is not grouped yet",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystems-request.test.ts",
+                "title": "s8 t6: the index.subsystems request is classed for the code-indexing worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystems-request.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2057,
+            "titles": [
+              {
+                "title": "s8 t6 (ac1): a complete, grouped repository returns its subsystems with their connections, every code entity in exactly one",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t6 (ac5): an incomplete graph says the groups rest on an incomplete graph; an older generation is stale; an ungrouped repository is not grouped yet",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t6: the index.subsystems request is classed for the code-indexing worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "32cc19900",
+        "ranAt": "2026-11-02T10:00:37.755Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyzer subsystem context",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7 (ac3): a request about one module names its subsystem, summary and connections, each a stored row, after the existing structure",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7: only a file with a stored subsystem row selects a subsystem; other path-like text is ignored",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7: without a repository or stored subsystems the bundle is unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+                "title": "s8 t7: the cache never holds the block, and subsystems stored after a bundle was cached show on the next serve",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1584,
+            "titles": [
+              {
+                "title": "s8 t7 (ac3): a request about one module names its subsystem, summary and connections, each a stored row, after the existing structure",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t7: only a file with a stored subsystem row selects a subsystem; other path-like text is ignored",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t7: without a repository or stored subsystems the bundle is unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "s8 t7: the cache never holds the block, and subsystems stored after a bundle was cached show on the next serve",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "72bf1dc57",
+        "ranAt": "2026-11-02T10:48:02.439Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: subsystems",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/smoke-t8.txt (installed daemon @ 2befc2d8: /tmp/insrc-s9-smoke grouped into 5 subsystems with 5 summaries at generation 28; insrc_analyze context names '#### Subsystem cpp' with its stored summary and files); full sweep in S008/full-sweep-t8.txt"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

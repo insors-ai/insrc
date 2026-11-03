@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.host.DetectPresentTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="unrecognisedHostFormat_failSafeSkip_omittedAndLogged_neverReachesWriter()" classname="ai.insors.insrc.jetbrains.host.DetectPresentTest" time="0.002"/>
+  <testcase name="includesInstalledEnabledHostsWithResolvedPaths_excludesDisabledAndAbsent()" classname="ai.insors.insrc.jetbrains.host.DetectPresentTest" time="0.0"/>
+  <testcase name="neitherHostPresent_returnsEmpty_noThrow()" classname="ai.insors.insrc.jetbrains.host.DetectPresentTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[  57451]   WARN - #ai.insors.insrc.jetbrains.host.HostDetector - insrc: skipping AI host with unrecognised config: unknown mcp shape
+[  57451]   WARN - #ai.insors.insrc.jetbrains.host.HostDetector - insrc: skipping AI host with unrecognised config: probe threw: probe blew up
+]]></system-err>
+</testsuite>

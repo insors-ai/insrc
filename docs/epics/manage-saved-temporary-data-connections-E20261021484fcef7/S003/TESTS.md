@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 83 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 123 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -460,3 +460,257 @@ Run at 2026-10-26T07:05:50.981Z on commit `80648023e`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/steps/__tests__/nested-planner-memory.test.ts` | 0 | 1 | 2.1 s |  |
+
+## t23
+
+Run at 2026-10-26T08:27:38.643Z on commit `11d7d4a0e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence | `src/daemon/steps/__tests__/task-persistence.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/task-persistence.test.ts` | 0 | 1 | 2.2 s |  |
+
+## t24
+
+Run at 2026-10-26T10:11:31.210Z on commit `a4df478e8`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards | `src/daemon/steps/__tests__/provider-admission.test.ts` |
+| pass | memory-only Ollama transport rejects malformed frames before SDK console diagnostics | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | admitted Session expiry during real structured validation prevents the next SDK retry | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | memory-only adapter refuses internal helper substitution before native construction | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+| pass | issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+
+**live: CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final actual isolated Ollama source/compiled runs each pass zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt), using src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Actual complete/completeStructured, callback persistence denial, immutable method/profile proof, cancellation/expiry and private output snapshots through server close. Production configured-service proof stays pending; release disabled.
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 0 | 6 | 1.9 s |  |
+| `src/daemon/steps/__tests__/provider-admission.test.ts` | 0 | 2 | 0.7 s |  |
+
+## t25
+
+Run at 2026-10-26T10:35:13.787Z on commit `9a9e14ad5`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal | `src/daemon/steps/__tests__/provider-diagnostics.test.ts` |
+| pass | admitted Session expiry during real structured validation prevents the next SDK retry | `src/agent/providers/__tests__/ollama-private-transport.test.ts` |
+
+**integration: CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control | `src/daemon/steps/__tests__/provider-diagnostics.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/ollama-private-transport.test.ts` | 0 | 6 | 1.6 s |  |
+| `src/daemon/steps/__tests__/provider-diagnostics.test.ts` | 0 | 2 | 1.1 s |  |
+
+## t26
+
+Run at 2026-10-26T11:02:19.774Z on commit `1f0151e05`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success | `src/daemon/steps/__tests__/embedding-denial.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/embedding-denial.test.ts` | 0 | 1 | 0.9 s |  |
+
+## t27
+
+Run at 2026-10-26T11:16:16.198Z on commit `7b17b4a50`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path | `src/daemon/steps/__tests__/adherence-cache.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/adherence-cache.test.ts` | 0 | 1 | 0.9 s |  |
+
+## t28
+
+Run at 2026-10-26T11:32:56.351Z on commit `ca4b9f987`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink | `src/daemon/steps/__tests__/analysis-diagnostics.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/analysis-diagnostics.test.ts` | 0 | 1 | 2.4 s |  |
+
+## t29
+
+Run at 2026-10-26T12:28:35.972Z on commit `54e4f7be4`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker | `src/daemon/steps/__tests__/rpc-diagnostics.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/steps/__tests__/rpc-diagnostics.test.ts` | 0 | 1 | 2.9 s |  |
+
+## t30
+
+Run at 2026-10-26T14:22:18.043Z on commit `64ae043a3`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+| pass | CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes | `src/daemon/db/__tests__/session-resources.test.ts` |
+| pass | CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits | `src/daemon/db/__tests__/session-probe.test.ts` |
+| pass | CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket | `src/daemon/db/__tests__/session-probe.test.ts` |
+| pass | CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases | `src/daemon/db/__tests__/session-file-resources.test.ts` |
+
+**integration: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+| pass | CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease | `src/daemon/db/__tests__/session-owner.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 2 | 6.3 s |  |
+| `src/daemon/db/__tests__/session-file-resources.test.ts` | 0 | 1 | 1.4 s |  |
+| `src/daemon/db/__tests__/session-owner.test.ts` | 0 | 11 | 0.5 s |  |
+| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 9 s |  |
+| `src/daemon/db/__tests__/session-resources.test.ts` | 0 | 7 | 1.6 s |  |
+
+## t31
+
+Run at 2026-10-26T16:11:42.294Z on commit `d8928fce2`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots | `src/daemon/db/__tests__/session-service-isolation.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-service-isolation.test.ts` | 0 | 1 | 6.1 s |  |
+
+## t32
+
+Run at 2026-10-26T16:32:59.145Z on commit `c14001644`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls | `src/daemon/db/__tests__/session-file-matrix.test.ts` |
+| pass | CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles | `src/daemon/db/__tests__/session-cleanup.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/session-cleanup.test.ts` | 0 | 2 | 15.5 s |  |
+| `src/daemon/db/__tests__/session-file-matrix.test.ts` | 0 | 1 | 8.2 s |  |
+
+## t33
+
+Run at 2026-10-29T07:05:57.321Z on commit `e166feb0e`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: CM-S3-INVENTORY: final resolved production site audit and saved compatibility regressions**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered | `src/daemon/db/__tests__/session-source-inventory.test.ts` |
+| pass | CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture | `src/daemon/db/__tests__/driver-field-audit.test.ts` |
+| pass | CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications | `src/daemon/db/__tests__/driver-field-audit.test.ts` |
+| pass | CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate | `src/daemon/db/__tests__/connection-reservations.test.ts` |
+| pass | CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage | `src/daemon/db/__tests__/connection-leases.test.ts` |
+| pass | CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family | `src/daemon/db/__tests__/saved-management.test.ts` |
+| pass | CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state | `src/daemon/db/__tests__/connection-management-rpc.test.ts` |
+| pass | CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket | `src/daemon/db/__tests__/draft-test-routes.test.ts` |
+| pass | CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain | `src/daemon/db/__tests__/draft-test-routes.test.ts` |
+| pass | CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits | `src/daemon/db/__tests__/session-probe.test.ts` |
+
+**integration: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled | `src/daemon/db/__tests__/session-release-gate.test.ts` |
+
+**live: CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance | `src/daemon/db/__tests__/session-release-gate.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/daemon/db/__tests__/connection-leases.test.ts` | 0 | 12 | 1.5 s |  |
+| `src/daemon/db/__tests__/connection-management-rpc.test.ts` | 0 | 6 | 1.4 s |  |
+| `src/daemon/db/__tests__/connection-reservations.test.ts` | 0 | 8 | 1.9 s |  |
+| `src/daemon/db/__tests__/draft-test-routes.test.ts` | 0 | 2 | 1.9 s |  |
+| `src/daemon/db/__tests__/driver-field-audit.test.ts` | 0 | 3 | 6.6 s |  |
+| `src/daemon/db/__tests__/saved-management.test.ts` | 0 | 5 | 1.8 s |  |
+| `src/daemon/db/__tests__/session-probe.test.ts` | 0 | 2 | 8.3 s |  |
+| `src/daemon/db/__tests__/session-release-gate.test.ts` | 0 | 2 | 3.2 s |  |
+| `src/daemon/db/__tests__/session-source-inventory.test.ts` | 0 | 2 | 11.9 s |  |
+
+## t34
+
+Run at 2026-10-26T18:35:22.559Z on commit `11c4b50f7`. Tests check: **failed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+no test files to run; reported as failed by the builder: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates
+
+**smoke: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-source-sweep.json

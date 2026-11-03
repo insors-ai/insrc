@@ -1,0 +1,7 @@
+Reusing configuration cache.
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :compileKotlin
+
+BUILD SUCCESSFUL in 37s
+1 actionable task: 1 executed
+Configuration cache entry reused.

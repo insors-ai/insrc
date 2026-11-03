@@ -1,7 +1,7 @@
 /** Explicit saved entry and staged fail-closed trusted carrier consumption. */
 import type { ConnectionAccessContext } from '../shared/connection-management.js';
-import { assertExplicitConnectionExecution, requireConnectionExecution, savedConnectionExecution, ConnectionExecutionError } from '../shared/step-context.js';
-import type { ConnectionExecutionContext, ConnectionExecutionLifetime, SavedConnectionExecution } from '../shared/step-context.js';
+import { assertExplicitConnectionExecution, requireConnectionExecution, savedConnectionExecution, ConnectionExecutionError, currentStepContext } from '../shared/step-context.js';
+import type { ConnectionExecutionContext, ConnectionExecutionLifetime, SavedConnectionExecution, ConnectionExecutionDiagnostics } from '../shared/step-context.js';
 import { RequestLifetime } from '../daemon/request-context.js';
 import { getLogger } from '../shared/logger.js';
 
@@ -23,4 +23,21 @@ export function analysisConnectionContext(lookupRoot: string, execution: Connect
 	const trusted = requireConnectionExecution(execution);
 	if (trusted.connectionAccess.lookupRoot !== lookupRoot) throw new ConnectionExecutionError('session-expired');
 	return trusted.connectionAccess;
+}
+
+/** Capture the immutable diagnostic policy before evaluating any source-bearing
+ * formatter. It deliberately does not revalidate authority: late work stays
+ * quiet after expiry, cancellation, or owner teardown. ALS is denial-only for
+ * legacy internal callers; it never grants connection access. */
+export function captureAnalysisDiagnostics(logger: object, execution?: ConnectionExecutionContext): ConnectionExecutionDiagnostics {
+	const quiet = execution?.mode === 'session-memory' || currentStepContext()?.connectionExecution?.mode === 'session-memory';
+	const sink: ConnectionExecutionDiagnostics = {
+		emit(level, format) {
+			if (quiet) return;
+			const values = format() as readonly unknown[];
+			const saved = logger as Record<string, (...args: unknown[]) => void>;
+			saved[level]!.apply(logger, [...values]);
+		}
+	};
+	return Object.freeze(sink);
 }

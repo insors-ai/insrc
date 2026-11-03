@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: handleWorkflowApprove: NEITHER artifactPath nor epicHash → InvalidTarget error, no IPC
+ok 1 - handleWorkflowApprove: NEITHER artifactPath nor epicHash → InvalidTarget error, no IPC
+  ---
+  duration_ms: 0.617917
+  type: 'test'
+  ...
+# Subtest: handleWorkflowApprove: BOTH artifactPath and epicHash → InvalidTarget error, no IPC
+ok 2 - handleWorkflowApprove: BOTH artifactPath and epicHash → InvalidTarget error, no IPC
+  ---
+  duration_ms: 0.0685
+  type: 'test'
+  ...
+# Subtest: handleWorkflowApprove: empty-string target fields count as absent (neither) → error
+ok 3 - handleWorkflowApprove: empty-string target fields count as absent (neither) → error
+  ---
+  duration_ms: 0.046833
+  type: 'test'
+  ...
+# Subtest: handleWorkflowApprove: the daemon result (incl. codeReview[]) is relayed verbatim in the JSON response
+ok 4 - handleWorkflowApprove: the daemon result (incl. codeReview[]) is relayed verbatim in the JSON response
+  ---
+  duration_ms: 13.179917
+  type: 'test'
+  ...
+# Subtest: DIFF-COMPAT: workflow approval relays stale-review and its reason without inventing approval or finding totals
+ok 5 - DIFF-COMPAT: workflow approval relays stale-review and its reason without inventing approval or finding totals
+  ---
+  duration_ms: 1.125958
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 413.482667

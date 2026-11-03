@@ -1,3 +1,5 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -131,6 +133,7 @@ export function connectionCheckFor(
 }
 
 export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const { input, opts } = args;
 	const cfg = loadAnalyzeConfig();
@@ -147,7 +150,7 @@ export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent>
 
 	// (2) Load classifier prompt + build messages.
 	const promptContent = loadPromptFile();
-	const provider = args.provider ?? resolveRoleProvider('analyze.classify', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.classify', cfg, undefined, args.connectionExecution);
 
 	let messages = buildInitialMessages(promptContent, bundleMd, input);
 
@@ -181,18 +184,12 @@ export async function classify(args: ClassifyDriverArgs): Promise<UnsizedIntent>
 		// Semantic validation: scopeRef.kind ↔ target match + path resolution.
 		const failure = await validateIntentSemantics(raw, connectionCheckFor(args), args.connectionExecution);
 		if (failure === null) {
-			log.debug(
-				{ runId: opts.runId, target: raw.target, attempt },
-				'classifier intent validated',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ runId: opts.runId, target: raw.target, attempt }, 'classifier intent validated']);
 			return raw;
 		}
 
 		lastValidationFailure = failure;
-		log.info(
-			{ runId: opts.runId, attempt, code: failure.code, message: failure.message },
-			'classifier validation failure -- corrective retry',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: opts.runId, attempt, code: failure.code, message: failure.message }, 'classifier validation failure -- corrective retry']);
 
 		// Compose corrective retry: append the failure reason to the
 		// user message so the model can fix the next attempt. We DO

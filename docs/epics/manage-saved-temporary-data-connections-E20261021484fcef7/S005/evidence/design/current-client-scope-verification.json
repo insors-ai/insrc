@@ -1,0 +1,25 @@
+{
+  "authority": "Current user scope clarification",
+  "targets": [
+    "vscode-plugin/",
+    "jetbrains-plugin/"
+  ],
+  "sourceHashes": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt": "5d07c94551079f8ab3fd8c78e0d26f8eb2c82ebe1940184c8da23d5d911d07a9",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt": "bb0ce8288c61dc6823bdb7a3428191bef86047dcd9b4091a09df059fc36adc04",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt": "f0ba900bfeb010baa3eebde5614cd4e098162155ad0379e1b45c993620cd83d6",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt": "bae1d62688e349c3474d21b608891317ad0aa3a64197fbb9b59d68093bdccf6a",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/platform/InsrcProjectOpenActivity.kt": "2fca7603ad91a8c99b75f7b0412bdccde2aa5caf407494dc9566b117ec086faf",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/PluginLifecycle.kt": "e1888631f538dddaa4cf0545ee03cf343c205a35121ab9bab9979384f86d9675",
+    "jetbrains-plugin/src/main/resources/META-INF/plugin.xml": "3f4def4546992df470158706c46a5f7cf408a3d8146aece81c30ebdb4178b494",
+    "jetbrains-plugin/build.gradle.kts": "5b7a21983539e5e709bf22dd6b0c4d57095da4a4574dcc80a4abedcf6034e0be"
+  },
+  "findings": [
+    "APP DaemonGatewayService is stateless and must stay so.",
+    "UnixSocketDaemonRpc uses one-shot SocketChannel; persistent session lane is new client integration.",
+    "Application Settings has no unique Project; explicit open-project selection precedes PROJECT service resolution.",
+    "PluginLifecycle exposes projectOpened/uninstall only; project disposal must use actual project Disposable service, not an invented hook.",
+    "JUnit5+IntelliJ platform tests and Gradle/JDK21 already configured."
+  ],
+  "approvedUpstreamJsonUnchanged": true
+}

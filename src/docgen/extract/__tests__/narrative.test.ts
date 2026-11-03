@@ -185,6 +185,6 @@ test('assembleShell(derived-only IR): NO narrated region -> pre-s4 shell unchang
 	assert.ok(isOk(out));
 	if (isOk(out)) {
 		assert.doesNotMatch(out.value.html, /docgen-narrative/);        // no region emitted
-		assert.match(out.value.html, /<div id="docgen-diagram"><pre class="mermaid">/); // no injected style attr — byte-identical marker
+		assert.match(out.value.html, /<div id="docgen-diagram" class="insrc-viewer-diagram"><pre class="mermaid">/); // no injected style attr — byte-identical marker
 	}
 });

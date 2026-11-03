@@ -50,7 +50,7 @@ test('root-bound production scope paths and saved compatibility', async()=>{
   await assert.rejects(resolveScopeForTarget({kind:'repo',value:other},'data',deps,undefined,execution),{code:'session-expired'});
   await assert.rejects(validateIntentSemantics({...intent,scopeRef:{kind:'repo',value:other}},fake,execution),{code:'session-expired'});
   await assert.rejects(prepareScope('task',{intent:{...intent,scopeRef:{kind:'repo',value:other}},task:{taskId:'t1'},upstreamTasks:new Map()} as never,deps,execution),{code:'session-expired'});
-  assert.equal((await hintedIntentBase('data','q',{kind:'repo',value:other},fake,execution)).ok,false);
+		await assert.rejects(hintedIntentBase('data', 'q', { kind: 'repo', value: other }, fake, execution), { code: 'session-expired' });
   // The code/docs/infra path semantics are unchanged; a target does not grant data resolver authority.
   assert.equal((await resolveScopeForTarget({kind:'repo',value:other},'infra',deps,undefined,execution)).lookupPath,other);
   await assert.rejects(resolveScopeForTarget(ref,'code',deps,undefined,execution),{name:'ScopeKindTargetMismatchError'});

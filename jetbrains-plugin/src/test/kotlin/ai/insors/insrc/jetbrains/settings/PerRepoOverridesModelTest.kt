@@ -2,7 +2,6 @@ package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.RepoOverrideDto
 import ai.insors.insrc.jetbrains.daemon.RoleDto
-import ai.insors.insrc.jetbrains.daemon.TierSpecDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -11,7 +10,7 @@ import org.junit.jupiter.api.Test
 
 /**
  * S005 unit tests for the pure per-repo override logic (PerRepoOverridesModel) —
- * rows/addableRepos, add/remove/edit across coreFloor + tasks + tiers, dirty, the
+ * rows/addableRepos, add/remove/edit across coreFloor + tasks, dirty, the
  * DOTTED/SLASHED repoPath + dotted-roleId leaf-granular nested-key mapping,
  * per-key isolation, and the whole-override single-Clear, tested headlessly.
  */
@@ -33,11 +32,10 @@ class PerRepoOverridesModelTest {
         current = current,
     )
 
-    /** A repo overridden on all three knobs (coreFloor + a task + a tier spec). */
+    /** A repo overridden on both knobs (coreFloor + a task). */
     private val fullOverride = RepoOverrideDto(
         coreFloor = "mid",
         tasks = mapOf("design.contract.detail" to "core"),
-        tiers = mapOf("core" to TierSpecDto(runner = "cli-claude", model = "opus")),
     )
 
     @Test
@@ -46,7 +44,6 @@ class PerRepoOverridesModelTest {
         val row = m.rows().single { it.repoPath == "/work/afm" }
         assertEquals("mid", row.coreFloor)
         assertEquals(mapOf("design.contract.detail" to "core"), row.tasks)
-        assertEquals(TierSpecDto("cli-claude", "opus"), row.tiers["core"])
         assertTrue(row.hasOverride)
         // registered minus the one overridden repo.
         assertEquals(listOf("/Users/x/work/insors.ide", "/plain"), m.addableRepos())
@@ -55,7 +52,7 @@ class PerRepoOverridesModelTest {
     @Test
     fun `a repo present in the config but not registered is a row and not addable`() {
         val m = model(
-            mapOf("/ghost" to RepoOverrideDto(coreFloor = "cheap", tasks = emptyMap(), tiers = emptyMap())),
+            mapOf("/ghost" to RepoOverrideDto(coreFloor = "cheap", tasks = emptyMap())),
         )
         assertTrue(m.rows().any { it.repoPath == "/ghost" })
         assertFalse("/ghost" in m.addableRepos())
@@ -93,15 +90,24 @@ class PerRepoOverridesModelTest {
     }
 
     @Test
-    fun `a tier runner and model are two independent leaves`() {
+    fun `only coreFloor and tasks state and writes`() {
+        // Epic ce99b72065d03b1b s7: a repo picks a tier per role (and a coreFloor), never
+        // the model behind a tier, so the row and the writes carry nothing else.
+        assertEquals(
+            listOf("repoPath", "coreFloor", "tasks", "hasOverride"),
+            PerRepoRow::class.java.declaredFields.map { it.name }.filter { !it.startsWith("$") },
+        )
         val m = model(emptyMap())
         m.addOverride("/plain")
-        m.setTierField("/plain", "core", TierField.Runner, "ollama")
-        m.setTierField("/plain", "core", TierField.Model, "qwen")
-        val bySeg = m.collectWrites().associate { it.segments to it.op }
-        assertEquals(2, bySeg.size)
-        assertEquals(WriteOp.Set("ollama"), bySeg[listOf("models", "byRepo", "/plain", "tiers", "core", "runner")])
-        assertEquals(WriteOp.Set("qwen"), bySeg[listOf("models", "byRepo", "/plain", "tiers", "core", "model")])
+        m.setCoreFloor("/plain", "mid")
+        m.setTaskTier("/plain", "classify", "core")
+        val segments = m.collectWrites().map { it.segments }
+        assertEquals(
+            listOf(listOf("models", "byRepo", "/plain", "coreFloor"), listOf("models", "byRepo", "/plain", "tasks", "classify")),
+            segments,
+        )
+        assertTrue(segments.none { "tiers" in it })
+        assertFalse(PerRepoOverridesModel::class.java.methods.any { it.name == "setTierField" }, "no per-tier editor")
     }
 
     @Test
@@ -185,7 +191,6 @@ class PerRepoOverridesModelTest {
         val row = m.rows().single { it.repoPath == "/work/afm" }
         assertNull(row.coreFloor)
         assertTrue(row.tasks.isEmpty())
-        assertTrue(row.tiers.isEmpty())
         // A clean re-add with no edits is not dirty and resurrects nothing.
         assertFalse(m.isModified())
         assertTrue(m.collectWrites().isEmpty())
@@ -209,7 +214,7 @@ class PerRepoOverridesModelTest {
         val m = model(
             mapOf(
                 "/work/afm" to fullOverride,
-                "/plain" to RepoOverrideDto("core", emptyMap(), emptyMap()),
+                "/plain" to RepoOverrideDto("core", emptyMap()),
             ),
         )
         m.setCoreFloor("/work/afm", "core")

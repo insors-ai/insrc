@@ -1,0 +1,280 @@
+TAP version 13
+# Subtest: t6: the STAMPED base on the PLAN is used, without needing the artifact committed
+ok 1 - t6: the STAMPED base on the PLAN is used, without needing the artifact committed
+  ---
+  duration_ms: 68.700542
+  type: 'test'
+  ...
+# Subtest: t6: a STANDALONE story resolves from its LLD stamp when there is no PLAN
+ok 2 - t6: a STANDALONE story resolves from its LLD stamp when there is no PLAN
+  ---
+  duration_ms: 65.522875
+  type: 'test'
+  ...
+# Subtest: t6: the PLAN stamp takes PRECEDENCE over the LLD stamp — one chain, one base
+ok 3 - t6: the PLAN stamp takes PRECEDENCE over the LLD stamp — one chain, one base
+  ---
+  duration_ms: 59.72375
+  type: 'test'
+  ...
+# Subtest: t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT — the bfe98ff7 s4 repair method
+ok 4 - t6: a LEGACY record with NO stamp resolves via the PLAN-INTRODUCING COMMIT — the bfe98ff7 s4 repair method
+  ---
+  duration_ms: 145.81475
+  type: 'test'
+  ...
+# Subtest: t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not an error — the state this Story's own LLD was in
+ok 5 - t6: an APPROVED-BUT-UNCOMMITTED plan with no stamp yields UNDEFINED, not an error — the state this Story's own LLD was in
+  ---
+  duration_ms: 74.991125
+  type: 'test'
+  ...
+# Subtest: t6: NO upstream at all (the TRIVIAL route) yields undefined — the specified outcome, not a failure
+ok 6 - t6: NO upstream at all (the TRIVIAL route) yields undefined — the specified outcome, not a failure
+  ---
+  duration_ms: 76.296917
+  type: 'test'
+  ...
+# Subtest: t6: the resolver NEVER substitutes HEAD^ or the empty-tree object — the divergence from the code-review chain
+ok 7 - t6: the resolver NEVER substitutes HEAD^ or the empty-tree object — the divergence from the code-review chain
+  ---
+  duration_ms: 108.608375
+  type: 'test'
+  ...
+# Subtest: t6: git UNAVAILABLE / a non-git directory yields undefined without throwing
+ok 8 - t6: git UNAVAILABLE / a non-git directory yields undefined without throwing
+  ---
+  duration_ms: 15.555708
+  type: 'test'
+  ...
+# Subtest: t6: an EMPTY-STRING stamp is treated as absent and falls through to the commit lookup
+ok 9 - t6: an EMPTY-STRING stamp is treated as absent and falls through to the commit lookup
+  ---
+  duration_ms: 105.617584
+  type: 'test'
+  ...
+# Subtest: t6: a MALFORMED artifact json is treated as absent rather than throwing
+ok 10 - t6: a MALFORMED artifact json is treated as absent rather than throwing
+  ---
+  duration_ms: 76.91925
+  type: 'test'
+  ...
+# Subtest: t6: an empty epicHash or storyId yields undefined without touching the filesystem or git
+ok 11 - t6: an empty epicHash or storyId yields undefined without touching the filesystem or git
+  ---
+  duration_ms: 62.777292
+  type: 'test'
+  ...
+# Subtest: T18: buildStartRelPath is the one path, outside the artifact store
+ok 12 - T18: buildStartRelPath is the one path, outside the artifact store
+  ---
+  duration_ms: 0.122792
+  type: 'test'
+  ...
+# Subtest: T18: a VALID build-start file wins over a different approval-time stamp on the PLAN
+ok 13 - T18: a VALID build-start file wins over a different approval-time stamp on the PLAN
+  ---
+  duration_ms: 116.981666
+  type: 'test'
+  ...
+# Subtest: T18: a HAND-WRITTEN file with the four fields is accepted — compact json, extra keys, any key order
+ok 14 - T18: a HAND-WRITTEN file with the four fields is accepted — compact json, extra keys, any key order
+  ---
+  duration_ms: 110.206125
+  type: 'test'
+  ...
+# Subtest: T18: one Story's build-start file does not answer for another Story of the same epic
+ok 15 - T18: one Story's build-start file does not answer for another Story of the same epic
+  ---
+  duration_ms: 92.204459
+  type: 'test'
+  ...
+# Subtest: T19: an invalid build-start file is IGNORED and the approval-time stamp is returned
+ok 16 - T19: an invalid build-start file is IGNORED and the approval-time stamp is returned
+  ---
+  duration_ms: 119.763958
+  type: 'test'
+  ...
+# Subtest: T19: a build-start file naming a TREE or BLOB object, not a commit, is invalid
+ok 17 - T19: a build-start file naming a TREE or BLOB object, not a commit, is invalid
+  ---
+  duration_ms: 120.99775
+  type: 'test'
+  ...
+# Subtest: T19/T20: with an invalid file and NOTHING else to resolve from, the answer is still undefined — no substituted range
+ok 18 - T19/T20: with an invalid file and NOTHING else to resolve from, the answer is still undefined — no substituted range
+  ---
+  duration_ms: 90.715
+  type: 'test'
+  ...
+# Subtest: T20: with NO build-start file the read is `absent` and resolution is exactly the pre-existing chain
+ok 19 - T20: with NO build-start file the read is `absent` and resolution is exactly the pre-existing chain
+  ---
+  duration_ms: 95.759584
+  type: 'test'
+  ...
+# Subtest: T1: no stamp and no BUILD record -> stamped; the file holds HEAD's full sha and the Story's ids
+ok 20 - T1: no stamp and no BUILD record -> stamped; the file holds HEAD's full sha and the Story's ids
+  ---
+  duration_ms: 115.133458
+  type: 'test'
+  ...
+# Subtest: T2: a valid stamp, HEAD moved, no BUILD record -> kept; file bytes unchanged
+ok 21 - T2: a valid stamp, HEAD moved, no BUILD record -> kept; file bytes unchanged
+  ---
+  duration_ms: 110.262209
+  type: 'test'
+  ...
+# Subtest: T3: mid-build approval — plan t1,t2,t3, record has t1 passed and was approved AFTER the stamp -> kept
+ok 22 - T3: mid-build approval — plan t1,t2,t3, record has t1 passed and was approved AFTER the stamp -> kept
+  ---
+  duration_ms: 118.826334
+  type: 'test'
+  ...
+# Subtest: T4: a record approved after the stamp whose one task has passed FALSE, or passed ABSENT -> kept
+ok 23 - T4: a record approved after the stamp whose one task has passed FALSE, or passed ABSENT -> kept
+  ---
+  duration_ms: 459.6625
+  type: 'test'
+  ...
+# Subtest: T4 (mixed): EVERY task must have passed — one passed and one failed, plan covered, approved after the stamp -> kept
+ok 24 - T4 (mixed): EVERY task must have passed — one passed and one failed, plan covered, approved after the stamp -> kept
+  ---
+  duration_ms: 137.961042
+  type: 'test'
+  ...
+# Subtest: T5: a record approved after the stamp but TASK-LESS -> kept
+ok 25 - T5: a record approved after the stamp but TASK-LESS -> kept
+  ---
+  duration_ms: 233.073709
+  type: 'test'
+  ...
+# Subtest: T6: a FINISHED plan-driven build (plan t1,t2; both passed; approved after the stamp) -> stamped at the new HEAD
+ok 26 - T6: a FINISHED plan-driven build (plan t1,t2; both passed; approved after the stamp) -> stamped at the new HEAD
+  ---
+  duration_ms: 124.424458
+  type: 'test'
+  ...
+# Subtest: T7: a FINISHED standalone build (no PLAN; one passed task; approved after the stamp) -> stamped
+ok 27 - T7: a FINISHED standalone build (no PLAN; one passed task; approved after the stamp) -> stamped
+  ---
+  duration_ms: 139.171458
+  type: 'test'
+  ...
+# Subtest: T8: a planned Story validated as a WHOLE (plan t1,t2; record holds a passed task whose id is the storyId) -> stamped
+ok 28 - T8: a planned Story validated as a WHOLE (plan t1,t2; record holds a passed task whose id is the storyId) -> stamped
+  ---
+  duration_ms: 118.788209
+  type: 'test'
+  ...
+# Subtest: T8 (contrast): a passed task that is neither a plan task nor the storyId does NOT cover the plan -> kept
+ok 29 - T8 (contrast): a passed task that is neither a plan task nor the storyId does NOT cover the plan -> kept
+  ---
+  duration_ms: 108.706042
+  type: 'test'
+  ...
+# Subtest: T9: a finished record approved BEFORE the stamp (or at the same instant, or with no approval, or an unparseable one) -> kept
+ok 30 - T9: a finished record approved BEFORE the stamp (or at the same instant, or with no approval, or an unparseable one) -> kept
+  ---
+  duration_ms: 432.496375
+  type: 'test'
+  ...
+# Subtest: T10: a PLAN json that is present but malformed makes an otherwise finished record NOT finished -> kept
+ok 31 - T10: a PLAN json that is present but malformed makes an otherwise finished record NOT finished -> kept
+  ---
+  duration_ms: 539.13425
+  type: 'test'
+  ...
+# Subtest: T11: no stamp and an UNAPPROVED record with one task -> skipped-work-exists, no file
+ok 32 - T11: no stamp and an UNAPPROVED record with one task -> skipped-work-exists, no file
+  ---
+  duration_ms: 101.243666
+  type: 'test'
+  ...
+# Subtest: T12: no stamp and an APPROVED record covering one of three plan tasks -> skipped-work-exists, no file
+ok 33 - T12: no stamp and an APPROVED record covering one of three plan tasks -> skipped-work-exists, no file
+  ---
+  duration_ms: 98.396916
+  type: 'test'
+  ...
+# Subtest: T13: no stamp and an APPROVED record whose one task has passed false -> skipped-work-exists, no file
+ok 34 - T13: no stamp and an APPROVED record whose one task has passed false -> skipped-work-exists, no file
+  ---
+  duration_ms: 102.047667
+  type: 'test'
+  ...
+# Subtest: T13 (unreadable record): no stamp and a BUILD record that cannot be parsed -> skipped-work-exists
+ok 35 - T13 (unreadable record): no stamp and a BUILD record that cannot be parsed -> skipped-work-exists
+  ---
+  duration_ms: 303.528541
+  type: 'test'
+  ...
+# Subtest: T14: no stamp and a FINISHED record -> stamped
+ok 36 - T14: no stamp and a FINISHED record -> stamped
+  ---
+  duration_ms: 120.36875
+  type: 'test'
+  ...
+# Subtest: T15: no stamp and a TASK-LESS record, approved or not -> stamped
+ok 37 - T15: no stamp and a TASK-LESS record, approved or not -> stamped
+  ---
+  duration_ms: 226.734125
+  type: 'test'
+  ...
+# Subtest: T16: a repo with no commits -> not-written, no file
+ok 38 - T16: a repo with no commits -> not-written, no file
+  ---
+  duration_ms: 20.362167
+  type: 'test'
+  ...
+# Subtest: T16: a directory that is not a git repo -> not-written, without throwing
+ok 39 - T16: a directory that is not a git repo -> not-written, without throwing
+  ---
+  duration_ms: 7.408208
+  type: 'test'
+  ...
+# Subtest: T16: the build-start directory cannot be created -> not-written, without throwing
+ok 40 - T16: the build-start directory cannot be created -> not-written, without throwing
+  ---
+  duration_ms: 113.0825
+  type: 'test'
+  ...
+# Subtest: T16: an empty epicHash or storyId -> not-written, nothing created
+ok 41 - T16: an empty epicHash or storyId -> not-written, nothing created
+  ---
+  duration_ms: 109.854
+  type: 'test'
+  ...
+# Subtest: T17: an INVALID stamp with no recorded task is replaced by a fresh one; with an unfinished record it is left alone
+ok 42 - T17: an INVALID stamp with no recorded task is replaced by a fresh one; with an unfinished record it is left alone
+  ---
+  duration_ms: 689.6845
+  type: 'test'
+  ...
+# Subtest: T1/T2 together: a second call after the first stamp keeps it, even after HEAD moves on
+ok 43 - T1/T2 together: a second call after the first stamp keeps it, even after HEAD moves on
+  ---
+  duration_ms: 164.51625
+  type: 'test'
+  ...
+# Subtest: stampBuildStart never writes or changes an artifact record
+ok 44 - stampBuildStart never writes or changes an artifact record
+  ---
+  duration_ms: 113.051958
+  type: 'test'
+  ...
+# Subtest: T21: range-base.ts has no RUNTIME import of gates.ts (type-only imports excluded)
+ok 45 - T21: range-base.ts has no RUNTIME import of gates.ts (type-only imports excluded)
+  ---
+  duration_ms: 0.616833
+  type: 'test'
+  ...
+1..45
+# tests 45
+# suites 0
+# pass 45
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6655.500333

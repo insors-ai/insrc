@@ -1,0 +1,214 @@
+TAP version 13
+# Subtest: saveSession + getSessionById round-trip
+ok 1 - saveSession + getSessionById round-trip
+  ---
+  duration_ms: 572.253458
+  type: 'test'
+  ...
+# Subtest: saveSession with explicit fields preserves them
+ok 2 - saveSession with explicit fields preserves them
+  ---
+  duration_ms: 624.946916
+  type: 'test'
+  ...
+# Subtest: saveSession upsert preserves single row
+ok 3 - saveSession upsert preserves single row
+  ---
+  duration_ms: 694.154375
+  type: 'test'
+  ...
+# Subtest: getSessionById on unknown id returns null
+ok 4 - getSessionById on unknown id returns null
+  ---
+  duration_ms: 494.900834
+  type: 'test'
+  ...
+# Subtest: setSessionAgent updates agent + category
+ok 5 - setSessionAgent updates agent + category
+  ---
+  duration_ms: 498.428333
+  type: 'test'
+  ...
+# Subtest: setSessionStatus mutates only the status
+ok 6 - setSessionStatus mutates only the status
+  ---
+  duration_ms: 187.2735
+  type: 'test'
+  ...
+# Subtest: bumpSessionActivity is silent no-op for unknown id
+ok 7 - bumpSessionActivity is silent no-op for unknown id
+  ---
+  duration_ms: 210.078042
+  type: 'test'
+  ...
+# Subtest: closeSession upserts the row + sets status=completed
+ok 8 - closeSession upserts the row + sets status=completed
+  ---
+  duration_ms: 193.9145
+  type: 'test'
+  ...
+# Subtest: saveTurn + getTurnsForSession round-trip
+ok 9 - saveTurn + getTurnsForSession round-trip
+  ---
+  duration_ms: 171.9935
+  type: 'test'
+  ...
+# Subtest: getTurnsForSession returns idx-ordered turns only of type "turn"
+ok 10 - getTurnsForSession returns idx-ordered turns only of type "turn"
+  ---
+  duration_ms: 188.684041
+  type: 'test'
+  ...
+# Subtest: saveTurn round-trips assertionRefs (G6 of memory-context design)
+ok 11 - saveTurn round-trips assertionRefs (G6 of memory-context design)
+  ---
+  duration_ms: 221.112
+  type: 'test'
+  ...
+# Subtest: saveTurn omits assertionRefs when not provided (back-compat)
+ok 12 - saveTurn omits assertionRefs when not provided (back-compat)
+  ---
+  duration_ms: 155.229291
+  type: 'test'
+  ...
+# Subtest: saveTurn upsert preserves single row by (sessionId, idx)
+ok 13 - saveTurn upsert preserves single row by (sessionId, idx)
+  ---
+  duration_ms: 203.074125
+  type: 'test'
+  ...
+# Subtest: saveTurn bumps session lastActivityAt
+ok 14 - saveTurn bumps session lastActivityAt
+  ---
+  duration_ms: 212.967417
+  type: 'test'
+  ...
+# Subtest: addCompactedTurns sets defaults: type=merged, tier=cold
+ok 15 - addCompactedTurns sets defaults: type=merged, tier=cold
+  ---
+  duration_ms: 145.817417
+  type: 'test'
+  ...
+# Subtest: addCompactedTurns on empty array is a no-op
+ok 16 - addCompactedTurns on empty array is a no-op
+  ---
+  duration_ms: 0.312208
+  type: 'test'
+  ...
+# Subtest: getAllTurnsForRepo returns only that repo's turns
+ok 17 - getAllTurnsForRepo returns only that repo's turns
+  ---
+  duration_ms: 215.090625
+  type: 'test'
+  ...
+# Subtest: getAllTurns returns every turn across repos
+ok 18 - getAllTurns returns every turn across repos
+  ---
+  duration_ms: 144.55525
+  type: 'test'
+  ...
+# Subtest: listSessions returns sessions in createdAt-desc order
+ok 19 - listSessions returns sessions in createdAt-desc order
+  ---
+  duration_ms: 241.300791
+  type: 'test'
+  ...
+# Subtest: listSessions filters by repo
+ok 20 - listSessions filters by repo
+  ---
+  duration_ms: 135.014625
+  type: 'test'
+  ...
+# Subtest: listSessionRecords filters by status
+ok 21 - listSessionRecords filters by status
+  ---
+  duration_ms: 123.39975
+  type: 'test'
+  ...
+# Subtest: getConversationStats counts turns + sessions
+ok 22 - getConversationStats counts turns + sessions
+  ---
+  duration_ms: 140.474959
+  type: 'test'
+  ...
+# Subtest: deleteSession removes the session + all its turns
+ok 23 - deleteSession removes the session + all its turns
+  ---
+  duration_ms: 174.080166
+  type: 'test'
+  ...
+# Subtest: deleteSession on unknown id returns 0/0
+ok 24 - deleteSession on unknown id returns 0/0
+  ---
+  duration_ms: 114.442958
+  type: 'test'
+  ...
+# Subtest: deleteTurnsForSession removes all turns, leaves session
+ok 25 - deleteTurnsForSession removes all turns, leaves session
+  ---
+  duration_ms: 123.666625
+  type: 'test'
+  ...
+# Subtest: deleteSessionRecord removes only the session row
+ok 26 - deleteSessionRecord removes only the session row
+  ---
+  duration_ms: 102.344333
+  type: 'test'
+  ...
+# Subtest: deleteSessionsForRepo removes only that repo's sessions
+ok 27 - deleteSessionsForRepo removes only that repo's sessions
+  ---
+  duration_ms: 143.330709
+  type: 'test'
+  ...
+# Subtest: deleteTurnsForRepo removes only that repo's turns
+ok 28 - deleteTurnsForRepo removes only that repo's turns
+  ---
+  duration_ms: 121.262458
+  type: 'test'
+  ...
+# Subtest: deleteTurnsByIds removes the specific turns
+ok 29 - deleteTurnsByIds removes the specific turns
+  ---
+  duration_ms: 129.461833
+  type: 'test'
+  ...
+# Subtest: deleteTurnsByIds on empty list is a no-op
+ok 30 - deleteTurnsByIds on empty list is a no-op
+  ---
+  duration_ms: 0.333
+  type: 'test'
+  ...
+# Subtest: searchTurnsByRepo returns [] (Phase 3.3 wires Lance)
+ok 31 - searchTurnsByRepo returns [] (Phase 3.3 wires Lance)
+  ---
+  duration_ms: 121.241375
+  type: 'test'
+  ...
+# Subtest: seedFromPrior returns [] (Phase 3.3 wires Lance)
+ok 32 - seedFromPrior returns [] (Phase 3.3 wires Lance)
+  ---
+  duration_ms: 111.009125
+  type: 'test'
+  ...
+# Subtest: sessions + turns survive close + reopen
+ok 33 - sessions + turns survive close + reopen
+  ---
+  duration_ms: 112.796666
+  type: 'test'
+  ...
+# Subtest: resetTableCaches is a no-op (back-compat shim)
+ok 34 - resetTableCaches is a no-op (back-compat shim)
+  ---
+  duration_ms: 0.285083
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7366.007833

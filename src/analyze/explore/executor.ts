@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -26,7 +27,7 @@
 
 import { assertSessionReuseNow, beginSessionReuse, sessionReuseWindow, assertSessionReuse, assertSessionContinuation, rememberSessionContinuation } from '../session-reuse.js';
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
-import { ConnectionExecutionError, requireConnectionExecution } from '../../shared/step-context.js';
+import { runWithConnectionExecution, ConnectionExecutionError, requireConnectionExecution } from '../../shared/step-context.js';
 import { lookupRepoId } from '../../db/repos.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import type { RepoCompleteness } from '../../shared/types.js';
@@ -36,6 +37,7 @@ import { getCachedExploration, putCachedExploration } from '../../db/exploration
 import { getLogger } from '../../shared/logger.js';
 import type { StructuredSchema } from '../../shared/types.js';
 import { createRepoIgnoreFilter } from '../context/repo-ignore-filter.js';
+import { withRunFileFilters } from '../context/run-file-filter.js';
 
 import {
 	CAPABILITY_VERDICTS_SCHEMA,
@@ -150,6 +152,11 @@ export interface ExecutePlanArgs {
 export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> {
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const execution = requireConnectionExecution(args.connectionExecution);
+	return runWithConnectionExecution(execution, () => withRunFileFilters(() => executePlanWithContext(args)));
+}
+async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPlan> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
 	await beginSessionReuse(execution);
 	assertSessionReuseNow(execution);
 	const start = Date.now();
@@ -157,11 +164,10 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 	const outputsById = new Map<string, ExplorationOutput>();
 	let totalCached = 0;
 
-	// One filter per plan execution. Shared across every runner via
-	// ExplorationRunnerContext so a single subprocess call to `git
-	// ls-files` powers .gitignore-aware directory filtering across
-	// the whole plan.
-	const ignoreFilter = await createRepoIgnoreFilter(args.repoPath);
+	// One filter per plan execution, shared across every runner via
+	// ExplorationRunnerContext; the walkers' own FileFilter is the same
+	// run-scoped instance (run-file-filter.ts).
+	const ignoreFilter = createRepoIgnoreFilter(args.repoPath);
 	// One read per plan execution: the relationship lookups state an incomplete index.
 	const repoCompleteness = await readRepoCompleteness(args.repoPath);
 
@@ -245,11 +251,8 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 				} catch (err) {
 					if (err instanceof ConnectionExecutionError) throw err;
 					assertAnalysisConnectionExecution(execution);
-					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
-						'exploration failed',
-					);
-					output = failedOutput(exp, err);
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) }, 'exploration failed']);
+					output = failedOutput(exp, err, execution);
 				}
 			}
 		}
@@ -262,8 +265,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 	}
 
 	const totalMs = Date.now() - start;
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:       args.runId,
 			answerType:  args.plan.answerType,
 			total:       results.length,
@@ -271,9 +273,7 @@ export async function executePlan(args: ExecutePlanArgs): Promise<ExecutedPlan> 
 			failed:      results.filter(r => r.output.type === 'failed').length,
 			unsupported: results.filter(r => r.output.type === 'unsupported').length,
 			totalMs,
-		},
-		'plan executed',
-	);
+	}, 'plan executed']);
 
 	await assertSessionReuse(execution);
 	assertSessionReuseNow(execution);
@@ -472,7 +472,12 @@ export type StepPlanResult = StepPlanPending | StepPlanDone;
  * stepPlan seeds outputsById + results from it and continues from the
  * next unprocessed exploration.
  */
-export async function stepPlan(
+export async function stepPlan(args: Parameters<typeof stepPlanWithContext>[0]): Promise<StepPlanResult> {
+	assertAnalysisConnectionExecution(args.connectionExecution);
+	const execution = requireConnectionExecution(args.connectionExecution);
+	return runWithConnectionExecution(execution, () => withRunFileFilters(() => stepPlanWithContext(args)));
+}
+async function stepPlanWithContext(
 	args: ExecutePlanArgs & {
 		readonly resumeState?: StepPlanResumeState;
 	},
@@ -498,7 +503,7 @@ export async function stepPlan(
 		priorMs = args.resumeState.totalMsSoFar;
 	}
 
-	const ignoreFilter = await createRepoIgnoreFilter(args.repoPath);
+	const ignoreFilter = createRepoIgnoreFilter(args.repoPath);
 	// One read per plan execution: the relationship lookups state an incomplete index.
 	const repoCompleteness = await readRepoCompleteness(args.repoPath);
 
@@ -570,11 +575,8 @@ export async function stepPlan(
 				} catch (err) {
 					if (err instanceof ConnectionExecutionError) throw err;
 					assertAnalysisConnectionExecution(execution);
-					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
-						'multi-turn exploration failed in prepare',
-					);
-					output = failedOutput(exp, err);   // never cached
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) }, 'multi-turn exploration failed in prepare']);
+					output = failedOutput(exp, err, execution);   // never cached
 				}
 				if (prep === undefined) {
 					// failed above: fall through to record the output
@@ -634,11 +636,8 @@ export async function stepPlan(
 				} catch (err) {
 					if (err instanceof ConnectionExecutionError) throw err;
 					assertAnalysisConnectionExecution(execution);
-					log.warn(
-						{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) },
-						'multi-turn exploration failed',
-					);
-					output = failedOutput(exp, err);
+					captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, explorationId: exp.id, type: exp.type, err: errorMessage(err) }, 'multi-turn exploration failed']);
+					output = failedOutput(exp, err, execution);
 				}
 			}
 		}
@@ -651,8 +650,7 @@ export async function stepPlan(
 	}
 
 	const totalMs = priorMs + (Date.now() - runStart);
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:       args.runId,
 			answerType:  args.plan.answerType,
 			total:       results.length,
@@ -660,9 +658,7 @@ export async function stepPlan(
 			failed:      results.filter(r => r.output.type === 'failed').length,
 			unsupported: results.filter(r => r.output.type === 'unsupported').length,
 			totalMs,
-		},
-		'stepPlan: multi-turn plan executed',
-	);
+	}, 'stepPlan: multi-turn plan executed']);
 
 	await assertSessionReuse(execution);
 	assertSessionReuseNow(execution);
@@ -686,7 +682,8 @@ export async function stepPlan(
  * the lookup had found before it failed (a `LookupFailedError`'s findings)
  * is copied to `partial`.
  */
-export function failedOutput(exp: Exploration, err: unknown): FailedExplorationOutput {
+export function failedOutput(exp: Exploration, err: unknown, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): FailedExplorationOutput {
+	if (execution?.mode === 'session-memory') return { type: 'failed', requested: exp.type, errorCode: 'temporary-failure', message: 'Temporary exploration failed.' };
 	const partial = err instanceof LookupFailedError ? err.partial : [];
 	return {
 		type:      'failed',

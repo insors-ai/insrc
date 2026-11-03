@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.lifecycle.NodeRuntimeResolverTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.001">
+  <properties/>
+  <testcase name="parseMajor_handlesVPrefixAndGarbage()" classname="ai.insors.insrc.jetbrains.lifecycle.NodeRuntimeResolverTest" time="0.0"/>
+  <testcase name="boundaryEqualsMin_adequate_and_unparseableOrAbsent_dispatchesToProvisioner()" classname="ai.insors.insrc.jetbrains.lifecycle.NodeRuntimeResolverTest" time="0.001"/>
+  <testcase name="adequateSystemNode_sourceSYSTEM_provisionerNeverInvoked()" classname="ai.insors.insrc.jetbrains.lifecycle.NodeRuntimeResolverTest" time="0.0"/>
+  <testcase name="noAdequateSystemNode_returnsProvisionedNode_and_provisionerFailure_propagates()" classname="ai.insors.insrc.jetbrains.lifecycle.NodeRuntimeResolverTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

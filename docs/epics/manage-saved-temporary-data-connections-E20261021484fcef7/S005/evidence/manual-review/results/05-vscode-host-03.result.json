@@ -1,0 +1,70 @@
+{
+  "id": "05-vscode-host-03",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:45:03.624Z",
+  "finished": "2026-11-01T04:45:28.618Z",
+  "inputChars": 27464,
+  "inputSha256": "9add76bd15b9d77139fd15a9f1223f7ff14100bfd7c0cebedc3cdc54bc1e8df5",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of only two changed files: vscode-plugin/src/connections/wiring.ts and vscode-plugin/src/connections/__tests__/entry.test.ts. I found no concrete defect with a demonstrated trigger. wiring.ts registers each connection command ID once and routes it to `host.open()`. It discards command arguments, so a forged URI or menu argument cannot select a root, save, test or remove. The entry test covers this: the manifest has a Settings link and unique command IDs, the no-registered-roots state, the multi-root picker, a retained draft and root across forged-argument command calls, and disposal. Most assigned obligations depend on host.ts, the owner/session code, shared IPC, extension.ts, package.json and the Kotlin files. None of those were supplied, so those obligations are could-not-verify. This is not a canonical CR and does not approve BUILD.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:3",
+        "status": "could-not-verify",
+        "evidence": "wiring.ts registers insrc.openDataSources plus add/edit/test/remove IDs through one host. The test checks the Settings link `[Manage Connections](command:insrc.openDataSources)`, unique manifest command IDs, and the absence of `insrc.connections.*` settings keys. The state model, stale rows, scope/search counts, add-reveal, JetBrains configurable and plugin.xml, and project choice were not supplied."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "could-not-verify",
+        "evidence": "The test only shows that all commands reach one ConnectionsManagerHost built on a single owner/controller. Heartbeat, lease/epoch, shared IPC lanes, extension disposal and the JetBrains service are in files that were not supplied."
+      },
+      {
+        "key": "lld:edge:1",
+        "status": "could-not-verify",
+        "evidence": "The test supports this edge case for VS Code. With no roots the list state is 'no-repository' and roots is []. With two roots it stays 'no-repository' with repoRoot null until `choose('root', …)`, and the selection is then retained across all five commands with forged `repoRoot` arguments. The host's picker logic and active-file behaviour were not visible, and JetBrains was not covered."
+      },
+      {
+        "key": "lld:backward-compat",
+        "status": "could-not-verify",
+        "evidence": "The command IDs are checked against the manifest and registered once, with no persisted setting added. Strict-v2 and upgrade-required behaviour, the one-shot IpcClient/Kotlin gateway compatibility and the absence of new storage depend on files that were not supplied."
+      },
+      {
+        "key": "plan:t8",
+        "status": "could-not-verify",
+        "evidence": "The owner implementation, heartbeat, resume and disposal were not supplied. This test only exercises the host and command entry through the f.owner fixture. It checks that the draft and root are retained across repeated open() calls, that `registrations.dispose()` empties the callbacks, and that `host.dispose()`, `probes.dispose()` and `removals.dispose()` run."
+      },
+      {
+        "key": "plan:t13",
+        "status": "could-not-verify",
+        "evidence": "This is a Kotlin task, and no Kotlin evidence was supplied."
+      },
+      {
+        "key": "plan:t22",
+        "status": "could-not-verify",
+        "evidence": "The entry test uses a single owner fixture. Two-owner isolation (CM-S5-WINDOW) and Kotlin project isolation were not supplied."
+      }
+    ],
+    "inspectedFiles": [
+      "vscode-plugin/src/connections/wiring.ts",
+      "vscode-plugin/src/connections/__tests__/entry.test.ts"
+    ],
+    "limitations": [
+      "The test only reads fragments of extension.ts and package.json by string match, so I could not check the activation wiring, the webview options, the icon assets or the file picker beyond those assertions.",
+      "I could not confirm that `ConnectionsManagerHost.open()` returns Promise<void> and, for an already-open panel, reveals it without re-reading roots. The test's `reads == 2` and `panels.length == 2` assertions depend on that behaviour.",
+      "The extension.ts slice assertion uses fixed anchor strings, so it depends on source layout. I raised no finding because I could not show a failing trigger.",
+      "No Kotlin or JetBrains files were supplied, and the live UI results (VS Code 0.5.23 manual testing, JetBrains deferred) are user-reported and not independently verified.",
+      "No test execution output was supplied."
+    ],
+    "evidenceRequests": [
+      "vscode-plugin/src/connections/host.ts: the open() and reveal semantics, the root picker and the registeredRoots handling.",
+      "vscode-plugin/src/extension.ts: the connection manager activation, the createWebviewPanel options, daemonData.registeredRepos wiring and disposal.",
+      "vscode-plugin/package.json: the commands and configuration contributions.",
+      "The workbench owner and session controller source, and src/shared/ipc-client.ts, for the lease, heartbeat and epoch obligations.",
+      "The JetBrains files named in the LLD: ConnectionsSessionService, UnixSocketDaemonRpc.kt, DaemonGatewayService.kt, InsrcProjectOpenActivity.kt, InsrcSettingsConfigurable.kt and plugin.xml.",
+      "The CM-S5-OWNER-TS and CM-S5-WINDOW test sources and results."
+    ]
+  }
+}

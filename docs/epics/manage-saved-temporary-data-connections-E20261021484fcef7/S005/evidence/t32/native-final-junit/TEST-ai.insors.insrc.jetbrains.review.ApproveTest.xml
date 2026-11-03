@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.review.ApproveTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.005">
+  <properties/>
+  <testcase name="ApproveDecision enabled follows view approvable()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.001"/>
+  <testcase name="approve forwards an ABSOLUTE mdPath UNCHANGED (never doubles the repo prefix)()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.001"/>
+  <testcase name="approve forwards a non-null overrideReason as overrideReview()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <testcase name="approve maps ok+skipped to Withheld(reason), never Approved()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.001"/>
+  <testcase name="ApproveDecision latchApproved only when the approved artifact is still shown()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <testcase name="approve maps ok=false and DaemonUnavailable and both-empty to Unavailable()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <testcase name="ApproveDecision normalizeOverride treats blank as no override and trims otherwise()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <testcase name="ApproveDecision shouldRefresh only on Approved()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <testcase name="over the real parse, an approved payload maps to Approved()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <testcase name="approve maps ok+approved to Approved and composes the absolute artifactPath (no override)()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <testcase name="over the real parse, a skipped payload maps to Withheld and an error to Unavailable()" classname="ai.insors.insrc.jetbrains.review.ApproveTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

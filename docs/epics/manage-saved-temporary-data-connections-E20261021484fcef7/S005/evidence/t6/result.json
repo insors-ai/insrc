@@ -1,0 +1,27 @@
+{
+  "task": "t6",
+  "focusedTests": {
+    "tests": 3,
+    "pass": 3,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "sharedManagerScenarios": 15,
+  "junitCorpusTests": 2,
+  "typecheck": "Node22 tsc --noEmit passed",
+  "implemented": "Pure immutable state, full keys/revisions, authority-captured read identity, registered root retention, truthful stale reads, counts/search and authoritative committed reveal",
+  "notInThisTask": [
+    "draft forms/dirty transitions: t10",
+    "signed operations/recovery: t12",
+    "native rendering and actual client acceptance: later tasks"
+  ],
+  "original12Transcripts": "Preserved; operation/draft transcripts await their relevant tasks",
+  "fixturesAreAcceptance": false,
+  "fullSweep": "deferred until all implementation tasks",
+  "sourceSha256": {
+    "src/shared/connection-manager/model.ts": "aa3e120f547bf3f25111f862b8d4b37430ed51b53f9d9d243b6bb0ccda329632",
+    "src/shared/__tests__/connection-manager-model.test.ts": "27068ba64342ef8cd4fb1ca80bf9c4cf3b42baae517724189d7a46c0bc43fadb",
+    "test-fixtures/connection-management/v1/corpus.json": "1674a74d5ab5b61cd2b4a39a1d074fd814af9f5a4e3d12bcb61e355fd1220d6d"
+  }
+}

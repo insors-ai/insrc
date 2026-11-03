@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: RENDER_ORDER is the documented seven layers in spec order
+ok 1 - RENDER_ORDER is the documented seven layers in spec order
+  ---
+  duration_ms: 1.400583
+  type: 'test'
+  ...
+# Subtest: LAYER_LABELS covers every layer in RENDER_ORDER
+ok 2 - LAYER_LABELS covers every layer in RENDER_ORDER
+  ---
+  duration_ms: 0.114417
+  type: 'test'
+  ...
+# Subtest: omitEmpty returns empty string for empty body
+ok 3 - omitEmpty returns empty string for empty body
+  ---
+  duration_ms: 0.048958
+  type: 'test'
+  ...
+# Subtest: omitEmpty returns empty string for whitespace-only body
+ok 4 - omitEmpty returns empty string for whitespace-only body
+  ---
+  duration_ms: 0.092042
+  type: 'test'
+  ...
+# Subtest: omitEmpty renders heading + trimmed body for non-empty body
+ok 5 - omitEmpty renders heading + trimmed body for non-empty body
+  ---
+  duration_ms: 0.044667
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown renders all seven layers in order with the footer at tail
+ok 6 - assembleMarkdown renders all seven layers in order with the footer at tail
+  ---
+  duration_ms: 0.122541
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown renders the system layer without a heading
+ok 7 - assembleMarkdown renders the system layer without a heading
+  ---
+  duration_ms: 0.1695
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown appends contract footer exactly once
+ok 8 - assembleMarkdown appends contract footer exactly once
+  ---
+  duration_ms: 0.060875
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown omits layers whose body is empty
+ok 9 - assembleMarkdown omits layers whose body is empty
+  ---
+  duration_ms: 0.228417
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown omits layers whose body is whitespace-only
+ok 10 - assembleMarkdown omits layers whose body is whitespace-only
+  ---
+  duration_ms: 0.271
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown omits layers listed in meta.emptyLayers even with non-empty body
+ok 11 - assembleMarkdown omits layers listed in meta.emptyLayers even with non-empty body
+  ---
+  duration_ms: 0.055041
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown without meta uses body-emptiness only
+ok 12 - assembleMarkdown without meta uses body-emptiness only
+  ---
+  duration_ms: 0.03525
+  type: 'test'
+  ...
+# Subtest: assembleMarkdown with an all-empty bundle still emits contract footer
+ok 13 - assembleMarkdown with an all-empty bundle still emits contract footer
+  ---
+  duration_ms: 0.032666
+  type: 'test'
+  ...
+# Subtest: a bundle with a report leads the prompt text with its completeness line; a bundle with none is rendered as before
+ok 14 - a bundle with a report leads the prompt text with its completeness line; a bundle with none is rendered as before
+  ---
+  duration_ms: 0.244875
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 208.627

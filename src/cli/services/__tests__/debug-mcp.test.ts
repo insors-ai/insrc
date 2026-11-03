@@ -31,16 +31,19 @@ function runner(map: Record<string, McpListRun>): (bin: string) => Promise<McpLi
 	return async bin => map[bin] ?? { code: -1, stdout: '', spawnError: 'not found' };
 }
 
-test('mcpStatusWith: canned claude+codex output -> per-client registered + connected', async () => {
+test('mcpStatusWith: canned claude+codex+vibe output -> per-client registered + connected', async () => {
 	const out = await mcpStatusWith({
 		runList: runner({
 			claude: { code: 0, stdout: 'insrc: node /x/insrc-mcp.js - ✓ Connected\n' },
 			codex:  { code: 0, stdout: 'insrc: node /x/insrc-mcp.js - connected\n' },
 		}),
+		runVersion: async () => ({ code: 0, stdout: 'vibe 1.0\n' }),
+		readVibeConfig: () => '[[mcp_servers]]\nname = "insrc"\n',
 	});
 	assert.deepEqual(out, [
 		{ client: 'claude', available: true, registered: true, connected: true },
 		{ client: 'codex',  available: true, registered: true, connected: true },
+		{ client: 'vibe',   available: true, registered: true, connected: false },
 	]);
 });
 
@@ -76,9 +79,13 @@ test('mcpStatusWith: a spawnError/non-zero client -> available:false while the o
 	assert.deepEqual(out[1], { client: 'codex', available: true, registered: true, connected: true });
 });
 
-test('mcpStatusWith: always exactly one entry per known client (claude, codex), never omitted', async () => {
-	const out = await mcpStatusWith({ runList: runner({}) });
-	assert.deepEqual(out.map(o => o.client), ['claude', 'codex']);
+test('mcpStatusWith: always exactly one entry per known client (claude, codex, vibe), never omitted', async () => {
+	const out = await mcpStatusWith({
+		runList: runner({}),
+		runVersion: async () => ({ code: -1, stdout: '', spawnError: 'not found' }),
+		readVibeConfig: () => undefined,
+	});
+	assert.deepEqual(out.map(o => o.client), ['claude', 'codex', 'vibe']);
 });
 
 // --- attachedClientsWith -----------------------------------------------------

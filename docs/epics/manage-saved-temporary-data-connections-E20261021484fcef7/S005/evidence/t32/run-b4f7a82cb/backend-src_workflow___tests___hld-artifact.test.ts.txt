@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: renderHldMarkdown emits all sections
+ok 1 - renderHldMarkdown emits all sections
+  ---
+  duration_ms: 2.504375
+  type: 'test'
+  ...
+# Subtest: renderHldMarkdown adds a Tracker link only when meta.tracker.epicRef is set
+ok 2 - renderHldMarkdown adds a Tracker link only when meta.tracker.epicRef is set
+  ---
+  duration_ms: 0.532834
+  type: 'test'
+  ...
+# Subtest: isHldBody accepts valid body
+ok 3 - isHldBody accepts valid body
+  ---
+  duration_ms: 0.217333
+  type: 'test'
+  ...
+# Subtest: isHldBody rejects missing storyBoundaries
+ok 4 - isHldBody rejects missing storyBoundaries
+  ---
+  duration_ms: 0.065166
+  type: 'test'
+  ...
+# Subtest: checkStoryCoverage passes when every Epic Story has a boundary
+ok 5 - checkStoryCoverage passes when every Epic Story has a boundary
+  ---
+  duration_ms: 0.700541
+  type: 'test'
+  ...
+# Subtest: checkStoryCoverage flags orphan Epic Stories
+ok 6 - checkStoryCoverage flags orphan Epic Stories
+  ---
+  duration_ms: 0.079875
+  type: 'test'
+  ...
+# Subtest: checkContractDependencyGraph passes on a consistent, acyclic graph
+ok 7 - checkContractDependencyGraph passes on a consistent, acyclic graph
+  ---
+  duration_ms: 0.242125
+  type: 'test'
+  ...
+# Subtest: checkContractDependencyGraph flags a cycle (mutual consumption)
+ok 8 - checkContractDependencyGraph flags a cycle (mutual consumption)
+  ---
+  duration_ms: 0.16775
+  type: 'test'
+  ...
+# Subtest: checkContractDependencyGraph flags an inversion (consumer not downstream of owner)
+ok 9 - checkContractDependencyGraph flags an inversion (consumer not downstream of owner)
+  ---
+  duration_ms: 0.20025
+  type: 'test'
+  ...
+# Subtest: checkContractDependencyGraph cg2 message names the nearest-common-ancestor re-ownership target
+ok 10 - checkContractDependencyGraph cg2 message names the nearest-common-ancestor re-ownership target
+  ---
+  duration_ms: 0.616209
+  type: 'test'
+  ...
+# Subtest: checkContractDependencyGraph flags depends drift from consumedByStories
+ok 11 - checkContractDependencyGraph flags depends drift from consumedByStories
+  ---
+  duration_ms: 0.103792
+  type: 'test'
+  ...
+# Subtest: reconcileDependsFromConsumers repairs a drifted depends so cg3 passes (S002 ac2)
+ok 12 - reconcileDependsFromConsumers repairs a drifted depends so cg3 passes (S002 ac2)
+  ---
+  duration_ms: 0.195792
+  type: 'test'
+  ...
+# Subtest: reconcileDependsFromConsumers is a pure inverse: dedup+sort, self-skip, other fields untouched (S002 ac2)
+ok 13 - reconcileDependsFromConsumers is a pure inverse: dedup+sort, self-skip, other fields untouched (S002 ac2)
+  ---
+  duration_ms: 0.077667
+  type: 'test'
+  ...
+# Subtest: reconcileDependsFromConsumers does NOT mask a genuine cg1 cycle (S002 ac3)
+ok 14 - reconcileDependsFromConsumers does NOT mask a genuine cg1 cycle (S002 ac3)
+  ---
+  duration_ms: 0.087584
+  type: 'test'
+  ...
+# Subtest: reconcileDependsFromConsumers does NOT mask a genuine cg2 inversion (S002 ac3)
+ok 15 - reconcileDependsFromConsumers does NOT mask a genuine cg2 inversion (S002 ac3)
+  ---
+  duration_ms: 0.159834
+  type: 'test'
+  ...
+# Subtest: checkStoryCoverage flags shared contract owned by unknown Story
+ok 16 - checkStoryCoverage flags shared contract owned by unknown Story
+  ---
+  duration_ms: 0.050667
+  type: 'test'
+  ...
+# Subtest: checkRolloutCoverage passes on clean fixture
+ok 17 - checkRolloutCoverage passes on clean fixture
+  ---
+  duration_ms: 0.067833
+  type: 'test'
+  ...
+# Subtest: checkRolloutCoverage flags story in multiple phases
+ok 18 - checkRolloutCoverage flags story in multiple phases
+  ---
+  duration_ms: 2.102959
+  type: 'test'
+  ...
+# Subtest: checkRolloutCoverage flags story in zero phases
+ok 19 - checkRolloutCoverage flags story in zero phases
+  ---
+  duration_ms: 0.306291
+  type: 'test'
+  ...
+# Subtest: checkOwnershipConsistency passes on aligned fixture
+ok 20 - checkOwnershipConsistency passes on aligned fixture
+  ---
+  duration_ms: 0.345667
+  type: 'test'
+  ...
+# Subtest: checkOwnershipConsistency flags mismatch between shared contract owner and boundary owner
+ok 21 - checkOwnershipConsistency flags mismatch between shared contract owner and boundary owner
+  ---
+  duration_ms: 0.208
+  type: 'test'
+  ...
+# Subtest: checkInterfaceSketchTypeLevel passes on pure TS interface
+ok 22 - checkInterfaceSketchTypeLevel passes on pure TS interface
+  ---
+  duration_ms: 0.369334
+  type: 'test'
+  ...
+# Subtest: checkInterfaceSketchTypeLevel flags a return statement
+ok 23 - checkInterfaceSketchTypeLevel flags a return statement
+  ---
+  duration_ms: 0.265167
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 291.433375

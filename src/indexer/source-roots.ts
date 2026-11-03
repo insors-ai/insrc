@@ -13,6 +13,7 @@
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, isAbsolute, resolve as resolvePath } from 'node:path';
+import { createFileFilter, type FileFilter } from './file-filter.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,11 +51,13 @@ export interface TsSourceInfo {
 // Public API
 // ---------------------------------------------------------------------------
 
-export function detectSourceRoots(repoRoot: string): SourceRoots {
+/** `filter`: the repository's FileFilter when the caller holds one (the
+ *  indexer's cached instance), so a settle pass does not build another. */
+export function detectSourceRoots(repoRoot: string, filter: FileFilter = createFileFilter(repoRoot)): SourceRoots {
   return {
     java:       detectJavaRoots(repoRoot),
     scala:      detectScalaRoots(repoRoot),
-    python:     detectPythonRoots(repoRoot),
+    python:     detectPythonRoots(repoRoot, filter),
     go:         detectGoRoot(repoRoot),
     typescript: detectTsRoot(repoRoot),
     javascript: detectJsRoot(repoRoot),
@@ -241,12 +244,6 @@ function extractBracedBlock(text: string, keyword: string): string | null {
 // Python -- probe for __init__.py and `src/` layout
 // ---------------------------------------------------------------------------
 
-const PY_IGNORE = new Set([
-  'node_modules', '.git', 'dist', 'build', '__pycache__',
-  '.venv', 'venv', '.env', '.tox', '.eggs', '.mypy_cache', '.pytest_cache',
-  'target', 'site-packages',
-]);
-
 /**
  * Python source roots are the *parents* of top-level packages -- i.e. the
  * directories you'd add to PYTHONPATH so `import foo.bar` works.
@@ -254,9 +251,12 @@ const PY_IGNORE = new Set([
  * Strategy: scan up to MAX_DEPTH levels under repoRoot looking for the
  * shallowest `__init__.py` files; the parent of each such file is a
  * candidate root. Always include `repoRoot` and `repoRoot/src` (when
- * present) as fallback roots.
+ * present) as fallback roots. `filter` (Epic c2ba6fa6 s6) is the one rule
+ * for what to skip -- a directory FileFilter excludes is never walked
+ * into, so a bare-name-matching package FileFilter includes is no longer
+ * hidden from source-root detection (ac2).
  */
-function detectPythonRoots(repoRoot: string): readonly string[] {
+function detectPythonRoots(repoRoot: string, filter: FileFilter): readonly string[] {
   const roots = new Set<string>();
   const MAX_DEPTH = 4;
 
@@ -272,9 +272,9 @@ function detectPythonRoots(repoRoot: string): readonly string[] {
       return;
     }
     for (const name of entries) {
-      if (PY_IGNORE.has(name)) continue;
-      if (name.startsWith('.') && depth > 0) continue;
       const child = join(dir, name);
+      if (!filter.includes(child)) continue;
+      if (name.startsWith('.') && depth > 0) continue;
       try {
         if (statSync(child).isDirectory()) visit(child, depth + 1);
       } catch { /* ignore */ }

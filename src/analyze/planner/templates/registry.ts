@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -80,7 +81,7 @@ export function registerTemplate(t: AnalyzeTaskTemplate): void {
 		);
 	}
 	REGISTRY.set(t.id, t);
-	log.debug({ id: t.id, target: t.target, kind: t.kind, family: t.family }, 'template registered');
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ id: t.id, target: t.target, kind: t.kind, family: t.family }, 'template registered']);
 }
 
 /** Return the full catalog as a stable array (sorted by id for determinism). */

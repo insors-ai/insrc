@@ -1,0 +1,56 @@
+TAP version 13
+# Subtest: codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor
+ok 1 - codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor
+  ---
+  duration_ms: 7.449166
+  type: 'test'
+  ...
+# Subtest: codeIndexWorkFor clears the in-flight job when the processor throws
+ok 2 - codeIndexWorkFor clears the in-flight job when the processor throws
+  ---
+  duration_ms: 0.94975
+  type: 'test'
+  ...
+# [04:40:17] [31mERROR[39m: [36m[queue] job failed[39m
+#     [35mmodule[39m: "queue"
+#     err: {
+#       "type": "Error",
+#       "message": "processor failed",
+#       "stack":
+#           Error: processor failed
+#               at processor (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/queue-code-index-work.test.ts:43:37)
+#               at IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:338:15)
+#               at IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:304:26)
+#               at TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/queue-code-index-work.test.ts:45:20)
+#               at Test.runInAsyncScope (node:async_hooks:214:14)
+#               at Test.run (node:internal/test_runner/test:1047:25)
+#               at Test.start (node:internal/test_runner/test:944:17)
+#               at startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+#     }
+# [04:40:17] [31mERROR[39m: [36m[queue] job failed[39m
+#     [35mmodule[39m: "queue"
+#     err: {
+#       "type": "Error",
+#       "message": "boom",
+#       "stack":
+#           Error: boom
+#               at <anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/queue-code-index-work.test.ts:65:92)
+#               at IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:338:15)
+#               at IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:304:26)
+#               at TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/__tests__/queue-code-index-work.test.ts:65:20)
+#               at Test.runInAsyncScope (node:async_hooks:214:14)
+#               at Test.run (node:internal/test_runner/test:1047:25)
+#               at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+#               at Test.postRun (node:internal/test_runner/test:1173:19)
+#               at Test.run (node:internal/test_runner/test:1101:12)
+#               at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+#     }
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 346.408208

@@ -43,6 +43,8 @@ export interface FakeSpawnCall {
   readonly cwd: string;
   /** Whether the CLI was started with no input stream; absent when the caller did not ask. */
   readonly closeInput?: boolean | undefined;
+  /** The full child environment when the caller passed one (vibe's VIBE_ACTIVE_MODEL pin); absent when inherited. */
+  readonly env?: NodeJS.ProcessEnv | undefined;
 }
 
 export interface FakeSpawner {
@@ -118,7 +120,7 @@ export function makeFakeSpawner(script: FakeProcScript | FakeProcScript[]): Fake
   let idx = 0;
 
   const spawn: SpawnFn = (command, args, opts) => {
-    calls.push({ command, args: [...args], cwd: opts.cwd, ...(opts.closeInput !== undefined ? { closeInput: opts.closeInput } : {}) });
+    calls.push({ command, args: [...args], cwd: opts.cwd, ...(opts.closeInput !== undefined ? { closeInput: opts.closeInput } : {}), ...(opts.env !== undefined ? { env: opts.env } : {}) });
     const s = single ?? scripts![Math.min(idx++, scripts!.length - 1)]!;
     const { proc, handle } = makeFakeProc(s);
     procs.push(handle);
@@ -279,3 +281,33 @@ export const CODEX_PERMISSION_TURN: readonly string[] = [
 /** A unified patch with one section per [path, oldStart, text] (Story E20261013b2e8109f:S001). */
 export const patchOf = (...sections: Array<[path: string, oldStart: number, text: string]>): string =>
   sections.map(([p, start, text]) => [`diff --git a/${p} b/${p}`, `--- a/${p}`, `+++ b/${p}`, `@@ -${start},2 +${start},3 @@`, ' ctx', `+${text}`, ' ctx2', ''].join('\n')).join('');
+
+// ---- vibe fixtures -----------------------------------------------------------
+//
+// `vibe -p --output streaming` prints one JSON session-entry per line (the same
+// entries `--output json` would collect into its array); there is NO terminal
+// event line — the adapter synthesizes `done` when the process exits 0.
+
+export const VIBE_TEXT_TURN: readonly string[] = [
+  JSON.stringify({ type: 'message', role: 'user', sessionId: 'sess-vibe-1', content: [{ type: 'text', text: 'hi' }] }),
+  JSON.stringify({ type: 'reasoning', sessionId: 'sess-vibe-1', generationStatus: 'completed', outcome: { type: 'committed' } }),
+  JSON.stringify({ type: 'message', role: 'assistant', sessionId: 'sess-vibe-1', content: [{ type: 'text', text: 'Hello ' }] }),
+  JSON.stringify({ type: 'message', role: 'assistant', sessionId: 'sess-vibe-1', content: [{ type: 'text', text: 'world' }] }),
+];
+
+// A tool call rides as an assistant content block with the arguments as a JSON
+// STRING in `arguments_json`; its output returns as a user tool_result block.
+export const VIBE_TOOL_TURN: readonly string[] = [
+  JSON.stringify({ type: 'message', role: 'user', sessionId: 'sess-vibe-2', content: [{ type: 'text', text: 'do it' }] }),
+  JSON.stringify({
+    type: 'message', role: 'assistant', sessionId: 'sess-vibe-2',
+    content: [
+      { type: 'tool_call', id: 'call-1', name: 'bash', arguments_json: JSON.stringify({ command: 'npm test' }) },
+      { type: 'tool_call', id: 'call-2', name: 'mcp_insrc_insrc_present', arguments_json: JSON.stringify({ documents: ['LLD-x-S001'] }) },
+    ],
+  }),
+  JSON.stringify({
+    type: 'message', role: 'user', sessionId: 'sess-vibe-2',
+    content: [{ type: 'tool_result', tool_call_id: 'call-1', content: 'all green', is_error: false }],
+  }),
+];

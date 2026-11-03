@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes
+ok 1 - summarySweepProgress is set while docSummariseRepo runs and cleared when the sweep completes
+  ---
+  duration_ms: 285.441125
+  type: 'test'
+  ...
+# Subtest: summarySweepProgress is cleared when the sweep stops on shutdown
+ok 2 - summarySweepProgress is cleared when the sweep stops on shutdown
+  ---
+  duration_ms: 278.064458
+  type: 'test'
+  ...
+# Subtest: summarySweepProgress is cleared when the sweep throws
+ok 3 - summarySweepProgress is cleared when the sweep throws
+  ---
+  duration_ms: 253.623792
+  type: 'test'
+  ...
+# Subtest: a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document
+ok 4 - a single-document job queued for the summary lane is taken by the running sweep and summarised before the next document
+  ---
+  duration_ms: 204.043958
+  type: 'test'
+  ...
+# Subtest: the indexer's sweep pauses while the queue's index lane has work and continues when it is idle
+ok 5 - the indexer's sweep pauses while the queue's index lane has work and continues when it is idle
+  ---
+  duration_ms: 169.254167
+  type: 'test'
+  ...
+# Subtest: a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives
+ok 6 - a summary never starts while code work is queued, even when the sweep wakes from its wait just before a code job arrives
+  ---
+  duration_ms: 237.495959
+  type: 'test'
+  ...
+# Subtest: an edited document queued while the indexer's sweep is paused for code work runs before the sweep's next document
+ok 7 - an edited document queued while the indexer's sweep is paused for code work runs before the sweep's next document
+  ---
+  duration_ms: 249.099333
+  type: 'test'
+  ...
+# Subtest: a single-document summary waits while code work runs, runs once it is done, and is not started on shutdown
+ok 8 - a single-document summary waits while code work runs, runs once it is done, and is not started on shutdown
+  ---
+  duration_ms: 167.239708
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2243.905958

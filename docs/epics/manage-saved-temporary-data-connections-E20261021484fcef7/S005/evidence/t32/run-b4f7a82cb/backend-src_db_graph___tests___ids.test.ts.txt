@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: first entity allocation returns 1 (0 reserved as no-ID sentinel)
+ok 1 - first entity allocation returns 1 (0 reserved as no-ID sentinel)
+  ---
+  duration_ms: 221.879458
+  type: 'test'
+  ...
+# Subtest: first repo allocation returns 1
+ok 2 - first repo allocation returns 1
+  ---
+  duration_ms: 186.79775
+  type: 'test'
+  ...
+# Subtest: entity allocations are monotonically increasing
+ok 3 - entity allocations are monotonically increasing
+  ---
+  duration_ms: 891.737167
+  type: 'test'
+  ...
+# Subtest: repo allocations are monotonically increasing
+ok 4 - repo allocations are monotonically increasing
+  ---
+  duration_ms: 359.958041
+  type: 'test'
+  ...
+# Subtest: block allocation reserves contiguous IDs without gaps
+ok 5 - block allocation reserves contiguous IDs without gaps
+  ---
+  duration_ms: 107.260584
+  type: 'test'
+  ...
+# Subtest: block allocation rejects count < 1
+ok 6 - block allocation rejects count < 1
+  ---
+  duration_ms: 0.816459
+  type: 'test'
+  ...
+# Subtest: counters survive close + reopen
+ok 7 - counters survive close + reopen
+  ---
+  duration_ms: 147.172541
+  type: 'test'
+  ...
+# Subtest: peek does not mutate the counter
+ok 8 - peek does not mutate the counter
+  ---
+  duration_ms: 133.873584
+  type: 'test'
+  ...
+# Subtest: in-txn allocator works alongside other writes
+ok 9 - in-txn allocator works alongside other writes
+  ---
+  duration_ms: 143.059
+  type: 'test'
+  ...
+# Subtest: in-txn allocator: repo + entity counters are independent
+ok 10 - in-txn allocator: repo + entity counters are independent
+  ---
+  duration_ms: 89.863959
+  type: 'test'
+  ...
+# Subtest: concurrent allocations all return distinct IDs
+ok 11 - concurrent allocations all return distinct IDs
+  ---
+  duration_ms: 95.500292
+  type: 'test'
+  ...
+# Subtest: large block allocation produces correct next value at u64 scale
+ok 12 - large block allocation produces correct next value at u64 scale
+  ---
+  duration_ms: 200.114625
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2809.294666

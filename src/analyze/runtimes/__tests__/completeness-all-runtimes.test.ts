@@ -260,7 +260,7 @@ test('no output of the five infra inventories has a `truncated` field; a walk th
 		const [output] = [...result.outputs.values()] as Record<string, unknown>[];
 		assert.equal('truncated' in output!, false, `${runtime.templateId}: the output has no truncated field`);
 		assert.equal(result.completeness.limited, undefined, `${runtime.templateId}: the walk did not reach its cap`);
-		assert.match(result.completeness.basisNote ?? '', /^Not walked, by rule: symbolic links, and directories named .*node_modules/);
+		assert.match(result.completeness.basisNote ?? '', /^Not walked, by rule: symbolic links, and anything the repository's ignore rules exclude/);
 	}
 
 	// The record every one of them builds, for a walk that stopped at its cap.

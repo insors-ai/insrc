@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: detectPresent: by-extension-id → getExtension; by-editor-env → appName/uriScheme; never throws (indeterminate → false)
+ok 1 - detectPresent: by-extension-id → getExtension; by-editor-env → appName/uriScheme; never throws (indeterminate → false)
+  ---
+  duration_ms: 0.845875
+  type: 'test'
+  ...
+# Subtest: wire writes BOTH the mcpServers.insrc entry + the steering block; skips the mcp entry (steering only) when the launch target is absent
+ok 2 - wire writes BOTH the mcpServers.insrc entry + the steering block; skips the mcp entry (steering only) when the launch target is absent
+  ---
+  duration_ms: 0.912375
+  type: 'test'
+  ...
+# Subtest: unwire removes exactly the insrc key + the marker block, restoring prior content (reversible)
+ok 3 - unwire removes exactly the insrc key + the marker block, restoring prior content (reversible)
+  ---
+  duration_ms: 0.278833
+  type: 'test'
+  ...
+# Subtest: wire-then-unwire when insrc CREATED the files leaves an empty mcpServers + empty steering (documented reversibility edge, matches the JetBrains reference)
+ok 4 - wire-then-unwire when insrc CREATED the files leaves an empty mcpServers + empty steering (documented reversibility edge, matches the JetBrains reference)
+  ---
+  duration_ms: 0.169375
+  type: 'test'
+  ...
+# Subtest: AiHostRegistry.detectPresent returns only present adapters and omits a throwing one; adapters() returns the full set
+ok 5 - AiHostRegistry.detectPresent returns only present adapters and omits a throwing one; adapters() returns the full set
+  ---
+  duration_ms: 0.852333
+  type: 'test'
+  ...
+# Subtest: createHostAdapter builds an adapter from a data-only HostSpec (ac3): a new HostSpec plugs in with no existing-adapter change
+ok 6 - createHostAdapter builds an adapter from a data-only HostSpec (ac3): a new HostSpec plugs in with no existing-adapter change
+  ---
+  duration_ms: 0.134291
+  type: 'test'
+  ...
+# Subtest: HOST_SPECS: the vibe entry detects by home path, targets ~/.vibe/config.toml (toml) + ~/.vibe/AGENTS.md
+ok 7 - HOST_SPECS: the vibe entry detects by home path, targets ~/.vibe/config.toml (toml) + ~/.vibe/AGENTS.md
+  ---
+  duration_ms: 0.157208
+  type: 'test'
+  ...
+# Subtest: vibe adapter wire() writes the [[mcp_servers]] insrc TOML entry + the steering block; unwire() reverses both
+ok 8 - vibe adapter wire() writes the [[mcp_servers]] insrc TOML entry + the steering block; unwire() reverses both
+  ---
+  duration_ms: 0.525083
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 210.214667

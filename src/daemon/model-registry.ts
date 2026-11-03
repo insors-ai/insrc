@@ -62,11 +62,26 @@ export interface ResolvedModel extends ModelDefinition {
 	readonly source: 'shipped' | 'user-approved';
 }
 
-export type FallbackReason = 'unlisted-model' | 'rejected-model';
+/** 'model-not-supported': a host family names a model it does not declare;
+ *  nothing is substituted and the resolution carries no model. */
+export type FallbackReason = 'unlisted-model' | 'rejected-model' | 'model-not-supported';
+
+/** A run asked for a model an Ollama-hosted family does not declare; nothing is substituted. */
+export class ModelNotSupportedError extends Error {
+	readonly family: FamilyId;
+	readonly requested: string;
+	constructor(family: FamilyId, requested: string, what: string) {
+		super(`${what}: model '${requested}' is not supported by ${family} (model-not-supported)`);
+		this.name = 'ModelNotSupportedError';
+		this.family = family;
+		this.requested = requested;
+	}
+}
 
 export interface TierResolution {
 	readonly family:         FamilyId;
-	readonly model:          ResolvedModel;
+	/** undefined only for a host family's undeclared model ('model-not-supported'). */
+	readonly model:          ResolvedModel | undefined;
 	readonly effort?:        EffortLevel | undefined;
 	readonly droppedEffort?: EffortLevel | undefined;
 	readonly fallback?:      { readonly reason: FallbackReason; readonly requested: string } | undefined;
@@ -90,7 +105,9 @@ export interface ModelRegistry {
 	tierDefault(family: CliFamilyId, tier: TierName): TierDefault;
 	summariserModel(family: CliFamilyId): ResolvedModel;
 	toolLoopModel(): ResolvedModel;
-	cliKind(family: FamilyId): 'claude' | 'codex' | undefined;
+	cliKind(family: FamilyId): 'claude' | 'codex' | 'vibe' | undefined;
+	/** 'ollama' for an Ollama-hosted family; undefined for every other family. */
+	host(family: FamilyId): 'ollama' | undefined;
 	/** De-duplicated union of every served model's efforts, by first appearance. */
 	effortLevels(): readonly EffortLevel[];
 	resolveTier(tier: TierName, setting: TierSetting): TierResolution;
@@ -105,7 +122,7 @@ export interface ModelRegistry {
 export function familyForClient(client: StepClient | undefined, registry: ModelRegistry = getModelRegistry()): FamilyId | undefined {
 	if (client === undefined) return undefined;
 	if (registry.cliKind(registry.defaultFamily()) === client) return registry.defaultFamily();
-	return registry.families().find(f => f.cliKind === client)?.id;
+	return registry.families().find(f => f.cliKind === client && f.host === undefined)?.id;
 }
 
 let storePathOverride: string | undefined;
@@ -134,11 +151,12 @@ function isStringList(v: unknown): v is string[] {
 	return Array.isArray(v) && v.every(x => typeof x === 'string');
 }
 
-/** Why an entry is not a valid ApprovedProfile, or undefined when it is. */
-function profileProblem(e: unknown): string | undefined {
+/** Why an entry is not a valid ApprovedProfile, or undefined when it is. The
+ *  store writer (model-check.ts) validates a new profile with the same rule. */
+export function profileProblem(e: unknown): string | undefined {
 	if (typeof e !== 'object' || e === null || Array.isArray(e)) return 'not an object';
 	const p = e as Record<string, unknown>;
-	if (p['family'] !== 'cli-claude' && p['family'] !== 'cli-codex') return `unknown family '${String(p['family'])}'`;
+	if (p['family'] !== 'cli-claude' && p['family'] !== 'cli-codex' && p['family'] !== 'cli-vibe') return `unknown family '${String(p['family'])}'`;
 	if (typeof p['modelId'] !== 'string' || p['modelId'].length === 0) return 'missing modelId';
 	if (p['status'] !== 'approved' && p['status'] !== 'rejected') return `status '${String(p['status'])}' is not approved | rejected`;
 	if (!isStringList(p['efforts'])) return 'efforts is not a list of strings';
@@ -219,7 +237,7 @@ export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonl
 	const byDecision = [...effective.values()].sort((a, b) => Date.parse(a.decidedAt) - Date.parse(b.decidedAt));
 
 	const served = new Map<FamilyId, ResolvedModel[]>();
-	const rejectedIds = new Map<CliFamilyId, string[]>([['cli-claude', []], ['cli-codex', []]]);
+	const rejectedIds = new Map<CliFamilyId, string[]>([['cli-claude', []], ['cli-codex', []], ['cli-vibe', []]]);
 	for (const f of file.families) {
 		served.set(f.id, f.models.map(m => Object.freeze({ ...m, family: f.id, source: 'shipped' as const })));
 	}
@@ -262,6 +280,7 @@ export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonl
 		summariserModel: (family: CliFamilyId) => find(family, familyOf(family).summariserModel!)!,
 		toolLoopModel: () => find('ollama', familyOf('ollama').toolLoopModel!)!,
 		cliKind: (family: FamilyId) => familyOf(family).cliKind,
+		host: (family: FamilyId) => familyOf(family).host,
 		effortLevels: () => efforts,
 		resolveTier(tier: TierName, setting: TierSetting): TierResolution {
 			const found = find(setting.runner, setting.model);
@@ -272,9 +291,17 @@ export function buildModelRegistry(file: ModelDefinitionsFile, profiles: readonl
 					? { family: setting.runner, model: found, effort }
 					: { family: setting.runner, model: found, droppedEffort: effort };
 			}
+			// A host family runs only what it declares: refuse, substitute nothing.
+			if (familyOf(setting.runner).host !== undefined) {
+				return { family: setting.runner, model: undefined, fallback: { reason: 'model-not-supported', requested: setting.model } };
+			}
+			// Only a vendor CLI family carries rejected ids / tier defaults; the
+			// local family falls back to the default family.
+			const runner = setting.runner;
+			const vendorCli = runner === 'cli-claude' || runner === 'cli-codex' || runner === 'cli-vibe' ? runner : undefined;
 			const reason: FallbackReason =
-				setting.runner !== 'ollama' && rejected(setting.runner).includes(setting.model) ? 'rejected-model' : 'unlisted-model';
-			const fbFamily: CliFamilyId = setting.runner === 'ollama' ? file.defaultFamily : setting.runner;
+				vendorCli !== undefined && rejected(vendorCli).includes(setting.model) ? 'rejected-model' : 'unlisted-model';
+			const fbFamily: CliFamilyId = vendorCli ?? file.defaultFamily;
 			const def = tierDefault(fbFamily, tier);
 			return {
 				family: fbFamily,

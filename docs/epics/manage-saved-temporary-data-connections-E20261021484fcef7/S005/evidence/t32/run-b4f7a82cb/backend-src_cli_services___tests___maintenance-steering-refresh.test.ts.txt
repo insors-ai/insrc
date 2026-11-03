@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: runUpdateSteeringRefresh: happy path → returns report + emits an onLog summary line
+ok 1 - runUpdateSteeringRefresh: happy path → returns report + emits an onLog summary line
+  ---
+  duration_ms: 10.171041
+  type: 'test'
+  ...
+# Subtest: runUpdateSteeringRefresh: block asset missing → caught, logged, returns undefined
+ok 2 - runUpdateSteeringRefresh: block asset missing → caught, logged, returns undefined
+  ---
+  duration_ms: 0.581542
+  type: 'test'
+  ...
+# Subtest: runUpdateSteeringRefresh: listRepos rejection → caught, returns undefined (never throws)
+ok 3 - runUpdateSteeringRefresh: listRepos rejection → caught, returns undefined (never throws)
+  ---
+  duration_ms: 1.718792
+  type: 'test'
+  ...
+# Subtest: runUpdateSteeringRefresh: empty steering asset is treated as a failure → undefined
+ok 4 - runUpdateSteeringRefresh: empty steering asset is treated as a failure → undefined
+  ---
+  duration_ms: 0.859333
+  type: 'test'
+  ...
+# Subtest: SOURCE contract: steering-refresh is sequenced after build+reconcile, best-effort (never flips ok:false), and issues no restart
+ok 5 - SOURCE contract: steering-refresh is sequenced after build+reconcile, best-effort (never flips ok:false), and issues no restart
+  ---
+  duration_ms: 0.311291
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 377.648458

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -117,8 +118,7 @@ export async function runSearchText(
 		text: h.text,
 	}));
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:           ctx.runId,
 			pattern:         params.pattern,
 			glob:            params.glob ?? '(none)',
@@ -127,9 +127,7 @@ export async function runSearchText(
 			backend:         data.usedRipgrep ? 'ripgrep' : 'node',
 			hits:            hits.length,
 			truncated:       data.truncated,
-		},
-		'search.text: complete',
-	);
+	}, 'search.text: complete']);
 
 	return {
 		type:      'search.text',

@@ -1,0 +1,279 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ca9883ca42f4d73f",
+    "storyId": "S001",
+    "createdAt": "2026-11-02T12:14:26.040Z",
+    "updatedAt": "2026-11-02T13:06:49.464Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:42:30.446Z",
+    "epicSlug": "daemon-update-never-retries-failed-npm"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "9355bdead",
+        "ranAt": "2026-11-02T12:14:26.040Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+                "title": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5083,
+            "titles": [
+              {
+                "title": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: a matching marker skips the install; a stale or missing marker installs",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "15f44dc79",
+        "ranAt": "2026-11-02T12:17:38.611Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: daemon-ctl.sh and maintenance.update honour each other's marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: daemon-ctl.sh and maintenance.update honour each other's marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+                "title": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5131,
+            "titles": [
+              {
+                "title": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: daemon-ctl.sh and maintenance.update honour each other's marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "4d2eeda98",
+        "ranAt": "2026-11-02T12:20:21.207Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/config/__tests__/installer-defs.test.ts",
+                "title": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/installer-defs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1890,
+            "titles": [
+              {
+                "title": "installer-defs.test.ts: both installer copies are identical with no tier-model or tool-loop literal; a step-4b dry run writes the file's defaults",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "81da97b73",
+        "ranAt": "2026-11-02T13:06:49.464Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t4: clean install under Node 22 builds fs-ext and the native modules",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-clean-install-t4.md"
+            }
+          },
+          {
+            "name": "S001 t4: the installed daemon's update installs once, then skips",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-installed-update-t4.md"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

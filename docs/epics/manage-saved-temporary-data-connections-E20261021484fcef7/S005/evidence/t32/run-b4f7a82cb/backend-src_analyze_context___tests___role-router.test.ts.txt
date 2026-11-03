@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: empty tiering → peripheral (mid) role resolves to the shipped mid default (claude sonnet), no clamp
+ok 1 - empty tiering → peripheral (mid) role resolves to the shipped mid default (claude sonnet), no clamp
+  ---
+  duration_ms: 2.158334
+  type: 'test'
+  ...
+# Subtest: empty tiering → critical (core) role resolves to the shipped core default (claude opus), no clamp
+ok 2 - empty tiering → critical (core) role resolves to the shipped core default (claude opus), no clamp
+  ---
+  duration_ms: 0.123375
+  type: 'test'
+  ...
+# Subtest: S010: brainstorm.decision.draft is peripheral → mid and is NOT floor-clamped
+ok 3 - S010: brainstorm.decision.draft is peripheral → mid and is NOT floor-clamped
+  ---
+  duration_ms: 0.051
+  type: 'test'
+  ...
+# Subtest: empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults
+ok 4 - empty tiering BUT an explicit legacy shaperProvider still wins over the built-in defaults
+  ---
+  duration_ms: 1.092875
+  type: 'test'
+  ...
+# Subtest: a configured cheap tier wins over the shipped cheap default
+ok 5 - a configured cheap tier wins over the shipped cheap default
+  ---
+  duration_ms: 0.250875
+  type: 'test'
+  ...
+# Subtest: roleTiers assigns a peripheral role a cheap tier with a concrete model
+ok 6 - roleTiers assigns a peripheral role a cheap tier with a concrete model
+  ---
+  duration_ms: 0.058916
+  type: 'test'
+  ...
+# Subtest: a mid CLI tier pins a concrete model (e.g. sonnet) that shaperModel alone cannot express
+ok 7 - a mid CLI tier pins a concrete model (e.g. sonnet) that shaperModel alone cannot express
+  ---
+  duration_ms: 0.089209
+  type: 'test'
+  ...
+# Subtest: critical role assigned cheap is clamped UP to a core floor (clampedByFloor true) and uses the core tier model
+ok 8 - critical role assigned cheap is clamped UP to a core floor (clampedByFloor true) and uses the core tier model
+  ---
+  duration_ms: 0.14925
+  type: 'test'
+  ...
+# Subtest: peripheral role assigned cheap is NEVER clamped even with a core floor
+ok 9 - peripheral role assigned cheap is NEVER clamped even with a core floor
+  ---
+  duration_ms: 0.204125
+  type: 'test'
+  ...
+# Subtest: byRepo roleTiers overrides the global roleTiers for the same role
+ok 10 - byRepo roleTiers overrides the global roleTiers for the same role
+  ---
+  duration_ms: 0.271833
+  type: 'test'
+  ...
+# Subtest: an unknown RoleId falls to the built-in default tier (mid), non-critical, no throw
+ok 11 - an unknown RoleId falls to the built-in default tier (mid), non-critical, no throw
+  ---
+  duration_ms: 0.05575
+  type: 'test'
+  ...
+# Subtest: resolveShaperKind: roleResolved wins over global/client
+ok 12 - resolveShaperKind: roleResolved wins over global/client
+  ---
+  duration_ms: 0.034166
+  type: 'test'
+  ...
+# Subtest: resolveShaperKind: a non-union roleResolved is coerced away (falls through the chain, never a REST path)
+ok 13 - resolveShaperKind: a non-union roleResolved is coerced away (falls through the chain, never a REST path)
+  ---
+  duration_ms: 0.031541
+  type: 'test'
+  ...
+# Subtest: resolveShaperKind: legacy callers resolve identically (roleResolved absent)
+ok 14 - resolveShaperKind: legacy callers resolve identically (roleResolved absent)
+  ---
+  duration_ms: 0.029833
+  type: 'test'
+  ...
+# Subtest: resolveProviderForRole memoizes per (role, repoPath) — repeated calls reuse the instance
+ok 15 - resolveProviderForRole memoizes per (role, repoPath) — repeated calls reuse the instance
+  ---
+  duration_ms: 0.478625
+  type: 'test'
+  ...
+# Subtest: resolveProviderForRole attaches a resolution record with the resolved tier/runner/model
+ok 16 - resolveProviderForRole attaches a resolution record with the resolved tier/runner/model
+  ---
+  duration_ms: 0.100375
+  type: 'test'
+  ...
+# Subtest: resolveSummariser follows the summariser config (cheap tier), not the shaper/role tiering
+ok 17 - resolveSummariser follows the summariser config (cheap tier), not the shaper/role tiering
+  ---
+  duration_ms: 0.493833
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 343.141833

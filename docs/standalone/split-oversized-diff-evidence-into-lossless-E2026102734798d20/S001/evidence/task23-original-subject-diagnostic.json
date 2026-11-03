@@ -1,0 +1,17 @@
+{
+  "stableFingerprint": "1cbe1a2b379972ea38e5b55af92ee2e88cbfdb1e3d74b20d5a63a3d03880dae7",
+  "fields": {
+    "changedFiles": true,
+    "approvedLld": true,
+    "approvedPlan": true,
+    "buildRecord": true,
+    "testRecord": true
+  },
+  "files": {
+    "resolved": 321,
+    "captured": 321,
+    "onlyResolved": [],
+    "onlyCaptured": [],
+    "firstOrderMismatch": -1
+  }
+}

@@ -116,15 +116,28 @@ class InsrcSettingsConfigurableTest {
             src.contains("throw ConfigurationException"),
             "a not-Saved leaf write throws ConfigurationException (ac2/ac3)",
         )
-        // The three nested editors are driven from the model (daemon-derived, lc1/k5):
-        // coreFloor + tasks combos + per-tier runner/model text fields.
+        // The nested editors are driven from the model (daemon-derived, lc1/k5):
+        // coreFloor + tasks combos.
         assertTrue(src.contains("model.rows()"), "rows come from the model (daemon-derived)")
         assertTrue(src.contains("model.tierNames()"), "tier choices come from the model (daemon-derived)")
         assertTrue(src.contains("model.roles()"), "per-role task rows come from the model (daemon-derived)")
         assertTrue(src.contains("model.addableRepos()"), "the add-picker candidates come from the model")
         assertTrue(src.contains("JComboBox"), "coreFloor + task tiers use a chooser")
-        assertTrue(src.contains("JTextField"), "per-tier runner/model use free-text fields (k5)")
-        assertTrue(src.contains("setTierField"), "the tiers editor edits runner/model leaves independently")
+    }
+
+    @Test
+    fun `per-repo editor has no tier runner or model field`() {
+        // Epic ce99b72065d03b1b s7: tiers are global; a repo picks only a tier per role and a coreFloor.
+        val src = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt")
+        assertTrue(src.contains("labeledCombo(\"coreFloor\""), "the coreFloor chooser stays")
+        assertTrue(src.contains("model.setTaskTier(repoPath, role.id, sel)"), "the per-role tier choosers stay")
+        for (gone in listOf("setTierField", "TierField", "JTextField", "tierFieldRow", "row.tiers", "tiers: ")) {
+            assertFalse(src.contains(gone), "no per-tier field: $gone")
+        }
+        val model = read("src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt")
+        for (gone in listOf("setTierField", "enum class TierField", "savedTiers", "TierSpecDto")) {
+            assertFalse(model.contains(gone), "no per-tier state in PerRepoOverridesModel: $gone")
+        }
     }
 
     @Test

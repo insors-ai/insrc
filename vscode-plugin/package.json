@@ -2,7 +2,7 @@
   "name": "insrc-vscode",
   "displayName": "insrc",
   "description": "insrc for VS Code \u2014 local-first, Ollama-backed code-knowledge and the tracked workflow, wired into your AI assistant.",
-  "version": "0.5.16",
+  "version": "0.5.24",
   "publisher": "insors",
   "license": "MIT",
   "repository": {
@@ -84,6 +84,11 @@
         "category": "insrc"
       },
       {
+        "command": "insrc.status.modelTiers",
+        "title": "Open Model Tiers",
+        "category": "insrc"
+      },
+      {
         "command": "insrc.models.setTier",
         "title": "Set model tier",
         "category": "insrc"
@@ -114,6 +119,31 @@
           "light": "media/insrc-delivery-icon.svg",
           "dark": "media/insrc-delivery-icon-dark.svg"
         }
+      },
+      {
+        "command": "insrc.openDataSources",
+        "title": "Manage Connections",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.add",
+        "title": "Add Connection",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.edit",
+        "title": "Edit Connection",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.test",
+        "title": "Test Connection",
+        "category": "insrc"
+      },
+      {
+        "command": "insrc.connections.remove",
+        "title": "Delete or Discard Connection",
+        "category": "insrc"
       }
     ],
     "menus": {
@@ -138,7 +168,7 @@
           "insrc.chat.enabled": {
             "type": "boolean",
             "default": true,
-            "markdownDescription": "Enable the in-editor insrc ctrl (sidebar Activity Bar view) over your own claude/codex CLI. On by default.",
+            "markdownDescription": "Enable the in-editor insrc ctrl (sidebar Activity Bar view) over your own claude/codex CLI. On by default. For insrc connections, [Manage Connections](command:insrc.openDataSources) opens the Saved and Temporary connection manager. Connection configuration and credentials are managed there.",
             "scope": "machine"
           },
           "insrc.chat.diffView": {
@@ -222,6 +252,12 @@
             "default": 600000,
             "markdownDescription": "ms maintenance waits for running requests to finish before it gives up for this time",
             "scope": "machine"
+          },
+          "insrc.daemon.threads.sessionIdleMs": {
+            "type": "number",
+            "default": 900000,
+            "markdownDescription": "ms a client session's worker thread may sit idle before it is released (Epic 86197ac6 s3); its step state outlives the release",
+            "scope": "machine"
           }
         }
       },
@@ -272,7 +308,7 @@
           "insrc.codeReview.daemonReviewIdleMs": {
             "type": "number",
             "default": 1200000,
-            "markdownDescription": "max ms a daemon code review may go without reporting progress; must exceed the longest single review call (at most the ceiling)",
+            "markdownDescription": "max ms a daemon code review may go without owner progress; independent of the chunk-derived total budget (legacy streams clamp to their ceiling)",
             "scope": "machine"
           },
           "insrc.designReview.premises.issue": {
@@ -341,104 +377,62 @@
         "properties": {
           "insrc.models.tiers.core.runner": {
             "type": "string",
-            "default": "cli-claude",
-            "markdownDescription": "core-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
-            "scope": "machine",
-            "enum": [
-              "cli-claude",
-              "cli-codex",
-              "ollama"
-            ]
+            "default": "",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe core tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "scope": "machine"
           },
           "insrc.models.tiers.core.model": {
             "type": "string",
-            "default": "opus",
-            "markdownDescription": "core-tier model id or alias (default from the model definitions)",
+            "default": "",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe core tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.core.effort": {
             "type": "string",
             "default": "",
-            "enum": [
-              "",
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max",
-              "ultra"
-            ],
-            "markdownDescription": "core-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe core tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.runner": {
             "type": "string",
-            "default": "cli-claude",
-            "markdownDescription": "mid-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
-            "scope": "machine",
-            "enum": [
-              "cli-claude",
-              "cli-codex",
-              "ollama"
-            ]
+            "default": "",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe mid tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "scope": "machine"
           },
           "insrc.models.tiers.mid.model": {
             "type": "string",
-            "default": "sonnet",
-            "markdownDescription": "mid-tier model id or alias (default from the model definitions)",
+            "default": "",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe mid tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.mid.effort": {
             "type": "string",
             "default": "",
-            "enum": [
-              "",
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max",
-              "ultra"
-            ],
-            "markdownDescription": "mid-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe mid tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.runner": {
             "type": "string",
-            "default": "cli-claude",
-            "markdownDescription": "cheap-tier backend: 'cli-claude' | 'cli-codex' | 'ollama'",
-            "scope": "machine",
-            "enum": [
-              "cli-claude",
-              "cli-codex",
-              "ollama"
-            ]
+            "default": "",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe cheap tier's model family (runner). Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
+            "scope": "machine"
           },
           "insrc.models.tiers.cheap.model": {
             "type": "string",
-            "default": "haiku",
-            "markdownDescription": "cheap-tier model id or alias (default from the model definitions)",
+            "default": "",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe cheap tier's model. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.tiers.cheap.effort": {
             "type": "string",
             "default": "",
-            "enum": [
-              "",
-              "low",
-              "medium",
-              "high",
-              "xhigh",
-              "max",
-              "ultra"
-            ],
-            "markdownDescription": "cheap-tier reasoning effort passed to the CLI ('' = the CLI's default)",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nThe cheap tier's reasoning effort. Valid values come from the daemon's model definitions; leave empty for the default. A model the family does not list is checked and approved with `insrc: Set model tier`; a family whose CLI runs on a host accepts only its listed models.",
             "scope": "machine"
           },
           "insrc.models.coreFloor": {
             "type": "string",
             "default": "mid",
-            "markdownDescription": "min tier for critical tasks: 'core' | 'mid' | 'cheap'",
+            "markdownDescription": "[Open the grouped Model Tiers editor \u2192](command:insrc.status.modelTiers)\n\nmin tier for critical tasks: 'core' | 'mid' | 'cheap'",
             "scope": "machine",
             "enum": [
               "core",

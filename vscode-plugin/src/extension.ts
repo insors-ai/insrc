@@ -8,10 +8,16 @@
  */
 import { existsSync, readFileSync, readdirSync, watch as fsWatch } from 'node:fs';
 import { execFile } from 'node:child_process';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import * as vscode from 'vscode';
 
+import { createConnectionsDraftTests, createConnectionsMutationController } from './connections/gateway.js';
+import { ConnectionsWorkbenchOwner } from './connections/session-owner.js';
+import { ConnectionsManagerHost } from './connections/host.js';
+import { registerConnectionCommands } from './connections/wiring.js';
+import { ConnectionRemovals } from '../../src/shared/connection-manager/removal.js';
 import { createIpcClient } from '../../src/shared/ipc-client.js';
 import { PATHS } from '../../src/shared/paths.js';
 import { createStatusSurface } from './surfaces/status-surface.js';
@@ -21,7 +27,8 @@ import { activateExtension } from './activation.js';
 import { defaultSubprocessRunner } from './daemon/subprocess.js';
 import { defaultDaemonPaths } from './daemon/paths.js';
 import { createDaemonLifecycleController } from './daemon/controller.js';
-import { registerDaemonCommands } from './daemon/commands.js';
+import { registerDaemonCommands, restartDaemonAndReport } from './daemon/commands.js';
+import type { ModelDefinitions } from './models/definitions.js';
 import { defaultHostFileSystem } from './hosts/fs.js';
 import { createHostRegistry } from './hosts/adapter.js';
 import { HOST_SPECS } from './hosts/specs.js';
@@ -42,14 +49,13 @@ import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
-import { renderRepoConfig, createRepoConfigWriteHandler } from './panels/repo-config.js';
+import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler } from './panels/repo-config.js';
+import { renderModelTiers, createModelTiersWriteHandler } from './panels/model-tiers.js';
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
 import type { PanelHandle } from './panels/types.js';
-import { runSetModelTier } from './models/model-tier-picker.js';
-import type { ModelListResult, ModelProvider } from './models/model-tier-picker.js';
+import { runSetModelTier, type DecisionResult, type ModelCheckResult } from './models/model-tier-picker.js';
 import { runDaemonFreshnessCheck } from './freshness/daemon-freshness.js';
-import { approvalDetails, createApprovalPrompter } from './chat/approval-subscribe.js';
 import { createChatPanelHost, CHAT_PANEL_TITLE, CHAT_VIEW_TYPE, DEFAULT_TURN_LOCK_TIMEOUT_MS, type ChatPanelChannel } from './chat/chat-panel.js';
 import { createFileSessionLocks, defaultIsAlive, defaultProcessStartTime } from './chat/session-lock.js';
 import { chatIsOffered, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, windowKeyOf } from './chat/chat-queue-setup.js';
@@ -102,34 +108,15 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(statusItem);
 
   const client = createIpcClient();
-
-  // A tool call that needs the user's yes (sc4): the daemon pushes it over approval.subscribe and
-  // it is shown as a warning toast with Approve and Decline. Opened at attach, reopened after a restart.
-  const approvals = createApprovalPrompter({
-    client,
-    notifier: {
-      show: (text, request) => {
-        let closed = false;
-        // 'Show details' opens the whole call in an editor (the toast cannot hold it), then asks again.
-        const ask = async (): Promise<'approve' | 'decline' | undefined> => {
-          for (;;) {
-            const c = await vscode.window.showWarningMessage(text, 'Approve', 'Decline', 'Show details');
-            if (closed || c === undefined) return undefined;
-            if (c === 'Show details') {
-              const doc = await vscode.workspace.openTextDocument({ content: approvalDetails(request), language: 'json' });
-              await vscode.window.showTextDocument(doc, { preview: true });
-              continue;
-            }
-            return c === 'Approve' ? 'approve' : 'decline';
-          }
-        };
-        return { choice: ask(), close: () => { closed = true; } };
-      },
-      notice: (text) => { void vscode.window.showInformationMessage(text, {}); },
-    },
-  });
-  approvals.start();
-  context.subscriptions.push({ dispose: () => approvals.stop() });
+  // Connection sessions outlive every manager view; no socket is opened until requested.
+  const connectionsOwner = new ConnectionsWorkbenchOwner();
+  context.subscriptions.push(connectionsOwner);
+  const connectionMutations = createConnectionsMutationController(connectionsOwner);
+  context.subscriptions.push(connectionMutations);
+  const connectionRemovals = new ConnectionRemovals(connectionMutations);
+  context.subscriptions.push(connectionRemovals);
+  const connectionTests = createConnectionsDraftTests(connectionsOwner);
+  context.subscriptions.push(connectionTests);
 
   const commands = createCommandRegistry(
     (command, callback) => vscode.commands.registerCommand(command, callback),
@@ -155,6 +142,7 @@ export function activate(context: vscode.ExtensionContext): void {
     getExtension: (id) => vscode.extensions.getExtension(id) !== undefined,
     appName: vscode.env.appName,
     uriScheme: vscode.env.uriScheme,
+    homePathExists: (relPath) => existsSync(join(homedir(), relPath)),
   };
   const registry = createHostRegistry(HOST_SPECS, {
     env,
@@ -230,7 +218,7 @@ export function activate(context: vscode.ExtensionContext): void {
       setLastSeen: (v) => context.globalState.update(LAST_SEEN_PLUGIN_VERSION_KEY, v),
     },
     // Reload the window when the user accepts the post-update nudge: a reload
-    // respawns the MCP host so claude/codex reconnect to the freshly updated daemon.
+    // respawns the MCP host so claude/codex/vibe reconnect to the freshly updated daemon.
     reloadWindow: () =>
       Promise.resolve(vscode.commands.executeCommand('workbench.action.reloadWindow')).then(() => undefined),
   }));
@@ -267,11 +255,21 @@ export function activate(context: vscode.ExtensionContext): void {
   // client) — constructed once and reused by the ConfigSync engine AND the S007
   // Repo Configuration panel (its writeKeyPath/rawConfig per-repo read/write).
   const configGateway = createDaemonConfigGateway(client);
+  // Offer a daemon restart for changes that apply only after one (s6): the action runs the
+  // restart and reports whether the daemon came back (restartDaemonAndReport).
+  const offerRestart = (message: string): void => {
+    void Promise.resolve(vscode.window.showInformationMessage(message, {}, 'Restart daemon')).then((choice) => {
+      if (choice === 'Restart daemon') void restartDaemonAndReport({ status, controller });
+    });
+  };
   const configSync = createConfigSyncEngine({
     gateway: configGateway,
     settings: configSettings,
     notifier: configNotifier,
     keyMap: MERGED_KEY_MAP,
+    // Native tier edits are checked against the daemon's model definitions (s6).
+    definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+    onRestartRequired: (keys) => offerRestart(`insrc: ${keys.join(', ')} saved — restart the daemon to apply`),
   });
   // Reconcile the native mirror with the daemon on activation (non-blocking).
   void activationSettled.then(() => configSync.pullFromDaemon());
@@ -321,6 +319,31 @@ export function activate(context: vscode.ExtensionContext): void {
     processScan: defaultProcessScan,
     logger: panelLog,
   });
+  const connectionManager = new ConnectionsManagerHost({
+    openedPath: () => {
+      const uri = vscode.window.activeTextEditor?.document.uri;
+      if (uri?.scheme === 'file' && vscode.workspace.getWorkspaceFolder(uri)) return uri.fsPath;
+      return vscode.workspace.workspaceFolders?.find(folder => folder.uri.scheme === 'file')?.uri.fsPath;
+    },
+    pickFile: async () => (await vscode.window.showOpenDialog({ canSelectMany: false, openLabel: 'Use file' }))?.[0]?.fsPath,
+    owner: connectionsOwner, mutations: connectionMutations,
+    tests: connectionTests, removals: connectionRemovals,
+    registeredRoots: async () => (await daemonData.registeredRepos()).map(repo => repo.path),
+    createPanel: () => {
+      const panel = vscode.window.createWebviewPanel('insrc.connections', 'Connections', vscode.ViewColumn.Active,
+        { enableScripts: true, localResourceRoots: [] });
+      panel.iconPath = {
+        light: vscode.Uri.file(join(context.extensionPath, 'media', 'connections-icon.svg')),
+        dark: vscode.Uri.file(join(context.extensionPath, 'media', 'connections-icon-dark.svg')),
+      };
+      return { ...webviewChannel(panel), onVisibility: listener => {
+        panel.onDidChangeViewState(event => listener(event.webviewPanel.visible));
+      } };
+    },
+  });
+  context.subscriptions.push(connectionManager, registerConnectionCommands(
+    (id, run) => vscode.commands.registerCommand(id, run), connectionManager,
+  ));
   // S006 sc9: ONE shared managed-daemon-pid resolver, read from the pidfile. Both
   // the Debug renderer (to exclude the managed daemon from the orphan offer) and
   // the consent-gated kill (defence-in-depth re-exclusion) read through it, so they
@@ -372,6 +395,10 @@ export function activate(context: vscode.ExtensionContext): void {
     managedPid,
     platform: process.platform,
   });
+  // S001 (E202610317b6a5fa9): bridges the gap between panelHost's construction
+  // (here) and registerDeliveryBoard()'s call, ~500 lines below — the closure
+  // below reads this by reference, so it resolves correctly once assigned.
+  let deliveryBoardOpen: (() => void) | undefined;
   const panelHost = createWebviewPanelHost({
     panels: ({ viewType, title }): PanelHandle => {
       // S005: enableScripts:true so the Detailed Status tab strip + Refresh can
@@ -428,8 +455,9 @@ export function activate(context: vscode.ExtensionContext): void {
     repoRenderer: renderRepoConfig({
       registeredRepos: () => daemonData.registeredRepos(),
       rawConfig: () => configGateway.rawConfig(),
-      repoFields: async () => (await configGateway.catalog()).repoFields,
-      repoSettings: (repoPath) => configGateway.repoSettings(repoPath),
+      // Forward the selected repo so mcp.status also probes the repo's own
+      // project-layer .vibe/config.toml for vibe (vibe merges layers by name).
+      mcpRegistration: (repoPath?: string) => daemonData.mcpRegistration(repoPath),
     }),
     // S007: the consent-gated per-repo write sink. Reuses the sc8 writeKeyPath ARRAY
     // form (config.write) — no new daemon capability (k3); gated by sc4 (k4); the
@@ -437,12 +465,52 @@ export function activate(context: vscode.ExtensionContext): void {
     onRepoConfigWrite: createRepoConfigWriteHandler({
       consent,
       writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
-      writeRepoSetting: (repoPath, key, value) => configGateway.writeRepoSetting(repoPath, key, value),
       registeredRepos: () => daemonData.registeredRepos(),
       status,
       logger: panelLog,
       refresh: () => panelHost.openRepoConfiguration(),
+      offerRestart,
     }),
+    // Post-setup provider registration: the repo form's Providers section posts
+    // the checked (unregistered) providers; the sink consent-gates and calls the
+    // daemon's mcp.register (steering injection + per-client MCP registration).
+    onRepoRegisterProviders: createRepoRegisterProvidersHandler({
+      consent,
+      status,
+      logger: panelLog,
+      registeredRepos: () => daemonData.registeredRepos(),
+      registerProviders: (repoPath, steering) => client.rpc('mcp.register', { path: repoPath, steering }),
+      refresh: () => panelHost.openRepoConfiguration(),
+    }),
+    // Story S001: the Model Tiers panel body — one card per tier (core/mid/cheap)
+    // from the daemon's model catalog + the global insrc.models.* raw config.
+    modelTiersRenderer: renderModelTiers({
+      modelDefinitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+      rawConfig: () => configGateway.rawConfig(),
+    }),
+    // Story S001: the Model Tiers write sink. Reuses the sc8 writeKeyPath ARRAY
+    // form (config.write) — no new daemon capability, no per-repo consent (tiers
+    // and the core floor are global, k6); the panel re-renders from fresh config.
+    onModelTiersWrite: createModelTiersWriteHandler({
+      writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
+      logger: panelLog,
+      refresh: () => panelHost.openModelTiers(),
+    }),
+    // Story S001 (E202610302ab0484d): the Manage Connections menu entry delegates
+    // to the already-complete connections panel (connectionManager.open(), the
+    // same method registerConnectionCommands binds the 5 insrc.connections.*
+    // commands to). .catch is defense-in-depth: open() is async and not proven
+    // never to reject (see the LLD's errorPaths).
+    onOpenConnections: () => {
+      connectionManager.open().catch((err: unknown) => {
+        panelLog.warn(`opening Connections failed — ${err instanceof Error ? err.message : String(err)}`);
+      });
+    },
+    // S001 (E202610317b6a5fa9): deliveryBoardOpen is assigned once
+    // registerDeliveryBoard() runs below; this closure reads it by reference.
+    onOpenDeliveryBoard: () => {
+      deliveryBoardOpen?.();
+    },
   });
   // The status-bar item's click target — set on the raw StatusBarItem (the sc2
   // StatusBarHandle carries no `command` field and is left untouched).
@@ -454,6 +522,9 @@ export function activate(context: vscode.ExtensionContext): void {
   commands.register({ id: 'insrc.status.repoConfig', title: 'Open Repo Configuration' }, async () => {
     panelHost.openRepoConfiguration();
   });
+  commands.register({ id: 'insrc.status.modelTiers', title: 'Open Model Tiers' }, async () => {
+    panelHost.openModelTiers();
+  });
 
   // S003-model-picker sc2 consumer: the 'insrc: Set model tier' guided command. A
   // DUMB dropdown over the shipped sc2 list-models IPC (client.rpc, no new daemon
@@ -464,16 +535,20 @@ export function activate(context: vscode.ExtensionContext): void {
   // showInformationMessage. All flow/k7 logic is in the VS-Code-free module.
   commands.register({ id: 'insrc.models.setTier', title: 'insrc: Set model tier' }, () =>
     runSetModelTier({
-      listModels: (provider: ModelProvider) =>
-        client.rpc<ModelListResult>('providers.listModels', { provider }),
-      catalog: () => configGateway.catalog(),
+      definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+      rawConfig: () => configGateway.rawConfig(),
       writeKeyPath: (segments, value) => configGateway.writeKeyPath(segments, value),
+      restartDaemon: () => restartDaemonAndReport({ status, controller }),
       pick: (items, opts) => Promise.resolve(vscode.window.showQuickPick(items, opts)),
-      notify: (message) => {
-        // The bundled vscode.d.ts stub's showInformationMessage requires the
-        // options arg; {} (all fields optional) satisfies it with no buttons.
-        void vscode.window.showInformationMessage(message, {});
-      },
+      // The bundled vscode.d.ts stub's showInformationMessage requires the options
+      // arg; {} (all fields optional) satisfies it, followed by any action buttons.
+      notify: (message, ...actions) => Promise.resolve(vscode.window.showInformationMessage(message, {}, ...actions)),
+      // The unlisted-model check and decision (models.check / approve / reject, s6).
+      check: (params) => client.rpc<ModelCheckResult | { error: string }>('models.check', params),
+      approve: (params) => client.rpc<DecisionResult>('models.approve', params),
+      reject: (params) => client.rpc<DecisionResult>('models.reject', params),
+      input: (opts) => Promise.resolve(vscode.window.showInputBox(opts)),
+      pickMany: (items, opts) => Promise.resolve(vscode.window.showQuickPick(items, { ...opts, canPickMany: true })),
     }),
   );
 
@@ -481,7 +556,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // (default false). When enabled, wire createChatPanelHost with the real injected
   // vscode channel seams (mirroring the status panel at :305), the memento-backed
   // sc4 ChatSessionStore (chat history extension-local, k3), and the sc5
-  // ProviderRegistry over the installed claude/codex CLIs. The chat command is
+  // ProviderRegistry over the installed claude/codex/vibe CLIs. The chat command is
   // registered ONLY when the flag is on, so the surface is invisible until opted in.
   const chatEnabled = vscode.workspace.getConfiguration().get<boolean>('insrc.chat.enabled') === true;
   // E2 s4: the docs-review pane, when the chat gate creates one, is also where the
@@ -734,6 +809,9 @@ export function activate(context: vscode.ExtensionContext): void {
       providers: chatProviders,
       store: chatStore,
       cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
+      // Run-config popup: the daemon's model definitions (per-family models + efforts),
+      // read once at host start; the panel re-renders when they land.
+      definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
       // LLM chat titling: a one-shot over the same CLI (no resume; timeout-bounded) names the
       // chat after its first turn, replacing the truncated-prompt fallback.
       deriveTitle: (input) => deriveChatTitle(chatProviders, input),
@@ -825,7 +903,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   // E2 s1: the delivery board — a read-only editor tab over the daemon's workflow.delivery
   // snapshot for the first workspace folder. Not gated on insrc.chat.enabled.
-  registerDeliveryBoard({
+  const deliveryBoard = registerDeliveryBoard({
     commands,
     subscriptions: context.subscriptions,
     createWebviewPanel: (viewType, title) =>
@@ -839,6 +917,9 @@ export function activate(context: vscode.ExtensionContext): void {
     logger: panelLog,
     reviewPane: docsReviewHost,
   });
+  // S001 (E202610317b6a5fa9): feeds the status-bar menu's Delivery Board entry,
+  // wired above at panelHost's construction (onOpenDeliveryBoard).
+  deliveryBoardOpen = deliveryBoard.open;
 
   // S005 sc-capstone: the per-workspace one-time onboarding-completed flag over
   // workspaceState (distinct key from the S004 register-dismissed flag).

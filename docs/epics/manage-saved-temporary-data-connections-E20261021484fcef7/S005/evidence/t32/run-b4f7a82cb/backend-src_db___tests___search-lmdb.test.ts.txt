@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: findCallees returns 1-hop CALLS successors
+ok 1 - findCallees returns 1-hop CALLS successors
+  ---
+  duration_ms: 237.984375
+  type: 'test'
+  ...
+# Subtest: findCallers returns 1-hop CALLS predecessors
+ok 2 - findCallers returns 1-hop CALLS predecessors
+  ---
+  duration_ms: 248.954542
+  type: 'test'
+  ...
+# Subtest: findCallees with no outgoing CALLS returns []
+ok 3 - findCallees with no outgoing CALLS returns []
+  ---
+  duration_ms: 219.615084
+  type: 'test'
+  ...
+# Subtest: findCallers with no incoming CALLS returns []
+ok 4 - findCallers with no incoming CALLS returns []
+  ---
+  duration_ms: 188.807083
+  type: 'test'
+  ...
+# Subtest: findCallees on unknown entity returns []
+ok 5 - findCallees on unknown entity returns []
+  ---
+  duration_ms: 202.88275
+  type: 'test'
+  ...
+# Subtest: findCallees ignores non-CALLS edges
+ok 6 - findCallees ignores non-CALLS edges
+  ---
+  duration_ms: 212.360375
+  type: 'test'
+  ...
+# Subtest: findDefinedIn returns DEFINES successors
+ok 7 - findDefinedIn returns DEFINES successors
+  ---
+  duration_ms: 222.004292
+  type: 'test'
+  ...
+# Subtest: findDefinedIn with mixed kinds only returns DEFINES targets
+ok 8 - findDefinedIn with mixed kinds only returns DEFINES targets
+  ---
+  duration_ms: 246.309208
+  type: 'test'
+  ...
+# Subtest: findImports returns IMPORTS successors
+ok 9 - findImports returns IMPORTS successors
+  ---
+  duration_ms: 288.539916
+  type: 'test'
+  ...
+# Subtest: findImports on file with no IMPORTS returns []
+ok 10 - findImports on file with no IMPORTS returns []
+  ---
+  duration_ms: 298.197209
+  type: 'test'
+  ...
+# Subtest: resolveClosure includes the root even with no DEPENDS_ON edges
+ok 11 - resolveClosure includes the root even with no DEPENDS_ON edges
+  ---
+  duration_ms: 290.600166
+  type: 'test'
+  ...
+# Subtest: resolveClosure on unknown repo path returns just the path
+ok 12 - resolveClosure on unknown repo path returns just the path
+  ---
+  duration_ms: 291.796375
+  type: 'test'
+  ...
+# Subtest: resolveClosure walks transitive DEPENDS_ON across repos
+ok 13 - resolveClosure walks transitive DEPENDS_ON across repos
+  ---
+  duration_ms: 291.753125
+  type: 'test'
+  ...
+# Subtest: resolveClosure handles cycles without infinite loop
+ok 14 - resolveClosure handles cycles without infinite loop
+  ---
+  duration_ms: 295.141417
+  type: 'test'
+  ...
+# Subtest: resolveClosure filters out non-repo reachable entities
+ok 15 - resolveClosure filters out non-repo reachable entities
+  ---
+  duration_ms: 280.184667
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4187.128542

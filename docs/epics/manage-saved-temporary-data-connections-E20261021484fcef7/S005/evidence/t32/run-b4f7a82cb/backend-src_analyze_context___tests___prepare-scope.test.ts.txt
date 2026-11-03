@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: runShaper refuses a pairing the table does not allow before resolving the scope
+ok 1 - runShaper refuses a pairing the table does not allow before resolving the scope
+  ---
+  duration_ms: 2.476958
+  type: 'test'
+  ...
+# Subtest: runShaper accepts every pairing in the corrected table
+ok 2 - runShaper accepts every pairing in the corrected table
+  ---
+  duration_ms: 1.233292
+  type: 'test'
+  ...
+# Subtest: the pairing is checked for run mode only: classification and task inputs are not refused
+ok 3 - the pairing is checked for run mode only: classification and task inputs are not refused
+  ---
+  duration_ms: 0.160208
+  type: 'test'
+  ...
+# Subtest: resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched
+ok 4 - resolveScopeForTarget: every pairing of the table resolves to what resolveScope gives; every other pairing is refused before a reader is touched
+  ---
+  duration_ms: 1.735625
+  type: 'test'
+  ...
+# Subtest: prepareScope makes no pairing check outside run mode: a refused pairing resolves to what resolveScope gives
+ok 5 - prepareScope makes no pairing check outside run mode: a refused pairing resolves to what resolveScope gives
+  ---
+  duration_ms: 0.1655
+  type: 'test'
+  ...
+# Subtest: generic and classification-mode requests on a symbol in an unindexed repo fail as not indexed; on a module they proceed
+ok 6 - generic and classification-mode requests on a symbol in an unindexed repo fail as not indexed; on a module they proceed
+  ---
+  duration_ms: 0.291041
+  type: 'test'
+  ...
+# Subtest: tool loop's path for classification and task modes is the resolved lookupPath
+ok 7 - tool loop's path for classification and task modes is the resolved lookupPath
+  ---
+  duration_ms: 0.49625
+  type: 'test'
+  ...
+# Subtest: inputs that carry neither a scope nor an intent fail as invalid input, not as a bare TypeError
+ok 8 - inputs that carry neither a scope nor an intent fail as invalid input, not as a bare TypeError
+  ---
+  duration_ms: 0.091584
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 597.269708

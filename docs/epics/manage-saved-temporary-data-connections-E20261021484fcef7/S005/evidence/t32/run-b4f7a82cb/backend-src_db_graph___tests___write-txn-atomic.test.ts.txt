@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: a withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen
+ok 1 - a withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen
+  ---
+  duration_ms: 251.503709
+  type: 'test'
+  ...
+# Subtest: of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept
+ok 2 - of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept
+  ---
+  duration_ms: 267.421209
+  type: 'test'
+  ...
+# Subtest: an async callback is refused with "withWriteTxn callbacks must be synchronous" and keeps nothing; the type rejects it
+ok 3 - an async callback is refused with "withWriteTxn callbacks must be synchronous" and keeps nothing; the type rejects it
+  ---
+  duration_ms: 179.225709
+  type: 'test'
+  ...
+# Subtest: a refused async callback that rejects later raises no unhandled rejection
+ok 4 - a refused async callback that rejects later raises no unhandled rejection
+  ---
+  duration_ms: 247.772708
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1318.7205

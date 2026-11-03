@@ -13,7 +13,9 @@ export type HostDetection =
   /** Present iff an extension with `extensionId` is installed+enabled (HostEnv.getExtension). */
   | { readonly kind: 'by-extension-id'; readonly extensionId: string }
   /** Present iff the running editor matches `appName` and/or `uriScheme` (HostEnv). */
-  | { readonly kind: 'by-editor-env'; readonly appName?: string; readonly uriScheme?: string };
+  | { readonly kind: 'by-editor-env'; readonly appName?: string; readonly uriScheme?: string }
+  /** Present iff the home-relative path exists (HostEnv.homePathExists) — e.g. a CLI agent's `~/.vibe` home. */
+  | { readonly kind: 'by-home-path'; readonly relPath: string };
 
 /** A supported AI host's identity + how it is detected (sc5). */
 export interface HostDescriptor {
@@ -33,6 +35,8 @@ export interface HostEnv {
   readonly appName: string;
   /** The running editor's uri scheme (VS Code's `env.uriScheme`, e.g. 'vscode'). */
   readonly uriScheme: string;
+  /** Whether the home-relative `relPath` exists (e.g. '.vibe') — detects a CLI agent installed at its default home. */
+  homePathExists(relPath: string): boolean;
 }
 
 /**
@@ -46,6 +50,9 @@ export interface HostSpec {
   detect(env: HostEnv): boolean;
   /** The host's own config file locations (private per-host, isolated for one-line path fixes). */
   resolveConfig(): { readonly mcpConfigPath: string; readonly steeringPath: string };
+  /** The mcp config file format: 'json' (mcpServers key-merge, the default) or 'toml'
+   *  ([[mcp_servers]] array-of-tables, e.g. vibe's ~/.vibe/config.toml). */
+  readonly mcpFormat?: 'json' | 'toml' | undefined;
 }
 
 /** sc5: an abstraction over one supported AI host — detection + reversible wire/unwire. */

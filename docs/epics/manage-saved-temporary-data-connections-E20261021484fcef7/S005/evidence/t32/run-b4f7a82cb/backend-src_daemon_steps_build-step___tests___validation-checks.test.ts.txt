@@ -1,0 +1,198 @@
+TAP version 13
+# fatal: bad object ffffffffffffffffffffffffffffffffffffffff
+# fatal: bad object 0000000000000000000000000000000000000000
+# Subtest: resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved
+ok 1 - resolveTaskTestFiles maps plan test names to tracked __tests__ files, de-duplicates, and lists names with no match as unresolved
+  ---
+  duration_ms: 71.013917
+  type: 'test'
+  ...
+# Subtest: a base name under two __tests__ directories resolves to both files
+ok 2 - a base name under two __tests__ directories resolves to both files
+  ---
+  duration_ms: 61.468
+  type: 'test'
+  ...
+# Subtest: the plan-driven, small and trivial routes each build the expected check plan
+ok 3 - the plan-driven, small and trivial routes each build the expected check plan
+  ---
+  duration_ms: 151.891958
+  type: 'test'
+  ...
+# Subtest: a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)
+ok 4 - a trivial build with a range base runs the test files touched across base..HEAD, not only the HEAD commit's (ISSUE-91640defac1b5816)
+  ---
+  duration_ms: 190.306834
+  type: 'test'
+  ...
+# Subtest: a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run
+ok 5 - a test name whose only *.test.ts token is not a leading prefix is unresolved, and the file it mentions is not run
+  ---
+  duration_ms: 60.403583
+  type: 'test'
+  ...
+# Subtest: a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none
+ok 6 - a plan is given the other TypeScript projects that own a file the build changed since its base, or a test file; a build inside the root project names none
+  ---
+  duration_ms: 543.653
+  type: 'test'
+  ...
+# Subtest: the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept
+ok 7 - the typecheck is run in the root and in each named project; it is clean only when all are, and each command and output is kept
+  ---
+  duration_ms: 512.568166
+  type: 'test'
+  ...
+# Subtest: a passing and a failing command give ok true and ok false with their exit codes and output tails
+ok 8 - a passing and a failing command give ok true and ok false with their exit codes and output tails
+  ---
+  duration_ms: 136.324625
+  type: 'test'
+  ...
+# Subtest: a command past its limit is reported timedOut and its whole process group, grandchild included, is gone
+ok 9 - a command past its limit is reported timedOut and its whole process group, grandchild included, is gone
+  ---
+  duration_ms: 1506.332833
+  type: 'test'
+  ...
+# Subtest: a test file that keeps its process alive after its tests pass still finishes under --test-force-exit
+ok 10 - a test file that keeps its process alive after its tests pass still finishes under --test-force-exit
+  ---
+  duration_ms: 163.140958
+  type: 'test'
+  ...
+# Subtest: an unresolved test name makes tests fail with a note naming it
+ok 11 - an unresolved test name makes tests fail with a note naming it
+  ---
+  duration_ms: 346.951875
+  type: 'test'
+  ...
+# Subtest: a trivial build that deletes a test file does not ask to run it
+ok 12 - a trivial build that deletes a test file does not ask to run it
+  ---
+  duration_ms: 127.403166
+  type: 'test'
+  ...
+# Subtest: with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'
+ok 13 - with no mapping, planTaskCheckPlan and smallStandaloneCheckPlan return the same testFiles, unresolvedTests and noTests as before, and namedTests marks each name 'prefix' or 'none'
+  ---
+  duration_ms: 134.467542
+  type: 'test'
+  ...
+# Subtest: with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)
+ok 14 - with a mapping, a name with no prefix is no longer unresolved, its files are in testFiles once, and a name with both a mapping and a prefix uses the mapping (mutation: keep the prefix's files as well)
+  ---
+  duration_ms: 62.629583
+  type: 'test'
+  ...
+# Subtest: smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail
+ok 15 - smallStandaloneCheckPlan with a mapping and no prefixed subject runs the mapped files and is not 'the LLD names no test file'; an unmapped prose subject is listed as not mapped and does not fail
+  ---
+  duration_ms: 63.708083
+  type: 'test'
+  ...
+# Subtest: runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)
+ok 16 - runValidationChecks runs each file in its own process, in order, with the TAP reporter, and returns per file its exit code and titles (mutation: run all files in one command)
+  ---
+  duration_ms: 255.17075
+  type: 'test'
+  ...
+# Subtest: a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)
+ok 17 - a mapped case that passes, one that fails, one that is skipped and one whose title is not in the file get those four results, and the check is not ok when any is fail, skipped or not found (mutations: count not found as pass; count skipped as pass)
+  ---
+  duration_ms: 760.412167
+  type: 'test'
+  ...
+# Subtest: a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles
+ok 18 - a file that exits non-zero while its mapped cases pass fails the check and lists the other failing titles
+  ---
+  duration_ms: 147.284541
+  type: 'test'
+  ...
+# Subtest: a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok
+ok 19 - a file that times out, and a file not started because the time limit was used up, are recorded with that note, their cases are not found, and the check is not ok
+  ---
+  duration_ms: 1561.919958
+  type: 'test'
+  ...
+# Subtest: a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note
+ok 20 - a run's whole output is written to a file and its path returned, with nothing cut; when that file cannot be written the results stand and the entry carries a note
+  ---
+  duration_ms: 305.749625
+  type: 'test'
+  ...
+# Subtest: a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)
+ok 21 - a reported pass on a live test runs nothing and leaves the check's result to the other tests; a reported fail makes the check not ok; a Task whose tests are all reported as pass runs no file and passes with the note, while a Task with no file and an unreported name still fails (mutation: fail every run that has no file)
+  ---
+  duration_ms: 749.321542
+  type: 'test'
+  ...
+# Subtest: trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file
+ok 22 - trivialCheckPlan marks each touched file 'touched' and the result lists every title of each file
+  ---
+  duration_ms: 400.556208
+  type: 'test'
+  ...
+# Subtest: a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it
+ok 23 - a file whose output is not TAP fails the check even when it exits with 0 and no case is named for it
+  ---
+  duration_ms: 186.222542
+  type: 'test'
+  ...
+# Subtest: a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments
+ok 24 - a line a test prints that looks like a result line, or like the start of a YAML block, is not read as one: the runner reports a test's output as comments
+  ---
+  duration_ms: 175.63175
+  type: 'test'
+  ...
+# Subtest: the whole output is still written after the output directory has been removed, and files older than the retention are pruned
+ok 25 - the whole output is still written after the output directory has been removed, and files older than the retention are pruned
+  ---
+  duration_ms: 501.772125
+  type: 'test'
+  ...
+# Subtest: ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)
+ok 26 - ISSUE-7ba8cf15: a file with many tests is reported in full under the gate's runner, every case found (mutation: run the file under --test, whose force-exited child cuts the report short)
+  ---
+  duration_ms: 615.157209
+  type: 'test'
+  ...
+# Subtest: ISSUE-7ba8cf15: in its own process a failing test still fails the file
+ok 27 - ISSUE-7ba8cf15: in its own process a failing test still fails the file
+  ---
+  duration_ms: 187.619625
+  type: 'test'
+  ...
+# Subtest: ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws
+ok 28 - ISSUE-7ba8cf15: when no report file can be made the file is not run, its entry says why and the check fails, and nothing throws
+  ---
+  duration_ms: 60.916083
+  type: 'test'
+  ...
+# Subtest: with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files
+ok 29 - with a storyKey, typecheckProjects holds the Story's projects and its test files' projects, and not a project that owns only unrelated uncommitted or untracked files
+  ---
+  duration_ms: 245.710417
+  type: 'test'
+  ...
+# Subtest: with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests
+ok 30 - with a storyKey, the trivial plan runs only the Story's test files, and with no base fails the listing instead of running the HEAD commit's tests
+  ---
+  duration_ms: 153.801666
+  type: 'test'
+  ...
+# Subtest: with a storyKey, a trivial build that deletes a test file does not ask to run it
+ok 31 - with a storyKey, a trivial build that deletes a test file does not ask to run it
+  ---
+  duration_ms: 259.162167
+  type: 'test'
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10966.596

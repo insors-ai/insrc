@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.ModelDefinitionsGatewayTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.009">
+  <properties/>
+  <testcase name="modelDefinitions, checkModel and decideModel parse their answers and classify failures()" classname="ai.insors.insrc.jetbrains.daemon.ModelDefinitionsGatewayTest" time="0.008"/>
+  <testcase name="DaemonGatewayService forwards modelDefinitions, checkModel and decideModel to its delegate()" classname="ai.insors.insrc.jetbrains.daemon.ModelDefinitionsGatewayTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

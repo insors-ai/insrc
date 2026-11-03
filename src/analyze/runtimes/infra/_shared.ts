@@ -12,8 +12,11 @@
  */
 
 import { readdir } from 'node:fs/promises';
-import { join, relative, sep } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 
+import { excludesDirectory } from '../../../indexer/file-filter.js';
+import { runFileFilter } from '../../context/run-file-filter.js';
 import type { TemplateExecuteArgs } from '../../executor/types.js';
 import { buildCompleteness } from '../../completeness.js';
 import type { Completeness, ReachedLimit, SkippedItem } from '../../completeness.js';
@@ -50,29 +53,6 @@ export function readScopeRef(args: TemplateExecuteArgs, templateLabel: string): 
 // Filesystem walking
 // ---------------------------------------------------------------------------
 
-/** Directory names that are NEVER walked into -- saves a ton of work on
- *  monorepos / projects with deep node_modules / .git histories. */
-const SKIP_DIRS = new Set([
-	'.git',
-	'node_modules',
-	'.next',
-	'.svelte-kit',
-	'.nuxt',
-	'.cache',
-	'dist',
-	'build',
-	'out',
-	'target',
-	'__pycache__',
-	'.venv',
-	'venv',
-	'.tox',
-	'.idea',
-	'.vscode',
-	'.gradle',
-	'.terraform',  // terraform's local plugin/state cache; downloaded, not user-authored
-]);
-
 /** Hard cap on files inspected per runtime call. Plans never need
  *  the entire filesystem; this is a backstop against runaway walks. */
 export const DEFAULT_FILE_CAP = 5000;
@@ -105,7 +85,7 @@ export function fileWalkCompleteness(
 		limited,
 		...(extra.skipped !== undefined ? { skipped: extra.skipped } : {}),
 		basis:     'filesystem',
-		basisNote: `Not walked, by rule: symbolic links, and directories named ${[...SKIP_DIRS].join(', ')}.`,
+		basisNote: `Not walked, by rule: symbolic links, and anything the repository's ignore rules exclude (its .gitignore files, the clone's exclude file and the global gitignore; a file git tracks is always walked), generated or minified files, and the .git and .insrc directories.`,
 	});
 }
 
@@ -120,10 +100,21 @@ export interface WalkedFile {
 	readonly relPath: string;
 }
 
+/** The git repository `dir` lies in (the nearest ancestor holding `.git`),
+ *  so a walk of a directory inside a repository applies the repository's own
+ *  ignore rules and tracked files; `dir` itself when no ancestor is one. */
+function enclosingRepo(dir: string): string {
+	for (let d = resolve(dir); ; d = dirname(d)) {
+		if (existsSync(join(d, '.git'))) return d;
+		if (dirname(d) === d) return resolve(dir);
+	}
+}
+
 /**
  * Recursively walk `root`, yielding every regular file (in
  * deterministic depth-first, name-sorted order). Symlinks are NOT
- * followed. SKIP_DIRS are excluded.
+ * followed. What the repository's FileFilter excludes is not walked
+ * (Epic c2ba6fa6 s6): the same rule the indexer uses.
  *
  * Stops + flags `truncated=true` after `cap` files; a null cap walks to the
  * end, with `truncated` false. A directory below the
@@ -139,6 +130,7 @@ export async function walkFiles(
 	const out: WalkedFile[] = [];
 	let truncated = false;
 	const unreadable: SkippedItem[] = [];
+	const filter = runFileFilter(enclosingRepo(root));
 
 	const visit = async (dir: string): Promise<void> => {
 		if (out.length >= cap) { truncated = true; return; }
@@ -164,9 +156,10 @@ export async function walkFiles(
 			if (ent.isSymbolicLink()) continue;
 			const abs = join(dir, ent.name);
 			if (ent.isDirectory()) {
-				if (SKIP_DIRS.has(ent.name)) continue;
+				if (excludesDirectory(filter, abs)) continue;
 				await visit(abs);
 			} else if (ent.isFile()) {
+				if (!filter.includes(abs)) continue;
 				const rel = relative(root, abs).split(sep).join('/');
 				out.push({ absPath: abs, relPath: rel });
 			}

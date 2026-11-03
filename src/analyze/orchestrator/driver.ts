@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -27,7 +28,7 @@
  *     the RPC layer is one wrapper call away)
  */
 
-import { ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { runWithConnectionExecution, ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { classify } from '../classifier/index.js';
@@ -82,7 +83,7 @@ import type { RequestMeasure, UnsizedIntent } from '../measure.js';
 import { liveRunCount, trackRunLive } from './live-runs.js';
 import { createRunRecordPort, assertRunRecordPort, assertRunRecordSource } from './persistence.js';
 import type { RunRecordPort } from './persistence.js';
-import { beginSessionReuse, assertSessionReuseNow } from '../session-reuse.js';
+import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type {
 	AnalyzeRunEvent,
@@ -134,8 +135,7 @@ export async function runAnalyze(
 		if (opts.onEvent === undefined) return;
 		try { opts.onEvent(event); }
 		catch (err) {
-			log.warn({ runId, eventType: event.type, err: execution?.mode === 'session-memory' ? 'Observer failed.' : (err as Error).message },
-				'runAnalyze: onEvent callback threw; ignoring');
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, eventType: event.type, err: execution?.mode === 'session-memory' ? 'Observer failed.' : (err as Error).message }, 'runAnalyze: onEvent callback threw; ignoring']);
 		}
 	};
 
@@ -158,7 +158,7 @@ export async function runAnalyze(
 	const records = createRunRecordPort(runId, execution);
 	const releaseLive = trackRunLive(runId, execution);
 	try {
-		const result = await runStages(args, opts, { start, emit, emitDoneAndReturn, reached, records, execution, log });
+		const result = await runWithConnectionExecution(execution, () => runStages(args, opts, { start, emit, emitDoneAndReturn, reached, records, execution, log }));
 		assertSessionReuseNow(execution);
 		return result;
 	} catch (err) {
@@ -168,7 +168,7 @@ export async function runAnalyze(
 		const failure: RunFailure = execution?.mode === 'session-memory'
 			? { code: err instanceof ConnectionExecutionError ? err.code === 'upgrade-required' ? 'unsupported-temporary' : err.code : 'internal-error', message: 'Analysis is unavailable.' }
 			: { code: 'internal-error', message: err instanceof Error ? err.message : String(err) };
-		log.error({ runId, stage: reached.stage, err: failure.message }, 'runAnalyze: uncaught error; the run is recorded as failed');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('error', () => [{ runId, stage: reached.stage, err: failure.message }, 'runAnalyze: uncaught error; the run is recorded as failed']);
 		try {
 			// The record is marked failed only when it is this run's to mark:
 			//   - a record that already says how a run ended ('ok' or 'failed') is
@@ -177,9 +177,9 @@ export async function runAnalyze(
 			//     and the run still going writes it, so this run leaves it alone.
 			const onDisk = records.read();
 			if (onDisk !== null && onDisk.status !== 'in-progress') {
-				log.warn({ runId, status: onDisk.status, stage: onDisk.stage }, 'runAnalyze: the run record already says how the run ended; it is left as it is');
+				captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, status: onDisk.status, stage: onDisk.stage }, 'runAnalyze: the run record already says how the run ended; it is left as it is']);
 			} else if (execution?.mode !== 'session-memory' && liveRunCount(runId, execution) > 1) {
-				log.warn({ runId }, 'runAnalyze: another run is going under this id; the shared run record is left to it');
+				captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId }, 'runAnalyze: another run is going under this id; the shared run record is left to it']);
 			} else {
 				const base: RunRecord = reached.record ?? {
 					runId, createdAt: nowIso(), updatedAt: nowIso(),
@@ -194,7 +194,7 @@ export async function runAnalyze(
 		} catch (writeErr) {
 			// The disk may be the very cause of the first error. The record is left
 			// as it was; the run is no longer live, so a reader corrects it.
-			log.error({ runId, err: execution?.mode === 'session-memory' ? 'Repair unavailable.' : (writeErr as Error).message }, 'runAnalyze: the failed run record could not be written');
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('error', () => [{ runId, err: execution?.mode === 'session-memory' ? 'Repair unavailable.' : (writeErr as Error).message }, 'runAnalyze: the failed run record could not be written']);
 		}
 		if (execution?.mode === 'session-memory') {
 			const result = failResult(reached.stage, failure, undefined, start, runId);
@@ -261,7 +261,7 @@ async function runStages(
 		&& cached.intent !== undefined
 		&& cached.finalReport !== undefined
 	) {
-		log.info({ runId }, 'runAnalyze: resume cache hit; returning persisted RunAnalyzeOk');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId }, 'runAnalyze: resume cache hit; returning persisted RunAnalyzeOk']);
 		return emitDoneAndReturn(resumedResult(cached, cached.intent));
 	}
 
@@ -293,7 +293,7 @@ async function runStages(
 			...(intent !== undefined ? { intent } : {}),
 		});
 		saveRunRecord(record);
-		log.info({ runId, stage }, 'runAnalyze: aborted via signal');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId, stage }, 'runAnalyze: aborted via signal']);
 		return failResult(stage, failure, intent, start, runId);
 	};
 
@@ -317,14 +317,14 @@ async function runStages(
 		if (!hinted.ok) {
 			record = patch(record, { stage: 'classify', status: 'failed', error: hinted.failure });
 			saveRunRecord(record);
-			log.warn({ runId, code: hinted.failure.code }, 'runAnalyze: hinted request failed validation');
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, code: hinted.failure.code }, 'runAnalyze: hinted request failed validation']);
 			return emitDoneAndReturn(failResult('classify', hinted.failure, undefined, start, runId));
 		}
 		// Skip the full classifier -- caller (chat panel slash command)
 		// has explicitly picked the target. Saves the ~3-min classifier
 		// round-trip.
 		unsized = { ...hinted.base, reasoning: 'target hinted via slash command (classifier skipped)' };
-		log.info({ runId, target: unsized.target }, 'runAnalyze: classifier skipped via targetHint');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId, target: unsized.target }, 'runAnalyze: classifier skipped via targetHint']);
 	} else {
 		try {
 			unsized = await classifyImpl({
@@ -337,7 +337,7 @@ async function runStages(
 			const failure = execution?.mode === 'session-memory' ? { code: 'internal-error' as const, message: 'Classification failed.' } : classifyClassifierError(err);
 			record = patch(record, { stage: 'classify', status: 'failed', error: failure });
 			saveRunRecord(record);
-			log.warn({ runId, code: failure.code }, 'runAnalyze: classify failed');
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, code: failure.code }, 'runAnalyze: classify failed']);
 			return emitDoneAndReturn(failResult('classify', failure, undefined, start, runId));
 		}
 	}
@@ -364,7 +364,7 @@ async function runStages(
 			const failure: RunFailure = scoped;
 			record = patch(record, { stage: 'classify', status: 'failed', error: failure });
 			saveRunRecord(record);
-			log.warn({ runId, code: failure.code }, "runAnalyze: the run's scope was refused before it was measured");
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, code: failure.code }, "runAnalyze: the run's scope was refused before it was measured"]);
 			return emitDoneAndReturn(failResult('classify', failure, undefined, start, runId));
 		}
 	}
@@ -384,14 +384,11 @@ async function runStages(
 	const measure = await measureRequestScopeImpl(unsized.scopeRef, unsized.target, args.scopeHint, { signal: opts.signal, connectionExecution: execution });
 	assertSessionReuseNow(execution);
 	const intent: ClassifiedIntent = { ...unsized, scope: measure.size };
-	log.info(
-		{ runId, size: measure.size, determined: measure.determined, files: measure.files, items: measure.items, sizeHint: measure.sizeHint, note: measure.note },
-		'runAnalyze: the request was measured',
-	);
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId, size: measure.size, determined: measure.determined, files: measure.files, items: measure.items, sizeHint: measure.sizeHint, note: measure.note }, 'runAnalyze: the request was measured']);
 	emit({ type: 'classified', intent, measure });
 	record = patch(record, { stage: 'plan', intent, measure });
 	saveRunRecord(record);
-	log.info({ runId, target: intent.target, scope: intent.scope }, 'runAnalyze: classified');
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId, target: intent.target, scope: intent.scope }, 'runAnalyze: classified']);
 
 	// ----- (2) Build run-level context bundle + (3) plan -----
 	{
@@ -430,7 +427,7 @@ async function runStages(
 		const failure = execution?.mode === 'session-memory' ? { code: 'internal-error' as const, message: 'Context build failed.' } : classifyShaperError(err);
 		record = patch(record, { stage: 'plan', status: 'failed', error: failure });
 		saveRunRecord(record);
-		log.warn({ runId, code: failure.code }, 'runAnalyze: bundle build failed');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, code: failure.code }, 'runAnalyze: bundle build failed']);
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
 	}
 	emit({
@@ -466,9 +463,10 @@ async function runStages(
 		const failure = execution?.mode === 'session-memory' ? { code: 'internal-error' as const, message: 'Planning failed.' } : classifyPlannerError(err);
 		record = patch(record, { stage: 'plan', status: 'failed', error: failure });
 		saveRunRecord(record);
-		log.warn({ runId, code: failure.code }, 'runAnalyze: plan build failed');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, code: failure.code }, 'runAnalyze: plan build failed']);
 		return emitDoneAndReturn(failResult('plan', failure, intent, start, runId));
 	}
+	await rememberSessionContinuation(tree, execution);
 	assertSessionReuseNow(execution);
 	emit({
 		type: 'plan-accepted',
@@ -516,6 +514,8 @@ async function runStages(
 		},
 	});
 	assertSessionReuseNow(execution);
+	await rememberSessionContinuation(execResult, execution);
+	assertSessionReuseNow(execution);
 	const rootPlan = execResult.root;
 
 	if (rootPlan.finalReport === undefined) {
@@ -535,7 +535,7 @@ async function runStages(
 			tasksFailed: rootPlan.tasksFailed,
 		});
 		saveRunRecord(record);
-		log.warn({ runId, tasksFailed: rootPlan.tasksFailed.length }, 'runAnalyze: aggregator failed');
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId, tasksFailed: rootPlan.tasksFailed.length }, 'runAnalyze: aggregator failed']);
 		return emitDoneAndReturn(failResult('execute', failure, intent, start, runId));
 	}
 
@@ -653,6 +653,8 @@ export function completeRun(args: {
 	assertSessionReuseNow(execution);
 	if (execution?.mode === 'session-memory' && !args.recordPort) throw new ConnectionExecutionError('session-expired');
 	assertRunRecordSource(args.record, execution);
+	assertSessionContinuationNow(args.tree, execution);
+	assertSessionContinuationNow(args.executed, execution);
 	const records = args.recordPort ?? createRunRecordPort(args.record.runId, execution);
 	assertRunRecordPort(records, execution);
 	const log = execution?.mode === 'session-memory' ? quietRunLog : savedRunLog;
@@ -668,10 +670,7 @@ export function completeRun(args: {
 		tasksFailed: rootPlan.tasksFailed,
 	}));
 	const durationMs = Date.now() - args.start;
-	log.info(
-		{ runId: record.runId, tasksCompleted: rootPlan.tasksCompleted, tasksFailed: rootPlan.tasksFailed.length, durationMs },
-		'runAnalyze: ok',
-	);
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: record.runId, tasksCompleted: rootPlan.tasksCompleted, tasksFailed: rootPlan.tasksFailed.length, durationMs }, 'runAnalyze: ok']);
 	return {
 		ok: true,
 		runId: record.runId,

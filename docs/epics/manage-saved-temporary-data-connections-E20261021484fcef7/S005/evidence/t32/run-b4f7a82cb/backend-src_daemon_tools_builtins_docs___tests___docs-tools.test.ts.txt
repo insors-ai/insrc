@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: docs_retrieve returns matching doc sections + citations
+ok 1 - docs_retrieve returns matching doc sections + citations
+  ---
+  duration_ms: 201.397458
+  type: 'test'
+  ...
+# Subtest: docs_retrieve fails when session has no closure repo
+ok 2 - docs_retrieve fails when session has no closure repo
+  ---
+  duration_ms: 147.195416
+  type: 'test'
+  ...
+# Subtest: docs_retrieve honours filenameHint boost
+ok 3 - docs_retrieve honours filenameHint boost
+  ---
+  duration_ms: 138.958459
+  type: 'test'
+  ...
+# Subtest: docs_project_context returns zero-doc context when nothing is summarised
+ok 4 - docs_project_context returns zero-doc context when nothing is summarised
+  ---
+  duration_ms: 121.573625
+  type: 'test'
+  ...
+# Subtest: docs_project_context rolls up decisions + constraints with citations
+ok 5 - docs_project_context rolls up decisions + constraints with citations
+  ---
+  duration_ms: 141.005625
+  type: 'test'
+  ...
+# Subtest: docs_summary_get returns markdown rendered summary
+ok 6 - docs_summary_get returns markdown rendered summary
+  ---
+  duration_ms: 183.482458
+  type: 'test'
+  ...
+# Subtest: docs_summary_get returns failure when no summary exists
+ok 7 - docs_summary_get returns failure when no summary exists
+  ---
+  duration_ms: 205.588459
+  type: 'test'
+  ...
+# Subtest: docs_family_list returns every summarised doc in a family
+ok 8 - docs_family_list returns every summarised doc in a family
+  ---
+  duration_ms: 122.812167
+  type: 'test'
+  ...
+# Subtest: docs_family_list skips placeholder rows
+ok 9 - docs_family_list skips placeholder rows
+  ---
+  duration_ms: 145.843667
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2059.178709

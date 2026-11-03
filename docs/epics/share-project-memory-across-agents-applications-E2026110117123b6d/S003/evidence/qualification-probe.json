@@ -1,0 +1,18 @@
+{
+  "kind": "design-probe",
+  "sdk": "@lancedb/lancedb 0.40.0",
+  "node": "22.23.2",
+  "platform": "darwin",
+  "capturedAt": "2026-11-03T08:47:42.281Z",
+  "singleMergeVersionDelta": 1,
+  "nullableReceiptVector": true,
+  "vectorSearchWithScalarFilter": true,
+  "pinnedReaderKeptPriorVersion": true,
+  "readerRefreshObservedNewVersion": true,
+  "reopenRetainedCommit": true,
+  "limits": [
+    "Small normal-exit macOS probe only",
+    "No crash/fsync, Linux, concurrent-reader-under-kill or power-loss qualification",
+    "No production store or semantic processing implemented"
+  ]
+}

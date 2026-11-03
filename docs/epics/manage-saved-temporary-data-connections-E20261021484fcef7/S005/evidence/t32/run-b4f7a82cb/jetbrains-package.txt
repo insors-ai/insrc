@@ -1,0 +1,39 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/private/tmp/s5-frozen-qldpq8za/home
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: buildPlugin
+> Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :initializeIntellijPlatformPlugin
+> Task :bundleBackendAssets UP-TO-DATE
+> Task :patchPluginXml UP-TO-DATE
+> Task :generateManifest UP-TO-DATE
+> Task :verifyPluginProjectConfiguration UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :compileKotlin UP-TO-DATE
+> Task :compileJava NO-SOURCE
+> Task :classes UP-TO-DATE
+> Task :instrumentCode UP-TO-DATE
+> Task :jar UP-TO-DATE
+> Task :instrumentedJar UP-TO-DATE
+> Task :composedJar UP-TO-DATE
+> Task :prepareSandbox
+
+> Task :buildSearchableOptions
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/private/tmp/s5-frozen-qldpq8za/home
+2026-10-30 10:44:09,746 [     95]   WARN - #c.i.u.p.CommonProxy - main authenticator is not yet registered
+2026-10-30 10:44:10,068 [    417]   WARN - c.i.o.u.r.overrides - Conflicting registry key definition for key kotlin.mpp.tests.force.gradle: it was defined by plugin org.jetbrains.kotlin but redefined by plugin org.jetbrains.kotlin. Consider adding overrides="true" for one of the plugins, see the documentation for com.intellij.openapi.util.registry.RegistryKeyBean.overrides for more details.
+2026-10-30 10:44:10,069 [    418]   WARN - #c.i.u.n.s.ConfirmingTrustManager - Received an empty list of custom trusted root certificates from the system. Check log above for possible errors, enable debug logging in category 'org.jetbrains.nativecerts' for more information
+2026-10-30 10:44:11,396 [   1745]   WARN - #c.i.i.s.p.i.BundledSharedIndexProvider - Bundled shared index is not found at: /Users/subhagho/.gradle/caches/8.10.2/transforms/e2f895e488bf31af19cbb2d663da6876/transformed/ideaIC-2024.2-aarch64/jdk-shared-indexes
+2026-10-30 10:44:14,847 [   5196]   WARN - #c.i.i.u.UIThemeBean - Unknown field: CombinedDiff
+2026-10-30 10:44:14,847 [   5196]   WARN - #c.i.i.u.UIThemeBean - Unknown field: BlockBorder
+2026-10-30 10:44:18,964 [   9313]   WARN - #c.i.u.j.JBCefApp - JCEF is manually disabled in headless env via 'ide.browser.jcef.headless.enabled=false'
+Found 224 configurables
+save to /private/tmp/s5-frozen-qldpq8za/repo/jetbrains-plugin/build/tmp/buildSearchableOptions
+
+> Task :prepareJarSearchableOptions
+> Task :jarSearchableOptions
+> Task :buildPlugin
+
+BUILD SUCCESSFUL in 21s
+16 actionable tasks: 6 executed, 10 up-to-date
+Configuration cache entry stored.

@@ -1,3 +1,5 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
+import { connectionExecutionErrorCode, ConnectionExecutionError } from '../../../../shared/step-context.js';
 import { beginSessionReuse, assertSessionReuseNow } from '../../../../analyze/session-reuse.js';
 import { assertAnalysisAudience } from '../../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../../shared/step-context.js';
@@ -53,6 +55,7 @@ import type {
 import type { BundleLayers } from '../../../../analyze/context/driver.js';
 import { reportFromLookups } from '../../../../analyze/explore/answer-report.js';
 import { measureLookupResults } from '../../../../analyze/measure.js';
+import { withSubsystemContext } from '../../../../analyze/context/subsystem-context.js';
 
 const log = getLogger('mcp:analyze-step:bundle');
 
@@ -74,6 +77,7 @@ export async function handleBundle(
 		assertSessionReuseNow(execution);
 		assertStage(state, 'awaiting_bundle');
 	} catch (err) {
+		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('state-decode', 'Temporary analysis continuation is unavailable.', false); }
 		if (err instanceof StepStateDecodeError) {
 			return errorResult('state-decode', err.message, err.code !== 'malformed');
 		}
@@ -83,8 +87,9 @@ export async function handleBundle(
 	// (2) Validate the bundle layers.
 	let layers: BundleLayers;
 	try {
-		layers = finalizeSynthesize(input.bundle);
+		layers = finalizeSynthesize(input.bundle, execution);
 	} catch (err) {
+		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('bundle-schema', 'Temporary analysis bundle is invalid.', true); }
 		if (err instanceof SynthesizerSchemaUnrecoverable) {
 			return errorResult(
 				'bundle-schema',
@@ -118,22 +123,26 @@ export async function handleBundle(
 	// Its measure is taken from the same results, with the caller's stated size as the hint.
 	const results = state.executed?.results ?? [];
 	const report = reportFromLookups(results, measureLookupResults(results, state.sizeHint));
-	const bundle: AnalyzeContextBundle = { ...layers, meta, report };
+	// (3b) The subsystems of the scope and of the files the bundle cites (Epic
+	// c2ba6fa6 s8), from the stored subsystem rows, as runShaper's bundles carry them.
+	const scopeRef = state.intent.scopeRef;
+	const bundle: AnalyzeContextBundle = await withSubsystemContext(
+		{ ...layers, meta, report },
+		state.repoPath,
+		scopeRef.kind === 'module' || scopeRef.kind === 'file' ? scopeRef.value : undefined,
+	);
 
 	// (4) Render.
 	const markdown = renderBundleAsMarkdown(bundle);
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, execution).emit('info', () => [{
 			runId:            state.runId,
 			target:           state.intent.target,
 			explorationCount: state.executed?.results.length ?? 0,
 			summaryLen:       layers.summary.length,
 			structureLen:     layers.structure.length,
 			artefactsLen:     layers.artefacts.length,
-		},
-		'insrc_analyze_step[bundle]: run complete',
-	);
+	}, 'insrc_analyze_step[bundle]: run complete']);
 
 	// Run completed -- drop the state entry so a busy MCP subprocess
 	// doesn't accumulate finished-run payloads.

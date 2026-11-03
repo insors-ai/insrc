@@ -1,0 +1,1131 @@
+TAP version 13
+# Subtest: quoteTarget -- identifier injection
+    # Subtest: postgres: rejects target "users; DROP TABLE users"
+    ok 1 - postgres: rejects target "users; DROP TABLE users"
+      ---
+      duration_ms: 2.066083
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users\\"; DROP TABLE users; --"
+    ok 2 - postgres: rejects target "users\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.136083
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users`; DROP TABLE users; --"
+    ok 3 - postgres: rejects target "users`; DROP TABLE users; --"
+      ---
+      duration_ms: 0.042834
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users -- malicious tail"
+    ok 4 - postgres: rejects target "users -- malicious tail"
+      ---
+      duration_ms: 0.092833
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users /* nested */ comment"
+    ok 5 - postgres: rejects target "users /* nested */ comment"
+      ---
+      duration_ms: 0.038625
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "u\\"ser"
+    ok 6 - postgres: rejects target "u\\"ser"
+      ---
+      duration_ms: 0.028333
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "u`ser"
+    ok 7 - postgres: rejects target "u`ser"
+      ---
+      duration_ms: 0.028042
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "u'ser"
+    ok 8 - postgres: rejects target "u'ser"
+      ---
+      duration_ms: 0.072125
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users WITH (NOLOCK)"
+    ok 9 - postgres: rejects target "users WITH (NOLOCK)"
+      ---
+      duration_ms: 0.149542
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users\\nDROP TABLE users"
+    ok 10 - postgres: rejects target "users\\nDROP TABLE users"
+      ---
+      duration_ms: 0.231291
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users\\tWHERE 1=1"
+    ok 11 - postgres: rejects target "users\\tWHERE 1=1"
+      ---
+      duration_ms: 0.044375
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users\\u0000"
+    ok 12 - postgres: rejects target "users\\u0000"
+      ---
+      duration_ms: 0.033
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "a.b.c"
+    ok 13 - postgres: rejects target "a.b.c"
+      ---
+      duration_ms: 0.026709
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target ".users"
+    ok 14 - postgres: rejects target ".users"
+      ---
+      duration_ms: 0.025958
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "users."
+    ok 15 - postgres: rejects target "users."
+      ---
+      duration_ms: 0.024708
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target ""
+    ok 16 - postgres: rejects target ""
+      ---
+      duration_ms: 0.025583
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "123users"
+    ok 17 - postgres: rejects target "123users"
+      ---
+      duration_ms: 0.025458
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects target "uаsers"
+    ok 18 - postgres: rejects target "uаsers"
+      ---
+      duration_ms: 0.047167
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users; DROP TABLE users"
+    ok 19 - mysql: rejects target "users; DROP TABLE users"
+      ---
+      duration_ms: 0.024125
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users\\"; DROP TABLE users; --"
+    ok 20 - mysql: rejects target "users\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.024708
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users`; DROP TABLE users; --"
+    ok 21 - mysql: rejects target "users`; DROP TABLE users; --"
+      ---
+      duration_ms: 0.025583
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users -- malicious tail"
+    ok 22 - mysql: rejects target "users -- malicious tail"
+      ---
+      duration_ms: 0.025375
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users /* nested */ comment"
+    ok 23 - mysql: rejects target "users /* nested */ comment"
+      ---
+      duration_ms: 0.024292
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "u\\"ser"
+    ok 24 - mysql: rejects target "u\\"ser"
+      ---
+      duration_ms: 0.024041
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "u`ser"
+    ok 25 - mysql: rejects target "u`ser"
+      ---
+      duration_ms: 0.024583
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "u'ser"
+    ok 26 - mysql: rejects target "u'ser"
+      ---
+      duration_ms: 0.026
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users WITH (NOLOCK)"
+    ok 27 - mysql: rejects target "users WITH (NOLOCK)"
+      ---
+      duration_ms: 0.0255
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users\\nDROP TABLE users"
+    ok 28 - mysql: rejects target "users\\nDROP TABLE users"
+      ---
+      duration_ms: 0.02625
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users\\tWHERE 1=1"
+    ok 29 - mysql: rejects target "users\\tWHERE 1=1"
+      ---
+      duration_ms: 0.025458
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users\\u0000"
+    ok 30 - mysql: rejects target "users\\u0000"
+      ---
+      duration_ms: 0.02475
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "a.b.c"
+    ok 31 - mysql: rejects target "a.b.c"
+      ---
+      duration_ms: 0.047
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target ".users"
+    ok 32 - mysql: rejects target ".users"
+      ---
+      duration_ms: 0.02525
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "users."
+    ok 33 - mysql: rejects target "users."
+      ---
+      duration_ms: 0.029417
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target ""
+    ok 34 - mysql: rejects target ""
+      ---
+      duration_ms: 0.02525
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "123users"
+    ok 35 - mysql: rejects target "123users"
+      ---
+      duration_ms: 0.103583
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects target "uаsers"
+    ok 36 - mysql: rejects target "uаsers"
+      ---
+      duration_ms: 0.046417
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users; DROP TABLE users"
+    ok 37 - sqlite: rejects target "users; DROP TABLE users"
+      ---
+      duration_ms: 0.085833
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users\\"; DROP TABLE users; --"
+    ok 38 - sqlite: rejects target "users\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.037833
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users`; DROP TABLE users; --"
+    ok 39 - sqlite: rejects target "users`; DROP TABLE users; --"
+      ---
+      duration_ms: 0.034209
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users -- malicious tail"
+    ok 40 - sqlite: rejects target "users -- malicious tail"
+      ---
+      duration_ms: 0.026958
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users /* nested */ comment"
+    ok 41 - sqlite: rejects target "users /* nested */ comment"
+      ---
+      duration_ms: 0.026375
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "u\\"ser"
+    ok 42 - sqlite: rejects target "u\\"ser"
+      ---
+      duration_ms: 0.025834
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "u`ser"
+    ok 43 - sqlite: rejects target "u`ser"
+      ---
+      duration_ms: 0.025125
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "u'ser"
+    ok 44 - sqlite: rejects target "u'ser"
+      ---
+      duration_ms: 0.033958
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users WITH (NOLOCK)"
+    ok 45 - sqlite: rejects target "users WITH (NOLOCK)"
+      ---
+      duration_ms: 0.026209
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users\\nDROP TABLE users"
+    ok 46 - sqlite: rejects target "users\\nDROP TABLE users"
+      ---
+      duration_ms: 0.026959
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users\\tWHERE 1=1"
+    ok 47 - sqlite: rejects target "users\\tWHERE 1=1"
+      ---
+      duration_ms: 0.024875
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users\\u0000"
+    ok 48 - sqlite: rejects target "users\\u0000"
+      ---
+      duration_ms: 0.025791
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "a.b.c"
+    ok 49 - sqlite: rejects target "a.b.c"
+      ---
+      duration_ms: 0.025292
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target ".users"
+    ok 50 - sqlite: rejects target ".users"
+      ---
+      duration_ms: 0.024875
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "users."
+    ok 51 - sqlite: rejects target "users."
+      ---
+      duration_ms: 0.041834
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target ""
+    ok 52 - sqlite: rejects target ""
+      ---
+      duration_ms: 0.026209
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "123users"
+    ok 53 - sqlite: rejects target "123users"
+      ---
+      duration_ms: 0.025625
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects target "uаsers"
+    ok 54 - sqlite: rejects target "uаsers"
+      ---
+      duration_ms: 0.039917
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users; DROP TABLE users"
+    ok 55 - mssql: rejects target "users; DROP TABLE users"
+      ---
+      duration_ms: 0.024459
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users\\"; DROP TABLE users; --"
+    ok 56 - mssql: rejects target "users\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.024458
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users`; DROP TABLE users; --"
+    ok 57 - mssql: rejects target "users`; DROP TABLE users; --"
+      ---
+      duration_ms: 0.024583
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users -- malicious tail"
+    ok 58 - mssql: rejects target "users -- malicious tail"
+      ---
+      duration_ms: 0.027083
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users /* nested */ comment"
+    ok 59 - mssql: rejects target "users /* nested */ comment"
+      ---
+      duration_ms: 0.025834
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "u\\"ser"
+    ok 60 - mssql: rejects target "u\\"ser"
+      ---
+      duration_ms: 0.024667
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "u`ser"
+    ok 61 - mssql: rejects target "u`ser"
+      ---
+      duration_ms: 0.02525
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "u'ser"
+    ok 62 - mssql: rejects target "u'ser"
+      ---
+      duration_ms: 0.024292
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users WITH (NOLOCK)"
+    ok 63 - mssql: rejects target "users WITH (NOLOCK)"
+      ---
+      duration_ms: 0.025417
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users\\nDROP TABLE users"
+    ok 64 - mssql: rejects target "users\\nDROP TABLE users"
+      ---
+      duration_ms: 0.024416
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users\\tWHERE 1=1"
+    ok 65 - mssql: rejects target "users\\tWHERE 1=1"
+      ---
+      duration_ms: 0.04125
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users\\u0000"
+    ok 66 - mssql: rejects target "users\\u0000"
+      ---
+      duration_ms: 0.116875
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "a.b.c"
+    ok 67 - mssql: rejects target "a.b.c"
+      ---
+      duration_ms: 0.058334
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target ".users"
+    ok 68 - mssql: rejects target ".users"
+      ---
+      duration_ms: 0.036625
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "users."
+    ok 69 - mssql: rejects target "users."
+      ---
+      duration_ms: 0.034375
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target ""
+    ok 70 - mssql: rejects target ""
+      ---
+      duration_ms: 0.029708
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "123users"
+    ok 71 - mssql: rejects target "123users"
+      ---
+      duration_ms: 0.04575
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects target "uаsers"
+    ok 72 - mssql: rejects target "uаsers"
+      ---
+      duration_ms: 0.030542
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users; DROP TABLE users"
+    ok 73 - oracle: rejects target "users; DROP TABLE users"
+      ---
+      duration_ms: 0.02725
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users\\"; DROP TABLE users; --"
+    ok 74 - oracle: rejects target "users\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.026583
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users`; DROP TABLE users; --"
+    ok 75 - oracle: rejects target "users`; DROP TABLE users; --"
+      ---
+      duration_ms: 0.026667
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users -- malicious tail"
+    ok 76 - oracle: rejects target "users -- malicious tail"
+      ---
+      duration_ms: 0.027416
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users /* nested */ comment"
+    ok 77 - oracle: rejects target "users /* nested */ comment"
+      ---
+      duration_ms: 0.0265
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "u\\"ser"
+    ok 78 - oracle: rejects target "u\\"ser"
+      ---
+      duration_ms: 0.026
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "u`ser"
+    ok 79 - oracle: rejects target "u`ser"
+      ---
+      duration_ms: 0.026542
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "u'ser"
+    ok 80 - oracle: rejects target "u'ser"
+      ---
+      duration_ms: 0.026833
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users WITH (NOLOCK)"
+    ok 81 - oracle: rejects target "users WITH (NOLOCK)"
+      ---
+      duration_ms: 0.024125
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users\\nDROP TABLE users"
+    ok 82 - oracle: rejects target "users\\nDROP TABLE users"
+      ---
+      duration_ms: 0.026416
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users\\tWHERE 1=1"
+    ok 83 - oracle: rejects target "users\\tWHERE 1=1"
+      ---
+      duration_ms: 0.024167
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users\\u0000"
+    ok 84 - oracle: rejects target "users\\u0000"
+      ---
+      duration_ms: 0.0265
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "a.b.c"
+    ok 85 - oracle: rejects target "a.b.c"
+      ---
+      duration_ms: 0.024792
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target ".users"
+    ok 86 - oracle: rejects target ".users"
+      ---
+      duration_ms: 0.031416
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "users."
+    ok 87 - oracle: rejects target "users."
+      ---
+      duration_ms: 0.0455
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target ""
+    ok 88 - oracle: rejects target ""
+      ---
+      duration_ms: 0.024375
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "123users"
+    ok 89 - oracle: rejects target "123users"
+      ---
+      duration_ms: 0.02475
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects target "uаsers"
+    ok 90 - oracle: rejects target "uаsers"
+      ---
+      duration_ms: 0.025625
+      type: 'test'
+      ...
+    # Subtest: accepts schema.table on every dialect
+    ok 91 - accepts schema.table on every dialect
+      ---
+      duration_ms: 0.142333
+      type: 'test'
+      ...
+    1..91
+ok 1 - quoteTarget -- identifier injection
+  ---
+  duration_ms: 6.857709
+  type: 'suite'
+  ...
+# Subtest: compileWhere -- column-name injection
+    # Subtest: postgres: rejects column "id\\"; DROP TABLE users; --"
+    ok 1 - postgres: rejects column "id\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.272709
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects column "id' OR '1'='1"
+    ok 2 - postgres: rejects column "id' OR '1'='1"
+      ---
+      duration_ms: 0.031416
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects column "id) UNION SELECT * FROM passwords ("
+    ok 3 - postgres: rejects column "id) UNION SELECT * FROM passwords ("
+      ---
+      duration_ms: 0.029333
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects column "name; -- tail"
+    ok 4 - postgres: rejects column "name; -- tail"
+      ---
+      duration_ms: 0.029084
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects column "name OR 1=1"
+    ok 5 - postgres: rejects column "name OR 1=1"
+      ---
+      duration_ms: 0.048542
+      type: 'test'
+      ...
+    # Subtest: postgres: rejects column "name AND 1=0"
+    ok 6 - postgres: rejects column "name AND 1=0"
+      ---
+      duration_ms: 2.187125
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects column "id\\"; DROP TABLE users; --"
+    ok 7 - mysql: rejects column "id\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.047208
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects column "id' OR '1'='1"
+    ok 8 - mysql: rejects column "id' OR '1'='1"
+      ---
+      duration_ms: 0.026792
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects column "id) UNION SELECT * FROM passwords ("
+    ok 9 - mysql: rejects column "id) UNION SELECT * FROM passwords ("
+      ---
+      duration_ms: 0.025375
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects column "name; -- tail"
+    ok 10 - mysql: rejects column "name; -- tail"
+      ---
+      duration_ms: 0.025458
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects column "name OR 1=1"
+    ok 11 - mysql: rejects column "name OR 1=1"
+      ---
+      duration_ms: 0.023083
+      type: 'test'
+      ...
+    # Subtest: mysql: rejects column "name AND 1=0"
+    ok 12 - mysql: rejects column "name AND 1=0"
+      ---
+      duration_ms: 0.020875
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects column "id\\"; DROP TABLE users; --"
+    ok 13 - sqlite: rejects column "id\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.02275
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects column "id' OR '1'='1"
+    ok 14 - sqlite: rejects column "id' OR '1'='1"
+      ---
+      duration_ms: 0.02175
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects column "id) UNION SELECT * FROM passwords ("
+    ok 15 - sqlite: rejects column "id) UNION SELECT * FROM passwords ("
+      ---
+      duration_ms: 0.022958
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects column "name; -- tail"
+    ok 16 - sqlite: rejects column "name; -- tail"
+      ---
+      duration_ms: 0.022292
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects column "name OR 1=1"
+    ok 17 - sqlite: rejects column "name OR 1=1"
+      ---
+      duration_ms: 0.041291
+      type: 'test'
+      ...
+    # Subtest: sqlite: rejects column "name AND 1=0"
+    ok 18 - sqlite: rejects column "name AND 1=0"
+      ---
+      duration_ms: 0.022
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects column "id\\"; DROP TABLE users; --"
+    ok 19 - mssql: rejects column "id\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.021833
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects column "id' OR '1'='1"
+    ok 20 - mssql: rejects column "id' OR '1'='1"
+      ---
+      duration_ms: 0.021709
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects column "id) UNION SELECT * FROM passwords ("
+    ok 21 - mssql: rejects column "id) UNION SELECT * FROM passwords ("
+      ---
+      duration_ms: 0.021958
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects column "name; -- tail"
+    ok 22 - mssql: rejects column "name; -- tail"
+      ---
+      duration_ms: 0.020792
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects column "name OR 1=1"
+    ok 23 - mssql: rejects column "name OR 1=1"
+      ---
+      duration_ms: 0.020958
+      type: 'test'
+      ...
+    # Subtest: mssql: rejects column "name AND 1=0"
+    ok 24 - mssql: rejects column "name AND 1=0"
+      ---
+      duration_ms: 0.021292
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects column "id\\"; DROP TABLE users; --"
+    ok 25 - oracle: rejects column "id\\"; DROP TABLE users; --"
+      ---
+      duration_ms: 0.021917
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects column "id' OR '1'='1"
+    ok 26 - oracle: rejects column "id' OR '1'='1"
+      ---
+      duration_ms: 0.021709
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects column "id) UNION SELECT * FROM passwords ("
+    ok 27 - oracle: rejects column "id) UNION SELECT * FROM passwords ("
+      ---
+      duration_ms: 0.020958
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects column "name; -- tail"
+    ok 28 - oracle: rejects column "name; -- tail"
+      ---
+      duration_ms: 0.048375
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects column "name OR 1=1"
+    ok 29 - oracle: rejects column "name OR 1=1"
+      ---
+      duration_ms: 0.021541
+      type: 'test'
+      ...
+    # Subtest: oracle: rejects column "name AND 1=0"
+    ok 30 - oracle: rejects column "name AND 1=0"
+      ---
+      duration_ms: 0.022084
+      type: 'test'
+      ...
+    # Subtest: legit column passes the validator
+    ok 31 - legit column passes the validator
+      ---
+      duration_ms: 0.191333
+      type: 'test'
+      ...
+    # Subtest: case-only differences resolve to the original known name (case-insensitive validator)
+    ok 32 - case-only differences resolve to the original known name (case-insensitive validator)
+      ---
+      duration_ms: 0.035625
+      type: 'test'
+      ...
+    1..32
+ok 2 - compileWhere -- column-name injection
+  ---
+  duration_ms: 3.683792
+  type: 'suite'
+  ...
+# Subtest: compileWhere -- value parametrisation
+    # Subtest: postgres: parametrises string(23)
+    ok 1 - postgres: parametrises string(23)
+      ---
+      duration_ms: 1.242292
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises string(11)
+    ok 2 - postgres: parametrises string(11)
+      ---
+      duration_ms: 0.053542
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises string(21)
+    ok 3 - postgres: parametrises string(21)
+      ---
+      duration_ms: 0.139375
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises string(1)
+    ok 4 - postgres: parametrises string(1)
+      ---
+      duration_ms: 0.032
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises string(10000)
+    ok 5 - postgres: parametrises string(10000)
+      ---
+      duration_ms: 0.024042
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises 42
+    ok 6 - postgres: parametrises 42
+      ---
+      duration_ms: 0.019291
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises 3.14159
+    ok 7 - postgres: parametrises 3.14159
+      ---
+      duration_ms: 0.0585
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises true
+    ok 8 - postgres: parametrises true
+      ---
+      duration_ms: 0.021833
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises false
+    ok 9 - postgres: parametrises false
+      ---
+      duration_ms: 0.050083
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises null
+    ok 10 - postgres: parametrises null
+      ---
+      duration_ms: 0.02525
+      type: 'test'
+      ...
+    # Subtest: postgres: parametrises Mon Jan 01 2024 05:30:00 GMT+0530 (India Standard Time)
+    ok 11 - postgres: parametrises Mon Jan 01 2024 05:30:00 GMT+0530 (India Standard Time)
+      ---
+      duration_ms: 0.018792
+      type: 'test'
+      ...
+    # Subtest: mysql: parametrises long strings
+    ok 12 - mysql: parametrises long strings
+      ---
+      duration_ms: 0.053792
+      type: 'test'
+      ...
+    # Subtest: rejects empty IN arrays (avoids ambiguous SQL)
+    ok 13 - rejects empty IN arrays (avoids ambiguous SQL)
+      ---
+      duration_ms: 0.059541
+      type: 'test'
+      ...
+    # Subtest: IN op spreads each element into its own placeholder
+    ok 14 - IN op spreads each element into its own placeholder
+      ---
+      duration_ms: 0.0365
+      type: 'test'
+      ...
+    # Subtest: IS NULL has no placeholder + does not consume an index
+    ok 15 - IS NULL has no placeholder + does not consume an index
+      ---
+      duration_ms: 0.030292
+      type: 'test'
+      ...
+    1..15
+ok 3 - compileWhere -- value parametrisation
+  ---
+  duration_ms: 1.985458
+  type: 'suite'
+  ...
+# Subtest: buildSampleSql -- mutation denylist
+    # Subtest: postgres: clean SELECT passes the denylist
+    ok 1 - postgres: clean SELECT passes the denylist
+      ---
+      duration_ms: 0.344875
+      type: 'test'
+      ...
+    # Subtest: postgres: clamps a 9999-row limit to 50
+    ok 2 - postgres: clamps a 9999-row limit to 50
+      ---
+      duration_ms: 0.050666
+      type: 'test'
+      ...
+    # Subtest: postgres: reject limit=0 by clamping up to 1
+    ok 3 - postgres: reject limit=0 by clamping up to 1
+      ---
+      duration_ms: 0.038125
+      type: 'test'
+      ...
+    # Subtest: mysql: clean SELECT passes the denylist
+    ok 4 - mysql: clean SELECT passes the denylist
+      ---
+      duration_ms: 0.025208
+      type: 'test'
+      ...
+    # Subtest: mysql: clamps a 9999-row limit to 50
+    ok 5 - mysql: clamps a 9999-row limit to 50
+      ---
+      duration_ms: 0.03075
+      type: 'test'
+      ...
+    # Subtest: mysql: reject limit=0 by clamping up to 1
+    ok 6 - mysql: reject limit=0 by clamping up to 1
+      ---
+      duration_ms: 0.033834
+      type: 'test'
+      ...
+    # Subtest: sqlite: clean SELECT passes the denylist
+    ok 7 - sqlite: clean SELECT passes the denylist
+      ---
+      duration_ms: 0.023542
+      type: 'test'
+      ...
+    # Subtest: sqlite: clamps a 9999-row limit to 50
+    ok 8 - sqlite: clamps a 9999-row limit to 50
+      ---
+      duration_ms: 0.018209
+      type: 'test'
+      ...
+    # Subtest: sqlite: reject limit=0 by clamping up to 1
+    ok 9 - sqlite: reject limit=0 by clamping up to 1
+      ---
+      duration_ms: 0.063584
+      type: 'test'
+      ...
+    # Subtest: mssql: clean SELECT passes the denylist
+    ok 10 - mssql: clean SELECT passes the denylist
+      ---
+      duration_ms: 0.021542
+      type: 'test'
+      ...
+    # Subtest: mssql: clamps a 9999-row limit to 50
+    ok 11 - mssql: clamps a 9999-row limit to 50
+      ---
+      duration_ms: 0.019459
+      type: 'test'
+      ...
+    # Subtest: mssql: reject limit=0 by clamping up to 1
+    ok 12 - mssql: reject limit=0 by clamping up to 1
+      ---
+      duration_ms: 0.019208
+      type: 'test'
+      ...
+    # Subtest: oracle: clean SELECT passes the denylist
+    ok 13 - oracle: clean SELECT passes the denylist
+      ---
+      duration_ms: 0.021583
+      type: 'test'
+      ...
+    # Subtest: oracle: clamps a 9999-row limit to 50
+    ok 14 - oracle: clamps a 9999-row limit to 50
+      ---
+      duration_ms: 0.026833
+      type: 'test'
+      ...
+    # Subtest: oracle: reject limit=0 by clamping up to 1
+    ok 15 - oracle: reject limit=0 by clamping up to 1
+      ---
+      duration_ms: 0.025125
+      type: 'test'
+      ...
+    1..15
+ok 4 - buildSampleSql -- mutation denylist
+  ---
+  duration_ms: 0.877875
+  type: 'suite'
+  ...
+# Subtest: looksLikeMutation -- denylist coverage
+    # Subtest: flags "INSERT INTO u VALUES (1)"
+    ok 1 - flags "INSERT INTO u VALUES (1)"
+      ---
+      duration_ms: 0.092708
+      type: 'test'
+      ...
+    # Subtest: flags "insert into u values (1)"
+    ok 2 - flags "insert into u values (1)"
+      ---
+      duration_ms: 0.017292
+      type: 'test'
+      ...
+    # Subtest: flags "UPDATE u SET x = 1"
+    ok 3 - flags "UPDATE u SET x = 1"
+      ---
+      duration_ms: 0.016125
+      type: 'test'
+      ...
+    # Subtest: flags "DELETE FROM u"
+    ok 4 - flags "DELETE FROM u"
+      ---
+      duration_ms: 0.015
+      type: 'test'
+      ...
+    # Subtest: flags "DROP TABLE u"
+    ok 5 - flags "DROP TABLE u"
+      ---
+      duration_ms: 0.017209
+      type: 'test'
+      ...
+    # Subtest: flags "TRUNCATE TABLE u"
+    ok 6 - flags "TRUNCATE TABLE u"
+      ---
+      duration_ms: 0.014458
+      type: 'test'
+      ...
+    # Subtest: flags "ALTER TABLE u ADD c INT"
+    ok 7 - flags "ALTER TABLE u ADD c INT"
+      ---
+      duration_ms: 0.015666
+      type: 'test'
+      ...
+    # Subtest: flags "CREATE INDEX ix ON u(x)"
+    ok 8 - flags "CREATE INDEX ix ON u(x)"
+      ---
+      duration_ms: 0.01425
+      type: 'test'
+      ...
+    # Subtest: flags "GRANT SELECT ON u TO r"
+    ok 9 - flags "GRANT SELECT ON u TO r"
+      ---
+      duration_ms: 0.014834
+      type: 'test'
+      ...
+    # Subtest: flags "REVOKE SELECT ON u FROM r"
+    ok 10 - flags "REVOKE SELECT ON u FROM r"
+      ---
+      duration_ms: 0.017041
+      type: 'test'
+      ...
+    # Subtest: flags "CALL my_proc()"
+    ok 11 - flags "CALL my_proc()"
+      ---
+      duration_ms: 0.015584
+      type: 'test'
+      ...
+    # Subtest: flags "BEGIN TRANSACTION"
+    ok 12 - flags "BEGIN TRANSACTION"
+      ---
+      duration_ms: 0.015792
+      type: 'test'
+      ...
+    # Subtest: flags "COMMIT"
+    ok 13 - flags "COMMIT"
+      ---
+      duration_ms: 0.016375
+      type: 'test'
+      ...
+    # Subtest: flags "ROLLBACK"
+    ok 14 - flags "ROLLBACK"
+      ---
+      duration_ms: 0.013917
+      type: 'test'
+      ...
+    # Subtest: flags "MERGE INTO u USING t ON ..."
+    ok 15 - flags "MERGE INTO u USING t ON ..."
+      ---
+      duration_ms: 0.016792
+      type: 'test'
+      ...
+    # Subtest: flags "REPLACE INTO u VALUES (1)"
+    ok 16 - flags "REPLACE INTO u VALUES (1)"
+      ---
+      duration_ms: 0.016
+      type: 'test'
+      ...
+    # Subtest: flags "VACUUM ANALYZE"
+    ok 17 - flags "VACUUM ANALYZE"
+      ---
+      duration_ms: 0.017208
+      type: 'test'
+      ...
+    # Subtest: flags "ATTACH DATABASE 'x' AS y"
+    ok 18 - flags "ATTACH DATABASE 'x' AS y"
+      ---
+      duration_ms: 0.016417
+      type: 'test'
+      ...
+    # Subtest: flags "DETACH DATABASE y"
+    ok 19 - flags "DETACH DATABASE y"
+      ---
+      duration_ms: 0.032417
+      type: 'test'
+      ...
+    # Subtest: flags "SELECT * FROM u; DROP TABLE u"
+    ok 20 - flags "SELECT * FROM u; DROP TABLE u"
+      ---
+      duration_ms: 0.015125
+      type: 'test'
+      ...
+    # Subtest: flags "SELECT * FROM u WHERE 1=1; UPDATE u SET "
+    ok 21 - flags "SELECT * FROM u WHERE 1=1; UPDATE u SET "
+      ---
+      duration_ms: 0.016083
+      type: 'test'
+      ...
+    # Subtest: accepts "SELECT * FROM u"
+    ok 22 - accepts "SELECT * FROM u"
+      ---
+      duration_ms: 0.023042
+      type: 'test'
+      ...
+    # Subtest: accepts "SELECT * FROM u WHERE id = $1"
+    ok 23 - accepts "SELECT * FROM u WHERE id = $1"
+      ---
+      duration_ms: 0.015417
+      type: 'test'
+      ...
+    # Subtest: accepts "SELECT TOP 10 * FROM u"
+    ok 24 - accepts "SELECT TOP 10 * FROM u"
+      ---
+      duration_ms: 0.019667
+      type: 'test'
+      ...
+    # Subtest: accepts "SELECT * FROM u WHERE name = $1 AND emai"
+    ok 25 - accepts "SELECT * FROM u WHERE name = $1 AND emai"
+      ---
+      duration_ms: 0.018459
+      type: 'test'
+      ...
+    # Subtest: accepts "SELECT count(*) FROM u"
+    ok 26 - accepts "SELECT count(*) FROM u"
+      ---
+      duration_ms: 0.016625
+      type: 'test'
+      ...
+    # Subtest: accepts "SELECT * FROM u FETCH FIRST 50 ROWS ONLY"
+    ok 27 - accepts "SELECT * FROM u FETCH FIRST 50 ROWS ONLY"
+      ---
+      duration_ms: 0.016
+      type: 'test'
+      ...
+    # Subtest: accepts "SELECT * FROM \\"creates\\""
+    ok 28 - accepts "SELECT * FROM \\"creates\\""
+      ---
+      duration_ms: 0.018875
+      type: 'test'
+      ...
+    1..28
+ok 5 - looksLikeMutation -- denylist coverage
+  ---
+  duration_ms: 0.796042
+  type: 'suite'
+  ...
+1..5
+# tests 181
+# suites 5
+# pass 181
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 293.831625

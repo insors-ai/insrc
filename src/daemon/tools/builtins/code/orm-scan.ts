@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
 /**
  * code_orm_scan -- scan a repo for ORM-defined models
  * (code-analyzer-skills.md Phase 0.4).
@@ -96,7 +97,7 @@ const codeOrmScanTool: Tool = {
 				try {
 					isPresent = await h.detect(repoPath);
 				} catch (err) {
-					log.warn({ dialect: h.id, err: errMessage(err) }, 'detect failed');
+					captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('warn', () => [{ dialect: h.id, err: errMessage(err) }, 'detect failed']);
 					continue;
 				}
 				if (!isPresent) continue;
@@ -107,7 +108,7 @@ const codeOrmScanTool: Tool = {
 				const dialectModels = await h.scan(repoPath);
 				models.push(...dialectModels);
 			} catch (err) {
-				log.warn({ dialect: h.id, err: errMessage(err) }, 'scan failed; skipping');
+				captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('warn', () => [{ dialect: h.id, err: errMessage(err) }, 'scan failed; skipping']);
 			}
 		}
 
@@ -116,10 +117,7 @@ const codeOrmScanTool: Tool = {
 			models,
 		};
 
-		log.info(
-			{ orm, repoPath, detected: detected.length, models: models.length },
-			'code_orm_scan',
-		);
+		captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('info', () => [{ orm, repoPath, detected: detected.length, models: models.length }, 'code_orm_scan']);
 		return ok(output);
 	},
 };

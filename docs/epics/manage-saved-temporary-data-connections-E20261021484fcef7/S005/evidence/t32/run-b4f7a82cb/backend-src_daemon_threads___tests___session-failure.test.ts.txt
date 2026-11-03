@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: failure: a session worker exit fails only its running and queued requests; the next request gets a new worker
+ok 1 - failure: a session worker exit fails only its running and queued requests; the next request gets a new worker
+  ---
+  duration_ms: 2390.302875
+  type: 'test'
+  ...
+# Subtest: runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason
+ok 2 - runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason
+  ---
+  duration_ms: 1419.396417
+  type: 'test'
+  ...
+# Subtest: shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one
+ok 3 - shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one
+  ---
+  duration_ms: 1356.159
+  type: 'test'
+  ...
+# Subtest: session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking
+ok 4 - session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking
+  ---
+  duration_ms: 1314.628333
+  type: 'test'
+  ...
+# Subtest: s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)
+ok 5 - s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)
+  ---
+  duration_ms: 3551.622625
+  type: 'test'
+  ...
+# Subtest: close: a request in flight on a released worker is answered, and a request after close is refused
+ok 6 - close: a request in flight on a released worker is answered, and a request after close is refused
+  ---
+  duration_ms: 912.360125
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11348.217917

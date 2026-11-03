@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: t7 REGRESSION GUARD: a DEF-bearing epic chain composes byte-identical paths to the pre-change baseline
+ok 1 - t7 REGRESSION GUARD: a DEF-bearing epic chain composes byte-identical paths to the pre-change baseline
+  ---
+  duration_ms: 4.455583
+  type: 'test'
+  ...
+# Subtest: t7 — workItemKindOf still maps absent and false alike to 'epic'
+ok 2 - t7 — workItemKindOf still maps absent and false alike to 'epic'
+  ---
+  duration_ms: 0.105084
+  type: 'test'
+  ...
+# Subtest: t7 — readEpicCreatedAt's behaviour for a DEF-bearing epic is unchanged
+ok 3 - t7 — readEpicCreatedAt's behaviour for a DEF-bearing epic is unchanged
+  ---
+  duration_ms: 2.327542
+  type: 'test'
+  ...
+# Subtest: t7 PURITY: the markdown path builders perform no filesystem read — a path composes for a nonexistent repo directory
+ok 4 - t7 PURITY: the markdown path builders perform no filesystem read — a path composes for a nonexistent repo directory
+  ---
+  duration_ms: 0.826125
+  type: 'test'
+  ...
+# Subtest: t7 — the definition artifact is consulted at finalize time only, never during path resolution
+ok 5 - t7 — the definition artifact is consulted at finalize time only, never during path resolution
+  ---
+  duration_ms: 1.026375
+  type: 'test'
+  ...
+# Subtest: t7/t3 — the label is INHERITED from the definition head, not re-derived from the stage focus
+ok 6 - t7/t3 — the label is INHERITED from the definition head, not re-derived from the stage focus
+  ---
+  duration_ms: 1.801291
+  type: 'test'
+  ...
+# Subtest: t7/t3 — the fallback still governs a work item with NO definition artifact
+ok 7 - t7/t3 — the fallback still governs a work item with NO definition artifact
+  ---
+  duration_ms: 0.342125
+  type: 'test'
+  ...
+# Subtest: t7/t3 — an EMPTY stored label counts as absent, so no folder name can begin with a dash
+ok 8 - t7/t3 — an EMPTY stored label counts as absent, so no folder name can begin with a dash
+  ---
+  duration_ms: 0.880875
+  type: 'test'
+  ...
+# Subtest: t7/t4a — the PLACEMENT is inherited from the definition head, overriding the stage fallback
+ok 9 - t7/t4a — the PLACEMENT is inherited from the definition head, overriding the stage fallback
+  ---
+  duration_ms: 1.108709
+  type: 'test'
+  ...
+# Subtest: t7/t4a — the caller fallback is used only when the head is SILENT
+ok 10 - t7/t4a — the caller fallback is used only when the head is SILENT
+  ---
+  duration_ms: 1.117167
+  type: 'test'
+  ...
+# Subtest: t7/t4a — a stored FALSE is reported as false, never silently promoted to true
+ok 11 - t7/t4a — a stored FALSE is reported as false, never silently promoted to true
+  ---
+  duration_ms: 0.762708
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 220.630875

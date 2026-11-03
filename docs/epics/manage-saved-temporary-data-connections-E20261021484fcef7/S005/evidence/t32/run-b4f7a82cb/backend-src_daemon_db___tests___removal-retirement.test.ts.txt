@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: CM-S4-RETIRE: shared budget enforces 64 per root and 256 daemon-wide without eviction
+ok 1 - CM-S4-RETIRE: shared budget enforces 64 per root and 256 daemon-wide without eviction
+  ---
+  duration_ms: 1.24175
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: opaque tokens bind owner, operation and revision and only uncommitted reservations cancel
+ok 2 - CM-S4-RETIRE: opaque tokens bind owner, operation and revision and only uncommitted reservations cancel
+  ---
+  duration_ms: 0.3685
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: failed close retains exact ownership and concurrent retries share one attempt
+ok 3 - CM-S4-RETIRE: failed close retains exact ownership and concurrent retries share one attempt
+  ---
+  duration_ms: 0.178583
+  type: 'test'
+  ...
+# Subtest: CM-S4-RETIRE: shutdown drains already-owned resources at capacity and keeps failures for retry
+ok 4 - CM-S4-RETIRE: shutdown drains already-owned resources at capacity and keeps failures for retry
+  ---
+  duration_ms: 1.117416
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 321.807125

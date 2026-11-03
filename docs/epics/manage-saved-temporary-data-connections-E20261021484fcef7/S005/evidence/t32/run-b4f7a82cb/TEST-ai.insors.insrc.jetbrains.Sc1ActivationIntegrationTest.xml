@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.Sc1ActivationIntegrationTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:12:48" hostname="subho-office-mac" time="3.721">
+  <properties/>
+  <testcase name="testSharedGatewayScopesEachCallToItsOwnRoot" classname="ai.insors.insrc.jetbrains.Sc1ActivationIntegrationTest" time="3.665"/>
+  <testcase name="testProjectOpenActivityBroadcastsContextForOpenedProject" classname="ai.insors.insrc.jetbrains.Sc1ActivationIntegrationTest" time="0.056"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

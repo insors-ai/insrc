@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * Session-delete cleanup orchestrator for the LanceDB vector tables.
  *
@@ -56,6 +57,7 @@ export interface LanceCleanupCounts {
  * session delete or after a bulk delete (see plan §A.3).
  */
 export async function deleteSessionFromLance(sessionId: string): Promise<LanceCleanupCounts> {
+	assertNoSessionPersistence();
 	if (sessionId === '') {
 		return { sessionRows: 0, turnRows: 0, responseSegments: 0, artifacts: 0 };
 	}
@@ -98,6 +100,7 @@ export async function deleteSessionFromLance(sessionId: string): Promise<LanceCl
  * optimize leaves the (correct) tombstoned data in place.
  */
 export async function compactSessionVecTables(): Promise<void> {
+	assertNoSessionPersistence();
 	const t0 = Date.now();
 	const conn = await getLanceConn();
 	const existingTables = await conn.tableNames();

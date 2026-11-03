@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: rootUnionKey: root oneOf -> oneOf
+ok 1 - rootUnionKey: root oneOf -> oneOf
+  ---
+  duration_ms: 0.867584
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: root anyOf -> anyOf
+ok 2 - rootUnionKey: root anyOf -> anyOf
+  ---
+  duration_ms: 0.195708
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: root allOf -> allOf
+ok 3 - rootUnionKey: root allOf -> allOf
+  ---
+  duration_ms: 0.125209
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: root oneOf alongside root type:object -> oneOf
+ok 4 - rootUnionKey: root oneOf alongside root type:object -> oneOf
+  ---
+  duration_ms: 0.095042
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: root allOf alongside root type:object (the CLASSIFY_SCHEMA shape) -> allOf
+ok 5 - rootUnionKey: root allOf alongside root type:object (the CLASSIFY_SCHEMA shape) -> allOf
+  ---
+  duration_ms: 0.108375
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: union NESTED under a property -> undefined
+ok 6 - rootUnionKey: union NESTED under a property -> undefined
+  ---
+  duration_ms: 0.131833
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: union nested two levels down -> undefined
+ok 7 - rootUnionKey: union nested two levels down -> undefined
+  ---
+  duration_ms: 0.307542
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: empty-branch root union -> undefined
+ok 8 - rootUnionKey: empty-branch root union -> undefined
+  ---
+  duration_ms: 0.041792
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: root $ref into $defs at a union -> undefined
+ok 9 - rootUnionKey: root $ref into $defs at a union -> undefined
+  ---
+  duration_ms: 0.257417
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: root union keyword that is not an array -> undefined
+ok 10 - rootUnionKey: root union keyword that is not an array -> undefined
+  ---
+  duration_ms: 0.304791
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: null -> undefined
+ok 11 - rootUnionKey: null -> undefined
+  ---
+  duration_ms: 0.03875
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: undefined -> undefined
+ok 12 - rootUnionKey: undefined -> undefined
+  ---
+  duration_ms: 0.029416
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: number -> undefined
+ok 13 - rootUnionKey: number -> undefined
+  ---
+  duration_ms: 0.02075
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: string -> undefined
+ok 14 - rootUnionKey: string -> undefined
+  ---
+  duration_ms: 0.022375
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: array -> undefined
+ok 15 - rootUnionKey: array -> undefined
+  ---
+  duration_ms: 0.018583
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: plain object -> undefined
+ok 16 - rootUnionKey: plain object -> undefined
+  ---
+  duration_ms: 0.021458
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: the real in-repo DOCGEN_OUTCOME_SCHEMA is a root oneOf
+ok 17 - rootUnionKey: the real in-repo DOCGEN_OUTCOME_SCHEMA is a root oneOf
+  ---
+  duration_ms: 0.03325
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: deterministic when a root carries more than one keyword
+ok 18 - rootUnionKey: deterministic when a root carries more than one keyword
+  ---
+  duration_ms: 0.033625
+  type: 'test'
+  ...
+# Subtest: rootUnionKey: PURITY — does not mutate its argument
+ok 19 - rootUnionKey: PURITY — does not mutate its argument
+  ---
+  duration_ms: 0.897541
+  type: 'test'
+  ...
+# Subtest: structured-output no longer exports normaliseSchemaForAnthropic
+ok 20 - structured-output no longer exports normaliseSchemaForAnthropic
+  ---
+  duration_ms: 0.037042
+  type: 'test'
+  ...
+# Subtest: CliProvider(claude).completeStructured rejects a root union locally, naming both vendor flags
+ok 21 - CliProvider(claude).completeStructured rejects a root union locally, naming both vendor flags
+  ---
+  duration_ms: 0.342375
+  type: 'test'
+  ...
+# Subtest: CliProvider(codex).completeStructured rejects a root union locally, naming both vendor flags
+ok 22 - CliProvider(codex).completeStructured rejects a root union locally, naming both vendor flags
+  ---
+  duration_ms: 0.090583
+  type: 'test'
+  ...
+# Subtest: NEGATIVE CONTROL (claude): a plain object schema does NOT hit the guard
+ok 23 - NEGATIVE CONTROL (claude): a plain object schema does NOT hit the guard
+  ---
+  duration_ms: 8.1125
+  type: 'test'
+  ...
+# Subtest: NEGATIVE CONTROL (codex): a plain object schema does NOT hit the guard
+ok 24 - NEGATIVE CONTROL (codex): a plain object schema does NOT hit the guard
+  ---
+  duration_ms: 6.311958
+  type: 'test'
+  ...
+# Subtest: NEGATIVE CONTROL: a schema with only a NESTED union reaches the spawn
+ok 25 - NEGATIVE CONTROL: a schema with only a NESTED union reaches the spawn
+  ---
+  duration_ms: 2.276042
+  type: 'test'
+  ...
+# Subtest: the guard rejection is NOT retryable
+ok 26 - the guard rejection is NOT retryable
+  ---
+  duration_ms: 0.604916
+  type: 'test'
+  ...
+# Subtest: the guard rejection costs no retry backoff
+ok 27 - the guard rejection costs no retry backoff
+  ---
+  duration_ms: 0.149542
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 366.599833

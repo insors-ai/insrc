@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: unwireAllHosts builds an adapter per HostSpec and removes the mcp key + steering block, returning a tally
+ok 1 - unwireAllHosts builds an adapter per HostSpec and removes the mcp key + steering block, returning a tally
+  ---
+  duration_ms: 1.870917
+  type: 'test'
+  ...
+# Subtest: unwireAllHosts is an idempotent no-op for a never-wired host (file byte-unchanged; failed:0)
+ok 2 - unwireAllHosts is an idempotent no-op for a never-wired host (file byte-unchanged; failed:0)
+  ---
+  duration_ms: 0.150416
+  type: 'test'
+  ...
+# Subtest: a host whose unwire() throws HostFileAccessError is counted in failed and does NOT abort the sweep
+ok 3 - a host whose unwire() throws HostFileAccessError is counted in failed and does NOT abort the sweep
+  ---
+  duration_ms: 0.251625
+  type: 'test'
+  ...
+# Subtest: runUninstall runs the sweep over HOST_SPECS + defaultHostFileSystem and never throws / never rejects
+ok 4 - runUninstall runs the sweep over HOST_SPECS + defaultHostFileSystem and never throws / never rejects
+  ---
+  duration_ms: 1.329833
+  type: 'test'
+  ...
+# Subtest: source-scan: src/uninstall.ts carries NO vscode import (plain node) and imports only the hosts seams + node builtins (k5)
+ok 5 - source-scan: src/uninstall.ts carries NO vscode import (plain node) and imports only the hosts seams + node builtins (k5)
+  ---
+  duration_ms: 0.629833
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 243.255792

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: parseArtifactId: DEF/HLD/LLD decode to the (kind, epicHash, storyId) locator
+ok 1 - parseArtifactId: DEF/HLD/LLD decode to the (kind, epicHash, storyId) locator
+  ---
+  duration_ms: 1.197541
+  type: 'test'
+  ...
+# Subtest: parseArtifactId: malformed or unsupported ids return null
+ok 2 - parseArtifactId: malformed or unsupported ids return null
+  ---
+  duration_ms: 0.069042
+  type: 'test'
+  ...
+# Subtest: an openQuestionId-anchored comment resolves that existing question (no append)
+ok 3 - an openQuestionId-anchored comment resolves that existing question (no append)
+  ---
+  duration_ms: 9.825125
+  type: 'test'
+  ...
+# Subtest: a section/quote/general comment appends a new open question then resolves it (a1)
+ok 4 - a section/quote/general comment appends a new open question then resolves it (a1)
+  ---
+  duration_ms: 7.348042
+  type: 'test'
+  ...
+# Subtest: a stale openQuestionId (not a current question) falls back to the append path
+ok 5 - a stale openQuestionId (not a current question) falls back to the append path
+  ---
+  duration_ms: 8.334667
+  type: 'test'
+  ...
+# Subtest: recorded === comments written; resolutions[] reports one entry per comment
+ok 6 - recorded === comments written; resolutions[] reports one entry per comment
+  ---
+  duration_ms: 7.648959
+  type: 'test'
+  ...
+# Subtest: malformed/unsupported artifactId -> { error }, no write
+ok 7 - malformed/unsupported artifactId -> { error }, no write
+  ---
+  duration_ms: 1.5855
+  type: 'test'
+  ...
+# Subtest: empty comments or a blank body -> { error }
+ok 8 - empty comments or a blank body -> { error }
+  ---
+  duration_ms: 0.778417
+  type: 'test'
+  ...
+# Subtest: repo unresolved -> { error }
+ok 9 - repo unresolved -> { error }
+  ---
+  duration_ms: 0.212667
+  type: 'test'
+  ...
+# Subtest: absent artifact json -> { error } (recorded 0, before any write)
+ok 10 - absent artifact json -> { error } (recorded 0, before any write)
+  ---
+  duration_ms: 0.768625
+  type: 'test'
+  ...
+# Subtest: a mid-batch record failure -> { error } naming recorded-so-far, no silent drop
+ok 11 - a mid-batch record failure -> { error } naming recorded-so-far, no silent drop
+  ---
+  duration_ms: 7.96275
+  type: 'test'
+  ...
+# Subtest: re-submitting the SAME general comment is idempotent (no duplicate open question)
+ok 12 - re-submitting the SAME general comment is idempotent (no duplicate open question)
+  ---
+  duration_ms: 13.749
+  type: 'test'
+  ...
+# Subtest: read-only-except-target: only the target artifact json is written
+ok 13 - read-only-except-target: only the target artifact json is written
+  ---
+  duration_ms: 6.179875
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 381.783667

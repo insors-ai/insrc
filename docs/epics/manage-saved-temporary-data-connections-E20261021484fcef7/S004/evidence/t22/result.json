@@ -1,0 +1,128 @@
+{
+  "subject": "CM-S4-GATE",
+  "runtime": "Node22.23.2",
+  "build": "fresh Node22 npm run build passed",
+  "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-reporter=tap src/daemon/db/__tests__/session-release-gate.test.ts src/daemon/db/__tests__/session-source-inventory.test.ts",
+  "result": {
+    "tests": 6,
+    "pass": 6,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "reviewedBoundaryFiles": 532,
+  "reviewedBoundarySites": 7518,
+  "explicitS004Sources": 17,
+  "sourceCompiledMaps": {
+    "src/daemon/connection-management-rpc.ts": {
+      "sourceDigest": "d7a58fa450f9ed84da8ae39b19921469bfad880b57c128d6d0b26c4df836a8da",
+      "compiledFile": "out/daemon/connection-management-rpc.js",
+      "compiledDigest": "b0eed812894bec705c8048248be673d25af79d1302f3791317b50d1a0c2c0988"
+    },
+    "src/daemon/connection-session-rpc.ts": {
+      "sourceDigest": "e5e63916aebfc404150cdc3e139755f3e2493713f64b22d788ad0d674dccdb6b",
+      "compiledFile": "out/daemon/connection-session-rpc.js",
+      "compiledDigest": "4dd4ff945845383673e21bce168980b328153b0ccd8c03a3646bdafa9aadca89"
+    },
+    "src/daemon/db-rpc.ts": {
+      "sourceDigest": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da",
+      "compiledFile": "out/daemon/db-rpc.js",
+      "compiledDigest": "51e499e88659ae6f1ee86fad78dd7ed76403c788a2c5de3b3bb88d9a4959e7d9"
+    },
+    "src/daemon/db/draft-test.ts": {
+      "sourceDigest": "6e477ef30876fe9e32da4e867e3aca709896d0d1e8eef6f57fed0b34cc21a95c",
+      "compiledFile": "out/daemon/db/draft-test.js",
+      "compiledDigest": "8b914407decd52da3d4c9f455a9582eab87b48fc17e4f8e2501045b012ff42de"
+    },
+    "src/daemon/db/management.ts": {
+      "sourceDigest": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489",
+      "compiledFile": "out/daemon/db/management.js",
+      "compiledDigest": "ecfbd41a4f7ad8154bd3f1f13f21a291b35b7f40e98aa1082ac664369694ea55"
+    },
+    "src/daemon/db/pool.ts": {
+      "sourceDigest": "8a1a5b3ed74d4b6463fbfb0b65820dd79d0a546d2414d77540a4a5f07e98d183",
+      "compiledFile": "out/daemon/db/pool.js",
+      "compiledDigest": "8e14ae168428368cef17108d969776b45690d81f1ccc736be222cf62ea17f741"
+    },
+    "src/daemon/db/secrets.ts": {
+      "sourceDigest": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca",
+      "compiledFile": "out/daemon/db/secrets.js",
+      "compiledDigest": "7fb9df768452be34f316dc1495d4685a9d5c8a85a882eaa7d91c4bc091135f26"
+    },
+    "src/daemon/db/session-entries.ts": {
+      "sourceDigest": "91b68d5f4b7bd58181898e0d95bc9f41a8eb24395cb2da9142847c39f7e83191",
+      "compiledFile": "out/daemon/db/session-entries.js",
+      "compiledDigest": "14d39c4297782ab1a861ec260987057fa60bf43fb5bef48a024291b7e166256f"
+    },
+    "src/daemon/db/session-ledger.ts": {
+      "sourceDigest": "258b6153921318c4f73db96ce5f29c6d7dd1ddae4bd6ce5493a424c13d3fdc50",
+      "compiledFile": "out/daemon/db/session-ledger.js",
+      "compiledDigest": "dfd5763376cd63d0a00c6a48dfa407920885e348c64fda8feafa5ab22959d101"
+    },
+    "src/daemon/db/session-management.ts": {
+      "sourceDigest": "b787103b0618f24543d6b636c79d2472a67ea11d8fdccb1a1c19d1f3c6846ada",
+      "compiledFile": "out/daemon/db/session-management.js",
+      "compiledDigest": "41959c71eae1e1910fe66dfc2f91e35c915e07d29ded6aca5aa4505fd66731ed"
+    },
+    "src/daemon/db/session-resources.ts": {
+      "sourceDigest": "344be9a116afd0d1ec644d63f63a8498f056175acef3adf00db81ba21ab7f348",
+      "compiledFile": "out/daemon/db/session-resources.js",
+      "compiledDigest": "96338a66ae9210e2c1529a615c4b1c1ec6120b7a874ca26547b7efaa94d816ab"
+    },
+    "src/shared/connection-management-wire.ts": {
+      "sourceDigest": "21d770c2c25207ceb009955d05ebf72d9c22f79a3afd8f630b2ea718072f6ead",
+      "compiledFile": "out/shared/connection-management-wire.js",
+      "compiledDigest": "936c52459a6cd73ffcd6b53d4ecb7abff43ae5015a70ed43fc7401dedbb6b539"
+    },
+    "src/shared/connection-management.ts": {
+      "sourceDigest": "91420d8952759a0c5c4a1602b9b143979fa211e7b656192bade5bab749a01200",
+      "compiledFile": "out/shared/connection-management.js",
+      "compiledDigest": "7c904532677399f4dcbe2ed7a2787a8afa870c06d0828421d241a3c9e24785f7"
+    },
+    "src/daemon/db/removal-retirement.ts": {
+      "sourceDigest": "ed9393a9adad751cf0752f103cb1951a5a70d6953a90d48fd937b7aa92b60169",
+      "compiledFile": "out/daemon/db/removal-retirement.js",
+      "compiledDigest": "53a1ab36bbefdc34976021dad882d665fd9940f6583b13a599827eebc32e6707"
+    },
+    "src/shared/connection-removal.ts": {
+      "sourceDigest": "e8597a68c8bbd87253dc646340c7adf6b43730a92041779641ebc792d486378e",
+      "compiledFile": "out/shared/connection-removal.js",
+      "compiledDigest": "0c7ec7280fe210eb42d50af0c369696d87015c47c1dd7f4b1f05554fa66befea"
+    },
+    "src/daemon/threads/method-class.ts": {
+      "sourceDigest": "f130c578b932343059eb6b23de5b08802abe91c74c692a7184de0a244df84fad",
+      "compiledFile": "out/daemon/threads/method-class.js",
+      "compiledDigest": "56a7052cd7e03bb617e3165029395e036a3d9a8a44cf0c7b46491e510892d140"
+    },
+    "src/daemon/db/management-enablement.ts": {
+      "sourceDigest": "544958c37a664d48cdd3d1492472f06d5bf32aa2d7756df145febd6bf83397ae",
+      "compiledFile": "out/daemon/db/management-enablement.js",
+      "compiledDigest": "e88bc970daa078a712a0c0c2b391f4106efdd291cceba64095d6380ad36bd1fd"
+    }
+  },
+  "negativeControls": [
+    "Stale/mixed/missing source, compiled hashes/maps, inventories, evidence and producer linkage refuse.",
+    "Self-consistent copied deployments that omit either required removal helper refuse.",
+    "Sc6-only verifier calls cannot bypass full session/external/client prerequisites."
+  ],
+  "privatePositiveControls": "Synthetic verified prerequisite statuses and copied manifests exist only in temporary verifier fixtures; they are not product acceptance or shipped evidence.",
+  "releaseEnabled": false,
+  "pendingPrerequisites": [
+    "Independent S001 foundation review",
+    "SQL Server Linux x64 CI/remote coverage",
+    "Historical sweep findings",
+    "Current-generation provider/service privacy enrollment",
+    "All-consumer Saved worker lease affinity",
+    "S005 VSCode and JetBrains rendering/keyboard acceptance"
+  ],
+  "unchangedShippedAssets": {
+    "src/assets/connection-management-gates.json": "91d6171e9c4520e55703ede34851302b8da029400b50e6784ac6ff8baf4b2d1b",
+    "src/assets/connection-management-inventory.json": "2bf9da5dec475b5c5d79b1532e01361503c9e94c95ba02cdc2d74d1daa938501",
+    "src/assets/connection-management-evidence.json": "2d4242392510383e27351b916149b3c3df49226ba52e38c5b80150993d21c259"
+  },
+  "logs": {
+    "node22-build.txt": "700fd6dbfbef786935546fd5a0ca041f955762c86ecc100c69c230cc5d45d6da",
+    "private-gates-and-inventory-pass.tap": "7f2a6ffd1314a8641436a452b58b04e18d7571fb676356f631824e0974bdcd2f",
+    "reviewed-source-classifications.json": "15a5252efff826e6dc213314bc9a0882d5f8e64ac0e3c8d153d110565186684e"
+  }
+}

@@ -1,0 +1,280 @@
+TAP version 13
+# Subtest: T5 a DEF with no review is withheld; an override reason approves it and is written on the artifact
+ok 1 - T5 a DEF with no review is withheld; an override reason approves it and is written on the artifact
+  ---
+  duration_ms: 3.932334
+  type: 'test'
+  ...
+# Subtest: T5 a HLD with no review is withheld; an override reason approves it and is written on the artifact
+ok 2 - T5 a HLD with no review is withheld; an override reason approves it and is written on the artifact
+  ---
+  duration_ms: 1.666
+  type: 'test'
+  ...
+# Subtest: T5 a LLD with no review is withheld; an override reason approves it and is written on the artifact
+ok 3 - T5 a LLD with no review is withheld; an override reason approves it and is written on the artifact
+  ---
+  duration_ms: 1.43925
+  type: 'test'
+  ...
+# Subtest: T5 the message names the reviewer that is needed: a controller review for daemon-authored work
+ok 4 - T5 the message names the reviewer that is needed: a controller review for daemon-authored work
+  ---
+  duration_ms: 1.803375
+  type: 'test'
+  ...
+# Subtest: T5 an ISSUE with no review is approved on the approval alone
+ok 5 - T5 an ISSUE with no review is approved on the approval alone
+  ---
+  duration_ms: 1.732958
+  type: 'test'
+  ...
+# Subtest: T5 an SPEC with no review is approved on the approval alone
+ok 6 - T5 an SPEC with no review is approved on the approval alone
+  ---
+  duration_ms: 1.281875
+  type: 'test'
+  ...
+# Subtest: T5 an PLAN with no review is approved on the approval alone
+ok 7 - T5 an PLAN with no review is approved on the approval alone
+  ---
+  duration_ms: 8.780041
+  type: 'test'
+  ...
+# Subtest: T6 a DEF authored AND reviewed by the controller is withheld; an override approves it and is recorded
+ok 8 - T6 a DEF authored AND reviewed by the controller is withheld; an override approves it and is recorded
+  ---
+  duration_ms: 1.512
+  type: 'test'
+  ...
+# Subtest: T6 a DEF authored by the controller and reviewed by the daemon with nothing blocking is approved
+ok 9 - T6 a DEF authored by the controller and reviewed by the daemon with nothing blocking is approved
+  ---
+  duration_ms: 1.085
+  type: 'test'
+  ...
+# Subtest: T6 a DEF authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+ok 10 - T6 a DEF authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+  ---
+  duration_ms: 1.884791
+  type: 'test'
+  ...
+# Subtest: T6 a DEF authored by the daemon and reviewed by the controller with nothing blocking is approved
+ok 11 - T6 a DEF authored by the daemon and reviewed by the controller with nothing blocking is approved
+  ---
+  duration_ms: 1.304042
+  type: 'test'
+  ...
+# Subtest: T6 a HLD authored AND reviewed by the controller is withheld; an override approves it and is recorded
+ok 12 - T6 a HLD authored AND reviewed by the controller is withheld; an override approves it and is recorded
+  ---
+  duration_ms: 1.658791
+  type: 'test'
+  ...
+# Subtest: T6 a HLD authored by the controller and reviewed by the daemon with nothing blocking is approved
+ok 13 - T6 a HLD authored by the controller and reviewed by the daemon with nothing blocking is approved
+  ---
+  duration_ms: 1.615375
+  type: 'test'
+  ...
+# Subtest: T6 a HLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+ok 14 - T6 a HLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+  ---
+  duration_ms: 1.948292
+  type: 'test'
+  ...
+# Subtest: T6 a HLD authored by the daemon and reviewed by the controller with nothing blocking is approved
+ok 15 - T6 a HLD authored by the daemon and reviewed by the controller with nothing blocking is approved
+  ---
+  duration_ms: 2.003959
+  type: 'test'
+  ...
+# Subtest: T6 a LLD authored AND reviewed by the controller is withheld; an override approves it and is recorded
+ok 16 - T6 a LLD authored AND reviewed by the controller is withheld; an override approves it and is recorded
+  ---
+  duration_ms: 1.32425
+  type: 'test'
+  ...
+# Subtest: T6 a LLD authored by the controller and reviewed by the daemon with nothing blocking is approved
+ok 17 - T6 a LLD authored by the controller and reviewed by the daemon with nothing blocking is approved
+  ---
+  duration_ms: 0.984542
+  type: 'test'
+  ...
+# Subtest: T6 a LLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+ok 18 - T6 a LLD authored AND reviewed by the daemon is withheld; an override approves it and is recorded
+  ---
+  duration_ms: 1.082458
+  type: 'test'
+  ...
+# Subtest: T6 a LLD authored by the daemon and reviewed by the controller with nothing blocking is approved
+ok 19 - T6 a LLD authored by the daemon and reviewed by the controller with nothing blocking is approved
+  ---
+  duration_ms: 0.927292
+  type: 'test'
+  ...
+# Subtest: T6 an other-party review whose verdict BLOCKS still withholds without an override
+ok 20 - T6 an other-party review whose verdict BLOCKS still withholds without an override
+  ---
+  duration_ms: 1.165209
+  type: 'test'
+  ...
+# Subtest: T6 an unknown author or an unknown reviewer never withholds by itself
+ok 21 - T6 an unknown author or an unknown reviewer never withholds by itself
+  ---
+  duration_ms: 2.583208
+  type: 'test'
+  ...
+# Subtest: T6 older records with no party field are judged by their model labels
+ok 22 - T6 older records with no party field are judged by their model labels
+  ---
+  duration_ms: 1.902667
+  type: 'test'
+  ...
+# Subtest: T6 the same-party rule applies to any artifact that carries a review, also one that needs none
+ok 23 - T6 the same-party rule applies to any artifact that carries a review, also one that needs none
+  ---
+  duration_ms: 1.229084
+  type: 'test'
+  ...
+# Subtest: T7 a BUILD record whose Story has no code review is withheld (enforcement off)
+ok 24 - T7 a BUILD record whose Story has no code review is withheld (enforcement off)
+  ---
+  duration_ms: 85.248042
+  type: 'test'
+  ...
+# Subtest: T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement off)
+ok 25 - T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement off)
+  ---
+  duration_ms: 75.046041
+  type: 'test'
+  ...
+# Subtest: T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement off)
+ok 26 - T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement off)
+  ---
+  duration_ms: 82.538208
+  type: 'test'
+  ...
+# Subtest: T7 a BUILD record whose Story has no code review is withheld (enforcement on)
+ok 27 - T7 a BUILD record whose Story has no code review is withheld (enforcement on)
+  ---
+  duration_ms: 79.546792
+  type: 'test'
+  ...
+# Subtest: T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement on)
+ok 28 - T7 a BUILD record written AND code-reviewed by the controller is withheld; reviewed by the daemon it completes (enforcement on)
+  ---
+  duration_ms: 77.621584
+  type: 'test'
+  ...
+# Subtest: T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement on)
+ok 29 - T7 a BUILD record written AND code-reviewed by the daemon is withheld; reviewed by the controller it completes (enforcement on)
+  ---
+  duration_ms: 75.9545
+  type: 'test'
+  ...
+# Subtest: T7 for a BUILD record too, an unknown author or reviewer does not withhold, and an older code review is read by its model label
+ok 30 - T7 for a BUILD record too, an unknown author or reviewer does not withhold, and an older code review is read by its model label
+  ---
+  duration_ms: 117.207209
+  type: 'test'
+  ...
+# Subtest: T7 a malformed code review cannot establish legacy identity
+ok 31 - T7 a malformed code review cannot establish legacy identity
+  ---
+  duration_ms: 36.986666
+  type: 'test'
+  ...
+# Subtest: T7 the TUI approve service applies the same rules: it calls the same function
+ok 32 - T7 the TUI approve service applies the same rules: it calls the same function
+  ---
+  duration_ms: 4.190417
+  type: 'test'
+  ...
+# Subtest: T8 a batch approval lists every withheld artifact in skipped[] with its reason, and approves the rest
+ok 33 - T8 a batch approval lists every withheld artifact in skipped[] with its reason, and approves the rest
+  ---
+  duration_ms: 12.850041
+  type: 'test'
+  ...
+# Subtest: T18 a DEF fixture (author: controller) stamped with the shared helper is approved with no override
+ok 34 - T18 a DEF fixture (author: controller) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.201208
+  type: 'test'
+  ...
+# Subtest: T18 a DEF fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 35 - T18 a DEF fixture (author: daemon) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.121958
+  type: 'test'
+  ...
+# Subtest: T18 a DEF fixture (author: none) stamped with the shared helper is approved with no override
+ok 36 - T18 a DEF fixture (author: none) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.347
+  type: 'test'
+  ...
+# Subtest: T18 a HLD fixture (author: controller) stamped with the shared helper is approved with no override
+ok 37 - T18 a HLD fixture (author: controller) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.387291
+  type: 'test'
+  ...
+# Subtest: T18 a HLD fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 38 - T18 a HLD fixture (author: daemon) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.387833
+  type: 'test'
+  ...
+# Subtest: T18 a HLD fixture (author: none) stamped with the shared helper is approved with no override
+ok 39 - T18 a HLD fixture (author: none) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.430917
+  type: 'test'
+  ...
+# Subtest: T18 a LLD fixture (author: controller) stamped with the shared helper is approved with no override
+ok 40 - T18 a LLD fixture (author: controller) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 2.3965
+  type: 'test'
+  ...
+# Subtest: T18 a LLD fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 41 - T18 a LLD fixture (author: daemon) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.780208
+  type: 'test'
+  ...
+# Subtest: T18 a LLD fixture (author: none) stamped with the shared helper is approved with no override
+ok 42 - T18 a LLD fixture (author: none) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 1.527458
+  type: 'test'
+  ...
+# Subtest: T18 a BUILD fixture (author: controller) stamped with the shared helper is approved with no override
+ok 43 - T18 a BUILD fixture (author: controller) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 2.664958
+  type: 'test'
+  ...
+# Subtest: T18 a BUILD fixture (author: daemon) stamped with the shared helper is approved with no override
+ok 44 - T18 a BUILD fixture (author: daemon) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 2.481833
+  type: 'test'
+  ...
+# Subtest: T18 a BUILD fixture (author: none) stamped with the shared helper is approved with no override
+ok 45 - T18 a BUILD fixture (author: none) stamped with the shared helper is approved with no override
+  ---
+  duration_ms: 2.65075
+  type: 'test'
+  ...
+1..45
+# tests 45
+# suites 0
+# pass 45
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1199.818167

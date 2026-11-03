@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup
+ok 1 - evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup
+  ---
+  duration_ms: 25.579084
+  type: 'test'
+  ...
+# Subtest: the highlighter module holds no script tag and its byte length stays under 250 KB
+ok 2 - the highlighter module holds no script tag and its byte length stays under 250 KB
+  ---
+  duration_ms: 11.225125
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 210.539333

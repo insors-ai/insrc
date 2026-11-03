@@ -14,7 +14,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 
@@ -26,6 +26,7 @@ import { IndexQueue } from '../../daemon/queue.js';
 import type { Watcher } from '../watcher.js';
 import { IndexerService } from '../index.js';
 import { selectFile } from '../file-selection.js';
+import { createFileFilter } from '../file-filter.js';
 import { getParser } from '../parser/registry.js';
 import { basenameParser } from '../parser/artifact.js';
 
@@ -42,6 +43,10 @@ test.beforeEach(async () => {
 	store = mkdtempSync(join(tmpdir(), 'insrc-s1t7-store-'));
 	setGraphStorePath(join(store, 'graph.lmdb'));
 	repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-s1t7-repo-')));
+	// A root ignore file, so the full index proposes none (s6), that leaves
+	// itself out, so the selections are the fixtures' own files. A test that
+	// needs its own rules writes over it.
+	writeFileSync(join(repo, '.gitignore'), '.gitignore\n', 'utf8');
 });
 test.afterEach(async () => {
 	await closeGraphStore();
@@ -57,8 +62,9 @@ function write(rel: string, text: string): string {
 }
 
 test('the predicate classes a .png, a .min.js, a lock file and a JSON over 256 KB as not-code, a .ts under an ignored directory as excluded-by-ignore, and a .css and a .json under the limit as selected', () => {
-	const ignore = ['build'];
-	const cls = (rel: string, text = 'x') => selectFile(write(rel, text), repo, ignore);
+	write('.gitignore', 'build/\n');
+	const filter = createFileFilter(repo);
+	const cls = (rel: string, text = 'x') => selectFile(write(rel, text), filter);
 	assert.equal(cls('assets/logo.png'), 'not-code');
 	assert.equal(cls('vendor/lib.min.js', 'var a=1;'), 'not-code');
 	assert.equal(cls('package-lock.json', '{}'), 'not-code');
@@ -122,4 +128,17 @@ test('on a mixed fixture the full index selects the files it selected before, le
 	const now = await fullIndexSelection();
 	assert.deepEqual(before.filter(f => !now.includes(f)).sort(), ['data/big.json', 'package-lock.json']);
 	assert.deepEqual(now.filter(f => !before.includes(f)), [], 'nothing selected that was not before');
+});
+
+test('lc1: a stale .insrc/config.json ignore array from before Story s6 is read by nothing -- only FileFilter decides what the full index takes', async () => {
+	// The array names src and docs, which the old per-repo list would have
+	// dropped; the repository's real ignore file names only build/.
+	write('.insrc/config.json', JSON.stringify({ ignore: ['src', 'docs', 'build'] }));
+	write('.gitignore', 'build/\n');
+	write('src/a.ts', 'export const a = 1;\n');
+	write('docs/guide.md', '# Guide\n\ntext\n');
+	write('build/gen.ts', 'export const g = 1;\n');
+
+	assert.deepEqual(await fullIndexSelection(), ['.gitignore', 'docs/guide.md', 'src/a.ts'].filter(f => BEFORE_T7(join(repo, f))).sort());
+	assert.equal(JSON.parse(readFileSync(join(repo, '.insrc/config.json'), 'utf8')).ignore.length, 3, 'the stale array is left on disk untouched');
 });

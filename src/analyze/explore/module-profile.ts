@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -26,6 +27,8 @@ import { basename, extname, join, sep } from 'node:path';
 
 import { getDb } from '../../db/client.js';
 import { listEntitiesForRepo } from '../../db/entities.js';
+import { excludesDirectory, type FileFilter } from '../../indexer/file-filter.js';
+import { runFileFilter } from '../context/run-file-filter.js';
 import { getLogger } from '../../shared/logger.js';
 import type { Entity } from '../../shared/types.js';
 
@@ -45,13 +48,6 @@ const log = getLogger('analyze:explore:module-profile');
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
-
-const IGNORE_DIRS = new Set([
-	'node_modules', '.git', '__pycache__', '.venv', 'venv',
-	'.tox', 'dist', 'build', '.next', '.cache', 'target',
-	'.mypy_cache', '.pytest_cache', '.ruff_cache',
-	'.DS_Store', 'coverage', '.idea', '.vscode',
-]);
 
 /**
  * Filenames that typically hold module-level exports / entry points.
@@ -143,10 +139,7 @@ export async function runModuleProfile(
 
 	if (stat.isFile()) {
 		const profile = await profileFile(path, entities, measurer, partlyRead);
-		log.info(
-			{ runId: ctx.runId, path, kind: 'file', entityCount: profile.entityCount },
-			'module.profile: file profiled',
-		);
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, path, kind: 'file', entityCount: profile.entityCount }, 'module.profile: file profiled']);
 		return {
 			type: 'module.profile',
 			completeness: buildCompleteness({ returned: 1, partlyRead, basis: 'filesystem', basisNote: ENTRYPOINT_RULE }),
@@ -155,9 +148,8 @@ export async function runModuleProfile(
 	}
 
 	const skipped: SkippedItem[] = [];
-	const profile = await profileDir(path, entities, ctx.ignoreFilter, measurer, partlyRead, skipped);
-	log.info(
-		{
+	const profile = await profileDir(path, entities, ctx.ignoreFilter, runFileFilter(ctx.repoPath), measurer, partlyRead, skipped);
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:       ctx.runId,
 			path,
 			kind:        'dir',
@@ -166,9 +158,7 @@ export async function runModuleProfile(
 			exports:     profile.exports.length,
 			entrypoints: profile.entrypoints.length,
 			entityCount: profile.entityCount,
-		},
-		'module.profile: dir profiled',
-	);
+	}, 'module.profile: dir profiled']);
 	return {
 		type: 'module.profile',
 		// Every immediate child of the directory is listed; nothing is cut by count.
@@ -191,6 +181,7 @@ async function profileDir(
 	dir:      string,
 	entities: readonly Entity[],
 	ignoreFilter: import('../context/repo-ignore-filter.js').RepoIgnoreFilter,
+	fileFilter: FileFilter,
 	measurer:   ItemMeasurer,
 	partlyRead: PartlyReadItem[],
 	skipped:    SkippedItem[],
@@ -207,13 +198,8 @@ async function profileDir(
 	// could not run: this throws, and the executor reports it as failed.
 	const entries: string[] = readdirSync(dir);
 	for (const name of entries) {
-		if (IGNORE_DIRS.has(name)) continue;
 		if (name.startsWith('.') && name !== '.env.example') continue;
 		const full = join(dir, name);
-		// .gitignore-aware filter. See analyze/context/repo-ignore-
-		// filter.ts -- drops anything not tracked by git (out/, build/,
-		// dist/, target/, .next/, node_modules/, ...). Permissive for
-		// non-git repos, so the IGNORE_DIRS set above still guards.
 		if (!ignoreFilter.isIncluded(full)) continue;
 		let s;
 		try { s = statSync(full); }
@@ -222,9 +208,14 @@ async function profileDir(
 			skipped.push({ what: full, reason: `the entry could not be read (${(err as NodeJS.ErrnoException).code ?? (err as Error).message})` });
 			continue;
 		}
+		// The repository's one rule for what the index leaves out
+		// (Epic c2ba6fa6 s6): its real ignore files, git's tracked files and
+		// the built-in exclusions -- for a non-git repository too.
 		if (s.isDirectory()) {
+			if (excludesDirectory(fileFilter, full)) continue;
 			subdirs.push(full);
 		} else if (s.isFile()) {
+			if (!fileFilter.includes(full)) continue;
 			const entity = findFileEntity(entities, full);
 			filesInDir.push({
 				file:     full,

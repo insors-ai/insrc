@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * `entity_vec` LanceDB table -- entity embeddings + filter columns.
  *
@@ -116,6 +117,7 @@ export function _resetEntityVecCache(): void {
  * `embeddingModel` was empty).
  */
 export async function addEntityEmbedding(row: EntityVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await addEntityEmbeddings([row]);
 }
 
@@ -127,6 +129,7 @@ export async function addEntityEmbedding(row: EntityVecRow): Promise<void> {
  * O(target) JOIN cost is fatal at scale).
  */
 export async function addEntityEmbeddings(rows: readonly EntityVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getEntityVecTable();
 	await table.add(rows.map(r => ({
@@ -139,10 +142,12 @@ export async function addEntityEmbeddings(rows: readonly EntityVecRow[]): Promis
 }
 
 export async function writeEntityEmbedding(row: EntityVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await writeEntityEmbeddings([row]);
 }
 
 export async function writeEntityEmbeddings(rows: readonly EntityVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getEntityVecTable();
 	// Native upsert via Lance's mergeInsert -- one round-trip, dedup
@@ -195,9 +200,10 @@ export async function writeEntityEmbeddings(rows: readonly EntityVecRow[]): Prom
  * even files newer than 7 days." Lance's default keeps 7 days of
  * version history because in-progress transactions can reference
  * recent files; we override because the daemon's indexer is the
- * only writer + drives this call from the per-file loop where no
- * concurrent Lance writes are in-flight (each indexFile() awaits
- * its full upsertEntities() round-trip before the next iteration).
+ * only writer, and every caller goes through compactEntityVectors
+ * (db/entities.ts), which holds the vector lock: no other change to
+ * this table is in flight meanwhile, including the backfill lane's
+ * (ISSUE-8c7d75b0 review). Never call this directly.
  *
  * Indexer's full-index loop calls this every 500 files. Errors are
  * non-fatal -- compaction is housekeeping, not load-bearing.
@@ -207,6 +213,7 @@ export async function compactEntityVecTable(): Promise<{
 	filesRemoved:     number;
 	elapsedMs:        number;
 }> {
+	assertNoSessionPersistence();
 	const t0 = Date.now();
 	const table = await getEntityVecTable();
 	const stats = await table.optimize({
@@ -264,6 +271,7 @@ const HNSW_THRESHOLD = 50_000;
 export async function optimizeEntityVecIndex(
 	opts: { force?: boolean } = {},
 ): Promise<{ built: boolean; rowCount: number; elapsedMs: number }> {
+	assertNoSessionPersistence();
 	const t0 = Date.now();
 	const table = await getEntityVecTable();
 	const rowCount = await table.countRows();
@@ -318,6 +326,7 @@ export async function searchEntityVecs(
 	limit: number,
 	filter: EntityVecFilter = 'all',
 ): Promise<EntityVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || closureRepos.length === 0) return [];
 	// An empty list of kinds or of ids matches no row, and the query engine
 	// rejects an empty IN list: no hits, and no query is made.
@@ -363,12 +372,22 @@ export async function searchEntityVecs(
 // ---------------------------------------------------------------------------
 
 export async function deleteEntityVec(id: string): Promise<void> {
+	assertNoSessionPersistence();
 	if (id === '') return;
 	const table = await getEntityVecTable();
 	await table.delete(`id = '${escapeLanceString(id)}'`);
 }
 
+/** Every entity id with a stored vector (the seed row left out). */
+export async function listEntityVecIds(): Promise<string[]> {
+	assertNoSessionPersistence();
+	const table = await getEntityVecTable();
+	const rows = await table.query().select(['id']).toArray();
+	return rows.map(r => r['id'] as string).filter(id => id !== '_seed_entity_vec');
+}
+
 export async function deleteEntityVecsByIds(ids: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	const table = await getEntityVecTable();
 	const list = ids.map(id => `'${escapeLanceString(id)}'`).join(', ');
@@ -376,6 +395,7 @@ export async function deleteEntityVecsByIds(ids: readonly string[]): Promise<voi
 }
 
 export async function deleteEntityVecsForRepo(repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	const table = await getEntityVecTable();
 	await table.delete(`repo = '${escapeLanceString(repo)}'`);
 }

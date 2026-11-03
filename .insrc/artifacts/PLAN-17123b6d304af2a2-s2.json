@@ -1,0 +1,627 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793602611579-wepkhi",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T06:56:58.277Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 6684,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "17123b6d304af2a2",
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "storyId": "s2",
+    "lldRunId": "wf-1793599888907-mgb1d3",
+    "lldEffectiveHash": "18ac1fc6f9d6876c125e243762b023f8b6fc223d9c20904cdbbee1c8e5588af9",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-02T06:58:05.544Z",
+    "rangeBase": "46a255bf3fe90f290db7fca3f3bd53b0f47034ab"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build a separate bounded file journal that acknowledges eligible events only after durable acceptance, recovers interrupted writes explicitly, and preserves retry identity. Integrate the queue into the existing standalone lifecycle without changing public contracts; semantic processing and Lance receipts remain later stories. Run focused tests per task, qualify crash behavior on named platforms, then validate the complete package and root build after all implementation changes."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define private queue types and canonical bounded codec",
+        "summary": "Implement packages/project-memory/src/queue/types.ts and packages/project-memory/src/queue/codec.ts, canonical JSON/strict envelope validation, immutable snapshots and incremental ingress reservations without editing public packages/project-memory/src/types.ts.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Preserve sc1/sc2 and sc3 signatures; private proof includes scope, epoch and bounded metadata.",
+          "Reject unsafe JSON, invalid Unicode/envelopes, depth/node/byte excess; preserve content, key-order equivalence and -0 deterministically.",
+          "Stable domain-separated identity and full admitted-command hash distinguish exact retry from conflicting reuse."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "canonical-json-frame-length-checksum-and-bounded-decoding"
+          },
+          {
+            "level": "unit",
+            "name": "immutable-policy-snapshot-before-persistence"
+          },
+          {
+            "level": "unit",
+            "name": "scoped-identity-exact-retry-and-conflicting-reuse"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add owned filesystem primitives and format bootstrap",
+        "summary": "Implement private packages/project-memory/src/queue/io.ts, exact-file identity checks, writeAll, explicit file/directory sync and bounded format/bootstrap state under S1 ownership.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "No implicit roots or backend imports; format.json and numbered segments created durably and exclusively.",
+          "Handle short/zero writes and sanitize OS failures; preserve bytes and ownership on uncertain I/O.",
+          "Expose private fault-injection seams only; no production fault options."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "owned-bootstrap-short-write-and-directory-sync"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Publish bounded checkpoints and segment rotation",
+        "summary": "Implement packages/project-memory/src/queue/checkpoint.ts with current/prior replacement protocol, immutable numbered segments, reservation accounting and rotation target semantics.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Backup and replacement require file sync/rename/directory sync in approved order; uncertainty fences mutations.",
+          "Physical retained bytes, per-frame/segment/control reservations and ceilings are enforced before acceptance.",
+          "Valid oversized single frames use dedicated bounded segments; uint64 identifiers never wrap."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "retained-byte-and-worst-case-metadata-reservations"
+          },
+          {
+            "level": "unit",
+            "name": "checkpoint-schema-generation-and-retry-state-validation"
+          },
+          {
+            "level": "integration",
+            "name": "rotation-orphan-successor-and-checkpoint-replacement-matrix"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Recover accepted frontiers and diagnose corruption",
+        "summary": "Implement packages/project-memory/src/queue/recovery.ts with strict checkpoint/segment validation and bounded durable recovery/fault records.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Never roll back a corrupt published checkpoint to silently lose accepted work.",
+          "Promote only valid contiguous complete suffixes; trim only incomplete unterminated unaccepted tail under durable intent/report.",
+          "Missing accepted files, duplicates, sequence gaps, complete malformed lines, unknown versions and event-bearing orphans fail closed; exact successor header-only orphan follows specified protocol."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail"
+          },
+          {
+            "level": "integration",
+            "name": "published-checkpoint-and-sealed-corruption-fail-closed"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement serialized durable append and backpressure",
+        "summary": "Implement packages/project-memory/src/queue/file-queue.ts append/seal/stats on one bounded FIFO mutation lane with acceptance-frontier publication.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Accepted response follows full frame write, data sync and durable checkpoint frontier; no semantic commit claim.",
+          "Reserve physical and future metadata budgets; full queue rejects new work without evicting pending events.",
+          "Any ambiguous write/publication failure fences the lane until quiescent recovery; stats distinguish pending events/retained bytes."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "durable-append-frontier-and-full-queue-refusal"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Enforce policy-bound admission and retry identity",
+        "summary": "Implement packages/project-memory/src/queue/admission.ts with invocation-time snapshot/reservation, bind/admit/revalidation and exact retry lookup before disk-budget rejection.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Denied/unbound/invalid commands leave no event bytes, invoke no models and emit no payload logs.",
+          "Policy may redact payload only; validate namespace ownership and epoch; same key/hash/epoch deduplicates and changed reuse conflicts.",
+          "Concurrent calls preserve invocation FIFO including policy waits; ingress count/memory reservations refund correctly and hanging policy blocks safely."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "concurrent-admission-fifo-and-idempotent-retry"
+          },
+          {
+            "level": "integration",
+            "name": "privacy-binding-and-scope-status-isolation-before-enqueue"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Implement pinned replay and scoped operation lookup",
+        "summary": "Add bounded replay snapshots/cursors, authorized status reads and retained retry index.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Replay preserves total sequence, unresolved holes and reader pins; paused readers prevent deletion.",
+          "Status rebinds scope; every stored qualifier must match a supplied qualifier, provenance session is distinct, unknown/mismatch are indistinguishable.",
+          "Drain accounting tracks active readers/calls separately from durable backlog; no new replay/status starts after stopAdmission."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "pinned-replay-and-qualified-operation-status"
+          },
+          {
+            "level": "integration",
+            "name": "retry-holes-do-not-authorize-mixed-segment-deletion"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Validate authoritative terminal receipt proofs",
+        "summary": "Implement S2-owned read-only verifier collaborator and markResolved bookkeeping using a test fake only.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Authoritative lookup first when installed reconciles lost queue ACK and recycled identity; validate scope/key/hash/epoch/generation and logical terminal proof.",
+          "Absent/unavailable/mismatched/nonterminal proof never permits resolution; queue-only S2 cannot resolve/recycle.",
+          "cleanup-pending is terminal only with explicit proof, without claiming physical deletion complete; no Lance store or worker implementation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "sc3-receipt-verifier-proof-and-causal-order-contract"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Recycle verified unpinned segments recoverably",
+        "summary": "Implement receipt barrier and one-segment retirement checkpoint/unlink/directory-sync/finalization protocol.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Only sealed fully terminal unpinned segments can retire; mixed pending segments remain.",
+          "Crash at any retirement phase resumes recorded intent safely, including exact already-unlinked files.",
+          "After recycling authoritative receipts prevent duplicate replay; missing verifier fails closed including older queue-only reopen; no second permanent receipt ledger."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "verified-terminal-ack-retirement-and-reader-pins"
+          },
+          {
+            "level": "integration",
+            "name": "recycled-identity-requires-authoritative-receipt-capability"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Compose queue startup and service lifecycle",
+        "summary": "Wire packages/project-memory/src/host-node.ts and packages/project-memory/src/runtime.ts private ingress delegate and OwnedWork with tracked partial-startup ownership.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Return service only after recovery; submit/operation perform real queue work while context/search/inspect stay NOT_READY.",
+          "Stop admission, drain calls/I/O/leases, then close handles; durable backlog remains replayable and does not block clean shutdown.",
+          "Startup/close failures retain owner unless cleanup verified; supplied models/policy/logger stay host-owned; service and participant drain are distinct."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "drain-close-startup-failure-preserve-backlog-and-ownership"
+          },
+          {
+            "level": "integration",
+            "name": "public-service-accepted-status-and-unavailable-semantic-capabilities"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Complete deterministic failure and privacy matrices",
+        "summary": "Exercise real-filesystem private faults and adversarial contract cases across integrated queue paths.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "Inject before/after write, sync, backup/rename, rotation, retirement and unlink; uncertain outcomes fence and recover.",
+          "Cover retry-full queue, source mutation, scope omissions after recycling, policy failures, metadata caps, clocks, overflow and paused readers.",
+          "Use durable fake verifier to test receipt boundaries while explicitly excluding S3 Lance atomicity claims."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "write-sync-rename-unlink-failure-fences-the-lane"
+          },
+          {
+            "level": "integration",
+            "name": "adversarial-admission-and-recycled-scope-isolation"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Qualify native process crash recovery on macOS and Linux",
+        "summary": "Add Node22 child barrier/SIGKILL accepted-set oracle and real ownership/filesystem qualification.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "Accepted identities/order survive kill at every durable boundary and duplicate retry causes no logical duplication.",
+          "Run on actual macOS/APFS and Linux/ext4 Node >=22.22.1 <23 with native ownership; unsupported/skipped runs are pending, never passed.",
+          "Publish environment and coverage evidence; process/fault tests do not imply hardware power-loss qualification."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "accepted-set-survives-process-kill-at-every-boundary"
+          },
+          {
+            "level": "integration",
+            "name": "macos-apfs-linux-ext4-node22-queue-qualification"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Measure queue resource and durability costs",
+        "summary": "Add reproducible bounded benchmark/evidence for queue acceptance/recovery with actual durability steps enabled.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Named hardware/OS/filesystem/Node corpus covers 1KiB/64KiB/1MiB commands, 16MiB safety edge and empty/1k/metadata-cap backlogs.",
+          "Report p50/p95 acceptance, cold recovery, physical data/control bytes and RSS/heap/counters; semantic commit is unimplemented.",
+          "No invented production defaults/latency SLO; record operational limits and handoff obligations for S3/S4/S9."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "queue-resource-and-fsync-cost-measurement"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Verify packed independent consumption and integrated build",
+        "summary": "Extend recursive dist/dependency closure verification for queue modules, external consumer smoke and package documentation.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "Isolated normally installed tarball submits, crashes/reopens, retries and queries accepted status without workspace/backend access.",
+          "Pure import has no side effects; recursive package contents/types/native dependency closure and natural exit verified.",
+          "After all code tasks complete run package suite and root build once; preserve existing S1 lifecycle/ownership tests and record any unrelated failures separately."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "packed-external-submit-crash-reopen-and-operation"
+          },
+          {
+            "level": "smoke",
+            "name": "pure-import-and-no-daemon-or-backend-storage-dependency"
+          },
+          {
+            "level": "smoke",
+            "name": "package-suite-root-build-and-current-source-ci-evidence"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "canonical-json-frame-length-checksum-and-bounded-decoding",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "immutable-policy-snapshot-before-persistence",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "scoped-identity-exact-retry-and-conflicting-reuse",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "retained-byte-and-worst-case-metadata-reservations",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "checkpoint-schema-generation-and-retry-state-validation",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "concurrent-admission-fifo-and-idempotent-retry",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "accepted-set-survives-process-kill-at-every-boundary",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "published-checkpoint-and-sealed-corruption-fail-closed",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "write-sync-rename-unlink-failure-fences-the-lane",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "verified-terminal-ack-retirement-and-reader-pins",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "recycled-identity-requires-authoritative-receipt-capability",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "retry-holes-do-not-authorize-mixed-segment-deletion",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "drain-close-startup-failure-preserve-backlog-and-ownership",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "macos-apfs-linux-ext4-node22-queue-qualification",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "sc3-receipt-verifier-proof-and-causal-order-contract",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "privacy-binding-and-scope-status-isolation-before-enqueue",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "packed-external-submit-crash-reopen-and-operation",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "pure-import-and-no-daemon-or-backend-storage-dependency",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "package-suite-root-build-and-current-source-ci-evidence",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "queue-resource-and-fsync-cost-measurement",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:25"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:132"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:123"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:141"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:165"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:174"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:182"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:205"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/LLD.md:284"
+    }
+  ]
+}

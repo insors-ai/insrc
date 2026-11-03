@@ -159,9 +159,21 @@
     "insrc-attlist",
     "insrc-atterr",
     "insrc-attach",
-    "insrc-provider",
     "insrc-modeseg",
-    "insrc-mode"
+    "insrc-mode",
+    "insrc-runbtn",
+    "insrc-effortbtn",
+    "insrc-effortlabel",
+    "insrc-runpop",
+    "insrc-provpane",
+    "insrc-modelpane",
+    "insrc-popfoot",
+    "insrc-effortpop",
+    "insrc-effortslider",
+    "insrc-ticks",
+    "insrc-notches",
+    "insrc-effortnote",
+    "insrc-catalog"
   ],
   "sharedSheetSha256": "16c89358c8033f56af1c7f838e0d3dd58a07a5a85d05860f0ca92877d4a1b94e",
   "docsReviewMarkdownSha256": "f1d698593ebb747cb56002cbac8b9c80a37c79bbb3c729e8431e67a58d45b90f"

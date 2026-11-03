@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: an approved issue artifact fires advanceBugfixAfterIssue with {repoPath, issueHash, repo}
+ok 1 - an approved issue artifact fires advanceBugfixAfterIssue with {repoPath, issueHash, repo}
+  ---
+  duration_ms: 1.375583
+  type: 'test'
+  ...
+# Subtest: a non-bugfix approval fires no seam and returns an empty followOn
+ok 2 - a non-bugfix approval fires no seam and returns an empty followOn
+  ---
+  duration_ms: 0.132917
+  type: 'test'
+  ...
+# Subtest: an issue artifact missing issueHash does NOT advance (guarded)
+ok 3 - an issue artifact missing issueHash does NOT advance (guarded)
+  ---
+  duration_ms: 0.066917
+  type: 'test'
+  ...
+# Subtest: a rejecting advance seam is captured as ok:false + note, never propagates
+ok 4 - a rejecting advance seam is captured as ok:false + note, never propagates
+  ---
+  duration_ms: 0.255459
+  type: 'test'
+  ...
+# Subtest: a skipped advance result surfaces its reason as an ok:true note
+ok 5 - a skipped advance result surfaces its reason as an ok:true note
+  ---
+  duration_ms: 0.237209
+  type: 'test'
+  ...
+# Subtest: bugfixCategory:false is threaded through to the seam opts
+ok 6 - bugfixCategory:false is threaded through to the seam opts
+  ---
+  duration_ms: 0.102208
+  type: 'test'
+  ...
+# Subtest: a BUILD artifact carrying issueHash fires completeBugfixTracker
+ok 7 - a BUILD artifact carrying issueHash fires completeBugfixTracker
+  ---
+  duration_ms: 0.135417
+  type: 'test'
+  ...
+# Subtest: a BUILD artifact WITHOUT issueHash fires no completion (current data-model reality)
+ok 8 - a BUILD artifact WITHOUT issueHash fires no completion (current data-model reality)
+  ---
+  duration_ms: 0.055167
+  type: 'test'
+  ...
+# Subtest: a batch fires the seam only for the matching completed artifact
+ok 9 - a batch fires the seam only for the matching completed artifact
+  ---
+  duration_ms: 0.361208
+  type: 'test'
+  ...
+# Subtest: an unreadable / meta-less artifact is skipped (no seam, no throw)
+ok 10 - an unreadable / meta-less artifact is skipped (no seam, no throw)
+  ---
+  duration_ms: 0.316
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 304.870125

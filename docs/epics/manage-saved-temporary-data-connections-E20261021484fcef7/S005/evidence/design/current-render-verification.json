@@ -1,0 +1,32 @@
+{
+  "scope": "VSCode+JetBrains only, per explicit user instruction",
+  "validation": {
+    "LLDShape": true,
+    "typeLevelSignatures": [],
+    "uxDefinition": [],
+    "sequenceDefinition": [],
+    "componentDefinition": []
+  },
+  "rendering": {
+    "tool": "isolated headless Chrome",
+    "scope": "Generated design companions only; not actual native client acceptance",
+    "visuallyInspected": [
+      "UX master/detail and alternate-state copy",
+      "Sequence4participants12messages, no direct daemon-to-controller reply",
+      "Component6nodes6dependencies, VSCode/JetBrains with common fixtures and distinct host owners"
+    ]
+  },
+  "sourceHashes": {
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/ux-mock.html": "a70fd63cfc365ee80a50d7e2708f8aa4afc7f62aa9612f6d51fda5aa6b171d8b",
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/sequence-diagram.html": "1726fe8a4007d48d41784dc9d956617841d9c82b85d8eba4a036b5d7be3495bf",
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/component-dependency.html": "2bdcd94b309ef036f1b1b6c208166fd62f97a9b14ea5b59893ed80c1584732d8"
+  },
+  "screenshots": {
+    "current-component-dependency.png": "9204685bc1832067e3c77e8a565d18c5e05d139f91324536b01fa40dc7edfa4b",
+    "current-ux-mock.png": "e9b31d5ed47d4cc0a9aaef554290e2d8cf97036816813b83402c75350f454195",
+    "current-sequence-diagram.png": "e557b276953474337c0d1dea6b1f295e64736a8afb7af8a00c23866c743ae97d"
+  },
+  "unrelatedPanelsTypesUnchanged": true,
+  "noImplementationChanges": true,
+  "releaseEnabled": false
+}

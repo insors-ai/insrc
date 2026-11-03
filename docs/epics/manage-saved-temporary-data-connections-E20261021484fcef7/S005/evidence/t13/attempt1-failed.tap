@@ -1,0 +1,104 @@
+TAP version 13
+# Subtest: CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create
+not ok 1 - CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create
+  ---
+  duration_ms: 20980.883334
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-mutation.test.ts:1:92'
+  failureType: 'testCodeFailure'
+  error: |-
+    Focused JUnit validation failed: Calculating task graph as no cached configuration is available for tasks: test --tests ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest
+    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+    > Task :initializeIntellijPlatformPlugin
+    > Task :bundleBackendAssets UP-TO-DATE
+    > Task :patchPluginXml UP-TO-DATE
+    > Task :generateManifest UP-TO-DATE
+    > Task :verifyPluginProjectConfiguration UP-TO-DATE
+    > Task :processResources UP-TO-DATE
+    > Task :processTestResources UP-TO-DATE
+    > Task :compileKotlin
+    > Task :compileJava NO-SOURCE
+    > Task :classes UP-TO-DATE
+    > Task :instrumentCode
+    > Task :jar
+    > Task :instrumentedJar
+    > Task :composedJar
+    > Task :prepareTestSandbox
+    > Task :prepareTest
+    
+    > Task :compileTestKotlin
+    w: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt:92:119 'fun createProject(p0: @Nullable() String?, p1: @NotNull() String): @NotNull() Project' is deprecated. Deprecated in Java.
+    
+    > Task :compileTestJava NO-SOURCE
+    > Task :testClasses UP-TO-DATE
+    > Task :instrumentTestCode
+    
+    > Task :test
+    
+    ConnectionMutationControllerTest > testSameTicketReplayIsExplicitAndIdenticalWhileExpiredUnknownBlocksNewMutation FAILED
+        java.util.concurrent.ExecutionException at ConnectionMutationControllerTest.kt:26
+            Caused by: ai.insors.insrc.jetbrains.daemon.ConnectionLaneException at UnixSocketDaemonRpc.kt:271
+    
+    ConnectionMutationControllerTest > testFiniteRecordsRefuseBeforeTicketWithoutEvictingUnknowns FAILED
+        java.util.concurrent.ExecutionException at ConnectionMutationControllerTest.kt:26
+            Caused by: ai.insors.insrc.jetbrains.daemon.ConnectionLaneException at UnixSocketDaemonRpc.kt:271
+    
+    ConnectionMutationControllerTest > testProjectMemoryUnknownSurvivesViewCloseAndLostReplyReconcilesWithoutAnotherCreate FAILED
+        java.util.concurrent.ExecutionException at ConnectionMutationControllerTest.kt:26
+            Caused by: ai.insors.insrc.jetbrains.daemon.ConnectionLaneException at UnixSocketDaemonRpc.kt:271
+    
+    ConnectionMutationControllerTest > testPostcommitActivationCleanupAndRefreshRemainSeparateFromRegistration FAILED
+        java.util.concurrent.ExecutionException at ConnectionMutationControllerTest.kt:26
+            Caused by: ai.insors.insrc.jetbrains.daemon.ConnectionLaneException at UnixSocketDaemonRpc.kt:271
+    
+    ConnectionMutationControllerTest > testPendingAndMalformedOutcomesRecoverByStatusWithoutRecreating FAILED
+        java.util.concurrent.ExecutionException at ConnectionMutationControllerTest.kt:26
+            Caused by: ai.insors.insrc.jetbrains.daemon.ConnectionLaneException at ConnectionMutationControllerTest.kt:26
+    
+    ConnectionMutationControllerTest > testTemporaryExpiryErasesOnlyItsAttemptAndNewProjectReloadCannotInventLostTicketOutcome FAILED
+        java.util.concurrent.ExecutionException at ConnectionMutationControllerTest.kt:78
+            Caused by: ai.insors.insrc.jetbrains.daemon.ConnectionLaneException at UnixSocketDaemonRpc.kt:271
+    
+    > Task :test FAILED
+    16 actionable tasks: 10 executed, 6 up-to-date
+    Configuration cache entry stored.
+    
+    
+    6 tests completed, 6 failed
+    
+    FAILURE: Build failed with an exception.
+    
+    * What went wrong:
+    Execution failed for task ':test'.
+    > There were failing tests. See the report at: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/build/reports/tests/test/index.html
+    
+    * Try:
+    > Run with --scan to get full insights.
+    
+    BUILD FAILED in 20s
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    runConnectionJUnit (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/fixtures/connection-junit.ts:16:10)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-mutation.test.ts:5:2)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 21449.000625

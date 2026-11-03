@@ -1,0 +1,190 @@
+TAP version 13
+# Subtest: upsertEntities + getEntity round-trip
+ok 1 - upsertEntities + getEntity round-trip
+  ---
+  duration_ms: 171.509917
+  type: 'test'
+  ...
+# Subtest: upsertEntities preserves all flag fields
+ok 2 - upsertEntities preserves all flag fields
+  ---
+  duration_ms: 156.102541
+  type: 'test'
+  ...
+# Subtest: getEntity on unknown id returns null
+ok 3 - getEntity on unknown id returns null
+  ---
+  duration_ms: 229.409458
+  type: 'test'
+  ...
+# Subtest: getEntitiesByIds returns matched subset (unmatched omitted)
+ok 4 - getEntitiesByIds returns matched subset (unmatched omitted)
+  ---
+  duration_ms: 223.286791
+  type: 'test'
+  ...
+# Subtest: getEntitiesByIds on empty array returns []
+ok 5 - getEntitiesByIds on empty array returns []
+  ---
+  duration_ms: 239.964917
+  type: 'test'
+  ...
+# Subtest: upsert overwrites a non-module entity
+ok 6 - upsert overwrites a non-module entity
+  ---
+  duration_ms: 159.874125
+  type: 'test'
+  ...
+# Subtest: module-stub upsert is ensure-exists (does not overwrite)
+ok 7 - module-stub upsert is ensure-exists (does not overwrite)
+  ---
+  duration_ms: 132.13
+  type: 'test'
+  ...
+# Subtest: upsertEntities dedupes intra-batch duplicates (last-wins)
+ok 8 - upsertEntities dedupes intra-batch duplicates (last-wins)
+  ---
+  duration_ms: 144.359791
+  type: 'test'
+  ...
+# Subtest: upsertEntities on empty array is a no-op
+ok 9 - upsertEntities on empty array is a no-op
+  ---
+  duration_ms: 267.232459
+  type: 'test'
+  ...
+# Subtest: listEntitiesForRepo returns only the requested repo
+ok 10 - listEntitiesForRepo returns only the requested repo
+  ---
+  duration_ms: 267.638208
+  type: 'test'
+  ...
+# Subtest: listEntitiesForRepo on unknown repo returns []
+ok 11 - listEntitiesForRepo on unknown repo returns []
+  ---
+  duration_ms: 206.154708
+  type: 'test'
+  ...
+# Subtest: findEntitiesByFile filters by absolute path
+ok 12 - findEntitiesByFile filters by absolute path
+  ---
+  duration_ms: 140.212959
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName matches names + kind filter
+ok 13 - findEntitiesByName matches names + kind filter
+  ---
+  duration_ms: 138.779583
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName respects repo filter
+ok 14 - findEntitiesByName respects repo filter
+  ---
+  duration_ms: 176.125458
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName respects multi-repo `repos` filter
+ok 15 - findEntitiesByName respects multi-repo `repos` filter
+  ---
+  duration_ms: 228.543666
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName: empty `repos` array returns []
+ok 16 - findEntitiesByName: empty `repos` array returns []
+  ---
+  duration_ms: 251.966916
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName: `repos` with unknown paths drops them silently
+ok 17 - findEntitiesByName: `repos` with unknown paths drops them silently
+  ---
+  duration_ms: 237.712208
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName: passing both `repo` and `repos` throws
+ok 18 - findEntitiesByName: passing both `repo` and `repos` throws
+  ---
+  duration_ms: 234.855
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName respects limit
+ok 19 - findEntitiesByName respects limit
+  ---
+  duration_ms: 256.814625
+  type: 'test'
+  ...
+# Subtest: findEntitiesByName on empty input returns []
+ok 20 - findEntitiesByName on empty input returns []
+  ---
+  duration_ms: 210.748792
+  type: 'test'
+  ...
+# Subtest: listUnembeddedEntities filters on empty embeddingModel
+ok 21 - listUnembeddedEntities filters on empty embeddingModel
+  ---
+  duration_ms: 260.209125
+  type: 'test'
+  ...
+# Subtest: updateEmbedding sets the model name (vector goes to Lance in 3.2)
+ok 22 - updateEmbedding sets the model name (vector goes to Lance in 3.2)
+  ---
+  duration_ms: 207.765042
+  type: 'test'
+  ...
+# Subtest: updateEmbedding on unknown id is a silent no-op
+ok 23 - updateEmbedding on unknown id is a silent no-op
+  ---
+  duration_ms: 137.485209
+  type: 'test'
+  ...
+# Subtest: deleteEntitiesForFile removes only that file's entities
+ok 24 - deleteEntitiesForFile removes only that file's entities
+  ---
+  duration_ms: 131.404166
+  type: 'test'
+  ...
+# Subtest: deleteEntitiesForFile cascades to out_edge and in_edge
+ok 25 - deleteEntitiesForFile cascades to out_edge and in_edge
+  ---
+  duration_ms: 197.015791
+  type: 'test'
+  ...
+# Subtest: deleteEntitiesForRepo removes all entities for that repo only
+ok 26 - deleteEntitiesForRepo removes all entities for that repo only
+  ---
+  duration_ms: 227.875959
+  type: 'test'
+  ...
+# Subtest: deleteEntitiesForRepo on unknown repo is a silent no-op
+ok 27 - deleteEntitiesForRepo on unknown repo is a silent no-op
+  ---
+  duration_ms: 153.717375
+  type: 'test'
+  ...
+# Subtest: entities survive close + reopen
+ok 28 - entities survive close + reopen
+  ---
+  duration_ms: 142.044
+  type: 'test'
+  ...
+# Subtest: absolute file path -> repo-relative on write, back to absolute on read
+ok 29 - absolute file path -> repo-relative on write, back to absolute on read
+  ---
+  duration_ms: 124.793666
+  type: 'test'
+  ...
+# Subtest: repo IDs are auto-allocated on first sighting
+ok 30 - repo IDs are auto-allocated on first sighting
+  ---
+  duration_ms: 134.481333
+  type: 'test'
+  ...
+1..30
+# tests 30
+# suites 0
+# pass 30
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6123.220792

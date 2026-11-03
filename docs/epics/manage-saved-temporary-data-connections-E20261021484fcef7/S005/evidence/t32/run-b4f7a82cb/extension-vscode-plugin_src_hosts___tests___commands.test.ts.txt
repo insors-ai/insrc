@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: registerHostCommands registers the insrc.hosts.wire command into the registry
+ok 1 - registerHostCommands registers the insrc.hosts.wire command into the registry
+  ---
+  duration_ms: 1.385791
+  type: 'test'
+  ...
+# Subtest: the wire command asks ONE combined consent (items = detected displayNames) and wires NONE until accepted
+ok 2 - the wire command asks ONE combined consent (items = detected displayNames) and wires NONE until accepted
+  ---
+  duration_ms: 0.350375
+  type: 'test'
+  ...
+# Subtest: on accepted every detected adapter.wire() runs; a failing adapter does not abort the others; the outcome is pushed to sc2
+ok 3 - on accepted every detected adapter.wire() runs; a failing adapter does not abort the others; the outcome is pushed to sc2
+  ---
+  duration_ms: 0.302292
+  type: 'test'
+  ...
+# Subtest: no supported host present → the command sets a "no hosts detected" status and wires nothing
+ok 4 - no supported host present → the command sets a "no hosts detected" status and wires nothing
+  ---
+  duration_ms: 0.067667
+  type: 'test'
+  ...
+# Subtest: source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ shared local modules) — no daemon internals/indexer/storage, no cloud/HTTP (k5)
+ok 5 - source-scan: vscode-plugin/src/hosts/ imports only node builtins + the s1 surfaces (+ shared local modules) — no daemon internals/indexer/storage, no cloud/HTTP (k5)
+  ---
+  duration_ms: 1.58325
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180.461542

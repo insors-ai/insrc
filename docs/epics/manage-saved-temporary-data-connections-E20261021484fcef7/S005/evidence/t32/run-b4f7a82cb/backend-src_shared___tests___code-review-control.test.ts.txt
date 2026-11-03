@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: DIFF-WAIT-TRANSPORT: shared serializer and both actual transports preserve start/status/cancel and discriminate every reply
+ok 1 - DIFF-WAIT-TRANSPORT: shared serializer and both actual transports preserve start/status/cancel and discriminate every reply
+  ---
+  duration_ms: 12.078166
+  type: 'test'
+  ...
+# Subtest: DIFF-WAIT-TRANSPORT: pending artifacts, malformed/foreign finals and unknown variants are refused by socket and in-daemon helpers
+ok 2 - DIFF-WAIT-TRANSPORT: pending artifacts, malformed/foreign finals and unknown variants are refused by socket and in-daemon helpers
+  ---
+  duration_ms: 8.568792
+  type: 'test'
+  ...
+# Subtest: DIFF-WAIT-COMPAT: legacy streams remain final-only and retain their existing final result shape
+ok 3 - DIFF-WAIT-COMPAT: legacy streams remain final-only and retain their existing final result shape
+  ---
+  duration_ms: 1.22125
+  type: 'test'
+  ...
+# Subtest: DIFF-TIME-OUTER: both transport waiters cap at 200 seconds without killing the daemon owner, and preserve long derived budgets
+ok 4 - DIFF-TIME-OUTER: both transport waiters cap at 200 seconds without killing the daemon owner, and preserve long derived budgets
+  ---
+  duration_ms: 7.837666
+  type: 'test'
+  ...
+# Subtest: DIFF-WAIT-TRANSPORT: repository checks accept physical aliases and reject a different repository with otherwise matching identity
+ok 5 - DIFF-WAIT-TRANSPORT: repository checks accept physical aliases and reject a different repository with otherwise matching identity
+  ---
+  duration_ms: 3.38675
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 413.40225

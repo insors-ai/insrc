@@ -32,10 +32,10 @@ test('CM-S2-E1: activation and probe runtime paths agree across cwd SQLite URLs 
    assert.deepEqual(tested,{...prepared,family:config.family??familyOf(config.kind)});
   }
 
-  for(const config of [{id:'x',kind:'csv',path:'../cwd/data file.csv'},{id:'x',kind:'sqlite',url:'https://host/db'},{id:'x',kind:'sqlite',url:'file://remote/db'},{id:'x',kind:'sqlite',url:'missing.db'},{id:'x',kind:'csv',path:join(other,'data file.csv')},{id:'x',kind:'postgres',schemaSource:{type:'prisma',path:'../cwd/data file.csv'}}] as ConnectionConfig[]) await assert.rejects(prepareRuntimeConfig(config,root));
+  for(const config of [{id:'x',kind:'csv',path:'../cwd/data file.csv'},{id:'x',kind:'sqlite',url:'https://host/db'},{id:'x',kind:'sqlite',url:'file:///bad%ZZ'},{id:'x',kind:'sqlite',url:'file://['},{id:'x',kind:'sqlite',url:'file://remote/db'},{id:'x',kind:'sqlite',url:'missing.db'},{id:'x',kind:'csv',path:join(other,'data file.csv')},{id:'x',kind:'postgres',schemaSource:{type:'prisma',path:'../cwd/data file.csv'}}] as ConnectionConfig[]) await assert.rejects(prepareRuntimeConfig(config,root),{code:'invalid-input'});
   await assert.rejects(prepareRuntimeConfig(configs[0]!,root,AbortSignal.abort()));
   const unreadable=join(root,'unreadable.csv');await writeFile(unreadable,'secret',{mode:0o000});
-  try {await assert.rejects(prepareRuntimeConfig({id:'unreadable',kind:'csv',path:'unreadable.csv'},root));} finally {await chmod(unreadable,0o600);}
+  try {await assert.rejects(prepareRuntimeConfig({id:'unreadable',kind:'csv',path:'unreadable.csv'},root),{code:'invalid-input'});} finally {await chmod(unreadable,0o600);}
   await assert.rejects(access(join(root,'missing.db')),'path validation never creates missing SQLite sources');
   assert.deepEqual(await readFile(registry),before);assert.equal(await readFile(join(root,'data file.csv'),'utf8'),'correct');assert.equal(await readFile(join(other,'data file.csv'),'utf8'),'decoy');
  } finally {process.chdir(oldCwd);Object.defineProperty(PATHS,'insrc',{value:oldIns,configurable:true});await rm(directory,{recursive:true,force:true});}

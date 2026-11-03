@@ -1,0 +1,2058 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s5",
+    "createdAt": "2026-10-26T12:46:38.667Z",
+    "updatedAt": "2026-10-26T14:03:28.205Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "40b5dd49a",
+        "ranAt": "2026-10-26T13:12:41.329Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/ipc-client.test.ts",
+                "title": "ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-client.test.ts",
+                "title": "rpc resolves the daemon result and writes the { label, pid } identity envelope on connect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/ipc-client.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 374,
+            "titles": [
+              {
+                "title": "rpc resolves the daemon result and writes the { label, pid } identity envelope on connect",
+                "result": "pass"
+              },
+              {
+                "title": "rpc rejects with \"daemon is not running\" on ENOENT / ECONNREFUSED",
+                "result": "pass"
+              },
+              {
+                "title": "rpc surfaces a daemon-side error and an unparseable line distinctly",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.status returns the wire DaemonStatus via daemon.status",
+                "result": "pass"
+              },
+              {
+                "title": "IpcClient.reachability derives running / stopped / errored and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "sockFilePath resolves to the daemon socket",
+                "result": "pass"
+              },
+              {
+                "title": "src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)",
+                "result": "pass"
+              },
+              {
+                "title": "src/shared/ipc-client imports only node:net + shared types/paths (no daemon internals/indexer/storage)",
+                "result": "pass"
+              },
+              {
+                "title": "ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "9129ff18a",
+        "ranAt": "2026-10-26T13:20:50.614Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-catalog.test.ts: memoryMb accepted on Ollama models, refused when not a positive integer or on a CLI model",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog.test.ts",
+                "title": "model-catalog.test.ts: memoryMb accepted on Ollama models, refused when not a positive integer or on a CLI model",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-registry.test.ts",
+                "title": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-definitions.test.ts",
+                "title": "model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "title": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/jetbrains-catalog-fixture.test.ts",
+                "title": "jetbrains-catalog-fixture.test.ts: the JetBrains catalog fixture equals buildConfigCatalog over its definitions",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/jetbrains-catalog-fixture.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 379,
+            "titles": [
+              {
+                "title": "jetbrains-catalog-fixture.test.ts: the JetBrains catalog fixture equals buildConfigCatalog over its definitions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 696,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 552,
+            "titles": [
+              {
+                "title": "model-catalog.test.ts: one synchronous refusal per fixture reason, each naming the entry and rule (incl. the three tier-default effort fixtures)",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: a valid fixture whose tier default names its model by alias and carries an accepted effort validates",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: validateModelCatalog returns and caches the frozen file; a second call does not re-read",
+                "result": "pass"
+              },
+              {
+                "title": "modelCatalogDir(): the in-process override, else INSRC_MODEL_CATALOG_DIR, else MODEL_CATALOG_DIR",
+                "result": "pass"
+              },
+              {
+                "title": "smoke: the built out/assets/models stages the catalog JSON, non-empty",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog.test.ts: memoryMb accepted on Ollama models, refused when not a positive integer or on a CLI model",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-definitions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 523,
+            "titles": [
+              {
+                "title": "model-definitions.test.ts: every sc3 field of a fixture file, aliases always a list, optional fields omitted",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: user-approved after shipped; unlisted rejected id only in rejectedModels; a rejected id the file lists is served as shipped and left out of rejectedModels",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: installed exact-match true/false, absent when the lister rejects, unlisted installed models absent",
+                "result": "pass"
+              },
+              {
+                "title": "model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-registry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 507,
+            "titles": [
+              {
+                "title": "model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk",
+                "result": "pass"
+              },
+              {
+                "title": "model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10727,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 797,
+            "titles": [
+              {
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "0c25d27c8",
+        "ranAt": "2026-10-26T13:48:10.175Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "config-write-models.test.ts: writes adding or changing models.byRepo.<repo>.tiers (directly or through a parent object) are refused with 'per-repo-tier'; tasks / coreFloor and unrelated writes succeed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/config-write-models.test.ts",
+                "title": "config-write-models.test.ts: writes adding or changing models.byRepo.<repo>.tiers (directly or through a parent object) are refused with 'per-repo-tier'; tasks / coreFloor and unrelated writes succeed",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/config-write-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 914,
+            "titles": [
+              {
+                "title": "config-write-models.test.ts: refusal via model leaf, runner switch, whole-tier and parent-object writes with config.json unchanged; formerly rejected shipped model accepted by id and alias",
+                "result": "pass"
+              },
+              {
+                "title": "config-write-models.test.ts: restartRequired for tier, tasks, coreFloor and coreModel changes including 'models' and 'models.local' writes; none for unrelated writes",
+                "result": "pass"
+              },
+              {
+                "title": "config-write-models.test.ts: writes adding or changing models.byRepo.<repo>.tiers (directly or through a parent object) are refused with 'per-repo-tier'; tasks / coreFloor and unrelated writes succeed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10433,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "da8dc8db0",
+        "ranAt": "2026-10-26T13:29:36.022Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "services.test.ts: Services.models calls the matching rpc methods with their params",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/services.test.ts",
+                "title": "services.test.ts: Services.models calls the matching rpc methods with their params",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 370,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: config set / unset refuse model keys and report refusals and restartRequired",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              },
+              {
+                "title": "team init writes the starter and reports its path",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh runs the refresh and reports the outcome",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh --branch passes the name through and renders the refusal that asks for it",
+                "result": "pass"
+              },
+              {
+                "title": "a thrown error from either team command renders as a cross-prefixed line",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/services.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 575,
+            "titles": [
+              {
+                "title": "listEpics returns [] when there is no artifacts dir",
+                "result": "pass"
+              },
+              {
+                "title": "listEpics scans DEF-<hash>.json and reads the display slug",
+                "result": "pass"
+              },
+              {
+                "title": "formatBytes scales units",
+                "result": "pass"
+              },
+              {
+                "title": "formatUptime is h/m/s aware",
+                "result": "pass"
+              },
+              {
+                "title": "formatWhen handles empty + invalid",
+                "result": "pass"
+              },
+              {
+                "title": "makeServices().debug.sections lists the three sections in DebugSectionId order",
+                "result": "pass"
+              },
+              {
+                "title": "makeServices() still returns every pre-existing facade (additive-only)",
+                "result": "pass"
+              },
+              {
+                "title": "services.test.ts: Services.models calls the matching rpc methods with their params",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2436,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              },
+              {
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              },
+              {
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "e40c8c9f6",
+        "ranAt": "2026-10-26T13:31:42.444Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tiers.test.ts: computeEffectiveTiers over a fake definitions answer, with the daemon's effort precedence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/model-tiers.test.ts",
+                "title": "model-tiers.test.ts: computeEffectiveTiers over a fake definitions answer, with the daemon's effort precedence",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/model-tiers.test.ts",
+                "title": "a critical role overridden below coreFloor is clamped UP to the floor (clamped=true)",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/model-tiers.test.ts",
+                "title": "a roleTiers key that is not a current taxonomy role is surfaced as a stale override",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tiers.test.ts: tier edit helpers (family without tierDefaults, effort drop, alias, unserved ids)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/model-tiers.test.ts",
+                "title": "model-tiers.test.ts: tier edit helpers (family without tierDefaults, effort drop, alias, unserved ids)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/model-tiers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 529,
+            "titles": [
+              {
+                "title": "empty tiering: tiers = the definitions' tier defaults as canonical ids (source default), coreFloor = mid (default)",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiering: a critical role resolves to its core default (source taxonomy), unclamped",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiering: a peripheral role resolves to its taxonomy default (mid/cheap)",
+                "result": "pass"
+              },
+              {
+                "title": "a configured tier model overrides the default and is marked source=config",
+                "result": "pass"
+              },
+              {
+                "title": "a roleTiers override changes the effective tier and is marked source=override",
+                "result": "pass"
+              },
+              {
+                "title": "a critical role overridden below coreFloor is clamped UP to the floor (clamped=true)",
+                "result": "pass"
+              },
+              {
+                "title": "a peripheral role below coreFloor is NEVER clamped",
+                "result": "pass"
+              },
+              {
+                "title": "a roleTiers key that is not a current taxonomy role is surfaced as a stale override",
+                "result": "pass"
+              },
+              {
+                "title": "config dot-path helpers target the right keys",
+                "result": "pass"
+              },
+              {
+                "title": "isTierName guards the tier union",
+                "result": "pass"
+              },
+              {
+                "title": "ROLE_TIERS_PATH is the dotless map key (no role id appended)",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers keeps a dotted role id as a single FLAT key",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers merges into an existing map without disturbing other roles",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers with tier=null clears the override (sparse) and leaves siblings",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers does not mutate the input map",
+                "result": "pass"
+              },
+              {
+                "title": "model-tiers.test.ts: computeEffectiveTiers over a fake definitions answer, with the daemon's effort precedence",
+                "result": "pass"
+              },
+              {
+                "title": "model-tiers.test.ts: tier edit helpers (family without tierDefaults, effort drop, alias, unserved ids)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "e40c8c9f6",
+        "ranAt": "2026-10-26T13:36:35.334Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/tui-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4179,
+            "titles": [
+              {
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2422,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              },
+              {
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              },
+              {
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "0c25d27c8",
+        "ranAt": "2026-10-26T13:46:44.192Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/tui-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4185,
+            "titles": [
+              {
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "0c25d27c8",
+        "ranAt": "2026-10-26T13:51:57.061Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-recommender.test.ts: recommendModels uses the passed local model, installed flag and memoryMb, falling back to the generic estimate",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/model-recommender.test.ts",
+                "title": "model-recommender.test.ts: recommendModels uses the passed local model, installed flag and memoryMb, falling back to the generic estimate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "system-recommend.test.ts: the daemon's system.recommend recommends a fixture file's tool-loop model",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/system-recommend.test.ts",
+                "title": "system-recommend.test.ts: the daemon's system.recommend recommends a fixture file's tool-loop model",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 418,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: config set / unset refuse model keys and report refusals and restartRequired",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              },
+              {
+                "title": "team init writes the starter and reports its path",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh runs the refresh and reports the outcome",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh --branch passes the name through and renders the refusal that asks for it",
+                "result": "pass"
+              },
+              {
+                "title": "a thrown error from either team command renders as a cross-prefixed line",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4258,
+            "titles": [
+              {
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/system-recommend.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1042,
+            "titles": [
+              {
+                "title": "system-recommend.test.ts: the daemon's system.recommend recommends a fixture file's tool-loop model",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10765,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/model-recommender.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 590,
+            "titles": [
+              {
+                "title": "model-recommender.test.ts: recommendModels uses the passed local model, installed flag and memoryMb, falling back to the generic estimate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "0c25d27c8",
+        "ranAt": "2026-10-26T13:53:23.031Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "command.test.ts: config set / unset refuse model keys and report refusals and restartRequired",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/command.test.ts",
+                "title": "command.test.ts: config set / unset refuse model keys and report refusals and restartRequired",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/command.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 394,
+            "titles": [
+              {
+                "title": "help lists the command reference",
+                "result": "pass"
+              },
+              {
+                "title": "repo add without --steering passes no steering (no silent write)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering installs both CLAUDE.md + AGENTS.md",
+                "result": "pass"
+              },
+              {
+                "title": "repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)",
+                "result": "pass"
+              },
+              {
+                "title": "repo add dispatches to repo.add with the path",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status renders a one-line summary",
+                "result": "pass"
+              },
+              {
+                "title": "config list shows known options (default) merged with set values",
+                "result": "pass"
+              },
+              {
+                "title": "config list <search> filters options by substring",
+                "result": "pass"
+              },
+              {
+                "title": "config get navigates a dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set parses JSON values (number) and writes the dot-path",
+                "result": "pass"
+              },
+              {
+                "title": "config set keeps a non-JSON token as a string",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: config set / unset refuse model keys and report refusals and restartRequired",
+                "result": "pass"
+              },
+              {
+                "title": "pane switches the active pane",
+                "result": "pass"
+              },
+              {
+                "title": "quit calls exit",
+                "result": "pass"
+              },
+              {
+                "title": "unknown command is reported, not thrown",
+                "result": "pass"
+              },
+              {
+                "title": "service errors surface as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review renders verdict, counts, auto-fixes, and pending findings",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve --override threads the reason to approve",
+                "result": "pass"
+              },
+              {
+                "title": "workflow approve surfaces a review block as a line, not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "workflow run streams progress via onLog and reports path + review verdict",
+                "result": "pass"
+              },
+              {
+                "title": "workflow findings lists pending, workflow resolve resolves one (R3)",
+                "result": "pass"
+              },
+              {
+                "title": "daemon status adds the store failure line when the status carries it",
+                "result": "pass"
+              },
+              {
+                "title": "workflow review says when the source roots could not be read from the index",
+                "result": "pass"
+              },
+              {
+                "title": "team init writes the starter and reports its path",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh runs the refresh and reports the outcome",
+                "result": "pass"
+              },
+              {
+                "title": "team refresh --branch passes the name through and renders the refusal that asks for it",
+                "result": "pass"
+              },
+              {
+                "title": "a thrown error from either team command renders as a cross-prefixed line",
+                "result": "pass"
+              },
+              {
+                "title": "command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4214,
+            "titles": [
+              {
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2356,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              },
+              {
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              },
+              {
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9318,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "0c25d27c8",
+        "ranAt": "2026-10-26T13:55:01.669Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-resolve-role.test.ts: reviewArtifact builds its provider from a fake models.resolveRole answer and refuses without one",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/services/__tests__/review-resolve-role.test.ts",
+                "title": "review-resolve-role.test.ts: reviewArtifact builds its provider from a fake models.resolveRole answer and refuses without one",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/__tests__/same-party-refusal.test.ts",
+                "title": "T15 the TUI review service surfaces the refusal, naming a controller review or an override",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/services/__tests__/review-resolve-role.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 564,
+            "titles": [
+              {
+                "title": "review-resolve-role.test.ts: reviewArtifact builds its provider from a fake models.resolveRole answer and refuses without one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10287,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/__tests__/same-party-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 900,
+            "titles": [
+              {
+                "title": "T15 a DEF authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "T15 a DEF authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "T15 a DEF authored by the controller is reviewed by the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T15 a DEF authored by an unknown author is reviewed by the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T15 a LLD authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "T15 a LLD authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "T15 a LLD authored by the controller is reviewed by the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T15 a LLD authored by an unknown author is reviewed by the daemon",
+                "result": "pass"
+              },
+              {
+                "title": "T15 the TUI review service surfaces the refusal, naming a controller review or an override",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "d98774911",
+        "ranAt": "2026-10-26T14:03:28.205Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "no-default-tiers.test.ts: no file under src imports or exports DEFAULT_TIERS / TIER_EFFORTS",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/__tests__/no-default-tiers.test.ts",
+                "title": "no-default-tiers.test.ts: no file under src imports or exports DEFAULT_TIERS / TIER_EFFORTS",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/tier-defaults.test.ts",
+                "title": "src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/config-catalog-defs.test.ts",
+                "title": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-literal-scan.test.ts: the scan covers src/cli and the recommender",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan covers src/cli and the recommender",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tsc over src and the changed TUI tests; tui.test.ts passes",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/s5-tests-typecheck.test.ts",
+                "title": "s5-tests-typecheck.test.ts: tsc over the TUI and model tests s5 changed reports no errors",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "file": "src/cli/__tests__/tui.test.ts",
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/__tests__/no-default-tiers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 537,
+            "titles": [
+              {
+                "title": "no-default-tiers.test.ts: no file under src imports or exports DEFAULT_TIERS / TIER_EFFORTS",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/s5-tests-typecheck.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3876,
+            "titles": [
+              {
+                "title": "s5-tests-typecheck.test.ts: tsc over the TUI and model tests s5 changed reports no errors",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/__tests__/tui.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2415,
+            "titles": [
+              {
+                "title": "Daemon pane shows running status + uptime",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane prints the store failure cause when the status carries it, and nothing of it otherwise",
+                "result": "pass"
+              },
+              {
+                "title": "Daemon pane renders the down state when the daemon is unreachable",
+                "result": "pass"
+              },
+              {
+                "title": "number keys switch panes (Daemon → Repos)",
+                "result": "pass"
+              },
+              {
+                "title": "Repos add flow drives repo.add with the entered path (+ per-file steering)",
+                "result": "pass"
+              },
+              {
+                "title": "Workflows pane lists epics and opens the chain detail",
+                "result": "pass"
+              },
+              {
+                "title": "Setup pane renders system + recommendation without crashing",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: Setup model-pull streams ollama progress into the message box",
+                "result": "pass"
+              },
+              {
+                "title": "Model Tiers pane (5) renders effective tiers, coreFloor, and roles from config",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` runs tracker setup for the selected repo and shows the report",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: a throwing tracker setup renders a failed row instead of crashing",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: `t` with no repos registered is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "Repos pane: the tracker modal dismisses on any key back to the list",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a daemon op streams into the message box; DaemonPane body stays stable",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a failing daemon op surfaces its error line; pane body untouched",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: a multi-line op is bounded (oldest lines scroll off, no layout growth)",
+                "result": "pass"
+              },
+              {
+                "title": "bottom box: ui.toast (r refresh) lands in the message box",
+                "result": "pass"
+              },
+              {
+                "title": "':' opens the command bar and runs a typed command",
+                "result": "pass"
+              },
+              {
+                "title": "the tab bar renders a 6th 6:Debug peer tab",
+                "result": "pass"
+              },
+              {
+                "title": "pressing '6' opens the Debug pane and hides the previously active pane",
+                "result": "pass"
+              },
+              {
+                "title": "Tab-cycling from the last pane wraps forward to Debug (TABS.length-driven)",
+                "result": "pass"
+              },
+              {
+                "title": "the TUI tests run with fakeServices carrying the team entry",
+                "result": "pass"
+              },
+              {
+                "title": "TUI ModelTiersPane shows the model definitions' tier defaults for an unset config",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/config-catalog-defs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 988,
+            "titles": [
+              {
+                "title": "config-catalog-defs.test.ts: buildConfigCatalog(fixture) takes runner/model/effort defaults, effort enums and coreModel default from the fixture; CONFIG_CATALOG equals buildConfigCatalog(shipped); no ollamaNumCtx row; loadBuiltCatalog accepts the built catalog",
+                "result": "pass"
+              },
+              {
+                "title": "config-catalog-defs.test.ts: model-defaults and config-catalog import no logger, registry or file-I/O module and derive without throwing from a fixture missing fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/config/__tests__/tier-defaults.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 531,
+            "titles": [
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the config catalog's cheap and mid tier defaults equal DEFAULT_TIERS",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the summariser follows the cheap tier and pins its model for a CLI, so the built-in default runs the Claude CLI on haiku",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the installer takes the claude and codex tier defaults from the model definitions file (installer-defs.test.ts runs it)",
+                "result": "pass"
+              },
+              {
+                "title": "src/config/__tests__/tier-defaults.test.ts: the plugin's copy of the installer is identical to the script",
+                "result": "pass"
+              },
+              {
+                "title": "a global tier dropped for an empty or invalid model keeps its configured effort on the DEFAULT_TIERS fallback (assembleConfig's shaperEffort / summariserEffort)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-catalog-asset.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 677,
+            "titles": [
+              {
+                "title": "model-catalog-asset.test.ts: shipped asset validates, ships via copy-assets, lists today's models and aliases; its tier defaults equal DEFAULT_TIERS; the installer reads its defaults from the file; the summariser comes from summariserModel",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimit",
+                "result": "pass"
+              },
+              {
+                "title": "model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1556,
+            "titles": [
+              {
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              },
+              {
+                "title": "model-literal-scan.test.ts: the scan covers src/cli and the recommender",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9696,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

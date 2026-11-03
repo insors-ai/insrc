@@ -1,0 +1,47 @@
+TAP version 13
+# Subtest: registry
+    # Subtest: registers + exposes kind + family + factory
+    ok 1 - registers + exposes kind + family + factory
+      ---
+      duration_ms: 0.693792
+      type: 'test'
+      ...
+    # Subtest: returns undefined for unknown kinds
+    ok 2 - returns undefined for unknown kinds
+      ---
+      duration_ms: 0.078875
+      type: 'test'
+      ...
+    # Subtest: replaces a previously registered kind
+    ok 3 - replaces a previously registered kind
+      ---
+      duration_ms: 0.075375
+      type: 'test'
+      ...
+    # Subtest: unregisterDriver removes a kind
+    ok 4 - unregisterDriver removes a kind
+      ---
+      duration_ms: 0.111083
+      type: 'test'
+      ...
+    # Subtest: listRegisteredKinds returns all registrations
+    ok 5 - listRegisteredKinds returns all registrations
+      ---
+      duration_ms: 0.366125
+      type: 'test'
+      ...
+    1..5
+ok 1 - registry
+  ---
+  duration_ms: 2.001875
+  type: 'suite'
+  ...
+1..1
+# tests 5
+# suites 1
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 423.516166

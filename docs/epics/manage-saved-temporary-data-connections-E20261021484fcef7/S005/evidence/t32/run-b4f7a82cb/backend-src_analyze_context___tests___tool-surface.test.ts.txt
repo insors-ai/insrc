@@ -1,0 +1,442 @@
+TAP version 13
+# Subtest: READ_ONLY_TOOL_IDS matches the expected snapshot
+ok 1 - READ_ONLY_TOOL_IDS matches the expected snapshot
+  ---
+  duration_ms: 1.358708
+  type: 'test'
+  ...
+# Subtest: READ_ONLY_TOOL_IDS has no duplicate entries
+ok 2 - READ_ONLY_TOOL_IDS has no duplicate entries
+  ---
+  duration_ms: 0.129167
+  type: 'test'
+  ...
+# Subtest: file_write must NOT be in the shaper's read-only surface
+ok 3 - file_write must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.095209
+  type: 'test'
+  ...
+# Subtest: file_edit must NOT be in the shaper's read-only surface
+ok 4 - file_edit must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.037667
+  type: 'test'
+  ...
+# Subtest: file_delete must NOT be in the shaper's read-only surface
+ok 5 - file_delete must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.039667
+  type: 'test'
+  ...
+# Subtest: file_copy must NOT be in the shaper's read-only surface
+ok 6 - file_copy must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.029625
+  type: 'test'
+  ...
+# Subtest: file_move must NOT be in the shaper's read-only surface
+ok 7 - file_move must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.078917
+  type: 'test'
+  ...
+# Subtest: file_mkdir must NOT be in the shaper's read-only surface
+ok 8 - file_mkdir must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.047208
+  type: 'test'
+  ...
+# Subtest: file_multi-edit must NOT be in the shaper's read-only surface
+ok 9 - file_multi-edit must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.203375
+  type: 'test'
+  ...
+# Subtest: shell_exec must NOT be in the shaper's read-only surface
+ok 10 - shell_exec must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.2575
+  type: 'test'
+  ...
+# Subtest: shell_exec-detached must NOT be in the shaper's read-only surface
+ok 11 - shell_exec-detached must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.035875
+  type: 'test'
+  ...
+# Subtest: shell_exec-pipeline must NOT be in the shaper's read-only surface
+ok 12 - shell_exec-pipeline must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.026
+  type: 'test'
+  ...
+# Subtest: shell_cwd must NOT be in the shaper's read-only surface
+ok 13 - shell_cwd must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.021084
+  type: 'test'
+  ...
+# Subtest: ssh_exec must NOT be in the shaper's read-only surface
+ok 14 - ssh_exec must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.022833
+  type: 'test'
+  ...
+# Subtest: ssh:exec-detached must NOT be in the shaper's read-only surface
+ok 15 - ssh:exec-detached must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.01925
+  type: 'test'
+  ...
+# Subtest: ssh:port-forward must NOT be in the shaper's read-only surface
+ok 16 - ssh:port-forward must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.033084
+  type: 'test'
+  ...
+# Subtest: scp:upload must NOT be in the shaper's read-only surface
+ok 17 - scp:upload must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019583
+  type: 'test'
+  ...
+# Subtest: scp:download must NOT be in the shaper's read-only surface
+ok 18 - scp:download must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.021167
+  type: 'test'
+  ...
+# Subtest: git_amend must NOT be in the shaper's read-only surface
+ok 19 - git_amend must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.024542
+  type: 'test'
+  ...
+# Subtest: git_commit must NOT be in the shaper's read-only surface
+ok 20 - git_commit must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018625
+  type: 'test'
+  ...
+# Subtest: git_push must NOT be in the shaper's read-only surface
+ok 21 - git_push must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.020625
+  type: 'test'
+  ...
+# Subtest: git_pull must NOT be in the shaper's read-only surface
+ok 22 - git_pull must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019
+  type: 'test'
+  ...
+# Subtest: git_fetch must NOT be in the shaper's read-only surface
+ok 23 - git_fetch must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018583
+  type: 'test'
+  ...
+# Subtest: git_merge must NOT be in the shaper's read-only surface
+ok 24 - git_merge must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018916
+  type: 'test'
+  ...
+# Subtest: git_rebase must NOT be in the shaper's read-only surface
+ok 25 - git_rebase must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.01825
+  type: 'test'
+  ...
+# Subtest: git_reset must NOT be in the shaper's read-only surface
+ok 26 - git_reset must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.020708
+  type: 'test'
+  ...
+# Subtest: git_revert must NOT be in the shaper's read-only surface
+ok 27 - git_revert must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019542
+  type: 'test'
+  ...
+# Subtest: git_checkout must NOT be in the shaper's read-only surface
+ok 28 - git_checkout must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.01875
+  type: 'test'
+  ...
+# Subtest: git_stage must NOT be in the shaper's read-only surface
+ok 29 - git_stage must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018917
+  type: 'test'
+  ...
+# Subtest: git_stash must NOT be in the shaper's read-only surface
+ok 30 - git_stash must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.0185
+  type: 'test'
+  ...
+# Subtest: git_worktree must NOT be in the shaper's read-only surface
+ok 31 - git_worktree must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019791
+  type: 'test'
+  ...
+# Subtest: git:cherry-pick must NOT be in the shaper's read-only surface
+ok 32 - git:cherry-pick must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018625
+  type: 'test'
+  ...
+# Subtest: git_branch must NOT be in the shaper's read-only surface
+ok 33 - git_branch must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018625
+  type: 'test'
+  ...
+# Subtest: git_tag must NOT be in the shaper's read-only surface
+ok 34 - git_tag must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.023667
+  type: 'test'
+  ...
+# Subtest: git_remote must NOT be in the shaper's read-only surface
+ok 35 - git_remote must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.057042
+  type: 'test'
+  ...
+# Subtest: gh_pr_create must NOT be in the shaper's read-only surface
+ok 36 - gh_pr_create must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.020958
+  type: 'test'
+  ...
+# Subtest: gh_pr_merge must NOT be in the shaper's read-only surface
+ok 37 - gh_pr_merge must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019583
+  type: 'test'
+  ...
+# Subtest: gh_pr_close must NOT be in the shaper's read-only surface
+ok 38 - gh_pr_close must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019083
+  type: 'test'
+  ...
+# Subtest: gh_pr_view must NOT be in the shaper's read-only surface
+ok 39 - gh_pr_view must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018625
+  type: 'test'
+  ...
+# Subtest: gh_issue_create must NOT be in the shaper's read-only surface
+ok 40 - gh_issue_create must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.041041
+  type: 'test'
+  ...
+# Subtest: gh_issue_close must NOT be in the shaper's read-only surface
+ok 41 - gh_issue_close must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.020125
+  type: 'test'
+  ...
+# Subtest: gh_run_cancel must NOT be in the shaper's read-only surface
+ok 42 - gh_run_cancel must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.072625
+  type: 'test'
+  ...
+# Subtest: cloud_aws_ec2_terminate must NOT be in the shaper's read-only surface
+ok 43 - cloud_aws_ec2_terminate must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.030833
+  type: 'test'
+  ...
+# Subtest: cloud_aws_s3_rm must NOT be in the shaper's read-only surface
+ok 44 - cloud_aws_s3_rm must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.073875
+  type: 'test'
+  ...
+# Subtest: cloud_aws_lambda_invoke must NOT be in the shaper's read-only surface
+ok 45 - cloud_aws_lambda_invoke must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.0225
+  type: 'test'
+  ...
+# Subtest: cloud_gcp_storage_rm must NOT be in the shaper's read-only surface
+ok 46 - cloud_gcp_storage_rm must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.09625
+  type: 'test'
+  ...
+# Subtest: cloud_az_vm_delete must NOT be in the shaper's read-only surface
+ok 47 - cloud_az_vm_delete must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.022458
+  type: 'test'
+  ...
+# Subtest: k8s_apply must NOT be in the shaper's read-only surface
+ok 48 - k8s_apply must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.037667
+  type: 'test'
+  ...
+# Subtest: k8s_delete must NOT be in the shaper's read-only surface
+ok 49 - k8s_delete must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018916
+  type: 'test'
+  ...
+# Subtest: k8s_exec must NOT be in the shaper's read-only surface
+ok 50 - k8s_exec must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019292
+  type: 'test'
+  ...
+# Subtest: k8s_logs must NOT be in the shaper's read-only surface
+ok 51 - k8s_logs must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018792
+  type: 'test'
+  ...
+# Subtest: pkg_install must NOT be in the shaper's read-only surface
+ok 52 - pkg_install must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019541
+  type: 'test'
+  ...
+# Subtest: pkg_add must NOT be in the shaper's read-only surface
+ok 53 - pkg_add must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.021792
+  type: 'test'
+  ...
+# Subtest: pkg_remove must NOT be in the shaper's read-only surface
+ok 54 - pkg_remove must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.017458
+  type: 'test'
+  ...
+# Subtest: notify_slack must NOT be in the shaper's read-only surface
+ok 55 - notify_slack must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.020792
+  type: 'test'
+  ...
+# Subtest: notify_email must NOT be in the shaper's read-only surface
+ok 56 - notify_email must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.01875
+  type: 'test'
+  ...
+# Subtest: test_run must NOT be in the shaper's read-only surface
+ok 57 - test_run must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.019584
+  type: 'test'
+  ...
+# Subtest: test_coverage must NOT be in the shaper's read-only surface
+ok 58 - test_coverage must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018375
+  type: 'test'
+  ...
+# Subtest: test_watch must NOT be in the shaper's read-only surface
+ok 59 - test_watch must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.053791
+  type: 'test'
+  ...
+# Subtest: http_request must NOT be in the shaper's read-only surface
+ok 60 - http_request must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.028291
+  type: 'test'
+  ...
+# Subtest: http_download must NOT be in the shaper's read-only surface
+ok 61 - http_download must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.041208
+  type: 'test'
+  ...
+# Subtest: http_upload must NOT be in the shaper's read-only surface
+ok 62 - http_upload must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.020209
+  type: 'test'
+  ...
+# Subtest: web_fetch must NOT be in the shaper's read-only surface
+ok 63 - web_fetch must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.018917
+  type: 'test'
+  ...
+# Subtest: web_search must NOT be in the shaper's read-only surface
+ok 64 - web_search must NOT be in the shaper's read-only surface
+  ---
+  duration_ms: 0.017333
+  type: 'test'
+  ...
+# Subtest: isReadOnlyShaperTool returns true for every allowlist entry
+ok 65 - isReadOnlyShaperTool returns true for every allowlist entry
+  ---
+  duration_ms: 0.062042
+  type: 'test'
+  ...
+# Subtest: isReadOnlyShaperTool returns false for unknown tool ids
+ok 66 - isReadOnlyShaperTool returns false for unknown tool ids
+  ---
+  duration_ms: 0.026167
+  type: 'test'
+  ...
+# Subtest: getReadOnlyTools throws ReadOnlyToolRegistryMismatch when registry is empty
+ok 67 - getReadOnlyTools throws ReadOnlyToolRegistryMismatch when registry is empty
+  ---
+  duration_ms: 0.284167
+  type: 'test'
+  ...
+# Subtest: getReadOnlyTools returns N ToolDefinitions after registerBuiltinTools()
+ok 68 - getReadOnlyTools returns N ToolDefinitions after registerBuiltinTools()
+  ---
+  duration_ms: 0.647166
+  type: 'test'
+  ...
+# Subtest: getReadOnlyTools result preserves allowlist order
+ok 69 - getReadOnlyTools result preserves allowlist order
+  ---
+  duration_ms: 0.109166
+  type: 'test'
+  ...
+# Subtest: each returned ToolDefinition has a non-empty description + inputSchema
+ok 70 - each returned ToolDefinition has a non-empty description + inputSchema
+  ---
+  duration_ms: 0.146541
+  type: 'test'
+  ...
+# Subtest: every registered mutation tool from the must-not-be-exposed list is absent from the result
+ok 71 - every registered mutation tool from the must-not-be-exposed list is absent from the result
+  ---
+  duration_ms: 0.194541
+  type: 'test'
+  ...
+# Subtest: ReadOnlyToolRegistryMismatch reports the missing ids in its message
+ok 72 - ReadOnlyToolRegistryMismatch reports the missing ids in its message
+  ---
+  duration_ms: 0.097666
+  type: 'test'
+  ...
+1..72
+# tests 72
+# suites 0
+# pass 72
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 584.048

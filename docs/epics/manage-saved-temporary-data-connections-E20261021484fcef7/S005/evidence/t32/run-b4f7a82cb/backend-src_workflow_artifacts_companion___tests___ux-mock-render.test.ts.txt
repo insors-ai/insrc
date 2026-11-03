@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: t1: a TextBlock renders its text as CONTENT, not as a 'TextBlock: "…"' caption
+ok 1 - t1: a TextBlock renders its text as CONTENT, not as a 'TextBlock: "…"' caption
+  ---
+  duration_ms: 1.031666
+  type: 'test'
+  ...
+# Subtest: t1: an Input.Text renders a LABELLED TEXT CONTROL carrying its label and placeholder
+ok 2 - t1: an Input.Text renders a LABELLED TEXT CONTROL carrying its label and placeholder
+  ---
+  duration_ms: 0.173
+  type: 'test'
+  ...
+# Subtest: t1: an Input.ChoiceSet renders a labelled control listing EVERY choice title
+ok 3 - t1: an Input.ChoiceSet renders a labelled control listing EVERY choice title
+  ---
+  duration_ms: 0.261084
+  type: 'test'
+  ...
+# Subtest: t1: an ActionSet renders ONE BUTTON PER ACTION, with Submit and OpenUrl DISTINGUISHABLE
+ok 4 - t1: an ActionSet renders ONE BUTTON PER ACTION, with Submit and OpenUrl DISTINGUISHABLE
+  ---
+  duration_ms: 0.126625
+  type: 'test'
+  ...
+# Subtest: t1: an Image renders a LABELLED PLACEHOLDER carrying url and altText, and is NEVER fetched
+ok 5 - t1: an Image renders a LABELLED PLACEHOLDER carrying url and altText, and is NEVER fetched
+  ---
+  duration_ms: 0.08525
+  type: 'test'
+  ...
+# Subtest: t1: a Container renders a visibly grouped region CONTAINING its children
+ok 6 - t1: a Container renders a visibly grouped region CONTAINING its children
+  ---
+  duration_ms: 0.183125
+  type: 'test'
+  ...
+# Subtest: t1: a ColumnSet renders its Columns SIDE BY SIDE rather than stacked
+ok 7 - t1: a ColumnSet renders its Columns SIDE BY SIDE rather than stacked
+  ---
+  duration_ms: 0.202209
+  type: 'test'
+  ...
+# Subtest: t1: a Column renders as a region inside its ColumnSet, preserving its width hint
+ok 8 - t1: a Column renders as a region inside its ColumnSet, preserving its width hint
+  ---
+  duration_ms: 0.096792
+  type: 'test'
+  ...
+# Subtest: t1: source-scan — the element switch is EXHAUSTIVE over UxElement, so a ninth variant fails the build
+ok 9 - t1: source-scan — the element switch is EXHAUSTIVE over UxElement, so a ninth variant fails the build
+  ---
+  duration_ms: 0.408875
+  type: 'test'
+  ...
+# Subtest: t1: an element OUTSIDE the union emits a VISIBLE placeholder naming that type, siblings intact
+ok 10 - t1: an element OUTSIDE the union emits a VISIBLE placeholder naming that type, siblings intact
+  ---
+  duration_ms: 0.320834
+  type: 'test'
+  ...
+# Subtest: t1: an unrecognised element never THROWS and never silently disappears
+ok 11 - t1: an unrecognised element never THROWS and never silently disappears
+  ---
+  duration_ms: 0.107292
+  type: 'test'
+  ...
+# Subtest: t1: a Container whose items is MALFORMED renders an empty group and the rest survives
+ok 12 - t1: a Container whose items is MALFORMED renders an empty group and the rest survives
+  ---
+  duration_ms: 0.082
+  type: 'test'
+  ...
+# Subtest: t1: text containing HTML metacharacters renders as LITERAL TEXT, everywhere it can appear
+ok 13 - t1: text containing HTML metacharacters renders as LITERAL TEXT, everywhere it can appear
+  ---
+  duration_ms: 0.100083
+  type: 'test'
+  ...
+# Subtest: t1: the emitter is PURE — the same definition yields a byte-identical string
+ok 14 - t1: the emitter is PURE — the same definition yields a byte-identical string
+  ---
+  duration_ms: 0.165875
+  type: 'test'
+  ...
+# Subtest: t8: every companion renderer goes through the shared companion shell, none through docgen
+ok 15 - t8: every companion renderer goes through the shared companion shell, none through docgen
+  ---
+  duration_ms: 0.1215
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 334.518958

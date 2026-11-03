@@ -1,0 +1,10 @@
+{
+  "html": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html",
+  "htmlSha256": "768d5dbef13c4c8b541ba14b39975b5a829d617c8a3d31426c82df73cfa59179",
+  "screenshot": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle1-round3.png",
+  "verification": "Headless Chrome saved render inspected: six participants, nine messages and timing narrative visible, readable at73percent fit. Pan/zoom controls not exercised.",
+  "viewport": {
+    "width": 1440,
+    "height": 1800
+  }
+}

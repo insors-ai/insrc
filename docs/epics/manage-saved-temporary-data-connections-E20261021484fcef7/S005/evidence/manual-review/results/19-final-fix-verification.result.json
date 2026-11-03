@@ -1,0 +1,77 @@
+{
+  "id": "19-final-fix-verification",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T05:10:30.770Z",
+  "finished": "2026-11-01T05:11:58.255Z",
+  "inputChars": 75354,
+  "inputSha256": "c64c96aa5641fb80d5516c0002a35e9cfce9c1d6545f4460063ab84c11c5abbf",
+  "missingObligations": [],
+  "result": {
+    "summary": "Round 3 result: both assigned round-2 issues are corrected as scoped. 17-fix-review-privacy-cache:1 holds. The `java.net.URI` strictness is gone for the reported triggers: space, `{}`, `[]`, and a bare `%` in path or query. The quoting is validation-only, and the original endpoint is returned unchanged. 18-fix-review-expiry:1 holds under the selected reload-and-authoritative-inspection remedy. The expired post-send dead end is not silently unlocked or replayed. Both clients show a fixed message telling the user to reload and inspect a fresh registration snapshot. I found three remaining defects independently. (1) MED: the new Kotlin lexical authority check misses credential-bearing endpoints that WHATWG `new URL` rejects, because special-scheme URLs can omit or vary the `//`. This is a Kotlin/TS parity gap. (2) LOW: some endpoints that TS accepts still make `java.net.URI` throw in Kotlin. (3) LOW: the recovery guidance has no cross-client parity or text test, and the Kotlin text is a duplicated literal.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+        "line": 221,
+        "trigger": "A safe read, list row or public patch carries an `http`/`https` endpoint whose authority does not follow a literal `//` immediately after the scheme. Examples: `https:user:pw@host/`, `https:///user:pw@host`, `https:/\\tab/user:pw@host`, `https:\\\\user:pw@host`.",
+        "defect": "The new check looks for `@` only when the text literally starts with `//` after the first `:`, and the authority ends at the first `/`, `?` or `#`. WHATWG `new URL` has different rules for special schemes. It tolerates missing or extra slashes, treats `\\` as a slash, and strips TAB/LF/CR. It then parses `user:pw` as credentials, so TS refuses these endpoints. In Kotlin the authority is empty or the URI is opaque, so `'@' in authority` is false and `URI.rawUserInfo` is null. The endpoint is accepted with embedded credentials. This reopens the original credential-bypass class for special schemes and is a TS/Kotlin parity gap. The same rules also over-refuse in Kotlin: `https://host\\@x/` has no credentials under WHATWG but is refused here (conservative direction).",
+        "evidence": "Lines 220-224 compute `authorityStart` only when `endpoint.startsWith(\"//\", schemeEnd+1)`. Lines 228-229 quote the tail and then `URI(...)`, which yields an opaque or empty-authority URI with null `rawUserInfo`. The supplied negative cases are only `postgresql://secret:password@...`, `redis://:pw@my_host:6379` and `postgresql://u:p@a:1,b:2/db`. All have a literal `//`. No supplied test covers a missing, extra or backslash slash form. The WHATWG behaviour is my knowledge of the spec and of Node's `URL`, not supplied evidence.",
+        "remedy": "Mirror the WHATWG special-scheme rules lexically. Strip TAB/LF/CR first. For `http`, `https`, `ws`, `wss` and `ftp`, skip any run of `/` or `\\` after `:` and end the authority at `/`, `\\`, `?` or `#`. For other schemes, keep the `//` rule. Reject `@` in the resulting authority. Add Kotlin and TS parity fixtures for the forms above. Better still, put them in the shared wire corpus so both languages are driven by one list."
+      },
+      {
+        "severity": "LOW",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+        "line": 228,
+        "trigger": "A WHATWG-valid endpoint that still contains characters `java.net.URI` rejects after the current quoting. Examples: a second `#` in the fragment (`https://host/#a#b`), DEL or C1 controls, Unicode space separators such as U+00A0 or U+2028 in the path or query, or `{`, `}` or `\"` in the host.",
+        "defect": "The quote set is `% U+0000-U+0020 < > \" { } | \\ ^ ` [ ]`. It omits `#` after the first `#`, U+007F-U+00A0 and the other Unicode space or control characters. The authority is passed to `URI` raw. WHATWG accepts or percent-encodes all of these. `URI` throws and `checked{}` converts that into `ConnectionReplyException`, so one row refuses the whole `list()` result and a patch is refused. This is the same failure shape as 17-fix-review-privacy-cache:1, on a narrower set of inputs.",
+        "evidence": "The quote regex on line 228. The added tests cover only space, `{value}`, `[value]` and a bare `%`. That `java.net.URI` rejects the remaining characters is my JDK knowledge, not supplied evidence.",
+        "remedy": "Do not depend on `java.net.URI` for acceptance. Check the scheme with `^[A-Za-z][A-Za-z0-9+.-]*:` and apply the lexical authority check. Or widen the validation-only quoting to every non-ASCII, control and non-first-`#` character. Add parity fixtures for each class."
+      },
+      {
+        "severity": "LOW",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt",
+        "line": 96,
+        "trigger": "A future edit changes the `reconciliation-required` recovery wording in one client only.",
+        "defect": "The reload guidance is a duplicated string literal. VS Code has it in `messages.ts`; the Kotlin panel has an inline `when` literal. No supplied test asserts that the expired post-send path produces this errorCode and message in either client, or that the two texts match. The round-2 remedy asked for a parity test, and the Kotlin live UI is stated as deferred. Drift would silently remove the only exit instruction for a permanently blocked key. Two things are also not in the supplied evidence: the Kotlin controller path that sets `errorCode` (round-2 cited lines 261 and 279) and where the renderer's `problems` object comes from.",
+        "evidence": "messages.ts line 1 and ConnectionsManagerPanel.kt line 96 hold identical text by inspection only. The renderer uses `problems[r.errorCode]` at line 176 with no visible definition. The test list shows no assertion on the message. The existing test, per round 2, asserts only the busy and `reconciliation-required` states.",
+        "remedy": "Add a parity test that drives submit, not-seen and expiry, then Reconcile or Replay, in both clients. It should assert `errorCode==='reconciliation-required'`, that the rendered text equals the shared constant, and that `submit` still throws `busy`. Prefer one shared message source (the corpus) for both clients."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "17-fix-review-privacy-cache:1",
+        "status": "holds",
+        "evidence": "The Kotlin `URI` parse no longer sees raw space, `{}`, `[]` or a bare `%`: the tail is quoted at line 228 for validation only. Lines 228-229 build a local `uri`, and the original endpoint is returned untouched. Tests at ConnectionProtocolTest.kt lines 102-107 assert `https://host/?q=a b`, `?q={value}` and `/[value]?q=100%` are accepted by `safeConnection`, `list` and `publicPatch` with the value preserved. Line 108 keeps `https://bad host/` refused, matching TS. The TS test at lines 69-72 has the same fixtures. The reported run shows 6 Kotlin protocol tests passing. Residual strictness and the special-scheme credential gap are reported as separate findings."
+      },
+      {
+        "key": "18-fix-review-expiry:1",
+        "status": "holds",
+        "evidence": "The approved policy is explicit reload-and-authoritative-inspection guidance, with no new dismiss protocol. controller.ts line 166 maps not-seen plus expired to `reconciliation-required`. Line 168 sets `errorCode='reconciliation-required'`. Replay at line 180 does the same and sends nothing. `canReplay` and `canDismiss` stay false and the key stays blocked, so there is no silent unlock or replay. messages.ts and the Kotlin panel line 96 both show: 'Check the original operation. If it remains unresolved, reload the workbench or Project, then refresh and inspect the registration before any new explicit action. Its historical outcome is unknown; never repeat it automatically.' The LLD section 3.6 and the recovery narrative document the same reload exit and say a pre-send expired ticket remains dismissible. Check the renderer's `problems` binding and the Kotlin controller's `errorCode` assignment against the source; neither is in the supplied evidence (see the LOW finding and evidenceRequests)."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt",
+      "src/shared/__tests__/connection-manager-wire.test.ts",
+      "vscode-plugin/src/connections/messages.ts",
+      "src/shared/connection-manager/wire.ts (101-149)",
+      "src/shared/connection-manager/controller.ts (40-111, 149-187)",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt (90-104)",
+      "vscode-plugin/src/connections/renderer.ts (169-184)",
+      "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md (131-137)"
+    ],
+    "limitations": [
+      "No tools were run. Test passes come from the supplied narrative and TAP output. The TAP block with 1..6 tests is not attributable to a specific file, so I could not tie it to the TS wire test, which has 4 tests.",
+      "WHATWG URL and java.net.URI behaviours cited in the findings are my knowledge, not supplied evidence.",
+      "Kotlin ConnectionMutationController and the renderer's `problems` definition were not supplied.",
+      "Controller.ts lines 111-148 were not supplied, so other paths that set `reconciliation-required` were not examined.",
+      "Kotlin live UI is deferred by the supplied narrative."
+    ],
+    "evidenceRequests": [
+      "Kotlin ConnectionMutationController (status and replay expiry handling, errorCode assignment)",
+      "vscode-plugin/src/connections/renderer.ts definition of `problems`, and the host-to-webview binding to CONNECTION_PROBLEMS",
+      "Shared-corpus or test output for the special-scheme credential forms (`https:user:pw@host/`, `https:///user:pw@host`, backslash and TAB variants) in both languages"
+    ]
+  }
+}

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: T22: exclude removes a file from BOTH the diff body and the file list; a kept file stays in both
+ok 1 - T22: exclude removes a file from BOTH the diff body and the file list; a kept file stays in both
+  ---
+  duration_ms: 160.533417
+  type: 'test'
+  ...
+# Subtest: T22: an excluded file does not count against maxBytes
+ok 2 - T22: an excluded file does not count against maxBytes
+  ---
+  duration_ms: 193.546333
+  type: 'test'
+  ...
+# Subtest: T23: with no exclude, and with an empty one, both argument vectors are exactly today's (numstat reads -z since ISSUE-b97752e9)
+ok 3 - T23: with no exclude, and with an empty one, both argument vectors are exactly today's (numstat reads -z since ISSUE-b97752e9)
+  ---
+  duration_ms: 0.4
+  type: 'test'
+  ...
+# Subtest: T23: the body and the numstat command receive the SAME pathspecs
+ok 4 - T23: the body and the numstat command receive the SAME pathspecs
+  ---
+  duration_ms: 0.1195
+  type: 'test'
+  ...
+# Subtest: T24: path stays the positive pathspec when exclude is given, and the exclusions narrow it
+ok 5 - T24: path stays the positive pathspec when exclude is given, and the exclusions narrow it
+  ---
+  duration_ms: 135.795459
+  type: 'test'
+  ...
+# Subtest: T25: a malformed exclude is invalid-input and git is not run
+ok 6 - T25: a malformed exclude is invalid-input and git is not run
+  ---
+  duration_ms: 0.541208
+  type: 'test'
+  ...
+# Subtest: T25: the closed input schema declares exclude as an array of non-empty strings
+ok 7 - T25: the closed input schema declares exclude as an array of non-empty strings
+  ---
+  duration_ms: 0.121542
+  type: 'test'
+  ...
+# Subtest: when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure
+ok 8 - when the diff body command succeeds and the numstat command fails, git_diff returns success: false naming the stat failure
+  ---
+  duration_ms: 154.158875
+  type: 'test'
+  ...
+# Subtest: a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces
+ok 9 - a renamed file is reported by its literal new path and old path, including a compact rename inside a shared directory and a path with spaces
+  ---
+  duration_ms: 240.439958
+  type: 'test'
+  ...
+# Subtest: a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call
+ok 10 - a body whose capture dropped output is marked truncated even when the captured text is under the cap, and a numstat read that was truncated or ends mid-record fails the call
+  ---
+  duration_ms: 185.663167
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1294.841125

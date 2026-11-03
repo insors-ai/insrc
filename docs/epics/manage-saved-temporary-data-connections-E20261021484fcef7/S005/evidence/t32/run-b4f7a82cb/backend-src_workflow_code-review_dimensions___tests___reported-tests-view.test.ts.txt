@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: the test-record view lists each builder-reported named test from its latest run, a fail winning a tie, and omits the list when there is none
+ok 1 - the test-record view lists each builder-reported named test from its latest run, a fail winning a tie, and omits the list when there is none
+  ---
+  duration_ms: 7.655541
+  type: 'test'
+  ...
+# Subtest: the coverage prompt grades a promised smoke test against its reported result, and is unchanged with none reported
+ok 2 - the coverage prompt grades a promised smoke test against its reported result, and is unchanged with none reported
+  ---
+  duration_ms: 0.537834
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 315.952541

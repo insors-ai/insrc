@@ -1,0 +1,49 @@
+TAP version 13
+# Subtest: file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link
+not ok 1 - file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link
+  ---
+  duration_ms: 26.862042
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts:1:3476'
+  failureType: 'testCodeFailure'
+  error: |-
+    The input was expected to not match the regular expression /graph\.lmdb/. Input:
+    
+    '# 2 matches for `NEEDLE` in `/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-tool-refusal-FjFuLU/.insrc` _(rg)_\n' +
+      '\n' +
+      '```\n' +
+      'graph.lmdb:1: DATA-NEEDLE\n' +
+      'graph.lmdb-lock:1: LOCK-NEEDLE\n' +
+      '```'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: |-
+    # 2 matches for `NEEDLE` in `/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-tool-refusal-FjFuLU/.insrc` _(rg)_
+    
+    ```
+    graph.lmdb:1: DATA-NEEDLE
+    graph.lmdb-lock:1: LOCK-NEEDLE
+    ```
+  operator: 'doesNotMatch'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts:103:10)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: a file tool call on any other path behaves as before
+ok 2 - a file tool call on any other path behaves as before
+  ---
+  duration_ms: 18.943833
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 396.871334

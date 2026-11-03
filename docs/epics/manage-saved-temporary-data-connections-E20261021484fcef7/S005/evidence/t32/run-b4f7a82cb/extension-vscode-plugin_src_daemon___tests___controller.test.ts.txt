@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0
+ok 1 - run(action) spawns bash <ctlScript> <action> for each lifecycle action and derives state from reachability on exit 0
+  ---
+  duration_ms: 1.938625
+  type: 'test'
+  ...
+# Subtest: run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws
+ok 2 - run(action) maps EACH ctl exit code 1/2/3/4 to its documented reason and never throws
+  ---
+  duration_ms: 1.06025
+  type: 'test'
+  ...
+# Subtest: run(action) with a missing ctl script returns errored/not-installed WITHOUT spawning
+ok 3 - run(action) with a missing ctl script returns errored/not-installed WITHOUT spawning
+  ---
+  duration_ms: 0.223667
+  type: 'test'
+  ...
+# Subtest: install() spawns bash <bundledInstaller> -y; exit 0 → reachability; codes 1/2 → mapped reason
+ok 4 - install() spawns bash <bundledInstaller> -y; exit 0 → reachability; codes 1/2 → mapped reason
+  ---
+  duration_ms: 1.532291
+  type: 'test'
+  ...
+# Subtest: install() with a missing bundled installer returns errored/reinstall WITHOUT spawning
+ok 5 - install() with a missing bundled installer returns errored/reinstall WITHOUT spawning
+  ---
+  duration_ms: 0.192375
+  type: 'test'
+  ...
+# Subtest: isInstalled() is true iff the compiled daemon entry exists, false for a clone-without-build, never throws
+ok 6 - isInstalled() is true iff the compiled daemon entry exists, false for a clone-without-build, never throws
+  ---
+  duration_ms: 0.5415
+  type: 'test'
+  ...
+# Subtest: source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)
+ok 7 - source-scan: vscode-plugin/src/daemon/ imports only node builtins + the shared ipc-client + the s1 surfaces (k5)
+  ---
+  duration_ms: 0.818375
+  type: 'test'
+  ...
+# Subtest: a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before
+ok 8 - a plain start runs daemon-ctl.sh start with --skip-sync, --skip-install and --skip-build, and a run without options builds the same command line as before
+  ---
+  duration_ms: 0.436958
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.12725

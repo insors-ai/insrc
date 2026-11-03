@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: CM-S4-CONFIRM: cancellation creates no command or ticket and confirmation captures the exact generation
+ok 1 - CM-S4-CONFIRM: cancellation creates no command or ticket and confirmation captures the exact generation
+  ---
+  duration_ms: 1.521
+  type: 'test'
+  ...
+# Subtest: CM-S4-STATE: uncertain status and missing rows never become successful removal
+ok 2 - CM-S4-STATE: uncertain status and missing rows never become successful removal
+  ---
+  duration_ms: 1.839333
+  type: 'test'
+  ...
+# Subtest: CM-S4-STATE: committed removal tracks credential and runtime cleanup independently
+ok 3 - CM-S4-STATE: committed removal tracks credential and runtime cleanup independently
+  ---
+  duration_ms: 0.696292
+  type: 'test'
+  ...
+# Subtest: CM-S4-STATE: unrelated outcomes cannot assert removal and projections never copy unsafe fields
+ok 4 - CM-S4-STATE: unrelated outcomes cannot assert removal and projections never copy unsafe fields
+  ---
+  duration_ms: 0.368125
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 205.336625

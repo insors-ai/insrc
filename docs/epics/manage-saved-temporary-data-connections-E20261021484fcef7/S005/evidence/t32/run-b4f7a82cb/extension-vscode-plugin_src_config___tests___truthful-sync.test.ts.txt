@@ -1,0 +1,102 @@
+TAP version 13
+# Subtest: applyChanges on an INVALID value reports the reason AND reverts the setting to the last-synced value
+ok 1 - applyChanges on an INVALID value reports the reason AND reverts the setting to the last-synced value
+  ---
+  duration_ms: 1.522084
+  type: 'test'
+  ...
+# Subtest: applyChanges on a daemon {ok:false} reports the reason AND reverts, without advancing the snapshot
+ok 2 - applyChanges on a daemon {ok:false} reports the reason AND reverts, without advancing the snapshot
+  ---
+  duration_ms: 0.228041
+  type: 'test'
+  ...
+# Subtest: applyChanges on a daemon-unreachable write (rpc reject) reverts and never throws
+ok 3 - applyChanges on a daemon-unreachable write (rpc reject) reverts and never throws
+  ---
+  duration_ms: 0.154208
+  type: 'test'
+  ...
+# Subtest: the revert is a loop-suppressed idempotent no-op: re-applying the reverted value writes nothing
+ok 4 - the revert is a loop-suppressed idempotent no-op: re-applying the reverted value writes nothing
+  ---
+  duration_ms: 0.083292
+  type: 'test'
+  ...
+# Subtest: a rejected key with NO last-synced value reverts to option.default and pre-sets the snapshot (no unintended write)
+ok 5 - a rejected key with NO last-synced value reverts to option.default and pre-sets the snapshot (no unintended write)
+  ---
+  duration_ms: 0.22725
+  type: 'test'
+  ...
+# Subtest: the revert's own settings.write failure is swallowed (applyChanges never throws)
+ok 6 - the revert's own settings.write failure is swallowed (applyChanges never throws)
+  ---
+  duration_ms: 0.086417
+  type: 'test'
+  ...
+# Subtest: pullFromDaemon reconciles: it republishes the daemon value over a stale local value + re-captures the snapshot
+ok 7 - pullFromDaemon reconciles: it republishes the daemon value over a stale local value + re-captures the snapshot
+  ---
+  duration_ms: 0.156625
+  type: 'test'
+  ...
+# Subtest: a Refresh (pullFromDaemon) while the daemon is unreachable notifies, changes nothing, and does not throw
+ok 8 - a Refresh (pullFromDaemon) while the daemon is unreachable notifies, changes nothing, and does not throw
+  ---
+  duration_ms: 0.066333
+  type: 'test'
+  ...
+# Subtest: package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands
+not ok 9 - package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands
+  ---
+  duration_ms: 1.7465
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/vscode-plugin/src/config/__tests__/truthful-sync.test.ts:1:6968'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    19 !== 14
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 14
+  actual: 19
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/vscode-plugin/src/config/__tests__/truthful-sync.test.ts:201:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: the InsrcCommandId union includes insrc.settings.refresh and extension.ts wires it to pullFromDaemon
+ok 10 - the InsrcCommandId union includes insrc.settings.refresh and extension.ts wires it to pullFromDaemon
+  ---
+  duration_ms: 0.897666
+  type: 'test'
+  ...
+# Subtest: insrc.advanced is NOT declared in S003 (escape-hatch deferred to a later story)
+ok 11 - insrc.advanced is NOT declared in S003 (escape-hatch deferred to a later story)
+  ---
+  duration_ms: 0.133625
+  type: 'test'
+  ...
+# Subtest: the config engine still imports no vscode and calls only config.catalog/config.write/config.show
+ok 12 - the config engine still imports no vscode and calls only config.catalog/config.write/config.show
+  ---
+  duration_ms: 0.300792
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 11
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 198.244958

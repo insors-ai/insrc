@@ -21,6 +21,7 @@ import { existsSync, mkdirSync, mkdtempSync, realpathSync, renameSync, rmSync, s
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { MessageChannel } from 'node:worker_threads';
+import { createHash } from 'node:crypto';
 
 const HOME = mkdtempSync(join(tmpdir(), 'insrc-maintenance-'));
 process.env['HOME'] = HOME;
@@ -61,6 +62,55 @@ import type { StartedWorker } from '../workers.js';
 // ---------------------------------------------------------------------------
 
 describe('unit', () => {
+	test('lane work that starts and ends between two ticks restarts the idle window: the board records when a lane was last busy', async () => {
+		const { StatusBoard } = await import('../status-board.js');
+		let clock = 1_000;
+		const board = new StatusBoard(() => clock);
+		assert.equal(board.lastLaneActivityAt(), undefined, 'no lane work yet');
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 60_000 },
+			now: () => clock, lanesIdle: () => board.snapshot().indexing.idle, laneActivityAt: () => board.lastLaneActivityAt(),
+			healthy: () => true, reclaimable: () => undefined,
+			workers: { live: () => [], created: () => 0 },
+			compact: () => assert.fail('no compaction below the thresholds'),
+		});
+		clock += 50_000;
+		// Between two ticks: a job runs and ends.
+		board.publishLane('index', { depth: 1, processing: true });
+		clock += 5_000;
+		board.publishLane('index', { depth: 0, processing: false });
+		assert.equal(board.lastLaneActivityAt(), 56_000, 'the publish that ended the work');
+		clock += 20_000;
+		assert.equal(board.snapshot().indexing.idle, true);
+		assert.equal(await c.tick(), 'not-idle', 'idle counts from the end of the lane work, not from boot');
+		assert.equal(c.idleForMs(), 20_000);
+		clock += 40_000;
+		assert.equal(await c.tick(), 'below-threshold');
+		// An idle publish while idle is not activity.
+		board.publishLane('summary', { depth: 0, processing: false });
+		assert.equal(board.lastLaneActivityAt(), 56_000);
+		await c.stop();
+	});
+
+	test('with idleMs 0, a non-admin request in flight or a busy lane still means not idle: tick does not compact', async () => {
+		let lanesIdle = true;
+		let compactions = 0;
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			now: () => 1_000, lanesIdle: () => lanesIdle, healthy: () => true,
+			reclaimable: () => ({ fileBytes: 100, reclaimableBytes: 50, reclaimablePct: 50 }),
+			workers: { live: () => [], created: () => 0 },
+			compact: async () => { compactions++; return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 }; },
+		});
+		const end = c.requestArrived('session.list', 'session');
+		assert.equal(await c.tick(), 'not-idle', 'a request in flight');
+		end();
+		lanesIdle = false;
+		assert.equal(await c.tick(), 'not-idle', 'a busy lane');
+		assert.equal(compactions, 0);
+		await c.stop();
+	});
+
 	test('maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does', async () => {
 		let clock = 1_000;
 		let lanesIdle = true;
@@ -95,7 +145,13 @@ describe('unit', () => {
 		lanesIdle = false;
 		assert.equal(c.idleForMs(), 0, 'a busy lane');
 		assert.equal(await c.tick(), 'not-idle');
+		// Lane work that outlasts idleMs: when it ends, idle starts again from the last time it was seen busy.
+		clock += 120_000;
+		assert.equal(await c.tick(), 'not-idle');
 		lanesIdle = true;
+		assert.equal(c.idleForMs(), 0, 'the busy lane restarted the idle window');
+		assert.equal(await c.tick(), 'not-idle');
+		clock += 60_000;
 		assert.equal(await c.tick(), 'below-threshold');
 		assert.equal(reclaimableAsked.length, 2);
 		// Never while the store is not healthy.
@@ -104,6 +160,78 @@ describe('unit', () => {
 		assert.equal(await c.tick(), 'unhealthy');
 		await assert.rejects(c.runNow(), /not healthy/);
 		assert.equal(reclaimableAsked.length, 2);
+	});
+
+	test('the pre-rename check is by worker identity: a worker that exited and was replaced between the close acknowledgements and the rename fails it, though the count is unchanged', async () => {
+		// Fake workers that acknowledge graph.close, as startDaemonWorker does.
+		const fakeWorker = (threadId: number) => {
+			const { port1, port2 } = new MessageChannel();
+			port2.on('message', (m: { op?: string; args?: unknown }) => {
+				if (m.op === GRAPH_CLOSE_OP) { (m.args as MessagePort).postMessage('closed'); (m.args as MessagePort).close(); }
+			});
+			return { threadId, port: port1, close: () => { port1.close(); port2.close(); } };
+		};
+		const a = fakeWorker(101), b = fakeWorker(102), replacement = fakeWorker(103);
+		let live = [a, b];
+		const decisions: boolean[] = [];
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined,
+			workers: { live: () => live, created: () => live.length },
+			compact: async opts => {
+				decisions.push(await opts.beforeRename());          // every live worker acknowledged
+				live = [a, replacement];                             // b exited and was replaced: same count
+				decisions.push(await opts.beforeRename());
+				return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 };
+			},
+		});
+		await c.runNow();
+		assert.deepEqual(decisions, [true, false], 'the replacement never acknowledged graph.close');
+		for (const w of [a, b, replacement]) w.close();
+	});
+
+	test('the pre-rename check no longer abandons the compaction when a worker the idle sweep released has already acknowledged graph.close, even though the supervisor has not yet seen its exit (ISSUE-dc0bd808)', async () => {
+		const fakeWorker = (threadId: number) => {
+			const { port1, port2 } = new MessageChannel();
+			port2.on('message', (m: { op?: string; args?: unknown }) => {
+				if (m.op === GRAPH_CLOSE_OP) { (m.args as MessagePort).postMessage('closed'); (m.args as MessagePort).close(); }
+			});
+			return { threadId, port: port1, close: () => { port1.close(); port2.close(); } };
+		};
+		const a = fakeWorker(104), b = fakeWorker(105);
+		let live = [a, b];
+		let created = 2; // the supervisor's own created count, independent of live() -- lags behind release until the worker's 'exit' event
+		const decisions: boolean[] = [];
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined,
+			workers: { live: () => live, created: () => created },
+			compact: async opts => {
+				decisions.push(await opts.beforeRename());          // both live and acknowledged
+				live = [a];                                          // the idle sweep released b; created() has not decremented yet
+				decisions.push(await opts.beforeRename());
+				return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 };
+			},
+		});
+		await c.runNow();
+		assert.deepEqual(decisions, [true, true], 'a released-but-acknowledged worker does not abandon the compaction, even with created() still ahead of live().length');
+		for (const w of [a, b]) w.close();
+	});
+
+	test('graph.close is asked of every worker at once: unresponsive workers cost one acknowledgement timeout, not one each', async () => {
+		const deaf = (threadId: number) => { const { port1, port2 } = new MessageChannel(); return { threadId, port: port1, close: () => { port1.close(); port2.close(); } }; };
+		const workers = [deaf(201), deaf(202), deaf(203)];
+		let refusedAfterMs = -1;
+		const t0 = Date.now();
+		const c = new MaintenanceController({
+			config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 0, minReclaimablePct: 0, minReclaimableMb: 0 },
+			lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined, ackMs: 400,
+			workers: { live: () => workers, created: () => workers.length },
+			compact: async opts => { assert.equal(await opts.beforeRename(), false); refusedAfterMs = Date.now() - t0; return { beforeBytes: 0, afterBytes: 0, savedBytes: 0, elapsedMs: 0 }; },
+		});
+		await c.runNow();
+		assert.ok(refusedAfterMs >= 350 && refusedAfterMs < 1000, `one timeout for three workers, not three (${refusedAfterMs} ms)`);
+		for (const w of workers) w.close();
 	});
 
 	test('reclaimable estimate: pages in use summed over every named database against the file size; the 25% and 256 MB thresholds both required', async () => {
@@ -217,10 +345,21 @@ function makeController(config: Partial<MaintenanceConfig>, extra: Partial<Maint
 	return c;
 }
 /** Entries per named database, as the test reads them. */
-async function fingerprint(): Promise<Record<string, number>> {
+async function fingerprint(): Promise<Record<string, string>> {
+	// Every key and value of every named database, hashed in order: a lost, added or changed row changes it.
 	const s = await getGraphStore();
-	const out: Record<string, number> = {};
-	for (const [name, db] of Object.entries(s)) if (name !== 'root') out[name] = ((db as { getStats(): unknown }).getStats() as { entryCount: number }).entryCount;
+	const bytes = (v: unknown): Buffer => Buffer.isBuffer(v) ? v : v instanceof Uint8Array ? Buffer.from(v) : Buffer.from(JSON.stringify(v, (_k, x: unknown) => typeof x === 'bigint' ? `${x}n` : x) ?? 'undefined');
+	const out: Record<string, string> = {};
+	for (const [name, db] of Object.entries(s)) {
+		if (name === 'root') continue;
+		const h = createHash('sha256');
+		let n = 0;
+		for (const { key, value } of (db as { getRange(): Iterable<{ key: unknown; value: unknown }> }).getRange()) {
+			h.update(bytes(key)); h.update('\0'); h.update(bytes(value)); h.update('\n');
+			n++;
+		}
+		out[name] = `${n}:${h.digest('hex')}`;
+	}
 	return out;
 }
 /** Rows written and deleted, so the file has space to give back. */
@@ -329,12 +468,50 @@ describe('integration', () => {
 		assert.ok(Date.now() - t0 < 5_000);
 		assert.equal(granted, false, 'never granted: no worker was asked to close and nothing was compacted');
 		assert.ok(graphStoreReclaimable() !== undefined, 'the main thread\'s store is still open');
-		await assert.rejects(c.runNow(), /the daemon was not idle in time/, 'daemon.compact gets the not-idle-in-time error');
+		await assert.rejects(c.runNow(), /^MaintenanceNotRunError: daemon\.compact: the daemon did not become idle within 300 ms; try again later$/, 'daemon.compact gets the design\'s not-idle-in-time error');
 		slow.release();
 		await slow.reply;
 		assert.equal((await ask('x.write', { key: 'after-abandon' })).result, 'written');
 		assert.equal((await ask('repo.stats', {})).error, undefined, 'the workers serve as before');
 		assert.equal((await writerOp({ op: 'read-config-and-artifact', tags: ['before'] }))['ok'], true);
+	});
+
+	test('the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted', { timeout: 60_000 }, async () => {
+		// Waiting: a running request holds the lock; health goes bad; maintenance stops waiting.
+		let ok = true;
+		let granted = false;
+		let liveAsked = 0;
+		let compacted = 0;
+		const workers = {
+			live: () => { liveAsked++; return supervisors.flatMap(s => s.liveWorkers()); },
+			created: () => supervisors.reduce((n, s) => n + s.createdCount(), 0),
+		};
+		const compact: MaintenanceDeps['compact'] = async opts => { compacted++; return compactGraphStore(opts); };
+		const waiting = makeController({ pauseLimitMs: 30_000 }, { healthy: () => ok, healthPollMs: 20, workers, compact, onGranted: async () => { granted = true; } });
+		const slow = slowRequest();
+		await until(() => slowEntered, 'the running request');
+		const t0 = Date.now();
+		const ticked = waiting.tick();
+		await sleep(150);
+		ok = false;
+		assert.equal(await ticked, 'abandoned');
+		assert.ok(Date.now() - t0 < 5_000, 'it stopped waiting at once, long before the 30 s pause limit');
+		assert.deepEqual([granted, liveAsked, compacted], [false, 0, 0], 'never granted: no worker asked to close, nothing compacted');
+		ok = true;
+		slow.release();
+		await slow.reply;
+		assert.equal((await ask('x.write', { key: 'after-unhealthy-wait' })).result, 'written', 'the exclusive request was withdrawn');
+
+		// Granted, then health goes bad before the workers are asked to close: nothing closed, nothing compacted.
+		ok = true;
+		liveAsked = 0;
+		compacted = 0;
+		const grantedThenLost = makeController({}, { healthy: () => ok, healthPollMs: 20, workers, compact, onGranted: async () => { ok = false; } });
+		await assert.rejects(grantedThenLost.runNow(), /^MaintenanceNotRunError: maintenance: the graph store is not healthy$/);
+		assert.deepEqual([liveAsked, compacted], [0, 0], 'stopped before closing any handle or compacting');
+		ok = true;
+		assert.equal((await ask('x.write', { key: 'after-unhealthy-grant' })).result, 'written', 'the lock was released');
+		assert.equal((await ask('repo.stats', {})).error, undefined, 'the workers still serve: their handles were never closed');
 	});
 
 	test("the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves", { timeout: 60_000 }, async () => {
@@ -370,6 +547,18 @@ describe('integration', () => {
 		assert.equal((await ask('index.file', { filePath: join(REPO, 'src', 'after.ts'), event: 'create' })).error, undefined);
 		assert.equal((await writerOp({ op: 'write-config-and-artifact', tag: 'after' }))['ok'], true);
 		await until(async () => (await findEntitiesByFile(await getDb(), join(REPO, 'src', 'after.ts'))).length > 0, 'the code-indexing worker\'s write');
+		// The document-summary worker's write: a document indexed after maintenance, then summarised (the
+		// test summariser records each summary in the store). The admin worker writes nothing to the store.
+		mkdirSync(join(REPO, 'docs'), { recursive: true });
+		writeFileSync(join(REPO, 'docs', 'after.md'), '# After maintenance\n\nA document indexed and summarised after the compaction.\n');
+		assert.equal((await ask('index.file', { filePath: join(REPO, 'docs', 'after.md'), event: 'create' })).error, undefined);
+		const docs = async () => (await findEntitiesByFile(await getDb(), join(REPO, 'docs', 'after.md'))).filter(e => e.kind === 'document' || e.kind === 'section');
+		await until(async () => (await docs()).length > 0, 'the document indexed');
+		await router.request('indexing', INDEXING_PORT.enqueue, { kind: 'doc-summarise-repo', repoPath: REPO });
+		await until(async () => {
+			const store = await getGraphStore();
+			return (await docs()).some(d => store.meta.get(`test-summary:${d.id}`) !== undefined);
+		}, 'the document-summary worker\'s write', 60_000);
 		assert.deepEqual((await getGraphStore()).meta.get('main-after'), Buffer.from([1]));
 		assert.equal((await new ConfigStore(null).getEntry('cfg-after'))?.body, 'body of cfg-after', 'the store worker\'s write');
 		assert.equal(statSync(PATHS.lmdb).ino, compacted, 'every write went to the compacted file');

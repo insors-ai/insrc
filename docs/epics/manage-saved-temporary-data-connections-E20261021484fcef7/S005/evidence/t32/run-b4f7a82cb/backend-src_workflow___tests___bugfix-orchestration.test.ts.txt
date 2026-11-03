@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)
+ok 1 - nextAfterIssue: magnitude='small' -> standalone insrc_build_step (issue->build)
+  ---
+  duration_ms: 1.317125
+  type: 'test'
+  ...
+# Subtest: nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)
+ok 2 - nextAfterIssue: magnitude='sized' -> standalone insrc_workflow_step design.story (START)
+  ---
+  duration_ms: 0.11775
+  type: 'test'
+  ...
+# Subtest: nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)
+ok 3 - nextAfterIssue: the small build routes through the build-step NO-LLD path (sizeClass=trivial, consumable)
+  ---
+  duration_ms: 0.111083
+  type: 'test'
+  ...
+# Subtest: nextAfterIssue: the sized design.story spec carries the full defect body, not just the title
+ok 4 - nextAfterIssue: the sized design.story spec carries the full defect body, not just the title
+  ---
+  duration_ms: 0.054625
+  type: 'test'
+  ...
+# Subtest: nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)
+ok 5 - nextAfterIssue: emitted stage matches routeForSizeClass (small->build has no design.story)
+  ---
+  duration_ms: 0.133875
+  type: 'test'
+  ...
+# Subtest: nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude
+ok 6 - nextAfterIssue: magnitude absent/invalid -> throws invalid-magnitude
+  ---
+  duration_ms: 0.186625
+  type: 'test'
+  ...
+# Subtest: admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted
+ok 7 - admitBugfixAdvance: approved + parentRef WorkItemRef -> admitted
+  ---
+  duration_ms: 1.957667
+  type: 'test'
+  ...
+# Subtest: admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted
+ok 8 - admitBugfixAdvance: approved + parentRef===null (standalone) -> admitted
+  ---
+  duration_ms: 0.166917
+  type: 'test'
+  ...
+# Subtest: admitBugfixAdvance: approved + parentRef ABSENT -> not admitted
+ok 9 - admitBugfixAdvance: approved + parentRef ABSENT -> not admitted
+  ---
+  duration_ms: 0.24025
+  type: 'test'
+  ...
+# Subtest: admitBugfixAdvance: not approved -> not admitted
+ok 10 - admitBugfixAdvance: not approved -> not admitted
+  ---
+  duration_ms: 0.298583
+  type: 'test'
+  ...
+# Subtest: locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation
+ok 11 - locateAndStampParent: WorkItemRef -> writeParentRef(ref); returns the ParentLocation
+  ---
+  duration_ms: 0.297667
+  type: 'test'
+  ...
+# Subtest: locateAndStampParent: standalone (null) -> writeParentRef(null)
+ok 12 - locateAndStampParent: standalone (null) -> writeParentRef(null)
+  ---
+  duration_ms: 0.059417
+  type: 'test'
+  ...
+# Subtest: locateAndStampParent: readIssue null -> throws issue-not-found, no write
+ok 13 - locateAndStampParent: readIssue null -> throws issue-not-found, no write
+  ---
+  duration_ms: 0.207917
+  type: 'test'
+  ...
+# Subtest: locateAndStampParent: not approved -> throws not-approved, no write
+ok 14 - locateAndStampParent: not approved -> throws not-approved, no write
+  ---
+  duration_ms: 0.062833
+  type: 'test'
+  ...
+# Subtest: locateAndStampParent: locateParent rejects -> propagates, no write
+ok 15 - locateAndStampParent: locateParent rejects -> propagates, no write
+  ---
+  duration_ms: 0.057083
+  type: 'test'
+  ...
+# Subtest: locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty
+ok 16 - locateAndStampParent: defectDescription is built from the issue body; touchedPaths empty
+  ---
+  duration_ms: 0.122917
+  type: 'test'
+  ...
+# Subtest: defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)
+ok 17 - defaultStampDeps: writeParentRef patches meta.parentRef only, body byte-unchanged (k4)
+  ---
+  duration_ms: 3.123042
+  type: 'test'
+  ...
+# Subtest: advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall
+ok 18 - advanceBugfixAfterIssue: bugfix issue -> stamps, admits, returns nextCall
+  ---
+  duration_ms: 0.207167
+  type: 'test'
+  ...
+# Subtest: advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed
+ok 19 - advanceBugfixAfterIssue: non-issue artifact -> skipped, nothing routed
+  ---
+  duration_ms: 0.0685
+  type: 'test'
+  ...
+# Subtest: advanceBugfixAfterIssue: bugfixCategory flag off -> skipped
+ok 20 - advanceBugfixAfterIssue: bugfixCategory flag off -> skipped
+  ---
+  duration_ms: 0.0475
+  type: 'test'
+  ...
+# Subtest: ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)
+ok 21 - ac3: a bugfix BUILD + enforce + CR pass -> completes via approveWorkflowTarget (reused gate)
+  ---
+  duration_ms: 5.564792
+  type: 'test'
+  ...
+# Subtest: ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved
+ok 22 - ac3: a bugfix BUILD + enforce + absent CR -> withheld into skipped[], not approved
+  ---
+  duration_ms: 2.095125
+  type: 'test'
+  ...
+# Subtest: ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)
+ok 23 - ac3: a bugfix BUILD + enforce OFF + absent CR -> withheld too (no separate path for a bugfix)
+  ---
+  duration_ms: 3.754625
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 322.440917

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: single: a review-clean artifact is approved (approvedAt stamped)
+ok 1 - single: a review-clean artifact is approved (approvedAt stamped)
+  ---
+  duration_ms: 5.696125
+  type: 'test'
+  ...
+# Subtest: single: a review-blocked artifact lands in skipped[] (not approved[]), no override
+ok 2 - single: a review-blocked artifact lands in skipped[] (not approved[]), no override
+  ---
+  duration_ms: 1.198958
+  type: 'test'
+  ...
+# Subtest: single: overrideReview approves past the block
+ok 3 - single: overrideReview approves past the block
+  ---
+  duration_ms: 1.1635
+  type: 'test'
+  ...
+# Subtest: single: a missing artifact throws ArtifactMissingError (not skipped)
+ok 4 - single: a missing artifact throws ArtifactMissingError (not skipped)
+  ---
+  duration_ms: 1.141833
+  type: 'test'
+  ...
+# Subtest: batch: a mixed epic splits into approved[] + skipped[] — nothing dropped
+ok 5 - batch: a mixed epic splits into approved[] + skipped[] — nothing dropped
+  ---
+  duration_ms: 3.589667
+  type: 'test'
+  ...
+# Subtest: batch: only NOT-yet-approved artifacts are swept (already-approved excluded)
+ok 6 - batch: only NOT-yet-approved artifacts are swept (already-approved excluded)
+  ---
+  duration_ms: 1.83625
+  type: 'test'
+  ...
+# Subtest: batch: an epic with ZERO pending artifacts throws NoPendingArtifactsError
+ok 7 - batch: an epic with ZERO pending artifacts throws NoPendingArtifactsError
+  ---
+  duration_ms: 1.711125
+  type: 'test'
+  ...
+# Subtest: batch: an epic whose pending artifacts are ALL blocked returns approved=[] / skipped=[all] (NOT the empty error)
+ok 8 - batch: an epic whose pending artifacts are ALL blocked returns approved=[] / skipped=[all] (NOT the empty error)
+  ---
+  duration_ms: 1.7595
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 312.480167

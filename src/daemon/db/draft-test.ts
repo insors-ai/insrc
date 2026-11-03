@@ -15,12 +15,12 @@ export const PROBE_DEADLINE_MS=10000,PROBE_CANCEL_GRACE_MS=250,PROBE_CAPACITY=4;
 export class DraftTestAdmissionError extends Error {
  constructor(readonly code:'busy'|'session-expired'){super(code==='busy'?'Connection test capacity is busy. Retry when cleanup completes.':'Connection test transport is unavailable.');}
 }
-export type DraftPreparation=(signal:AbortSignal)=>Promise<EffectiveDraft>;
+export type DraftPreparation=(signal:AbortSignal,drained:Promise<void>)=>Promise<EffectiveDraft>;
 interface Active {readonly requestId:string;readonly epoch:string;readonly stop:()=>boolean;readonly drained:Promise<void>}
 /** Explicit projection excludes saved references and runtime authority from private config. */
 function workerConfig(config:ConnectionConfig):ConnectionConfig {
  const {id,kind,family,label,url,path,schemaSource,namespace,pii,options,recursive,partitioning}=config;
- return JSON.parse(JSON.stringify({id,kind,family,label,url,path,schemaSource,namespace,pii,options,recursive,partitioning})) as ConnectionConfig;
+ return JSON.parse(JSON.stringify({id,kind,family,label:label?.trim()?label:undefined,url,path,schemaSource,namespace,pii,options,recursive,partitioning})) as ConnectionConfig;
 }
 export function probeWorkerEnvironment():NodeJS.ProcessEnv {
  const env:NodeJS.ProcessEnv={INSRC_MODE:'probe-worker',TSX_DISABLE_CACHE:'1'};
@@ -62,7 +62,7 @@ export class DraftTestSupervisor {
    try{
     controller.signal.throwIfAborted();
     let effective:EffectiveDraft;
-    try{effective=await prepare(controller.signal);}catch(error){if(!terminal){terminal=true;rejectResult(error);}return;}
+    try{effective=await prepare(controller.signal,drained);}catch(error){if(!terminal){terminal=true;rejectResult(error);}return;}
     controller.signal.throwIfAborted();
     context.assertRequestActive?.();
     const config=workerConfig(effective.config);

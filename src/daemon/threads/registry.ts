@@ -7,9 +7,10 @@
  * Target registry (Epic 86197ac6, Story s1, contract sc3): which worker thread
  * serves which class of request. Lives on the main thread, which routes.
  *
- * At most one live target each for admin work, indexing work and requests that
- * carry no valid client identity (the unattributed worker), and at most one per
- * session (client label + process id).
+ * At most one live target each for admin work, indexing work, requests that
+ * carry no valid client identity (the unattributed worker) and the session-class
+ * families whose state is one process-wide copy (the shared-state worker, s3),
+ * and at most one per session (client label + process id).
  */
 
 import type { MethodClass, SessionId } from './channel.js';
@@ -20,6 +21,8 @@ export interface ThreadTarget {
 	readonly session?: SessionId | undefined;
 	/** The one shared worker for session-class requests that carry no valid identity. */
 	readonly unattributed?: true | undefined;
+	/** The one shared-state worker (s3): chat, todos and understanding, whose state is one process-wide copy. */
+	readonly shared?: true | undefined;
 }
 
 export class TargetConflictError extends Error {
@@ -29,8 +32,10 @@ export class TargetConflictError extends Error {
 	}
 }
 
-function slotOf(t: Pick<ThreadTarget, 'cls' | 'session' | 'unattributed'>): string {
+function slotOf(t: Pick<ThreadTarget, 'cls' | 'session' | 'unattributed' | 'shared'>): string {
 	if (t.cls !== 'session') return t.cls;
+	// Checked first: the shared-state target has no session either, but is not the unattributed one.
+	if (t.shared === true) return 'session:shared';
 	if (t.unattributed === true || t.session === undefined) return 'session:unattributed';
 	return `session:${t.session.label}:${t.session.pid}`;
 }
@@ -50,9 +55,12 @@ export class TargetRegistry {
 		for (const [slot, t] of this.bySlot) if (t.threadId === threadId) this.bySlot.delete(slot);
 	}
 
-	/** The target for a request; a session-class request without identity resolves to the unattributed target. */
-	targetFor(cls: MethodClass, session?: SessionId): ThreadTarget | undefined {
-		return this.bySlot.get(slotOf({ cls, session }));
+	/**
+	 * The target for a request; a session-class request without identity resolves to the
+	 * unattributed target, and only one asked for with `shared` to the shared-state target.
+	 */
+	targetFor(cls: MethodClass, session?: SessionId, opts: { readonly shared?: true | undefined } = {}): ThreadTarget | undefined {
+		return this.bySlot.get(slotOf({ cls, session, shared: opts.shared }));
 	}
 
 	targets(): readonly ThreadTarget[] {

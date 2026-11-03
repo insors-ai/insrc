@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:">
+<title>insrc VS Code — Repo Configuration, grouped (UX mock, round 1)</title>
+<style>
+:root{
+  color-scheme: light dark;
+  --bg: light-dark(#ffffff, #1e1e1e);
+  --bg-inset: light-dark(#f3f3f3, #252526);
+  --panel: light-dark(#ffffff, #252526);
+  --fg: light-dark(#1b1b1b, #cccccc);
+  --fg-strong: light-dark(#000000, #ffffff);
+  --muted: light-dark(#6a6a6a, #9d9d9d);
+  --border: light-dark(#d4d4d4, #3c3c3c);
+  --border-lit: light-dark(#c8c8c8, #4a4a4a);
+  --dropdown-bg: light-dark(#ffffff, #3c3c3c);
+  --dropdown-border: light-dark(#c8c8c8, #5a5a5a);
+  --hover: light-dark(#ececec, #2a2d2e);
+  --accent: light-dark(#0e639c, #4fc3f7);
+  --focus: light-dark(#0078d4, #0090ff);
+  --ok-fg: light-dark(#2e7d32, #81c995);
+  --chip-ok-bg: light-dark(#e8f5e9, #1e3a24);
+  --chip-ok-fg: light-dark(#2e7d32, #81c995);
+  --chip-warn-bg: light-dark(#fff8e1, #3a2f12);
+  --chip-warn-fg: light-dark(#8a6400, #e8b94a);
+  --chip-off-bg: light-dark(#f3f3f3, #333333);
+  --chip-off-fg: light-dark(#6a6a6a, #9d9d9d);
+  --sans: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:13px;padding:1.25rem;display:flex;flex-direction:column;align-items:center;gap:.9rem}
+.demo-bar{display:flex;gap:1rem;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:.5rem .9rem;background:var(--bg-inset);max-width:720px}
+.demo-bar b{color:var(--accent);letter-spacing:.04em}
+.panel{width:min(680px,100%);border:1px solid var(--border-lit);border-radius:8px;overflow:hidden;background:var(--panel);box-shadow:0 8px 30px rgb(0 0 0 / .22)}
+.panel-head{padding:.75rem 1rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:.3rem}
+.panel-head h1{margin:0;font-size:15px;font-weight:600;color:var(--fg-strong)}
+.panel-head p{margin:0;font-size:12px;color:var(--muted)}
+.repo-picker{display:flex;flex-direction:column;gap:.2rem}
+.repo-picker label{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+select{background:var(--dropdown-bg);color:var(--fg);border:1px solid var(--dropdown-border);border-radius:5px;font:inherit;font-size:12.5px;padding:4px 6px;height:28px}
+select:focus{outline:2px solid var(--focus);outline-offset:-1px}
+.section{border-bottom:1px solid var(--border);padding:.85rem 1rem}
+.section:last-child{border-bottom:none}
+.section-head{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;margin-bottom:.5rem;cursor:pointer}
+.section-head .title{display:flex;align-items:baseline;gap:.5rem}
+.section-head b{font-size:13px;color:var(--fg-strong)}
+.section-head .count{font-size:11px;color:var(--muted);border:1px solid var(--border);border-radius:9px;padding:0 7px}
+.section-head .chev{color:var(--muted);transition:transform .15s}
+.section.collapsed .chev{transform:rotate(-90deg)}
+.section.collapsed .rows{display:none}
+.section-sub{font-size:11.5px;color:var(--muted);margin:-.3rem 0 .6rem}
+.rows{display:flex;flex-direction:column;gap:2px}
+.role-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:4px 2px;border-radius:4px}
+.role-row:hover{background:var(--hover)}
+.role-row .role-id{font-family:var(--mono);font-size:11.5px;color:var(--fg)}
+.role-row select{height:24px;font-size:11.5px;min-width:90px}
+.more-link{font-size:11.5px;color:var(--accent);cursor:pointer;margin-top:.4rem;display:inline-block}
+.floor-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem}
+.floor-row .hint{font-size:11px;color:var(--muted)}
+.provider-list{display:flex;flex-direction:column;gap:6px}
+.provider-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:5px 8px;border:1px solid var(--border);border-radius:6px}
+.provider-row .name{display:flex;align-items:center;gap:8px}
+.provider-row input[type=checkbox]{accent-color:var(--focus)}
+.status-chip{font-size:10.5px;border-radius:9px;padding:1px 8px;white-space:nowrap}
+.status-chip.ok{background:var(--chip-ok-bg);color:var(--chip-ok-fg)}
+.status-chip.off{background:var(--chip-off-bg);color:var(--chip-off-fg)}
+.status-chip.warn{background:var(--chip-warn-bg);color:var(--chip-warn-fg)}
+button{background:var(--accent);color:#fff;border:none;border-radius:5px;padding:6px 12px;font:inherit;font-size:12px;cursor:pointer;margin-top:.6rem}
+.caption{width:min(680px,100%);font-size:12px;color:var(--muted);line-height:1.5}
+.caption b{color:var(--fg)}
+</style>
+</head>
+<body>
+
+<div class="demo-bar">
+  <b>MOCK · ROUND 1</b>
+  <span>Role tiers grouped by criticality (critical = floor-protected, peripheral = eligible for mid/cheap) instead of one flat 34-row table. Providers shown as status cards. Compare with today's plain tables.</span>
+</div>
+
+<div class="panel">
+  <div class="panel-head">
+    <h1>Repo Configuration</h1>
+    <p>Per-repo overrides for the selected repo. 'global' uses the shared choice; a tier's runner/model/effort is set once for all repos in <a href="#" style="color:inherit">Model Tiers</a>.</p>
+    <div class="repo-picker">
+      <label>Repo</label>
+      <select><option selected>insrc — /Users/x/work/insors/insrc</option><option>insrc-ide (deprecated) — /Users/x/work/insors/insrc-ide</option></select>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="title"><b>Critical roles</b></div>
+      <div class="count">14</div>
+      <span class="chev">▾</span>
+    </div>
+    <p class="section-sub">Floor-protected — never resolve below the core floor. design, review, build, define.*.</p>
+    <div class="rows">
+      <div class="role-row"><span class="role-id">design.alternatives.enumerate</span><select><option>global</option><option selected>core</option><option>mid</option><option>cheap</option></select></div>
+      <div class="role-row"><span class="role-id">design.alternatives.judge</span><select><option selected>global</option><option>core</option><option>mid</option><option>cheap</option></select></div>
+      <div class="role-row"><span class="role-id">design.contract.detail</span><select><option selected>global</option><option>core</option><option>mid</option><option>cheap</option></select></div>
+      <div class="role-row"><span class="role-id">review</span><select><option selected>global</option><option>core</option><option>mid</option><option>cheap</option></select></div>
+      <div class="role-row"><span class="role-id">build</span><select><option selected>global</option><option>core</option><option>mid</option><option>cheap</option></select></div>
+    </div>
+    <span class="more-link">Show 9 more critical roles…</span>
+  </div>
+
+  <div class="section collapsed">
+    <div class="section-head">
+      <div class="title"><b>Peripheral roles</b></div>
+      <div class="count">20</div>
+      <span class="chev">▾</span>
+    </div>
+    <p class="section-sub">Eligible for mid or cheap — design-adjacent grounding, tracker rendering, analyze pipeline, indexer summarisation.</p>
+    <div class="rows">
+      <div class="role-row"><span class="role-id">context.assemble</span><select><option selected>global</option><option>core</option><option>mid</option><option>cheap</option></select></div>
+      <div class="role-row"><span class="role-id">analyze.classify</span><select><option>global</option><option>core</option><option>mid</option><option selected>cheap</option></select></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div class="title"><b>Core floor</b></div></div>
+    <div class="floor-row">
+      <select><option>global</option><option selected>mid</option><option>cheap</option></select>
+      <span class="hint">Overrides the global core floor for this repo only.</span>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><div class="title"><b>Providers</b></div></div>
+    <p class="section-sub">Register the insrc MCP server (and inject the steering block) for a provider in this repo.</p>
+    <div class="provider-list">
+      <div class="provider-row"><span class="name">Claude Code</span><span class="status-chip ok">registered</span></div>
+      <div class="provider-row"><span class="name"><input type="checkbox" checked> Codex</span><span class="status-chip warn">not registered</span></div>
+      <div class="provider-row"><span class="name">Mistral Vibe</span><span class="status-chip off">CLI not found on PATH</span></div>
+    </div>
+    <button type="button">Register selected providers</button>
+  </div>
+</div>
+
+<div class="caption">
+  <p><b>What changed vs. today:</b> the panel renders two plain HTML tables — a 34-row "Role tiers" table (one row per role, no structure) and a 1-row "Core floor" table — plus a flat checkbox list for Providers. There's no grouping, so scanning 34 roles for the handful you actually want to override means scrolling past all of them.</p>
+  <p><b>What this mock proposes:</b> roles split into two collapsible groups by their existing <code>criticality</code> field (critical/peripheral — already in the data, no new concept) — critical open by default since those are floor-protected and most likely to be reviewed, peripheral collapsed; a "show N more" link rather than rendering all rows for a group at once; Providers as status cards (chip = registered / not registered / CLI unavailable) instead of three different checkbox states.</p>
+  <p><b>Open questions for round 2:</b> (1) collapsible sections need a tiny bit of client JS (a &lt;details&gt;-like toggle) — fine since the panel already has a bootstrap script, just confirming it's in scope; (2) is "show N more" good enough, or do you want a text filter box for the 34 roles; (3) keep the groups as critical/peripheral, or split further by the (A)/(B)/(C) categories in the role-taxonomy comments (pipeline reasoning / workflow+review+build+tracker / indexer summarisation) — the latter needs the taxonomy file to actually carry a category field, which it doesn't today.</p>
+</div>
+
+</body>
+</html>

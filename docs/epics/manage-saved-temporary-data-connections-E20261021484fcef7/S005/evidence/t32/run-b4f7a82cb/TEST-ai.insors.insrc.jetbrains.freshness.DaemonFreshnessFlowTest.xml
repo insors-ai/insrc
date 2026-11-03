@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" tests="16" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.005">
+  <properties/>
+  <testcase name="the single-flight gate skips the update when another is already in flight (no competing update, no balloon)()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.001"/>
+  <testcase name="a stale outcome is ignored and commit-advance decides success()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.001"/>
+  <testcase name="failure on reconnect timeout shows one failure balloon and no second update()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="self-update auto-updates with no prompt and records the version()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="startup-check drift on Dismiss does not update()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="failure on a fresh failed outcome carries the raw error()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="on a confirmed update the success balloon carries the reload-nudge message and no action()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="skip paths show nothing and never update()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.001"/>
+  <testcase name="startup-check drift shows Update Dismiss and updates only on Update()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="never-throws swallows a throwing seam and still records the version()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="reconnect confirms success from a fresh succeeded outcome()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="failure on update Failed shows exactly one failure balloon with no retry()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.001"/>
+  <testcase name="the single-flight gate is released after the update completes()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="the self-update nudge records the plugin version so it does not silently re-fire()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="no reload nudge on a no-op or a failed update()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <testcase name="empty current version falls back to the prompt path, never the silent auto path()" classname="ai.insors.insrc.jetbrains.freshness.DaemonFreshnessFlowTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

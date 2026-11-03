@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: T13 start on a design returns the review template with next emit_findings
+ok 1 - T13 start on a design returns the review template with next emit_findings
+  ---
+  duration_ms: 5.030084
+  type: 'test'
+  ...
+# Subtest: T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too
+ok 2 - T13 a design that answers an ISSUE gets the ISSUE template; an HLD is a design too
+  ---
+  duration_ms: 5.663375
+  type: 'test'
+  ...
+# Subtest: T13 the findings phase stamps the review and does not edit the design
+ok 3 - T13 the findings phase stamps the review and does not edit the design
+  ---
+  duration_ms: 6.857583
+  type: 'test'
+  ...
+# Subtest: T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped
+ok 4 - T13 an answer the session path rejects is rejected by the findings phase with the same errors, and nothing is stamped
+  ---
+  duration_ms: 6.609458
+  type: 'test'
+  ...
+# Subtest: T13 the two paths do not cross: no claims on a design run, no findings on a non-design run
+ok 5 - T13 the two paths do not cross: no claims on a design run, no findings on a non-design run
+  ---
+  duration_ms: 7.356
+  type: 'test'
+  ...
+# Subtest: T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt
+ok 6 - T13 on a DEF, an ISSUE and a PLAN start still returns the extract prompt
+  ---
+  duration_ms: 7.784625
+  type: 'test'
+  ...
+# Subtest: T4 the findings phase stamps the controller on an HLD too
+ok 7 - T4 the findings phase stamps the controller on an HLD too
+  ---
+  duration_ms: 3.562583
+  type: 'test'
+  ...
+# Subtest: T13 the registered tool accepts phase `findings` and its phase list names it
+ok 8 - T13 the registered tool accepts phase `findings` and its phase list names it
+  ---
+  duration_ms: 9.449417
+  type: 'test'
+  ...
+# Subtest: T13 the ISSUE template is validated against its own items
+ok 9 - T13 the ISSUE template is validated against its own items
+  ---
+  duration_ms: 2.881709
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 704.735583

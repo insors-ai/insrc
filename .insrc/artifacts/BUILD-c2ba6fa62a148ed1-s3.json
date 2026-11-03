@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s3",
+    "createdAt": "2026-11-01T06:05:36.818Z",
+    "updatedAt": "2026-11-01T07:54:54.491Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-01T07:54:54.667Z",
+    "reviewOverride": {
+      "reason": "Code-review framework is being rewritten on another branch; manual code review via independent subagent completed with no findings (verdict: safe to approve) per standing project rule.",
+      "at": "2026-11-01T07:54:54.667Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "Added the MIGRATION_V5_TO_V6 step (SCHEMA_VERSION 5->6): walks the entity table once and backfills entityByFile for every row, idempotent via LMDB's no-op dupSort put of an already-present (key,value) pair.",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S003/LLD.md",
+          "version": "77571a318"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T07:54:54.491Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S003/PLAN.md",
+          "version": "77571a318"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T07:54:54.491Z"
+      }
+    ],
+    "commit": "77571a318"
+  }
+}

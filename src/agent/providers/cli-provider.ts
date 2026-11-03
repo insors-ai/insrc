@@ -1,20 +1,24 @@
 import { ReviewActivityStream } from './review-activity-stream.js';
 import type { ActivityReviewSessionOpts } from '../../shared/types.js';
 import { requireBoundedReview, validateReviewSessionOptions } from '../../shared/review-activity.js';
+// CLI adapters never have a supported Session backend; denial needs no local-provider proof loader.
+import { assertNoSessionProvider as assertNoSessionEmbedding, assertNoSessionProvider as assertConnectionProviderAdmission } from '../../shared/connection-provider-denial.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * CliProvider -- wraps the locally-installed `claude` and `codex` CLI
- * binaries behind the `LLMProvider` interface.
+ * CliProvider -- wraps the locally-installed `claude`, `codex` and `vibe`
+ * CLI binaries behind the `LLMProvider` interface.
  *
  * Rationale: the cleanup replaced four direct cloud REST providers
- * (Anthropic, OpenAI, Gemini, Mistral) with two local subprocess
- * invocations. Auth and quota are owned by the local CLI's OAuth
+ * (Anthropic, OpenAI, Gemini, Mistral) with local subprocess
+ * invocations. Auth and quota are owned by the local CLI's own
  * session; structured output is delegated to the CLI's native
- * `--json-schema` (claude) or `--output-schema` (codex) flag.
+ * `--json-schema` (claude) or `--output-schema` (codex) flag, or — for
+ * vibe, which has no schema flag — requested in the prompt and checked
+ * locally with ajv + retry.
  *
  *   - claude --print --output-format json --json-schema '<inline>'
  *     envelope.structured_output is the parsed, schema-validated
@@ -22,6 +26,12 @@ import { requireBoundedReview, validateReviewSessionOptions } from '../../shared
  *   - codex exec --output-schema <tmpfile> --json
  *     JSONL stream; the `item.completed` event's `item.text` is the
  *     JSON payload. We JSON.parse it ourselves.
+ *   - vibe -p --output text|json
+ *     headless mode: `-p` with no text reads the prompt from stdin.
+ *     `text` prints the final answer; `json` prints the session
+ *     messages as a JSON array, from which we take the last
+ *     assistant message. The model is pinned per invocation with the
+ *     VIBE_ACTIVE_MODEL env var (vibe has no --model flag).
  *
  * Embeddings are delegated to whatever `embedDelegate` is provided
  * (typically an Ollama provider) since neither CLI exposes embeddings.
@@ -62,8 +72,10 @@ import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from './budget/accounting.js';
 import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars } from './review-budget.js';
-import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-output.js';
+import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-schema.js';
+import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
+import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
 
 const log = getLogger('cli-provider');
 
@@ -72,7 +84,7 @@ const log = getLogger('cli-provider');
 // Construction
 // ---------------------------------------------------------------------------
 
-export type CliKind = 'claude' | 'codex';
+export type CliKind = 'claude' | 'codex' | 'vibe';
 
 /** Options for an agentic free-form EDITING session (`runEditSession`).
  *  Unlike `complete`/`completeStructured` — which are one-shot text/JSON
@@ -80,6 +92,7 @@ export type CliKind = 'claude' | 'codex';
  *  directory and file-edit permissions, so `claude`/`codex` can actually
  *  modify files on disk during the turn. */
 export interface EditSessionOpts {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	/** The repo root the CLI runs inside; its entire edit blast radius. */
 	readonly cwd:        string;
 	/** Per-session wall-clock cap. Defaults to the provider's `timeoutMs`. */
@@ -142,7 +155,15 @@ export function codexReviewSessionArgs(schemaPath: string, cwd: string, modelArg
 	return ['exec', '--output-schema', schemaPath, '--json', '--sandbox', 'read-only', '-C', cwd, ...modelArgs];
 }
 
+/** Where an Ollama-hosted family's claude runs (Epic b220bb61, Story s2):
+ *  the Ollama server and whether the model is an Ollama cloud model. */
+export interface OllamaTarget {
+	readonly host:    string;
+	readonly hosting: 'cloud' | 'local';
+}
+
 export interface CliProviderOpts {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly kind: CliKind;
 	/** Default model name passed via `--model`. Optional; the CLI's own default applies when absent. */
 	readonly model?: string | undefined;
@@ -160,6 +181,11 @@ export interface CliProviderOpts {
 	/** The model's input limit in characters, from the model definitions
 	 *  (codex states its limit; claude's size refusal decides when absent). */
 	readonly inputBudgetChars?: number | undefined;
+	/** Run claude against this Ollama server (claude kind with a model only).
+	 *  Absent: the CLI runs exactly as before. */
+	readonly ollama?: OllamaTarget | undefined;
+	/** The pre-run check of an Ollama-targeted provider (tests pass a stub). Default checkOllamaTarget. */
+	readonly ollamaCheck?: ((target: OllamaTarget, model: string) => Promise<void>) | undefined;
 }
 
 
@@ -186,6 +212,9 @@ export class CliStallError extends Error {
 	}
 }
 
+export const BOUNDED_CLI_ADAPTERS = { claude: 'cli-claude', codex: 'cli-codex', vibe: 'cli-vibe' } as const;
+export type BoundedCliAdapterId = typeof BOUNDED_CLI_ADAPTERS[keyof typeof BOUNDED_CLI_ADAPTERS];
+
 export class CliProvider implements LLMProvider {
 	readonly supportsTools = false;
 	/** The model's input limit in characters, as the model definitions give it
@@ -203,10 +232,19 @@ export class CliProvider implements LLMProvider {
 	private readonly timeoutMs: number;
 	private readonly codexFirstOutputMs: number;
 	private readonly embedDelegate: Pick<LLMProvider, 'embed' | 'capabilities'> | undefined;
+	/** The Ollama server claude runs against, when this provider serves an Ollama-hosted family. */
+	readonly ollama: OllamaTarget | undefined;
+	private readonly ollamaCheck: (target: OllamaTarget, model: string) => Promise<void>;
 
 	readonly capabilities: ProviderCapabilities;
 
 	constructor(opts: CliProviderOpts) {
+		assertConnectionProviderAdmission(opts.connectionExecution);
+		if (opts.ollama !== undefined && (opts.kind !== 'claude' || opts.model === undefined || opts.model.length === 0)) {
+			throw new Error(`cli-provider: an Ollama target needs the claude CLI and a model (kind '${opts.kind}', model '${opts.model ?? ''}')`);
+		}
+		this.ollama = opts.ollama;
+		this.ollamaCheck = opts.ollamaCheck ?? checkOllamaTarget;
 		this.kind = opts.kind;
 		this.inputBudgetChars = opts.inputBudgetChars;
 		this.defaultModel = opts.model;
@@ -234,6 +272,7 @@ export class CliProvider implements LLMProvider {
 
 	async complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse> {
 		if (opts?.reviewBudget) throw new ReviewBudgetError('native-budget-unqualified');
+		assertConnectionProviderAdmission(opts?.connectionExecution);
 		return this.withTransientRetry('complete', async () => {
 			const prompt = serialiseMessages(messages);
 			if (this.kind === 'claude') {
@@ -244,13 +283,20 @@ export class CliProvider implements LLMProvider {
 					stopReason: 'end_turn' as const,
 				};
 			}
-			const args = ['exec', '--json', ...this.modelArgs(opts)];
-			const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd, undefined, opts?.signal));
+			if (this.kind === 'codex') {
+				const args = ['exec', '--json', ...this.modelArgs(opts)];
+				const { agentText } = await this.runCodex(args, prompt, this.execIn(opts?.cwd, undefined, opts?.signal));
+				return {
+					text: agentText ?? '',
+					stopReason: 'end_turn' as const,
+				};
+			}
+			const out = await this.runVibe(vibeArgs('text', []), prompt, this.execIn(opts?.cwd, undefined, opts?.signal));
 			return {
-				text: agentText ?? '',
+				text: out.stdout.replace(/\n+$/, ''),
 				stopReason: 'end_turn' as const,
 			};
-		});
+		}, 3, opts?.connectionExecution);
 	}
 
 
@@ -261,15 +307,21 @@ export class CliProvider implements LLMProvider {
 	 *  succeeds. Deterministic failures (bad schema, non-transient exit) are
 	 *  re-thrown on the first attempt. Accuracy over cost: a long synthesize is
 	 *  worth re-running rather than failing the whole workflow. */
-	private async withTransientRetry<T>(label: string, op: () => Promise<T>, maxAttempts = 3): Promise<T> {
+	private async withTransientRetry<T>(label: string, op: () => Promise<T>, maxAttempts = 3, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): Promise<T> {
 		let lastErr: unknown;
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			assertConnectionProviderAdmission(execution);
 			try {
-				return await op();
+				const result = await op();
+				assertConnectionProviderAdmission(execution);
+				return result;
 			} catch (err) {
+				assertConnectionProviderAdmission(execution);
 				lastErr = err;
 				// A size refusal is never resent, whatever its text looks like (ISSUE-aef82b03).
 				if (err instanceof ReviewBudgetError || err instanceof InputTooLargeError) throw err;
+				// An Ollama server that cannot serve the run is reported, not retried.
+				if (err instanceof OllamaTargetError) throw err;
 				// A cancelled call ends at once; it is never retried (Epic 8315a11f s1).
 				if (err instanceof ReviewBudgetError || isAbortError(err)) throw err;
 				const msg = err instanceof Error ? err.message : String(err);
@@ -308,6 +360,7 @@ export class CliProvider implements LLMProvider {
 		schema: StructuredSchema,
 		opts?: StructuredCompletionOpts,
 	): Promise<T> {
+		assertConnectionProviderAdmission(opts?.connectionExecution);
 		// Pre-flight the schema root BEFORE the retry wrapper is entered.
 		//
 		// The placement is load-bearing, not stylistic. `withTransientRetry`
@@ -318,6 +371,11 @@ export class CliProvider implements LLMProvider {
 		// non-retryability structural rather than contingent on error prose.
 		// (The message is also written to avoid that vocabulary, as a second
 		// defence that survives a future relocation.)
+		// vibe has no --json-schema flag: the schema travels in the prompt and
+		// the answer is parsed + ajv-validated locally, with retry-on-mismatch.
+		if (this.kind === 'vibe') {
+			return this.completeStructuredVibe<T>(messages, schema, opts);
+		}
 		const unionKey = rootUnionKey(schema);
 		if (unionKey !== undefined) {
 			throw new Error(
@@ -333,7 +391,7 @@ export class CliProvider implements LLMProvider {
 				+ `required: ['<field>'] }. A union BELOW the root is fine.`,
 			);
 		}
-		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.reviewBudget || opts?.internalRetry === false ? 1 : 3);
+		return this.withTransientRetry('completeStructured', () => this.completeStructuredOnce<T>(messages, schema, opts), opts?.reviewBudget || opts?.internalRetry === false ? 1 : 3, opts?.connectionExecution);
 	}
 
 	private async completeStructuredOnce<T>(
@@ -392,6 +450,31 @@ export class CliProvider implements LLMProvider {
 	}
 
 
+	/** vibe's structured path: the schema goes in the prompt (vibe has no
+	 *  --json-schema/--output-schema flag), the run prints the session messages
+	 *  as a JSON array, and the last assistant message is parsed and
+	 *  ajv-validated locally. `withStructuredRetry` re-issues with a feedback
+	 *  note when the answer does not parse or validate; a size refusal and a
+	 *  cancellation pass through untouched. */
+	private completeStructuredVibe<T>(
+		messages: LLMMessage[],
+		schema: StructuredSchema,
+		opts?: StructuredCompletionOpts,
+	): Promise<T> {
+		const schemaNote = outputContractNote(schema);
+		return withStructuredRetry<T>(
+			async (note) => {
+				const prompt = serialiseMessages(messages) + schemaNote + (note !== undefined ? `\n\n${note}` : '');
+				const out = await this.runVibe(vibeArgs('json', []), prompt, this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal));
+				return JSON.parse(vibeLastAssistantText(out.stdout)) as unknown;
+			},
+			(raw) => validateAgainstSchema<T>(schema, raw, opts?.connectionExecution),
+			opts?.internalRetry === false ? 1 : 3,
+			opts?.connectionExecution,
+		);
+	}
+
+
 	// -- runEditSession -------------------------------------------------
 
 	/**
@@ -417,6 +500,7 @@ export class CliProvider implements LLMProvider {
 	 * decision.
 	 */
 	async runEditSession(prompt: string, opts: EditSessionOpts): Promise<LLMResponse> {
+		assertConnectionProviderAdmission(opts.connectionExecution);
 		return this.withTransientRetry('runEditSession', async () => {
 			const exec = { cwd: opts.cwd, timeoutMs: opts.timeoutMs ?? this.timeoutMs };
 			if (this.kind === 'claude') {
@@ -427,10 +511,16 @@ export class CliProvider implements LLMProvider {
 				}
 				return { text: envelope.result ?? '', stopReason: 'end_turn' as const };
 			}
-			const args = ['exec', '--json', '--full-auto', ...this.modelArgs()];
-			const { agentText } = await this.runCodex(args, prompt, exec);
-			return { text: agentText ?? '', stopReason: 'end_turn' as const };
-		});
+			if (this.kind === 'codex') {
+				const args = ['exec', '--json', '--full-auto', ...this.modelArgs()];
+				const { agentText } = await this.runCodex(args, prompt, exec);
+				return { text: agentText ?? '', stopReason: 'end_turn' as const };
+			}
+			// vibe: headless run with every tool call auto-approved (the headless
+			// sibling of codex --full-auto / claude --permission-mode acceptEdits).
+			const out = await this.runVibe(vibeArgs('text', ['--auto-approve']), prompt, { cwd: opts.cwd, timeoutMs: opts.timeoutMs ?? this.timeoutMs });
+			return { text: out.stdout.replace(/\n+$/, ''), stopReason: 'end_turn' as const };
+		}, 3, opts?.connectionExecution);
 	}
 
 
@@ -457,6 +547,7 @@ export class CliProvider implements LLMProvider {
 	 * {@link ReviewSessionTimeoutError}, which is never retried.
 	 */
 	async runReviewSession<T>(prompt: string, schema: StructuredSchema, opts: ReviewSessionOpts): Promise<T> {
+		assertConnectionProviderAdmission(opts.connectionExecution);
     if (opts.mode === 'activity') { validateReviewSessionOptions(opts); return this.activityReview<T>(prompt,schema,opts); }
     // Preserve the bounded caller's expired-deadline error without starting a process.
     if ((opts.mode === undefined || opts.mode === 'bounded') && Number.isFinite(opts.deadlineMs) && opts.deadlineMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
@@ -465,6 +556,7 @@ export class CliProvider implements LLMProvider {
 		// internalRetry false: the caller re-issues, so this call makes one attempt only.
 		const maxAttempts = opts.reviewBudget || opts.internalRetry === false ? 1 : 2;
 		for (let attempt = 1; ; attempt++) {
+			assertConnectionProviderAdmission(opts.connectionExecution);
 			const remainingMs = opts.deadlineMs - (Date.now() - startedAt);
 			if (remainingMs <= 0) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 			if (opts.reviewBudget) {
@@ -489,6 +581,7 @@ export class CliProvider implements LLMProvider {
 					if (attempt < maxAttempts) continue;
 					throw err;
 				}
+				if (err instanceof OllamaTargetError) throw err;
 				// The subprocess runner reports its own kill as exit code -9.
 				if (/exited with -9\b/.test(msg)) throw new ReviewSessionTimeoutError(opts.deadlineMs);
 				if (attempt >= maxAttempts || !isTransientCliError(transienceText(err))) throw err;
@@ -527,6 +620,27 @@ export class CliProvider implements LLMProvider {
  }
 
 	private async reviewSessionOnce<T>(prompt: string, schema: StructuredSchema, exec: ExecOverride & { cwd: string; timeoutMs: number; watchStall: boolean }): Promise<T> {
+		if (this.kind === 'vibe') {
+			// Read-only: in headless mode `--enabled-tools` disables every other
+			// tool, and programmatic mode denies any call that would need an
+			// approval, so no write/execute tool exists in the session at all.
+			// The insrc analyze MCP tools stay reachable for drill-down.
+			const args = vibeArgs('json', ['--enabled-tools', 'read_file', '--enabled-tools', 'mcp_insrc_*']);
+			const schemaNote = outputContractNote(schema);
+			let errors: readonly string[] = [];
+			for (let attempt = 1; attempt <= 2; attempt++) {
+				const full = prompt + schemaNote + (attempt > 1 ? `\n\n${buildRetryNote(errors)}` : '');
+				const out = await this.runVibe(args, full, exec);
+				const text = vibeLastAssistantText(out.stdout);
+				let parsed: unknown;
+				try { parsed = JSON.parse(text); }
+				catch (err) { errors = [`the review answer was not parseable JSON: ${(err as Error).message}`]; continue; }
+				const checked = validateCodexReply<T>(schema, parsed);
+				if (checked.ok) return checked.value;
+				errors = checked.errors;
+			}
+			throw new ModelResponseShapeError('vibe review session answer did not satisfy the schema', errors);
+		}
 		if (this.kind === 'claude') {
 			const { envelope } = await this.runClaude(claudeReviewSessionArgs(schema, this.modelArgs(), exec.codeTaskCommands), prompt, exec);
 			if (envelope.is_error) {
@@ -578,11 +692,12 @@ export class CliProvider implements LLMProvider {
 
 	// -- embed ----------------------------------------------------------
 
-	async embed(text: string): Promise<number[]> {
+	async embed(text: string, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): Promise<number[]> {
+		assertNoSessionEmbedding(execution);
 		if (this.embedDelegate === undefined) {
 			throw new Error('cli-provider: embed() requires an embedDelegate (typically an Ollama provider); none was supplied at construction');
 		}
-		return this.embedDelegate.embed(text);
+		return this.embedDelegate.embed(text, execution);
 	}
 
 
@@ -596,9 +711,34 @@ export class CliProvider implements LLMProvider {
 		// default at construction time (which the model-class router on the
 		// caller side resolves before constructing the provider).
 		void opts;
+		// vibe has no --model/--effort flags: the model is pinned per invocation
+		// through VIBE_ACTIVE_MODEL (see envForModel), and the thinking level is
+		// the model's own `thinking` setting in the user's vibe config.
+		if (this.kind === 'vibe') return [];
 		const modelArgs = model === undefined || model.length === 0 ? [] : ['--model', model];
 		if (this.effort === undefined) return modelArgs;
 		return [...modelArgs, ...(this.kind === 'claude' ? ['--effort', this.effort] : ['-c', `model_reasoning_effort=${this.effort}`])];
+	}
+
+	/** vibe pins the model per invocation with the VIBE_ACTIVE_MODEL env var (it
+	 *  has no --model flag). The child keeps the daemon's environment so HOME /
+	 *  PATH and the user's ~/.vibe auth resolve exactly as in an interactive run. */
+	private envForModel(): NodeJS.ProcessEnv | undefined {
+		if (this.defaultModel === undefined || this.defaultModel.length === 0) return undefined;
+		return { ...process.env, VIBE_ACTIVE_MODEL: this.defaultModel };
+	}
+
+	private async runVibe(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<SubprocessResult> {
+		const out = await runSubprocess(
+			this.binPath, args, prompt,
+			exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal,
+			exec?.env ?? this.envForModel(),
+		);
+		// vibe exit codes: 0 finished, 1 could not start, 2 model API/runtime
+		// failure, 3 stopped before finishing. Transience is judged on the
+		// CLI's own words (`said`), as for the other CLIs.
+		if (out.exitCode !== 0) throw cliExitError('vibe', out.exitCode, out.stdout, out.stderr);
+		return out;
 	}
 
 
@@ -611,9 +751,36 @@ export class CliProvider implements LLMProvider {
 		return { reviewScoped, ...(cwd !== undefined ? { cwd } : {}), timeoutMs: timeoutMs ?? this.timeoutMs, ...(signal !== undefined ? { signal } : {}) };
 	}
 
-	private runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
+	/** A copy of `base` pointing claude at this provider's Ollama server, without
+	 *  the vendor login; undefined when the provider has no Ollama target. The
+	 *  daemon's own environment is never changed. */
+	private withOllama(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv | undefined {
+		if (this.ollama === undefined) return undefined;
+		const env: NodeJS.ProcessEnv = { ...base, ANTHROPIC_BASE_URL: this.ollama.host, ANTHROPIC_AUTH_TOKEN: 'ollama', ANTHROPIC_API_KEY: '' };
+		// No vendor login, and no Bedrock/Vertex mode that would send the run to another cloud.
+		for (const key of ['CLAUDE_CODE_OAUTH_TOKEN', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX']) delete env[key];
+		return env;
+	}
+
+	/** Before a claude run of an Ollama-targeted provider: the server answers,
+	 *  has the model and (cloud model) is signed in; a failure starts no run. */
+	private async checkOllama(): Promise<void> {
+		if (this.ollama === undefined) return;
+		try {
+			await this.ollamaCheck(this.ollama, this.defaultModel!);
+		} catch (err) {
+			if (err instanceof OllamaTargetError) {
+				log.warn({ model: err.model, host: err.host, cause: err.cause }, `claude on Ollama: pre-run check failed (${err.cause}); the run was not started`);
+			}
+			throw err;
+		}
+	}
+
+	private async runClaude(args: readonly string[], prompt: string, exec?: ExecOverride): Promise<{ envelope: ClaudeEnvelope }> {
+		await this.checkOllama();
 		return new Promise((resolve, reject) => {
-			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal);
+			const env = this.withOllama(exec?.env ?? process.env) ?? exec?.env;
+			const r = runSubprocess(this.binPath, args, prompt, exec?.timeoutMs ?? this.timeoutMs, exec?.cwd, undefined, exec?.signal, env);
 			r.then(out => {
 				if (out.exitCode !== 0) {
 					return reject(cliExitError('claude', out.exitCode, out.stdout, out.stderr, undefined, exec?.reviewScoped));
@@ -668,6 +835,61 @@ export class CliProvider implements LLMProvider {
 
 
 // ---------------------------------------------------------------------------
+// vibe headless helpers
+// ---------------------------------------------------------------------------
+
+/** vibe headless args: `-p` with no text reads the prompt from stdin;
+ *  `--output` picks the format (`text` = the final answer, `json` = the
+ *  session messages as a JSON array). Extra flags (--auto-approve,
+ *  --enabled-tools, ...) follow. */
+function vibeArgs(output: 'text' | 'json', extra: readonly string[]): string[] {
+	return ['-p', '--output', output, ...extra];
+}
+
+/** The output-contract note appended to a vibe prompt when a structured
+ *  answer is required (vibe has no schema flag, so the schema travels in
+ *  the prompt). */
+function outputContractNote(schema: StructuredSchema): string {
+	return (
+		'\n\n## Output contract\n'
+		+ 'Return ONLY a raw JSON object that conforms to this JSON Schema. '
+		+ 'No markdown fences, no prose before or after; the first character '
+		+ 'must be `{` and the last `}`.\n'
+		+ JSON.stringify(schema)
+	);
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+	return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** The last assistant message's text from a `vibe -p --output json` stdout.
+ *  Tolerant of the two shapes vibe has shipped: a bare array of session
+ *  messages, or an object wrapping them; message content may be a string or
+ *  a list of content blocks (ACP-style {type:'text', text}). */
+export function vibeLastAssistantText(stdout: string): string {
+	let doc: unknown;
+	try { doc = JSON.parse(stdout); }
+	catch (err) { throw new Error(`vibe --output json stdout was not parseable JSON: ${(err as Error).message}. stdout=${stdout.slice(0, 300)}`); }
+	const messages = Array.isArray(doc) ? doc
+		: isRecord(doc) && Array.isArray(doc['messages']) ? doc['messages'] as unknown[]
+		: undefined;
+	if (messages === undefined) throw new Error('vibe --output json did not print a message array');
+	for (let i = messages.length - 1; i >= 0; i--) {
+		const m = messages[i];
+		if (!isRecord(m) || m['role'] !== 'assistant') continue;
+		const content = m['content'];
+		const text = typeof content === 'string' ? content
+			: Array.isArray(content)
+				? content.filter(isRecord).filter(b => b['type'] === 'text').map(b => String(b['text'] ?? '')).join('')
+				: '';
+		if (text.length > 0) return text;
+	}
+	throw new Error('vibe --output json carried no assistant text message');
+}
+
+
+// ---------------------------------------------------------------------------
 // Message serialisation
 // ---------------------------------------------------------------------------
 
@@ -709,6 +931,9 @@ interface ExecOverride {
 	readonly stallMs?: number | undefined;
 	/** Cancels the run in flight: its process group is killed and AbortError thrown (Epic 8315a11f s1). */
 	readonly signal?: AbortSignal | undefined;
+	/** Full child environment (vibe: VIBE_ACTIVE_MODEL pin). When absent the
+	 *  child inherits the daemon's environment. */
+	readonly env?: NodeJS.ProcessEnv | undefined;
 }
 
 /** Await `ms` milliseconds. */
@@ -792,7 +1017,7 @@ function reportedNumber(text: string, key: string): number | undefined {
  * say "Prompt is too long" (not yet observed: ISSUE-aef82b03 smoke).
  */
 export function classifyInputTooLarge(said: string): InputSizes | undefined {
-	if (/input_too_large|input exceeds the maximum length/i.test(said)) {
+	if (/input_too_large|input exceeds the maximum length|input (?:is|was) too long/i.test(said)) {
 		const stated = /maximum length of (\d+)/i.exec(said)?.[1];
 		return {
 			maxChars:    reportedNumber(said, 'max_chars') ?? (stated !== undefined ? Number(stated) : undefined),
@@ -839,7 +1064,7 @@ export function transienceText(err: unknown): string {
  * the error output in the message as well whenever that alone fits.
  */
 export function cliExitError(
-	cli:      'claude' | 'codex',
+	cli:      CliKind,
 	exitCode: number,
 	stdout:   string,
 	stderr:   string,
@@ -876,7 +1101,7 @@ export function cliExitError(
 }
 
 /** The message of `cliExitError`. */
-export function cliFailureMessage(cli: 'claude' | 'codex', exitCode: number, stdout: string, stderr: string, dir?: string): string {
+export function cliFailureMessage(cli: CliKind, exitCode: number, stdout: string, stderr: string, dir?: string): string {
 	return cliExitError(cli, exitCode, stdout, stderr, dir).message;
 }
 
@@ -890,7 +1115,7 @@ function writeCliFailureFile(dir: string, cli: string, stdout: string, stderr: s
 	mkdirSync(dir, { recursive: true, mode: 0o700 });
 	const now = Date.now();
 	for (const name of readdirSync(dir)) {
-		if (!/^(claude|codex)-exit-.*\.txt$/.test(name)) continue;
+		if (!/^(claude|codex|vibe)-exit-.*\.txt$/.test(name)) continue;
 		const old = join(dir, name);
 		try { if (now - statSync(old).mtimeMs > CLI_FAILURE_FILE_MAX_AGE_MS) rmSync(old, { force: true }); }
 		catch { /* another process removed it first */ }
@@ -933,11 +1158,12 @@ async function runSubprocess(
 	cwd?: string,
 	stall?: ProcessGroupOpts['stall'],
 	signal?: AbortSignal,
+	env?: NodeJS.ProcessEnv,
 ): Promise<SubprocessResult> {
-	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal);
+	let result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal, env);
 	if (result.exitCode === -1 && /ENOENT/.test(result.stderr)) {
 		resolvedBinCache.delete(command);
-		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal);
+		result = await spawnOnce(resolveBin(command), args, stdin, timeoutMs, cwd, stall, signal, env);
 	}
 	return result;
 }
@@ -953,8 +1179,9 @@ async function spawnOnce(
 	cwd?: string,
 	stall?: ProcessGroupOpts['stall'],
 	signal?: AbortSignal,
+	env?: NodeJS.ProcessEnv,
 ): Promise<SubprocessResult> {
-	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd, stall, ...(signal !== undefined ? { signal } : {}) });
+	const r = await runInProcessGroup(command, args, { stdin, timeoutMs, cwd, stall, ...(signal !== undefined ? { signal } : {}), ...(env !== undefined ? { env } : {}) });
 	// A cancelled run throws at once: its group is already killed (Epic 8315a11f s1).
 	if (r.aborted === true) throw abortError();
 	if (r.spawnError !== undefined) {

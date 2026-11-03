@@ -134,6 +134,10 @@ test('a settle classes the rows of an edit that adds a call to JSON.parse, a cal
 	write('assets/logo.png', 'png');
 	const svc = await service();
 	await markFullIndexFinished(true);
+	// No embedding backend runs in this test: say so, as the backfill records it
+	// (Epic c2ba6fa6 s2), so the entities without vectors do not count against completeness.
+	const repoId = (await lookupRepoId(repo))!;
+	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, row => { row.embeddingAvailable = false; }); });
 	assert.equal(completenessOf(await readIndexState(repo)).complete, true, 'complete before the edit');
 
 	const a = write('src/a.ts', [
@@ -171,6 +175,10 @@ test('the pass after an index clean-up changes neither fullIndexFinished nor the
 });
 
 test('after a full index, rows awaiting a file are classed by the selection rule: not code is no-candidate, an ignored source file and a source file not stored stay awaiting with their reason', async () => {
+	// Epic c2ba6fa6 s6: FileFilter is the one rule now, taken from the
+	// repo's real ignore files -- name the rule this test exercises instead
+	// of relying on the retired universal bare-name default.
+	write('.gitignore', '/build/\n');
 	write('assets/logo.png', 'png');
 	write('vendor/lib.min.js', 'var a=1;');
 	write('data/big.json', `{"a":"${'x'.repeat(256 * 1024 + 1)}"}`);

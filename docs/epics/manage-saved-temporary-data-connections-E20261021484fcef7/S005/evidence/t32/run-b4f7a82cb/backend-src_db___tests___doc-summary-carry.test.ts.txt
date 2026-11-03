@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary
+ok 1 - writeDocSummaryIfCurrent is unchanged and onlyIfAbsent never replaces a stored summary
+  ---
+  duration_ms: 232.889292
+  type: 'test'
+  ...
+# Subtest: keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash
+ok 2 - keepGoodSummary keeps a stored summary with no errorCode and the same contentHash, and writes over an error row or a different hash
+  ---
+  duration_ms: 235.152083
+  type: 'test'
+  ...
+# Subtest: restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row
+ok 3 - restoreCarriedDocSummaries writes a current carried summary under the new entity number, drops gone and changed ones and leaves no carry row
+  ---
+  duration_ms: 265.399709
+  type: 'test'
+  ...
+# Subtest: restoreCarriedDocSummaries keeps a good summary stored after the rebuild and replaces a stored error placeholder
+ok 4 - restoreCarriedDocSummaries keeps a good summary stored after the rebuild and replaces a stored error placeholder
+  ---
+  duration_ms: 256.344209
+  type: 'test'
+  ...
+# Subtest: restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry
+ok 5 - restoreCarriedDocSummaries works through more carry rows than one batch, and touches no other repository's carry
+  ---
+  duration_ms: 5168.053833
+  type: 'test'
+  ...
+# Subtest: a v5 store opened with this build has an empty doc_summary_carry and schema version 5
+ok 6 - a v5 store opened with this build has an empty doc_summary_carry and schema version 5
+  ---
+  duration_ms: 195.843708
+  type: 'test'
+  ...
+# Subtest: the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row
+ok 7 - the delete with carryDocSummaries carries every summary it removes, the live value winning over an older carry row
+  ---
+  duration_ms: 223.344875
+  type: 'test'
+  ...
+# Subtest: a failure inside the delete transaction rolls back the carry with the delete
+ok 8 - a failure inside the delete transaction rolls back the carry with the delete
+  ---
+  duration_ms: 214.502167
+  type: 'test'
+  ...
+# Subtest: without carryDocSummaries the repository's carry rows are deleted
+ok 9 - without carryDocSummaries the repository's carry rows are deleted
+  ---
+  duration_ms: 155.315375
+  type: 'test'
+  ...
+# Subtest: repo removal of a repository with carry rows and no entities deletes the carry rows
+ok 10 - repo removal of a repository with carry rows and no entities deletes the carry rows
+  ---
+  duration_ms: 133.200083
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7410.33825

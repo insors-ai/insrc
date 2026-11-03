@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none
+ok 1 - renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none
+  ---
+  duration_ms: 0.893792
+  type: 'test'
+  ...
+# Subtest: renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global
+ok 2 - renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global
+  ---
+  duration_ms: 0.728583
+  type: 'test'
+  ...
+# Subtest: renderRepoConfig: an unregistered selected repo falls back to picker-only
+ok 3 - renderRepoConfig: an unregistered selected repo falls back to picker-only
+  ---
+  duration_ms: 0.070667
+  type: 'test'
+  ...
+# Subtest: renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates
+ok 4 - renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates
+  ---
+  duration_ms: 0.445791
+  type: 'test'
+  ...
+# Subtest: createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)
+ok 5 - createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)
+  ---
+  duration_ms: 5.018666
+  type: 'test'
+  ...
+# Subtest: createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent
+ok 6 - createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent
+  ---
+  duration_ms: 8.407791
+  type: 'test'
+  ...
+# Subtest: createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws
+ok 7 - createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws
+  ---
+  duration_ms: 2.877792
+  type: 'test'
+  ...
+# Subtest: source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)
+ok 8 - source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)
+  ---
+  duration_ms: 0.3385
+  type: 'test'
+  ...
+# Subtest: source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed
+ok 9 - source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed
+  ---
+  duration_ms: 0.370625
+  type: 'test'
+  ...
+# Subtest: repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart
+ok 10 - repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart
+  ---
+  duration_ms: 3.985792
+  type: 'test'
+  ...
+# Subtest: renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable
+ok 11 - renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable
+  ---
+  duration_ms: 0.57375
+  type: 'test'
+  ...
+# Subtest: steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)
+ok 12 - steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)
+  ---
+  duration_ms: 0.060167
+  type: 'test'
+  ...
+# Subtest: createRepoRegisterProvidersHandler: on accept, mcp.register is called with the repo + mapped steering; outcome surfaced + panel refreshed
+ok 13 - createRepoRegisterProvidersHandler: on accept, mcp.register is called with the repo + mapped steering; outcome surfaced + panel refreshed
+  ---
+  duration_ms: 1.94975
+  type: 'test'
+  ...
+# Subtest: createRepoRegisterProvidersHandler: decline writes nothing; unknown client / unregistered repo / empty selection are no-ops
+ok 14 - createRepoRegisterProvidersHandler: decline writes nothing; unknown client / unregistered repo / empty selection are no-ops
+  ---
+  duration_ms: 1.439834
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 484.493833

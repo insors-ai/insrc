@@ -1,0 +1,16 @@
+{
+  "task": "t23",
+  "finalFocused": { "nodeCases": 9, "nativeJUnitCases": 24, "pass": 9, "fail": 0, "skipped": 0, "cancelled": 0, "evidence": "parity-and-forms.tap" },
+  "parity": "Actual native and TypeScript implementations produce identical complete public projections and effects across all 16 production-model scenarios, and identical acceptance decisions for all 18 wire cases. Deliberately divergent root, transition and wire decisions fail comparison. Shared raw-byte digest/version refusal, all 29 descriptor forms, nine common drafts, strict public percent decoding and 20 removal snapshots are exercised by existing consumer cases.",
+  "recovery": "Native signed mutation/removal matrix runs inside the new parity bridge (6 mutation + 4 removal JUnit cases). TypeScript mutation/removal cases all passed in focused.tap; that invocation's overall result was 12 pass / 2 fail because the parity harness and bundle rules were still being corrected. No producer recovery case failed. Exact cases/facts are indexed in recovery-matrix.json.",
+  "boundaries": "esbuild metafile for actual VS Code extension excludes repository backend daemon/storage/indexer/provider sources. Native jar contains the native manager and no backend TypeScript/runtime implementations. Existing lifecycle client wrappers and document-review JavaScript assets are legitimate unrelated client components.",
+  "attempts": [
+    { "evidence": "attempt1.tap", "result": "1 pass / 1 fail", "reason": "Parity itself passed; bundle rule accidentally matched vscode-plugin/src/daemon lifecycle client wrappers." },
+    { "evidence": "focused.tap", "result": "12 pass / 2 fail", "reason": "Cached Gradle configuration did not reliably forward changing process environment parity directory; bundle rule also over-banned existing document-review JavaScript assets. Replaced environment forwarding with explicit tracked Gradle property/JVM system property; narrowed backend implementation boundary." }
+  ],
+  "typecheck": "fresh backend TypeScript noEmit pass",
+  "coverage": "coverage-index.json maps all 20 LLD subjects to concrete consumer files or retained evidence, with unfulfilled live UI/source/lifecycle, packaging, full sweep and producer prerequisites explicitly pending. Original 12 conceptual transcript examples are retained as reference examples, not relabelled as executed production model scenarios or live acceptance.",
+  "sharedWorkspace": "Concurrent session committed an intermediate parity implementation/evidence as dd5b22334 with the required S005 story trailer. This task's final commit retains that history and fixes the harness; no unrelated changes reverted or included.",
+  "releaseEnabled": false,
+  "fullSweep": "deferred until all implementation, t32"
+}

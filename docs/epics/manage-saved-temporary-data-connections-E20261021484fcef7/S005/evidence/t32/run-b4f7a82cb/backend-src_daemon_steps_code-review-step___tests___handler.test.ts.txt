@@ -1,0 +1,196 @@
+TAP version 13
+# Subtest: start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)
+ok 1 - start => next:emit_judgements with the four prompts + a file:line-pinned DimensionResult[] schema + grounding + an opaque token (ac1)
+  ---
+  duration_ms: 2.864917
+  type: 'test'
+  ...
+# Subtest: the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)
+ok 2 - the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)
+  ---
+  duration_ms: 3.018625
+  type: 'test'
+  ...
+# Subtest: an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)
+ok 3 - an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)
+  ---
+  duration_ms: 1.324792
+  type: 'test'
+  ...
+# Subtest: fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)
+ok 4 - fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)
+  ---
+  duration_ms: 0.68375
+  type: 'test'
+  ...
+# Subtest: all-empty judgements => a written PASS record (vacuous but valid, ac3)
+ok 5 - all-empty judgements => a written PASS record (vacuous but valid, ac3)
+  ---
+  duration_ms: 0.84625
+  type: 'test'
+  ...
+# Subtest: ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write
+ok 6 - ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write
+  ---
+  duration_ms: 0.182459
+  type: 'test'
+  ...
+# Subtest: ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write
+ok 7 - ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write
+  ---
+  duration_ms: 2.295125
+  type: 'test'
+  ...
+# Subtest: ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved
+ok 8 - ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved
+  ---
+  duration_ms: 0.3335
+  type: 'test'
+  ...
+# Subtest: resending the same judgements token after done fails loadState (no double-write)
+ok 9 - resending the same judgements token after done fails loadState (no double-write)
+  ---
+  duration_ms: 0.812417
+  type: 'test'
+  ...
+# Subtest: a superseded code-review token fails with today's not-found message
+ok 10 - a superseded code-review token fails with today's not-found message
+  ---
+  duration_ms: 1.009041
+  type: 'test'
+  ...
+# Subtest: s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called
+ok 11 - s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called
+  ---
+  duration_ms: 0.182042
+  type: 'test'
+  ...
+# Subtest: s9: start with isProcessing:true (empty staleFiles) => confirm_wait too
+ok 12 - s9: start with isProcessing:true (empty staleFiles) => confirm_wait too
+  ---
+  duration_ms: 0.096375
+  type: 'test'
+  ...
+# Subtest: s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)
+ok 13 - s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)
+  ---
+  duration_ms: 0.518292
+  type: 'test'
+  ...
+# Subtest: s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements
+ok 14 - s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements
+  ---
+  duration_ms: 0.316041
+  type: 'test'
+  ...
+# Subtest: S001: a freshness timeout refuses an unverified degraded controller before reading diff evidence
+ok 15 - S001: a freshness timeout refuses an unverified degraded controller before reading diff evidence
+  ---
+  duration_ms: 0.237375
+  type: 'test'
+  ...
+# Subtest: S001: the timeout auto-diff releases the confirm_wait token before the diff review
+ok 16 - S001: the timeout auto-diff releases the confirm_wait token before the diff review
+  ---
+  duration_ms: 0.218458
+  type: 'test'
+  ...
+# Subtest: S001: hollow graph grounding cannot emit an unbounded controller diff task without the helper
+ok 17 - S001: hollow graph grounding cannot emit an unbounded controller diff task without the helper
+  ---
+  duration_ms: 0.135917
+  type: 'test'
+  ...
+# Subtest: S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)
+ok 18 - S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)
+  ---
+  duration_ms: 0.581208
+  type: 'test'
+  ...
+# Subtest: s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write
+ok 19 - s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write
+  ---
+  duration_ms: 0.080791
+  type: 'test'
+  ...
+# Subtest: s10: declining freshness requires the isolated controller helper before diff evidence is assembled
+ok 20 - s10: declining freshness requires the isolated controller helper before diff evidence is assembled
+  ---
+  duration_ms: 0.120667
+  type: 'test'
+  ...
+# Subtest: s10: an old degraded aggregate state is restart-required and never reaches the fold or writer
+ok 21 - s10: an old degraded aggregate state is restart-required and never reaches the fold or writer
+  ---
+  duration_ms: 0.191042
+  type: 'test'
+  ...
+# Subtest: T48: unverified controller admission stops before range-base diff assembly
+ok 22 - T48: unverified controller admission stops before range-base diff assembly
+  ---
+  duration_ms: 85.045333
+  type: 'test'
+  ...
+# Subtest: T48: a missing base cannot bypass verified controller admission
+ok 23 - T48: a missing base cannot bypass verified controller admission
+  ---
+  duration_ms: 0.276208
+  type: 'test'
+  ...
+# Subtest: s10: lack of a helper cannot be hidden by an unreadable-diff fallback
+ok 24 - s10: lack of a helper cannot be hidden by an unreadable-diff fallback
+  ---
+  duration_ms: 0.167667
+  type: 'test'
+  ...
+# Subtest: s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full
+ok 25 - s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full
+  ---
+  duration_ms: 2.093458
+  type: 'test'
+  ...
+# Subtest: 11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted
+ok 26 - 11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted
+  ---
+  duration_ms: 0.778375
+  type: 'test'
+  ...
+# Subtest: 11e4fa88 — the response says how many were dropped, per dimension, and against how large a set
+ok 27 - 11e4fa88 — the response says how many were dropped, per dimension, and against how large a set
+  ---
+  duration_ms: 0.372459
+  type: 'test'
+  ...
+# Subtest: 11e4fa88 — the markdown lists the dropped findings and says they are not counted
+ok 28 - 11e4fa88 — the markdown lists the dropped findings and says they are not counted
+  ---
+  duration_ms: 0.517542
+  type: 'test'
+  ...
+# Subtest: 11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature
+ok 29 - 11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature
+  ---
+  duration_ms: 0.452959
+  type: 'test'
+  ...
+# Subtest: a full graph review omits fallbackReason while a daemon-reviewed timeout forwards its exact queued/in-flight reason
+ok 30 - a full graph review omits fallbackReason while a daemon-reviewed timeout forwards its exact queued/in-flight reason
+  ---
+  duration_ms: 0.69875
+  type: 'test'
+  ...
+# Subtest: on the controller-reviewed path, queued-only and in-flight timeout cannot bypass bounded helper admission
+ok 31 - on the controller-reviewed path, queued-only and in-flight timeout cannot bypass bounded helper admission
+  ---
+  duration_ms: 0.398041
+  type: 'test'
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 481.592958

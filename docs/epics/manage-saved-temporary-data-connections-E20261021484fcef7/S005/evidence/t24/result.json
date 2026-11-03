@@ -1,0 +1,22 @@
+{
+  "task": "t24",
+  "changes": [
+    "Both renderers erase password documents before form removal/rebuild and address-control removal; Keep/Clear snapshots erase DOM values. Detached credential and public/source controls cannot submit into a subsequent draft. Browser pagehide/visibility erases password controls.",
+    "Project session service fields are transient, so accidental ordinary Gson serialization emits an empty object while actual explicit IPC DTO serialization remains unchanged.",
+    "Reuse real renderer, manager host and native Project services against actual session/ticket/mutation handlers. Poison client filesystem/logging and browser persistence/network/telemetry APIs; audit actual module dependencies for unavailable Settings/memento/artifact capabilities. Native privacy cases count registry/credential writes, compare Project files, verify non-persistent service registration, empty serialization and independent-owner projections."
+  ],
+  "evidence": {
+    "focused-final.tap": "5/5 Node cases pass, including captured TypeScript privacy subprocess (3 actual cases), 2 native privacy cases and 4 manager renderer/host cases.",
+    "focused-attempt1.tap": "7/8 Node cases passed, including 4 native owner cases, 6 native manager cases and TypeScript isolation/manager cases. The privacy bridge failed because an inherited NODE_TEST_CONTEXT caused a child process to execute zero cases; the mandatory pass-count assertion caught it. No product regression case failed.",
+    "privacy-attempt2.tap": "Corrected independent TAP subprocess plus 2 native privacy cases passed before the final detached public-control extension.",
+    "client-sinks-attempt1.tap": "3 TypeScript privacy cases passed. Temporary Test/Save/Discard/authenticated expiry/reconnect/end caused zero client sink calls and zero registry/credential write deltas; explicitly durable Saved control caused registry writes. Other-owner events excluded canaries."
+  },
+  "failedRegressionsRetained": [
+    "erasure-before-fix.tap reproduces retained hidden password after shared-state Keep. The synthetic password value alone was redacted; original failure verdict/counts retained. Later privacy assertions use booleans to avoid echoing even synthetic private values.",
+    "erasure-after-fix.tap catches one stale removed-address input event (15 posts versus 14); fixed with attachment/membership guard. erasure-final.tap passed."
+  ],
+  "capture": "Parent bridge scans actual TypeScript stdout/stderr and native JUnit reports for endpoint/config/credential/source/capability canaries without echoing payloads. Browser sink calls remain empty. Actual owner authority stays in private/transient fields; forged capability inputs are rejected before effects.",
+  "typechecks": { "backend": "pass", "vscode": "pass" },
+  "limits": "Controlled fixtures and native platform tests; no live screenshots collected yet. Actual IDE UI/keyboard, wall-clock expiry, full source-driver acceptance and packaging/full sweep remain t26-t32. No production admission gate enabled.",
+  "releaseEnabled": false
+}

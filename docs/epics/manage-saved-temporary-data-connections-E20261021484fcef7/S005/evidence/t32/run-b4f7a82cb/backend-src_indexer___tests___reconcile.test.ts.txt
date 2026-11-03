@@ -1,0 +1,128 @@
+TAP version 13
+# Subtest: a clean-up job for a registered repository with nothing stored is processed without error
+ok 1 - a clean-up job for a registered repository with nothing stored is processed without error
+  ---
+  duration_ms: 231.7495
+  type: 'test'
+  ...
+# Subtest: the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was
+ok 2 - the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was
+  ---
+  duration_ms: 422.65125
+  type: 'test'
+  ...
+# Subtest: a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept
+ok 3 - a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept
+  ---
+  duration_ms: 260.436083
+  type: 'test'
+  ...
+# Subtest: a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept
+ok 4 - a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept
+  ---
+  duration_ms: 271.2965
+  type: 'test'
+  ...
+# Subtest: running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was
+ok 5 - running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was
+  ---
+  duration_ms: 339.181666
+  type: 'test'
+  ...
+# Subtest: a file whose parent directory became a file is removed as absent
+ok 6 - a file whose parent directory became a file is removed as absent
+  ---
+  duration_ms: 260.725291
+  type: 'test'
+  ...
+# Subtest: the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it
+ok 7 - the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it
+  ---
+  duration_ms: 229.365917
+  type: 'test'
+  ...
+# Subtest: the vector rows of a removed file are gone after the clean-up and those of a kept file remain
+ok 8 - the vector rows of a removed file are gone after the clean-up and those of a kept file remain
+  ---
+  duration_ms: 213.041959
+  type: 'test'
+  ...
+# Subtest: a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay
+ok 9 - a kept file's link into a removed entity is removed with it, and the kept file's other links and entities stay
+  ---
+  duration_ms: 126.710208
+  type: 'test'
+  ...
+# Subtest: a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them
+ok 10 - a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them
+  ---
+  duration_ms: 150.003375
+  type: 'test'
+  ...
+# Subtest: the clean-up method called directly removes the stale files, runs no resolver and removes no cached result
+ok 11 - the clean-up method called directly removes the stale files, runs no resolver and removes no cached result
+  ---
+  duration_ms: 117.974
+  type: 'test'
+  ...
+# Subtest: a store failure part-way through a clean-up job still drops the cached results and runs the resolver for the files already removed, and the job fails
+ok 12 - a store failure part-way through a clean-up job still drops the cached results and runs the resolver for the files already removed, and the job fails
+  ---
+  duration_ms: 250.066
+  type: 'test'
+  ...
+# Subtest: a resolver failure after a clean-up fails the job with the cached results already dropped
+ok 13 - a resolver failure after a clean-up fails the job with the cached results already dropped
+  ---
+  duration_ms: 340.826458
+  type: 'test'
+  ...
+# Subtest: a failure on the only stale file still drops the cached results and runs the resolver, because part of the file may be gone
+ok 14 - a failure on the only stale file still drops the cached results and runs the resolver, because part of the file may be gone
+  ---
+  duration_ms: 293.012958
+  type: 'test'
+  ...
+# Subtest: a repository whose directory is there but holds none of the stored files loses nothing, and one where only ignored files are left on disk is still cleaned
+ok 15 - a repository whose directory is there but holds none of the stored files loses nothing, and one where only ignored files are left on disk is still cleaned
+  ---
+  duration_ms: 302.10375
+  type: 'test'
+  ...
+# Subtest: an ignored file is removed whatever the check of its presence says, also when it is the only thing stored
+ok 16 - an ignored file is removed whatever the check of its presence says, also when it is the only thing stored
+  ---
+  duration_ms: 248.291
+  type: 'test'
+  ...
+# [04:47:39] [31mERROR[39m: [36m[indexer] full index failed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-2764-a-ZKhotu"
+#     err: "store write failed"
+# Subtest: a clean-up failure inside a full index fails the full index and marks the repository error
+ok 17 - a clean-up failure inside a full index fails the full index and marks the repository error
+  ---
+  duration_ms: 401.829542
+  type: 'test'
+  ...
+# Subtest: a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed
+ok 18 - a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed
+  ---
+  duration_ms: 297.236666
+  type: 'test'
+  ...
+# Subtest: a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready
+ok 19 - a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready
+  ---
+  duration_ms: 204.220708
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5368.696292

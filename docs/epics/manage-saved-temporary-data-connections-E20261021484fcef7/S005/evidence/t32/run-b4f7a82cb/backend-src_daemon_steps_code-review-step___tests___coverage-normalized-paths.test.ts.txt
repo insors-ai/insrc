@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: on both the controller and daemon paths a lowered graph-gap finding is LOW and the folded verdict is not block
+ok 1 - on both the controller and daemon paths a lowered graph-gap finding is LOW and the folded verdict is not block
+  ---
+  duration_ms: 21.854209
+  type: 'test'
+  ...
+# Subtest: the daemon diff path reaches the coverage judge as degraded, also with an empty grounding
+ok 2 - the daemon diff path reaches the coverage judge as degraded, also with an empty grounding
+  ---
+  duration_ms: 13.373125
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 536.370416

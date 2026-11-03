@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: memory-only Ollama transport rejects malformed frames before SDK console diagnostics
+ok 1 - memory-only Ollama transport rejects malformed frames before SDK console diagnostics
+  ---
+  duration_ms: 2124.196834
+  type: 'test'
+  ...
+# Subtest: memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame
+ok 2 - memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame
+  ---
+  duration_ms: 0.157583
+  type: 'test'
+  ...
+# Subtest: memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics
+ok 3 - memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics
+  ---
+  duration_ms: 0.042292
+  type: 'test'
+  ...
+# Subtest: admitted Session expiry during real structured validation prevents the next SDK retry
+ok 4 - admitted Session expiry during real structured validation prevents the next SDK retry
+  ---
+  duration_ms: 0.039792
+  type: 'test'
+  ...
+# Subtest: memory-only adapter refuses internal helper substitution before native construction
+ok 5 - memory-only adapter refuses internal helper substitution before native construction
+  ---
+  duration_ms: 0.044875
+  type: 'test'
+  ...
+# Subtest: issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls
+ok 6 - issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls
+  ---
+  duration_ms: 0.0375
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2256.960375

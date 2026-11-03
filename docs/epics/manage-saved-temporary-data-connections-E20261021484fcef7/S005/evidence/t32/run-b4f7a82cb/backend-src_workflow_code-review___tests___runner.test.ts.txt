@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: runCodeReview: all four judges returning findings persist ONE record with dimensions:[four] + folded verdict + counts (ac1)
+ok 1 - runCodeReview: all four judges returning findings persist ONE record with dimensions:[four] + folded verdict + counts (ac1)
+  ---
+  duration_ms: 5.53325
+  type: 'test'
+  ...
+# Subtest: runCodeReview: verdict fold matches the ReviewVerdict vocabulary (any-HIGH=>block, MED-no-HIGH=>warn, only-LOW/empty=>pass) (ac2)
+ok 2 - runCodeReview: verdict fold matches the ReviewVerdict vocabulary (any-HIGH=>block, MED-no-HIGH=>warn, only-LOW/empty=>pass) (ac2)
+  ---
+  duration_ms: 2.15525
+  type: 'test'
+  ...
+# Subtest: runCodeReview: the record is written at CR-<epic>-<story> and carries kind:code-review (ac3)
+ok 3 - runCodeReview: the record is written at CR-<epic>-<story> and carries kind:code-review (ac3)
+  ---
+  duration_ms: 0.231
+  type: 'test'
+  ...
+# Subtest: runCodeReview: the four judges run SERIALLY in [adherence,conventions,coverage,quality] order, never concurrently (ac4)
+ok 4 - runCodeReview: the four judges run SERIALLY in [adherence,conventions,coverage,quality] order, never concurrently (ac4)
+  ---
+  duration_ms: 0.161625
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a throwing 2nd judge aborts the run with {ok:false} and writes NOTHING; judges 3-4 do not run (ac5)
+ok 5 - runCodeReview: a throwing 2nd judge aborts the run with {ok:false} and writes NOTHING; judges 3-4 do not run (ac5)
+  ---
+  duration_ms: 0.438958
+  type: 'test'
+  ...
+# Subtest: runCodeReview: an in-memory validation failure returns {ok:false} before any write (ac5)
+ok 6 - runCodeReview: an in-memory validation failure returns {ok:false} before any write (ac5)
+  ---
+  duration_ms: 0.828041
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a pre-aborted signal returns {ok:false} and writes nothing (ac5)
+ok 7 - runCodeReview: a pre-aborted signal returns {ok:false} and writes nothing (ac5)
+  ---
+  duration_ms: 0.356
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a grounding failure returns {ok:false} and writes nothing (ac5)
+ok 8 - runCodeReview: a grounding failure returns {ok:false} and writes nothing (ac5)
+  ---
+  duration_ms: 0.28625
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a successful run writes BOTH the .json and the .md (two write-spy calls)
+ok 9 - runCodeReview: a successful run writes BOTH the .json and the .md (two write-spy calls)
+  ---
+  duration_ms: 0.592667
+  type: 'test'
+  ...
+# Subtest: runCodeReview: all four dimensions empty => a written PASS record (an empty review is a persisted PASS, not an absence)
+ok 10 - runCodeReview: all four dimensions empty => a written PASS record (an empty review is a persisted PASS, not an absence)
+  ---
+  duration_ms: 0.487125
+  type: 'test'
+  ...
+# Subtest: T4 runCodeReview given reviewedBy controller writes it on the record
+ok 11 - T4 runCodeReview given reviewedBy controller writes it on the record
+  ---
+  duration_ms: 0.25875
+  type: 'test'
+  ...
+# Subtest: T4 runCodeReview given reviewedBy daemon writes it on the record
+ok 12 - T4 runCodeReview given reviewedBy daemon writes it on the record
+  ---
+  duration_ms: 0.172333
+  type: 'test'
+  ...
+# Subtest: T4 runCodeReview given no reviewedBy writes none
+ok 13 - T4 runCodeReview given no reviewedBy writes none
+  ---
+  duration_ms: 0.205625
+  type: 'test'
+  ...
+# Subtest: DEFAULT_DEPS: wires the base four judges + conditional functional-coverage + diagram + ux, in fixed order + writeAtomic
+ok 14 - DEFAULT_DEPS: wires the base four judges + conditional functional-coverage + diagram + ux, in fixed order + writeAtomic
+  ---
+  duration_ms: 0.064209
+  type: 'test'
+  ...
+# Subtest: s10: runCodeReview with opts.groundingMode:degraded stamps body.groundingMode === degraded
+ok 15 - s10: runCodeReview with opts.groundingMode:degraded stamps body.groundingMode === degraded
+  ---
+  duration_ms: 0.171
+  type: 'test'
+  ...
+# Subtest: s10: capVerdictAtWarn:true + all-empty findings (would fold pass) => verdict warn
+ok 16 - s10: capVerdictAtWarn:true + all-empty findings (would fold pass) => verdict warn
+  ---
+  duration_ms: 0.135792
+  type: 'test'
+  ...
+# Subtest: s10: capVerdictAtWarn:true + a HIGH finding => verdict stays block (the cap never lowers block/warn)
+ok 17 - s10: capVerdictAtWarn:true + a HIGH finding => verdict stays block (the cap never lowers block/warn)
+  ---
+  duration_ms: 0.1305
+  type: 'test'
+  ...
+# Subtest: s10 ac6: runCodeReview with NO groundingMode/cap opts stamps full and the verdict fold is unchanged (default parity)
+ok 18 - s10 ac6: runCodeReview with NO groundingMode/cap opts stamps full and the verdict fold is unchanged (default parity)
+  ---
+  duration_ms: 0.1195
+  type: 'test'
+  ...
+# Subtest: the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were
+ok 19 - the review record stamps excludedFromScope beside changedFiles when uncommitted files were left out, and omits it when none were
+  ---
+  duration_ms: 0.42875
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 358.871083

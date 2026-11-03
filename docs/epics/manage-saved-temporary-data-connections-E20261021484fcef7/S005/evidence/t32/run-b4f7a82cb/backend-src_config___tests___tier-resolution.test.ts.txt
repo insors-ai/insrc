@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids
+ok 1 - tier-resolution.test.ts: unset and '' tiers resolve to the fixture default with its effort; '' effort is the CLI default; aliases resolve to canonical ids
+  ---
+  duration_ms: 5.797375
+  type: 'test'
+  ...
+# Subtest: tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort
+ok 2 - tier-resolution.test.ts: an unaccepted effort is dropped with a warning naming tier, model and effort
+  ---
+  duration_ms: 2.578167
+  type: 'test'
+  ...
+# Subtest: tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions
+ok 3 - tier-resolution.test.ts: unlisted and rejected models fall back with a warning naming tier, requested model, reason and default, kept in tierResolutions
+  ---
+  duration_ms: 1.332917
+  type: 'test'
+  ...
+# Subtest: tier-resolution.test.ts: a tier's own effort applies when no separate efforts entry exists; an efforts entry ('' included) wins
+ok 4 - tier-resolution.test.ts: a tier's own effort applies when no separate efforts entry exists; an efforts entry ('' included) wins
+  ---
+  duration_ms: 1.134625
+  type: 'test'
+  ...
+# Subtest: tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports the refusal without reading a missing model
+ok 5 - tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports the refusal without reading a missing model
+  ---
+  duration_ms: 1.950208
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 348.267459

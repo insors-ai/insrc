@@ -1,0 +1,1011 @@
+TAP version 13
+# (node:2910) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)
+ok 1 - submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)
+  ---
+  duration_ms: 22.055709
+  type: 'test'
+  ...
+# Subtest: single-in-flight: a second submit waits for the first, which reports to its end — no interleave; the first is not killed (H1/M2)
+ok 2 - single-in-flight: a second submit waits for the first, which reports to its end — no interleave; the first is not killed (H1/M2)
+  ---
+  duration_ms: 12.82825
+  type: 'test'
+  ...
+# Subtest: new-chat mid-stream stops the prior turn (no cross-session post) (M3)
+ok 3 - new-chat mid-stream stops the prior turn (no cross-session post) (M3)
+  ---
+  duration_ms: 35.636041
+  type: 'test'
+  ...
+# Subtest: malformed submit-turn (non-string text) is a no-op, no unhandled rejection (M4)
+ok 4 - malformed submit-turn (non-string text) is a no-op, no unhandled rejection (M4)
+  ---
+  duration_ms: 21.003959
+  type: 'test'
+  ...
+# Subtest: an errored turn persists its transcript rows (L3)
+ok 5 - an errored turn persists its transcript rows (L3)
+  ---
+  duration_ms: 5.56125
+  type: 'test'
+  ...
+# Subtest: empty/whitespace submit-turn is a no-op (no run)
+ok 6 - empty/whitespace submit-turn is a no-op (no run)
+  ---
+  duration_ms: 31.04525
+  type: 'test'
+  ...
+# Subtest: a terminal error TurnEvent is posted inline; unknown-provider is surfaced, not thrown
+ok 7 - a terminal error TurnEvent is posted inline; unknown-provider is surfaced, not thrown
+  ---
+  duration_ms: 5.323042
+  type: 'test'
+  ...
+# Subtest: onDidDispose cancels the active turn and stops posting further
+ok 8 - onDidDispose cancels the active turn and stops posting further
+  ---
+  duration_ms: 35.5395
+  type: 'test'
+  ...
+# Subtest: unknown / edit-* / docs-* inbound messages are accepted-but-ignored no-ops
+ok 9 - unknown / edit-* / docs-* inbound messages are accepted-but-ignored no-ops
+  ---
+  duration_ms: 22.340375
+  type: 'test'
+  ...
+# Subtest: no provider installed: open posts an error notice (no crash)
+ok 10 - no provider installed: open posts an error notice (no crash)
+  ---
+  duration_ms: 0.578833
+  type: 'test'
+  ...
+# Subtest: rendered shell: one nonce'd inline script + strict CSP + sc1 style + no remote origin
+ok 11 - rendered shell: one nonce'd inline script + strict CSP + sc1 style + no remote origin
+  ---
+  duration_ms: 0.809667
+  type: 'test'
+  ...
+# Subtest: rendered shell mints a FRESH nonce per render
+ok 12 - rendered shell mints a FRESH nonce per render
+  ---
+  duration_ms: 0.444625
+  type: 'test'
+  ...
+# Subtest: S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)
+ok 13 - S004 rendered shell: non-delta turn-events route through the marker mapper (sc1 class, not the bare bracket)
+  ---
+  duration_ms: 0.748542
+  type: 'test'
+  ...
+# Subtest: S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)
+ok 14 - S004 integration: a status->tool-call(mcp)->status->file-edit->done turn posts a marker per event and persists status+done rows (ac1/ac2, k8)
+  ---
+  duration_ms: 5.6755
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker
+ok 15 - S001 (ux polish): a tool-result event persists a STRUCTURED role:tool-result row (command+output), never a marker
+  ---
+  duration_ms: 5.52725
+  type: 'test'
+  ...
+# Subtest: S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)
+ok 16 - S001 (ux polish): a turn with NO tool-result events persists a byte-identical transcript (no tool-result rows)
+  ---
+  duration_ms: 4.96
+  type: 'test'
+  ...
+# Subtest: S005 shell: run-config controls (provider·model popup + effort gauge) + history-dropdown; one script + CSP intact
+ok 17 - S005 shell: run-config controls (provider·model popup + effort gauge) + history-dropdown; one script + CSP intact
+  ---
+  duration_ms: 1.086834
+  type: 'test'
+  ...
+# Subtest: S005 shell: empty providers.available -> disabled selector
+ok 18 - S005 shell: empty providers.available -> disabled selector
+  ---
+  duration_ms: 0.403459
+  type: 'test'
+  ...
+# Subtest: S005 open() posts a history-list
+ok 19 - S005 open() posts a history-list
+  ---
+  duration_ms: 0.17775
+  type: 'test'
+  ...
+# Subtest: open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn
+ok 20 - open()/close leaves NO empty session in history — the chat opens a draft, persisted only on first turn
+  ---
+  duration_ms: 0.353792
+  type: 'test'
+  ...
+# Subtest: LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)
+ok 21 - LLM titling: the first turn swaps the truncated-prompt title for the LLM-derived name (+ refreshes history)
+  ---
+  duration_ms: 5.516291
+  type: 'test'
+  ...
+# Subtest: LLM titling: a failed/empty derivation keeps the truncated-prompt fallback
+ok 22 - LLM titling: a failed/empty derivation keeps the truncated-prompt fallback
+  ---
+  duration_ms: 11.190375
+  type: 'test'
+  ...
+# Subtest: LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)
+ok 23 - LLM titling: with no deriveTitle injected, the truncated-prompt fallback is kept (no built-in CLI call)
+  ---
+  duration_ms: 0.332833
+  type: 'test'
+  ...
+# Subtest: S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op
+ok 24 - S005 new-chat: valid provider creates a fixed-provider session + re-posts history; non-available is a no-op
+  ---
+  duration_ms: 0.217583
+  type: 'test'
+  ...
+# Subtest: S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history
+ok 25 - S005 open-chat: restores a prior transcript; a missing id is a no-op + refreshes history
+  ---
+  duration_ms: 0.261041
+  type: 'test'
+  ...
+# Subtest: S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent
+ok 26 - S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; only the new prompt is sent
+  ---
+  duration_ms: 11.297417
+  type: 'test'
+  ...
+# Subtest: S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)
+ok 27 - S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)
+  ---
+  duration_ms: 6.002542
+  type: 'test'
+  ...
+# Subtest: S005 a first-turn error still refreshes the history dropdown (title label)
+ok 28 - S005 a first-turn error still refreshes the history dropdown (title label)
+  ---
+  duration_ms: 5.028333
+  type: 'test'
+  ...
+# Subtest: S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none
+ok 29 - S008 integration: a turn persists each marker row with cssClass === markerFor(ev).cssClass (ac2); assistant rows carry none
+  ---
+  duration_ms: 6.061166
+  type: 'test'
+  ...
+# Subtest: S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)
+ok 30 - S008 integration: open-chat restore posts marker rows carrying their cssClass (ac1)
+  ---
+  duration_ms: 0.221833
+  type: 'test'
+  ...
+# Subtest: S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact
+ok 31 - S001 shell: session-restored replay routes through the sc1 registry (keyed, single-sourced, carries the stored class); CSP/one-script/textContent intact
+  ---
+  duration_ms: 0.823208
+  type: 'test'
+  ...
+# Subtest: diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed
+ok 32 - diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed
+  ---
+  duration_ms: 46.908833
+  type: 'test'
+  ...
+# Subtest: diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows
+ok 33 - diff sections: a check is requested after every tool-result and file-edit event and once more at the end of the turn, and the session is saved after late rows
+  ---
+  duration_ms: 103.201458
+  type: 'test'
+  ...
+# Subtest: diff sections: overflow and unreadable push one marker row each and post it as transcript-row
+ok 34 - diff sections: overflow and unreadable push one marker row each and post it as transcript-row
+  ---
+  duration_ms: 119.337375
+  type: 'test'
+  ...
+# Subtest: diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today
+ok 35 - diff sections: with no snapshot, or with the editor view, no diff state is made and the rows and messages are those of today
+  ---
+  duration_ms: 148.782084
+  type: 'test'
+  ...
+# Subtest: diff sections: the restored window and an older page carry each section's latest version at its first row's place
+ok 36 - diff sections: the restored window and an older page carry each section's latest version at its first row's place
+  ---
+  duration_ms: 47.815542
+  type: 'test'
+  ...
+# Subtest: diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row
+ok 37 - diff sections: while the diff state is open the file-edit marker and the successful edit result write no row, and a failed edit pushes and posts the path marker then the error row
+  ---
+  duration_ms: 77.64675
+  type: 'test'
+  ...
+# Subtest: diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none
+ok 38 - diff sections: an edit whose path has no section after its check gets its path marker, posted as transcript-row, for a claude result, for a codex applied file-edit and at the end of the turn; an edit whose path has a section gets none
+  ---
+  duration_ms: 144.151292
+  type: 'test'
+  ...
+# Subtest: diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing
+ok 39 - diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing
+  ---
+  duration_ms: 65.610375
+  type: 'test'
+  ...
+# Subtest: diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths
+ok 40 - diff sections: the Stop control, a newer turn's start, a sink error and closing the panel each end the open diff state and settle its held paths
+  ---
+  duration_ms: 266.887333
+  type: 'test'
+  ...
+# Subtest: diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot
+ok 41 - diff sections: a followed turn writes and posts its rows as today and asks for no check, also while the governor still holds a snapshot
+  ---
+  duration_ms: 72.144625
+  type: 'test'
+  ...
+# Subtest: S006 integration: set-edit-mode updates + persists session.editMode
+ok 42 - S006 integration: set-edit-mode updates + persists session.editMode
+  ---
+  duration_ms: 0.3255
+  type: 'test'
+  ...
+# Subtest: S006: without editGovernance the host behaves as before (no transcript-row; file-edit marker still renders)
+ok 43 - S006: without editGovernance the host behaves as before (no transcript-row; file-edit marker still renders)
+  ---
+  duration_ms: 5.848666
+  type: 'test'
+  ...
+# Subtest: S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce'd script; CSP/textContent invariants intact
+ok 44 - S006 shell: edit-mode toggle + diff renderer live inside the ONE nonce'd script; CSP/textContent invariants intact
+  ---
+  duration_ms: 0.954792
+  type: 'test'
+  ...
+# Subtest: S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)
+ok 45 - S001 ac1: submit-turn posts a live user-row (the prompt appears during the turn, not only on reload)
+  ---
+  duration_ms: 0.273
+  type: 'test'
+  ...
+# Subtest: S001 lc1: two identical prompts yield two distinct-keyed live user-rows
+ok 46 - S001 lc1: two identical prompts yield two distinct-keyed live user-rows
+  ---
+  duration_ms: 0.196583
+  type: 'test'
+  ...
+# Subtest: S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)
+ok 47 - S002 ac2: a cancel-turn message cancels the in-flight turn (cancelActive -> provider.cancel)
+  ---
+  duration_ms: 5.502916
+  type: 'test'
+  ...
+# Subtest: S002: a cancel-turn with no active turn is an idempotent no-op (no throw)
+ok 48 - S002: a cancel-turn with no active turn is an idempotent no-op (no throw)
+  ---
+  duration_ms: 0.293042
+  type: 'test'
+  ...
+# Subtest: S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (\#insrc-prompt) is the send/stop control; the trailing \#insrc-send button is retired
+ok 49 - S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (\#insrc-prompt) is the send/stop control; the trailing \#insrc-send button is retired
+  ---
+  duration_ms: 0.573875
+  type: 'test'
+  ...
+# Subtest: S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched
+ok 50 - S001 (74bc0120) ac5: the session dropdown cap doubles to 36ch; the rest of the chip is untouched
+  ---
+  duration_ms: 0.290167
+  type: 'test'
+  ...
+# Subtest: run-config controls: the statusbar runctl group carries the run button, gauge, popups and catalog
+ok 51 - run-config controls: the statusbar runctl group carries the run button, gauge, popups and catalog
+  ---
+  duration_ms: 0.318375
+  type: 'test'
+  ...
+# Subtest: run-config popup bootstrap: catalog parse + button wiring posts new-chat / set-run-config; run-config echo branch present
+ok 52 - run-config popup bootstrap: catalog parse + button wiring posts new-chat / set-run-config; run-config echo branch present
+  ---
+  duration_ms: 1.049542
+  type: 'test'
+  ...
+# Subtest: regression: the history dropdown still opens/new-chats, and session-restored still clears + replays
+ok 53 - regression: the history dropdown still opens/new-chats, and session-restored still clears + replays
+  ---
+  duration_ms: 0.328334
+  type: 'test'
+  ...
+# Subtest: both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%
+ok 54 - both message bubbles span the full row (100%) and the assistant carries no magenta left rail; wrapper stays 100%
+  ---
+  duration_ms: 0.465084
+  type: 'test'
+  ...
+# Subtest: S002 ac1: the fixed-region layout holds — \#insrc-term is the only scroll region; header + input stay flex:0
+ok 55 - S002 ac1: the fixed-region layout holds — \#insrc-term is the only scroll region; header + input stay flex:0
+  ---
+  duration_ms: 0.567416
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill
+ok 56 - S001 (bugfix): the <body> carries no surface class — so .insrc-term-<surface>{display:block} cannot override body{display:flex} and collapse the flex-fill
+  ---
+  duration_ms: 0.315167
+  type: 'test'
+  ...
+# Subtest: S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin
+ok 57 - S002 ac1/k1: all pre-existing element ids remain; one inline script; no innerHTML/remote origin
+  ---
+  duration_ms: 0.752333
+  type: 'test'
+  ...
+# Subtest: S002: an empty submit is a host no-op (no turn starts)
+ok 58 - S002: an empty submit is a host no-op (no turn starts)
+  ---
+  duration_ms: 31.118875
+  type: 'test'
+  ...
+# Subtest: S002 ac3: renderShell embeds a single \#insrc-progress widget above the input, not hidden and starting idle
+ok 59 - S002 ac3: renderShell embeds a single \#insrc-progress widget above the input, not hidden and starting idle
+  ---
+  duration_ms: 0.634208
+  type: 'test'
+  ...
+# Subtest: S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)
+ok 60 - S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)
+  ---
+  duration_ms: 6.203959
+  type: 'test'
+  ...
+# Subtest: S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)
+ok 61 - S003 t1: renderShell embeds the role-tone + markdown/JSON widget + caption CSS (inline, CSP-safe)
+  ---
+  duration_ms: 1.189375
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams
+ok 62 - S001 (bugfix): renderShell has the SINGLE merged mode control + wires the approval seams
+  ---
+  duration_ms: 0.87725
+  type: 'test'
+  ...
+# Subtest: S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — \#insrc-input has no box chrome, rows=2 kept, ❯ top-aligned
+ok 63 - S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — \#insrc-input has no box chrome, rows=2 kept, ❯ top-aligned
+  ---
+  duration_ms: 0.428792
+  type: 'test'
+  ...
+# Subtest: S001 (fidelity) ac2: the placeholder gains the interrupt hint
+ok 64 - S001 (fidelity) ac2: the placeholder gains the interrupt hint
+  ---
+  duration_ms: 0.346208
+  type: 'test'
+  ...
+# Subtest: ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar
+ok 65 - ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar
+  ---
+  duration_ms: 0.497709
+  type: 'test'
+  ...
+# Subtest: UI: the \#insrc-history session dropdown carries a leading history/clock glyph so its purpose reads
+ok 66 - UI: the \#insrc-history session dropdown carries a leading history/clock glyph so its purpose reads
+  ---
+  duration_ms: 0.353375
+  type: 'test'
+  ...
+# Subtest: ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)
+ok 67 - ISSUE-095906bac5bbacaf: every image source the shell DECLARES is permitted by its own CSP (a declared-but-blocked icon must fail)
+  ---
+  duration_ms: 0.555667
+  type: 'test'
+  ...
+# Subtest: S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged
+ok 68 - S001 (fidelity) ac4 (regression): the S002 send/stop control + mode/provider switching are unchanged
+  ---
+  duration_ms: 0.354417
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)
+ok 69 - S001 (bugfix): a turn's mode defaults to manual; set-permission-mode switches the NEXT turn (edit-auto / auto)
+  ---
+  duration_ms: 16.172583
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)
+ok 70 - S001 (bugfix): an invalid set-permission-mode is dropped (mode unchanged)
+  ---
+  duration_ms: 6.094
+  type: 'test'
+  ...
+# Subtest: S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)
+ok 71 - S004 t7: permission-decision is relayed to the live turn adapter.decide with (turnId, requestId, decision)
+  ---
+  duration_ms: 26.577417
+  type: 'test'
+  ...
+# Subtest: S004 t7: permission-decision with no active turn is a safe no-op (never throws)
+ok 72 - S004 t7: permission-decision with no active turn is a safe no-op (never throws)
+  ---
+  duration_ms: 0.23525
+  type: 'test'
+  ...
+# Subtest: S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)
+ok 73 - S001 adopt(channel) wires + posts theme/session-restored/history-list (restored panel shows history)
+  ---
+  duration_ms: 6.257958
+  type: 'test'
+  ...
+# Subtest: S001 adopt() supersedes an already-live channel (prior disposed; single active channel)
+ok 74 - S001 adopt() supersedes an already-live channel (prior disposed; single active channel)
+  ---
+  duration_ms: 0.333709
+  type: 'test'
+  ...
+# Subtest: S001 adopt() with no agentic CLI posts the same error a fresh open does
+ok 75 - S001 adopt() with no agentic CLI posts the same error a fresh open does
+  ---
+  duration_ms: 0.112584
+  type: 'test'
+  ...
+# Subtest: S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)
+ok 76 - S001 the webview posts a ready handshake AFTER attaching its message listener (initial load + every reload)
+  ---
+  duration_ms: 0.340209
+  type: 'test'
+  ...
+# Subtest: S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates
+ok 77 - S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates
+  ---
+  duration_ms: 0.15275
+  type: 'test'
+  ...
+# Subtest: S001 ready before any open-time delivery still populates history (models the dropped initial post)
+ok 78 - S001 ready before any open-time delivery still populates history (models the dropped initial post)
+  ---
+  duration_ms: 0.1055
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session
+ok 79 - S001 (bugfix): approving a permission-denied request re-runs the blocked action with the tool pre-allowed, resuming the session
+  ---
+  duration_ms: 11.630083
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)
+ok 80 - S001 (bugfix): denying a permission-denied request does NOT re-run (the turn stays denied)
+  ---
+  duration_ms: 36.506625
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool
+ok 81 - S001 (bugfix): Approve on a tool-gate WITH a command re-runs naming the EXACT command (not the vague nudge) + pre-allows the tool
+  ---
+  duration_ms: 12.309625
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)
+ok 82 - S001 (bugfix): Approve on a tool-gate WITHOUT a command falls back to the tool-name phrasing (+ allowedTools)
+  ---
+  duration_ms: 11.961208
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched
+ok 83 - S001 (bugfix): Approve on a dir-block does NOT re-run/grant — it posts an informational message; argv/allowlist untouched
+  ---
+  duration_ms: 35.946083
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip
+ok 84 - S001 (bugfix) + S003 (ux polish): Deny drops both a tool-gate and a dir-block — no re-run; posts ONLY the rejected outcome chip
+  ---
+  duration_ms: 73.10975
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): an in-turn request is relayed to adapter.decide (codex/in-turn relay); an id the host does not hold still falls through
+ok 85 - S001 (bugfix): an in-turn request is relayed to adapter.decide (codex/in-turn relay); an id the host does not hold still falls through
+  ---
+  duration_ms: 5.641125
+  type: 'test'
+  ...
+# Subtest: S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)
+ok 86 - S003 ac2: approving a tool-gate WITH a command re-runs with [toolName] but posts ZERO user-row echoes (suppressEcho)
+  ---
+  duration_ms: 12.355417
+  type: 'test'
+  ...
+# Subtest: S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)
+ok 87 - S003 ac2: a NORMAL user turn still posts its user-row echo (suppressEcho gates ONLY the synthetic grant re-run)
+  ---
+  duration_ms: 0.33475
+  type: 'test'
+  ...
+# Subtest: S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome
+ok 88 - S003 ac2: the tool-name FALLBACK grant (no command) also suppresses the echo + records the approved outcome
+  ---
+  duration_ms: 10.0495
+  type: 'test'
+  ...
+# Subtest: S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)
+ok 89 - S003 ac3: a dir-block Approve records an approved outcome (even though it does NOT re-run)
+  ---
+  duration_ms: 6.662083
+  type: 'test'
+  ...
+# Subtest: S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)
+ok 90 - S003 ac4: after an approve, the persisted transcript carries the outcome row and NO approval-request (the pending card never replays)
+  ---
+  duration_ms: 6.450042
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): set-permission-mode persists onto the active (saved) session
+ok 91 - S001 (bugfix): set-permission-mode persists onto the active (saved) session
+  ---
+  duration_ms: 6.457209
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode
+ok 92 - S001 (bugfix): the mode FOLLOWS the session — opening a chat adopts its persisted mode
+  ---
+  duration_ms: 6.655125
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): the webview sets the mode control from a restored session
+ok 93 - S001 (bugfix): the webview sets the mode control from a restored session
+  ---
+  duration_ms: 0.375958
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)
+ok 94 - S004 (ux polish): renderShell wires the selection decision sink + routes selection turn-events (approval path intact)
+  ---
+  duration_ms: 0.43325
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn
+ok 95 - S004 (ux polish): a selection-decision records the outcome (chosen LABELS) AND continues the run via a synthesized user turn
+  ---
+  duration_ms: 12.091125
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)
+ok 96 - S004 (ux polish): a selection-decision for an unknown/stale requestId is a safe no-op (no outcome, no run)
+  ---
+  duration_ms: 20.020875
+  type: 'test'
+  ...
+# Subtest: S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)
+ok 97 - S004 (ux polish): a selection-decision with an empty/invalid selected list is dropped (no outcome, no run)
+  ---
+  duration_ms: 26.114459
+  type: 'test'
+  ...
+# Subtest: a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits
+ok 98 - a message sent while the previous CLI process is still alive after its answer waits, shows 'Waiting for the previous turn to finish', and starts only after that process exits
+  ---
+  duration_ms: 42.674625
+  type: 'test'
+  ...
+# Subtest: with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed
+ok 99 - with a short timeout, the still-running holder is stopped and the new turn starts after its exit is confirmed
+  ---
+  duration_ms: 47.147667
+  type: 'test'
+  ...
+# Subtest: Stop ends the running process at once and the waiting message then runs; with the queue every message runs, in order, one answer each
+ok 100 - Stop ends the running process at once and the waiting message then runs; with the queue every message runs, in order, one answer each
+  ---
+  duration_ms: 32.744833
+  type: 'test'
+  ...
+# Subtest: a lock failure other than a dropped wait is logged and shown, never a silent no-op
+ok 101 - a lock failure other than a dropped wait is logged and shown, never a silent no-op
+  ---
+  duration_ms: 6.195667
+  type: 'test'
+  ...
+# Subtest: a turn whose adapter fails to start releases the session lease (the next turn does not wait)
+ok 102 - a turn whose adapter fails to start releases the session lease (the next turn does not wait)
+  ---
+  duration_ms: 10.47575
+  type: 'test'
+  ...
+# Subtest: a turn records its cursor on the session as lines are handled and clears it at the terminal event
+ok 103 - a turn records its cursor on the session as lines are handled and clears it at the terminal event
+  ---
+  duration_ms: 18.806375
+  type: 'test'
+  ...
+# Subtest: after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end
+ok 104 - after a reload (a new host over the same store) a session with a live cursor is followed from the saved offset, only new events are posted and appended, and the cursor is cleared at the end
+  ---
+  duration_ms: 6.54975
+  type: 'test'
+  ...
+# Subtest: a cursor whose generation is gone (rolled over twice) is cleared without resuming
+ok 105 - a cursor whose generation is gone (rolled over twice) is cleared without resuming
+  ---
+  duration_ms: 0.582667
+  type: 'test'
+  ...
+# Subtest: a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over
+ok 106 - a second live window that is not the cursor's owner does not follow it; once the owner host is gone it takes over
+  ---
+  duration_ms: 36.175583
+  type: 'test'
+  ...
+# Subtest: switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped
+ok 107 - switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped
+  ---
+  duration_ms: 42.679875
+  type: 'test'
+  ...
+# Subtest: Stop ends a resumed turn's process through the handle resume() hands over
+ok 108 - Stop ends a resumed turn's process through the handle resume() hands over
+  ---
+  duration_ms: 11.613667
+  type: 'test'
+  ...
+# Subtest: closing the panel mid-turn leaves a session-file turn running with its cursor saved
+ok 109 - closing the panel mid-turn leaves a session-file turn running with its cursor saved
+  ---
+  duration_ms: 26.023167
+  type: 'test'
+  ...
+# Subtest: a failing store save or a failing process stop never becomes an unhandled rejection
+ok 110 - a failing store save or a failing process stop never becomes an unhandled rejection
+  ---
+  duration_ms: 51.349083
+  type: 'test'
+  ...
+# Subtest: a save failing at the end of a turn is logged; the turn still ends cleanly and the history is refreshed
+ok 111 - a save failing at the end of a turn is logged; the turn still ends cleanly and the history is refreshed
+  ---
+  duration_ms: 15.823584
+  type: 'test'
+  ...
+# Subtest: a save failing while the derived title is stored is logged, never an unhandled rejection, and the history is still refreshed
+ok 112 - a save failing while the derived title is stored is logged, never an unhandled rejection, and the history is still refreshed
+  ---
+  duration_ms: 21.111208
+  type: 'test'
+  ...
+# Subtest: a failing save of a selection or permission outcome is logged and the run still continues
+ok 113 - a failing save of a selection or permission outcome is logged and the run still continues
+  ---
+  duration_ms: 11.54825
+  type: 'test'
+  ...
+# Subtest: a failing edit-governor call is logged, never an unhandled rejection
+ok 114 - a failing edit-governor call is logged, never an unhandled rejection
+  ---
+  duration_ms: 26.435167
+  type: 'test'
+  ...
+# Subtest: three requests in one turn: only the first card is posted (with '1 of 3')
+ok 115 - three requests in one turn: only the first card is posted (with '1 of 3')
+  ---
+  duration_ms: 4.997291
+  type: 'test'
+  ...
+# Subtest: a turn followed after reload routes its approval-requests through the queue and its end ends the batch
+ok 116 - a turn followed after reload routes its approval-requests through the queue and its end ends the batch
+  ---
+  duration_ms: 31.036959
+  type: 'test'
+  ...
+# Subtest: Stop with requests queued records each as rejected and clears the queue
+ok 117 - Stop with requests queued records each as rejected and clears the queue
+  ---
+  duration_ms: 11.424292
+  type: 'test'
+  ...
+# Subtest: outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)
+ok 118 - outcome rows: one role:'permission-outcome' row per decision, in decision order, and no approval-request rows (restore shows only chips)
+  ---
+  duration_ms: 6.361917
+  type: 'test'
+  ...
+# Subtest: the second card is posted only after the first is decided; a decision on a waiting card's id does nothing
+ok 119 - the second card is posted only after the first is decided; a decision on a waiting card's id does nothing
+  ---
+  duration_ms: 6.367917
+  type: 'test'
+  ...
+# Subtest: live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started
+ok 120 - live-turn provider with two requests: decide() is called for the first before the second card is posted; no follow-up turn is started
+  ---
+  duration_ms: 48.144916
+  type: 'test'
+  ...
+# Subtest: an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)
+ok 121 - an in-turn request that carries a toolName is relayed with decide(), not batched (routing by resolution)
+  ---
+  duration_ms: 26.801458
+  type: 'test'
+  ...
+# Subtest: approving all three starts exactly one follow-up turn, after the last decision and the turn's end, with allowedTools = all three tools and a prompt naming the three approved actions
+ok 122 - approving all three starts exactly one follow-up turn, after the last decision and the turn's end, with allowedTools = all three tools and a prompt naming the three approved actions
+  ---
+  duration_ms: 71.263875
+  type: 'test'
+  ...
+# Subtest: no approval ever supersedes a running follow-up: turns.start is called once per batch
+ok 123 - no approval ever supersedes a running follow-up: turns.start is called once per batch
+  ---
+  duration_ms: 102.861958
+  type: 'test'
+  ...
+# Subtest: deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message
+ok 124 - deny: a denied request gets a rejected chip, the next request is still asked, and the follow-up names it as denied; all denied -> no follow-up and an informational message
+  ---
+  duration_ms: 47.463042
+  type: 'test'
+  ...
+# Subtest: a follow-up that is refused again forms the next batch and its follow-up carries the previous batch's grants
+ok 125 - a follow-up that is refused again forms the next batch and its follow-up carries the previous batch's grants
+  ---
+  duration_ms: 45.375125
+  type: 'test'
+  ...
+# Subtest: a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn
+ok 126 - a user-typed message while requests are queued records each as rejected, clears the queue, resets the grant chain and runs as a normal turn
+  ---
+  duration_ms: 22.939792
+  type: 'test'
+  ...
+# Subtest: a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip
+ok 127 - a live provider with a queued in-turn request, then the user types a message: decide(turnId, requestId, 'deny') is called before the new turn starts, and the request gets a rejected chip
+  ---
+  duration_ms: 33.337625
+  type: 'test'
+  ...
+# Subtest: a request joining the queue while the head is shown updates the shown card in place (one card per requestId)
+ok 128 - a request joining the queue while the head is shown updates the shown card in place (one card per requestId)
+  ---
+  duration_ms: 11.77875
+  type: 'test'
+  ...
+# Subtest: reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue
+ok 129 - reloading the webview while requests are queued re-posts the head card, and deciding it continues the queue
+  ---
+  duration_ms: 6.445584
+  type: 'test'
+  ...
+# Subtest: live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none
+ok 130 - live rows carry rowIndex from all five writers: assistant, marker and tool-result events, the user-row, a permission outcome and a selection outcome are each posted with the absolute index of the row already written; status and approval-request carry none
+  ---
+  duration_ms: 5.32325
+  type: 'test'
+  ...
+# Subtest: write-then-post order: when each live row is posted, the transcript already holds it at that index
+ok 131 - write-then-post order: when each live row is posted, the transcript already holds it at that index
+  ---
+  duration_ms: 5.848167
+  type: 'test'
+  ...
+# Subtest: a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard
+ok 132 - a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard
+  ---
+  duration_ms: 36.014125
+  type: 'test'
+  ...
+# Subtest: load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0
+ok 133 - load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0
+  ---
+  duration_ms: 0.594167
+  type: 'test'
+  ...
+# Subtest: load-older for another session id, or with a malformed before or sessionId, posts nothing
+ok 134 - load-older for another session id, or with a malformed before or sessionId, posts nothing
+  ---
+  duration_ms: 0.191042
+  type: 'test'
+  ...
+# Subtest: session-restored carries firstIndex 0 and total while the whole transcript is still sent
+ok 135 - session-restored carries firstIndex 0 and total while the whole transcript is still sent
+  ---
+  duration_ms: 0.155333
+  type: 'test'
+  ...
+# Subtest: the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total
+ok 136 - the shell embeds the pager: line() appends through it, session-restored replays with absolute keys through its reset, transcript-page goes to prepend, live rows are stamped and trimmed, and the provider lock settles from total
+  ---
+  duration_ms: 0.887375
+  type: 'test'
+  ...
+# Subtest: the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin
+ok 137 - the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin
+  ---
+  duration_ms: 5.601042
+  type: 'test'
+  ...
+# Subtest: opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0
+ok 138 - opening a 1,000-row session posts session-restored with at most 200 rows, firstIndex at a turn start, total 1,000 and the session's mode; a short session is posted whole with firstIndex 0
+  ---
+  duration_ms: 0.608125
+  type: 'test'
+  ...
+# Subtest: ready, new-chat and open-chat post the same windowed session-restored
+ok 139 - ready, new-chat and open-chat post the same windowed session-restored
+  ---
+  duration_ms: 0.287542
+  type: 'test'
+  ...
+# Subtest: a ready after older pages were requested posts the latest window again, with the approval head after it
+ok 140 - a ready after older pages were requested posts the latest window again, with the approval head after it
+  ---
+  duration_ms: 5.69575
+  type: 'test'
+  ...
+# Subtest: the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows
+ok 141 - the stored session is unchanged by paging: after restores and page loads the saved transcript equals the original rows
+  ---
+  duration_ms: 0.7555
+  type: 'test'
+  ...
+# Subtest: the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn
+ok 142 - the chat panel run over the file store: a turn's saves append only that turn's rows, a restored session shows the same rows, and a failing save is logged without breaking the turn
+  ---
+  duration_ms: 103.985458
+  type: 'test'
+  ...
+# Subtest: host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged
+ok 143 - host: attach-image and pick-attachments add to the active session's pending list and post attachments-pending; remove-attachment removes one; errors are posted as one sentence and the list is unchanged
+  ---
+  duration_ms: 69.428792
+  type: 'test'
+  ...
+# Subtest: host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment
+ok 144 - host: ready, new-chat and open-chat post each session's own pending list; an unknown or foreign attachment id in remove or open does nothing; open-attachment opens the resolved path of a row's or a pending attachment
+  ---
+  duration_ms: 34.989292
+  type: 'test'
+  ...
+# Subtest: host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored
+ok 145 - host without the attachments seams: the shell has no attach button or chip row and the four messages are ignored
+  ---
+  duration_ms: 21.540542
+  type: 'test'
+  ...
+# Subtest: host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store
+ok 146 - host: an attach-image whose base64 length implies more than the limit is refused without decoding and without calling the store
+  ---
+  duration_ms: 18.352709
+  type: 'test'
+  ...
+# Subtest: host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence
+ok 147 - host: a dismissed dialog posts nothing, and a pick over the limit keeps the first ten and posts one error sentence
+  ---
+  duration_ms: 53.042
+  type: 'test'
+  ...
+# Subtest: host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list
+ok 148 - host: a submit stores the user's text with the attachments on the row, echoes them on user-row, sends a prompt that ends with the attached-files block of absolute paths, passes readDirs, and clears the pending list
+  ---
+  duration_ms: 21.990208
+  type: 'test'
+  ...
+# Subtest: host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op
+ok 149 - host: a submit with blank text and an attachment runs a turn and names the chat from the attachment; with blank text and none it is a no-op
+  ---
+  duration_ms: 70.926625
+  type: 'test'
+  ...
+# Subtest: host: a submit waits for an attachment still being written, and the message carries every chip in order
+ok 150 - host: a submit waits for an attachment still being written, and the message carries every chip in order
+  ---
+  duration_ms: 42.42175
+  type: 'test'
+  ...
+# Subtest: host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it
+ok 151 - host: a later turn of a session with an attachment still passes readDirs, a session with none passes none, and a grant re-run keeps it
+  ---
+  duration_ms: 28.091
+  type: 'test'
+  ...
+# Subtest: host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing
+ok 152 - host: a grant re-run and a selection continuation leave the pending list untouched and attach nothing
+  ---
+  duration_ms: 28.08075
+  type: 'test'
+  ...
+# Subtest: host: a submit with blank text and an attachment supersedes queued approvals
+ok 153 - host: a submit with blank text and an attachment supersedes queued approvals
+  ---
+  duration_ms: 79.644459
+  type: 'test'
+  ...
+# Subtest: host: with the queue, a submit with blank text and an attachment leaves the waiting cards as they are, waits, and runs once they are decided
+ok 154 - host: with the queue, a submit with blank text and an attachment leaves the waiting cards as they are, waits, and runs once they are decided
+  ---
+  duration_ms: 54.5585
+  type: 'test'
+  ...
+# Subtest: host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first
+ok 155 - host: a chat switch while a submit waits drops the submit and keeps the chips on their session, and a second submit runs after the first
+  ---
+  duration_ms: 111.818958
+  type: 'test'
+  ...
+# Subtest: chat host: a run turn begins a presenter turn just before it starts, passes the documents a tool call declares and no tool result, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn
+ok 156 - chat host: a run turn begins a presenter turn just before it starts, passes the documents a tool call declares and no tool result, and ends it once when the run is over, also for a turn that failed, was stopped or was superseded; a message refused before any run begins none; a presenter that throws does not disturb the turn
+  ---
+  duration_ms: 282.115458
+  type: 'test'
+  ...
+# Subtest: chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its declared documents and ends it when the follow ended; a ready message during a run turn begins nothing and reads nothing, and the run turn opens only a document it declares
+ok 157 - chat host: a followed turn begins a presenter turn on its first event, not when the follow is asked for, passes its declared documents and ends it when the follow ended; a ready message during a run turn begins nothing and reads nothing, and the run turn opens only a document it declares
+  ---
+  duration_ms: 213.792208
+  type: 'test'
+  ...
+# Subtest: chat host: a turn followed by a second message still passes its declared documents to the presenter, which opens the document it presents, once
+ok 158 - chat host: a turn followed by a second message still passes its declared documents to the presenter, which opens the document it presents, once
+  ---
+  duration_ms: 100.383209
+  type: 'test'
+  ...
+# Subtest: chat host: submitExternal in a window without a queue answers unavailable with a note and keeps nothing
+ok 159 - chat host: submitExternal in a window without a queue answers unavailable with a note and keeps nothing
+  ---
+  duration_ms: 0.257417
+  type: 'test'
+  ...
+# Subtest: the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything
+ok 160 - the chat host passes a tool-call's declared documents to the presenter and nothing else, and ends the turn without opening anything
+  ---
+  duration_ms: 57.659916
+  type: 'test'
+  ...
+# Subtest: the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome
+ok 161 - the chat host shows a line for a not-pending name and for an unreadable pending list from the presenter's outcome
+  ---
+  duration_ms: 74.009041
+  type: 'test'
+  ...
+# Subtest: the chat host feeds the declaration from both a followed live turn and a hosted run
+ok 162 - the chat host feeds the declaration from both a followed live turn and a hosted run
+  ---
+  duration_ms: 20.370459
+  type: 'test'
+  ...
+# Subtest: the chat opens a declared pending document even when the insrc_present tool call itself failed
+ok 163 - the chat opens a declared pending document even when the insrc_present tool call itself failed
+  ---
+  duration_ms: 14.988292
+  type: 'test'
+  ...
+# Subtest: runCatalogView: maps cliKind→provider, keeps only installed providers, drops rejected models, picks the first alias
+ok 164 - runCatalogView: maps cliKind→provider, keeps only installed providers, drops rejected models, picks the first alias
+  ---
+  duration_ms: 0.606
+  type: 'test'
+  ...
+# Subtest: new-chat with model/effort: the draft carries them and the next turn request includes them
+ok 165 - new-chat with model/effort: the draft carries them and the next turn request includes them
+  ---
+  duration_ms: 22.822792
+  type: 'test'
+  ...
+# Subtest: set-run-config: updates the session for subsequent turns and echoes run-config; invalid shapes are no-ops
+ok 166 - set-run-config: updates the session for subsequent turns and echoes run-config; invalid shapes are no-ops
+  ---
+  duration_ms: 46.303791
+  type: 'test'
+  ...
+# Subtest: a started chat refuses a provider change (host backstop); an unstarted draft allows it
+ok 167 - a started chat refuses a provider change (host backstop); an unstarted draft allows it
+  ---
+  duration_ms: 65.976084
+  type: 'test'
+  ...
+# Subtest: providerIcon: the OFFICIAL vendor mark per provider (path data from media/providers/*.svg), fill=currentColor, empty for unknown ids
+ok 168 - providerIcon: the OFFICIAL vendor mark per provider (path data from media/providers/*.svg), fill=currentColor, empty for unknown ids
+  ---
+  duration_ms: 0.805792
+  type: 'test'
+  ...

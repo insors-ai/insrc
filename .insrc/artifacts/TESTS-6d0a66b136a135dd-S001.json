@@ -1,0 +1,163 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "6d0a66b136a135dd",
+    "storyId": "S001",
+    "createdAt": "2026-10-29T14:53:47.778Z",
+    "updatedAt": "2026-10-29T14:53:47.778Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T14:49:17.098Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "36a0a9974",
+        "ranAt": "2026-10-29T14:53:47.778Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/threads/__tests__/router-session.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/threads/__tests__/router-session.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/threads/__tests__/s3-acceptance.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1162,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 40841,
+            "titles": [
+              {
+                "title": "ac1: session B is answered on its own thread while session A's worker spins",
+                "result": "pass"
+              },
+              {
+                "title": "ac2/ac3: one session over two connections runs in order on one worker thread, released after idle",
+                "result": "pass"
+              },
+              {
+                "title": "ac4: a session worker failure is contained; a throwing handler keeps its worker",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: no Promise.all over provider calls in the modules s3 adds or changes",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a recording provider shows a session's provider calls strictly sequential, over two of its connections at once",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: a token of each step kind resumes on a new worker after an idle release",
+                "result": "pass"
+              },
+              {
+                "title": "ac7: daemon.status answers within 100 ms at p99 of 200 calls while a session worker spins",
+                "result": "pass"
+              },
+              {
+                "title": "parity: moved session methods answer over the socket as the single-thread daemon does",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

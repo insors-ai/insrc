@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: first boot writes schema_version
+ok 1 - first boot writes schema_version
+  ---
+  duration_ms: 119.384416
+  type: 'test'
+  ...
+# Subtest: re-open with matching schema_version proceeds normally
+ok 2 - re-open with matching schema_version proceeds normally
+  ---
+  duration_ms: 98.354458
+  type: 'test'
+  ...
+# Subtest: re-open with stored > expected hard-fails with LmdbStoreSchemaVersionMismatch
+ok 3 - re-open with stored > expected hard-fails with LmdbStoreSchemaVersionMismatch
+  ---
+  duration_ms: 166.0515
+  type: 'test'
+  ...
+# Subtest: INSRC_LMDB_MAPSIZE_GIB override is honored
+ok 4 - INSRC_LMDB_MAPSIZE_GIB override is honored
+  ---
+  duration_ms: 107.03875
+  type: 'test'
+  ...
+# Subtest: invalid INSRC_LMDB_MAPSIZE_GIB falls back to default
+ok 5 - invalid INSRC_LMDB_MAPSIZE_GIB falls back to default
+  ---
+  duration_ms: 90.615583
+  type: 'test'
+  ...
+# Subtest: LmdbStoreError classes are exported and constructible
+ok 6 - LmdbStoreError classes are exported and constructible
+  ---
+  duration_ms: 0.461166
+  type: 'test'
+  ...
+# Subtest: opening a non-LMDB file at the env path surfaces a typed error
+ok 7 - opening a non-LMDB file at the env path surfaces a typed error
+  ---
+  duration_ms: 78.701791
+  type: 'test'
+  ...
+# Subtest: SCHEMA_VERSION constant is exported and stable
+ok 8 - SCHEMA_VERSION constant is exported and stable
+  ---
+  duration_ms: 0.369042
+  type: 'test'
+  ...
+# Subtest: runReaderCheck returns 0 on a fresh env (no stale slots)
+ok 9 - runReaderCheck returns 0 on a fresh env (no stale slots)
+  ---
+  duration_ms: 78.956583
+  type: 'test'
+  ...
+# Subtest: runReaderCheck is a no-op when env is closed
+ok 10 - runReaderCheck is a no-op when env is closed
+  ---
+  duration_ms: 0.524959
+  type: 'test'
+  ...
+# Subtest: runReaderCheck is safe to call repeatedly
+ok 11 - runReaderCheck is safe to call repeatedly
+  ---
+  duration_ms: 93.155917
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1085.798916

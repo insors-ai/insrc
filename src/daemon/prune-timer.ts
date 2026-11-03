@@ -14,7 +14,7 @@ import type { DbClient } from '../db/client.js';
 import { compactConversations } from '../db/compaction.js';
 import { pruneConversations } from '../db/conversations.js';
 import { embedQuery } from '../indexer/embedder.js';
-import { withBackgroundHold } from '../shared/locks/maintenance-lock.js';
+import { withTimerHold } from '../shared/locks/maintenance-lock.js';
 import { getLogger } from '../shared/logger.js';
 
 const log = getLogger('daemon');
@@ -35,7 +35,7 @@ const realOps: PruneOps = {
 /** One sweep: prune expired and over-cap sessions, then compact conversations. Never throws. */
 export async function runPruneSweep(db: DbClient, ops: PruneOps = realOps): Promise<void> {
 	try {
-		await withBackgroundHold(async () => {
+		await withTimerHold(async () => {
 			const result = await ops.prune(db);
 			if (result.expired > 0 || result.capped > 0) {
 				log.info(`pruned ${result.expired} expired + ${result.capped} capped sessions`);

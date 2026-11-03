@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent
+ok 1 - writeInsrcServer sets mcpServers.insrc preserving every other key/server; idempotent; creates {} when absent
+  ---
+  duration_ms: 1.382083
+  type: 'test'
+  ...
+# Subtest: writeInsrcServer throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)
+ok 2 - writeInsrcServer throws HostFileAccessError (no write) when mcpServers is present-but-non-object (never clobber)
+  ---
+  duration_ms: 0.421709
+  type: 'test'
+  ...
+# Subtest: removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent
+ok 3 - removeInsrcServer deletes only the insrc key (other servers intact) and is a no-op when absent
+  ---
+  duration_ms: 0.141958
+  type: 'test'
+  ...
+# Subtest: SteeringWriter.upsert: no-markers→append; markers→replace; malformed/duplicate→untouched; idempotent; remove deletes/absent no-op
+ok 4 - SteeringWriter.upsert: no-markers→append; markers→replace; malformed/duplicate→untouched; idempotent; remove deletes/absent no-op
+  ---
+  duration_ms: 0.613917
+  type: 'test'
+  ...
+# Subtest: SteeringWriter.remove deletes the marker block (restoring prior content) and is a no-op when no markers exist
+ok 5 - SteeringWriter.remove deletes the marker block (restoring prior content) and is a no-op when no markers exist
+  ---
+  duration_ms: 0.127792
+  type: 'test'
+  ...
+# Subtest: both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)
+ok 6 - both writers leave the file byte-unchanged when HostFileSystem.write throws (no partial write)
+  ---
+  duration_ms: 0.119542
+  type: 'test'
+  ...
+# Subtest: composeMcpEntry(path) = { command:node, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)
+ok 7 - composeMcpEntry(path) = { command:node, args:[path] } and returns undefined for an undefined/empty target (no cloud/env/argv)
+  ---
+  duration_ms: 0.125416
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.330709

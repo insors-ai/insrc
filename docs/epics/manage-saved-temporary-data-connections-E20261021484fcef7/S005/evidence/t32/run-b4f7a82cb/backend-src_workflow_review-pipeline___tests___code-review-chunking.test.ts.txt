@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory
+ok 1 - over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory
+  ---
+  duration_ms: 3.719542
+  type: 'test'
+  ...
+# Subtest: a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol
+ok 2 - a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol
+  ---
+  duration_ms: 2.158708
+  type: 'test'
+  ...
+# Subtest: every changed symbol is whole in exactly one chunk and every chunk fits the limit
+ok 3 - every changed symbol is whole in exactly one chunk and every chunk fits the limit
+  ---
+  duration_ms: 5.038958
+  type: 'test'
+  ...
+# Subtest: a summary larger than the limit on its own raises AtomTooLargeError naming its file\#name
+ok 4 - a summary larger than the limit on its own raises AtomTooLargeError naming its file\#name
+  ---
+  duration_ms: 0.807166
+  type: 'test'
+  ...
+# Subtest: under the limit the plan is one chunk and the dimension prompt is unchanged
+ok 5 - under the limit the plan is one chunk and the dimension prompt is unchanged
+  ---
+  duration_ms: 0.303042
+  type: 'test'
+  ...
+# Subtest: every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars
+ok 6 - every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars
+  ---
+  duration_ms: 1.056583
+  type: 'test'
+  ...
+# Subtest: a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call
+ok 7 - a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call
+  ---
+  duration_ms: 0.389334
+  type: 'test'
+  ...
+# Subtest: an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large
+ok 8 - an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large
+  ---
+  duration_ms: 3.474334
+  type: 'test'
+  ...
+# Subtest: a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged
+ok 9 - a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged
+  ---
+  duration_ms: 3.126125
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 328.371041

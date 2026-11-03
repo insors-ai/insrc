@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O
+ok 1 - CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O
+  ---
+  duration_ms: 6036.196208
+  type: 'test'
+  ...
+# Subtest: CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal
+ok 2 - CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal
+  ---
+  duration_ms: 6.341083
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6219.42725

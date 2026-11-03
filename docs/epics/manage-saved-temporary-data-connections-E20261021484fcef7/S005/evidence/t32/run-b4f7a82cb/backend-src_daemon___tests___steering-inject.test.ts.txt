@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: absent file → create with only the marked section
+ok 1 - absent file → create with only the marked section
+  ---
+  duration_ms: 0.867708
+  type: 'test'
+  ...
+# Subtest: file with user content but no marker → append, preserving content
+ok 2 - file with user content but no marker → append, preserving content
+  ---
+  duration_ms: 0.151375
+  type: 'test'
+  ...
+# Subtest: marked section present + identical → idempotent no-op (unchanged, no write)
+ok 3 - marked section present + identical → idempotent no-op (unchanged, no write)
+  ---
+  duration_ms: 0.120291
+  type: 'test'
+  ...
+# Subtest: stale marked section → replace ONLY between markers, preserve surrounding
+ok 4 - stale marked section → replace ONLY between markers, preserve surrounding
+  ---
+  duration_ms: 0.065709
+  type: 'test'
+  ...
+# Subtest: open marker without close → left untouched (never clobber to EOF)
+ok 5 - open marker without close → left untouched (never clobber to EOF)
+  ---
+  duration_ms: 0.235084
+  type: 'test'
+  ...
+# Subtest: duplicate open markers → left untouched (ambiguous)
+ok 6 - duplicate open markers → left untouched (ambiguous)
+  ---
+  duration_ms: 0.123916
+  type: 'test'
+  ...
+# Subtest: refresh: present + stale block → replaced, surrounding content byte-for-byte preserved
+ok 7 - refresh: present + stale block → replaced, surrounding content byte-for-byte preserved
+  ---
+  duration_ms: 0.134375
+  type: 'test'
+  ...
+# Subtest: refresh: present + identical block → unchanged, content null (no write)
+ok 8 - refresh: present + identical block → unchanged, content null (no write)
+  ---
+  duration_ms: 0.0715
+  type: 'test'
+  ...
+# Subtest: refresh: absent file → skipped, NEVER created
+ok 9 - refresh: absent file → skipped, NEVER created
+  ---
+  duration_ms: 0.239541
+  type: 'test'
+  ...
+# Subtest: refresh: present file WITHOUT markers → skipped, NEVER created/appended (opt-out)
+ok 10 - refresh: present file WITHOUT markers → skipped, NEVER created/appended (opt-out)
+  ---
+  duration_ms: 0.277
+  type: 'test'
+  ...
+# Subtest: refresh: duplicate markers → unchanged + note, untouched
+ok 11 - refresh: duplicate markers → unchanged + note, untouched
+  ---
+  duration_ms: 0.053083
+  type: 'test'
+  ...
+# Subtest: refresh: malformed markers (open without close) → unchanged + note, untouched
+ok 12 - refresh: malformed markers (open without close) → unchanged + note, untouched
+  ---
+  duration_ms: 0.038583
+  type: 'test'
+  ...
+# Subtest: walk: mixed repos — stale written, opted-out skipped-not-created, malformed untouched
+ok 13 - walk: mixed repos — stale written, opted-out skipped-not-created, malformed untouched
+  ---
+  duration_ms: 0.941834
+  type: 'test'
+  ...
+# Subtest: walk: per-file read rejection → skipped+note, walk continues to remaining repos
+ok 14 - walk: per-file read rejection → skipped+note, walk continues to remaining repos
+  ---
+  duration_ms: 0.314334
+  type: 'test'
+  ...
+# Subtest: walk: per-file write rejection → skipped+note, other repos still refreshed
+ok 15 - walk: per-file write rejection → skipped+note, other repos still refreshed
+  ---
+  duration_ms: 0.12075
+  type: 'test'
+  ...
+# Subtest: walk: CLAUDE.md refreshed while sibling AGENTS.md absent → independent per-file
+ok 16 - walk: CLAUDE.md refreshed while sibling AGENTS.md absent → independent per-file
+  ---
+  duration_ms: 0.106041
+  type: 'test'
+  ...
+# Subtest: walk: zero registered repos → empty report, no writes
+ok 17 - walk: zero registered repos → empty report, no writes
+  ---
+  duration_ms: 0.040417
+  type: 'test'
+  ...
+# Subtest: walk: partial deps fills the omitted members with production defaults
+ok 18 - walk: partial deps fills the omitted members with production defaults
+  ---
+  duration_ms: 0.34325
+  type: 'test'
+  ...
+# Subtest: readSteeringBlock: resolves the shipped prompts/steering-block.md and is non-trivial
+ok 19 - readSteeringBlock: resolves the shipped prompts/steering-block.md and is non-trivial
+  ---
+  duration_ms: 0.132833
+  type: 'test'
+  ...
+# Subtest: injectSteeringBlock: nothing selected → both files skipped, no writes
+ok 20 - injectSteeringBlock: nothing selected → both files skipped, no writes
+  ---
+  duration_ms: 2.292084
+  type: 'test'
+  ...
+# Subtest: injectSteeringBlock: claude only → CLAUDE.md created, AGENTS.md untouched
+ok 21 - injectSteeringBlock: claude only → CLAUDE.md created, AGENTS.md untouched
+  ---
+  duration_ms: 13.750041
+  type: 'test'
+  ...
+# Subtest: injectSteeringBlock: both selected + one pre-existing → created + preserved-append
+ok 22 - injectSteeringBlock: both selected + one pre-existing → created + preserved-append
+  ---
+  duration_ms: 3.676584
+  type: 'test'
+  ...
+# Subtest: injectSteeringBlock: re-run is idempotent (second run unchanged)
+ok 23 - injectSteeringBlock: re-run is idempotent (second run unchanged)
+  ---
+  duration_ms: 3.9475
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 330.013916

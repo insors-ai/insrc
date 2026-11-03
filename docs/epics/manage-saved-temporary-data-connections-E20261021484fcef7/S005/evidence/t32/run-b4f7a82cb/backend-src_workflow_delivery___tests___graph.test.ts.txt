@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: a story with LLD, PLAN, BUILD and CR is one item with all four as evidence
+ok 1 - a story with LLD, PLAN, BUILD and CR is one item with all four as evidence
+  ---
+  duration_ms: 9.723167
+  type: 'test'
+  ...
+# Subtest: s1 and S001 records join one story and both raw ids are kept in sourceIds
+ok 2 - s1 and S001 records join one story and both raw ids are kept in sourceIds
+  ---
+  duration_ms: 0.3645
+  type: 'test'
+  ...
+# Subtest: the real S001/s001 pair from epic dfc0371b yields one story
+ok 3 - the real S001/s001 pair from epic dfc0371b yields one story
+  ---
+  duration_ms: 0.550333
+  type: 'test'
+  ...
+# Subtest: LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice
+ok 4 - LLD standalone true with BUILD standalone false (real d88062a6 and dfc0371b shapes) is one item with no notice
+  ---
+  duration_ms: 0.6095
+  type: 'test'
+  ...
+# Subtest: an unparseable storyId keeps its own :R(<raw>) item and raises identity-ambiguous naming the sibling story items
+ok 5 - an unparseable storyId keeps its own :R(<raw>) item and raises identity-ambiguous naming the sibling story items
+  ---
+  duration_ms: 0.208541
+  type: 'test'
+  ...
+# Subtest: a standalone story with no head is a root with no invented epic, dated from its own LLD
+ok 6 - a standalone story with no head is a root with no invented epic, dated from its own LLD
+  ---
+  duration_ms: 0.101542
+  type: 'test'
+  ...
+# Subtest: a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice
+ok 7 - a trivial story with only a BUILD (standalone true) and a CR is a standalone root with no unresolved-parent notice
+  ---
+  duration_ms: 0.145875
+  type: 'test'
+  ...
+# Subtest: pending and rejected EXT records create no story item and appear as epic evidence
+ok 8 - pending and rejected EXT records create no story item and appear as epic evidence
+  ---
+  duration_ms: 0.123375
+  type: 'test'
+  ...
+# Subtest: a rejected EXT whose story nothing else names is keyed epic-level and creates no story key
+ok 9 - a rejected EXT whose story nothing else names is keyed epic-level and creates no story key
+  ---
+  duration_ms: 1.114042
+  type: 'test'
+  ...
+# Subtest: records with an invalid createdAt or a non-hex hash get the H-form id and an identity-anchor-missing notice
+ok 10 - records with an invalid createdAt or a non-hex hash get the H-form id and an identity-anchor-missing notice
+  ---
+  duration_ms: 0.665583
+  type: 'test'
+  ...
+# Subtest: groupRecordsByWorkItem keys an unparseable storyId as <hash>|R(x), omits SPECs, and a head-less HLD key carries an unresolved-parent notice
+ok 11 - groupRecordsByWorkItem keys an unparseable storyId as <hash>|R(x), omits SPECs, and a head-less HLD key carries an unresolved-parent notice
+  ---
+  duration_ms: 0.262417
+  type: 'test'
+  ...
+# Subtest: an epic story under a hash with no head raises unresolved-parent and gets no parent
+ok 12 - an epic story under a hash with no head raises unresolved-parent and gets no parent
+  ---
+  duration_ms: 0.09725
+  type: 'test'
+  ...
+# Subtest: a Define story with no records yet is still a member of its epic
+ok 13 - a Define story with no records yet is still a member of its epic
+  ---
+  duration_ms: 0.077333
+  type: 'test'
+  ...
+# Subtest: no call throws for a malformed createdAt, a non-hex hash or an unparseable storyId
+ok 14 - no call throws for a malformed createdAt, a non-hex hash or an unparseable storyId
+  ---
+  duration_ms: 0.187833
+  type: 'test'
+  ...
+# Subtest: task t1 in two stories of different epics gets two distinct canonical ids
+ok 15 - task t1 in two stories of different epics gets two distinct canonical ids
+  ---
+  duration_ms: 0.128416
+  type: 'test'
+  ...
+# Subtest: a BUILD task id equal to the story id creates no task item and no notice
+ok 16 - a BUILD task id equal to the story id creates no task item and no notice
+  ---
+  duration_ms: 0.093167
+  type: 'test'
+  ...
+# Subtest: tasks under an :R(x) story and under a story with an invalid createdAt get <story id>:T<nnn> ids and the builder does not throw
+ok 17 - tasks under an :R(x) story and under a story with an invalid createdAt get <story id>:T<nnn> ids and the builder does not throw
+  ---
+  duration_ms: 0.127625
+  type: 'test'
+  ...
+# Subtest: an issue with fix stories S001 and S002 has two distinct story children with their own tasks and evidence
+ok 18 - an issue with fix stories S001 and S002 has two distinct story children with their own tasks and evidence
+  ---
+  duration_ms: 0.287
+  type: 'test'
+  ...
+# Subtest: a self-slug parentRef gives correctsRef null and no notice
+ok 19 - a self-slug parentRef gives correctsRef null and no notice
+  ---
+  duration_ms: 0.055875
+  type: 'test'
+  ...
+# Subtest: an issue whose outward parentRef matches nothing is present with an unresolved-parent notice
+ok 20 - an issue whose outward parentRef matches nothing is present with an unresolved-parent notice
+  ---
+  duration_ms: 0.214375
+  type: 'test'
+  ...
+# Subtest: a parentRef with slug and storyId (ISSUE-57446545909fe95c shape) resolves to the named story
+ok 21 - a parentRef with slug and storyId (ISSUE-57446545909fe95c shape) resolves to the named story
+  ---
+  duration_ms: 0.190625
+  type: 'test'
+  ...
+# Subtest: a parentRef naming an existing epic and a storyId it lacks resolves to the epic with an unresolved-parent notice naming the missing story
+ok 22 - a parentRef naming an existing epic and a storyId it lacks resolves to the epic with an unresolved-parent notice naming the missing story
+  ---
+  duration_ms: 0.1365
+  type: 'test'
+  ...
+# Subtest: a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the existing story without a notice
+ok 23 - a bare-hash parentRef slug (ISSUE-095906bac5bbacaf shape) resolves to the existing story without a notice
+  ---
+  duration_ms: 0.087167
+  type: 'test'
+  ...
+# Subtest: a hierarchical slug parentRef resolves through parseWorkflowId
+ok 24 - a hierarchical slug parentRef resolves through parseWorkflowId
+  ---
+  duration_ms: 0.108792
+  type: 'test'
+  ...
+# Subtest: a parentRef slug matching two hashes resolves to nothing and raises identity-ambiguous naming both
+ok 25 - a parentRef slug matching two hashes resolves to nothing and raises identity-ambiguous naming both
+  ---
+  duration_ms: 0.09325
+  type: 'test'
+  ...
+# Subtest: a SPEC named by seededFromSpec is in that epic's evidence; an unnamed SPEC raises unattached-spec
+ok 26 - a SPEC named by seededFromSpec is in that epic's evidence; an unnamed SPEC raises unattached-spec
+  ---
+  duration_ms: 0.071334
+  type: 'test'
+  ...
+# Subtest: the same record set built twice gives a deep-equal graph
+ok 27 - the same record set built twice gives a deep-equal graph
+  ---
+  duration_ms: 3.298917
+  type: 'test'
+  ...
+# Subtest: every load failure is one store-level record-unreadable notice naming the file, reason and detail
+ok 28 - every load failure is one store-level record-unreadable notice naming the file, reason and detail
+  ---
+  duration_ms: 0.184
+  type: 'test'
+  ...
+# Subtest: items, rootIds and every other notice are the same with and without an unreadable file
+ok 29 - items, rootIds and every other notice are the same with and without an unreadable file
+  ---
+  duration_ms: 0.153458
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 313.855709

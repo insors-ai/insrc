@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: ProgressEvent union is exhaustive over kind with a never check
+ok 1 - ProgressEvent union is exhaustive over kind with a never check
+  ---
+  duration_ms: 0.501416
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 182.743917

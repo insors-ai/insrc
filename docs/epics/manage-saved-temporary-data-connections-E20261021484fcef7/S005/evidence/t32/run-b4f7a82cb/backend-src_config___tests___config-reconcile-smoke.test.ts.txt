@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: boot against a legacy config: retired keys stripped, live namespaces byte-identical, then converges
+ok 1 - boot against a legacy config: retired keys stripped, live namespaces byte-identical, then converges
+  ---
+  duration_ms: 4.206
+  type: 'test'
+  ...
+# Subtest: first boot against an empty home → surviving former-literal keys written, retired keys NOT written, canonical surfaces present
+ok 2 - first boot against an empty home → surviving former-literal keys written, retired keys NOT written, canonical surfaces present
+  ---
+  duration_ms: 1.209584
+  type: 'test'
+  ...
+# Subtest: update chain: newly-catalogued key added, type-invalid key repaired, retired keys pruned, live namespaces unchanged; repeat writes nothing
+ok 3 - update chain: newly-catalogued key added, type-invalid key repaired, retired keys pruned, live namespaces unchanged; repeat writes nothing
+  ---
+  duration_ms: 7.058584
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 382.916459

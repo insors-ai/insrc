@@ -1,0 +1,26 @@
+TAP version 13
+# Subtest: CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket
+ok 1 - CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket
+  ---
+  duration_ms: 834.69125
+  type: 'test'
+  ...
+# Subtest: CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain
+ok 2 - CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain
+  ---
+  duration_ms: 3.691917
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 840.262459
+# 
+# npm warn Unknown project config "target". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "runtime". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+# npm warn Unknown project config "disturl". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.

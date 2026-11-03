@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)
+ok 1 - a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)
+  ---
+  duration_ms: 8.954209
+  type: 'test'
+  ...
+# Subtest: a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run
+ok 2 - a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run
+  ---
+  duration_ms: 9.894625
+  type: 'test'
+  ...
+# Subtest: a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)
+ok 3 - a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)
+  ---
+  duration_ms: 4.847542
+  type: 'test'
+  ...
+# Subtest: a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path
+ok 4 - a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path
+  ---
+  duration_ms: 2.694334
+  type: 'test'
+  ...
+# Subtest: through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params
+ok 5 - through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params
+  ---
+  duration_ms: 2.5755
+  type: 'test'
+  ...
+# Subtest: a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task
+ok 6 - a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task
+  ---
+  duration_ms: 12.389208
+  type: 'test'
+  ...
+# Subtest: when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged
+ok 7 - when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged
+  ---
+  duration_ms: 3.693041
+  type: 'test'
+  ...
+# Subtest: a task that is not the report task receives every output of a name it consumes
+ok 8 - a task that is not the report task receives every output of a name it consumes
+  ---
+  duration_ms: 2.242667
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 635.244

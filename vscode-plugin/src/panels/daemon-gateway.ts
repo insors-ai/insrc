@@ -23,6 +23,7 @@ import {
   type DaemonDataGatewayDeps,
   type DaemonStatusView,
   type McpClientView,
+  type McpRegistrationView,
   type RepoRef,
   type WorkflowChainRow,
   type WorkflowChainView,
@@ -31,6 +32,11 @@ import {
 /** The raw `daemon.debug-status` payload: the attached socket clients (bare, no wrapper). */
 interface DebugStatusPayload {
   readonly clients?: readonly AttachedClient[];
+}
+
+/** The raw `mcp.status` payload: per-client registration probe (bare, no wrapper). */
+interface McpStatusPayload {
+  readonly clients?: readonly { readonly client: string; readonly available: boolean; readonly registered: boolean }[];
 }
 
 /** Coerce any thrown value into a GatewayReadError carrying its message. */
@@ -95,6 +101,22 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
       // The raw IPC returns a bare { clients } — an attached client is a live
       // socket connection, so it is `wired`. s6 renders the richer per-MCP view.
       return (payload?.clients ?? []).map((c) => ({ host: c.label, wired: true }));
+    },
+
+    async mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]> {
+      let payload: McpStatusPayload;
+      try {
+        // The repo path lets the daemon also probe the repo's own project-layer
+        // .vibe/config.toml for vibe (vibe merges config layers by server name).
+        payload = await rpc<McpStatusPayload>('mcp.status', repoPath !== undefined && repoPath !== '' ? { path: repoPath } : {});
+      } catch (err) {
+        throw asReadError('mcp.status failed', err);
+      }
+      return (payload?.clients ?? []).map((c) => ({
+        client: c.client,
+        available: c.available === true,
+        registered: c.registered === true,
+      }));
     },
 
     async workflowChain(): Promise<WorkflowChainView> {

@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: both classifyShaperError functions map each of the five new error classes to its code
+ok 1 - both classifyShaperError functions map each of the five new error classes to its code
+  ---
+  duration_ms: 0.87625
+  type: 'test'
+  ...
+# Subtest: one list of ten error classes gives the same code from the plan tree's and the daemon's mapping
+ok 2 - one list of ten error classes gives the same code from the plan tree's and the daemon's mapping
+  ---
+  duration_ms: 0.214625
+  type: 'test'
+  ...
+# Subtest: an error neither mapping knows stays internal-error on both sides
+ok 3 - an error neither mapping knows stays internal-error on both sides
+  ---
+  duration_ms: 0.047125
+  type: 'test'
+  ...
+# Subtest: the cause codes are declared in both lists
+ok 4 - the cause codes are declared in both lists
+  ---
+  duration_ms: 0.856667
+  type: 'test'
+  ...
+# Subtest: classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings
+ok 5 - classifyShaperError: RepoIndexingError maps to 'repo-indexing' with its data in both mappings
+  ---
+  duration_ms: 0.428
+  type: 'test'
+  ...
+# Subtest: classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings
+ok 6 - classifyShaperError: index-state-read-failed and lookup-failed map to their own codes in both mappings
+  ---
+  duration_ms: 0.240917
+  type: 'test'
+  ...
+# Subtest: both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'
+ok 7 - both mapping functions return 'answer-step-failed' with the reason, the results and the report, and a failed planning call is still 'shaper-llm-unavailable'
+  ---
+  duration_ms: 0.435459
+  type: 'test'
+  ...
+# Subtest: both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran
+ok 8 - both mapping functions keep the code of a missing prompt and put the results and the report in its data only when the lookups ran
+  ---
+  duration_ms: 0.08125
+  type: 'test'
+  ...
+# Subtest: one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)
+ok 9 - one function maps the three scope error classes to their codes and data, and both mapping functions return through it what they returned before (mutation: return the code alone)
+  ---
+  duration_ms: 0.484416
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 789.634125

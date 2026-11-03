@@ -52,11 +52,24 @@ test('declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths
   assert.deepEqual(extra, [], `manifest has extra keys: ${extra.join(', ')}`);
 });
 
+/** Every family id, model id and alias the shipped model definitions name. */
+const DEFS = JSON.parse(readFileSync(join(HERE, '..', '..', '..', '..', 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ id: string; models: Array<{ id: string; aliases?: string[] }> }> };
+const DEFINITION_NAMES = DEFS.families.flatMap((f) => [`'${f.id}'`, ...f.models.flatMap((m) => [m.id, ...(m.aliases ?? []).map((a) => `'${a}'`)])]);
+
+/** A tier row: the manifest carries no list or model-name default for it (Epic ce99b72065d03b1b, Story s6). */
+const isTierRow = (path: string) => /^models\.tiers\.[^.]+\.(runner|model|effort)$/.test(path);
+
 test("each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'", () => {
   for (const option of CONFIG_CATALOG) {
     const id = 'insrc.' + option.path;
     const schema = DECLARED[id];
     assert.ok(schema, `no declared schema for ${id}`);
+    if (isTierRow(option.path)) {
+      // The tier rows' valid values come from the daemon's model definitions.
+      assert.deepEqual([schema.type, schema.default, 'enum' in schema, schema.scope], ['string', '', false, 'machine'], `${id}: a tier row carries no enum and default ''`);
+      for (const name of DEFINITION_NAMES) assert.ok(!String(schema.markdownDescription).includes(name), `${id}: its description names '${name}'`);
+      continue;
+    }
     assert.equal(schema.type, jsonType(option.type), `${id}: wrong type`);
     assert.deepEqual(schema.default, option.default, `${id}: wrong default`);
     assert.equal(schema.scope, 'machine', `${id}: scope must be 'machine'`);

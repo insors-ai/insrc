@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: currentRoutingContext is undefined outside an established run
+ok 1 - currentRoutingContext is undefined outside an established run
+  ---
+  duration_ms: 0.471708
+  type: 'test'
+  ...
+# Subtest: established context → a converted site resolves per-role via the ambient router
+ok 2 - established context → a converted site resolves per-role via the ambient router
+  ---
+  duration_ms: 1.518375
+  type: 'test'
+  ...
+# Subtest: unestablished context → resolveRoleProvider is byte-for-byte buildShaperProvider(cfg) (k3)
+ok 3 - unestablished context → resolveRoleProvider is byte-for-byte buildShaperProvider(cfg) (k3)
+  ---
+  duration_ms: 0.231208
+  type: 'test'
+  ...
+# Subtest: unestablished context → a claude-preserving legacyFallback is honoured (not dropped to Ollama)
+ok 4 - unestablished context → a claude-preserving legacyFallback is honoured (not dropped to Ollama)
+  ---
+  duration_ms: 0.167333
+  type: 'test'
+  ...
+# Subtest: established context with a nullish router throws (fail-loud, no silent legacy revert)
+ok 5 - established context with a nullish router throws (fail-loud, no silent legacy revert)
+  ---
+  duration_ms: 0.178167
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 316.188333

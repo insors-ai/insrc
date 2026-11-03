@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: tier-1 explicit-ref hit → deterministic, short-circuits (inferCandidates never called)
+ok 1 - tier-1 explicit-ref hit → deterministic, short-circuits (inferCandidates never called)
+  ---
+  duration_ms: 1.318458
+  type: 'test'
+  ...
+# Subtest: stale explicitRef (resolveRef null) → falls through to inference tiers
+ok 2 - stale explicitRef (resolveRef null) → falls through to inference tiers
+  ---
+  duration_ms: 0.134625
+  type: 'test'
+  ...
+# Subtest: graph candidate ≥ threshold → graph-ownership wins even when semantic scores higher (short-circuit)
+ok 3 - graph candidate ≥ threshold → graph-ownership wins even when semantic scores higher (short-circuit)
+  ---
+  duration_ms: 0.083833
+  type: 'test'
+  ...
+# Subtest: graph empty/below-threshold, semantic ≥ threshold → semantic
+ok 4 - graph empty/below-threshold, semantic ≥ threshold → semantic
+  ---
+  duration_ms: 0.065625
+  type: 'test'
+  ...
+# Subtest: semantic candidate just below threshold → defers to prompt (no silent attach)
+ok 5 - semantic candidate just below threshold → defers to prompt (no silent attach)
+  ---
+  duration_ms: 0.09025
+  type: 'test'
+  ...
+# Subtest: tied graph candidates at/above threshold → defers to prompt (no arbitrary pick)
+ok 6 - tied graph candidates at/above threshold → defers to prompt (no arbitrary pick)
+  ---
+  duration_ms: 0.11
+  type: 'test'
+  ...
+# Subtest: inferCandidates rejects/times out → degrades to prompt then standalone, never throws, never auto-attaches
+ok 7 - inferCandidates rejects/times out → degrades to prompt then standalone, never throws, never auto-attaches
+  ---
+  duration_ms: 0.122417
+  type: 'test'
+  ...
+# Subtest: inferCandidates returns a resolved {error}-shaped object → degrades to standalone, never throws
+ok 8 - inferCandidates returns a resolved {error}-shaped object → degrades to standalone, never throws
+  ---
+  duration_ms: 0.060417
+  type: 'test'
+  ...
+# Subtest: inferCandidates returns a well-typed array carrying a malformed element → filtered, degrades, no throw
+ok 9 - inferCandidates returns a well-typed array carrying a malformed element → filtered, degrades, no throw
+  ---
+  duration_ms: 0.241375
+  type: 'test'
+  ...
+# Subtest: empty defectDescription → semantic tier skipped, graph+prompt order preserved
+ok 10 - empty defectDescription → semantic tier skipped, graph+prompt order preserved
+  ---
+  duration_ms: 0.31675
+  type: 'test'
+  ...
+# Subtest: nothing clears threshold → promptForRef; a resolvable ref attaches (prompt tier)
+ok 11 - nothing clears threshold → promptForRef; a resolvable ref attaches (prompt tier)
+  ---
+  duration_ms: 0.133875
+  type: 'test'
+  ...
+# Subtest: prompt with an unresolvable / empty ref → standalone, parentRef=null
+ok 12 - prompt with an unresolvable / empty ref → standalone, parentRef=null
+  ---
+  duration_ms: 0.099333
+  type: 'test'
+  ...
+# Subtest: malformed input (no paths, no description, no ref) throws
+ok 13 - malformed input (no paths, no description, no ref) throws
+  ---
+  duration_ms: 0.216709
+  type: 'test'
+  ...
+# Subtest: ParentLocation shape invariant: parentRef non-null iff tier ≠ standalone; confidence ≥ threshold on attach
+ok 14 - ParentLocation shape invariant: parentRef non-null iff tier ≠ standalone; confidence ≥ threshold on attach
+  ---
+  duration_ms: 0.100333
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 189.365417

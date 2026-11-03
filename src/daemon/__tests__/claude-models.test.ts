@@ -48,6 +48,8 @@ test('claude-models.test.ts: claude.models lists the Claude-kind family in its s
 			{ id: 'cli-claude', cliKind: 'codex', displayName: 'A', models: [{ id: 'a', efforts: [] }], tierDefaults: { core: { model: 'a' }, mid: { model: 'a' }, cheap: { model: 'a' } }, summariserModel: 'a' },
 			{ id: 'cli-codex', cliKind: 'claude', displayName: 'B', models: [{ id: 'b-1', displayName: 'Bee One', efforts: [] }, { id: 'b-2', efforts: [] }], tierDefaults: { core: { model: 'b-1' }, mid: { model: 'b-1' }, cheap: { model: 'b-2' } }, summariserModel: 'b-2' },
 			{ id: 'ollama', displayName: 'O', models: [{ id: 'o:1', efforts: [], inputLimit: { unit: 'tokens', max: 4096 } }], toolLoopModel: 'o:1' },
+			{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+			{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 		],
 	}));
 	// One user-approved model of that family is served too.

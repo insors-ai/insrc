@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: CM-S3-STREAM: real socket done retains handler completion and late registered drains
+ok 1 - CM-S3-STREAM: real socket done retains handler completion and late registered drains
+  ---
+  duration_ms: 11.834958
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: real socket error retains handler completion and late registered drains
+ok 2 - CM-S3-STREAM: real socket error retains handler completion and late registered drains
+  ---
+  duration_ms: 2.69625
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains
+ok 3 - CM-S3-STREAM: real socket disconnect retains handler completion and late registered drains
+  ---
+  duration_ms: 2.588834
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains
+ok 4 - CM-S3-STREAM: real socket terminal-disconnect retains handler completion and late registered drains
+  ---
+  duration_ms: 3.71475
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup
+ok 5 - CM-S3-STREAM: throwing progress delivery retains actual handler and cleanup
+  ---
+  duration_ms: 1.366583
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup
+ok 6 - CM-S3-STREAM: throwing terminal delivery retains actual handler and cleanup
+  ---
+  duration_ms: 1.065458
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup
+ok 7 - CM-S3-STREAM: a thrown handler emits one error but holds registered cleanup
+  ---
+  duration_ms: 0.947875
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery
+ok 8 - CM-S3-STREAM: worker terminal acknowledges actual completion and drain independently of delivery
+  ---
+  duration_ms: 1.486541
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery
+ok 9 - CM-S3-STREAM: worker cancel acknowledges actual completion and drain independently of delivery
+  ---
+  duration_ms: 2.118541
+  type: 'test'
+  ...
+# Subtest: CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery
+ok 10 - CM-S3-STREAM: worker unary-fallback acknowledges actual completion and drain independently of delivery
+  ---
+  duration_ms: 1.211
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 341.216416

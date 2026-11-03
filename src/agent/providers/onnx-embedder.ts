@@ -1,3 +1,6 @@
+import { connectionExecutionErrorCode, ConnectionExecutionError } from '../../shared/step-context.js';
+import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -66,6 +69,8 @@ const NOMIC_DOCUMENT_PREFIX = 'search_document: ';
 
 /** Lazy pipeline reference — first embed call warms it. */
 let pipelinePromise: Promise<unknown> | undefined;
+/** Test-only warm pipeline seam; never grants Session access or loads a model. */
+export function _setOnnxPipelineForTest(pipeline?: unknown): void { assertNoSessionEmbedding(); pipelinePromise = pipeline === undefined ? undefined : Promise.resolve(pipeline); }
 
 /**
  * Configure HuggingFace transformers cache location before it's imported
@@ -79,6 +84,7 @@ function ensureCacheDir(): string {
 }
 
 async function getPipeline(): Promise<unknown> {
+	assertNoSessionEmbedding();
 	if (pipelinePromise !== undefined) return pipelinePromise;
 
 	pipelinePromise = (async () => {
@@ -106,6 +112,7 @@ async function getPipeline(): Promise<unknown> {
 	// If the load itself fails, clear the cache so a caller retry can
 	// re-attempt from scratch.
 	pipelinePromise.catch(err => {
+		if (connectionExecutionErrorCode(err)) { pipelinePromise = undefined; return; }
 		log.error({ err: (err as Error).message }, 'ONNX embedder failed to load');
 		pipelinePromise = undefined;
 	});
@@ -124,7 +131,8 @@ async function getPipeline(): Promise<unknown> {
  * The pipeline mean-pools token embeddings and L2-normalises the
  * output -- matches the way the model was trained.
  */
-export async function onnxEmbedQuery(text: string): Promise<number[]> {
+export async function onnxEmbedQuery(text: string, execution?: ConnectionExecutionContext): Promise<number[]> {
+	assertNoSessionEmbedding(execution);
 	const pipe = (await getPipeline()) as (
 		input: string | string[],
 		opts?: { pooling?: 'mean' | 'cls'; normalize?: boolean },
@@ -138,7 +146,8 @@ export async function onnxEmbedQuery(text: string): Promise<number[]> {
  * Embed a single document string. Wraps with nomic's
  * `search_document: ` prefix. Returns a 768-dim vector.
  */
-export async function onnxEmbedDocument(text: string): Promise<number[]> {
+export async function onnxEmbedDocument(text: string, execution?: ConnectionExecutionContext): Promise<number[]> {
+	assertNoSessionEmbedding(execution);
 	const pipe = (await getPipeline()) as (
 		input: string | string[],
 		opts?: { pooling?: 'mean' | 'cls'; normalize?: boolean },
@@ -153,7 +162,8 @@ export async function onnxEmbedDocument(text: string): Promise<number[]> {
  * data field is a flat Float32Array of length (batchSize * 768) — we
  * chunk it back into per-doc arrays.
  */
-export async function onnxEmbedDocuments(texts: string[]): Promise<number[][]> {
+export async function onnxEmbedDocuments(texts: string[], execution?: ConnectionExecutionContext): Promise<number[][]> {
+	assertNoSessionEmbedding(execution);
 	if (texts.length === 0) return [];
 	const pipe = (await getPipeline()) as (
 		input: string[],
@@ -182,11 +192,13 @@ export async function onnxEmbedDocuments(texts: string[]): Promise<number[][]> {
  * The first invocation may take 10-30 s on cold cache (downloads
  * model); subsequent probes return in <100 ms.
  */
-export async function isOnnxEmbedderAvailable(): Promise<boolean> {
+export async function isOnnxEmbedderAvailable(execution?: ConnectionExecutionContext): Promise<boolean> {
+	assertNoSessionEmbedding(execution);
 	try {
 		await getPipeline();
 		return true;
-	} catch {
+	} catch (error) {
+		const code = connectionExecutionErrorCode(error); if (code) throw new ConnectionExecutionError(code);
 		return false;
 	}
 }

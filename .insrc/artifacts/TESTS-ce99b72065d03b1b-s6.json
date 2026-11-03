@@ -1,0 +1,947 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s6",
+    "createdAt": "2026-10-26T19:37:41.399Z",
+    "updatedAt": "2026-10-26T19:51:41.424Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c6f35e07f",
+        "ranAt": "2026-10-26T19:38:28.714Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "gateway.test.ts: writeKey and writeKeyPath pass through the daemon's restartRequired, reason and detail, and fall back to 'refused' for a bare { ok:false }",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+                "title": "gateway.test.ts: writeKey and writeKeyPath pass through the daemon's restartRequired, reason and detail, and fall back to 'refused' for a bare { ok:false }",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+                "title": "applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+                "title": "the per-role key-map + engine + gateway modules import no 'vscode'",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/config/__tests__/gateway.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 358,
+            "titles": [
+              {
+                "title": "gateway.test.ts: writeKey and writeKeyPath pass through the daemon's restartRequired, reason and detail, and fall back to 'refused' for a bare { ok:false }",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 366,
+            "titles": [
+              {
+                "title": "applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid per-role tier without calling writeKeyPath, and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a per-role {ok:false}/reject reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a rawConfig() rejection writes no per-role keys and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "per-role idempotent no-op: re-applying the pulled value calls no writeKeyPath",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon gateway sends writeKeyPath as the config.write ARRAY form and rawConfig as config.show",
+                "result": "pass"
+              },
+              {
+                "title": "the per-role key-map + engine + gateway modules import no 'vscode'",
+                "result": "pass"
+              },
+              {
+                "title": "the gateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 371,
+            "titles": [
+              {
+                "title": "pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a catalog() rejection writes nothing and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon captures the last-synced snapshot so a re-apply of the same value is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a valid change maps native key -> path and writes exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid enum value without calling writeKey and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects a wrong-typed number without writing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a writeKey rejection reports a rejected write without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges ignores an unknown native key (drift-safe) — no write, no notify",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges advances the snapshot on a successful write so an immediate re-apply is a no-op",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 366,
+            "titles": [
+              {
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 380,
+            "titles": [
+              {
+                "title": "renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: an unregistered selected repo falls back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "c6f35e07f",
+        "ranAt": "2026-10-26T19:39:21.913Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+                "title": "commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+                "title": "registers exactly the five insrc.daemon.* commands",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/daemon/__tests__/commands.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 359,
+            "titles": [
+              {
+                "title": "registers exactly the five insrc.daemon.* commands",
+                "result": "pass"
+              },
+              {
+                "title": "the install command asks sc4 and calls install() ONLY on accepted",
+                "result": "pass"
+              },
+              {
+                "title": "each lifecycle command runs the action (no gate) and pushes the resulting state into sc2",
+                "result": "pass"
+              },
+              {
+                "title": "a failing action pushes errored + the mapped message into the status surface",
+                "result": "pass"
+              },
+              {
+                "title": "commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "c3e820454",
+        "ranAt": "2026-10-26T19:41:29.987Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "key-map.test.ts: buildConfigKeyMap over a manifest fixture takes type / enum / default from the manifest, maps tier keys as plain strings, skips plugin-local keys, and key-map.ts does not import the settings catalog",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/key-map.test.ts",
+                "title": "key-map.test.ts: buildConfigKeyMap over a manifest fixture takes type / enum / default from the manifest, maps tier keys as plain strings, skips plugin-local keys, and key-map.ts does not import the settings catalog",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manifest-catalog.test.ts: package.json contributes every catalog row, the tier rows without enum and with default ''",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+                "title": "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+                "title": "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync-manifest-catalog.test.ts: the committed manifest is in sync with the generator and the generator is idempotent",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles without the settings catalog",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+                "title": "applyChanges rejects an invalid enum value without calling writeKey and reports a reason",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+                "title": "applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/config/__tests__/key-map.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 372,
+            "titles": [
+              {
+                "title": "key-map.test.ts: buildConfigKeyMap over a manifest fixture takes type / enum / default from the manifest, maps tier keys as plain strings, skips plugin-local keys, and key-map.ts does not import the settings catalog",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/manifest-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 378,
+            "titles": [
+              {
+                "title": "declared global insrc.* keys EXACTLY cover the global CONFIG_CATALOG paths (no missing, no extra)",
+                "result": "pass"
+              },
+              {
+                "title": "each declared key's type/enum/default matches its ConfigOption, and scope is 'machine'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 398,
+            "titles": [
+              {
+                "title": "applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid per-role tier without calling writeKeyPath, and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a per-role {ok:false}/reject reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a rawConfig() rejection writes no per-role keys and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "per-role idempotent no-op: re-applying the pulled value calls no writeKeyPath",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon gateway sends writeKeyPath as the config.write ARRAY form and rawConfig as config.show",
+                "result": "pass"
+              },
+              {
+                "title": "the per-role key-map + engine + gateway modules import no 'vscode'",
+                "result": "pass"
+              },
+              {
+                "title": "the gateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 393,
+            "titles": [
+              {
+                "title": "pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a catalog() rejection writes nothing and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon captures the last-synced snapshot so a re-apply of the same value is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a valid change maps native key -> path and writes exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid enum value without calling writeKey and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects a wrong-typed number without writing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a writeKey rejection reports a rejected write without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges ignores an unknown native key (drift-safe) — no write, no notify",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges advances the snapshot on a successful write so an immediate re-apply is a no-op",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-manifest-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 840,
+            "titles": [
+              {
+                "title": "sync-manifest-catalog.test.ts: the committed manifest is in sync, and the script is idempotent on a stale copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1874,
+            "titles": [
+              {
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "f45e8d4e2",
+        "ranAt": "2026-10-26T19:44:36.093Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "manifest-key-map-engine.test.ts: native tier edits over the real merged key map are validated against the definitions and written whole; invalid edits revert; restartRequired calls onRestartRequired once",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts",
+                "title": "manifest-key-map-engine.test.ts: native tier edits over the real merged key map are validated against the definitions and written whole; invalid edits revert; restartRequired calls onRestartRequired once",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "sync-engine.test.ts and per-role-engine.test.ts: existing engine behaviour unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+                "title": "applyChanges on a valid change maps native key -> path and writes exactly once",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+                "title": "pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+                "title": "applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+                "title": "applyChanges on a daemon {ok:false} reports the reason AND reverts, without advancing the snapshot",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/config/__tests__/manifest-key-map-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 387,
+            "titles": [
+              {
+                "title": "manifest-key-map-engine.test.ts: native tier edits over the real merged key map are validated against the definitions and written whole; invalid edits revert; restartRequired calls onRestartRequired once",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/per-role-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 425,
+            "titles": [
+              {
+                "title": "applyChanges on a valid per-role change calls writeKeyPath with the segment array exactly once, NOT writeKey",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid per-role tier without calling writeKeyPath, and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a per-role {ok:false}/reject reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon reads the current per-role override from rawConfig at the dotted key (defaultTier when absent)",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a rawConfig() rejection writes no per-role keys and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "per-role idempotent no-op: re-applying the pulled value calls no writeKeyPath",
+                "result": "pass"
+              },
+              {
+                "title": "the daemon gateway sends writeKeyPath as the config.write ARRAY form and rawConfig as config.show",
+                "result": "pass"
+              },
+              {
+                "title": "the per-role key-map + engine + gateway modules import no 'vscode'",
+                "result": "pass"
+              },
+              {
+                "title": "the gateway references only config.catalog + config.show + config.write (no new IPC, no cloud/HTTP)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/sync-engine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 379,
+            "titles": [
+              {
+                "title": "pullFromDaemon writes each catalog value, and the ConfigOption.default for an omitted path",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon on a catalog() rejection writes nothing and notifies without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon captures the last-synced snapshot so a re-apply of the same value is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "pull publishes the snapshot for EVERY key so an echoed re-apply of the pulled values writes nothing (MED-1: activation echo suppression)",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a valid change maps native key -> path and writes exactly once",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects an invalid enum value without calling writeKey and reports a reason",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges rejects a wrong-typed number without writing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon {ok:false} reports a rejected write and does not advance the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a writeKey rejection reports a rejected write without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges ignores an unknown native key (drift-safe) — no write, no notify",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges advances the snapshot on a successful write so an immediate re-apply is a no-op",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 371,
+            "titles": [
+              {
+                "title": "applyChanges on an INVALID value reports the reason AND reverts the setting to the last-synced value",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon {ok:false} reports the reason AND reverts, without advancing the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "applyChanges on a daemon-unreachable write (rpc reject) reverts and never throws",
+                "result": "pass"
+              },
+              {
+                "title": "the revert is a loop-suppressed idempotent no-op: re-applying the reverted value writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "a rejected key with NO last-synced value reverts to option.default and pre-sets the snapshot (no unintended write)",
+                "result": "pass"
+              },
+              {
+                "title": "the revert's own settings.write failure is swallowed (applyChanges never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "pullFromDaemon reconciles: it republishes the daemon value over a stale local value + re-captures the snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "a Refresh (pullFromDaemon) while the daemon is unreachable notifies, changes nothing, and does not throw",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands",
+                "result": "pass"
+              },
+              {
+                "title": "the InsrcCommandId union includes insrc.settings.refresh and extension.ts wires it to pullFromDaemon",
+                "result": "pass"
+              },
+              {
+                "title": "insrc.advanced is NOT declared in S003 (escape-hatch deferred to a later story)",
+                "result": "pass"
+              },
+              {
+                "title": "the config engine still imports no vscode and calls only config.catalog/config.write/config.show",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "2b0929a14",
+        "ranAt": "2026-10-26T19:49:31.356Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/config/__tests__/vscode-bundle-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1897,
+            "titles": [
+              {
+                "title": "vscode-bundle-catalog.test.ts: the extension type-checks and bundles; its key map, loaded without backend node_modules, maps every settings-catalog row without bundling the catalog or the definitions file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 386,
+            "titles": [
+              {
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "2b0929a14",
+        "ranAt": "2026-10-26T19:50:45.493Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+                "title": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 376,
+            "titles": [
+              {
+                "title": "model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config",
+                "result": "pass"
+              },
+              {
+                "title": "model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "2b0929a14",
+        "ranAt": "2026-10-26T19:51:41.424Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 370,
+            "titles": [
+              {
+                "title": "renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: an unregistered selected repo falls back to picker-only",
+                "result": "pass"
+              },
+              {
+                "title": "renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent",
+                "result": "pass"
+              },
+              {
+                "title": "createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via sc2 + refresh; a writeKeyPath rejection is caught, never throws",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: repo-config.ts imports no vscode, no cloud; and reaches the daemon only via the sc8 writeKeyPath/rawConfig (k3)",
+                "result": "pass"
+              },
+              {
+                "title": "source-scan: the sc9 types amendment is ADDITIVE — S007 members added, no S004/S005/S006 member removed",
+                "result": "pass"
+              },
+              {
+                "title": "repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

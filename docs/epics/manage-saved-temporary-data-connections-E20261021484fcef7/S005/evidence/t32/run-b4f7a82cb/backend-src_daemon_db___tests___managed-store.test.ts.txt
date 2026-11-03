@@ -1,0 +1,48 @@
+TAP version 13
+# (node:6889) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S1-F: actual same-UID writeFile is fenced after digest validation; preopened descriptor writes only detached inode
+ok 1 - CM-S1-F: actual same-UID writeFile is fenced after digest validation; preopened descriptor writes only detached inode
+  ---
+  duration_ms: 692.025584
+  type: 'test'
+  ...
+# Subtest: CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth
+ok 2 - CM-S1-E: each atomic write failure preserves prior bytes or requires reconciliation to exact committed truth
+  ---
+  duration_ms: 1936.4575
+  type: 'test'
+  ...
+# Subtest: CM-S1-O: managed startup refuses direct legacy writes, envelope stripping, forged proofs and missing owner
+ok 3 - CM-S1-O: managed startup refuses direct legacy writes, envelope stripping, forged proofs and missing owner
+  ---
+  duration_ms: 139.784708
+  type: 'test'
+  ...
+# Subtest: CM-S1-F: privileged or failed permission proof disables adoption without changing the registry
+ok 4 - CM-S1-F: privileged or failed permission proof disables adoption without changing the registry
+  ---
+  duration_ms: 13.233709
+  type: 'test'
+  ...
+# Subtest: CM-S1-O: inode mode envelope and generation drift block writes instead of normalizing registry truth
+ok 5 - CM-S1-O: inode mode envelope and generation drift block writes instead of normalizing registry truth
+  ---
+  duration_ms: 786.525458
+  type: 'test'
+  ...
+# Subtest: CM-S1-F: an ineffective physical overwrite fence refuses adoption with exact registry bytes unchanged
+ok 6 - CM-S1-F: an ineffective physical overwrite fence refuses adoption with exact registry bytes unchanged
+  ---
+  duration_ms: 23.387959
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4550.64775

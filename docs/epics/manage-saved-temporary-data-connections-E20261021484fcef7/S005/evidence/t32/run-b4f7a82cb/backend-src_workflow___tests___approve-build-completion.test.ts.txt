@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: ac1: epic-batch sweep includes a pending BUILD; excludes an already-approved BUILD
+ok 1 - ac1: epic-batch sweep includes a pending BUILD; excludes an already-approved BUILD
+  ---
+  duration_ms: 56.606917
+  type: 'test'
+  ...
+# Subtest: ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass
+ok 2 - ac2: single BUILD + enforce ON + CR pass => completes, codeReview[] pass
+  ---
+  duration_ms: 44.354708
+  type: 'test'
+  ...
+# Subtest: ac3: BUILD + enforce ON + absent CR => withheld into skipped[], no approvedAt, codeReview[] no-review
+ok 3 - ac3: BUILD + enforce ON + absent CR => withheld into skipped[], no approvedAt, codeReview[] no-review
+  ---
+  duration_ms: 49.320459
+  type: 'test'
+  ...
+# Subtest: ac4: BUILD + enforce ON + absent CR + overrideReview => completes, override recorded
+ok 4 - ac4: BUILD + enforce ON + absent CR + overrideReview => completes, override recorded
+  ---
+  duration_ms: 54.727459
+  type: 'test'
+  ...
+# Subtest: ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] blocked
+ok 5 - ac5: BUILD + enforce ON + CR block => withheld into skipped[], codeReview[] blocked
+  ---
+  duration_ms: 69.837291
+  type: 'test'
+  ...
+# Subtest: ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)
+ok 6 - ac6: BUILD + enforce OFF + absent CR => withheld (completion requires a code review, whatever the setting)
+  ---
+  duration_ms: 96.360292
+  type: 'test'
+  ...
+# Subtest: ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off still demotes a blocking verdict to advisory
+ok 7 - ac6: BUILD + enforce OFF + a BLOCKING CR => completes: enforcement off still demotes a blocking verdict to advisory
+  ---
+  duration_ms: 56.196834
+  type: 'test'
+  ...
+# Subtest: ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)
+ok 8 - ac6: non-BUILD LLD + enforce ON + absent CR => completes (the withhold is BUILD-scoped)
+  ---
+  duration_ms: 8.609875
+  type: 'test'
+  ...
+# Subtest: ac6: a non-BUILD filename cannot hide BUILD workflow metadata from the common freshness boundary
+ok 9 - ac6: a non-BUILD filename cannot hide BUILD workflow metadata from the common freshness boundary
+  ---
+  duration_ms: 7.7405
+  type: 'test'
+  ...
+# Subtest: ac7: clean meta.review + BUILD withheld ONLY by the code-review gate (distinct from meta.review)
+ok 10 - ac7: clean meta.review + BUILD withheld ONLY by the code-review gate (distinct from meta.review)
+  ---
+  duration_ms: 58.450666
+  type: 'test'
+  ...
+# Subtest: ac7: epic batch withheld-BUILD + clean-LLD => BUILD skipped, LLD approved (non-lossy)
+ok 11 - ac7: epic batch withheld-BUILD + clean-LLD => BUILD skipped, LLD approved (non-lossy)
+  ---
+  duration_ms: 64.887917
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 808.409375

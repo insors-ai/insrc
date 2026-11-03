@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: insertList creates a list with a seed transfer entry
+ok 1 - insertList creates a list with a seed transfer entry
+  ---
+  duration_ms: 252.52625
+  type: 'test'
+  ...
+# Subtest: insertList rejects unknown owner / source
+ok 2 - insertList rejects unknown owner / source
+  ---
+  duration_ms: 7.314834
+  type: 'test'
+  ...
+# Subtest: insertList with parentListId validates session match
+ok 3 - insertList with parentListId validates session match
+  ---
+  duration_ms: 251.035375
+  type: 'test'
+  ...
+# Subtest: insertList with missing parent rejects
+ok 4 - insertList with missing parent rejects
+  ---
+  duration_ms: 273.098667
+  type: 'test'
+  ...
+# Subtest: insertItem creates an item under an existing list
+ok 5 - insertItem creates an item under an existing list
+  ---
+  duration_ms: 274.840583
+  type: 'test'
+  ...
+# Subtest: insertItem on missing list rejects
+ok 6 - insertItem on missing list rejects
+  ---
+  duration_ms: 278.183708
+  type: 'test'
+  ...
+# Subtest: listItems returns items sorted by order
+ok 7 - listItems returns items sorted by order
+  ---
+  duration_ms: 308.431667
+  type: 'test'
+  ...
+# Subtest: listItems supports fractional ordering for insert-between
+ok 8 - listItems supports fractional ordering for insert-between
+  ---
+  duration_ms: 275.490833
+  type: 'test'
+  ...
+# Subtest: insertComment + listCommentsForItem round-trip
+ok 9 - insertComment + listCommentsForItem round-trip
+  ---
+  duration_ms: 256.072458
+  type: 'test'
+  ...
+# Subtest: listCommentsForItem returns comments sorted by createdAt
+ok 10 - listCommentsForItem returns comments sorted by createdAt
+  ---
+  duration_ms: 227.200875
+  type: 'test'
+  ...
+# Subtest: updateComment updates body + agentAcknowledged
+ok 11 - updateComment updates body + agentAcknowledged
+  ---
+  duration_ms: 195.139708
+  type: 'test'
+  ...
+# Subtest: deleteComment removes the comment
+ok 12 - deleteComment removes the comment
+  ---
+  duration_ms: 201.587917
+  type: 'test'
+  ...
+# Subtest: updateItem rejects illegal status transitions
+ok 13 - updateItem rejects illegal status transitions
+  ---
+  duration_ms: 188.453667
+  type: 'test'
+  ...
+# Subtest: updateItem -> completed sets completedAt
+ok 14 - updateItem -> completed sets completedAt
+  ---
+  duration_ms: 283.729625
+  type: 'test'
+  ...
+# Subtest: updateItem -> blocked requires non-empty blockedReason
+ok 15 - updateItem -> blocked requires non-empty blockedReason
+  ---
+  duration_ms: 222.060416
+  type: 'test'
+  ...
+# Subtest: updateList rejects illegal status transitions
+ok 16 - updateList rejects illegal status transitions
+  ---
+  duration_ms: 163.063917
+  type: 'test'
+  ...
+# Subtest: transferList changes owner + appends transfer history
+ok 17 - transferList changes owner + appends transfer history
+  ---
+  duration_ms: 212.388
+  type: 'test'
+  ...
+# Subtest: reparentList sets the parent
+ok 18 - reparentList sets the parent
+  ---
+  duration_ms: 236.667459
+  type: 'test'
+  ...
+# Subtest: reparentList rejects cycles
+ok 19 - reparentList rejects cycles
+  ---
+  duration_ms: 181.83825
+  type: 'test'
+  ...
+# Subtest: assertParentAllowed accepts valid hierarchies
+ok 20 - assertParentAllowed accepts valid hierarchies
+  ---
+  duration_ms: 232.254958
+  type: 'test'
+  ...
+# Subtest: listListsBySession returns roots first then children
+ok 21 - listListsBySession returns roots first then children
+  ---
+  duration_ms: 222.070542
+  type: 'test'
+  ...
+# Subtest: listListsBySession filters by includeArchived flag
+ok 22 - listListsBySession filters by includeArchived flag
+  ---
+  duration_ms: 286.649
+  type: 'test'
+  ...
+# Subtest: listAllLists filters by status + source
+ok 23 - listAllLists filters by status + source
+  ---
+  duration_ms: 246.632125
+  type: 'test'
+  ...
+# Subtest: deleteItem removes the item + its comments
+ok 24 - deleteItem removes the item + its comments
+  ---
+  duration_ms: 270.458916
+  type: 'test'
+  ...
+# Subtest: deleteList cascades through items + comments
+ok 25 - deleteList cascades through items + comments
+  ---
+  duration_ms: 269.761875
+  type: 'test'
+  ...
+# Subtest: deleteListsBySession returns the count
+ok 26 - deleteListsBySession returns the count
+  ---
+  duration_ms: 266.758917
+  type: 'test'
+  ...
+# Subtest: lists + items + comments survive close + reopen
+ok 27 - lists + items + comments survive close + reopen
+  ---
+  duration_ms: 238.161333
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6563.17425

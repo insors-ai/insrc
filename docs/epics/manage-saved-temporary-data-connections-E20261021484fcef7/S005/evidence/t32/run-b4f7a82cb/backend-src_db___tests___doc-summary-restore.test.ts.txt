@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: restore writes a backup summary whose document is stored with the same body, by either model, and counts already-present, gone, changed and undecodable rows
+ok 1 - restore writes a backup summary whose document is stored with the same body, by either model, and counts already-present, gone, changed and undecodable rows
+  ---
+  duration_ms: 240.943833
+  type: 'test'
+  ...
+# Subtest: a second restore writes nothing and the backup file is unchanged
+ok 2 - a second restore writes nothing and the backup file is unchanged
+  ---
+  duration_ms: 225.491709
+  type: 'test'
+  ...
+# Subtest: a backup lacking entity_string_by_u64 is rejected, nothing is written and the backup is closed
+ok 3 - a backup lacking entity_string_by_u64 is rejected, nothing is written and the backup is closed
+  ---
+  duration_ms: 238.28225
+  type: 'test'
+  ...
+# Subtest: restore refuses a relative path, a missing file, a directory and the live store, before opening anything
+ok 4 - restore refuses a relative path, a missing file, a directory and the live store, before opening anything
+  ---
+  duration_ms: 173.212875
+  type: 'test'
+  ...
+# Subtest: a backup file whose name has no extension is read as a single-file store
+ok 5 - a backup file whose name has no extension is read as a single-file store
+  ---
+  duration_ms: 230.644667
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1433.337458

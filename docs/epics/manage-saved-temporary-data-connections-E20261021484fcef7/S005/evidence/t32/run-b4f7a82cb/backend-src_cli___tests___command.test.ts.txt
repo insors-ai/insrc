@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: help lists the command reference
+ok 1 - help lists the command reference
+  ---
+  duration_ms: 1.689916
+  type: 'test'
+  ...
+# Subtest: repo add without --steering passes no steering (no silent write)
+ok 2 - repo add without --steering passes no steering (no silent write)
+  ---
+  duration_ms: 0.337333
+  type: 'test'
+  ...
+# Subtest: repo add --steering installs both CLAUDE.md + AGENTS.md
+ok 3 - repo add --steering installs both CLAUDE.md + AGENTS.md
+  ---
+  duration_ms: 0.171042
+  type: 'test'
+  ...
+# Subtest: repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)
+ok 4 - repo add --steering=claude installs CLAUDE.md only (path parsed past the flag)
+  ---
+  duration_ms: 0.153083
+  type: 'test'
+  ...
+# Subtest: repo add dispatches to repo.add with the path
+ok 5 - repo add dispatches to repo.add with the path
+  ---
+  duration_ms: 0.084125
+  type: 'test'
+  ...
+# Subtest: daemon status renders a one-line summary
+ok 6 - daemon status renders a one-line summary
+  ---
+  duration_ms: 0.144875
+  type: 'test'
+  ...
+# Subtest: config list shows known options (default) merged with set values
+ok 7 - config list shows known options (default) merged with set values
+  ---
+  duration_ms: 0.373208
+  type: 'test'
+  ...
+# Subtest: config list <search> filters options by substring
+ok 8 - config list <search> filters options by substring
+  ---
+  duration_ms: 0.256708
+  type: 'test'
+  ...
+# Subtest: config get navigates a dot-path
+ok 9 - config get navigates a dot-path
+  ---
+  duration_ms: 0.364792
+  type: 'test'
+  ...
+# Subtest: config set parses JSON values (number) and writes the dot-path
+ok 10 - config set parses JSON values (number) and writes the dot-path
+  ---
+  duration_ms: 0.42475
+  type: 'test'
+  ...
+# Subtest: config set keeps a non-JSON token as a string
+ok 11 - config set keeps a non-JSON token as a string
+  ---
+  duration_ms: 0.089083
+  type: 'test'
+  ...
+# Subtest: command.test.ts: config set / unset refuse model keys and report refusals and restartRequired
+ok 12 - command.test.ts: config set / unset refuse model keys and report refusals and restartRequired
+  ---
+  duration_ms: 0.209833
+  type: 'test'
+  ...
+# Subtest: pane switches the active pane
+ok 13 - pane switches the active pane
+  ---
+  duration_ms: 0.067083
+  type: 'test'
+  ...
+# Subtest: quit calls exit
+ok 14 - quit calls exit
+  ---
+  duration_ms: 0.078125
+  type: 'test'
+  ...
+# Subtest: unknown command is reported, not thrown
+ok 15 - unknown command is reported, not thrown
+  ---
+  duration_ms: 0.085292
+  type: 'test'
+  ...
+# Subtest: service errors surface as a line, not a throw
+ok 16 - service errors surface as a line, not a throw
+  ---
+  duration_ms: 0.170875
+  type: 'test'
+  ...
+# Subtest: workflow review renders verdict, counts, auto-fixes, and pending findings
+ok 17 - workflow review renders verdict, counts, auto-fixes, and pending findings
+  ---
+  duration_ms: 0.29825
+  type: 'test'
+  ...
+# Subtest: workflow approve --override threads the reason to approve
+ok 18 - workflow approve --override threads the reason to approve
+  ---
+  duration_ms: 0.083584
+  type: 'test'
+  ...
+# Subtest: workflow approve surfaces a review block as a line, not a throw
+ok 19 - workflow approve surfaces a review block as a line, not a throw
+  ---
+  duration_ms: 0.082916
+  type: 'test'
+  ...
+# Subtest: workflow run streams progress via onLog and reports path + review verdict
+ok 20 - workflow run streams progress via onLog and reports path + review verdict
+  ---
+  duration_ms: 0.0965
+  type: 'test'
+  ...
+# Subtest: workflow findings lists pending, workflow resolve resolves one (R3)
+ok 21 - workflow findings lists pending, workflow resolve resolves one (R3)
+  ---
+  duration_ms: 0.149333
+  type: 'test'
+  ...
+# Subtest: daemon status adds the store failure line when the status carries it
+ok 22 - daemon status adds the store failure line when the status carries it
+  ---
+  duration_ms: 0.089084
+  type: 'test'
+  ...
+# Subtest: workflow review says when the source roots could not be read from the index
+ok 23 - workflow review says when the source roots could not be read from the index
+  ---
+  duration_ms: 0.101667
+  type: 'test'
+  ...
+# Subtest: team init writes the starter and reports its path
+ok 24 - team init writes the starter and reports its path
+  ---
+  duration_ms: 0.108958
+  type: 'test'
+  ...
+# Subtest: team refresh runs the refresh and reports the outcome
+ok 25 - team refresh runs the refresh and reports the outcome
+  ---
+  duration_ms: 0.191958
+  type: 'test'
+  ...
+# Subtest: team refresh --branch passes the name through and renders the refusal that asks for it
+ok 26 - team refresh --branch passes the name through and renders the refusal that asks for it
+  ---
+  duration_ms: 0.164167
+  type: 'test'
+  ...
+# Subtest: a thrown error from either team command renders as a cross-prefixed line
+ok 27 - a thrown error from either team command renders as a cross-prefixed line
+  ---
+  duration_ms: 0.08825
+  type: 'test'
+  ...
+# Subtest: command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down
+ok 28 - command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down
+  ---
+  duration_ms: 0.370917
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 267.673125

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: erDefinitionToIr: sections = Purpose + Fields & schema + Legend
+ok 1 - erDefinitionToIr: sections = Purpose + Fields & schema + Legend
+  ---
+  duration_ms: 1.340833
+  type: 'test'
+  ...
+# Subtest: sequenceDefinitionToIr: sections = Purpose + Participants & message flow + Legend
+ok 2 - sequenceDefinitionToIr: sections = Purpose + Participants & message flow + Legend
+  ---
+  duration_ms: 0.232959
+  type: 'test'
+  ...
+# Subtest: empty-but-valid definitions emit Purpose + Legend only (field section omitted, no throw)
+ok 3 - empty-but-valid definitions emit Purpose + Legend only (field section omitted, no throw)
+  ---
+  duration_ms: 0.067041
+  type: 'test'
+  ...
+# Subtest: toIr does not mutate the input definition (read-only derivation)
+ok 4 - toIr does not mutate the input definition (read-only derivation)
+  ---
+  duration_ms: 0.3715
+  type: 'test'
+  ...
+# Subtest: renderErCompanion writes the source document link and context line from the header
+ok 5 - renderErCompanion writes the source document link and context line from the header
+  ---
+  duration_ms: 22.943834
+  type: 'test'
+  ...
+# Subtest: renderSequenceCompanion writes the narrative and the description tables beside the diagram
+ok 6 - renderSequenceCompanion writes the narrative and the description tables beside the diagram
+  ---
+  duration_ms: 19.28425
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 339.022542

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: HIGH inventory finding when claim says two but ripgrep finds three
+ok 1 - HIGH inventory finding when claim says two but ripgrep finds three
+  ---
+  duration_ms: 169.388875
+  type: 'test'
+  ...
+# Subtest: citation confirmed by path:line read is LOW
+ok 2 - citation confirmed by path:line read is LOW
+  ---
+  duration_ms: 18.90625
+  type: 'test'
+  ...
+# Subtest: verdict is block when HIGH present, pass when all LOW
+ok 3 - verdict is block when HIGH present, pass when all LOW
+  ---
+  duration_ms: 53.937833
+  type: 'test'
+  ...
+# Subtest: gatherEvidence sets truncated when matches exceed the cap
+ok 4 - gatherEvidence sets truncated when matches exceed the cap
+  ---
+  duration_ms: 10.925542
+  type: 'test'
+  ...
+# Subtest: auto finding yields artifactEdits whose find is a real substring; manual yields options and no edits
+ok 5 - auto finding yields artifactEdits whose find is a real substring; manual yields options and no edits
+  ---
+  duration_ms: 17.040667
+  type: 'test'
+  ...
+# Subtest: renderReviewReport emits a verdict header, a table, and orders HIGH first
+ok 6 - renderReviewReport emits a verdict header, a table, and orders HIGH first
+  ---
+  duration_ms: 18.974375
+  type: 'test'
+  ...
+# Subtest: gatherEvidence notes a file that EXISTS on disk but is named in no file body (probe fix)
+ok 7 - gatherEvidence notes a file that EXISTS on disk but is named in no file body (probe fix)
+  ---
+  duration_ms: 14.888458
+  type: 'test'
+  ...
+# Subtest: a premise call that fails once is retried as a fresh call and judged; the review completes
+ok 8 - a premise call that fails once is retried as a fresh call and judged; the review completes
+  ---
+  duration_ms: 21.891167
+  type: 'test'
+  ...
+# Subtest: a premise call that fails twice is recorded as not judged, never as a pass, and every other premise is kept
+ok 9 - a premise call that fails twice is recorded as not judged, never as a pass, and every other premise is kept
+  ---
+  duration_ms: 20.282917
+  type: 'test'
+  ...
+# Subtest: every premise judgement carries the design-verify cap and silence limit
+ok 10 - every premise judgement carries the design-verify cap and silence limit
+  ---
+  duration_ms: 20.103625
+  type: 'test'
+  ...
+# Subtest: a cancelled review still ends at once instead of recording the premise as not judged
+ok 11 - a cancelled review still ends at once instead of recording the premise as not judged
+  ---
+  duration_ms: 19.02
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 654.166458

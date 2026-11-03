@@ -1,0 +1,83 @@
+TAP version 13
+# Subtest: CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views
+not ok 1 - CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views
+  ---
+  duration_ms: 34827.177417
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-owner.test.ts:1:92'
+  failureType: 'testCodeFailure'
+  error: |-
+    Focused JUnit validation failed: Calculating task graph as no cached configuration is available for tasks: test --tests ai.insors.insrc.jetbrains.connections.ConnectionsSessionServiceTest
+    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED
+    > Task :bundleBackendAssets UP-TO-DATE
+    > Task :initializeIntellijPlatformPlugin
+    > Task :generateManifest UP-TO-DATE
+    > Task :patchPluginXml UP-TO-DATE
+    > Task :compileKotlin UP-TO-DATE
+    > Task :verifyPluginProjectConfiguration UP-TO-DATE
+    > Task :processResources UP-TO-DATE
+    > Task :processTestResources UP-TO-DATE
+    > Task :compileJava NO-SOURCE
+    > Task :classes UP-TO-DATE
+    > Task :instrumentCode
+    > Task :jar
+    > Task :instrumentedJar
+    > Task :composedJar
+    > Task :prepareTestSandbox
+    > Task :prepareTest
+    > Task :compileTestKotlin
+    > Task :compileTestJava NO-SOURCE
+    > Task :testClasses UP-TO-DATE
+    > Task :instrumentTestCode
+    
+    > Task :test
+    
+    ConnectionsSessionServiceTest > testTwoActualProjectsWithSameRegisteredRootHaveIndependentOwnersAndProjectTeardown FAILED
+        java.lang.AssertionError at ConnectionsSessionServiceTest.kt:80
+    
+    ConnectionsSessionServiceTest > testActualProjectContainerOwnsServiceAndViewDisposalLeavesSessionAlive FAILED
+        java.lang.IllegalStateException at ConnectionsSessionServiceTest.kt:48
+    
+    > Task :test FAILED
+    16 actionable tasks: 9 executed, 7 up-to-date
+    Configuration cache entry stored.
+    
+    
+    2 tests completed, 2 failed
+    
+    FAILURE: Build failed with an exception.
+    
+    * What went wrong:
+    Execution failed for task ':test'.
+    > There were failing tests. See the report at: file:///Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/build/reports/tests/test/index.html
+    
+    * Try:
+    > Run with --scan to get full insights.
+    
+    BUILD FAILED in 34s
+    
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    runConnectionJUnit (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/fixtures/connection-junit.ts:16:10)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-owner.test.ts:5:2)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.start (node:internal/test_runner/test:944:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 35081.983375

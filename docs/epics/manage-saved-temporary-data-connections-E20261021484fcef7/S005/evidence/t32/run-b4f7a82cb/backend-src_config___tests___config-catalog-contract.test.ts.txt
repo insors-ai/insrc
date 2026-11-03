@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: src/config/** contains no import of src/cli (static scan of resolved specifiers)
+ok 1 - src/config/** contains no import of src/cli (static scan of resolved specifiers)
+  ---
+  duration_ms: 4.189792
+  type: 'test'
+  ...
+# Subtest: src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption
+ok 2 - src/config/config-catalog.ts is the single definition site of CONFIG_CATALOG and ConfigOption
+  ---
+  duration_ms: 0.318875
+  type: 'test'
+  ...
+# Subtest: the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)
+ok 3 - the src/cli re-export is reference-identical to the src/config definition (no duplicate literal)
+  ---
+  duration_ms: 0.053375
+  type: 'test'
+  ...
+# Subtest: the real CONFIG_CATALOG has 48 rows (models.shaper.ollamaNumCtx retired; flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows + daemon.threads.sessionIdleMs)
+ok 4 - the real CONFIG_CATALOG has 48 rows (models.shaper.ollamaNumCtx retired; flat models.* surface; shaper*/summariser* now derived; + three models.tiers.*.effort rows + codeReview.enforce + codeReview.freshnessTimeoutMs + codeReview.daemonReviewCeilingMs + codeReview.daemonReviewIdleMs + models.local.embeddingKeepAlive + five designReview.* rows + analyzer.dataSourceListingTimeoutMs + review.chunkTokens + daemon.threads.enabled + four daemon.maintenance.* rows + daemon.threads.sessionIdleMs)
+  ---
+  duration_ms: 0.128167
+  type: 'test'
+  ...
+# Subtest: RETIRED_PATHS covers exactly the 7 declared legacy entries and is disjoint from every CONFIG_CATALOG path
+ok 5 - RETIRED_PATHS covers exactly the 7 declared legacy entries and is disjoint from every CONFIG_CATALOG path
+  ---
+  duration_ms: 0.908542
+  type: 'test'
+  ...
+# Subtest: real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate
+ok 6 - real CONFIG_CATALOG self-consistency: every row in-domain, every default satisfies its predicate
+  ---
+  duration_ms: 0.157333
+  type: 'test'
+  ...
+# Subtest: reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false
+ok 7 - reconcileConfig({}, CONFIG_CATALOG) is idempotent on the real catalog — second pass changed === false
+  ---
+  duration_ms: 0.207708
+  type: 'test'
+  ...
+# Subtest: ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)
+ok 8 - ConfigCatalogError is the class thrown for catalog-integrity failures (not a bare Error)
+  ---
+  duration_ms: 0.172542
+  type: 'test'
+  ...
+# Subtest: enrichment (S001): every catalog row has a non-empty group
+ok 9 - enrichment (S001): every catalog row has a non-empty group
+  ---
+  duration_ms: 0.22475
+  type: 'test'
+  ...
+# Subtest: enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it
+ok 10 - enrichment (S001): every enum row carries a non-empty enumValues; every non-enum row omits it
+  ---
+  duration_ms: 0.325958
+  type: 'test'
+  ...
+# Subtest: the config catalog declares codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs with their defaults
+ok 11 - the config catalog declares codeReview.daemonReviewCeilingMs and codeReview.daemonReviewIdleMs with their defaults
+  ---
+  duration_ms: 0.085417
+  type: 'test'
+  ...
+# Subtest: the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default '' (48 rows)
+ok 12 - the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default '' (48 rows)
+  ---
+  duration_ms: 0.066042
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 202.864125

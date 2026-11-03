@@ -1246,9 +1246,10 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
  */
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
-  chars:  134749,
-  bytes:  134813,
-  sha256: '6f35df398d5a4756659f5db5c3969412a76fbefd333ea4246b3707af1e0e747a',
+  // ISSUE-7fa297efd4bd1c59: the presented strip (markup + CSS + rvPresented renderer) in the shell.
+  chars:  136357,
+  bytes:  136421,
+  sha256: '7e42432980d18eb93cb31192a3253f1ed8d235b417398c8f47e98788f15eb080',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -5624,6 +5625,77 @@ test('openArtifact opens a non-pending artifact with feedback only, and a pendin
   w2.deliver({ artifactId: 'LLD-abc-s7', markdown: '# Doc', openQuestions: [], blocked: false, commentable: true });
   assert.deepEqual(w2.controls(), ALL_ON);
   assert.equal(w2.bar.state.textContent, 'pending review');
+});
+
+test('ISSUE-7fa297efd4bd1c59: quiet (chat-presented) opens accumulate and ride `presented` on every docs-content, so no presented document is silently replaced', async () => {
+  const fc = fakeChannel();
+  const { client } = fakeClient({
+    pending: () => [
+      { id: 'BUILD-abc-s7', kind: 'BUILD', title: 'Build record', status: 'pending' },
+      { id: 'CR-abc-s7', kind: 'CR', title: 'Code review', status: 'pending' },
+    ],
+  });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client });
+  // Two documents presented in one turn: two quiet opens in a row.
+  host.openArtifact({ artifactId: 'BUILD-abc-s7', mdPath: 'docs/e/S007/BUILD.md', quiet: true });
+  await tick(); await tick();
+  host.openArtifact({ artifactId: 'CR-abc-s7', mdPath: 'docs/e/S007/CR.md', quiet: true });
+  await tick(); await tick();
+  const contents = fc.posted.filter((p) => p.payload.type === 'docs-content');
+  assert.ok(contents.length >= 2, 'both opens posted content');
+  // The first presented doc's content already carries the presented list (one entry: the strip stays hidden at one).
+  const first = contents.find((p) => p.payload.artifactId === 'BUILD-abc-s7')!;
+  assert.deepEqual(first.payload['presented'], ['BUILD-abc-s7']);
+  // The second (last shown) carries BOTH, in order — nothing presented is dropped from the record.
+  const last = contents.at(-1)!;
+  assert.equal(last.payload.artifactId, 'CR-abc-s7', 'the last presented document is the one shown (unchanged behavior)');
+  assert.deepEqual(last.payload['presented'], ['BUILD-abc-s7', 'CR-abc-s7'], 'every presented document stays reachable');
+  // A non-quiet open (a list-row click) does not add to the presented list.
+  host.openArtifact({ artifactId: 'BUILD-abc-s7', mdPath: 'docs/e/S007/BUILD.md' });
+  await tick(); await tick();
+  const after = fc.posted.filter((p) => p.payload.type === 'docs-content').at(-1)!;
+  assert.deepEqual(after.payload['presented'], ['BUILD-abc-s7', 'CR-abc-s7'], 'list-row opens are not presentations');
+  // dispose clears the presented list.
+  host.dispose();
+  assert.equal(renderShellFor(SHELL_BASELINE.nonce).includes('insrc-rv-presented'), true, 'the shell carries the presented strip element');
+});
+
+test('ISSUE-6dbf14435972af7a: the pane polls the pending list and re-renders the open document when its pending membership changes externally (e.g. approved from the chat)', async () => {
+  const timers: Array<() => void> = [];
+  const setTimer = (fn: () => void): { cancel(): void } => {
+    timers.push(fn);
+    return { cancel: () => { const i = timers.indexOf(fn); if (i >= 0) timers.splice(i, 1); } };
+  };
+  let pendingList: DocsArtifactSummary[] = [{ id: 'LLD-abc-s7', kind: 'LLD', title: 't', status: 'pending' }];
+  const fc = fakeChannel();
+  const { client } = fakeClient({ pending: () => pendingList });
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client, pollTimer: setTimer, pollMs: 10 });
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: 'docs/e/S007/LLD.md' });
+  await tick(); await tick();
+  const before = fc.posted.filter((p) => p.payload.type === 'docs-content').length;
+  assert.ok(before >= 1);
+  // An external decision removes the artifact from the pending list; fire the poll tick.
+  pendingList = [];
+  timers.splice(0).forEach((fn) => fn());
+  await tick(); await tick(); await tick(); await tick();
+  const contents = fc.posted.filter((p) => p.payload.type === 'docs-content');
+  assert.ok(contents.length > before, 'the open document was re-read when its pending membership changed');
+  const last = contents.at(-1)!;
+  assert.equal(last.payload.artifactId, 'LLD-abc-s7');
+  assert.equal(last.payload['readOnly'], true, 'decided elsewhere: the outcome is shown, no decision buttons');
+  // The list was re-posted without the decided artifact.
+  const lists = fc.posted.filter((p) => p.payload.type === 'docs-list');
+  assert.deepEqual((lists.at(-1)!.payload as { artifacts: unknown[] }).artifacts, []);
+  host.dispose();
+  assert.equal(timers.length, 0, 'dispose cancels the poll');
+});
+
+test('ISSUE-7fa297efd4bd1c59: the shell renders the presented strip only for more than one presented document (rvPresented guard)', () => {
+  const html = renderShellFor(SHELL_BASELINE.nonce);
+  assert.ok(html.includes('function rvPresented(list)'), 'the strip renderer ships in the shell script');
+  assert.ok(html.includes("list.length<2"), 'one or zero presented documents show no strip (single-doc behavior unchanged)');
+  assert.ok(html.includes("type:'open-doc',artifactId:id"), 'a strip button re-opens that document through the list-row open path');
+  assert.ok(html.includes('Presented for review ('), 'the strip is labelled with the count');
 });
 
 test('openArtifact on a cold pane decides pending from its own pending read, even when the boot ping\'s refresh is superseded', async () => {

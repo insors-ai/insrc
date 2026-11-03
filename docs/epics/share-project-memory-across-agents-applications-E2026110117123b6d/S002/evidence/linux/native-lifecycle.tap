@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: options-fail-before-side-effects
+ok 1 - options-fail-before-side-effects
+  ---
+  duration_ms: 6.220708
+  type: 'test'
+  ...
+# Subtest: canonical-root-and-readonly-layout-validation
+ok 2 - canonical-root-and-readonly-layout-validation
+  ---
+  duration_ms: 14.865817
+  type: 'test'
+  ...
+# Subtest: same-process-package-copy-thread-process-contention
+ok 3 - same-process-package-copy-thread-process-contention
+  ---
+  duration_ms: 649.322547
+  type: 'test'
+  ...
+# Subtest: killed-owner-release-stopped-owner-exclusion-and-aliases
+ok 4 - killed-owner-release-stopped-owner-exclusion-and-aliases
+  ---
+  duration_ms: 98.064556
+  type: 'test'
+  ...
+# Subtest: node22-fs-ext-abi-and-separate-descriptor-probe
+ok 5 - node22-fs-ext-abi-and-separate-descriptor-probe
+  ---
+  duration_ms: 18.69503
+  type: 'test'
+  ...
+# Subtest: native-load-failure-is-not-ready
+ok 6 - native-load-failure-is-not-ready
+  ---
+  duration_ms: 0.463819
+  type: 'test'
+  ...
+# Subtest: exclusive-descriptor-and-owned-bootstrap
+ok 7 - exclusive-descriptor-and-owned-bootstrap
+  ---
+  duration_ms: 39.355252
+  type: 'test'
+  ...
+# Subtest: native-callback-cleanup-and-inode-faults
+ok 8 - native-callback-cleanup-and-inode-faults
+  ---
+  duration_ms: 19.82101
+  type: 'test'
+  ...
+# Subtest: layout-state-is-decided-under-ownership-after-one-preflight
+ok 9 - layout-state-is-decided-under-ownership-after-one-preflight
+  ---
+  duration_ms: 31.307922
+  type: 'test'
+  ...
+# Subtest: idempotent-drain-close-and-provider-ownership
+ok 10 - idempotent-drain-close-and-provider-ownership
+  ---
+  duration_ms: 10.326353
+  type: 'test'
+  ...
+# Subtest: public-service-accepted-status-and-unavailable-semantic-capabilities
+ok 11 - public-service-accepted-status-and-unavailable-semantic-capabilities
+  ---
+  duration_ms: 187.627077
+  type: 'test'
+  ...
+# Subtest: all-quiescent-participants-close-before-unverified-ownership-is-retained
+ok 12 - all-quiescent-participants-close-before-unverified-ownership-is-retained
+  ---
+  duration_ms: 0.4315
+  type: 'test'
+  ...
+# Subtest: drain-close-startup-failure-preserve-backlog-and-ownership
+ok 13 - drain-close-startup-failure-preserve-backlog-and-ownership
+  ---
+  duration_ms: 143.316992
+  type: 'test'
+  ...
+# Subtest: queue-limit-validation-precedes-directory-ownership
+ok 14 - queue-limit-validation-precedes-directory-ownership
+  ---
+  duration_ms: 1.693213
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1009.85899

@@ -1,0 +1,78 @@
+TAP version 13
+# (node:77633) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead
+ok 1 - chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead
+  ---
+  duration_ms: 28.360334
+  type: 'test'
+  ...
+# Subtest: chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs
+ok 2 - chat host outbox: cancelling a waiting message removes it from the queue and the outbox, and it never runs
+  ---
+  duration_ms: 727.748417
+  type: 'test'
+  ...
+# Subtest: chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs
+ok 3 - chat host outbox: resending a failed message queues the same text and attachments at the back under this window's key, and it runs
+  ---
+  duration_ms: 14.971042
+  type: 'test'
+  ...
+# Subtest: chat host outbox: a refused action is re-posted with its note, a seq of another chat is ignored, and a taken message leaves the outbox
+ok 4 - chat host outbox: a refused action is re-posted with its note, a seq of another chat is ignored, and a taken message leaves the outbox
+  ---
+  duration_ms: 620.408458
+  type: 'test'
+  ...
+# Subtest: chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places
+ok 5 - chat host outbox: after the host is rebuilt over the same queue file and its webview is ready, the outbox shows the same messages in the same places
+  ---
+  duration_ms: 21.194417
+  type: 'test'
+  ...
+# Subtest: chat host outbox: while another window's running message waits on an approval, this window's outbox says which chat it waits on, and the line clears once the card is answered
+ok 6 - chat host outbox: while another window's running message waits on an approval, this window's outbox says which chat it waits on, and the line clears once the card is answered
+  ---
+  duration_ms: 2010.209166
+  type: 'test'
+  ...
+# Subtest: chat host outbox: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends
+ok 7 - chat host outbox: a review-pane decision sent while a turn runs waits in the outbox as origin review-pane, leaves the running turn and its waiting card alone, and runs when the turn ends
+  ---
+  duration_ms: 26.53775
+  type: 'test'
+  ...
+# Subtest: chat host outbox: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready
+ok 8 - chat host outbox: submitExternal on a closed panel opens it, saves the chat, queues a review-pane row, and the message runs in order once the webview is ready
+  ---
+  duration_ms: 13.820583
+  type: 'test'
+  ...
+# Subtest: chat host outbox: a decision queued before the panel or window closes is still in the queue file afterwards
+ok 9 - chat host outbox: a decision queued before the panel or window closes is still in the queue file afterwards
+  ---
+  duration_ms: 8.805208
+  type: 'test'
+  ...
+# Subtest: chat host outbox: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing
+ok 10 - chat host outbox: submitExternal with no CLI, blank text, a full queue and a busy queue each returns unavailable with its own note and queues nothing
+  ---
+  duration_ms: 40.958708
+  type: 'test'
+  ...
+# Subtest: chat host outbox: a queued message with an attachment keeps it and sends it when the message runs
+ok 11 - chat host outbox: a queued message with an attachment keeps it and sends it when the message runs
+  ---
+  duration_ms: 15.648
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3882.311334

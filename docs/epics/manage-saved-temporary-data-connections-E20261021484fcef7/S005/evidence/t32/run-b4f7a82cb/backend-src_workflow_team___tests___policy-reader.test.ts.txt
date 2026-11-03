@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: reads the policy from the remote default branch's tracking ref
+ok 1 - reads the policy from the remote default branch's tracking ref
+  ---
+  duration_ms: 434.264
+  type: 'test'
+  ...
+# Subtest: a working-tree edit has no effect
+ok 2 - a working-tree edit has no effect
+  ---
+  duration_ms: 409.524833
+  type: 'test'
+  ...
+# Subtest: a feature-branch edit has no effect
+ok 3 - a feature-branch edit has no effect
+  ---
+  duration_ms: 513.678625
+  type: 'test'
+  ...
+# Subtest: a policy on an unlabelled tracking ref is never applied
+ok 4 - a policy on an unlabelled tracking ref is never applied
+  ---
+  duration_ms: 377.280167
+  type: 'test'
+  ...
+# Subtest: an unknown default branch with a fetched policy is refused with the --branch instruction
+ok 5 - an unknown default branch with a fetched policy is refused with the --branch instruction
+  ---
+  duration_ms: 400.41875
+  type: 'test'
+  ...
+# Subtest: a remote without a remote HEAD and with no policy on any fetched ref reads as none
+ok 6 - a remote without a remote HEAD and with no policy on any fetched ref reads as none
+  ---
+  duration_ms: 279.883291
+  type: 'test'
+  ...
+# Subtest: a repo with no policy and no sighting reads as none and writes nothing
+ok 7 - a repo with no policy and no sighting reads as none and writes nothing
+  ---
+  duration_ms: 298.657625
+  type: 'test'
+  ...
+# Subtest: non-git, no-commit and no-remote directories without a sighting read as none
+ok 8 - non-git, no-commit and no-remote directories without a sighting read as none
+  ---
+  duration_ms: 184.149958
+  type: 'test'
+  ...
+# Subtest: a never-fetched repo with no sighting reads as none
+ok 9 - a never-fetched repo with no sighting reads as none
+  ---
+  duration_ms: 275.827541
+  type: 'test'
+  ...
+# Subtest: a known team repo with no fetched policy is refused with the reason
+ok 10 - a known team repo with no fetched policy is refused with the reason
+  ---
+  duration_ms: 150.117792
+  type: 'test'
+  ...
+# Subtest: a known team repo whose remote was removed is refused or read from the recorded commit, never none
+ok 11 - a known team repo whose remote was removed is refused or read from the recorded commit, never none
+  ---
+  duration_ms: 512.326542
+  type: 'test'
+  ...
+# Subtest: the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative
+ok 12 - the remote is origin, else the sole remote, never guessed, and a sighting's remote stays authoritative
+  ---
+  duration_ms: 687.527417
+  type: 'test'
+  ...
+# Subtest: first observation creates the sighting create-only and a failed write does not change the result
+ok 13 - first observation creates the sighting create-only and a failed write does not change the result
+  ---
+  duration_ms: 479.533042
+  type: 'test'
+  ...
+# Subtest: a policy file that exists but cannot be read is refused, never taken for absence
+ok 14 - a policy file that exists but cannot be read is refused, never taken for absence
+  ---
+  duration_ms: 612.744625
+  type: 'test'
+  ...
+# Subtest: a branch with non-ASCII letters is a valid default branch
+ok 15 - a branch with non-ASCII letters is a valid default branch
+  ---
+  duration_ms: 401.372417
+  type: 'test'
+  ...
+# Subtest: a ref listing that fails is refused, not taken for no policy
+ok 16 - a ref listing that fails is refused, not taken for no policy
+  ---
+  duration_ms: 218.970875
+  type: 'test'
+  ...
+# Subtest: a git failure while resolving the default branch ref is refused, not taken for no policy
+ok 17 - a git failure while resolving the default branch ref is refused, not taken for no policy
+  ---
+  duration_ms: 213.933666
+  type: 'test'
+  ...
+# Subtest: the reader leaves the first sighting to a refresh that is running
+ok 18 - the reader leaves the first sighting to a refresh that is running
+  ---
+  duration_ms: 497.657417
+  type: 'test'
+  ...
+# Subtest: a git failure while inspecting a repository is refused; only a directory with no .git anywhere is confirmed non-git
+ok 19 - a git failure while inspecting a repository is refused; only a directory with no .git anywhere is confirmed non-git
+  ---
+  duration_ms: 201.691167
+  type: 'test'
+  ...
+# Subtest: the first sighting is not recorded from a revision that moved before it was published
+ok 20 - the first sighting is not recorded from a revision that moved before it was published
+  ---
+  duration_ms: 664.898167
+  type: 'test'
+  ...
+# Subtest: the policy is found when the reader is run from a subdirectory of the repository
+ok 21 - the policy is found when the reader is run from a subdirectory of the repository
+  ---
+  duration_ms: 356.428583
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 8400.148666

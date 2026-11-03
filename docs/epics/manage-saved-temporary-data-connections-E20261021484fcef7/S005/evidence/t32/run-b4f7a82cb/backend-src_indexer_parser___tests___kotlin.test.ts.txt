@@ -1,0 +1,192 @@
+TAP version 13
+# Subtest: Kotlin parser - types
+    # Subtest: extracts a class with a member fun (Method) + DEFINES
+    ok 1 - extracts a class with a member fun (Method) + DEFINES
+      ---
+      duration_ms: 5.865167
+      type: 'test'
+      ...
+    # Subtest: an interface is an Interface entity (interface keyword, not a modifier)
+    ok 2 - an interface is an Interface entity (interface keyword, not a modifier)
+      ---
+      duration_ms: 1.712416
+      type: 'test'
+      ...
+    # Subtest: a data class carries a `data` marker + DEFINES its val/var properties
+    ok 3 - a data class carries a `data` marker + DEFINES its val/var properties
+      ---
+      duration_ms: 0.910875
+      type: 'test'
+      ...
+    # Subtest: captures `sealed` / `abstract` modifiers in the signature
+    ok 4 - captures `sealed` / `abstract` modifiers in the signature
+      ---
+      duration_ms: 0.36925
+      type: 'test'
+      ...
+    # Subtest: an object is a Class with `object`; a companion object gets a `(companion of X)` suffix
+    ok 5 - an object is a Class with `object`; a companion object gets a `(companion of X)` suffix
+      ---
+      duration_ms: 0.887875
+      type: 'test'
+      ...
+    # Subtest: an enum class carries an `enum class` marker
+    ok 6 - an enum class carries an `enum class` marker
+      ---
+      duration_ms: 0.329042
+      type: 'test'
+      ...
+    1..6
+ok 1 - Kotlin parser - types
+  ---
+  duration_ms: 12.53975
+  type: 'suite'
+  ...
+# Subtest: Kotlin parser - functions
+    # Subtest: a top-level fun is a Function; an extension fun is a Method with an `extension` marker + receiver
+    ok 1 - a top-level fun is a Function; an extension fun is a Method with an `extension` marker + receiver
+      ---
+      duration_ms: 0.589291
+      type: 'test'
+      ...
+    # Subtest: a member fun and a same-named member extension get DISTINCT ids (receiver folds into the name)
+    ok 2 - a member fun and a same-named member extension get DISTINCT ids (receiver folds into the name)
+      ---
+      duration_ms: 0.430167
+      type: 'test'
+      ...
+    1..2
+ok 2 - Kotlin parser - functions
+  ---
+  duration_ms: 1.151666
+  type: 'suite'
+  ...
+# Subtest: Kotlin parser - package + imports
+    # Subtest: package -> Module + own-package IMPORTS; import -> IMPORTS to a jvm Module stub; `as` records meta.alias
+    ok 1 - package -> Module + own-package IMPORTS; import -> IMPORTS to a jvm Module stub; `as` records meta.alias
+      ---
+      duration_ms: 0.322291
+      type: 'test'
+      ...
+    1..1
+ok 3 - Kotlin parser - package + imports
+  ---
+  duration_ms: 0.441958
+  type: 'suite'
+  ...
+# Subtest: Kotlin parser - supertypes
+    # Subtest: `class A : Base(), Iface1, Iface2` -> INHERITS Base + IMPLEMENTS Iface1, Iface2
+    ok 1 - `class A : Base(), Iface1, Iface2` -> INHERITS Base + IMPLEMENTS Iface1, Iface2
+      ---
+      duration_ms: 1.0935
+      type: 'test'
+      ...
+    # Subtest: interface delegation `class A(...) : Iface by d` still emits IMPLEMENTS
+    ok 2 - interface delegation `class A(...) : Iface by d` still emits IMPLEMENTS
+      ---
+      duration_ms: 0.563375
+      type: 'test'
+      ...
+    1..2
+ok 4 - Kotlin parser - supertypes
+  ---
+  duration_ms: 1.709916
+  type: 'suite'
+  ...
+# Subtest: Kotlin parser - calls
+    # Subtest: a recognised HTTP client (okhttp import) emits CALLS_HTTP to the URL
+    ok 1 - a recognised HTTP client (okhttp import) emits CALLS_HTTP to the URL
+      ---
+      duration_ms: 0.974709
+      type: 'test'
+      ...
+    # Subtest: HTTP recognition is import-gated: a `.url(...)` with no HTTP import does not misfire
+    ok 2 - HTTP recognition is import-gated: a `.url(...)` with no HTTP import does not misfire
+      ---
+      duration_ms: 0.369541
+      type: 'test'
+      ...
+    # Subtest: a recognised messaging client (spring kafka/jms import) emits a messaging edge
+    ok 3 - a recognised messaging client (spring kafka/jms import) emits a messaging edge
+      ---
+      duration_ms: 0.856583
+      type: 'test'
+      ...
+    1..3
+ok 5 - Kotlin parser - calls
+  ---
+  duration_ms: 2.441292
+  type: 'suite'
+  ...
+# Subtest: Kotlin parser - robustness
+    # Subtest: a file with a syntax error still emits its package + clean top-level entities and marks the file
+    ok 1 - a file with a syntax error still emits its package + clean top-level entities and marks the file
+      ---
+      duration_ms: 0.726875
+      type: 'test'
+      ...
+    # Subtest: never throws on empty / whitespace-only source
+    ok 2 - never throws on empty / whitespace-only source
+      ---
+      duration_ms: 0.154667
+      type: 'test'
+      ...
+    # Subtest: makeEntityId is stable: re-parsing the same source yields identical ids
+    ok 3 - makeEntityId is stable: re-parsing the same source yields identical ids
+      ---
+      duration_ms: 0.306292
+      type: 'test'
+      ...
+    1..3
+ok 6 - Kotlin parser - robustness
+  ---
+  duration_ms: 1.292959
+  type: 'suite'
+  ...
+# Subtest: Kotlin parser - registry + jvm dedup
+    # Subtest: getParser routes .kt and .kts to the Kotlin parser; supportedExtensions() includes them
+    ok 1 - getParser routes .kt and .kts to the Kotlin parser; supportedExtensions() includes them
+      ---
+      duration_ms: 0.096167
+      type: 'test'
+      ...
+    # Subtest: a real Kotlin fixture yields a non-empty entities array through the registry-selected parser
+    ok 2 - a real Kotlin fixture yields a non-empty entities array through the registry-selected parser
+      ---
+      duration_ms: 0.120417
+      type: 'test'
+      ...
+    # Subtest: Kotlin + Scala import stubs for the same JVM dependency dedup to one repo id
+    ok 3 - Kotlin + Scala import stubs for the same JVM dependency dedup to one repo id
+      ---
+      duration_ms: 1.173083
+      type: 'test'
+      ...
+    1..3
+ok 7 - Kotlin parser - registry + jvm dedup
+  ---
+  duration_ms: 1.469583
+  type: 'suite'
+  ...
+# Subtest: Kotlin parser - grammar smoke regression
+    # Subtest: tree-sitter-kotlin loads under the pinned tree-sitter and parses a trivial file
+    ok 1 - tree-sitter-kotlin loads under the pinned tree-sitter and parses a trivial file
+      ---
+      duration_ms: 0.560625
+      type: 'test'
+      ...
+    1..1
+ok 8 - Kotlin parser - grammar smoke regression
+  ---
+  duration_ms: 0.615083
+  type: 'suite'
+  ...
+1..8
+# tests 21
+# suites 8
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 284.453875

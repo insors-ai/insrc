@@ -30,6 +30,9 @@ import { spawn } from 'node:child_process';
 
 import type { DocumentIR, RenderedDocumentShell } from '../types.js';
 import { renderNarrativeBand } from './narrative.js';
+import {
+	DIAGRAM_OVERRIDES_CSS, SURFACES, THEME_VERSION, diagramRoles, exportableSvg, fontFaceCssForArtifacts, legendSlotHtml, pageStyleTags,
+} from '../../artifact-theme/theme.js';
 import { CODE_REF_SCRIPT } from './code-ref-script.js';
 
 // ── t1 · oversized predicate ───────────────────────────────────────────────
@@ -212,35 +215,72 @@ export function assembleFallbackShell(
 	svgPanZoomVersion: string,
 ): RenderedDocumentShell {
 	const narrative = renderNarrativeBand(ir.narrated.sections, ir.narrated.sourceLink);
+	// R4: the legend renders only when the diagram source carries role classes.
+	const legend = legendSlotHtml(diagramRoles(toGraphvizDot(ir)));
 	// A narrative band shares the viewport with the diagram; a band-less doc keeps
 	// the full-height diagram (no inline style → byte-identical to before).
 	const diagramStyle = narrative !== '' ? ' style="height:65vh"' : '';
 	const init = `
 (function () {
+  var SURFACES_BG=${JSON.stringify({ light: SURFACES.light.bg, dark: SURFACES.dark.bg })};
+  var EXPORT_SVG=${exportableSvg.toString()};
+  var panzoomInstance = null;
   var svg = document.querySelector('#docgen-diagram svg');
   if (svg && window.svgPanZoom) {
     svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
     svg.style.maxWidth = 'none';
-    window.svgPanZoom(svg, { controlIconsEnabled: true, fit: true, center: true, minZoom: 0.2, maxZoom: 20 });
+    panzoomInstance = window.svgPanZoom(svg, { controlIconsEnabled: true, fit: true, center: true, minZoom: 0.2, maxZoom: 20 });
   }
+  window.insrcPz = panzoomInstance ? {
+    fit: function () { panzoomInstance.fit(); },
+    reset: function () { panzoomInstance.reset(); },
+    zoomTo: function (s) { panzoomInstance.zoomTo(s); },
+    getT: function () { return { s: panzoomInstance.getZoom(), x: 0, y: 0 }; },
+    setT: function (t) { if (t && typeof t.s === 'number') panzoomInstance.zoomTo(t.s); },
+  } : null;
+  // theme toggle for the fallback shell (page-level; the SVG is pre-rendered)
+  var mode = (function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';})();
+  function applyMode(m){
+    mode=m;document.body.setAttribute('data-theme',m);
+    document.querySelectorAll('style[data-iv-mode]').forEach(function(s){s.disabled=(s.getAttribute('data-iv-mode')!==m);});
+    document.querySelectorAll('[data-iv-legend]').forEach(function(el){el.hidden=(el.getAttribute('data-iv-legend')!==m);});
+    try{localStorage.setItem('insrc-theme-mode',m);}catch(e){}
+    var t=document.getElementById('iv-theme');if(t)t.setAttribute('aria-pressed',m==='dark'?'true':'false');
+  }
+  var tb=document.getElementById('iv-theme');if(tb)tb.addEventListener('click',function(){applyMode(mode==='dark'?'light':'dark');});
+  applyMode(mode);
+  var ex=document.getElementById('iv-export');
+  if(ex)ex.addEventListener('click',function(){
+    var s=document.querySelector('#docgen-diagram svg');if(!s)return;
+    var c=s.cloneNode(true);c.setAttribute('xmlns','http://www.w3.org/2000/svg');
+    var out=EXPORT_SVG(new XMLSerializer().serializeToString(c),{bg:SURFACES_BG[mode],style:document.body.getAttribute('data-iv-export-css')||''});
+    var a=document.createElement('a');
+    a.href='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(out);
+    a.download='diagram.svg';a.click();
+  });
 })();`;
+	// The branded page chrome (both light AND dark variants) is composed by the
+	// ONE shared helper (R1) — the degraded fallback shell gets the same theme
+	// switch as the primary shell, not a single hardcoded mode.
+	const pageCss = pageStyleTags(`
+  html, body { margin: 0; height: 100%; }
+  #docgen-diagram { width: 100%; height: 100vh; background: var(--iv-bg); }
+  #docgen-diagram svg { width: 100%; height: 100%; }
+  [data-insrc-path] { cursor: pointer; }
+`);
 	const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="insrc-theme" content="${THEME_VERSION}">
 <title>${escapeHtml(ir.scopeDescription)}</title>
-<style>
-  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
-  #docgen-diagram { width: 100%; height: 100vh; }
-  #docgen-diagram svg { width: 100%; height: 100%; }
-  #docgen-error { color: #b00020; padding: 8px; font-family: monospace; }
-  [data-insrc-path] { cursor: pointer; }
-</style>
+${pageCss}
 </head>
-<body>
-<div id="docgen-error"></div>
-<div id="docgen-diagram"${diagramStyle}>${svg}</div>${narrative}
+<body class="insrc-viewer" data-theme="light" data-iv-export-css="${escapeHtml(fontFaceCssForArtifacts() + '\n' + DIAGRAM_OVERRIDES_CSS)}">
+<div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button></div>
+<div class="iv-err" id="iv-err" role="alert"></div>
+<div id="docgen-diagram" class="insrc-viewer-diagram"${diagramStyle}>${svg}</div>${legend}${narrative}
 <script>${svgPanZoom}</script>
 <script>${CODE_REF_SCRIPT}</script>
 <script>${init}</script>

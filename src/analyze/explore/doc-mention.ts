@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -135,15 +136,12 @@ export async function runDocMention(
 		if (m.cutByIndexer) partlyRead.push(partlyReadEntry(`${r.file} § ${r.heading}`, m.storedChars, m));
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:    ctx.runId,
 			subject:  params.subject,
 			returned: hits.length,
 			partlyRead: partlyRead.length,
-		},
-		'doc.mention: complete',
-	);
+	}, 'doc.mention: complete']);
 
 	return {
 		type:    'doc.mention',

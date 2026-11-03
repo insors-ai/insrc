@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -233,11 +234,11 @@ export function taskRefusalMapping(err: unknown): { readonly code: TaskRefusalCo
  */
 export async function ensureNonEmptyClosure(
 	scope: ResolvedScope,
-	deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'> & { readonly indexRun?: ((repoPath: string) => IndexRunView | undefined) | undefined },
+	deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo' | 'repoHasAnyEntity'> & { readonly indexRun?: ((repoPath: string) => IndexRunView | undefined) | undefined },
 ): Promise<string | undefined> {
 	// Data-only scopes don't need a code graph.
 	if (scope.kind === 'connection') {
-		log.debug({ scope: scope.value }, 'ensureNonEmptyClosure: skipping connection-kind scope');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scope.value }, 'ensureNonEmptyClosure: skipping connection-kind scope']);
 		return undefined;
 	}
 
@@ -257,10 +258,7 @@ export async function ensureNonEmptyClosure(
 		// the invariant cannot evaluate its precondition. The driver
 		// proceeds; downstream tools that need graph data will either
 		// fall back or fail with their own errors.
-		log.debug(
-			{ scope: scopePath, err: (err as Error).message },
-			'ensureNonEmptyClosure: registry read failed; skipping invariant',
-		);
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, err: (err as Error).message }, 'ensureNonEmptyClosure: registry read failed; skipping invariant']);
 		return undefined;
 	}
 
@@ -270,10 +268,7 @@ export async function ensureNonEmptyClosure(
 	// state (there's no expected closure to compare against), so we
 	// skip silently and let the shaper fall back to filesystem tools.
 	if (repos.length === 0) {
-		log.debug(
-			{ scope: scopePath },
-			'ensureNonEmptyClosure: registry pristine; skipping invariant',
-		);
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath }, 'ensureNonEmptyClosure: registry pristine; skipping invariant']);
 		return undefined;
 	}
 
@@ -289,12 +284,22 @@ export async function ensureNonEmptyClosure(
 		);
 	}
 
-	// Check for an indexed entity in this repo. Stops at the first hit;
-	// no need to materialise the full list.
-	const entities = deps !== undefined
-		? await deps.listEntitiesForRepo(best.path, { limit: 1 })
-		: await listEntitiesForRepo(null, best.path, { limit: 1 });
-	if (entities.length === 0) {
+	// Epic c2ba6fa6 Story s3 (ac4): prefer the cheap existence check when
+	// the caller's deps supply it -- it never builds the entity list.
+	// Fall back to today's full listEntitiesForRepo + length check
+	// otherwise, unchanged.
+	let empty: boolean;
+	let entityCount: number | undefined;
+	if (deps?.repoHasAnyEntity !== undefined) {
+		empty = !(await deps.repoHasAnyEntity(best.path));
+	} else {
+		const entities = deps !== undefined
+			? await deps.listEntitiesForRepo(best.path)
+			: await listEntitiesForRepo(null, best.path);
+		empty = entities.length === 0;
+		entityCount = entities.length;
+	}
+	if (empty) {
 		throw new ScopeNotIndexedError(
 			scopePath,
 			best.path,
@@ -302,10 +307,7 @@ export async function ensureNonEmptyClosure(
 		);
 	}
 
-	log.debug(
-		{ scope: scopePath, repo: best.path, indexedEntityFound: entities.length > 0 },
-		'ensureNonEmptyClosure: closure non-empty',
-	);
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, repo: best.path, entityCount }, 'ensureNonEmptyClosure: closure non-empty']);
 	return best.path;
 }
 
@@ -337,11 +339,11 @@ export async function ensureRepoQueryable(
 	try {
 		repos = deps?.listRepos !== undefined ? await deps.listRepos() : await listRepos(null);
 	} catch (err) {
-		log.debug({ scope: scopePath, err: (err as Error).message }, 'ensureRepoQueryable: registry read failed; skipping the check');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath, err: (err as Error).message }, 'ensureRepoQueryable: registry read failed; skipping the check']);
 		return;
 	}
 	if (repos.length === 0) {
-		log.debug({ scope: scopePath }, 'ensureRepoQueryable: registry pristine; skipping the check');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ scope: scopePath }, 'ensureRepoQueryable: registry pristine; skipping the check']);
 		return;
 	}
 	const repo = longestPrefixRepo(scopePath, repos);

@@ -22,16 +22,18 @@ function makeGateway(opts: {
   processScan?: () => Promise<readonly OrphanProcess[]>;
 }): { gateway: ReturnType<typeof createDaemonDataGateway>; calls: string[] } {
   const calls: string[] = [];
+  const paramsSeen: { method: string; params: unknown }[] = [];
   const deps: DaemonDataGatewayDeps = {
     rpc: async <T>(method: string, params?: unknown) => {
       calls.push(method);
+      paramsSeen.push({ method, params });
       return (opts.rpc ? await opts.rpc(method, params) : undefined) as T;
     },
     artifactsRoot: opts.artifactsRoot ?? (() => undefined),
     processScan: opts.processScan ?? (async () => []),
     logger: { warn: () => {} },
   };
-  return { gateway: createDaemonDataGateway(deps), calls };
+  return { gateway: createDaemonDataGateway(deps), calls, paramsSeen };
 }
 
 test('status() maps a DaemonStatus (incl. missing optionals) to a DaemonStatusView { state, detail }, over daemon.status only (ac4)', async () => {
@@ -171,4 +173,17 @@ test('registeredRepos() carries each repository\'s status and completeness from 
     { path: '/b', name: 'b', status: 'indexing', completeness: incomplete },
     { path: '/c', name: 'c', status: 'ready' },
   ]);
+});
+
+test('mcpRegistration(repoPath) forwards the repo path to mcp.status so the daemon also probes the project-layer .vibe/config.toml; without a path it sends {}', async () => {
+  const { gateway, paramsSeen } = makeGateway({
+    rpc: async (method) => (method === 'mcp.status' ? { clients: [{ client: 'vibe', available: true, registered: true }] } : undefined),
+  });
+  const withPath = await gateway.mcpRegistration('/repo/a');
+  assert.deepEqual(withPath, [{ client: 'vibe', available: true, registered: true }]);
+  assert.deepEqual(paramsSeen.at(-1), { method: 'mcp.status', params: { path: '/repo/a' } }, 'the repo path rides along as mcp.status params.path');
+  await gateway.mcpRegistration();
+  assert.deepEqual(paramsSeen.at(-1), { method: 'mcp.status', params: {} }, 'no path → empty params (user-global probe only)');
+  await gateway.mcpRegistration('');
+  assert.deepEqual(paramsSeen.at(-1), { method: 'mcp.status', params: {} }, 'empty path is treated as absent');
 });

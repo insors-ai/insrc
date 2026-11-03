@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: removes every complete guide section, retaining the skeleton
+ok 1 - removes every complete guide section, retaining the skeleton
+  ---
+  duration_ms: 0.769667
+  type: 'test'
+  ...
+# Subtest: leaves a half-present (start-only) marker intact
+ok 2 - leaves a half-present (start-only) marker intact
+  ---
+  duration_ms: 0.065833
+  type: 'test'
+  ...
+# Subtest: collapses the blank run left where a section was removed
+ok 3 - collapses the blank run left where a section was removed
+  ---
+  duration_ms: 0.062083
+  type: 'test'
+  ...
+# Subtest: is idempotent — stripping an already-stripped skeleton is a no-op
+ok 4 - is idempotent — stripping an already-stripped skeleton is a no-op
+  ---
+  duration_ms: 0.113333
+  type: 'test'
+  ...
+# Subtest: is safe on text with no guide sections at all
+ok 5 - is safe on text with no guide sections at all
+  ---
+  duration_ms: 0.078375
+  type: 'test'
+  ...
+# Subtest: is safe on empty-ish text
+ok 6 - is safe on empty-ish text
+  ---
+  duration_ms: 0.034458
+  type: 'test'
+  ...
+# Subtest: the shipped asset carries guide sections; readSteeringBlock returns it whole
+ok 7 - the shipped asset carries guide sections; readSteeringBlock returns it whole
+  ---
+  duration_ms: 0.956917
+  type: 'test'
+  ...
+# Subtest: refreshSteeringAcrossRepos (default readBlock) stamps a guide-marker-free skeleton
+ok 8 - refreshSteeringAcrossRepos (default readBlock) stamps a guide-marker-free skeleton
+  ---
+  duration_ms: 0.743541
+  type: 'test'
+  ...
+# Subtest: an injected readBlock (the daemon-update path) is ALSO stripped — the skeleton contract cannot be bypassed
+ok 9 - an injected readBlock (the daemon-update path) is ALSO stripped — the skeleton contract cannot be bypassed
+  ---
+  duration_ms: 0.499958
+  type: 'test'
+  ...
+# Subtest: the inject-path strip is idempotent over the shipped asset
+ok 10 - the inject-path strip is idempotent over the shipped asset
+  ---
+  duration_ms: 0.463334
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 434.457667

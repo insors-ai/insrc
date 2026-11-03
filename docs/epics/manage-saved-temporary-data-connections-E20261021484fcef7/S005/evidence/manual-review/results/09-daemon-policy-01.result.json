@@ -1,0 +1,68 @@
+{
+  "id": "09-daemon-policy-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:53:54.415Z",
+  "finished": "2026-11-01T04:54:33.037Z",
+  "inputChars": 83780,
+  "inputSha256": "1c4e4721c9ef36de6d873fcc46b210ac7daf10b2b955c476ce204007e163bde7",
+  "missingObligations": [],
+  "result": {
+    "summary": "I found no concrete, reachable defects in the supplied daemon-side changes. The evidence covers only daemon policy, RPC and tests, plus two fixture files I did not inspect record by record. It contains no VS Code or JetBrains client source, no plugin.xml or Settings code, no manager state model, no artifact or definition files, and no sweep or acceptance records. I could therefore verify none of the five assigned obligations (ConnectionListState, Add Temporary under a Saved filter, scope, t30, t32). Several of the daemon changes are authorized decisions that I did not reopen, and they appear internally consistent. Those decisions are runtime management on by default, the release gate left unverified (`verifyConnectionManagementRelease` is still false), and registered-root default initialization.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:3",
+        "status": "could-not-verify",
+        "evidence": "The ConnectionListState call sites are package.json, InsrcSettingsConfigurable.kt and plugin.xml, and none were supplied. The daemon diff only changes capability advertisement, so list-state distinctions, stale-row handling, scope and search counts, the project and root picker, and reveal-after-add cannot be assessed."
+      },
+      {
+        "key": "lld:edge:3",
+        "status": "could-not-verify",
+        "evidence": "This case depends on client manager logic: default Saved filter, filter adjustment after a successful refresh, and lifecycle copy shown before adding. No client code or tests were supplied."
+      },
+      {
+        "key": "lld:scope",
+        "status": "could-not-verify",
+        "evidence": "The daemon changes (default enablement, the `management-defaults.ts` initializer, the capabilities hook) are outside the S005 client boundary, and the diff includes other streams. No client source was supplied, so I could not check whether S005 re-implements consumed contracts. What I did see is that the sc1–sc6 consumed-contract wire types and `parseDraftTestRequest`/`parseMutationRequest` are still imported from shared modules rather than redefined. That covers only the daemon side."
+      },
+      {
+        "key": "plan:t30",
+        "status": "could-not-verify",
+        "evidence": "No UX or interaction definitions, regenerated companions, client inventory or evidence records, or CM-S5-GATE/CM-S5-ARTIFACTS tests were supplied. What the diff does show: `verifyConnectionManagementRelease` is retained unchanged in behavior, the shipped gate assertions still expect `ready=false` with empty scopes, and the new `management-defaults.test.ts` asserts the release audit stays false ('pending audit is retained'). Two fixture inventories were supplied only as metadata and were not reviewed record by record."
+      },
+      {
+        "key": "plan:t32",
+        "status": "could-not-verify",
+        "evidence": "No frozen manifest, Node22/JDK21 sweep results, verifyPlugin output, or acceptance matrix was supplied. The user states that the automated sweep has recorded failures and timeouts, and I did not treat that as proof of a defect. I cannot confirm that raw results are retained."
+      }
+    ],
+    "inspectedFiles": [
+      "src/daemon/connection-management-rpc.ts",
+      "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+      "src/daemon/db/__tests__/connection-session-rpc.test.ts",
+      "src/daemon/db/__tests__/draft-test-routes.test.ts",
+      "src/daemon/db/__tests__/fixtures/session-namespace-child.ts",
+      "src/daemon/db/__tests__/management-defaults.test.ts",
+      "src/daemon/db/__tests__/management-maintenance-foundation.test.ts",
+      "src/daemon/db/__tests__/removal-production-affinity.test.ts",
+      "src/daemon/db/__tests__/session-release-gate.test.ts",
+      "src/daemon/db/draft-test.ts",
+      "src/daemon/db/management-defaults.ts",
+      "src/daemon/db/management-enablement.ts"
+    ],
+    "limitations": [
+      "No VS Code, JetBrains or shared-client source was supplied. All client-facing obligations are unassessed.",
+      "The fixtures `connection-source-inventory.json` (60340 bytes) and `session-source-inventory.json` (805424 bytes) were supplied only as metadata and were not assessed. Several production files changed (`management-enablement.ts`, `connection-management-rpc.ts`, `draft-test.ts`, `management-defaults.ts`). I could not confirm that the hash-based inventory fixtures were regenerated to match.",
+      "`management-startup.ts` (`openManagedRoot`), `removalReady()`, `root()`, and the existing `releaseDigest` consumers were not supplied. So I could not verify that a partially initialized managed root recovers, or that already-persisted `releaseDigest` values stay valid now that `connectionManagementEnablement` returns a fixed default digest.",
+      "`closeDefaultManagedRoots` sets `closing=true` and never resets it. I saw no non-shutdown caller, so I did not raise it as a defect.",
+      "Only diff fragments were supplied for the changed files, not the full files. That limits how much I can say about the surrounding integration."
+    ],
+    "evidenceRequests": [
+      "`src/daemon/db/management-startup.ts` (`openManagedRoot`): does it recover a root left with `connection-management/` and `preparing.json` but no `state.json`? That happens if `initializeFreshManagedRoot` throws after `mkdir(directory)`, for example when `SavedTicketAuthority.open` fails on a keychain error. The `interrupted` case in `management-defaults.test.ts` only tests the refusal in `initializeFreshManagedRoot`, not the capabilities retry path through `ensureDefaultManagedRoot`.",
+      "Client sources: `vscode-plugin/package.json` and the manager host/model, `InsrcSettingsConfigurable.kt`, `plugin.xml`, the Kotlin manager model and panel, and their tests. These are needed for ConnectionListState, filter reveal and scope behavior.",
+      "Current structured UX/interaction definitions, regenerated companions, CM-S5-GATE/ARTIFACTS test sources, and the final sweep manifest and raw results for t30 and t32.",
+      "Callers of `closeDefaultManagedRoots` and all consumers of `connectionManagementEnablement().digest` (`management-state` `releaseDigest` comparison), to confirm compatibility with the pre-change digest."
+    ]
+  }
+}

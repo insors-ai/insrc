@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' \# SKIP' with and without a reason, and skipped for ' \# TODO'
+ok 1 - the captured run in the Story's tap-sample folder gives the result of each of its titles: pass, fail, skipped for ' \# SKIP' with and without a reason, and skipped for ' \# TODO'
+  ---
+  duration_ms: 1.531208
+  type: 'test'
+  ...
+# Subtest: a title nested in a suite or a subtest is found at its depth by its own title
+ok 2 - a title nested in a suite or a subtest is found at its depth by its own title
+  ---
+  duration_ms: 0.149167
+  type: 'test'
+  ...
+# Subtest: TAP's escaping of '\#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)
+ok 3 - TAP's escaping of '\#' and backslash in a title is reversed, so the title as declared matches (mutation: compare the raw line)
+  ---
+  duration_ms: 0.173458
+  type: 'test'
+  ...
+# Subtest: a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped
+ok 4 - a title that occurs twice fails if either occurrence failed, passes if one passed and none failed, and is skipped if both were skipped
+  ---
+  duration_ms: 0.1445
+  type: 'test'
+  ...
+# Subtest: output with no TAP version line and no result line is reported as not understood, with no titles
+ok 5 - output with no TAP version line and no result line is reported as not understood, with no titles
+  ---
+  duration_ms: 0.088125
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 209.211417

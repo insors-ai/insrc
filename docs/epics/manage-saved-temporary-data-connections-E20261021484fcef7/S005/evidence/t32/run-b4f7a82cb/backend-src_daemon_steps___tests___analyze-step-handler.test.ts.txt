@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: handler rejects non-object input
+ok 1 - handler rejects non-object input
+  ---
+  duration_ms: 1.017417
+  type: 'test'
+  ...
+# Subtest: handler rejects an unknown phase
+ok 2 - handler rejects an unknown phase
+  ---
+  duration_ms: 0.101792
+  type: 'test'
+  ...
+# Subtest: handler rejects missing phase field
+ok 3 - handler rejects missing phase field
+  ---
+  duration_ms: 0.069834
+  type: 'test'
+  ...
+# Subtest: start returns emit_plan with a state blob + a real prompt
+ok 4 - start returns emit_plan with a state blob + a real prompt
+  ---
+  duration_ms: 210.420334
+  type: 'test'
+  ...
+# Subtest: start with no repo + no INSRC_REPO env → clear no-repo error
+ok 5 - start with no repo + no INSRC_REPO env → clear no-repo error
+  ---
+  duration_ms: 0.283875
+  type: 'test'
+  ...
+# Subtest: plan phase with a garbage state blob returns wrong-state error
+ok 6 - plan phase with a garbage state blob returns wrong-state error
+  ---
+  duration_ms: 0.3295
+  type: 'test'
+  ...
+# Subtest: bundle phase with awaiting_plan state returns wrong-stage error
+ok 7 - bundle phase with awaiting_plan state returns wrong-stage error
+  ---
+  duration_ms: 1.26775
+  type: 'test'
+  ...
+# Subtest: envelope is { content: [{type:"text", text: JSON}] }
+ok 8 - envelope is { content: [{type:"text", text: JSON}] }
+  ---
+  duration_ms: 0.909916
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 778.511917

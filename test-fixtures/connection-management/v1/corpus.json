@@ -1,0 +1,7076 @@
+{
+  "version": 1,
+  "protocolVersion": 2,
+  "purpose": "Synthetic cross-language wire/sc7 scenarios. Fixtures are not native/live acceptance or signed authority.",
+  "releaseEnabled": false,
+  "fixturesAreAcceptance": false,
+  "identity": {
+    "key": {
+      "repoRoot": "/fixture/repo-a",
+      "scope": "saved",
+      "id": "warehouse"
+    },
+    "temporaryKey": {
+      "repoRoot": "/fixture/repo-a",
+      "scope": "temporary",
+      "id": "preview"
+    },
+    "revision": "11111111-1111-4111-8111-111111111111",
+    "operationId": "22222222-2222-4222-8222-222222222222",
+    "daemonEpoch": "fixture-epoch"
+  },
+  "wire": [
+    {
+      "id": "wire-capabilities-0",
+      "kind": "capabilities",
+      "input": {
+        "version": 2,
+        "daemonEpoch": "fixture-epoch",
+        "features": [
+          "safe-read",
+          "driver-descriptors",
+          "operation-tickets",
+          "operation-status",
+          "saved-create",
+          "saved-update",
+          "saved-remove",
+          "temporary-remove",
+          "removal-state",
+          "removal-cleanup-retry"
+        ],
+        "receiptRetentionDays": 30
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-list-1",
+      "kind": "list",
+      "input": [
+        {
+          "key": {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "id": "warehouse"
+          },
+          "revision": "11111111-1111-4111-8111-111111111111",
+          "kind": "postgres",
+          "family": "rdbms",
+          "effectiveFamily": "rdbms",
+          "publicConfig": {
+            "endpoint": "postgresql://fixture.invalid/example"
+          },
+          "credentialPresence": {
+            "url.password": false
+          }
+        },
+        {
+          "key": {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "temporary",
+            "id": "preview"
+          },
+          "revision": "11111111-1111-4111-8111-111111111111",
+          "kind": "csv",
+          "family": "file",
+          "effectiveFamily": "file",
+          "publicConfig": {
+            "path": "data/example.csv"
+          },
+          "credentialPresence": {}
+        }
+      ],
+      "valid": true
+    },
+    {
+      "id": "wire-read-2",
+      "kind": "read",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "rdbms",
+        "effectiveFamily": "rdbms",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.password": false
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-ticket-3",
+      "kind": "ticket",
+      "input": {
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "lookupRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "connectionId": "warehouse",
+        "mode": "remove",
+        "issuedAt": "2026-01-01T00:00:00.000Z",
+        "expiresAt": "2026-01-31T00:00:00.000Z",
+        "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-outcome-4",
+      "kind": "outcome",
+      "input": {
+        "status": "committed",
+        "value": {
+          "operationId": "22222222-2222-4222-8222-222222222222",
+          "revision": "11111111-1111-4111-8111-111111111111",
+          "registration": "removed",
+          "activation": "not-applicable",
+          "credentialCleanup": "complete"
+        }
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-status-5",
+      "kind": "status",
+      "input": {
+        "status": "not-seen"
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-test-6",
+      "kind": "test",
+      "input": {
+        "requestId": "22222222-2222-4222-8222-222222222222",
+        "draftRevision": 2,
+        "repoRoot": "/fixture/repo-a",
+        "daemonEpoch": "fixture-epoch",
+        "status": "reachable",
+        "tookMs": 3
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-removal-7",
+      "kind": "removal",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed-cleanup-pending",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending."
+      },
+      "valid": true
+    },
+    {
+      "id": "wire-invalid-capabilities-0",
+      "kind": "capabilities",
+      "input": {
+        "version": 1,
+        "features": []
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-capabilities-1",
+      "kind": "capabilities",
+      "input": {
+        "version": 2,
+        "daemonEpoch": null,
+        "features": [
+          "safe-read",
+          "driver-descriptors",
+          "operation-tickets",
+          "operation-status",
+          "saved-create",
+          "saved-update",
+          "saved-remove",
+          "temporary-remove",
+          "removal-state",
+          "removal-cleanup-retry"
+        ],
+        "receiptRetentionDays": 30
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-list-2",
+      "kind": "list",
+      "input": {
+        "rows": []
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-read-3",
+      "kind": "read",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "session",
+          "id": "warehouse"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "rdbms",
+        "effectiveFamily": "rdbms",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.password": false
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-ticket-4",
+      "kind": "ticket",
+      "input": {
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "lookupRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "connectionId": "warehouse",
+        "mode": "upsert",
+        "issuedAt": "2026-01-01T00:00:00.000Z",
+        "expiresAt": "2026-01-31T00:00:00.000Z",
+        "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-outcome-5",
+      "kind": "outcome",
+      "input": {
+        "status": "committed",
+        "value": {
+          "operationId": "22222222-2222-4222-8222-222222222222"
+        }
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-status-6",
+      "kind": "status",
+      "input": {
+        "status": "success"
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-test-7",
+      "kind": "test",
+      "input": {
+        "requestId": "22222222-2222-4222-8222-222222222222",
+        "draftRevision": -1
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-removal-8",
+      "kind": "removal",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed",
+        "resourceCleanup": "pending"
+      },
+      "valid": false
+    },
+    {
+      "id": "wire-invalid-read-9",
+      "kind": "read",
+      "input": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "warehouse"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "rdbms",
+        "effectiveFamily": "rdbms",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.password": "plaintext"
+        }
+      },
+      "valid": false
+    }
+  ],
+  "transcripts": [
+    {
+      "id": "choose-root",
+      "initial": {
+        "repoRoot": null,
+        "filter": "all",
+        "listState": "no-repository",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 0,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "select-root",
+          "repoRoot": "/fixture/repo-a"
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "effects": [
+        {
+          "type": "list",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1
+        }
+      ]
+    },
+    {
+      "id": "empty-registry",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-result",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1,
+          "rows": []
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "empty-registry",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "effects": []
+    },
+    {
+      "id": "successful-rows",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-result",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1,
+          "rows": [
+            {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111",
+              "kind": "postgres",
+              "family": "rdbms",
+              "effectiveFamily": "rdbms",
+              "publicConfig": {
+                "endpoint": "postgresql://fixture.invalid/example"
+              },
+              "credentialPresence": {
+                "url.password": false
+              }
+            },
+            {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111",
+              "kind": "csv",
+              "family": "file",
+              "effectiveFamily": "file",
+              "publicConfig": {
+                "path": "data/example.csv"
+              },
+              "credentialPresence": {}
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ],
+        "counts": {
+          "all": 2,
+          "saved": 1,
+          "temporary": 1
+        }
+      },
+      "effects": []
+    },
+    {
+      "id": "saved-filter",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "filter",
+          "value": "saved"
+        }
+      ],
+      "expected": {
+        "filter": "saved",
+        "listState": "ready",
+        "visibleKeys": [
+          {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "id": "warehouse"
+          }
+        ],
+        "counts": {
+          "all": 2,
+          "saved": 1,
+          "temporary": 1
+        }
+      },
+      "effects": []
+    },
+    {
+      "id": "empty-filter",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "filter",
+          "value": "temporary"
+        }
+      ],
+      "expected": {
+        "filter": "temporary",
+        "listState": "empty-filter",
+        "visibleKeys": [],
+        "counts": {
+          "all": 1,
+          "saved": 1,
+          "temporary": 0
+        }
+      },
+      "effects": []
+    },
+    {
+      "id": "read-error-not-empty",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-error",
+          "repoRoot": "/fixture/repo-a",
+          "viewGeneration": 1,
+          "code": "registry-unreadable"
+        }
+      ],
+      "expected": {
+        "listState": "read-error",
+        "canMutate": false
+      },
+      "effects": []
+    },
+    {
+      "id": "stale-list-ignored",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "events": [
+        {
+          "type": "list-result",
+          "repoRoot": "/fixture/repo-b",
+          "viewGeneration": 0,
+          "rows": [
+            {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111",
+              "kind": "postgres",
+              "family": "rdbms",
+              "effectiveFamily": "rdbms",
+              "publicConfig": {
+                "endpoint": "postgresql://fixture.invalid/example"
+              },
+              "credentialPresence": {
+                "url.password": false
+              }
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "loading",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": []
+      },
+      "effects": []
+    },
+    {
+      "id": "dirty-cancel-navigation",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": true,
+        "draftRevision": 2,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "request-close"
+        },
+        {
+          "type": "dirty-decision",
+          "value": "cancel"
+        }
+      ],
+      "expected": {
+        "dirty": true,
+        "draftRevision": 2,
+        "repoRoot": "/fixture/repo-a",
+        "closed": false
+      },
+      "effects": []
+    },
+    {
+      "id": "unknown-retains-attempt",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "attempt-written",
+          "ticket": {
+            "operationId": "22222222-2222-4222-8222-222222222222",
+            "lookupRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "connectionId": "warehouse",
+            "mode": "remove",
+            "issuedAt": "2026-01-01T00:00:00.000Z",
+            "expiresAt": "2026-01-31T00:00:00.000Z",
+            "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          "expectedRevision": "11111111-1111-4111-8111-111111111111"
+        },
+        {
+          "type": "delivery-lost"
+        },
+        {
+          "type": "submit"
+        }
+      ],
+      "expected": {
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "operationState": "unknown",
+        "canMutate": false
+      },
+      "effects": []
+    },
+    {
+      "id": "unknown-close-keeps-recovery",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ],
+        "operation": {
+          "ticket": {
+            "operationId": "22222222-2222-4222-8222-222222222222",
+            "lookupRoot": "/fixture/repo-a",
+            "scope": "saved",
+            "connectionId": "warehouse",
+            "mode": "remove",
+            "issuedAt": "2026-01-01T00:00:00.000Z",
+            "expiresAt": "2026-01-31T00:00:00.000Z",
+            "signature": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+          },
+          "state": "unknown"
+        }
+      },
+      "events": [
+        {
+          "type": "request-close"
+        }
+      ],
+      "expected": {
+        "closed": true,
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "operationState": "unknown"
+      },
+      "effects": []
+    },
+    {
+      "id": "cleanup-pending-keeps-operation",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 0,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ]
+      },
+      "events": [
+        {
+          "type": "removal-result",
+          "value": {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "operationId": "22222222-2222-4222-8222-222222222222",
+            "state": "removed-cleanup-pending",
+            "credentialCleanup": "complete",
+            "resourceCleanup": "pending",
+            "safeMessage": "The registration was removed. Application-owned cleanup is pending."
+          }
+        }
+      ],
+      "expected": {
+        "visibleKeys": [
+          {
+            "repoRoot": "/fixture/repo-a",
+            "scope": "temporary",
+            "id": "preview"
+          }
+        ],
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "operationState": "removed-cleanup-pending",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      },
+      "effects": []
+    },
+    {
+      "id": "late-test-ignored",
+      "initial": {
+        "repoRoot": "/fixture/repo-a",
+        "filter": "all",
+        "listState": "ready",
+        "dirty": false,
+        "draftRevision": 3,
+        "viewGeneration": 1,
+        "rows": [
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "saved",
+              "id": "warehouse"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "postgres",
+            "family": "rdbms",
+            "effectiveFamily": "rdbms",
+            "publicConfig": {
+              "endpoint": "postgresql://fixture.invalid/example"
+            },
+            "credentialPresence": {
+              "url.password": false
+            }
+          },
+          {
+            "key": {
+              "repoRoot": "/fixture/repo-a",
+              "scope": "temporary",
+              "id": "preview"
+            },
+            "revision": "11111111-1111-4111-8111-111111111111",
+            "kind": "csv",
+            "family": "file",
+            "effectiveFamily": "file",
+            "publicConfig": {
+              "path": "data/example.csv"
+            },
+            "credentialPresence": {}
+          }
+        ],
+        "test": {
+          "requestId": "22222222-2222-4222-8222-222222222222",
+          "draftRevision": 3
+        }
+      },
+      "events": [
+        {
+          "type": "test-result",
+          "value": {
+            "requestId": "22222222-2222-4222-8222-222222222222",
+            "draftRevision": 2,
+            "repoRoot": "/fixture/repo-a",
+            "daemonEpoch": "fixture-epoch",
+            "status": "reachable",
+            "tookMs": 3
+          }
+        }
+      ],
+      "expected": {
+        "draftRevision": 3,
+        "testStatus": "pending"
+      },
+      "effects": []
+    }
+  ],
+  "removalSnapshots": [
+    {
+      "scope": "saved",
+      "phase": "confirming",
+      "confirmation": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333",
+        "action": "Delete",
+        "message": "Delete this saved registration and its obsolete application-owned credentials. Source files, databases, tables and remote data will be preserved."
+      },
+      "operationIssuedBeforeConfirmation": false,
+      "cancelCommand": null,
+      "confirmedSelection": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removing",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removing",
+        "safeMessage": "Removing the connection registration."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "busy",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "busy",
+        "safeMessage": "The connection is currently in use. Retry after the current work finishes."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "conflict",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "conflict",
+        "safeMessage": "The connection revision changed. Refresh before confirming removal again."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "not-seen",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "reconciliation-required",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "pending",
+        "resourceCleanup": "complete"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "pending",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed",
+        "safeMessage": "The registration was removed. Source data was preserved.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "complete"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "confirming",
+      "confirmation": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333",
+        "action": "Discard",
+        "message": "Discard this temporary registration and release its application-owned resources. Source files, databases, tables and remote data will be preserved."
+      },
+      "operationIssuedBeforeConfirmation": false,
+      "cancelCommand": null,
+      "confirmedSelection": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removing",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removing",
+        "safeMessage": "Removing the connection registration."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "busy",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "busy",
+        "safeMessage": "The connection is currently in use. Retry after the current work finishes."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "conflict",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "conflict",
+        "safeMessage": "The connection revision changed. Refresh before confirming removal again."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "not-seen",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "reconciliation-required",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removed",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed",
+        "safeMessage": "The registration was removed. Source data was preserved.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "complete"
+      }
+    }
+  ],
+  "coverage": [
+    {
+      "subject": "CM-S5-STATE",
+      "requirement": "CM-S5-STATE: all list states distinct, retained root, full-key identity, filter/search/counts, add reveal and stale-view rejection",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-DIRTY",
+      "requirement": "CM-S5-DIRTY: every draft exit Discard/Cancel; editing fixed identity/scope; zero effects after Cancel; unknown mutation retains reconciliation on close",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-FORM",
+      "requirement": "CM-S5-FORM: descriptor subset validation, every offered driver, safe endpoint/secret-slot serialization and Keep/Replace/Clear; pinned/read-only compatibility",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-TEST",
+      "requirement": "CM-S5-TEST: same draft serializer for Save/Test, optional testing, exact stale-result tuple, repeated click suppression and cancel",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-WIRE",
+      "requirement": "CM-S5-WIRE: capabilities, descriptors, safe lists/reads, tickets, outcomes/status, test/removal replies strict/size-bounded; old/missing/malformed fails closed",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-SYNC",
+      "requirement": "CM-S5-SYNC: one versioned/digested JSON wire+state/effect transcript corpus executed by TypeScript and Kotlin, divergent-field/transition negative controls; both bundles exclude daemon/storage/provider code.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-COMPAT",
+      "requirement": "CM-S5-COMPAT: old daemon/new client upgrade UI; no legacy mutation fallback, legacy unrelated projections retained, pinned family retained",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-TRANSPORT",
+      "requirement": "CM-S5-TRANSPORT: persistent request multiplexing, disconnect pre/postwrite, timeout/abort, request ID collisions, finite buffers, exactly-once disposal and no raw error leak",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-OWNER",
+      "requirement": "CM-S5-OWNER: one owner per extension workbench or JetBrains Project;30sheartbeat,90sexpiry,sameepochresume/new epoch,root switches/close-reopen; no session end on Configurable disposal, no persistent capabilities.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-WINDOW",
+      "requirement": "CM-S5-WINDOW: two actual project-scoped services/workbench hosts, same roots/IDs and overlapping RPC IDs, forged owner hints and disposed/stale-view refusal; owner-only delivery and independent project disposal.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-OUTCOME",
+      "requirement": "CM-S5-OUTCOME: known commit vs activation/refresh failure; lostreply same-ticket recovery, expiry, no changedpayload/new operation retry; row/card independent cleanup phases",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-REMOVE",
+      "requirement": "CM-S5-REMOVE: exact root/scope/ID confirmation, zero-effect Cancel, busy/conflict retention, unknown status, ticket-only retry and same-ID recreation safety",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-ENTRY",
+      "requirement": "CM-S5-ENTRY: VSCode Settings/command and JetBrains native Settings/AnAction route each project/workbench to the same guarded manager; explicit project chooser for application Settings, no-project/multiroot/retained-root cases.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-UI",
+      "requirement": "CM-S5-UI: actual VSCode extension and JetBrains native manager in light/dark/highcontrast, labels, focus/live status and keyboard-only add/edit/test/Delete/Discard flows.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-LIFETIME",
+      "requirement": "CM-S5-LIFETIME: before-add temporary copy in both clients, panelclose/root switch retention, workbench disposal/reconnect/expiry/restart loss; no inferred lifecycle success from backend snapshots",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-SOURCE",
+      "requirement": "CM-S5-SOURCE: both clients supported SQL/KV/file Test/Save/discard/delete leave seeded source rows/bytes unchanged; SQL Server unavailable remains pending",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-PRIVACY",
+      "requirement": "CM-S5-PRIVACY: synthetic endpoint/secret/config/capability canaries absent from Settings,memento,webview state,logs,telemetry,artifacts and other-window events; temporary actions cause zero persistence",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    },
+    {
+      "subject": "CM-S5-BUILD",
+      "requirement": "CM-S5-BUILD: fresh Node22 backend and extension typecheck/bundle; JDK21 ./gradlew test build and applicable verifyPlugin checks; packaged runtime smoke for both live clients.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-SWEEP",
+      "requirement": "CM-S5-SWEEP: per-task relevant Node/JUnit tests, then final frozen backend+explicit extension+JetBrains suites with exact logs/counts; no forced live gates or historical failure relabeling.",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "native/live"
+    },
+    {
+      "subject": "CM-S5-GATE",
+      "requirement": "CM-S5-GATE: production remains fail-closed until current S001/provider/worker-affinity/SQLServer/both-client prerequisites are genuinely satisfied; test-positive evidence never enables shipped gates",
+      "acceptance": "pending",
+      "fixtureEvidenceOnly": true,
+      "requiredEvidence": "implemented-consumer-tests"
+    }
+  ],
+  "driverDescriptors": [
+    {
+      "kind": "arrow",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "arrow"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "avro",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "avro"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "bson",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "bson"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "cassandra",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "cassandra"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "contactPoints": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^@/?#\\s]+$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "localDataCenter": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "keyspace": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "clickhouse",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "clickhouse"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "cockroachdb",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "cockroachdb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "csv",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "csv"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "delimiter": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2,
+                "pattern": "^[^'\"\\\\]*$"
+              },
+              "header": {
+                "type": "boolean"
+              },
+              "quote": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1,
+                    "pattern": "^[^\\\\]*$"
+                  },
+                  {
+                    "const": false
+                  }
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "dynamodb",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "dynamodb"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "region": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "profile": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "endpoint": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.endpoint"
+      ]
+    },
+    {
+      "kind": "etcd",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "etcd"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "hosts": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "user": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.hosts",
+        "options.password"
+      ]
+    },
+    {
+      "kind": "feather",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "feather"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "fixed-width",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "fixed-width"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "columns": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 512,
+                      "pattern": "^[^\\u0000-\\u001f]*$"
+                    },
+                    "start": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "length": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 9007199254740991
+                    },
+                    "type": {
+                      "enum": [
+                        "string",
+                        "integer",
+                        "number",
+                        "boolean"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "start",
+                    "length",
+                    "type"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "encoding": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              },
+              "trim": {
+                "type": "boolean"
+              },
+              "skipFirstLine": {
+                "type": "boolean"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "json",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "json"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "jsonl",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "jsonl"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "keydb",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "keydb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "mariadb",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mariadb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "memcached",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "kind": {
+            "const": "memcached"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "servers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "user": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.servers",
+        "options.password"
+      ]
+    },
+    {
+      "kind": "mongodb",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mongodb"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "mssql",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mssql"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "mysql",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "mysql"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "nats",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "nats"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "servers": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "minItems": 1,
+                "maxItems": 1024
+              },
+              "bucket": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "options.servers"
+      ]
+    },
+    {
+      "kind": "ndjson",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "ndjson"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "oracle",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "oracle"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "parquet",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "parquet"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "postgres",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "postgres"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "redis",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "redis"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "sqlite",
+      "family": "rdbms",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "schemaSource": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "prisma"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [
+              "type",
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "sqlite"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "tsv",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "tsv"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "delimiter": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2,
+                "pattern": "^[^'\"\\\\]*$"
+              },
+              "header": {
+                "type": "boolean"
+              },
+              "quote": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1,
+                    "pattern": "^[^\\\\]*$"
+                  },
+                  {
+                    "const": false
+                  }
+                ]
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    },
+    {
+      "kind": "valkey",
+      "family": "kv",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "endpoint": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "namespace": {
+            "type": "object",
+            "properties": {
+              "allow": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 16384,
+                  "pattern": "^[^\\u0000-\\u001f]*$"
+                },
+                "maxItems": 1024
+              }
+            },
+            "required": [
+              "allow"
+            ],
+            "additionalProperties": false
+          },
+          "kind": {
+            "const": "valkey"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": [
+        "url.username",
+        "url.password"
+      ]
+    },
+    {
+      "kind": "xlsx",
+      "family": "file",
+      "publicInputSchema": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 512,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "pii": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 16384,
+              "pattern": "^[^\\u0000-\\u001f]*$"
+            },
+            "maxItems": 1024
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 16384,
+            "pattern": "^[^\\u0000-\\u001f]*$"
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "partitioning": {
+            "enum": [
+              "none",
+              "hive"
+            ]
+          },
+          "kind": {
+            "const": "xlsx"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "glob": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 16384,
+                "pattern": "^[^\\u0000-\\u001f]*$"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "secretSlots": []
+    }
+  ],
+  "draftTestMessages": {
+    "failed": "Connection test failed.",
+    "timeout": "Connection test timed out. Retry when cleanup completes.",
+    "canceled": "Connection test canceled.",
+    "resource-limit": "Connection test exceeded the memory limit. Use a smaller input or a saved connection.",
+    "unsupported-temporary": "This input cannot be tested without persistent storage. Use a saved connection."
+  },
+  "managerScenarios": [
+    {
+      "id": "no-repository",
+      "steps": []
+    },
+    {
+      "id": "all-states-empty-filter-search",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "filter",
+            "value": "saved"
+          },
+          "expected": {
+            "matchingCount": 1,
+            "visibleKeys": [
+              {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "CSV"
+          },
+          "expected": {
+            "listState": "empty-filter",
+            "matchingCount": 0
+          }
+        },
+        {
+          "event": {
+            "type": "filter",
+            "value": "temporary"
+          },
+          "expected": {
+            "listState": "ready",
+            "matchingCount": 1,
+            "visibleKeys": [
+              {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              }
+            ]
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "empty-filter",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty-registry",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": []
+          },
+          "expected": {
+            "listState": "empty-registry",
+            "canMutate": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "read-error-stale",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "stale": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-error",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "code": "read-error"
+          },
+          "expected": {
+            "listState": "read-error",
+            "stale": true,
+            "canMutate": false,
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "read-error",
+            "canMutate": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "offline-stale",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "stale": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-error",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "code": "offline"
+          },
+          "expected": {
+            "listState": "offline",
+            "stale": true,
+            "canMutate": false,
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "offline",
+            "canMutate": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "upgrade-required-stale",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "stale": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-error",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "code": "upgrade-required"
+          },
+          "expected": {
+            "listState": "upgrade-required",
+            "stale": true,
+            "canMutate": false,
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "missing"
+          },
+          "expected": {
+            "listState": "upgrade-required",
+            "canMutate": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "invalid-read-retains-last-good",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "bad": "data"
+              }
+            ]
+          },
+          "expected": {
+            "listState": "read-error",
+            "stale": true,
+            "matchingCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "root-generation-epoch-guards",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 0,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "old-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-b",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": []
+          },
+          "expected": {
+            "listState": "ready",
+            "matchingCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "root-ABA-generation",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-b"
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-b",
+            "viewGeneration": 2,
+            "rows": []
+          }
+        },
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 3
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "loading",
+            "rows": []
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 3,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready"
+          }
+        }
+      ]
+    },
+    {
+      "id": "full-key-and-revision-selection",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "wrong"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "saved",
+                "id": "warehouse"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "retained-registered-root",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "registered-roots",
+            "roots": [
+              "/fixture/repo-b",
+              "/fixture/repo-a"
+            ]
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1
+          }
+        },
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/unregistered"
+          },
+          "expected": {
+            "repoRoot": "/fixture/repo-a"
+          }
+        },
+        {
+          "event": {
+            "type": "registered-roots",
+            "roots": [
+              "/fixture/repo-b"
+            ]
+          },
+          "expected": {
+            "repoRoot": null,
+            "listState": "no-repository",
+            "rows": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "committed-reveal-waits",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "filter",
+            "value": "saved"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "search",
+            "value": "warehouse"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "committed-reveal",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            }
+          },
+          "expected": {
+            "listState": "loading",
+            "selected": null,
+            "pendingReveal": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            },
+            "filter": "saved"
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 2,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              }
+            ]
+          },
+          "expected": {
+            "pendingReveal": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            },
+            "selected": null
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 3,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "pendingReveal": null,
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              },
+              "revision": "11111111-1111-4111-8111-111111111111"
+            },
+            "filter": "temporary",
+            "search": "",
+            "visibleKeys": [
+              {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "preview"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "epoch-loss-clears-temporary",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "epoch",
+            "value": "next-epoch"
+          },
+          "expected": {
+            "listState": "offline",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              }
+            ],
+            "selected": null,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              }
+            ],
+            "listState": "offline"
+          }
+        }
+      ]
+    },
+    {
+      "id": "close-rejects-late-results",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {}
+        },
+        {
+          "event": {
+            "type": "close"
+          },
+          "expected": {
+            "closed": true,
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "closed": true,
+            "rows": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "disconnect-invalidates-inflight-and-ready",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "canMutate": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "warehouse"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "endpoint": "postgresql://fixture.invalid/example"
+                },
+                "credentialPresence": {
+                  "url.password": false
+                }
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "preview"
+                },
+                "revision": "11111111-1111-4111-8111-111111111111",
+                "kind": "csv",
+                "family": "file",
+                "effectiveFamily": "file",
+                "publicConfig": {
+                  "path": "data/example.csv"
+                },
+                "credentialPresence": {}
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            },
+            "matchingCount": 2
+          }
+        },
+        {
+          "event": {
+            "type": "unavailable",
+            "code": "offline"
+          },
+          "expected": {
+            "listState": "offline",
+            "canMutate": false,
+            "stale": true
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "viewGeneration": 1,
+            "daemonEpoch": "fixture-epoch",
+            "rows": []
+          },
+          "expected": {
+            "listState": "offline",
+            "matchingCount": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "authenticated-temporary-revocation",
+      "steps": [
+        {
+          "event": {
+            "type": "select-root",
+            "repoRoot": "/fixture/repo-a"
+          },
+          "expected": {
+            "listState": "loading",
+            "viewGeneration": 1
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "daemonEpoch": "fixture-epoch",
+            "viewGeneration": 1,
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {},
+                "ephemeral": true
+              }
+            ]
+          },
+          "expected": {
+            "listState": "ready",
+            "counts": {
+              "all": 2,
+              "saved": 1,
+              "temporary": 1
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "select",
+            "selection": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "revoked-fixture"
+              },
+              "revision": "33333333-3333-4333-8333-333333333333"
+            }
+          },
+          "expected": {
+            "selected": {
+              "key": {
+                "repoRoot": "/fixture/repo-a",
+                "scope": "temporary",
+                "id": "revoked-fixture"
+              },
+              "revision": "33333333-3333-4333-8333-333333333333"
+            }
+          }
+        },
+        {
+          "event": {
+            "type": "refresh"
+          },
+          "expected": {
+            "listState": "loading",
+            "viewGeneration": 2
+          }
+        },
+        {
+          "event": {
+            "type": "temporary-ended"
+          },
+          "expected": {
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              }
+            ],
+            "selected": null,
+            "listState": "offline",
+            "viewGeneration": 3,
+            "counts": {
+              "all": 1,
+              "saved": 1,
+              "temporary": 0
+            },
+            "awaitingRead": false
+          }
+        },
+        {
+          "event": {
+            "type": "list-result",
+            "repoRoot": "/fixture/repo-a",
+            "daemonEpoch": "fixture-epoch",
+            "viewGeneration": 2,
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              },
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "temporary",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {},
+                "ephemeral": true
+              }
+            ]
+          },
+          "expected": {
+            "rows": [
+              {
+                "key": {
+                  "repoRoot": "/fixture/repo-a",
+                  "scope": "saved",
+                  "id": "revoked-fixture"
+                },
+                "revision": "33333333-3333-4333-8333-333333333333",
+                "kind": "postgres",
+                "family": "rdbms",
+                "effectiveFamily": "rdbms",
+                "publicConfig": {
+                  "kind": "postgres",
+                  "endpoint": "postgresql://fixture.invalid/database"
+                },
+                "credentialPresence": {}
+              }
+            ],
+            "selected": null,
+            "listState": "offline",
+            "viewGeneration": 3
+          }
+        }
+      ]
+    }
+  ],
+  "draftScenarios": [
+    {
+      "id": "temporary-csv",
+      "kind": "csv",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "temporary",
+        "id": "preview"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "path"
+          ],
+          "value": "data/example.csv"
+        },
+        {
+          "action": "field",
+          "path": [
+            "options",
+            "delimiter"
+          ],
+          "value": ","
+        },
+        {
+          "action": "field",
+          "path": [
+            "options",
+            "header"
+          ],
+          "value": true
+        }
+      ],
+      "expected": {
+        "family": "file",
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "temporary",
+          "id": "preview"
+        },
+        "mode": "create",
+        "publicPatch": {
+          "kind": "csv",
+          "path": "data/example.csv",
+          "options": {
+            "delimiter": ",",
+            "header": true
+          }
+        },
+        "credentials": {}
+      }
+    },
+    {
+      "id": "pinned-family-update-keep",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "label"
+          ],
+          "value": "Fixture label"
+        }
+      ],
+      "expected": {
+        "family": "kv",
+        "mode": "update",
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres",
+          "label": "Fixture label"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "keep"
+          }
+        }
+      }
+    },
+    {
+      "id": "blank-replace-needs-input",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "replace"
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serializationError": "invalid-fields"
+    },
+    {
+      "id": "replace-then-keep-erases-input",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "replace",
+          "value": "fixture-only-replacement-canary"
+        },
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "keep"
+        }
+      ],
+      "expected": {
+        "dirty": false
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "keep"
+          }
+        }
+      }
+    },
+    {
+      "id": "explicit-clear",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "credential",
+          "slot": "url.password",
+          "intent": "clear"
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "clear"
+          }
+        }
+      }
+    },
+    {
+      "id": "address-list-private-replacement",
+      "kind": "nats",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "temporary",
+        "id": "preview"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "options",
+            "servers"
+          ],
+          "value": [
+            "nats://fixture.invalid:4222"
+          ]
+        },
+        {
+          "action": "credential-addresses",
+          "slot": "options.servers",
+          "values": [
+            "nats://fixture:fixture-only-password@fixture.invalid:4222"
+          ]
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "temporary",
+          "id": "preview"
+        },
+        "mode": "create",
+        "publicPatch": {
+          "kind": "nats",
+          "options": {
+            "servers": [
+              "nats://fixture.invalid:4222"
+            ]
+          }
+        },
+        "credentials": {
+          "options.servers": {
+            "action": "replace",
+            "value": "[\"nats://fixture:fixture-only-password@fixture.invalid:4222\"]"
+          }
+        }
+      }
+    },
+    {
+      "id": "incomplete-structured-group",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "schemaSource",
+            "path"
+          ],
+          "value": "schema.prisma"
+        }
+      ],
+      "expected": {
+        "dirty": true
+      },
+      "serializationError": "invalid-fields"
+    },
+    {
+      "id": "reset-create-field",
+      "kind": "csv",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "temporary",
+        "id": "draft"
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "path"
+          ],
+          "value": "data/example.csv"
+        },
+        {
+          "action": "reset-field",
+          "path": [
+            "path"
+          ]
+        }
+      ],
+      "expected": {
+        "dirty": false
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "temporary",
+          "id": "draft"
+        },
+        "mode": "create",
+        "publicPatch": {
+          "kind": "csv"
+        },
+        "credentials": {}
+      }
+    },
+    {
+      "id": "reset-update-keeps-baseline",
+      "kind": "postgres",
+      "key": {
+        "repoRoot": "/fixture/repo-a",
+        "scope": "saved",
+        "id": "draft"
+      },
+      "current": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "revision": "11111111-1111-4111-8111-111111111111",
+        "kind": "postgres",
+        "family": "kv",
+        "effectiveFamily": "kv",
+        "declaredFamily": "kv",
+        "registeredFamily": "kv",
+        "publicConfig": {
+          "endpoint": "postgresql://fixture.invalid/example"
+        },
+        "credentialPresence": {
+          "url.username": false,
+          "url.password": true
+        }
+      },
+      "steps": [
+        {
+          "action": "field",
+          "path": [
+            "endpoint"
+          ],
+          "value": "postgresql://other.invalid/db"
+        },
+        {
+          "action": "reset-field",
+          "path": [
+            "endpoint"
+          ]
+        }
+      ],
+      "expected": {
+        "dirty": false
+      },
+      "serialized": {
+        "key": {
+          "repoRoot": "/fixture/repo-a",
+          "scope": "saved",
+          "id": "draft"
+        },
+        "mode": "update",
+        "expectedRevision": "11111111-1111-4111-8111-111111111111",
+        "publicPatch": {
+          "endpoint": "postgresql://fixture.invalid/example",
+          "kind": "postgres"
+        },
+        "credentials": {
+          "url.username": {
+            "action": "keep"
+          },
+          "url.password": {
+            "action": "keep"
+          }
+        }
+      }
+    }
+  ],
+  "publicFieldCases": [
+    {
+      "value": "data/literal+plus.csv",
+      "valid": true
+    },
+    {
+      "value": "data/literal%.csv",
+      "valid": true
+    },
+    {
+      "value": "data/%E2%82%AC.csv",
+      "valid": true
+    },
+    {
+      "value": "data/%C0%AF.csv",
+      "valid": false
+    },
+    {
+      "value": "data/%E2%82.csv",
+      "valid": false
+    },
+    {
+      "value": "data/%24%7Bsecret%3Afixture%7D.csv",
+      "valid": false
+    }
+  ],
+  "capabilityCases": [
+    {
+      "id": "saved-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "create",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "saved-update",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "update",
+      "mode": "update",
+      "expected": true
+    },
+    {
+      "id": "saved-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "remove",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "saved-test",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "test",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "saved-status",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "status",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "saved-activation",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "activation",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "temporary-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "create",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "temporary-update",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "update",
+      "mode": "update",
+      "expected": true
+    },
+    {
+      "id": "temporary-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "remove",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "temporary-test",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "test",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "temporary-status",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "status",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "temporary-activation",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "activation",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "optional-test-absent-save-still-supported",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "create",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "optional-test-absent-test-disabled",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "test",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "test-only-server-does-not-need-save",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "draft-test",
+        "test-cancellation"
+      ],
+      "scope": "saved",
+      "action": "test",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "missing-saved-create-saved-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "create",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-saved-create-temporary-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "create",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "missing-saved-update-saved-update",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "update",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-saved-remove-saved-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "remove",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-saved-remove-temporary-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "remove",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "missing-temporary-remove-temporary-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "remove",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-operation-status-saved-status",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "status",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-operation-status-temporary-status",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "status",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "missing-operation-status-saved-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "create",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-activation-retry-saved-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "create",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "missing-activation-retry-saved-activation",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "activation",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-memory-only-files-saved-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "create",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-full-use-leases-saved-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "create",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-immutable-credentials-saved-update",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "update",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-operation-tickets-saved-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "remove",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-removal-state-temporary-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "remove",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "missing-removal-cleanup-retry-saved-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state"
+      ],
+      "scope": "saved",
+      "action": "remove",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "base-missing-safe-read",
+      "features": [
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "read",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "base-missing-driver-descriptors",
+      "features": [
+        "safe-read",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "read",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "base-missing-workbench-sessions",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "read",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "base-missing-session-delegation",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "temporary",
+      "action": "read",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "cleanup-old-create-without-new-create",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "cleanup",
+      "mode": "create",
+      "expected": true
+    },
+    {
+      "id": "cleanup-old-remove-without-new-remove",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "cleanup",
+      "mode": "remove",
+      "expected": true
+    },
+    {
+      "id": "invalid-scope",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "forged",
+      "action": "create",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "invalid-action",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "forged",
+      "mode": "create",
+      "expected": false
+    },
+    {
+      "id": "invalid-mode",
+      "features": [
+        "safe-read",
+        "driver-descriptors",
+        "workbench-sessions",
+        "session-delegation",
+        "saved-create",
+        "saved-update",
+        "operation-tickets",
+        "operation-status",
+        "activation-retry",
+        "immutable-credentials",
+        "full-use-leases",
+        "memory-only-files",
+        "draft-test",
+        "test-cancellation",
+        "saved-remove",
+        "temporary-remove",
+        "removal-state",
+        "removal-cleanup-retry"
+      ],
+      "scope": "saved",
+      "action": "read",
+      "mode": "forged",
+      "expected": false
+    }
+  ],
+  "endpointPolicy": {
+    "version": 2,
+    "purpose": "Portable public-field safety only; driver-specific connection validity remains a daemon gate. Original strings are never normalized.",
+    "rules": [
+      "Absolute ASCII scheme and nonempty remainder; no trimming or normalization.",
+      "Raw C0, DEL, C1 controls, unpaired UTF-16 surrogates and backslashes are refused.",
+      "All endpoint schemes require canonical scheme://authority syntax, matching producer uri()/address(). Authority must be nonempty except file. Opaque or nested SDK strings are refused, never guessed.",
+      "Authority is text between scheme:// and first / ? #. Refuse user-info and unsafe delimiter/whitespace spellings after bounded strict decoding.",
+      "At most 8 stable percent-decoding passes in authority; reject userinfo @, separators, controls, Unicode whitespace and unsafe authority punctuation.",
+      "Path/query/fragment text is returned unchanged, subject to existing strict UTF-8 percent decoding and encoded secret-reference checks; malformed encoded bytes are refused.",
+      "This is not complete WHATWG or RFC URL conformance, and an accepted public field does not prove connectability.",
+      "An endpoint field must be a string. The daemon retains unsupported raw SDK config server-side and projects readonly metadata without an endpoint."
+    ]
+  },
+  "endpointCases": [
+    {
+      "id": "endpoint-01",
+      "value": "https://host/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-02",
+      "value": "postgresql://fixture.invalid/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-03",
+      "value": "redis://my_host:6379",
+      "valid": true
+    },
+    {
+      "id": "endpoint-04",
+      "value": "mongodb://a:27017,b:27018/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-05",
+      "value": "custom:opaque-value",
+      "valid": false
+    },
+    {
+      "id": "endpoint-06",
+      "value": "file:///tmp/data.csv",
+      "valid": true
+    },
+    {
+      "id": "endpoint-07",
+      "value": "https://host/?q=a b",
+      "valid": true
+    },
+    {
+      "id": "endpoint-08",
+      "value": "https://host/?q={value}",
+      "valid": true
+    },
+    {
+      "id": "endpoint-09",
+      "value": "https://host/[value]?q=100%",
+      "valid": true
+    },
+    {
+      "id": "endpoint-10",
+      "value": "https://host/#a#b",
+      "valid": true
+    },
+    {
+      "id": "endpoint-11",
+      "value": "https://host/?q=\u00a0",
+      "valid": true
+    },
+    {
+      "id": "endpoint-12",
+      "value": "https://host/?q=\u2028",
+      "valid": true
+    },
+    {
+      "id": "endpoint-13",
+      "value": "https://host/a\u3000b",
+      "valid": true
+    },
+    {
+      "id": "endpoint-14",
+      "value": "https://\u4f8b\u3048.invalid/\u6570\u636e",
+      "valid": true
+    },
+    {
+      "id": "endpoint-15",
+      "value": "https://[::1]:443/db",
+      "valid": true
+    },
+    {
+      "id": "endpoint-16",
+      "value": "https://host/path@value?q=x@y#z@q",
+      "valid": true
+    },
+    {
+      "id": "endpoint-17",
+      "value": "postgresql://host/db?q=%25",
+      "valid": true
+    },
+    {
+      "id": "endpoint-18",
+      "value": "redis://:pw@my_host:6379",
+      "valid": false
+    },
+    {
+      "id": "endpoint-19",
+      "value": "postgresql://u:p@a:1,b:2/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-20",
+      "value": "https:user:pw@host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-21",
+      "value": "https:///user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-22",
+      "value": "https:\\\\user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-23",
+      "value": "https:/\\tab/user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-24",
+      "value": "https://user:pw@host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-25",
+      "value": "https:\tuser:pw@host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-26",
+      "value": "https://user:\npw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-27",
+      "value": "https://user:\rpw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-28",
+      "value": "https://u%40host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-29",
+      "value": "https://u%2540host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-30",
+      "value": "https://host%2fother/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-31",
+      "value": "https://host%5cother/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-32",
+      "value": "https://host%3fother/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-33",
+      "value": "https://host%23other/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-34",
+      "value": "https://bad host/?q=ok",
+      "valid": false
+    },
+    {
+      "id": "endpoint-35",
+      "value": "https://bad\u00a0host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-36",
+      "value": "https://bad\u2028host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-37",
+      "value": "https://{host}/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-38",
+      "value": "https://host\\@other/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-39",
+      "value": "https://host/a\\b",
+      "valid": false
+    },
+    {
+      "id": "endpoint-40",
+      "value": "https://host/a\u007fb",
+      "valid": false
+    },
+    {
+      "id": "endpoint-41",
+      "value": "https://host/a\u0085b",
+      "valid": false
+    },
+    {
+      "id": "endpoint-42",
+      "value": "https://",
+      "valid": false
+    },
+    {
+      "id": "endpoint-43",
+      "value": "https:///",
+      "valid": false
+    },
+    {
+      "id": "endpoint-44",
+      "value": "https:host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-45",
+      "value": "https:/host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-46",
+      "value": "http:opaque",
+      "valid": false
+    },
+    {
+      "id": "endpoint-47",
+      "value": "http://?q=value",
+      "valid": false
+    },
+    {
+      "id": "endpoint-48",
+      "value": "custom:",
+      "valid": false
+    },
+    {
+      "id": "endpoint-49",
+      "value": "relative/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-50",
+      "value": "//host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-51",
+      "value": "://host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-52",
+      "value": "1scheme://host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-53",
+      "value": " https://host/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-54",
+      "value": "custom:user:pw@host",
+      "valid": false
+    },
+    {
+      "id": "endpoint-55",
+      "value": "https://%ff/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-56",
+      "value": "https://host/%24%7Bsecret%3Afixture%7D",
+      "valid": false
+    },
+    {
+      "id": "endpoint-57",
+      "value": "https://\ud800.invalid/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-58",
+      "value": "https://\udc00.invalid/",
+      "valid": false
+    },
+    {
+      "id": "endpoint-59",
+      "value": "https://host/\ud800",
+      "valid": false
+    },
+    {
+      "id": "endpoint-60",
+      "value": "https://\ud83d\ude00.invalid/",
+      "valid": true
+    },
+    {
+      "id": "endpoint-61",
+      "value": "https://host/\ud83d\ude00",
+      "valid": true
+    },
+    {
+      "id": "endpoint-62",
+      "value": "jdbc:postgresql://user:pw@host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-63",
+      "value": "jdbc:mysql://u:p@h/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-64",
+      "value": "jdbc:sqlserver://u:p@h",
+      "valid": false
+    },
+    {
+      "id": "endpoint-65",
+      "value": "jdbc:postgresql://host/db",
+      "valid": false
+    },
+    {
+      "id": "endpoint-66",
+      "value": "custom:/u:p@h",
+      "valid": false
+    },
+    {
+      "id": "endpoint-67",
+      "value": "custom:?u:p@h",
+      "valid": false
+    },
+    {
+      "id": "endpoint-68",
+      "value": "custom:prefix//u:p@host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-69",
+      "value": "https://host/?q=%E9",
+      "valid": false
+    },
+    {
+      "id": "endpoint-70",
+      "value": "https://host/%ff",
+      "valid": false
+    },
+    {
+      "id": "endpoint-71",
+      "value": "https://%41.invalid/path",
+      "valid": true
+    },
+    {
+      "id": "endpoint-72",
+      "value": "https://%25252525252525252540host/path",
+      "valid": false
+    },
+    {
+      "id": "endpoint-73",
+      "value": null,
+      "valid": false
+    },
+    {
+      "id": "endpoint-74",
+      "value": 17,
+      "valid": false
+    },
+    {
+      "id": "endpoint-75",
+      "value": true,
+      "valid": false
+    },
+    {
+      "id": "endpoint-76",
+      "value": [
+        "https://u:p@host"
+      ],
+      "valid": false
+    },
+    {
+      "id": "endpoint-77",
+      "value": {
+        "value": "https://u:p@host"
+      },
+      "valid": false
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "subject": "CM-S4-FILES/NO-PERSIST",
+  "runtime": "Node22.23.2",
+  "build": "fresh npm run build on Node22 PATH, before focused source/compiled execution; no full sweep yet",
+  "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-reporter=tap src/daemon/db/__tests__/session-file-matrix.test.ts src/daemon/db/__tests__/session-file-resources.test.ts",
+  "result": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "bothScopes": [
+    "saved",
+    "temporary"
+  ],
+  "formats": [
+    "csv",
+    "tsv",
+    "json",
+    "jsonl",
+    "ndjson",
+    "parquet",
+    "avro",
+    "bson",
+    "fixed-width",
+    "xlsx"
+  ],
+  "directories": "two-file CSV directory inputs verified in both scopes",
+  "perMode": {
+    "source": {
+      "temporaryResourcesClosed": 11,
+      "savedDriversClosed": 11
+    },
+    "compiled": {
+      "temporaryResourcesClosed": 11,
+      "savedDriversClosed": 11
+    }
+  },
+  "sourcePreservation": "SHA256 tree equality; no unexpected source-directory entries; poisoned Node unlink/rm/rename/truncate/write/append ports assert zero mutation attempts. Watcher notifications for existing inputs are permitted because notifications alone do not prove byte mutation.",
+  "temporaryPersistence": "Entire isolated root/state tree unchanged after temporary operations; memory-only and no-spill policy; each actual private DuckDB execution closed with zero connections/operations/tables/decodedBytes. Underlying SDK/file close canary never reaches process output.",
+  "savedPersistence": "Existing saved-cache policy unchanged. Only isolated test-owned registry and application cache metadata may be written; original source trees remain unchanged. Global saved DuckDB singleton closes on fixture exit.",
+  "negativeControls": "Existing matrix retains Arrow/Feather unsupported-temporary and overbudget BSON refusal. Arrow extension unavailable in current DuckDB build; no claim of temporary support.",
+  "earlierAttempt": {
+    "file": "initial-filesystem-notification-assertion-failure.log",
+    "result": "fail",
+    "cause": "Zero-notification assertion was invalid despite per-input hash equality. Replaced with hashes, poisoned source mutation ports and unexpected-entry checks."
+  },
+  "releaseEnabled": false,
+  "sourceHashes": {
+    "src/daemon/db/__tests__/fixtures/file-removal-acceptance-child.ts": "e6e6213556c4f390ad8ae382a567c3be8e1fcab153cf4f6b048416df64ac0da4",
+    "src/daemon/db/__tests__/fixtures/file-removal-run.ts": "f53ee4ea25d9a4db17db1a23e502a6cc1e63bb4c381e4fa4de9254069dfbf405",
+    "src/daemon/db/__tests__/fixtures/session-file-inputs.ts": "92b3793090bb5e287cb9a56d566358032c6b21d2ed7c8cbd91ecec845c70362a",
+    "src/daemon/db/__tests__/fixtures/session-file-resources-child.ts": "cc1aba6363d2197b93466ce028b78ddf12946b49be249554520c336149be4e81",
+    "src/daemon/db/__tests__/session-file-matrix.test.ts": "e3c204bb104d2791bdb9cbecc3f29a057db3ac5c4d9d5d513ce4733cc2d3daa1",
+    "src/daemon/db/__tests__/session-file-resources.test.ts": "42ac13c60242ea04324a3207e93b22404aa04c3dad0357a0175f55714b2f16f4"
+  },
+  "logs": {
+    "initial-filesystem-notification-assertion-failure.log": "bfd9188b02dcfe46f1e4df59447b07de06505b2c798b647e614ea0c95777b680",
+    "node22-build.log": "b9c27e3653bbc93f1df7462714f9461aa2125b09950c938d59c6d20499a6f1d6",
+    "source-compiled-relevant-pass.tap": "f8f33efdbccdd1b6201b417cee565af8104ebb2003d633cfbacd098983e67a7a"
+  }
+}

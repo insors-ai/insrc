@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.SettingsViewTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.001">
+  <properties/>
+  <testcase name="displayValue keeps a genuinely fractional number as-is()" classname="ai.insors.insrc.jetbrains.settings.SettingsViewTest" time="0.0"/>
+  <testcase name="displayValue treats a set-but-null currentValue as unset (falls back to default)()" classname="ai.insors.insrc.jetbrains.settings.SettingsViewTest" time="0.0"/>
+  <testcase name="displayValue yields a string for an unrecognized type (never dropped or thrown)()" classname="ai.insors.insrc.jetbrains.settings.SettingsViewTest" time="0.0"/>
+  <testcase name="groupsOf orders by payload groups, covers every option, trailing-buckets out-of-groups, skips empty groups()" classname="ai.insors.insrc.jetbrains.settings.SettingsViewTest" time="0.0"/>
+  <testcase name="displayValue shows the value when set and the default with a marker when unset()" classname="ai.insors.insrc.jetbrains.settings.SettingsViewTest" time="0.0"/>
+  <testcase name="displayValue renders an integral number without the Gson Double artifact (real socket shape)()" classname="ai.insors.insrc.jetbrains.settings.SettingsViewTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

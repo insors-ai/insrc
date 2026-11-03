@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: parseManifest - Maven pom.xml
+    # Subtest: extracts groupId:artifactId + version triples from <dependency> blocks
+    ok 1 - extracts groupId:artifactId + version triples from <dependency> blocks
+      ---
+      duration_ms: 1.638792
+      type: 'test'
+      ...
+    # Subtest: substitutes ${...} placeholders against same-pom <properties>
+    ok 2 - substitutes ${...} placeholders against same-pom <properties>
+      ---
+      duration_ms: 0.399917
+      type: 'test'
+      ...
+    # Subtest: excludes <dependencyManagement> entries from the runtime dep list
+    ok 3 - excludes <dependencyManagement> entries from the runtime dep list
+      ---
+      duration_ms: 0.397667
+      type: 'test'
+      ...
+    # Subtest: handles dependencies without an explicit <version>
+    ok 4 - handles dependencies without an explicit <version>
+      ---
+      duration_ms: 0.221167
+      type: 'test'
+      ...
+    1..4
+ok 1 - parseManifest - Maven pom.xml
+  ---
+  duration_ms: 2.942209
+  type: 'suite'
+  ...
+# Subtest: parseManifest - Gradle (Groovy DSL)
+    # Subtest: extracts triples from `implementation` + `api` + `testImplementation`
+    ok 1 - extracts triples from `implementation` + `api` + `testImplementation`
+      ---
+      duration_ms: 0.787667
+      type: 'test'
+      ...
+    # Subtest: skips project() refs + interpolated strings
+    ok 2 - skips project() refs + interpolated strings
+      ---
+      duration_ms: 0.309666
+      type: 'test'
+      ...
+    1..2
+ok 2 - parseManifest - Gradle (Groovy DSL)
+  ---
+  duration_ms: 1.206
+  type: 'suite'
+  ...
+# Subtest: parseManifest - Gradle (Kotlin DSL)
+    # Subtest: extracts triples from build.gradle.kts double-quoted strings
+    ok 1 - extracts triples from build.gradle.kts double-quoted strings
+      ---
+      duration_ms: 0.256
+      type: 'test'
+      ...
+    # Subtest: prefers Gradle (Kotlin) over (Groovy) when both are present
+    ok 2 - prefers Gradle (Kotlin) over (Groovy) when both are present
+      ---
+      duration_ms: 0.278625
+      type: 'test'
+      ...
+    1..2
+ok 3 - parseManifest - Gradle (Kotlin DSL)
+  ---
+  duration_ms: 0.76975
+  type: 'suite'
+  ...
+# Subtest: parseManifest - SBT
+    # Subtest: extracts %%-style (Scala) and %-style (Java) triples
+    ok 1 - extracts %%-style (Scala) and %-style (Java) triples
+      ---
+      duration_ms: 0.414417
+      type: 'test'
+      ...
+    1..1
+ok 4 - parseManifest - SBT
+  ---
+  duration_ms: 0.453292
+  type: 'suite'
+  ...
+# Subtest: parseManifest - Mill
+    # Subtest: extracts ivy"group::artifact:version" + ivy"group:artifact:version"
+    ok 1 - extracts ivy"group::artifact:version" + ivy"group:artifact:version"
+      ---
+      duration_ms: 0.35025
+      type: 'test'
+      ...
+    1..1
+ok 5 - parseManifest - Mill
+  ---
+  duration_ms: 0.390375
+  type: 'suite'
+  ...
+# Subtest: parseManifest - no manifest
+    # Subtest: returns an empty array when no manifest is found
+    ok 1 - returns an empty array when no manifest is found
+      ---
+      duration_ms: 0.180625
+      type: 'test'
+      ...
+    1..1
+ok 6 - parseManifest - no manifest
+  ---
+  duration_ms: 0.216292
+  type: 'suite'
+  ...
+1..6
+# tests 11
+# suites 6
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 185.840084

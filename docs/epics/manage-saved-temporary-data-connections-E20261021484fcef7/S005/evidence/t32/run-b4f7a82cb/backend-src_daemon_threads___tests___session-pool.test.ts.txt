@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: session pool: concurrent workerFor calls for one session start one worker
+ok 1 - session pool: concurrent workerFor calls for one session start one worker
+  ---
+  duration_ms: 1.746375
+  type: 'test'
+  ...
+# Subtest: session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight
+ok 2 - session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight
+  ---
+  duration_ms: 0.532375
+  type: 'test'
+  ...
+# Subtest: session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries
+ok 3 - session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries
+  ---
+  duration_ms: 1.007667
+  type: 'test'
+  ...
+# Subtest: session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config
+ok 4 - session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config
+  ---
+  duration_ms: 0.926166
+  type: 'test'
+  ...
+# Subtest: session pool: a worker that exits is unregistered and disconnected from its main-thread services
+ok 5 - session pool: a worker that exits is unregistered and disconnected from its main-thread services
+  ---
+  duration_ms: 11.309334
+  type: 'test'
+  ...
+# Subtest: session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn
+ok 6 - session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn
+  ---
+  duration_ms: 0.32425
+  type: 'test'
+  ...
+# Subtest: session pool: close waits for a start under way, releases that worker too, and refuses any later start
+ok 7 - session pool: close waits for a start under way, releases that worker too, and refuses any later start
+  ---
+  duration_ms: 0.255
+  type: 'test'
+  ...
+# Subtest: session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError
+ok 8 - session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError
+  ---
+  duration_ms: 0.266542
+  type: 'test'
+  ...
+# Subtest: session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart
+ok 9 - session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart
+  ---
+  duration_ms: 0.373541
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 319.375

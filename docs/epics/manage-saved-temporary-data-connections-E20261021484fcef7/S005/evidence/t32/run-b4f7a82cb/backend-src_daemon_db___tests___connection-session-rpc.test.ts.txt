@@ -1,0 +1,42 @@
+TAP version 13
+# (node:6398) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility
+ok 1 - CM-S3-AUTH: strict bounded session decoding rejects hostile shapes before eligibility
+  ---
+  duration_ms: 12.8015
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback
+ok 2 - CM-S3-AUTH: socket session admission stays on main and refuses persistent runners and fallback
+  ---
+  duration_ms: 17.220583
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay
+ok 3 - CM-S3-AUTH: disconnect during eligibility cannot publish a session or overlay
+  ---
+  duration_ms: 1.352125
+  type: 'test'
+  ...
+# Subtest: CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade
+ok 4 - CM-S4-INPUT/RPC: temporary socket removal enforces sc6 owner audience root and no saved downgrade
+  ---
+  duration_ms: 31.756792
+  type: 'test'
+  ...
+# Subtest: CM-S4-RPC/GATE: actual sockets keep both removal scopes on main and refuse absent feature without worker fallback
+ok 5 - CM-S4-RPC/GATE: actual sockets keep both removal scopes on main and refuse absent feature without worker fallback
+  ---
+  duration_ms: 5.318958
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1081.857292

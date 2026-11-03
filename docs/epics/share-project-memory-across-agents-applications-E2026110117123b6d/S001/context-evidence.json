@@ -1,0 +1,234 @@
+{
+  "capturedOn": "2026-11-01",
+  "probes": [
+    {
+      "type": "symbol.locate",
+      "completeness": {
+        "complete": true,
+        "total": 0,
+        "returned": 0,
+        "basis": "graph",
+        "basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established"
+      },
+      "names": [
+        "MemoryService",
+        "MemoryOptions",
+        "MemoryLifecycle",
+        "ModelPort"
+      ],
+      "hits": []
+    },
+    {
+      "type": "module.profile",
+      "completeness": {
+        "complete": true,
+        "total": 3,
+        "returned": 3,
+        "basis": "filesystem",
+        "basisNote": "Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only."
+      },
+      "profile": {
+        "path": "src/shared/locks",
+        "kind": "dir",
+        "subdirs": [
+          "src/shared/locks/__tests__"
+        ],
+        "filesInDir": [
+          {
+            "file": "src/shared/locks/lock-manager.ts",
+            "language": "typescript",
+            "bytes": 38259,
+            "kind": "file"
+          },
+          {
+            "file": "src/shared/locks/maintenance-lock.ts",
+            "language": "typescript",
+            "bytes": 6439,
+            "kind": "file"
+          }
+        ],
+        "exports": [],
+        "entrypoints": [],
+        "entityCount": 99,
+        "totalBytes": 94497
+      }
+    },
+    {
+      "type": "test.locate",
+      "completeness": {
+        "complete": false,
+        "total": 107,
+        "returned": 8,
+        "limited": [
+          {
+            "what": "tests",
+            "limit": 8,
+            "scope": "overall",
+            "reason": "107 tests were found and 8 are kept"
+          }
+        ],
+        "basis": "graph",
+        "basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established"
+      },
+      "subject": "lock-manager",
+      "hits": [
+        {
+          "entityId": "968a69d3b5de88e125c25082e5d44922",
+          "name": "ShowOrRegisterRepoActionTest.`the action computes the dynamic label off the EDT (BGT) and never blocks or throws in update`",
+          "kind": "method",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/actions/ShowOrRegisterRepoActionTest.kt",
+          "startLine": 46
+        },
+        {
+          "entityId": "6d85ea661367b970b931e3a34af90d8e",
+          "name": "ConnectionMutationBackend.wallClock",
+          "kind": "method",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationBackend.kt",
+          "startLine": 31
+        },
+        {
+          "entityId": "7e6fc196d08ea3dc9bf27c04f0fbeaf7",
+          "name": "ConnectionMutationControllerTest.testSameTicketReplayIsExplicitAndIdenticalWhileExpiredUnknownBlocksNewMutation",
+          "kind": "method",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt",
+          "startLine": 69
+        },
+        {
+          "entityId": "ddaa3886375f7dc4a3c1b2a2f4e68c9f",
+          "name": "testClosedProjectChoiceAndStaleChooserButtonsCannotOpenManager",
+          "kind": "function",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt",
+          "startLine": 60
+        },
+        {
+          "entityId": "5c94157ce4b316d4263718e94d0071f7",
+          "name": "ConnectionsManagerModelTest",
+          "kind": "class",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt",
+          "startLine": 7
+        },
+        {
+          "entityId": "c43ce929cece950fb1a50458f07dd469",
+          "name": "ConnectionsManagerModelTest.selection",
+          "kind": "method",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt",
+          "startLine": 9
+        },
+        {
+          "entityId": "733103ef8c0a4b7e67173088ea57f437",
+          "name": "ConnectionsManagerModelTest.event",
+          "kind": "method",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt",
+          "startLine": 13
+        },
+        {
+          "entityId": "bad5dfdb46f0e25acc6e3923c7a0e56b",
+          "name": "ConnectionsManagerModelTest.`same sixteen sc7 transcripts match state projections and effects`",
+          "kind": "method",
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt",
+          "startLine": 32
+        }
+      ],
+      "notFoundNote": ""
+    },
+    {
+      "type": "failed",
+      "requested": "search.text",
+      "errorCode": "runtime-error",
+      "message": "ENOTDIR: not a directory, scandir 'package.json'"
+    },
+    {
+      "type": "import.graph",
+      "completeness": {
+        "complete": true,
+        "total": 14,
+        "returned": 14,
+        "basis": "graph",
+        "basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established"
+      },
+      "summary": {
+        "target": "src/shared/locks/lock-manager.ts",
+        "topImporters": [
+          {
+            "file": "src/daemon/db/__tests__/actual-probe-acceptance.test.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/daemon/threads/__tests__/helpers/hold-worker.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/daemon/threads/__tests__/helpers/store-worker.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/daemon/threads/__tests__/stream-lifetime.test.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/daemon/threads/main-services.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/daemon/threads/worker-entry.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/daemon/threads/workers.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/shared/locks/__tests__/helpers/lock-ops-worker.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/shared/locks/__tests__/helpers/lock-wait-worker.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/shared/locks/__tests__/lock-manager-threads.test.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/shared/locks/__tests__/lock-manager.test.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/shared/locks/maintenance-lock.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/daemon/threads/maintenance.ts",
+            "edges": 1
+          }
+        ],
+        "topImportees": [
+          {
+            "file": "src/shared/logger.ts",
+            "edges": 1
+          }
+        ],
+        "totalInDegree": 13,
+        "totalOutDegree": 1
+      }
+    }
+  ],
+  "limitations": [
+    "test.locate results were off-topic/bounded; exact test imports were inspected separately.",
+    "package search failed ENOTDIR; exact package.json and tsconfig.json source reads supplemented it.",
+    "No graph absence claim implies complete source coverage."
+  ],
+  "osProbe": {
+    "platform": "darwin",
+    "tool": "Python fcntl",
+    "separateDescriptorExclusion": true,
+    "lastDescriptorCloseRelease": true,
+    "notQualified": [
+      "Node fs-ext binding",
+      "worker threads",
+      "process crash",
+      "Linux filesystem",
+      "package ABI/packing"
+    ]
+  }
+}

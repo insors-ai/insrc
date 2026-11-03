@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: CM-S1-S: BSON admits length and structure before payload/object allocation and releases every retained decoder unit
+ok 1 - CM-S1-S: BSON admits length and structure before payload/object allocation and releases every retained decoder unit
+  ---
+  duration_ms: 29.733166
+  type: 'test'
+  ...
+# Subtest: CM-S1-S: fixed-width giant records and cumulative schema limits reject with zero retained buffers
+ok 2 - CM-S1-S: fixed-width giant records and cumulative schema limits reject with zero retained buffers
+  ---
+  duration_ms: 4.738625
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: BSON saved and memory schemas preserve full dates precise large numbers nested values rare fields and all-null data
+ok 3 - CM-S1-W: BSON saved and memory schemas preserve full dates precise large numbers nested values rare fields and all-null data
+  ---
+  duration_ms: 227.108792
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: fixed-width saved and memory rows share explicit empty all-null schema and complete incremental decoding
+ok 4 - CM-S1-W: fixed-width saved and memory rows share explicit empty all-null schema and complete incremental decoding
+  ---
+  duration_ms: 76.370417
+  type: 'test'
+  ...
+# Subtest: CM-S1-S: source replacement between inference and decoding fails explicitly and clears decoder buffers
+ok 5 - CM-S1-S: source replacement between inference and decoding fails explicitly and clears decoder buffers
+  ---
+  duration_ms: 11.450042
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: actual empty and all-null BSON keeps its declared fallback schema with no invented data rows
+ok 6 - CM-S1-W: actual empty and all-null BSON keeps its declared fallback schema with no invented data rows
+  ---
+  duration_ms: 70.592167
+  type: 'test'
+  ...
+# Subtest: CM-S1-S: rejected and cancelled bounded decoding closes every actual source handle
+ok 7 - CM-S1-S: rejected and cancelled bounded decoding closes every actual source handle
+  ---
+  duration_ms: 221.363833
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 920.294333

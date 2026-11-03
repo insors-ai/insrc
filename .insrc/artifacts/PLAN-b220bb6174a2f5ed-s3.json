@@ -1,0 +1,213 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793341977730-z8b39u",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T06:35:48.501Z",
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 170755,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b220bb6174a2f5ed",
+    "epicSlug": "run-claude-codex-ollama-models",
+    "storyId": "s3",
+    "lldRunId": "wf-1793340689279-hnplkh",
+    "lldEffectiveHash": "ca5bac7aee6017131c5204a57baa27e41f2e27c7cfda243bf4d4fdb1d0a3748a",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-30T06:38:02.689Z",
+    "rangeBase": "76bc986ec8eaf6aebcaddffaf0a50a515a8e3d28"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story teaches the terminal UI's Model Tiers screen about the Ollama-hosted Claude runner. The pure tier logic learns to read a family's host mark and a model's cloud/local hosting from the daemon's definitions answer, so it can label models, refuse typed ids the family does not list, and show an undeclared model as not supported. The screen then renders those labels and messages and withholds the 'type another id' key for that runner, and the existing literal scan is widened so no family id, including the new one, is ever hard-coded in the UI.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Host-aware tier logic in model-tiers.ts",
+        "summary": "EffectiveTier gains `hosting?: 'cloud' | 'local'` (a host family's served model) and `notSupported: boolean` (a host family not serving the configured model; served stays false). computeEffectiveTiers reads the family's `host` and the served model's `hosting` from the definitions answer; vendor and plain Ollama tiers keep hosting absent and notSupported false, and a family entry without `host` (an older daemon) computes as today. resolveTypedModel returns refused ('only listed <displayName> models are selectable') for an id a host family does not serve, so it never yields 'check' for it. switchFamily to a host family (no tier defaults) takes its first declared model with the CLI-default effort. effortChoices is unchanged. Unit tests in src/cli/__tests__/model-tiers.test.ts over a fake definitions answer with a host family (cloud model with efforts, local model without).",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "computeEffectiveTiers sets hosting for a served host-family model (cloud and local) and notSupported true for an undeclared one; vendor and plain Ollama tiers carry no hosting and notSupported false.",
+          "A configured alias of a host model is served, reported with the canonical id and its hosting.",
+          "A family entry without `host` (older daemon answer) computes as a vendor family: no hosting, notSupported false, and a typed unlisted id still yields 'check' when it has a CLI kind.",
+          "resolveTypedModel refuses an unlisted id for a host family and still returns 'check' for a vendor CLI family; an alias of a host model resolves to served.",
+          "Switching a tier to the host family takes its first declared model with the CLI-default effort.",
+          "The family is recognised by `host`, never by id: no family id literal is added to src/cli."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "model-tiers.test.ts: computeEffectiveTiers marks a host family's served model with its hosting and an undeclared one as notSupported; vendor, plain Ollama and host-less families are unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "model-tiers.test.ts: resolveTypedModel refuses an unlisted id for a host family and keeps 'check' for a vendor CLI family; switchFamily to the host family takes its first declared model"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Model Tiers pane: cloud/local label, not-supported note, withheld 'n', effort messages",
+        "summary": "In src/cli/panes/ModelTiersPane.tsx the tier row appends the model's hosting ('cloud' / 'local') for a host family; a notSupported tier shows 'not supported by <family displayName>: the tier will not run; pick a listed model with m' instead of the vendor 'not served' note; the 'n' key hint is hidden and 'n' does nothing for a host family (so no typed id reaches the check path; resolveTypedModel's refusal from t1 backs any prompt path); 'e' on a model with no efforts toasts 'this model takes no effort setting' and writes nothing; 'e' on a notSupported tier toasts '<model> is not supported by <family>: pick a listed model with m' (the vendor toast at :184 stays for vendor families only). Integration tests in src/cli/__tests__/tui-models.test.ts with ink-testing-library over fake services, including the save-then-reload test for ac3.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "'f' reaches the Ollama-hosted runner next to today's runners and writes its first declared model as one whole tier; the row shows the model's cloud/local label.",
+          "On a host-family tier 'm' cycles only declared models and 'e' cycles only the model's efforts, each edit writing the whole tier { runner, model, effort } with one config.write.",
+          "On a host-family tier 'n' is hidden from the key hints and pressing it opens no prompt and writes nothing; 'e' on a model with no efforts toasts 'this model takes no effort setting' and writes nothing.",
+          "A configured host-family tier with an undeclared model shows the 'not supported ... will not run' note and its 'e' toast; a vendor unserved model still shows the vendor note and toast, and 'n' still opens the prompt for a vendor family.",
+          "After a tier is saved on the Ollama-hosted runner and the pane reloads (config.show returns the saved tier), the row shows that runner, the model with its cloud/local label and the effort the daemon uses, with an unlisted effort marked as dropped."
+        ],
+        "derivedFrom": [
+          "c3",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "tui-models.test.ts: 'f' reaches the Ollama-hosted runner and writes its first declared model as a whole tier, labelled cloud or local"
+          },
+          {
+            "level": "integration",
+            "name": "tui-models.test.ts: on a host-family tier 'm' and 'e' cycle only declared values, 'n' is hidden and opens nothing, and a model with no efforts says so"
+          },
+          {
+            "level": "integration",
+            "name": "tui-models.test.ts: an undeclared host-family model shows 'not supported ... will not run'; a vendor unserved model keeps the vendor note"
+          },
+          {
+            "level": "integration",
+            "name": "tui-models.test.ts: a tier saved on the Ollama-hosted runner shows its runner, model, cloud/local label and effort after reload"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Extend the literal scan to every CLI family id of the shipped definitions",
+        "summary": "In src/daemon/__tests__/model-literal-scan.test.ts replace the fixed /cli-(claude|codex)/ family-id pattern with one built from every family that has a CLI kind in the shipped definitions file (cli-claude, cli-codex, cli-vibe, ollama-claude), read like modelNames(); add an injected fixture literal proving 'ollama-claude' is flagged outside the definitions' owners. The scan stays green on today's tree.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The scan flags a quoted 'ollama-claude' and 'cli-vibe' literal outside the owner files in an injected fixture.",
+          "The family-id list is read from the shipped definitions file, not hard-coded in the test.",
+          "The scan passes on the current tree (comments stay stripped)."
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "model-literal-scan.test.ts: every CLI family id of the shipped definitions, including ollama-claude and cli-vibe, is flagged outside the owners"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/cli/__tests__/model-tiers.test.ts: computeEffectiveTiers sets hosting for a served host-family model and notSupported for an undeclared one; vendor and plain Ollama tiers carry no hosting and notSupported false.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/__tests__/model-tiers.test.ts: resolveTypedModel refuses an unlisted id for a host family (never 'check') and still returns 'check' for a vendor CLI family; switchFamily to the host family takes its first declared model.",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/__tests__/tui-models.test.ts: 'f' reaches the Ollama-hosted runner next to today's runners and writes its first declared model as a whole tier; the row shows the model's cloud/local label.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/__tests__/tui-models.test.ts: on a host-family tier, 'm' cycles only declared models, 'n' is hidden and opens nothing, 'e' on a model with no efforts says it takes no effort setting and writes nothing.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/__tests__/tui-models.test.ts: a configured host-family tier with an undeclared model shows 'not supported by <family>: the tier will not run', not the vendor 'runs the default' note; a vendor unserved model still shows the vendor note.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/cli/__tests__/tui-models.test.ts: after a tier is saved on the Ollama-hosted runner and the pane reloads (config.show returns the saved tier), the row shows that runner, the model with its cloud/local label and the effort the daemon uses (an effort the model does not list is marked as dropped).",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/model-literal-scan.test.ts: the CLI-family-id check is extended from the fixed cli-claude/cli-codex pattern to every family id that has a CLI kind in the shipped definitions file (so 'cli-vibe' and 'ollama-claude' are flagged outside the definitions' owners), with a fixture literal proving the new id is caught; the scan stays green on the tree.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api computeEffectiveTiers + dataModelChanges EffectiveTier",
+      "quotedText": "Adds hosting?: 'cloud' | 'local' (a host family's served model) and notSupported: boolean"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api resolveTypedModel",
+      "quotedText": "A host family never yields 'check', so the unknown-model check screen is never opened for it."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api ModelTiersPane",
+      "quotedText": "the 'n' key hint is hidden and 'n' does nothing; 'e' on a model with no efforts toasts 'this model takes no effort setting'"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths.invariantsToPreserve literal scan + testStrategy model-literal-scan subject",
+      "quotedText": "the literal scan over src/cli, extended to every CLI family id of the shipped definitions, stays green"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths errorCases + edgeCases",
+      "quotedText": "No host field: the family is treated as today's families (no labels, no refusal), so an older daemon behaves as before."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy acceptanceMapping ac1-ac3",
+      "quotedText": "after a tier is saved on the Ollama-hosted runner and the pane reloads, the row shows that runner, the model with its cloud/local label and the effort the daemon uses"
+    }
+  ]
+}

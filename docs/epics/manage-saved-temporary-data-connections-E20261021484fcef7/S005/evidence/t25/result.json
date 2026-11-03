@@ -1,0 +1,23 @@
+{
+  "task": "s5/t25",
+  "scope": "Per-action capability admission and mixed-version compatibility in VS Code and JetBrains; legacy contracts preserved",
+  "evidence": {
+    "typescript": "ts-attempt2.tap: 4 passed",
+    "compatibility": "compat-attempt1.tap: TS 4 plus native 20 JUnit passed",
+    "renderer": "uncached-renderer.tap: bridge passed, all 6 native renderer cases",
+    "focusedRegression": "relevant-regression.tap: 27/28 Node tests passed; sole failure was stale native renderer ABI",
+    "freshJvm": "fresh-jvm-renderer.tap: all 16 Gradle pipeline tasks rerun; renderer 6 passed",
+    "compatibilityFinal": "compat-uncached.tap: parent passed; TS4 + native4 compatibility + native3 legacy gateway + native13 parser",
+    "typechecks": "backend-tsc.txt and vscode-tsc.txt: exit0"
+  },
+  "retainedFailures": [
+    "ts-attempt1.tap: test fixture omitted explicit kind and supplied disallowed publicConfig.family; fixture corrected without weakening decoder",
+    "relevant-regression.tap, post-rebuild.tap, normal-renderer-after-fresh.tap: cached instrumented Kotlin test call sites used obsolete data-class copy descriptor"
+  ],
+  "intervention": "Focused native bridge now disables build cache and incremental Kotlin, and uses in-process compiler in a fresh single-use Gradle JVM; invocation-owned reports retained; run bridge files serially. No shared processes killed or caches deleted.",
+  "coverageLimits": [
+    "Positive peers are test-only. Production release gates unchanged.",
+    "Live IDE/theme/keyboard checks are tasks26-29, still pending.",
+    "SQL Server unavailable and pending."
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "kind": "manual-independent-review-workaround-not-canonical-CR",
+  "status": "needs-another-cycle",
+  "baselineHead": "90404ac88fe6c3f424d9cc80352bf6dac5f49085",
+  "baselineFingerprint": {
+    "schemaVersion": 1,
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s5",
+    "author": "controller",
+    "sourceDigest": "96f620da4d9872d7c6cfd6eafba1ecd8cd28ba90cfc77654afb59d24870fb38c",
+    "contractDigest": "1f33ebff159b209f5f2525f3a6a4aeeb4193459d3d7ef3e0bd0393829f28380e",
+    "buildDigest": "d12e0ee1504f7fee5e5dac04a381b7bce5c5bc58c93e11f2e348c36588074e65",
+    "testsDigest": "b2444e2a1af30da46f7e816fe026edefaccfa38e4ac62df6b447ab43ad64c478",
+    "digest": "7acdfa3347a3674cd3895ef5116516bae0e25a59eee5302b392420392a524807"
+  },
+  "reviewSessions": 32,
+  "reviewRounds": 3,
+  "largestPacketTextChars": 95733,
+  "totalPacketTextChars": 2228374,
+  "provider": {
+    "kind": "installed-Claude-CLI",
+    "configuredModel": "sonnet",
+    "effort": "high",
+    "transport": "CliProvider.completeStructured; fresh tool-free bounded invocation; CLI-owned authentication",
+    "maxCompleteInputChars": 128000,
+    "parallelProviderCalls": false,
+    "concreteModelVersion": "not captured"
+  },
+  "validation": {
+    "VSCodeConnections": {
+      "pass": 42,
+      "fail": 0,
+      "skip": 0,
+      "note": "After behavioral fixes; final static recovery wording was subsequently verified by independent source review, typecheck and bundle."
+    },
+    "sharedWireDraft": {
+      "pass": 7,
+      "fail": 0
+    },
+    "finalSharedWireRelease": {
+      "pass": 6,
+      "fail": 0
+    },
+    "KotlinProtocol": {
+      "pass": 6
+    },
+    "KotlinDraftTests": {
+      "pass": 5
+    },
+    "KotlinMutation": {
+      "pass": 7
+    },
+    "rootTypecheck": "passed",
+    "extensionTypecheck": "passed",
+    "extensionBundle": "passed",
+    "svgPinnedHashesVerified": 24,
+    "iconRegeneration": "byte-identical",
+    "corpusDigest": "matched"
+  },
+  "validationHistory": "An initial concurrent native-wrapper invocation collided in instrumentation and was replaced by successful serial runs. New mutation tests initially exposed a premature returned busy snapshot and incomplete synthetic rejection messages; both were corrected before final passing runs. No full sweep was rerun or claimed green.",
+  "acceptance": {
+    "VSCodeLiveUI": "completed-user-reported on version0.5.23; not a claim for current corrections",
+    "JetBrainsLiveUI": "deferred-user",
+    "externalServiceCoverage": "pending; unchanged"
+  },
+  "remaining": {
+    "codeFindings": [
+      {
+        "severity": "MED",
+        "topic": "Kotlin special-scheme credential URL parity",
+        "source": "19-final-fix-verification:1",
+        "reproduced": "JDK equivalent of current Kotlin algorithm accepts examples; exact TypeScript decoder rejects"
+      },
+      {
+        "severity": "LOW",
+        "topic": "Remaining Java URI versus WHATWG URL acceptance differences",
+        "source": "19-final-fix-verification:2",
+        "reproduced": "second fragment # and NBSP accepted in TS, refused by JDK-equivalent validation"
+      }
+    ],
+    "advice": [
+      {
+        "source": "19-final-fix-verification:3",
+        "topic": "Add a rendered recovery-message parity test. The future-drift scenario is advice, not an independently demonstrated current defect."
+      }
+    ],
+    "requirementsCoverage": "Baseline isolated packets: 16 partial positive assessments, 1 failed, 66 could-not-verify. Focused integration/fix passes do not establish full end-to-end adherence for the 66 gaps."
+  },
+  "correctionFilesSha256": {
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/consumer-inventory.json": "477c4b89ff5bd55b98c9a2ea82b92d09c6a3736067069e1e2a772b7767881ab8",
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/implementation-definitions.json": "cae9c01a4ccea63060a6fd7c4cb386b9b5d37cd7b28b6484e544a6a4b4928382",
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/implementation-sequence.html": "a22f8b86764dff2ee75f89ae61ae48db8a904bbc260756c97812f96ac3ded28a",
+    "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/implementation-ux.html": "d8cf045f162f3c1ce841c5089700c376342d17ccd36c2aa0c1a848d2faa70940",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt": "6badec65ac0df365332846e4ec9e32e62204c53b6cff243ca891228cc435e0a7",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt": "6d6261c27467d6642a11087ef7bf752829941f5509d4ad5afe20acc2ddfb21ff",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt": "0dd987175d1ac0df7f41a321239b8a98c2bf358cf001bdb5202d5ce90f4e211c",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt": "42f4a358c117e18529ff6db8471ee55b76783351ccccc5af8aced8f9c8e11082",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt": "566236a7387d895d191d3f85e86f1211a624106d2c154a0e4635ac38d36f62d8",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt": "edfec29dd9c5260f4b5c8806a647f8882033c48759a2465c5f7250e553638373",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt": "58b380a7292c1cc616da42643cc96a429af627eba1c3283bf115ed1128240fbc",
+    "src/shared/__tests__/connection-manager-draft.test.ts": "28df3db73cb063c1dbb9eed4871bff79514e4027049c8430a79824929768481a",
+    "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts": "be71f4e98426a8d8fcceb5274c1f62f8a6c4602a95db180367019073f93bc36b",
+    "src/shared/__tests__/connection-manager-kotlin-test.test.ts": "76b25dec0162039a921662124c01afd56955e01de35177b8e06d85c85b73662a",
+    "src/shared/__tests__/connection-manager-wire.test.ts": "bde2977b699fd0c88b04629f6148183b57284adc7116053c688145c98cbd9306",
+    "src/shared/connection-manager/controller.ts": "37afdc481baedf8e0effb05065898e3f0a68cf2ca823faa3b4fa698159f8b2c2",
+    "src/shared/connection-manager/draft.ts": "9c265a186ecc4259e4cbd8d61bfd4824bfac40fdb40e30a061011c17fca2c3a4",
+    "vscode-plugin/package-lock.json": "14d024edb0860c644a6874f42ad8d9427ca27434591f9ee4d3edc3507294d72a",
+    "vscode-plugin/src/connections/__tests__/mutation.test.ts": "ab270d2bf9cfd3eb2978ecd3a7f8751bbb485925277b68375f1c3d540e3ab8b6",
+    "vscode-plugin/src/connections/messages.ts": "51a64f0946afb3a1321f8dd2b5bcbc3bb9fbc2b495b1804d9792c6d17cdcea06"
+  },
+  "sourceCorrectionsCommitted": false,
+  "canonicalCRProduced": false,
+  "buildApproved": false,
+  "releaseCertified": false,
+  "concurrentUnrelatedLedgerChangesExcluded": true
+}

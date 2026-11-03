@@ -51,7 +51,7 @@ export interface DeliveryBoardWiringDeps {
 
 export const DELIVERY_DEADLINES_MS = { snapshot: 30_000, evidence: 15_000 } as const;
 
-export function registerDeliveryBoard(deps: DeliveryBoardWiringDeps): void {
+export function registerDeliveryBoard(deps: DeliveryBoardWiringDeps): { open(): void } {
   const clientNow = () => createDeliveryClient({ rpc: deps.rpc, repo: deps.repo(), deadlinesMs: DELIVERY_DEADLINES_MS });
   const host = createDeliveryBoardHost({
     createPanel: ({ viewType, title }) => {
@@ -73,4 +73,5 @@ export function registerDeliveryBoard(deps: DeliveryBoardWiringDeps): void {
   deps.commands.register({ id: 'insrc.delivery.openBoard', title: 'insrc: Open delivery board' }, async () => {
     host.open();
   });
+  return { open: () => host.open() };
 }

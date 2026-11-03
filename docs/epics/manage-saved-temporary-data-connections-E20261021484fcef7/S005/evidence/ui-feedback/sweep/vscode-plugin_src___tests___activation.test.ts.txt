@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: runReachabilityProbe pushes the derived running/stopped/errored state into the status surface
+ok 1 - runReachabilityProbe pushes the derived running/stopped/errored state into the status surface
+  ---
+  duration_ms: 0.805042
+  type: 'test'
+  ...
+# Subtest: runReachabilityProbe degrades a hung probe to errored within the bounded deadline
+ok 2 - runReachabilityProbe degrades a hung probe to errored within the bounded deadline
+  ---
+  duration_ms: 20.467084
+  type: 'test'
+  ...
+# Subtest: runReachabilityProbe never throws even if reachability() rejects
+ok 3 - runReachabilityProbe never throws even if reachability() rejects
+  ---
+  duration_ms: 0.279375
+  type: 'test'
+  ...
+# Subtest: activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves
+ok 4 - activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves
+  ---
+  duration_ms: 0.200041
+  type: 'test'
+  ...
+# Subtest: the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)
+ok 5 - the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)
+  ---
+  duration_ms: 1.734333
+  type: 'test'
+  ...
+# Subtest: only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)
+ok 6 - only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)
+  ---
+  duration_ms: 1.477
+  type: 'test'
+  ...
+# Subtest: a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running
+ok 7 - a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running
+  ---
+  duration_ms: 10.792708
+  type: 'test'
+  ...
+# Subtest: no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given
+ok 8 - no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given
+  ---
+  duration_ms: 44.684834
+  type: 'test'
+  ...
+# Subtest: a start is skipped when the fresh reachability check just before it finds the daemon running
+ok 9 - a start is skipped when the fresh reachability check just before it finds the daemon running
+  ---
+  duration_ms: 11.663917
+  type: 'test'
+  ...
+# Subtest: a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation
+ok 10 - a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation
+  ---
+  duration_ms: 11.100333
+  type: 'test'
+  ...
+# Subtest: a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'
+ok 11 - a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'
+  ---
+  duration_ms: 21.84275
+  type: 'test'
+  ...
+# Subtest: runReachabilityProbe answers the state it pushed into the status surface
+ok 12 - runReachabilityProbe answers the state it pushed into the status surface
+  ---
+  duration_ms: 11.279167
+  type: 'test'
+  ...
+# Subtest: the extension entry passes the daemon lifecycle controller into the activation
+ok 13 - the extension entry passes the daemon lifecycle controller into the activation
+  ---
+  duration_ms: 0.282916
+  type: 'test'
+  ...
+# Subtest: activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws
+ok 14 - activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws
+  ---
+  duration_ms: 97.104834
+  type: 'test'
+  ...
+# Subtest: the extension entry runs the settings pull, the update check and onboarding only after activation has settled
+ok 15 - the extension entry runs the settings pull, the update check and onboarding only after activation has settled
+  ---
+  duration_ms: 0.513334
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 455.375916

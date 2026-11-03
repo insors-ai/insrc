@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways
+ok 1 - a divided review and the same material in one call under a raised limit give the same obligation verdicts for every dimension, on fixtures that fit both ways
+  ---
+  duration_ms: 70.659583
+  type: 'test'
+  ...
+# Subtest: a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller
+ok 2 - a caller and callee in different chunks whose contract disagrees are judged in a relation call and the mismatch is reported at the caller
+  ---
+  duration_ms: 26.260708
+  type: 'test'
+  ...
+# Subtest: two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef
+ok 3 - two duplicate symbols in different chunks are named by compare and reported by pair with counterpartRef
+  ---
+  duration_ms: 23.376125
+  type: 'test'
+  ...
+# Subtest: a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence
+ok 4 - a degraded review whose single call is over the limit is divided with zero atoms and judges every promised test at gather on its full record evidence
+  ---
+  duration_ms: 16.143
+  type: 'test'
+  ...
+# Subtest: a gather call failing twice fails the review and records nothing
+ok 5 - a gather call failing twice fails the review and records nothing
+  ---
+  duration_ms: 3.38925
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 436.678417

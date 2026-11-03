@@ -1,0 +1,23 @@
+TAP version 13
+# Subtest: CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases
+ok 1 - CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases
+  ---
+  duration_ms: 6832.92675
+  type: 'test'
+  ...
+# Subtest: CM-S4-FILES/NO-PERSIST: poisoned source mutation ports hashes and native counters prove removal cleanup
+ok 2 - CM-S4-FILES/NO-PERSIST: poisoned source mutation ports hashes and native counters prove removal cleanup
+  ---
+  duration_ms: 2547.460042
+  type: 'test'
+  ...
+# {"proof":"file-removal-ok","mode":"source","nativeAndConvertedKinds":10,"directoryInputs":2,"temporaryClosed":11,"savedClosed":11}
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9571.603875

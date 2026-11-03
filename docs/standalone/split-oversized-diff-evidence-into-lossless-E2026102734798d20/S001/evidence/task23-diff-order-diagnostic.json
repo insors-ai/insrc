@@ -1,0 +1,24 @@
+{
+  "sourceStable": true,
+  "exactFiles": false,
+  "resolvedCount": 321,
+  "diffCount": 321,
+  "firstOrderMismatch": 0,
+  "onlyResolved": [],
+  "onlyDiff": [],
+  "firstResolved": [
+    "src/analyze/context/driver.ts",
+    "src/analyze/context/types.ts",
+    "src/analyze/executor/types.ts",
+    "src/analyze/explore/executor.ts",
+    "src/analyze/explore/types.ts"
+  ],
+  "firstDiff": [
+    "copy-assets.mjs",
+    "package.json",
+    "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+    "src/agent/providers/cli-provider.ts",
+    "src/agent/providers/ollama.ts"
+  ],
+  "symbolCount": 570
+}

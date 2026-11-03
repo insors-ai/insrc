@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.debug.LogModelTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.006">
+  <properties/>
+  <testcase name="matchesFilter text is a case-insensitive substring over raw incl a non-JSON line()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.001"/>
+  <testcase name="parseLogLine keeps only raw for a non-JSON or partial line and never throws()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.001"/>
+  <testcase name="parseLogLine tolerates a name-but-no-msg line()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.0"/>
+  <testcase name="LogLevels label upper-cases a known level and falls back to the number for an unknown()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.001"/>
+  <testcase name="matchesFilter ANDs active fields and an empty filter matches everything()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.0"/>
+  <testcase name="matchesFilter module is a case-insensitive substring and drops no-module()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.0"/>
+  <testcase name="parseLogLine fills the pino-JSON fields and always keeps raw()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.0"/>
+  <testcase name="LogLevels parseLevel maps a name, a numeric string, blank and junk()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.0"/>
+  <testcase name="LogCategories are the two CLI categories in order()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.002"/>
+  <testcase name="matchesFilter minLevel keeps ge and drops both below and no-level()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.001"/>
+  <testcase name="LogLevels carries the exact CLI numeric map()" classname="ai.insors.insrc.jetbrains.debug.LogModelTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

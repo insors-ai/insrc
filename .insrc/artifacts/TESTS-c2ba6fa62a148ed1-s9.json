@@ -1,0 +1,662 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s9",
+    "createdAt": "2026-11-02T05:01:33.548Z",
+    "updatedAt": "2026-11-02T06:08:28.502Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "7348f340d",
+        "ranAt": "2026-11-02T05:01:33.548Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "migration step for namespaces and kinds",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: a v6 store without the new namespace rows opens at version 7 holding them, its entities and relationships read unchanged",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: a fresh store holds all seven shared-modules rows",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: a module stub of Rust, C#, C or C++ is stored under its namespace row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "table/view kinds and new languages",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+                "title": "s9 t1: table and view are appended kind slots 14 and 15, and every earlier slot keeps its byte",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1138,
+            "titles": [
+              {
+                "title": "s9 t1: a v6 store without the new namespace rows opens at version 7 holding them, its entities and relationships read unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t1: a fresh store holds all seven shared-modules rows",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t1: a module stub of Rust, C#, C or C++ is stored under its namespace row",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t1: table and view are appended kind slots 14 and 15, and every earlier slot keeps its byte",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "bf7897d48",
+        "ranAt": "2026-11-02T05:07:15.705Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "guarded grammar load records an unavailable reader",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+                "title": "s9 t2: a reader whose grammar load throws is not registered and is listed unavailable with the error; a reader loaded after it still registers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "languages request",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+                "title": "s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12014,
+            "titles": [
+              {
+                "title": "each indexing-class method runs on the code-indexing worker's thread id",
+                "result": "pass"
+              },
+              {
+                "title": "a file change is indexed while a session request spins the main thread",
+                "result": "pass"
+              },
+              {
+                "title": "the store slot is published before the queue starts and after every registry change",
+                "result": "pass"
+              },
+              {
+                "title": "recorded responses of repo.stats and daemon.compact equal the single-thread daemon's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1330,
+            "titles": [
+              {
+                "title": "s9 t2: a reader whose grammar load throws is not registered and is listed unavailable with the error; a reader loaded after it still registers",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ba35c2a89",
+        "ranAt": "2026-11-02T05:09:48.138Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C/C++ family match in the cross-file pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/cross-file-c-family.test.ts",
+                "title": "s9 t3: a C caller resolves to a function declared in an included .h read as cpp; a Python caller still never resolves to a same-named Go function",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/cross-file-c-family.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 955,
+            "titles": [
+              {
+                "title": "s9 t3: a C caller resolves to a function declared in an included .h read as cpp; a Python caller still never resolves to a same-named Go function",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "effcc80ac",
+        "ranAt": "2026-11-02T05:15:46.960Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a .c fixture yields its functions and types, with DEFINES, and its include and call relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a quoted include of a file on disk is an IMPORTS to that file (extracted); an angle include is an IMPORTS to a native module stub; a missing one stays pending",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a same-file call is resolved (extracted); a call to another file stays pending for the cross-file pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/c.test.ts",
+                "title": "s9 t4: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/c.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 717,
+            "titles": [
+              {
+                "title": "s9 t4: a .c fixture yields its functions and types, with DEFINES, and its include and call relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t4: a quoted include of a file on disk is an IMPORTS to that file (extracted); an angle include is an IMPORTS to a native module stub; a missing one stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t4: a same-file call is resolved (extracted); a call to another file stays pending for the cross-file pass",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t4: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b0e4f9d74",
+        "ranAt": "2026-11-02T05:20:51.601Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C++ reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/cpp.test.ts",
+                "title": "s9 t5: a .cpp fixture yields classes, methods and functions with namespaces folded in, and its include, call and inheritance relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/cpp.test.ts",
+                "title": "s9 t5: a .h header is read as cpp and its declarations are functions a caller in another file can link to",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/cpp.test.ts",
+                "title": "s9 t5: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "C caller resolves to a C++ header declaration",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts",
+                "title": "s9 t5: a C caller of a function declared in an included .h header resolves to it across files through the family rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/c-calls-cpp-header.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 991,
+            "titles": [
+              {
+                "title": "s9 t5: a C caller of a function declared in an included .h header resolves to it across files through the family rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/cpp.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 607,
+            "titles": [
+              {
+                "title": "s9 t5: a .cpp fixture yields classes, methods and functions with namespaces folded in, and its include, call and inheritance relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t5: a .h header is read as cpp and its declarations are functions a caller in another file can link to",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t5: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "d031e5656",
+        "ranAt": "2026-11-02T05:27:53.386Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Rust reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/rust.test.ts",
+                "title": "s9 t6: a .rs fixture yields its items and its mod/use, call and impl relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/rust.test.ts",
+                "title": "s9 t6: mod util; resolves to util.rs over util/mod.rs when both exist; crate, declared-module and super paths resolve to their module files; a missing module stays pending",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/rust.test.ts",
+                "title": "s9 t6: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/rust.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 561,
+            "titles": [
+              {
+                "title": "s9 t6: a .rs fixture yields its items and its mod/use, call and impl relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t6: mod util; resolves to util.rs over util/mod.rs when both exist; crate, declared-module and super paths resolve to their module files; a missing module stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t6: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "b8a2832cf",
+        "ranAt": "2026-11-02T05:34:48.328Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "C# reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/csharp.test.ts",
+                "title": "s9 t7: a .cs fixture yields its types and members and its using, call and base-list relationships",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/csharp.test.ts",
+                "title": "s9 t7: a same-file call resolves (extracted); a call into another file through a namespace stays pending",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/csharp.test.ts",
+                "title": "s9 t7: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "mixed Rust/C#/C/C++ repository through IndexerService",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+                "title": "s9 t7 (ac1): a Rust, C#, C and C++ repository indexed through IndexerService stores, per language, file, function and type entities",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+                "title": "s9 t7 (ac1): each language stores its IMPORTS -- files for includes and Rust modules, module stubs for external crates, system headers and namespaces",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+                "title": "s9 t7 (ac1): each language stores its CALLS -- same-file calls extracted, Rust and C-to-header calls across files inferred, a C# call through a namespace pending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/mixed-native-languages.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1416,
+            "titles": [
+              {
+                "title": "s9 t7 (ac1): a Rust, C#, C and C++ repository indexed through IndexerService stores, per language, file, function and type entities",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7 (ac1): each language stores its IMPORTS -- files for includes and Rust modules, module stubs for external crates, system headers and namespaces",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7 (ac1): each language stores its CALLS -- same-file calls extracted, Rust and C-to-header calls across files inferred, a C# call through a namespace pending",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/csharp.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 655,
+            "titles": [
+              {
+                "title": "s9 t7: a .cs fixture yields its types and members and its using, call and base-list relationships",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7: a same-file call resolves (extracted); a call into another file through a namespace stays pending",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t7: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "906458b2e",
+        "ranAt": "2026-11-02T05:41:47.671Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "SQL reader",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a SQL fixture yields the document, table and view entities and their REFERENCES (ac2)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: the document entity is the one the artifact reader writes for the same file",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a CTE name is not a reference, and quoted identifiers are unquoted",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a reference to a table defined in another file stays pending by name after the per-file resolver",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: definitions inside a transaction block are read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "SQL repository through IndexerService",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-index.test.ts",
+                "title": "s9 t8 (ac2): SQL files indexed through IndexerService store a table or view per definition beside the document, and REFERENCES per foreign key and per relation a view selects from",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "languages request lists all twelve",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+                "title": "s9 t8 (ac4): the index.languages request lists all twelve languages available, with their extensions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/sql-index.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1630,
+            "titles": [
+              {
+                "title": "s9 t8 (ac2): SQL files indexed through IndexerService store a table or view per definition beside the document, and REFERENCES per foreign key and per relation a view selects from",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/registry-languages.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1251,
+            "titles": [
+              {
+                "title": "s9 t2: a reader whose grammar load throws is not registered and is listed unavailable with the error; a reader loaded after it still registers",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t2: the index.languages request lists python, go, typescript, javascript, java, scala and kotlin available, with their extensions; it is classed for the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8 (ac4): the index.languages request lists all twelve languages available, with their extensions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/sql.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 651,
+            "titles": [
+              {
+                "title": "s9 t8: a SQL fixture yields the document, table and view entities and their REFERENCES (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: the document entity is the one the artifact reader writes for the same file",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a CTE name is not a reference, and quoted identifiers are unquoted",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a reference to a table defined in another file stays pending by name after the per-file resolver",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: definitions inside a transaction block are read",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "710296754",
+        "ranAt": "2026-11-02T06:08:28.502Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: five languages",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S009/smoke-t9.txt (installed daemon @ b26dd1cd: index.languages lists all twelve available; /tmp/insrc-s9-smoke status ready with rust/c/cpp/csharp/sql entities, tables/views, and CALLS incl. run [inferred], util_add [inferred])"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

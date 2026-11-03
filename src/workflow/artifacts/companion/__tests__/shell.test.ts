@@ -100,12 +100,46 @@ test('d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its
 	}
 });
 
-test('d9f85b3c t3 — a Mermaid page inlines Mermaid and fits once the diagram is drawn', () => {
+test('d9f85b3c t3 — a Mermaid page inlines Mermaid and the branded theme boot drives the render', () => {
 	const html = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
 	assert.ok(html.includes('<script>/*MERMAID*/</script>'));
 	assert.ok(html.indexOf('/*MERMAID*/') < html.indexOf('mermaid.run('), 'the runtime loads before it is used');
-	assert.match(html, /mermaid\.run\(\{querySelector:'#stage pre\.mermaid'\}\)\.then\(function\(\)\{.*pz\.fit\(\);/s);
+	// branded: theme meta stamp, shared DOM classes, per-mode CSS, packaged fonts, controls
+	assert.match(html, /<meta name="insrc-theme" content="insors-brand-1">/);
+	assert.match(html, /class="page insrc-viewer" data-theme="light"/);
+	assert.match(html, /<div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage">/);
+	assert.match(html, /<style data-iv-mode="light">/);
+	assert.match(html, /<style data-iv-mode="dark" disabled>/);
+	assert.match(html, /@font-face\{font-family:'Poppins'/);
+	assert.match(html, /\.insrc-viewer-diagram svg \.relationshipLabel\{fill:#102D1A!important\}/);
+	for (const id of ['iv-theme', 'iv-export', 'iv-srcbtn', 'iv-err', 'iv-src']) assert.match(html, new RegExp(`id="${id}"`), id);
+	// no old styling remains
+	assert.doesNotMatch(html, /theme:'neutral'|theme: 'neutral'/, 'theme neutral is gone');
+	assert.doesNotMatch(html, /#f3f5f8|#1f3a8a/, 'the fixed light page colors are gone');
+	assert.doesNotMatch(html, /\.insrc-artifact/, 'the chat-embed namespace is not used');
+	// the boot drives the render through the shared diagram wrapper and the pz adapter
+	assert.match(html, /mermaid\.run\(\{querySelector:'\.insrc-viewer-diagram pre\.mermaid'/);
+	assert.match(html, /window\.insrcPz=\{/);
+	assert.match(html, /minFitScale:0\.8/, 'readable initial-scale floor (16px labels at 20px font)');
+	assert.match(html, /document\.fonts\.ready/, 'font readiness before measuring');
 	assert.match(html, /<pre class="mermaid">erDiagram\n  CUSTOMER \|\|--o\{ ORDER : places<\/pre>/);
+});
+
+test('d9f85b3c t3 — the legend renders iff the mermaid source carries role classes (R4)', () => {
+	const plain = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
+	assert.doesNotMatch(shellMarkup(plain), /data-iv-legend/, 'no role metadata → no legend slot');
+	const withRoles: CompanionPageContent = {
+		...MERMAID_PAGE,
+		visual: { kind: 'mermaid', source: 'flowchart LR\n  A[API]:::internal --> B[(DB)]:::datastore\n  B --> C[Cloud]:::external' },
+	};
+	const html = shellMarkup(renderCompanionPage(HEADER, withRoles, RUNTIME_MERMAID));
+	assert.match(html, /data-iv-legend="light"/);
+	assert.match(html, /data-iv-legend="dark" hidden/);
+	assert.match(html, /insrc-legend/);
+	assert.match(html, />internal</);
+	assert.match(html, />datastore</);
+	assert.match(html, />external</);
+	assert.doesNotMatch(html, />note</, 'roles absent from the source are not shown');
 });
 
 test('d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS', () => {
@@ -113,7 +147,7 @@ test('d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries 
 	assert.ok(!html.includes('/*MERMAID*/'), 'Mermaid is not inlined even when supplied');
 	assert.doesNotMatch(html, /mermaid\./);
 	assert.match(html, /fitOnLoad:true/);
-	assert.ok(html.includes('<div class="stage" id="stage"><div class="ux-card">card</div></div>'));
+	assert.ok(html.includes('<div class="stage iv-stage insrc-viewer-diagram" id="stage"><div class="ux-card">card</div></div>'));
 	assert.ok(html.includes('.ux-card{width:640px}</style>'));
 });
 

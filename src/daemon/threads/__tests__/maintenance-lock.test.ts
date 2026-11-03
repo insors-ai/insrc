@@ -38,15 +38,20 @@ const { closeLanceConn } = await import('../../../db/lance/conn.js');
 const { getDb, initDb } = await import('../../../db/client.js');
 const { addRepo } = await import('../../../db/repos.js');
 const { getSessionById, saveSession } = await import('../../../db/conversations.js');
-const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
-const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
+const { getLockManager, LockTimeoutError } = await import('../../../shared/locks/lock-manager.js');
+const { COMPACTION_ACTIVITY, MAINTENANCE_LOCK, holdsMaintenanceLock, withBackgroundHold, withTimerHold } = await import('../../../shared/locks/maintenance-lock.js');
 const { IpcServer, directDispatch } = await import('../../server.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { runPruneSweep } = await import('../../prune-timer.js');
+const { emitTodosEvent, scheduleTodosRetention, subscribe: subscribeTodos } = await import('../../todos-rpc.js');
+const { IndexerService } = await import('../../../indexer/index.js');
+const { IndexQueue } = await import('../../queue.js');
+const { DEFAULT_MAINTENANCE_CONFIG, MaintenanceController } = await import('../maintenance.js');
+const { holdingForward } = await import('../maintenance-entry.js');
 const { createUnderstandingRoutes } = await import('../../understanding-rpc.js');
 const { UnderstandingService } = await import('../../../understanding/service.js');
 const { ThreadServices } = await import('../main-services.js');
-const { methodClasses } = await import('../method-class.js');
+const { inDaemonTarget, methodClasses } = await import('../method-class.js');
 const { Router } = await import('../router.js');
 const { startClassWorker } = await import('../workers.js');
 const { INDEXING_DRAINED, INDEXING_STOP_OP } = await import('../indexing-port.js');
@@ -56,6 +61,7 @@ import type { ReplyEnvelope, RequestEnvelope, FrameEnvelope, MethodClass } from 
 import type { RpcHandlers, StreamHandlers } from '../../server.js';
 import type { Owner } from '../../../understanding/service.js';
 import type { AssessmentScope } from '../../../shared/understanding.js';
+import { stopWorker } from './helpers/stop-worker.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-maintenance-lock-repo-')));
@@ -72,12 +78,15 @@ function holdMaintenance(activity = COMPACTION_ACTIVITY): { granted: Promise<voi
 	let isGranted = false;
 	let work: (() => Promise<void>) | undefined;
 	let workDone!: () => void;
-	const ran = new Promise<void>(r => { workDone = r; });
+	let workFailed!: (err: unknown) => void;
+	const ran = new Promise<void>((r, j) => { workDone = r; workFailed = j; });
 	const done = getLockManager().request(MAINTENANCE_LOCK, { mode: 'exclusive', metadata: { activity, reason: REASON }, timeoutMs: 120_000 }, async () => {
 		isGranted = true;
 		grant();
 		await gate;
-		if (work !== undefined) { await work(); workDone(); }
+		if (work !== undefined) {
+			try { await work(); workDone(); } catch (err) { workFailed(err); throw err; }
+		}
 	});
 	return {
 		granted, isGranted: () => isGranted, done,
@@ -126,10 +135,7 @@ before(async () => {
 after(async () => {
 	if (codeWorker !== undefined) {
 		const { worker, port } = codeWorker;
-		const drained = new Promise<void>(resolve => worker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); }));
-		pushToWorker(port, INDEXING_STOP_OP, null);
-		await drained;
-		await worker.terminate();
+		await stopWorker(worker, () => pushToWorker(port, INDEXING_STOP_OP, null), INDEXING_DRAINED);
 	}
 	await closeLanceConn();
 	await closeGraphStore();
@@ -211,12 +217,26 @@ test("an exclusive maintenance request that becomes pending while a session requ
 	let open!: () => void;
 	const gate = new Promise<void>(r => { open = r; });
 	let router!: InstanceType<typeof Router>;
+	let maintenance: ReturnType<typeof holdMaintenance> | undefined;
+	let pendingWhileNestedRan = false;
+	let nestedSent!: () => void;
+	const sent = new Promise<void>(r => { nestedSent = r; });
+	let maintenanceAsked!: () => void;
+	const asked = new Promise<void>(r => { maintenanceAsked = r; });
 	const rpc: RpcHandlers = {
 		'step.reindex': async () => {
 			entered = true;
 			await gate;
-			const client = createInDaemonClient(rpc, {}, { route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) } });
+			// The nested call reaches the code-indexing worker only once maintenance (asked from outside this
+			// request) is pending, so the worker serves it while an exclusive request waits for the lock.
+			const route = async (cls: MethodClass, method: string, params: unknown): Promise<unknown> => {
+				nestedSent();
+				await asked;
+				return router.request(cls, method, params);
+			};
+			const client = createInDaemonClient(rpc, {}, { route: { targetOf: method => inDaemonTarget(method, { routed, onSharedWorker: false }), request: route } });
 			const result = await client.request('repo.reindex', { path: REPO });
+			pendingWhileNestedRan = maintenance !== undefined && !maintenance.isGranted();
 			order.push('nested');
 			return result;
 		},
@@ -228,12 +248,15 @@ test("an exclusive maintenance request that becomes pending while a session requ
 
 	const outer = ask(router, 'step.reindex').then(r => { order.push('outer'); return r; });
 	await until(() => entered, 'the session request running');
-	const maintenance = holdMaintenance();
-	void maintenance.granted.then(() => order.push('maintenance'));
-	await tick();
-	assert.equal(maintenance.isGranted(), false, 'maintenance is pending');
 	open();
+	await sent;
+	maintenance = holdMaintenance();
+	void maintenance.granted.then(() => order.push('maintenance'));
+	await until(() => getLockManager().query().pending.some(l => l.name === MAINTENANCE_LOCK && l.mode === 'exclusive'), 'maintenance pending');
+	maintenanceAsked();
 	const reply = await outer;
+	assert.ok(maintenance !== undefined);
+	assert.equal(pendingWhileNestedRan, true, 'maintenance became pending while the nested call ran on the worker, and stayed pending until it completed');
 	assert.equal(reply.error, undefined, `the nested repo.reindex ran on the worker under the outer hold: ${reply.error}`);
 	assert.deepEqual(reply.result, { ok: true });
 	await maintenance.granted;
@@ -294,7 +317,14 @@ test('an open understanding.watch stream does not prevent idle detection or main
 	const scope: AssessmentScope = { repoId: 'repo', worktreeId: 'worktree', baseOid: null, stagedTreeOid: 'a'.repeat(40), commitMode: 'normal', parentOids: [], learnerKey: 'learner', policyRevision: 'p', evidenceRevision: 'e' };
 	let service: InstanceType<typeof UnderstandingService> | undefined;
 	const routes = createUnderstandingRoutes({ service: () => service!, owner: async () => owner });
-	const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(), local: directDispatch(routes.rpc, routes.streams) });
+	// Idle detection as the daemon wires it: the router reports every request to the controller.
+	const idle = new MaintenanceController({
+		config: { ...DEFAULT_MAINTENANCE_CONFIG, idleMs: 60_000 },
+		lanesIdle: () => true, healthy: () => true, reclaimable: () => undefined,
+		workers: { live: () => [], created: () => 0 },
+		compact: async () => assert.fail('no compaction in this test'),
+	});
+	const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(), local: directDispatch(routes.rpc, routes.streams), onRequest: (method, cls) => idle.requestArrived(method, cls) });
 	const sock = join(HOME, 'watch.sock');
 	const server = new IpcServer(router.forward, Date.now, sock);
 	await server.listen();
@@ -315,6 +345,14 @@ test('an open understanding.watch stream does not prevent idle detection or main
 		await until(() => frames.length > 0, 'the first snapshot');
 		assert.equal(frames[0]!.data.revision, 1);
 
+		// The open stream is not activity: the daemon's idle time keeps growing while it is open.
+		const idleBefore = idle.idleForMs();
+		await tick(250);
+		assert.ok(idle.idleForMs() >= idleBefore + 200, `idle keeps growing with the stream open (${idleBefore} -> ${idle.idleForMs()} ms)`);
+		// (An ordinary request would reset it: shown for contrast.)
+		const end = idle.requestArrived('x.write', 'session');
+		assert.equal(idle.idleForMs(), 0, 'a running ordinary request is activity');
+		end();
 		// The open stream holds no lock: maintenance is granted at once.
 		assert.deepEqual(getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK), [], 'the stream holds nothing');
 		const maintenance = holdMaintenance();
@@ -337,4 +375,220 @@ test('an open understanding.watch stream does not prevent idle detection or main
 		service?.stop();
 		await server.close();
 	}
+});
+
+test('the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it', { timeout: 60_000 }, async () => {
+	const db = await getDb();
+	const shared = countSharedRequests();
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	let stop: (() => void) | undefined;
+	try {
+		// Fires once at once (as at boot): its sweep asks for the lock shared and waits.
+		stop = scheduleTodosRetention(db);
+		await until(() => shared.count() > 0, 'the retention sweep to ask for the maintenance lock');
+		const waiting = (): number => getLockManager().query().pending.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+		await tick(300);
+		assert.equal(waiting(), 1, 'the sweep waits for maintenance');
+		maintenance.release();
+		await maintenance.done;
+		await until(() => waiting() === 0 && !getLockManager().query().held.some(l => l.name === MAINTENANCE_LOCK), 'the sweep to run and release after maintenance');
+	} finally {
+		stop?.();
+		shared.restore();
+	}
+});
+
+test('a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered', { timeout: 60_000 }, async () => {
+	const sent: { stream: string; data: unknown }[] = [];
+	const aborter = new AbortController();
+	const stream = subscribeTodos({}, m => { sent.push({ stream: m.stream, data: m.data }); }, aborter.signal);
+	const list = { id: `list-${randomUUID()}` } as unknown as Parameters<typeof emitTodosEvent>[1];
+	try {
+		assert.deepEqual(getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK), [], 'the open stream holds nothing');
+		const maintenance = holdMaintenance();
+		await maintenance.granted;
+		emitTodosEvent('listUpdated', list);
+		await tick(300);
+		assert.equal(sent.filter(m => m.stream === 'todos').length, 0, 'no push during maintenance');
+		maintenance.release();
+		await maintenance.done;
+		emitTodosEvent('listUpdated', list);
+		await until(() => sent.some(m => m.stream === 'todos'), 'the push after maintenance');
+		assert.equal(sent.filter(m => m.stream === 'todos').length, 1, 'only the push after maintenance was delivered');
+	} finally {
+		aborter.abort();
+		await stream;
+	}
+});
+
+test("an edit's settle pass that comes due during maintenance waits for the maintenance lock instead of failing, and runs after it", { timeout: 60_000 }, async () => {
+	const watcher = { onEvents() {}, async addRepo() {}, async removeRepo() {}, async addConfigDir() {} } as never;
+	class Settling extends IndexerService {
+		constructor() { super(null as never, new IndexQueue(), watcher, undefined, 300); }
+	}
+	const svc = new Settling();
+	await svc.start([{ path: REPO, name: 'fixture', addedAt: new Date().toISOString(), status: 'ready' }]);
+	const waiting = (): number => getLockManager().query().pending.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+	// The edit is indexed; its settle is due 300 ms later, while maintenance holds the lock.
+	await svc.processJob({ kind: 'file', filePath: join(REPO, 'src', 'a.ts'), event: 'update' });
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	await until(() => svc._armedSettleTimersForTest() === 0, 'the settle timer to fire');
+	await until(() => waiting() === 1, 'the settle pass to wait for maintenance');
+	let settled = false;
+	void svc._settlePassesDoneForTest().then(() => { settled = true; });
+	await tick(300);
+	assert.equal(settled, false, 'the settle pass has not run during maintenance');
+	maintenance.release();
+	await maintenance.done;
+	await until(() => settled, 'the settle pass to run after maintenance');
+	assert.equal(waiting(), 0);
+});
+
+test('a cancelled stream with no request lifetime keeps its maintenance hold until its handler sends its terminal frame', { timeout: 30_000 }, async () => {
+	const heldShared = (): number => getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+	let finish!: () => void;
+	let deliverTo!: (e: FrameEnvelope) => void;
+	// A stream handler that, once cancelled, takes a while to finish (a write unwinding) and then ends.
+	const forward = holdingForward((request, deliver) => {
+		deliverTo = deliver as (e: FrameEnvelope) => void;
+		finish = () => deliver({ kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'done', data: {} } } satisfies FrameEnvelope);
+		return () => {};
+	});
+	const frames: unknown[] = [];
+	const cancel = forward({ kind: 'request', requestId: 'stream-1', method: 'x.stream', params: {}, stream: true } satisfies RequestEnvelope, e => frames.push(e));
+	await until(() => heldShared() === 1, 'the stream under its hold');
+	assert.ok(deliverTo !== undefined);
+	cancel();
+	await tick(300);
+	assert.equal(heldShared(), 1, 'still held after the cancel: the handler has not finished');
+	finish();
+	await until(() => heldShared() === 0, 'the hold released at the terminal frame');
+});
+
+test('an understanding.watch or todos.subscribe opened during maintenance is refused at once with the busy error and reads nothing; opened after it, the watch delivers its snapshot', { timeout: 60_000 }, async () => {
+	const owner: Owner = { ownerPrincipal: 'owner', learner: { key: 'learner', source: 'git', authority: 'git-email', subject: 'private', assurance: 'local-config', aliases: [] } };
+	const scope: AssessmentScope = { repoId: 'repo', worktreeId: 'worktree', baseOid: null, stagedTreeOid: 'b'.repeat(40), commitMode: 'normal', parentOids: [], learnerKey: 'learner', policyRevision: 'p', evidenceRevision: 'e' };
+	let service: InstanceType<typeof UnderstandingService> | undefined;
+	let ownerReads = 0;
+	const routes = createUnderstandingRoutes({ service: () => service!, owner: async () => { ownerReads++; return owner; } });
+	const router = new Router({ classOf: methodClasses.classOf, registry: services.registry, routed: new Set(), local: directDispatch(routes.rpc, routes.streams) });
+	const sock = join(HOME, 'watch-open.sock');
+	const server = new IpcServer(router.forward, Date.now, sock);
+	await server.listen();
+	service = await UnderstandingService.open(sock);
+	let socket: Socket | undefined;
+	try {
+		const id = (await service.prepare(owner, scope, randomUUID())).view.id;
+		const maintenance = holdMaintenance();
+		await maintenance.granted;
+		const readsBefore = ownerReads;
+		socket = connect(sock);
+		const frames: { stream: string; data: { type?: string } }[] = [];
+		let pending = '';
+		socket.on('data', d => {
+			pending += d.toString();
+			let end: number;
+			while ((end = pending.indexOf('\n')) >= 0) { frames.push(JSON.parse(pending.slice(0, end))); pending = pending.slice(end + 1); }
+		});
+		await once(socket, 'connect');
+		socket.write(JSON.stringify({ id: 11, method: 'understanding.watch', params: { assessmentId: id }, stream: true }) + '\n');
+		await until(() => frames.length > 0, 'the refusal');
+		const busy = new RegExp(`^daemon busy: ${COMPACTION_ACTIVITY} since \\S+ \\(${REASON.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\); retry later$`);
+		assert.equal(frames[0]!.stream, 'error');
+		assert.match((frames[0]!.data as { error?: string }).error ?? '', busy, 'refused with the maintenance activity, reason and start time');
+		assert.equal(ownerReads, readsBefore, 'no store read during maintenance');
+		// todos.subscribe is admitted the same way.
+		const todos: { stream: string; data: { error?: string } }[] = [];
+		const forward = holdingForward((_r, d) => { d({ kind: 'frame', requestId: 'todos-1', frame: { id: 0, stream: 'todos', data: {} } }); return () => {}; });
+		forward({ kind: 'request', requestId: 'todos-1', method: 'todos.subscribe', params: {}, stream: true }, e => todos.push((e as FrameEnvelope).frame as { stream: string; data: { error?: string } }));
+		await until(() => todos.length > 0, 'the todos refusal');
+		assert.equal(todos[0]!.stream, 'error');
+		assert.match(todos[0]!.data.error ?? '', busy);
+		maintenance.release();
+		await maintenance.done;
+		// After maintenance the watch opens and delivers its snapshot.
+		socket.write(JSON.stringify({ id: 12, method: 'understanding.watch', params: { assessmentId: id }, stream: true }) + '\n');
+		await until(() => frames.some(f => f.data.type === 'snapshot'), 'the snapshot after maintenance');
+	} finally {
+		socket?.destroy();
+		routes.stop();
+		service?.stop();
+		await server.close();
+	}
+});
+
+test('background work that is still waiting when its bounded wait runs out waits again and runs after maintenance, instead of failing', { timeout: 30_000 }, async () => {
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	let ran = false;
+	let failed: unknown;
+	// A 100 ms wait, against maintenance held for several of them.
+	const work = withBackgroundHold(async () => { ran = true; }, 100).catch((err: unknown) => { failed = err; });
+	await tick(450);
+	assert.equal(failed, undefined, 'the background work did not fail on its wait running out');
+	assert.equal(ran, false, 'the background work does not run during maintenance');
+	maintenance.release();
+	await maintenance.done;
+	await work;
+	assert.equal(failed, undefined);
+	assert.equal(ran, true, 'the background work ran after maintenance');
+});
+
+test("a timer run that is still waiting for maintenance at its bound skips this tick (undefined) without running; one that gets the hold runs", { timeout: 30_000 }, async () => {
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	let ran = 0;
+	try {
+		assert.equal(await withTimerHold(async () => { ran++; return 'ran'; }, 100), undefined, 'skipped at its bound');
+		assert.equal(ran, 0, 'the skipped tick did not run');
+	} finally {
+		maintenance.release();
+		await maintenance.done;
+	}
+	assert.equal(await withTimerHold(async () => { ran++; return 'ran'; }, 100), 'ran');
+	assert.equal(ran, 1);
+});
+
+test('a lock timeout thrown by the background work itself is not retried: it rejects after one run', { timeout: 30_000 }, async () => {
+	let runs = 0;
+	await assert.rejects(
+		() => withBackgroundHold(async () => { runs++; throw new LockTimeoutError('other.lock', 5, []); }, 100),
+		(e: unknown) => e instanceof LockTimeoutError && e.lockName === 'other.lock',
+	);
+	assert.equal(runs, 1, 'the work ran once');
+});
+
+test("maintenance work played by the test that fails rejects run() with its error instead of leaving it pending", { timeout: 30_000 }, async () => {
+	const maintenance = holdMaintenance();
+	await maintenance.granted;
+	const done = maintenance.done.catch((err: unknown) => err);
+	await assert.rejects(() => maintenance.run(async () => { throw new Error('compaction failed'); }), /compaction failed/);
+	assert.match(String(await done), /compaction failed/);
+});
+
+test("an admitted subscription starts outside the admission hold: work it begins does not see that hold as its own", { timeout: 30_000 }, async () => {
+	const seen: boolean[] = [];
+	let later: Promise<void> | undefined;
+	const forward = holdingForward((_r, _d) => {
+		seen.push(holdsMaintenanceLock());
+		// Work the stream starts now and continues later, as a subscription's setup read does.
+		later = (async () => { await tick(20); seen.push(holdsMaintenanceLock()); })();
+		return () => {};
+	});
+	forward({ kind: 'request', requestId: 'watch-ctx', method: 'understanding.watch', params: {}, stream: true }, () => {});
+	await until(() => later !== undefined, 'the subscription to start');
+	await later;
+	assert.deepEqual(seen, [false, false], 'neither the start nor its continuation holds the lock through admission');
+	assert.equal(getLockManager().query().held.some(l => l.name === MAINTENANCE_LOCK), false);
+});
+
+test('a subscription whose start throws is answered with an error frame, not left waiting', { timeout: 30_000 }, async () => {
+	const frames: { stream: string; data: { error?: string } }[] = [];
+	const forward = holdingForward(() => { throw new Error('the subscription could not start'); });
+	forward({ kind: 'request', requestId: 'todos-throw', method: 'todos.subscribe', params: {}, stream: true }, e => frames.push((e as FrameEnvelope).frame as { stream: string; data: { error?: string } }));
+	await until(() => frames.length > 0, 'the error frame', 5_000);
+	assert.equal(frames[0]!.stream, 'error');
+	assert.equal(frames[0]!.data.error, 'the subscription could not start');
 });

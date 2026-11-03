@@ -147,3 +147,108 @@ test('composeMcpEntry(path) = { command:node, args:[path] } and returns undefine
   const entry = composeMcpEntry('/x/insrc-mcp.js')!;
   assert.deepEqual(Object.keys(entry).sort(), ['args', 'command']);
 });
+
+// ---- TOML mcp writer (vibe's ~/.vibe/config.toml) ---------------------------
+
+import { createTomlMcpConfigWriter } from '../toml-mcp-writer.js';
+
+const TOML = '/home/u/.vibe/config.toml';
+const TOML_ENTRY_TEXT = `[[mcp_servers]]
+name = "insrc"
+transport = "stdio"
+command = "node"
+args = ["/home/u/.insrc/daemon/out/bin/insrc-mcp.js"]
+`;
+
+test('toml writeInsrcServer creates the [[mcp_servers]] insrc section in an absent file', () => {
+  const fs = fakeFs();
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY);
+  assert.equal(fs.files.get(TOML), TOML_ENTRY_TEXT);
+});
+
+test('toml writeInsrcServer appends to an existing config preserving every other table/key/comment', () => {
+  const original = `# user config
+active_model = "mistral-medium-3.5"
+
+[[mcp_servers]]
+name = "docs"
+url = "https://example.com/mcp"
+
+[tools.bash]
+permission = "ask"
+`;
+  const fs = fakeFs({ [TOML]: original });
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY);
+  const out = fs.files.get(TOML)!;
+  assert.ok(out.startsWith(original.trimEnd() + '\n\n'), 'existing content preserved verbatim, then a blank line + the new section');
+  assert.ok(out.endsWith(TOML_ENTRY_TEXT), 'insrc section appended');
+  assert.match(out, /name = "docs"/, 'other server preserved');
+  assert.match(out, /\[tools\.bash\]/, 'other tables preserved');
+});
+
+test('toml writeInsrcServer replaces an existing insrc section (new args), keeping the header line, and is idempotent', () => {
+  const fs = fakeFs({ [TOML]: `[[mcp_servers]] # ours\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = ["/old/path.js"]\n\n[[mcp_servers]]\nname = "other"\nurl = "https://x"\n` });
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY);
+  const out = fs.files.get(TOML)!;
+  assert.ok(out.includes('[[mcp_servers]] # ours'), 'header line kept verbatim incl. comment');
+  assert.ok(out.includes(`args = ["${ENTRY.args[0]}"]`), 'args updated to the current launch target');
+  assert.ok(!out.includes('/old/path.js'), 'stale args gone');
+  assert.ok(out.includes('name = "other"'), 'other server untouched');
+  // idempotent: identical re-write does not write again
+  let wrote = false;
+  const spyFs = { ...fs, write: (p: string, c: string) => { wrote = true; fs.files.set(p, c); } };
+  createTomlMcpConfigWriter(spyFs).writeInsrcServer(TOML, ENTRY);
+  assert.equal(wrote, false);
+});
+
+test('toml writer refuses duplicate insrc sections (never guesses) and leaves the file unchanged', () => {
+  const original = `[[mcp_servers]]\nname = "insrc"\ncommand = "a"\n\n[[mcp_servers]]\nname = "insrc"\ncommand = "b"\n`;
+  const fs = fakeFs({ [TOML]: original });
+  assert.throws(() => createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY), HostFileAccessError);
+  assert.throws(() => createTomlMcpConfigWriter(fs).removeInsrcServer(TOML), HostFileAccessError);
+  assert.equal(fs.files.get(TOML), original, 'byte-unchanged');
+});
+
+test('toml removeInsrcServer drops the insrc section and its [mcp_servers.auth] sub-table, preserving everything else; no-op when absent', () => {
+  const original = `active_model = "mistral-medium-3.5"
+
+[[mcp_servers]]
+name = "docs"
+url = "https://x"
+
+[[mcp_servers]]
+name = "insrc"
+transport = "stdio"
+command = "node"
+args = ["/x/insrc-mcp.js"]
+
+[mcp_servers.auth]
+type = "oauth"
+
+[tools.bash]
+permission = "ask"
+`;
+  const fs = fakeFs({ [TOML]: original });
+  createTomlMcpConfigWriter(fs).removeInsrcServer(TOML);
+  const out = fs.files.get(TOML)!;
+  assert.ok(!out.includes('"insrc"'), 'insrc section gone');
+  assert.ok(!out.includes('[mcp_servers.auth]'), 'its auth sub-table gone with it');
+  assert.ok(out.includes('name = "docs"') && out.includes('[tools.bash]') && out.includes('active_model'), 'everything else preserved');
+  // no-op when absent
+  const fs2 = fakeFs({ [TOML]: 'active_model = "x"\n' });
+  createTomlMcpConfigWriter(fs2).removeInsrcServer(TOML);
+  assert.equal(fs2.files.get(TOML), 'active_model = "x"\n');
+});
+
+test('toml writer escapes quotes/backslashes in the launch path (TOML basic string)', () => {
+  const fs = fakeFs();
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, { command: 'node', args: ['C:\\Users\\u "x"\\insrc-mcp.js'] });
+  assert.ok(fs.files.get(TOML)!.includes('args = ["C:\\\\Users\\\\u \\"x\\"\\\\insrc-mcp.js"]'), 'escaped');
+});
+
+test('toml writer surfaces fs failures as HostFileAccessError with no partial write', () => {
+  const fs = fakeFs();
+  fs.failWrites.add(TOML);
+  assert.throws(() => createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY), HostFileAccessError);
+  assert.equal(fs.files.has(TOML), false);
+});

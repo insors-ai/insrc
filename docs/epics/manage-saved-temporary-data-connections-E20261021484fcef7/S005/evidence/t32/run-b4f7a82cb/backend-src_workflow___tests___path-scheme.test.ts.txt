@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: resolveArtifactMdPath: SPEC/DEF/HLD land at the work-item root (no story segment)
+ok 1 - resolveArtifactMdPath: SPEC/DEF/HLD land at the work-item root (no story segment)
+  ---
+  duration_ms: 0.8915
+  type: 'test'
+  ...
+# Subtest: resolveArtifactMdPath: LLD/PLAN/BUILD/CR/EXT land under S<nnn>/
+ok 2 - resolveArtifactMdPath: LLD/PLAN/BUILD/CR/EXT land under S<nnn>/
+  ---
+  duration_ms: 0.135
+  type: 'test'
+  ...
+# Subtest: resolveArtifactMdPath: workItemKind 'standalone' → docs/standalone, same internal S<nnn> grouping
+ok 3 - resolveArtifactMdPath: workItemKind 'standalone' → docs/standalone, same internal S<nnn> grouping
+  ---
+  duration_ms: 0.120458
+  type: 'test'
+  ...
+# Subtest: resolveArtifactMdPath: bare <KIND>.md; folder key is fileSeg(slug)+epicSegment; identity (not filename) supplies the key
+ok 4 - resolveArtifactMdPath: bare <KIND>.md; folder key is fileSeg(slug)+epicSegment; identity (not filename) supplies the key
+  ---
+  duration_ms: 0.074792
+  type: 'test'
+  ...
+# Subtest: resolveArtifactMdPath: throws when a story-scoped kind gets an epic-level identity
+ok 5 - resolveArtifactMdPath: throws when a story-scoped kind gets an epic-level identity
+  ---
+  duration_ms: 0.223125
+  type: 'test'
+  ...
+# Subtest: resolveArtifactMdPath: story ordinal is zero-padded to S<nnn> (>=1000 keeps full width)
+ok 6 - resolveArtifactMdPath: story ordinal is zero-padded to S<nnn> (>=1000 keeps full width)
+  ---
+  duration_ms: 0.111416
+  type: 'test'
+  ...
+# Subtest: listWorkItems: one kind-tagged, sorted entry per work-item folder across both top-levels
+ok 7 - listWorkItems: one kind-tagged, sorted entry per work-item folder across both top-levels
+  ---
+  duration_ms: 3.312125
+  type: 'test'
+  ...
+# Subtest: listWorkItems: empty list (no throw) when docs/epics and docs/standalone are absent
+ok 8 - listWorkItems: empty list (no throw) when docs/epics and docs/standalone are absent
+  ---
+  duration_ms: 0.857792
+  type: 'test'
+  ...
+# Subtest: listArtifactMdPaths: every md within one work item (item-root + each S<nnn>/)
+ok 9 - listArtifactMdPaths: every md within one work item (item-root + each S<nnn>/)
+  ---
+  duration_ms: 3.823333
+  type: 'test'
+  ...
+# Subtest: lldArtifactPaths: md is the nested resolver path; json is unchanged ARTIFACTS_DIR/<hashId>.json
+ok 10 - lldArtifactPaths: md is the nested resolver path; json is unchanged ARTIFACTS_DIR/<hashId>.json
+  ---
+  duration_ms: 0.518958
+  type: 'test'
+  ...
+# Subtest: lldArtifactPaths: epicSlug omitted → folder label falls back to fileSeg(epicHash); json unchanged
+ok 11 - lldArtifactPaths: epicSlug omitted → folder label falls back to fileSeg(epicHash); json unchanged
+  ---
+  duration_ms: 0.093625
+  type: 'test'
+  ...
+# Subtest: lldMdRel: nested repo-relative md path matching the absolute helper
+ok 12 - lldMdRel: nested repo-relative md path matching the absolute helper
+  ---
+  duration_ms: 0.063625
+  type: 'test'
+  ...
+# Subtest: defineArtifactId is unchanged (hash-flat json store stays untouched)
+ok 13 - defineArtifactId is unchanged (hash-flat json store stays untouched)
+  ---
+  duration_ms: 0.031334
+  type: 'test'
+  ...
+# Subtest: resolveCompanionPath: returns a sibling in the same S<nnn>/ dir as the LLD.md (ac2)
+ok 14 - resolveCompanionPath: returns a sibling in the same S<nnn>/ dir as the LLD.md (ac2)
+  ---
+  duration_ms: 0.116833
+  type: 'test'
+  ...
+# Subtest: resolveCompanionPath: standalone kind lands under docs/standalone
+ok 15 - resolveCompanionPath: standalone kind lands under docs/standalone
+  ---
+  duration_ms: 0.063291
+  type: 'test'
+  ...
+# Subtest: resolveCompanionPath: throws for a story-scoped companion missing identity.story
+ok 16 - resolveCompanionPath: throws for a story-scoped companion missing identity.story
+  ---
+  duration_ms: 0.080709
+  type: 'test'
+  ...
+# Subtest: resolveCompanionPath: rejects a companionFileName containing a path separator
+ok 17 - resolveCompanionPath: rejects a companionFileName containing a path separator
+  ---
+  duration_ms: 0.12075
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 200.588208

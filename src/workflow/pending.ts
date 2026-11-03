@@ -34,12 +34,16 @@ const log = getLogger('workflow-pending');
 // sc1 contract types
 // ---------------------------------------------------------------------------
 
-/** The reviewer-approvable artifact kinds the pending list surfaces. A BUILD
- *  record is listed once its Story's code review has run (Story
- *  E20261013dd277f9c:S001): its approval is the Story's completion. EXTEND /
- *  STUB / AMD stay excluded — they are not artifacts a reviewer approves in
- *  the review panel. */
-export const PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'BUILD', 'CR'] as const;
+/** The reviewer-approvable artifact kinds the pending list surfaces. A
+ *  tracked-epic BUILD record is listed once its Story's code review has run
+ *  (Story E20261013dd277f9c:S001): its approval is the Story's completion. A
+ *  standalone Story's BUILD record has no CR sibling and is listed on its own
+ *  meta.standalone marker (ISSUE-16b8d3d50f14fc1d). EXT (a Story extension,
+ *  document-backed by EXT.md) and AMD (an HLD amendment, a JSON record with no
+ *  document of its own) are listed too, so every artifact awaiting the user's
+ *  decision can be presented and decided in the review pane
+ *  (ISSUE-6dbf14435972af7a). STUB stays excluded. */
+export const PENDING_KINDS = ['SPEC', 'DEF', 'HLD', 'LLD', 'PLAN', 'ISSUE', 'BUILD', 'CR', 'EXT', 'AMD'] as const;
 export type PendingKind = typeof PENDING_KINDS[number];
 
 export interface PendingArtifact {
@@ -92,6 +96,9 @@ const PENDING_KIND_SET: ReadonlySet<string> = new Set(PENDING_KINDS);
 interface ArtifactShape {
 	readonly meta?: Record<string, unknown>;
 	readonly body?: Record<string, unknown>;
+	/** AMD records are flat: the decision status sits at the top level. */
+	readonly status?: unknown;
+	readonly [key: string]: unknown;
 }
 
 /** The KIND prefix of an artifact filename (`LLD-<hash>-s5.json` -> `LLD`). */
@@ -118,10 +125,6 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 	for (const file of files) {
 		const kind = kindFromFilename(file);
 		if (!PENDING_KIND_SET.has(kind)) continue;   // non-reviewer-approvable kind
-		// A BUILD record exists from its Story's first validated task. It awaits
-		// approval only once the Story's code review has run: its CR record, the
-		// same name under the CR prefix, is then in this directory.
-		if (kind === 'BUILD' && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;
 
 		let art: ArtifactShape;
 		try {
@@ -133,7 +136,19 @@ export function listPendingArtifacts(repoPath: string): readonly PendingArtifact
 
 		const meta = art.meta ?? {};
 		// Pending = neither approved nor rejected in the lifecycle, the state approve and reject write.
-		if (approvalStateOf(meta) !== 'pending') continue;
+		// An AMD record is flat (no meta): its own top-level status carries the decision (ISSUE-6dbf14435972af7a).
+		if (kind === 'AMD') {
+			if (art['status'] !== 'pending') continue;
+		} else if (approvalStateOf(meta) !== 'pending') continue;
+
+
+		// A tracked-epic BUILD record exists from its Story's first validated
+		// task, but awaits approval only once the Story's code review has run:
+		// its CR record, the same name under the CR prefix, is then in this
+		// directory. A STANDALONE Story's build never writes a CR sibling (the
+		// automated code-review path does not run for it), so its BUILD record
+		// is listed on its own meta.standalone marker (ISSUE-16b8d3d50f14fc1d).
+		if (kind === 'BUILD' && meta['standalone'] !== true && !names.has(`CR${file.slice('BUILD'.length)}`)) continue;
 
 		out.push(toDescriptor(repoPath, file, kind as PendingKind, art));
 	}
@@ -156,7 +171,9 @@ function toDescriptor(repoPath: string, file: string, kind: PendingKind, art: Ar
 		artifactId,
 		kind,
 		title:  deriveTitle(kind, meta, body, workItemId, artifactId),
-		mdPath: kind === 'BUILD' ? buildRecordMdPath(repoPath, artifactId, meta) : deriveMdPath(repoPath, kind, meta),
+		mdPath: kind === 'BUILD' ? buildRecordMdPath(repoPath, artifactId, meta)
+			: kind === 'AMD' ? ''   // an amendment is a JSON record with no document; the pane opens it by id (ISSUE-6dbf14435972af7a)
+			: deriveMdPath(repoPath, kind, meta),
 		openQuestionCount,
 		state:  'pending',
 	};
@@ -216,6 +233,8 @@ function deriveTitle(
 ): string {
 	const bodyTitle = str(body['title']);
 	if (bodyTitle !== undefined) return bodyTitle;
+	// An AMD amendment carries its rationale, not a title: label it by id.
+	if (kind === 'AMD') return `Amendment ${artifactId}`;
 	if (workItemId !== undefined) return `${kind} ${workItemId}`;
 	return artifactId;
 }

@@ -46,10 +46,11 @@ test('publishLane: two lanes merge, idle is derived from both, queueDepth and Qu
 		await summaryWorker!.snapshot();
 		snap = board.snapshot();
 		assert.deepEqual(snap.indexing, { index: { depth: 4, processing: true }, summary: { depth: 2, processing: false }, sweep, idle: false });
-		// The status fields map exactly as composeQueueLanes maps the live queue today.
+		// The status fields map exactly as composeQueueLanes maps the live queue today -- with the
+		// backfill lane (s2), which the board reports idle until a worker publishes it.
 		assert.deepEqual(queueStatusFromBoard(snap.indexing), {
 			queueDepth: 6,
-			queueLanes: composeQueueLanes({ index: { depth: 4, running: true }, summary: { depth: 2, running: false } }, sweep),
+			queueLanes: composeQueueLanes({ index: { depth: 4, running: true }, summary: { depth: 2, running: false }, backfill: { depth: 0, running: false } }, sweep),
 		});
 
 		// An index-lane publish keeps the summary lane and its sweep.
@@ -63,7 +64,7 @@ test('publishLane: two lanes merge, idle is derived from both, queueDepth and Qu
 		await summaryWorker!.snapshot();
 		assert.deepEqual(board.snapshot().indexing, { index: { depth: 0, processing: false }, summary: { depth: 0, processing: false }, idle: true });
 		assert.equal('sweep' in board.snapshot().indexing, false);
-		assert.deepEqual(queueStatusFromBoard(board.snapshot().indexing).queueLanes, { index: { depth: 0, running: false }, summary: { depth: 0, running: false } });
+		assert.deepEqual(queueStatusFromBoard(board.snapshot().indexing).queueLanes, { index: { depth: 0, running: false }, summary: { depth: 0, running: false }, backfill: { depth: 0, running: false } });
 
 		// A processing lane at depth 0 is not idle.
 		codeWorker!.publishLane('index', { depth: 0, processing: true });

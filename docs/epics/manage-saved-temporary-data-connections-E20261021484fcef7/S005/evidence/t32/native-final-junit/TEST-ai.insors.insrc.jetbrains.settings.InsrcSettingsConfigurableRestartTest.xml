@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableRestartTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.007">
+  <properties/>
+  <testcase name="one prompt when any write needed a restart, also with a failure, none otherwise()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableRestartTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

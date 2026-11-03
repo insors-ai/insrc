@@ -10,8 +10,6 @@ import { dirname, join } from 'node:path';
 
 import { renderRepoConfig, createRepoConfigWriteHandler, type RepoConfigWriteDeps } from '../repo-config.js';
 import { escapeHtml } from '../html.js';
-import { REPO_TRACKER_FIELDS } from '../../../../src/config/repo-fields.js';
-import type { RepoSettingsPayload, SettingsResult } from '../../../../src/daemon/repo-settings.js';
 import type { RepoRef } from '../types.js';
 import type { ConfigWriteResult } from '../../config/types.js';
 import type { ConsentGate, ConsentOutcome } from '../../surfaces/consent-gate.js';
@@ -24,74 +22,114 @@ const REPOS: RepoRef[] = [
   { path: '/Users/x/work/repo-two', name: 'repo-two' },
 ];
 
-// The renderer's tracker dependencies: no repoFields, so the model-tier assertions below see no Tracker section.
-const NO_TRACKER = {
-  repoFields: async () => [],
-  repoSettings: async (): Promise<SettingsResult> => ({ ok: false, error: { code: 'repo-not-registered', message: 'unused' } }),
-};
-
 // ---- renderRepoConfig -----------------------------------------------------
 
 test('renderRepoConfig: repo <select> from registeredRepos() (folder-independent) + explicit empty-state when none', async () => {
-  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}) , ...NO_TRACKER })(undefined);
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(undefined);
   assert.match(html, /<select id="insrc-repo-select">/, 'a repo picker is rendered');
   assert.match(html, /repo-one/, 'each registered repo is an option');
   assert.match(html, /repo-two/);
   assert.match(html, /Choose a repo/, 'no selection -> picker-only prompt, no form');
   assert.doesNotMatch(html, /insrc-repo-form/, 'no form until a repo is selected');
 
-  const empty = await renderRepoConfig({ registeredRepos: async () => [], rawConfig: async () => ({}) , ...NO_TRACKER })(undefined);
+  const empty = await renderRepoConfig({ registeredRepos: async () => [], rawConfig: async () => ({}), mcpRegistration: async () => [] })(undefined);
   assert.match(empty, /No repos are registered/, 'empty repo list -> explicit empty-state');
   assert.doesNotMatch(empty, /<select/, 'no picker when there are no repos');
 });
 
-test('renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath].tiers (NOT raw JSON); missing entry -> all-defaults', async () => {
-  const raw = {
-    models: { byRepo: { '/Users/x/work/a.b/repo-one': { tiers: { core: { runner: 'ollama', model: 'qwen' } } } } },
-  };
-  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => raw , ...NO_TRACKER })(
-    '/Users/x/work/a.b/repo-one',
-  );
-  // The trailing segments are carried as a JSON array (escapeHtml'd), NOT a dot-joined
-  // string — so a future dotted segment (a dotted roleId) cannot mis-nest.
+test('renderRepoConfig: discrete per-repo form fields from models.byRepo[repoPath] tasks and coreFloor (NOT raw JSON); missing entry -> all-global', async () => {
+  const raw = { models: { byRepo: { '/Users/x/work/a.b/repo-one': { tasks: { 'context.assemble': 'cheap' }, coreFloor: 'mid' } } } };
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => raw, mcpRegistration: async () => [] })('/Users/x/work/a.b/repo-one');
   const reEsc = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const coreRunner = reEsc(escapeHtml(JSON.stringify(['tiers', 'core', 'runner'])));
-  const coreModel = reEsc(escapeHtml(JSON.stringify(['tiers', 'core', 'model'])));
-  const midRunner = reEsc(escapeHtml(JSON.stringify(['tiers', 'mid', 'runner'])));
+  const seg = (segments: string[]) => reEsc(escapeHtml(JSON.stringify(segments)));
   assert.match(html, /id="insrc-repo-form" data-repo="\/Users\/x\/work\/a\.b\/repo-one"/, 'the form carries the selected repoPath');
-  assert.match(html, new RegExp(`data-segments="${coreRunner}"[^>]*value="ollama"`), 'the stored core.runner value pre-fills the field');
-  assert.match(html, new RegExp(`data-segments="${coreModel}"[^>]*value="qwen"`));
-  assert.match(html, new RegExp(`data-segments="${midRunner}"[^>]*value=""`), 'an unset field is blank (using default)');
-  assert.doesNotMatch(html, /<textarea/, 'the overrides are discrete fields, NOT a raw-JSON textarea (ac3)');
+  // A dotted role id stays one segment; the stored tier is selected.
+  assert.match(html, new RegExp(`data-segments="${seg(['tasks', 'context.assemble'])}"><option value="">global</option><option value="core">core</option><option value="mid">mid</option><option value="cheap" selected>cheap</option>`));
+  assert.match(html, new RegExp(`data-segments="${seg(['coreFloor'])}">[^]*?<option value="mid" selected>mid</option>`));
+  assert.doesNotMatch(html, /<textarea/, 'discrete fields, NOT a raw-JSON textarea (ac3)');
 
-  // A repo with NO byRepo entry -> all fields blank (all-defaults).
-  const missing = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}) , ...NO_TRACKER })(
-    '/Users/x/work/repo-two',
-  );
-  assert.match(missing, new RegExp(`data-segments="${coreRunner}"[^>]*value=""`), 'a missing byRepo entry -> all-defaults form');
+  // A repo with NO byRepo entry -> every field 'global'.
+  const missing = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })('/Users/x/work/repo-two');
+  assert.match(missing, new RegExp(`data-segments="${seg(['tasks', 'review'])}"><option value="" selected>global</option>`), 'a missing byRepo entry -> all-global form');
+});
+
+test('renderRepoConfig renders 14 critical roles in an open <details> group and 20 peripheral roles in a closed <details> group, not one flat 34-row table', async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(REPOS[0]!.path);
+  assert.doesNotMatch(html, /<table/, 'no flat table — roles render as grouped rows, not <tr>s');
+  const critical = /<details class="section" open><summary class="section-head">Critical roles <span class="count">(\d+)<\/span><\/summary>([^]*?)<\/details>/.exec(html);
+  const peripheral = /<details class="section"><summary class="section-head">Peripheral roles <span class="count">(\d+)<\/span><\/summary>([^]*?)<\/details>/.exec(html);
+  assert.ok(critical, 'the critical group is open (no explicit open attr elsewhere -> this regex)');
+  assert.ok(peripheral, 'the peripheral group is present and closed (no "open" attribute)');
+  assert.equal(critical![1], '14', '14 critical roles');
+  assert.equal(peripheral![1], '20', '20 peripheral roles');
+  assert.equal((critical![2]!.match(/class="role-row"/g) ?? []).length, 14, 'the critical group renders exactly its 14 role rows');
+  assert.equal((peripheral![2]!.match(/class="role-row"/g) ?? []).length, 20, 'the peripheral group renders exactly its 20 role rows');
+});
+
+test('the core floor renders in its own <details>/section, separate from the role groups', async () => {
+  const raw = { models: { byRepo: { [REPOS[0]!.path]: { coreFloor: 'mid' } } } };
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => raw, mcpRegistration: async () => [] })(REPOS[0]!.path);
+  const floorSection = /<div class="section"><div class="section-head">Core floor<\/div><div class="floor-row">([^]*?)<\/div><\/div>/.exec(html);
+  assert.ok(floorSection, 'the core floor has its own section, distinct from the role-group <details>');
+  assert.match(floorSection![1]!, /data-segments="[^"]*coreFloor[^"]*"/, 'the floor row still carries the coreFloor write segments');
+  assert.match(floorSection![1]!, /<option value="mid" selected>mid<\/option>/, 'the stored core-floor tier is selected');
+  assert.doesNotMatch(html, /<details[^>]*>(?:(?!<\/details>).)*Core floor/s, "the core floor is its own section, not nested inside a role-group <details>");
+});
+
+test("repo-config.test.ts: all roles at 'global' still render all 34 rows across both groups", async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(REPOS[0]!.path);
+  assert.equal((html.match(/class="role-row"/g) ?? []).length, 35, '34 role rows + 1 core-floor row, all rendered at the global default');
+  assert.match(html, /<span class="count">14<\/span>/, 'the critical group still reports 14 at all-global');
+  assert.match(html, /<span class="count">20<\/span>/, 'the peripheral group still reports 20 at all-global');
+  const ids = new Set([...html.matchAll(/data-segments="([^"]+)"/g)].map((m) => m[1]));
+  assert.equal(ids.size, 35, '34 distinct role segments + 1 coreFloor segment, not duplicates');
+});
+
+test("repo-config.test.ts: a repo switch always renders the default open/closed groups afresh (no stale collapse state carried between repos)", async () => {
+  const deps = { registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] };
+  const first = await renderRepoConfig(deps)(REPOS[0]!.path);
+  const second = await renderRepoConfig(deps)(REPOS[1]!.path);
+  for (const html of [first, second]) {
+    assert.match(html, /<details class="section" open><summary class="section-head">Critical roles/, 'critical is open on every fresh render, regardless of repo');
+    assert.match(html, /<details class="section"><summary class="section-head">Peripheral roles/, 'peripheral is closed on every fresh render, regardless of repo');
+  }
+});
+
+test("repo-config.test.ts: no checkable providers omits the 'Register selected providers' button", async () => {
+  const allRegistered = REGS.map((r) => ({ ...r, registered: true, available: true }));
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => allRegistered })(REPOS[0]!.path);
+  assert.doesNotMatch(html, /insrc-register-providers/, 'nothing checkable -> no register button');
+});
+
+test("repo-config.test.ts: an mcpRegistration() rejection degrades only the Providers section to a hint paragraph; role groups and core floor still render", async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => { throw new Error('mcp.status down'); } })(REPOS[0]!.path);
+  assert.match(html, /registration state is unavailable/, 'the Providers section degrades to a hint paragraph');
+  assert.match(html, /<details class="section" open><summary class="section-head">Critical roles/, 'the critical role group still renders despite the Providers failure');
+  assert.match(html, /<details class="section"><summary class="section-head">Peripheral roles/, 'the peripheral role group still renders despite the Providers failure');
+  assert.match(html, /<div class="section"><div class="section-head">Core floor<\/div>/, 'the core floor section still renders despite the Providers failure');
 });
 
 test('renderRepoConfig: an unregistered selected repo falls back to picker-only', async () => {
-  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}) , ...NO_TRACKER })('/not/registered');
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })('/not/registered');
   assert.doesNotMatch(html, /insrc-repo-form/, 'a stale selection that is no longer registered renders no form');
   assert.match(html, /Choose a repo/);
 });
 
 test('renderRepoConfig: every repo path/name + field value HTML-escaped; a registeredRepos()/rawConfig() rejection propagates', async () => {
   const evilRepos: RepoRef[] = [{ path: '/r/<x>', name: '<b>&' }];
-  const raw = { models: { byRepo: { '/r/<x>': { tiers: { core: { runner: '<script>x</script>' } } } } } };
-  const html = await renderRepoConfig({ registeredRepos: async () => evilRepos, rawConfig: async () => raw , ...NO_TRACKER })('/r/<x>');
-  assert.doesNotMatch(html, /<script>x<\/script>/, 'the field value is HTML-escaped');
-  assert.match(html, /&lt;script&gt;/, 'escaped entities are emitted');
+  const raw = { models: { byRepo: { '/r/<x>': { tasks: { review: '<script>x</script>' } } } } };
+  const html = await renderRepoConfig({ registeredRepos: async () => evilRepos, rawConfig: async () => raw, mcpRegistration: async () => [] })('/r/<x>');
+  assert.doesNotMatch(html, /<script>x<\/script>/, 'a stored value is never echoed raw (only fixed tier options render)');
+  assert.match(html, /data-repo="\/r\/&lt;x&gt;"/, 'the repo path is escaped');
   assert.match(html, /&lt;b&gt;&amp;/, 'the repo name is escaped');
 
   await assert.rejects(
-    () => renderRepoConfig({ registeredRepos: async () => { throw new Error('repo.list down'); }, rawConfig: async () => ({}) , ...NO_TRACKER })(undefined),
+    () => renderRepoConfig({ registeredRepos: async () => { throw new Error('repo.list down'); }, rawConfig: async () => ({}), mcpRegistration: async () => [] })(undefined),
     /repo.list down/,
     'a registeredRepos() rejection propagates',
   );
   await assert.rejects(
-    () => renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => { throw new Error('config.show down'); } , ...NO_TRACKER })(REPOS[0]!.path),
+    () => renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => { throw new Error('config.show down'); }, mcpRegistration: async () => [] })(REPOS[0]!.path),
     /config.show down/,
     'a rawConfig() rejection propagates',
   );
@@ -112,13 +150,11 @@ function fakeStatus(): StatusSurface {
 function makeWriteDeps(over: Partial<RepoConfigWriteDeps> & { outcome?: ConsentOutcome; writeResult?: ConfigWriteResult } = {}): {
   deps: RepoConfigWriteDeps;
   calls: { segments: readonly string[]; value: unknown }[];
-  trackerCalls: { repoPath: string; key: string; value: string | boolean | null }[];
   consentAsked: () => number;
   refreshes: () => number;
   status: StatusSurface;
 } {
   const calls: { segments: readonly string[]; value: unknown }[] = [];
-  const trackerCalls: { repoPath: string; key: string; value: string | boolean | null }[] = [];
   const consent = fakeConsent(over.outcome ?? 'accepted');
   const status = over.status ?? fakeStatus();
   let refreshes = 0;
@@ -128,49 +164,46 @@ function makeWriteDeps(over: Partial<RepoConfigWriteDeps> & { outcome?: ConsentO
       calls.push({ segments: [...segments], value });
       return over.writeResult ?? { ok: true };
     },
-    writeRepoSetting: async (repoPath, key, value) => {
-      trackerCalls.push({ repoPath, key, value });
-      return over.writeResult ?? { ok: true };
-    },
     registeredRepos: async () => REPOS,
     status,
     logger: { warn: () => {} },
     refresh: () => { refreshes += 1; },
+    offerRestart: () => {},
     ...(over.writeKeyPath ? { writeKeyPath: over.writeKeyPath } : {}),
-    ...(over.writeRepoSetting ? { writeRepoSetting: over.writeRepoSetting } : {}),
     ...(over.registeredRepos ? { registeredRepos: over.registeredRepos } : {}),
     ...(over.logger ? { logger: over.logger } : {}),
+    ...(over.offerRestart ? { offerRestart: over.offerRestart } : {}),
   };
-  return { deps, calls, trackerCalls, consentAsked: consent.asked, refreshes: () => refreshes, status };
+  return { deps, calls, consentAsked: consent.asked, refreshes: () => refreshes, status };
 }
 
 test("createRepoConfigWriteHandler: on 'accepted' writeKeyPath called with EXACTLY ['models','byRepo',repoPath,...segments] + value (ac2 array form)", async () => {
   const f = makeWriteDeps({ outcome: 'accepted' });
-  createRepoConfigWriteHandler(f.deps)({ repoPath: REPOS[0]!.path, segments: ['tiers', 'core', 'runner'], value: 'ollama' });
+  createRepoConfigWriteHandler(f.deps)({ repoPath: REPOS[0]!.path, segments: ['tasks', 'context.assemble'], value: 'cheap' });
   await new Promise((r) => setTimeout(r, 0));
   assert.equal(f.consentAsked(), 1, 'consent was requested');
-  assert.deepEqual(f.calls, [{ segments: ['models', 'byRepo', REPOS[0]!.path, 'tiers', 'core', 'runner'], value: 'ollama' }]);
-  assert.match(f.status.current().detail ?? '', /updated tiers\.core\.runner/, 'the outcome surfaced via sc2');
+  assert.deepEqual(f.calls, [{ segments: ['models', 'byRepo', REPOS[0]!.path, 'tasks', 'context.assemble'], value: 'cheap' }]);
+  assert.match(f.status.current().detail ?? '', /updated tasks\.context\.assemble/, 'the outcome surfaced via sc2');
   assert.equal(f.refreshes(), 1, 'the panel re-rendered from fresh config');
 });
 
 test("createRepoConfigWriteHandler: declined/dismissed consent writes NEVER (k4); unregistered/malformed write dropped without consent", async () => {
   // declined -> no write.
   const declined = makeWriteDeps({ outcome: 'declined' });
-  createRepoConfigWriteHandler(declined.deps)({ repoPath: REPOS[0]!.path, segments: ['tiers', 'core', 'runner'], value: 'x' });
+  createRepoConfigWriteHandler(declined.deps)({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'mid' });
   await new Promise((r) => setTimeout(r, 0));
   assert.equal(declined.consentAsked(), 1);
   assert.deepEqual(declined.calls, [], 'a declined consent writes NOTHING (k4)');
 
   // dismissed -> no write.
   const dismissed = makeWriteDeps({ outcome: 'dismissed' });
-  createRepoConfigWriteHandler(dismissed.deps)({ repoPath: REPOS[0]!.path, segments: ['tiers', 'core', 'runner'], value: 'x' });
+  createRepoConfigWriteHandler(dismissed.deps)({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'mid' });
   await new Promise((r) => setTimeout(r, 0));
   assert.deepEqual(dismissed.calls, [], 'a dismissed consent writes NOTHING (k4)');
 
   // unregistered repo -> no consent, no write.
   const unreg = makeWriteDeps({ outcome: 'accepted' });
-  createRepoConfigWriteHandler(unreg.deps)({ repoPath: '/not/registered', segments: ['tiers', 'core', 'runner'], value: 'x' });
+  createRepoConfigWriteHandler(unreg.deps)({ repoPath: '/not/registered', segments: ['coreFloor'], value: 'mid' });
   await new Promise((r) => setTimeout(r, 0));
   assert.equal(unreg.consentAsked(), 0, 'an unregistered repo is not even prompted');
   assert.deepEqual(unreg.calls, [], 'an unregistered repo writes NOTHING (lc1)');
@@ -187,7 +220,7 @@ test("createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via s
   // refusal -> surfaces reason + refresh, no throw.
   const refused = makeWriteDeps({ outcome: 'accepted', writeResult: { ok: false, reason: 'invalid path' } });
   await assert.doesNotReject(async () => {
-    createRepoConfigWriteHandler(refused.deps)({ repoPath: REPOS[0]!.path, segments: ['tiers', 'core', 'runner'], value: 'x' });
+    createRepoConfigWriteHandler(refused.deps)({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'mid' });
     await new Promise((r) => setTimeout(r, 0));
   });
   assert.match(refused.status.current().detail ?? '', /refused: invalid path/, 'the daemon reason surfaced via sc2');
@@ -201,150 +234,10 @@ test("createRepoConfigWriteHandler: {ok:false} refusal surfaces the reason via s
     logger: { warn: (m) => warns.push(m) },
   });
   await assert.doesNotReject(async () => {
-    createRepoConfigWriteHandler(rejecting.deps)({ repoPath: REPOS[0]!.path, segments: ['tiers', 'core', 'runner'], value: 'x' });
+    createRepoConfigWriteHandler(rejecting.deps)({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'mid' });
     await new Promise((r) => setTimeout(r, 0));
   });
   assert.ok(warns.some((w) => /per-repo config write failed/.test(w)), 'the write rejection was caught + logged');
-});
-
-// ---- tracker section (Story s3) -------------------------------------------
-
-const TRACKER_PAYLOAD: RepoSettingsPayload = {
-  repo: REPOS[0]!.path,
-  values: { type: 'github', owner: 'acme', repo: 'widgets', ghHost: 'ghe.example.com' },
-  resolved: { type: 'github', owner: 'acme', repo: 'widgets', source: 'per-repo-config' },
-  signin: { state: 'signed-in', login: 'octocat' },
-  policy: {
-    ok: true, mode: 'team',
-    values: { teamMode: true, signoffStages: ['DEF', 'HLD'], claimsEnforced: true, administrators: ['ada'],
-      claimUnits: { epic: ['DEF', 'HLD'], story: ['LLD', 'PLAN'], task: ['BUILD'] }, forceTaskIssues: true },
-    source: { ref: 'origin/main', fetchedAt: '2026-10-17T00:00:00.000Z' },
-  },
-};
-
-const trackerRenderer = (result: SettingsResult | (() => Promise<SettingsResult>)) =>
-  renderRepoConfig({
-    registeredRepos: async () => REPOS,
-    rawConfig: async () => ({}),
-    repoFields: async () => REPO_TRACKER_FIELDS,
-    repoSettings: typeof result === 'function' ? result : async () => result,
-  });
-
-test('renderRepoConfig: the Tracker section lists local rows as inputs (including ghHost) and status and policy rows read-only', async () => {
-  const html = await trackerRenderer({ ok: true, payload: TRACKER_PAYLOAD })(REPOS[0]!.path);
-  assert.match(html, /id="insrc-tracker"/);
-  // Every local row is an input posting its key; the stored value pre-fills it.
-  for (const key of ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern']) {
-    assert.match(html, new RegExp(`data-tracker-key="${key}"`), `${key} is editable`);
-  }
-  assert.match(html, /data-tracker-key="ghHost" value="ghe\.example\.com"/);
-  assert.match(html, /data-tracker-key="owner" value="acme"/);
-  // Status and policy rows are NOT inputs.
-  for (const key of ['signin', 'target', 'teamMode', 'signoffStages', 'claimsEnforced', 'claimUnits', 'administrators', 'forceTaskIssues']) {
-    assert.doesNotMatch(html, new RegExp(`data-tracker-key="${key}"`), `${key} is read-only`);
-    assert.match(html, new RegExp(`data-readonly-key="${key}"`), `${key} is shown`);
-  }
-  assert.match(html, /DEF, HLD/);
-  assert.match(html, /epic: DEF, HLD · story: LLD, PLAN · task: BUILD/);
-  assert.match(html, /saved; not used yet/);
-  // The model-tier form is still there, unchanged.
-  assert.match(html, /insrc-repo-form/);
-  assert.match(html, /data-segments=/);
-});
-
-test('renderRepoConfig: the sign-in row is rendered read-only with status and reason', async () => {
-  const states: Array<[RepoSettingsPayload['signin'], RegExp]> = [
-    [{ state: 'signed-in', login: 'octocat' }, /signed in as octocat/],
-    [{ state: 'missing-tool', reason: 'gh was not found' }, /missing-tool: gh was not found/],
-    [{ state: 'missing-signin', reason: 'gh is not signed in' }, /missing-signin: gh is not signed in/],
-    [{ state: 'unreachable', reason: 'timed out' }, /unreachable: timed out/],
-    [{ state: 'rejected', reason: 'bad credentials' }, /rejected: bad credentials/],
-    [{ state: 'disabled', reason: 'the tracker is off for this repo' }, /disabled: the tracker is off for this repo/],
-  ];
-  for (const [signin, re] of states) {
-    const html = await trackerRenderer({ ok: true, payload: { ...TRACKER_PAYLOAD, signin } })(REPOS[0]!.path);
-    const row = /<label[^>]*>Sign-in [\s\S]*?<\/label>/.exec(html)?.[0] ?? '';
-    assert.match(row, /data-readonly-key="signin"/);
-    assert.match(row, re);
-    assert.doesNotMatch(row, /<input/, 'the sign-in row is never an input');
-    assert.match(row, /\(read-only\)/);
-  }
-});
-
-test('renderRepoConfig: an ok:false result shows its message; no repoFields renders no Tracker section; a transport rejection propagates; values are escaped', async () => {
-  const refused = await trackerRenderer({ ok: false, error: { code: 'github-json-unreadable', message: '/h/.insrc/github.json: is not valid JSON' } })(REPOS[0]!.path);
-  assert.match(refused, /class="error">\/h\/\.insrc\/github\.json: is not valid JSON</);
-  assert.doesNotMatch(refused, /data-tracker-key/);
-  assert.match(refused, /insrc-repo-form/, 'the model-tier form still renders');
-
-  const none = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), ...NO_TRACKER })(REPOS[0]!.path);
-  assert.doesNotMatch(none, /insrc-tracker/);
-
-  await assert.rejects(() => trackerRenderer(async () => { throw new Error('repo.settings.get down'); })(REPOS[0]!.path), /repo.settings.get down/);
-
-  const evil = await trackerRenderer({ ok: true, payload: { ...TRACKER_PAYLOAD, values: { ...TRACKER_PAYLOAD.values, ghHost: '"><script>x</script>' } } })(REPOS[0]!.path);
-  assert.doesNotMatch(evil, /<script>x<\/script>/);
-  assert.match(evil, /&lt;script&gt;/);
-});
-
-test("createRepoConfigWriteHandler: a tracker edit goes through consent to writeRepoSetting and never to the models.byRepo route", async () => {
-  const f = makeWriteDeps({ outcome: 'accepted' });
-  createRepoConfigWriteHandler(f.deps)({ repoPath: REPOS[0]!.path, key: 'ghHost', value: 'ghe.example.com' });
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(f.consentAsked(), 1);
-  assert.deepEqual(f.trackerCalls, [{ repoPath: REPOS[0]!.path, key: 'ghHost', value: 'ghe.example.com' }]);
-  assert.deepEqual(f.calls, [], 'the models.byRepo writeKeyPath route was not used');
-  assert.match(f.status.current().detail ?? '', /updated ghHost/);
-  assert.equal(f.refreshes(), 1);
-
-  // null clears.
-  const clear = makeWriteDeps({ outcome: 'accepted' });
-  createRepoConfigWriteHandler(clear.deps)({ repoPath: REPOS[0]!.path, key: 'ghPath', value: null });
-  await new Promise((r) => setTimeout(r, 0));
-  assert.deepEqual(clear.trackerCalls, [{ repoPath: REPOS[0]!.path, key: 'ghPath', value: null }]);
-
-  // The existing route is unchanged beside it.
-  const model = makeWriteDeps({ outcome: 'accepted' });
-  createRepoConfigWriteHandler(model.deps)({ repoPath: REPOS[0]!.path, segments: ['tiers', 'core', 'runner'], value: 'ollama' });
-  await new Promise((r) => setTimeout(r, 0));
-  assert.deepEqual(model.trackerCalls, []);
-  assert.equal(model.calls.length, 1);
-});
-
-test('createRepoConfigWriteHandler: declined consent, an unregistered repo and a malformed tracker write write nothing; a refusal shows the daemon message', async () => {
-  const declined = makeWriteDeps({ outcome: 'declined' });
-  createRepoConfigWriteHandler(declined.deps)({ repoPath: REPOS[0]!.path, key: 'ghHost', value: 'x' });
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(declined.consentAsked(), 1);
-  assert.deepEqual(declined.trackerCalls, [], 'a declined consent writes NOTHING (k4)');
-
-  const unreg = makeWriteDeps({ outcome: 'accepted' });
-  createRepoConfigWriteHandler(unreg.deps)({ repoPath: '/not/registered', key: 'ghHost', value: 'x' });
-  await new Promise((r) => setTimeout(r, 0));
-  assert.equal(unreg.consentAsked(), 0);
-  assert.deepEqual(unreg.trackerCalls, []);
-
-  for (const bad of [{ key: '', value: 'x' }, { key: 'ghHost', value: 5 }, { key: 'ghHost', value: undefined }, { key: 'ghHost', value: ['a'] }]) {
-    const f = makeWriteDeps({ outcome: 'accepted' });
-    createRepoConfigWriteHandler(f.deps)({ repoPath: REPOS[0]!.path, ...bad } as never);
-    await new Promise((r) => setTimeout(r, 0));
-    assert.equal(f.consentAsked(), 0, JSON.stringify(bad));
-    assert.deepEqual(f.trackerCalls, []);
-  }
-
-  const refused = makeWriteDeps({ outcome: 'accepted', writeResult: { ok: false, reason: 'branchPattern must not start with a slash' } });
-  createRepoConfigWriteHandler(refused.deps)({ repoPath: REPOS[0]!.path, key: 'branchPattern', value: '/x' });
-  await new Promise((r) => setTimeout(r, 0));
-  assert.match(refused.status.current().detail ?? '', /tracker setting refused: branchPattern must not start with a slash/);
-  assert.equal(refused.refreshes(), 1, 'the panel re-read even on refusal');
-
-  const warns: string[] = [];
-  const rejecting = makeWriteDeps({ outcome: 'accepted', writeRepoSetting: async () => { throw new Error('socket down'); }, logger: { warn: (m) => warns.push(m) } });
-  await assert.doesNotReject(async () => {
-    createRepoConfigWriteHandler(rejecting.deps)({ repoPath: REPOS[0]!.path, key: 'ghHost', value: 'x' });
-    await new Promise((r) => setTimeout(r, 0));
-  });
-  assert.ok(warns.some((w) => /tracker setting write failed/.test(w)));
 });
 
 // ---- source guards --------------------------------------------------------
@@ -362,11 +255,156 @@ test('source-scan: the sc9 types amendment is ADDITIVE — S007 members added, n
   const src = readFileSync(join(HERE, '..', 'types.ts'), 'utf8');
   assert.match(src, /export type RepoConfigRenderer\b/);
   assert.match(src, /export interface RepoConfigRendererDeps\b/);
-  assert.match(src, /export (interface|type) RepoConfigWrite\b/);
-  assert.match(src, /export interface RepoTrackerWrite\b/);
+  assert.match(src, /export interface RepoConfigWrite\b/);
   assert.match(src, /repoRenderer\?:\s*RepoConfigRenderer/);
   assert.match(src, /onRepoConfigWrite\?:\s*\(\(write: RepoConfigWrite\) => void\)/);
   for (const kept of ['detailRenderers', 'tabControllers', 'onDetailAction', 'DaemonDataGateway', 'PanelHandle', 'TabRenderer']) {
     assert.ok(src.includes(kept), `${kept} is preserved (additive amendment)`);
   }
+});
+
+test('repo-config.test.ts: the form has role tier selects and a coreFloor select only; the handler writes tasks / coreFloor after consent, drops tiers writes, shows reason and detail and offers a restart', async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => [] })(REPOS[0]!.path);
+  const segs = [...html.matchAll(/data-segments="([^"]+)"/g)].map((m) => JSON.parse(m[1]!.replace(/&quot;/g, '"')) as string[]);
+  assert.ok(segs.length > 1);
+  assert.ok(segs.every((x) => (x[0] === 'tasks' && x.length === 2) || (x.length === 1 && x[0] === 'coreFloor')), 'only tasks and coreFloor fields');
+  assert.deepEqual(segs.filter((x) => x[0] === 'coreFloor'), [['coreFloor']]);
+  assert.doesNotMatch(html, /<input|data-segments="[^"]*(runner|model|effort|tiers)/, 'no runner, model, effort or tier field');
+
+  // tasks and coreFloor writes reach writeKeyPath after consent; a tiers write is dropped before consent.
+  const ok = makeWriteDeps({ outcome: 'accepted' });
+  const handle = createRepoConfigWriteHandler(ok.deps);
+  handle({ repoPath: REPOS[0]!.path, segments: ['tasks', 'context.assemble'], value: null });
+  handle({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'core' });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.deepEqual(ok.calls, [
+    { segments: ['models', 'byRepo', REPOS[0]!.path, 'tasks', 'context.assemble'], value: null },
+    { segments: ['models', 'byRepo', REPOS[0]!.path, 'coreFloor'], value: 'core' },
+  ]);
+  const warns: string[] = [];
+  const tiers = makeWriteDeps({ outcome: 'accepted', logger: { warn: (m) => warns.push(m) } });
+  for (const segments of [['tiers', 'core', 'runner'], ['tasks'], ['tasks', 'a', 'b'], ['coreFloor', 'x']]) {
+    createRepoConfigWriteHandler(tiers.deps)({ repoPath: REPOS[0]!.path, segments, value: 'x' });
+  }
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(tiers.consentAsked(), 0, 'no prompt for a write a repo may not make');
+  assert.deepEqual(tiers.calls, []);
+  assert.equal(warns.length, 4);
+
+  // A refusal shows the daemon's reason and detail; restartRequired offers a restart.
+  const refused = makeWriteDeps({ outcome: 'accepted', writeResult: { ok: false, reason: 'per-repo-tier', detail: 'tiers are global' } });
+  createRepoConfigWriteHandler(refused.deps)({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'mid' });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.match(refused.status.current().detail ?? '', /per-repo write refused: per-repo-tier — tiers are global/);
+  const offers: string[] = [];
+  const restart = makeWriteDeps({ outcome: 'accepted', writeResult: { ok: true, restartRequired: true }, offerRestart: (m) => offers.push(m) });
+  createRepoConfigWriteHandler(restart.deps)({ repoPath: REPOS[0]!.path, segments: ['coreFloor'], value: 'mid' });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(offers.length, 1);
+  assert.match(offers[0]!, /updated coreFloor for .* — restart the daemon to apply/);
+});
+
+// ---- Providers section (post-setup mcp.register) -----------------------------
+
+import { createRepoRegisterProvidersHandler, steeringForClients, type RepoRegisterProvidersDeps } from '../repo-config.js';
+import type { McpRegistrationView, RepoProviderRegistration } from '../types.js';
+
+const REGS: McpRegistrationView[] = [
+  { client: 'claude', available: true, registered: true },
+  { client: 'codex', available: true, registered: false },
+  { client: 'vibe', available: false, registered: false },
+];
+
+test('renderRepoConfig: Providers section — registered = checked+disabled, unregistered+available = checkable, unavailable = disabled; button only when something is checkable; the repo path is probed and the vibe restart hint shows', async () => {
+  let probed: string | undefined;
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async (repoPath?: string) => { probed = repoPath; return REGS; } })(REPOS[0]!.path);
+  assert.equal(probed, REPOS[0]!.path, 'mcp.status is probed with the selected repo so the project-layer .vibe/config.toml counts');
+  assert.match(html, /restart vibe inside this repo/, 'the hint tells the user vibe reads its config at startup');
+  assert.match(html, /repo's own \.vibe\/config\.toml/, 'the hint names the project-layer file');
+  assert.match(html, /<h3>Providers<\/h3>/, 'the section renders in the repo form');
+  assert.match(html, /Claude Code<\/span><span class="status-chip ok">registered<\/span>/, 'registered provider shows a registered chip, no checkbox');
+  assert.doesNotMatch(html, /data-provider="claude"/, 'a registered provider carries no data-provider checkbox');
+  assert.match(html, /<input type="checkbox" data-provider="codex"> Codex<\/label><span class="status-chip warn">not registered<\/span>/, 'an unregistered available provider is checkable, with a not-registered chip');
+  assert.match(html, /Mistral Vibe<\/span><span class="status-chip off">CLI not found on PATH<\/span>/, 'an unavailable provider shows a CLI-not-found chip, no checkbox');
+  assert.match(html, /id="insrc-register-providers"/, 'the register button renders when a provider is checkable');
+
+  const none = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => REGS.map(r => ({ ...r, registered: true, available: true })) })(REPOS[0]!.path);
+  assert.doesNotMatch(none, /insrc-register-providers/, 'nothing checkable -> no button');
+  assert.doesNotMatch(none, /data-provider=/, 'all registered -> no checkboxes at all');
+
+  const down = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => { throw new Error('mcp.status down'); } })(REPOS[0]!.path);
+  assert.match(down, /registration state is unavailable/, 'a failed mcp.status read degrades to a hint, not an error');
+
+  const oldDaemon = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => { throw new Error('mcp.status failed: unknown method: mcp.status'); } })(REPOS[0]!.path);
+  assert.match(oldDaemon, /predates provider registration/, 'an old daemon (unknown method) gets an update hint, not the bare unavailable text');
+  assert.match(oldDaemon, /insrc: Update daemon/, 'the hint names the update command');
+});
+
+test("renderProvidersSection renders a 'registered' status chip with no checkbox for an already-registered provider, a checkable input plus a 'not registered' chip for an available-unregistered one, and a 'CLI not found on PATH' chip with no checkbox for an unavailable one", async () => {
+  const html = await renderRepoConfig({ registeredRepos: async () => REPOS, rawConfig: async () => ({}), mcpRegistration: async () => REGS })(REPOS[0]!.path);
+  const row = (client: string): string => (new RegExp(`<div class="provider-row">(?:(?!</div>).)*${client}(?:(?!</div>).)*</div>`, 's').exec(html) ?? [''])[0]!;
+  assert.doesNotMatch(row('Claude Code'), /<input/, "a registered provider's row has no checkbox");
+  assert.match(row('Claude Code'), /<span class="status-chip ok">registered<\/span>/, "a registered provider's row has a registered chip");
+  assert.match(row('Codex'), /<input type="checkbox" data-provider="codex">/, "an available-unregistered provider's row keeps its checkable input");
+  assert.match(row('Codex'), /<span class="status-chip warn">not registered<\/span>/, "an available-unregistered provider's row has a not-registered chip");
+  assert.doesNotMatch(row('Mistral Vibe'), /<input/, "an unavailable provider's row has no checkbox");
+  assert.match(row('Mistral Vibe'), /<span class="status-chip off">CLI not found on PATH<\/span>/, "an unavailable provider's row has a CLI-not-found chip");
+});
+
+test('steeringForClients maps provider clients to the daemon selection (claude→claude, codex→agents, vibe→vibe)', () => {
+  assert.deepEqual(steeringForClients(['codex', 'vibe']), { claude: false, agents: true, vibe: true });
+  assert.deepEqual(steeringForClients(['claude']), { claude: true, agents: false, vibe: false });
+  assert.deepEqual(steeringForClients([]), { claude: false, agents: false, vibe: false });
+});
+
+function makeRegDeps(over: Partial<RepoRegisterProvidersDeps> & { outcome?: ConsentOutcome } = {}): {
+  deps: RepoRegisterProvidersDeps;
+  calls: { repoPath: string; steering: unknown }[];
+  consentAsked: () => number;
+  refreshes: () => number;
+  status: StatusSurface;
+} {
+  const calls: { repoPath: string; steering: unknown }[] = [];
+  const consent = fakeConsent(over.outcome ?? 'accepted');
+  const status = over.status ?? fakeStatus();
+  let refreshes = 0;
+  const deps: RepoRegisterProvidersDeps = {
+    consent: consent.gate,
+    status,
+    logger: { warn: () => {} },
+    registeredRepos: async () => REPOS,
+    registerProviders: async (repoPath, steering) => {
+      calls.push({ repoPath, steering });
+      return { ok: true, mcp: { clients: [{ client: 'codex', action: 'registered' }] } };
+    },
+    refresh: () => { refreshes += 1; },
+    ...over,
+  };
+  return { deps, calls, consentAsked: consent.asked, refreshes: () => refreshes, status };
+}
+
+test('createRepoRegisterProvidersHandler: on accept, mcp.register is called with the repo + mapped steering; outcome surfaced + panel refreshed', async () => {
+  const f = makeRegDeps({ outcome: 'accepted' });
+  const reg: RepoProviderRegistration = { repoPath: REPOS[0]!.path, clients: ['codex', 'vibe'] };
+  createRepoRegisterProvidersHandler(f.deps)(reg);
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(f.consentAsked(), 1);
+  assert.deepEqual(f.calls, [{ repoPath: REPOS[0]!.path, steering: { claude: false, agents: true, vibe: true } }], 'the full registration (steering + MCP) goes through one mcp.register call');
+  assert.match(f.status.current().detail ?? '', /codex registered/, 'per-client outcome surfaced via sc2');
+  assert.equal(f.refreshes(), 1, 'panel re-rendered from fresh state');
+});
+
+test('createRepoRegisterProvidersHandler: decline writes nothing; unknown client / unregistered repo / empty selection are no-ops', async () => {
+  const declined = makeRegDeps({ outcome: 'declined' });
+  createRepoRegisterProvidersHandler(declined.deps)({ repoPath: REPOS[0]!.path, clients: ['codex'] });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(declined.calls.length, 0, 'declined -> no mcp.register');
+
+  const bad = makeRegDeps({ outcome: 'accepted' });
+  createRepoRegisterProvidersHandler(bad.deps)({ repoPath: REPOS[0]!.path, clients: ['gemini'] });
+  createRepoRegisterProvidersHandler(bad.deps)({ repoPath: '/not/registered', clients: ['codex'] });
+  createRepoRegisterProvidersHandler(bad.deps)({ repoPath: REPOS[0]!.path, clients: [] });
+  await new Promise((r) => setTimeout(r, 0));
+  assert.equal(bad.calls.length, 0, 'unknown provider / unregistered repo / empty selection -> no call');
+  assert.equal(bad.consentAsked(), 0, 'no consent prompt for an invalid request');
 });

@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: validatePlan: happy-path 20-task M-bucket plan passes every invariant
+ok 1 - validatePlan: happy-path 20-task M-bucket plan passes every invariant
+  ---
+  duration_ms: 25.715083
+  type: 'test'
+  ...
+# Subtest: INV-1: empty tasks list
+ok 2 - INV-1: empty tasks list
+  ---
+  duration_ms: 0.247167
+  type: 'test'
+  ...
+# Subtest: INV-2: gap in task ids (t01, t02, t04)
+ok 3 - INV-2: gap in task ids (t01, t02, t04)
+  ---
+  duration_ms: 0.070291
+  type: 'test'
+  ...
+# Subtest: INV-2: out-of-order ids (t01, t03, t02, ...)
+ok 4 - INV-2: out-of-order ids (t01, t03, t02, ...)
+  ---
+  duration_ms: 0.054
+  type: 'test'
+  ...
+# Subtest: INV-3: unknown template id
+ok 5 - INV-3: unknown template id
+  ---
+  duration_ms: 0.055791
+  type: 'test'
+  ...
+# Subtest: INV-4: data template in a code plan
+ok 6 - INV-4: data template in a code plan
+  ---
+  duration_ms: 0.0785
+  type: 'test'
+  ...
+# Subtest: INV-4: generic-target plans accept any target template
+ok 7 - INV-4: generic-target plans accept any target template
+  ---
+  duration_ms: 13.983334
+  type: 'test'
+  ...
+# Subtest: INV-5: missing required param key
+ok 8 - INV-5: missing required param key
+  ---
+  duration_ms: 11.971
+  type: 'test'
+  ...
+# Subtest: INV-5: param value with wrong type
+ok 9 - INV-5: param value with wrong type
+  ---
+  duration_ms: 11.831542
+  type: 'test'
+  ...
+# Subtest: INV-6: emitted produces differs from template produces
+ok 10 - INV-6: emitted produces differs from template produces
+  ---
+  duration_ms: 8.898917
+  type: 'test'
+  ...
+# Subtest: INV-7: task consumes an output no earlier task produces
+ok 11 - INV-7: task consumes an output no earlier task produces
+  ---
+  duration_ms: 4.159166
+  type: 'test'
+  ...
+# Subtest: INV-8: leaf template emitted with kind=planner
+ok 12 - INV-8: leaf template emitted with kind=planner
+  ---
+  duration_ms: 6.1595
+  type: 'test'
+  ...
+# Subtest: INV-8: planner template emitted with kind=leaf
+ok 13 - INV-8: planner template emitted with kind=leaf
+  ---
+  duration_ms: 5.204917
+  type: 'test'
+  ...
+# Subtest: INV-9: params contains a nested {taskId, template, ...} array
+ok 14 - INV-9: params contains a nested {taskId, template, ...} array
+  ---
+  duration_ms: 9.087167
+  type: 'test'
+  ...
+# Subtest: INV-9: params deeply nested array of task-shaped objects
+ok 15 - INV-9: params deeply nested array of task-shaped objects
+  ---
+  duration_ms: 3.726208
+  type: 'test'
+  ...
+# Subtest: INV-10: produces->consumes cycle (a depends on b depends on a)
+ok 16 - INV-10: produces->consumes cycle (a depends on b depends on a)
+  ---
+  duration_ms: 6.464541
+  type: 'test'
+  ...
+# Subtest: INV-12: no aggregator at all
+ok 17 - INV-12: no aggregator at all
+  ---
+  duration_ms: 3.567875
+  type: 'test'
+  ...
+# Subtest: INV-12: aggregator not in the last slot
+ok 18 - INV-12: aggregator not in the last slot
+  ---
+  duration_ms: 4.62275
+  type: 'test'
+  ...
+# Subtest: INV-12: TWO aggregator tasks
+ok 19 - INV-12: TWO aggregator tasks
+  ---
+  duration_ms: 3.618625
+  type: 'test'
+  ...
+# Subtest: INV-13: M-bucket plan with too few tasks (below lower bound 20)
+ok 20 - INV-13: M-bucket plan with too few tasks (below lower bound 20)
+  ---
+  duration_ms: 4.833
+  type: 'test'
+  ...
+# Subtest: INV-13: focused intent halves the lower bound
+ok 21 - INV-13: focused intent halves the lower bound
+  ---
+  duration_ms: 6.034792
+  type: 'test'
+  ...
+# Subtest: INV-13: focused intent does NOT raise the upper bound
+ok 22 - INV-13: focused intent does NOT raise the upper bound
+  ---
+  duration_ms: 7.125584
+  type: 'test'
+  ...
+# Subtest: INV-14: task rationale at exactly 19 chars (boundary)
+ok 23 - INV-14: task rationale at exactly 19 chars (boundary)
+  ---
+  duration_ms: 4.982334
+  type: 'test'
+  ...
+# Subtest: INV-14: plan reasoning at exactly 49 chars (boundary)
+ok 24 - INV-14: plan reasoning at exactly 49 chars (boundary)
+  ---
+  duration_ms: 10.154333
+  type: 'test'
+  ...
+# Subtest: INV-15: root plan must NOT have parentTaskPath
+ok 25 - INV-15: root plan must NOT have parentTaskPath
+  ---
+  duration_ms: 3.058917
+  type: 'test'
+  ...
+# Subtest: INV-15: child plan MUST have parentTaskPath
+ok 26 - INV-15: child plan MUST have parentTaskPath
+  ---
+  duration_ms: 2.860625
+  type: 'test'
+  ...
+# Subtest: INV-15: child plan with parentTaskPath set passes
+ok 27 - INV-15: child plan with parentTaskPath set passes
+  ---
+  duration_ms: 4.824583
+  type: 'test'
+  ...
+# Subtest: SCOPE_BAND values match the design doc
+ok 28 - SCOPE_BAND values match the design doc
+  ---
+  duration_ms: 1.486208
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 696.097375

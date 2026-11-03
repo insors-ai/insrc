@@ -1,0 +1,113 @@
+TAP version 13
+# Subtest: one lease per session; a second acquire waits until the holder's process exits, then is granted
+ok 1 - one lease per session; a second acquire waits until the holder's process exits, then is granted
+  ---
+  duration_ms: 8.486083
+  type: 'test'
+  ...
+# Subtest: a lease released without a process grants the waiter; release is idempotent
+ok 2 - a lease released without a process grants the waiter; release is idempotent
+  ---
+  duration_ms: 3.605667
+  type: 'test'
+  ...
+# Subtest: past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted
+ok 3 - past the timeout the holder is stopped (SIGTERM, then SIGKILL after the grace period), its exit is awaited, then the lease is granted
+  ---
+  duration_ms: 216.859291
+  type: 'test'
+  ...
+# Subtest: a process that exits by itself grants the waiter at once, without any stop
+ok 4 - a process that exits by itself grants the waiter at once, without any stop
+  ---
+  duration_ms: 71.123583
+  type: 'test'
+  ...
+# Subtest: an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one
+ok 5 - an aborted wait is cancelled without stopping anything, and a newer waiter replaces an older one
+  ---
+  duration_ms: 44.896125
+  type: 'test'
+  ...
+# Subtest: stopProcess reports whether the exit was confirmed
+ok 6 - stopProcess reports whether the exit was confirmed
+  ---
+  duration_ms: 33.630584
+  type: 'test'
+  ...
+# Subtest: a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced
+ok 7 - a lock file from another window is honoured while its pid is alive, and a stale file (dead pid or mismatched start time) is replaced
+  ---
+  duration_ms: 92.0925
+  type: 'test'
+  ...
+# Subtest: on timeout a cross-window holder's group is stopped only when its start time matches
+ok 8 - on timeout a cross-window holder's group is stopped only when its start time matches
+  ---
+  duration_ms: 110.248792
+  type: 'test'
+  ...
+# Subtest: an unwritable lock directory falls back to memory
+ok 9 - an unwritable lock directory falls back to memory
+  ---
+  duration_ms: 28.525833
+  type: 'test'
+  ...
+# Subtest: the file-backed lock works with the real default seams (pid liveness, start time, fs)
+ok 10 - the file-backed lock works with the real default seams (pid liveness, start time, fs)
+  ---
+  duration_ms: 0.741541
+  type: 'test'
+  ...
+# the start-time seam reads /proc (Linux)
+# Subtest: runLeased releases the lease on every path unless a process was attached
+ok 11 - runLeased releases the lease on every path unless a process was attached
+  ---
+  duration_ms: 8.852542
+  type: 'test'
+  ...
+# Subtest: a take-over never deletes a lock file another window has re-created meanwhile
+ok 12 - a take-over never deletes a lock file another window has re-created meanwhile
+  ---
+  duration_ms: 46.227042
+  type: 'test'
+  ...
+# Subtest: the cross-window wait starts after the in-window grant, and a taken-over starting lease cannot start a second process
+ok 13 - the cross-window wait starts after the in-window grant, and a taken-over starting lease cannot start a second process
+  ---
+  duration_ms: 122.79825
+  type: 'test'
+  ...
+# Subtest: a lease whose process has no pid still removes its lock file on exit
+ok 14 - a lease whose process has no pid still removes its lock file on exit
+  ---
+  duration_ms: 6.785125
+  type: 'test'
+  ...
+# Subtest: a failed pid update removes its temp file
+ok 15 - a failed pid update removes its temp file
+  ---
+  duration_ms: 18.418833
+  type: 'test'
+  ...
+# Subtest: the lock record carries the holder's session file and turn after attach
+ok 16 - the lock record carries the holder's session file and turn after attach
+  ---
+  duration_ms: 17.812125
+  type: 'test'
+  ...
+# Subtest: the lock file is never rewritten after it is created; holder details live in a sidecar that goes with the lease
+ok 17 - the lock file is never rewritten after it is created; holder details live in a sidecar that goes with the lease
+  ---
+  duration_ms: 44.450542
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1074.238958

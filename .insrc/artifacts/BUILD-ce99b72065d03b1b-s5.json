@@ -1,0 +1,390 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s5",
+    "createdAt": "2026-10-26T12:46:38.667Z",
+    "updatedAt": "2026-10-26T18:12:05.327Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "approvedAt": "2026-10-26T18:12:05.961Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": false
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": false
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      }
+    ],
+    "summary": "DEFAULT_TIERS / TIER_EFFORTS removed; three test modules migrated; the literal scan covers src/cli and the recommender; s5-tests-typecheck.test.ts type-checks the s5-changed tests. d98774911 hardens no-default-tiers.test.ts: it scans .ts/.tsx/.mts/.cts/.js/.jsx/.mjs/.cjs under src (asserting JS files are included) and catches static imports (multi-line, type-only), destructured dynamic import()/require(), member access on import()/require(), export declarations, multi-line export lists and export default — with a probe per shape and negative probes; mutation-checked with a temporary .mjs holding a multi-line export list.",
+    "testRecord": {
+      "md": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/ipc-client.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/ipc-client.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/models/cloud-model-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog-asset.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-catalog.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-definitions.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/model-definitions.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/config-write-models.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/config-write.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/command.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/services.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/config.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/models.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/command.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/SetupPane.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/setup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/system-recommend.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/model-recommender.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/model-recommender.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/model-tiers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui-shipped-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/ModelTiersPane.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/model-tiers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/helpers/fake-services.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/tui-models.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/ModelCheckScreen.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/RepoModelsView.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/ReposPane.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/review-resolve-role.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/workflow.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/shipped-model-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/__tests__/same-party-refusal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/__tests__/no-default-tiers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-defs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/tier-defaults.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/config/analyze.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/config/model-defaults.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/model-literal-scan.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/ui/widgets.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/s5-tests-typecheck.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-26T18:12:05.327Z"
+      }
+    ],
+    "commit": "1784db2f1"
+  }
+}

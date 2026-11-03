@@ -136,6 +136,7 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 	const end = parts.end ?? realEndDeps;
 	const hardExitMs = parts.hardExitMs ?? 20_000;
 	let started = false;
+	let ended = false;
 
 	return function shutdown(signal: string): void {
 		// Re-entrant safety: SIGINT followed by SIGTERM (or vice
@@ -173,10 +174,11 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 			const health = end.storeHealth();
 			if (health.state === 'locks-lost') {
 				stage('locks lost: skip queue and store close');
-				setTimeout(() => endAfterStoreFailure(`shutdown (${signal})`, health, end), REPLY_FLUSH_MS);
+				setTimeout(() => { if (ended) return; ended = true; endAfterStoreFailure(`shutdown (${signal})`, health, end); }, REPLY_FLUSH_MS);
 				return;
 			}
 			const backstop = setTimeout(() => {
+				if (ended) return; ended = true;
 				stage('in-process deadline fallback');
 				const current = end.storeHealth();
 				if (current.state === 'locks-lost') endAfterStoreFailure(`shutdown (${signal}), hard-exit backstop`, current, end);
@@ -184,22 +186,25 @@ export function createShutdown(parts: ShutdownParts): (signal: string) => void {
 			}, hardExitMs);
 			backstop.unref();
 			stage('queue drain');
-			const finish = async (): Promise<void> => {
+			const finish = async (queueFailed: boolean): Promise<void> => {
+				if (ended) return;
 				const current = end.storeHealth();
 				if (current.state === 'locks-lost') {
 					clearTimeout(backstop);
+					ended = true;
 					endAfterStoreFailure(`shutdown (${signal})`, current, end); return;
 				}
 				stage('close stores and request server');
 				await parts.closeStores();
+				if (ended) return; ended = true;
 				end.clearPid();
-				parts.log.info('bye');
+				parts.log.info(queueFailed ? 'shutdown: queue drain failed' : 'bye');
 				clearTimeout(backstop);
 				stage('exit hooks');
 				// Do not disarm: a native process.exit hook can itself block.
-				exitRespectingStoreHealth(0, `shutdown (${signal})`, end);
+				exitRespectingStoreHealth(queueFailed ? 1 : 0, `shutdown (${signal})`, end);
 			};
-			void parts.queueDone.then(finish, finish).catch(failClosed);
+			void parts.queueDone.then(() => finish(false), () => finish(true)).catch(failClosed);
 		};
 		void begin().catch(failClosed);
 	};

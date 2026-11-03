@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: src/workflow/__tests__/path-forms.test.ts: the callSites and pathsCited schema descriptions carry the rule wording
+ok 1 - src/workflow/__tests__/path-forms.test.ts: the callSites and pathsCited schema descriptions carry the rule wording
+  ---
+  duration_ms: 0.7485
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: every synthesize prompt and the step prompts that author paths contain PATH_FORM_RULE
+ok 2 - src/workflow/__tests__/path-forms.test.ts: every synthesize prompt and the step prompts that author paths contain PATH_FORM_RULE
+  ---
+  duration_ms: 1.390125
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form
+ok 3 - src/workflow/__tests__/path-forms.test.ts: the design.story synthesize prompt lets a call site taken from s4 be corrected to the path form
+  ---
+  duration_ms: 0.315834
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number
+ok 4 - src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a root-relative path with and without a line number
+  ---
+  duration_ms: 0.890042
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file
+ok 5 - src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an absolute path as an external file
+  ---
+  duration_ms: 0.116125
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it
+ok 6 - src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a call site with prose beside the path and names it
+  ---
+  duration_ms: 0.069833
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment
+ok 7 - src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a leading ./ and a .. segment
+  ---
+  duration_ms: 0.106458
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms checks only citations of kind code and doc
+ok 8 - src/workflow/__tests__/path-forms.test.ts: checkPathForms checks only citations of kind code and doc
+  ---
+  duration_ms: 0.169625
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a \#anchor
+ok 9 - src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a path with a line range, a column and a \#anchor
+  ---
+  duration_ms: 0.1925
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation
+ok 10 - src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts an http(s) URL in a doc citation
+  ---
+  duration_ms: 0.937917
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose
+ok 11 - src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations returns a paths failure for an LLD whose call site carries prose
+  ---
+  duration_ms: 0.187917
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact
+ok 12 - src/workflow/__tests__/path-forms.test.ts: validateBodyAndCitations keeps the citation result for a well-formed artifact
+  ---
+  duration_ms: 0.132333
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses an absolute path inside the project when it knows the project root
+ok 13 - src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses an absolute path inside the project when it knows the project root
+  ---
+  duration_ms: 0.135667
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a path that names a symbol and says what to keep
+ok 14 - src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses a path that names a symbol and says what to keep
+  ---
+  duration_ms: 0.049125
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a project directory with a trailing slash
+ok 15 - src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a project directory with a trailing slash
+  ---
+  duration_ms: 0.039
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses the project root itself and ignores a root of /
+ok 16 - src/workflow/__tests__/path-forms.test.ts: checkPathForms refuses the project root itself and ignores a root of /
+  ---
+  duration_ms: 0.037542
+  type: 'test'
+  ...
+# Subtest: src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a project path with brackets or parentheses in a segment
+ok 17 - src/workflow/__tests__/path-forms.test.ts: checkPathForms accepts a project path with brackets or parentheses in a segment
+  ---
+  duration_ms: 0.037333
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 215.345916

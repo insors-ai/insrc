@@ -1,0 +1,9 @@
+{
+  "renderer": "Installed Google Chrome headless, isolated temporary profile, local self-contained HTML",
+  "html": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html",
+  "htmlSha256": "1212e1b02dd06332e32502c618e599dca2a31686b8bbd24e9d58ff61504e4c93",
+  "screenshot": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round3.png",
+  "screenshotSha256": "192ed31c89e266771df9c9abad92c5cf35b41f00d857ef00d7921f7e392582b8",
+  "observed": "Current generated companion captured in the same headless renderer/profile isolation; sequence definitions/labels match the visually verified second-round diagram. Source schema/reference validation passed.",
+  "limit": "Pan/zoom controls were visible but not exercised interactively."
+}

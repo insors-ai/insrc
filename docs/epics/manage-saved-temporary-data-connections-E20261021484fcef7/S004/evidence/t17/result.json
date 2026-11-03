@@ -1,0 +1,95 @@
+{
+  "subject": "CM-S4-SOURCE",
+  "runtime": "Node 22.23.2",
+  "implementationMode": "source; existing service regression also exercises source and compiled isolation",
+  "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-reporter=tap src/daemon/db/__tests__/session-service-isolation.test.ts",
+  "result": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "proof": [
+    "Actual PostgreSQL 17.10 and test-owned Redis 7.4 services retain all seeded rows and keys after saved and temporary removal.",
+    "Observer SDKs verify app-owned connections are drained while services remain alive.",
+    "Injected failure before the actual SDK close retains the real connection; physical retry closes it.",
+    "Same-ID recreation opens a new real driver; replayed old cleanup leaves it usable."
+  ],
+  "earlierAttempts": [
+    {
+      "file": "first-redis-startup-failure.tap",
+      "result": "fail",
+      "cause": "Disposable Redis startup readiness; bounded SDK readiness polling added."
+    },
+    {
+      "file": "joined-cleanup-assertion-failure.tap",
+      "result": "fail",
+      "cause": "Test expected a joined failed close to start a new retry; assertion corrected to allow the documented joined attempt then explicit retry."
+    }
+  ],
+  "releaseEnabled": false,
+  "logs": {
+    "joined-cleanup-assertion-failure.tap": "15ebea148205e640b82b81603a78148c478c2c2e932601e0502fc5255b821440",
+    "first-redis-startup-failure.tap": "afefdf41cc9a68b7ea20f809e68452c06c6553b874293124d1d3de88d8a41dfa",
+    "removal-live-pass.tap": "bdb399274d9c7fbd50d21dc7e4e86a8c16fe6b90412adc55701ca93a40ba4a53",
+    "full-relevant-pass.tap": "c8366e432d04d77e6ebe0b3dcfab46468301e217328be76d7f5e2a53ddb557e6"
+  },
+  "shippedExternalPrerequisiteSnapshot": {
+    "S001": {
+      "status": "pending",
+      "reason": "Independent foundation review deferred by user; not cleared by S003"
+    },
+    "S002SqlServer": {
+      "status": "pending",
+      "reason": "Actual Linux x64 CI/remote SQL Server coverage deferred by user; no local installation or EULA acceptance"
+    },
+    "S002Sweep": {
+      "status": "pending",
+      "reason": "Prior sweep retained failures/cancellation/skips/TODO; S003 does not retroactively relabel it",
+      "priorEvidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S002/evidence/t19-post-sweep.json"
+    },
+    "providerService": {
+      "status": "pending",
+      "reason": "Current-generation exact adapter/service privacy proof and enrollment remain pending; historical t24 results retained"
+    },
+    "S004": {
+      "status": "pending",
+      "reason": "Dependent removal/lifecycle story not implemented by S003"
+    },
+    "S005": {
+      "status": "pending",
+      "clients": {
+        "vscode": {
+          "status": "pending",
+          "evidence": []
+        },
+        "jetbrains": {
+          "status": "pending",
+          "evidence": []
+        }
+      },
+      "requiredPreAddCopy": {
+        "retain": [
+          "panel-close",
+          "root-switch"
+        ],
+        "expire": [
+          "workbench-end",
+          "lease-loss",
+          "daemon-restart"
+        ]
+      },
+      "reason": "External both-client acceptance only; a passing metadata assertion does not mean either client was verified"
+    }
+  },
+  "shippedPrerequisiteNote": "Unchanged shipped evidence, not a current S004 implementation claim; final S004 acceptance is recorded at t24.",
+  "testedSources": {
+    "src/daemon/db/__tests__/session-service-isolation.test.ts": "91ac7a9c9d959990af0939b6fd537cfe9e003bf5e356ada939488dfc0bd1c392",
+    "src/daemon/db/__tests__/fixtures/session-services.ts": "312399fa1ab25b006864b11a231c7cd29cad090ca8df6069bcce9128a86271ff",
+    "src/daemon/db/management.ts": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489",
+    "src/daemon/db/session-entries.ts": "91b68d5f4b7bd58181898e0d95bc9f41a8eb24395cb2da9142847c39f7e83191",
+    "src/daemon/db/session-resources.ts": "344be9a116afd0d1ec644d63f63a8498f056175acef3adf00db81ba21ab7f348",
+    "src/daemon/db/pool.ts": "8a1a5b3ed74d4b6463fbfb0b65820dd79d0a546d2414d77540a4a5f07e98d183"
+  }
+}

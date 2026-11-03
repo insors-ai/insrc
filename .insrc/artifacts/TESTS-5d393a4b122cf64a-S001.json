@@ -1,0 +1,556 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "5d393a4b122cf64a",
+    "storyId": "S001",
+    "createdAt": "2026-10-29T12:03:40.473Z",
+    "updatedAt": "2026-10-29T13:02:53.983Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T11:39:36.587Z",
+    "epicSlug": "classify-module-scope-mutable-state-reachable"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "c9afc8032",
+        "ranAt": "2026-10-29T12:03:40.473Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "module-state-inventory.test.ts: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure (temp project)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "module-state-inventory.test.ts: the scanner throws on an unreadable tsconfig and is deterministic",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1450,
+            "titles": [
+              {
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "ed84114a5",
+        "ranAt": "2026-10-29T12:05:12.825Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "module-state-inventory.test.ts: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1438,
+            "titles": [
+              {
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "340ad22bf",
+        "ranAt": "2026-10-29T12:09:23.490Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "module-state-inventory.test.ts: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2800,
+            "titles": [
+              {
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "69befaa89",
+        "ranAt": "2026-10-29T12:13:08.214Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "module-state-inventory.test.ts: every module-scope mutable value the session worker can load is classified (full guard over the repo)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2888,
+            "titles": [
+              {
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "0a49226b1",
+        "ranAt": "2026-10-29T12:49:16.098Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "module-state-inventory.test.ts: every one-owner or shared-store entry names the mechanism that gives it one copy (no unresolved candidate is left in the fixture)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3481,
+            "titles": [
+              {
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "da7fc5a18",
+        "ranAt": "2026-10-29T12:59:29.214Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "method-class.test.ts and a two-session-worker test per moved family: both workers reach the one owner (or, with no inline moves, method-class.test.ts still passes)",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/method-class.test.ts",
+                "title": "method sets: every served chat.*, todos.*, understanding.*, models.* and codeReview.* method is in the shared-state set",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/router-session.test.ts",
+                "title": "router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/analyze-run-owner.test.ts",
+                "title": "router: analyze.run.status and analyze.run.purge from another session reach the worker running the analyze run; a run live nowhere is answered by the session's worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/analyze-run-owner.test.ts",
+                "title": "live runs: the publisher hears a run id when it becomes live and when it stops, once each, however many runs share the id",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/analyze-run-owner.test.ts",
+                "title": "status board: a worker's live analyze runs reach the board through the hub; a stop from another thread or the owner's exit is handled",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/module-state-moves.test.ts",
+                "title": "tool settings set by one session reach every session worker, those already running and those started later",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+                "title": "module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/analyze-run-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 456,
+            "titles": [
+              {
+                "title": "live runs: the publisher hears a run id when it becomes live and when it stops, once each, however many runs share the id",
+                "result": "pass"
+              },
+              {
+                "title": "status board: a worker's live analyze runs reach the board through the hub; a stop from another thread or the owner's exit is handled",
+                "result": "pass"
+              },
+              {
+                "title": "router: analyze.run.status and analyze.run.purge from another session reach the worker running the analyze run; a run live nowhere is answered by the session's worker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/method-class.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 973,
+            "titles": [
+              {
+                "title": "classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique",
+                "result": "pass"
+              },
+              {
+                "title": "coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every shared-state and FIFO-exempt member is a session-class method",
+                "result": "pass"
+              },
+              {
+                "title": "method sets: every served chat.*, todos.*, understanding.*, models.* and codeReview.* method is in the shared-state set",
+                "result": "pass"
+              },
+              {
+                "title": "in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline",
+                "result": "pass"
+              },
+              {
+                "title": "the method-class module loads on a worker without importing a handler module",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/module-state-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2655,
+            "titles": [
+              {
+                "title": "module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)",
+                "result": "pass"
+              },
+              {
+                "title": "module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/module-state-moves.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2671,
+            "titles": [
+              {
+                "title": "tool settings set by one session reach every session worker, those already running and those started later",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/router-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1161,
+            "titles": [
+              {
+                "title": "router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt methods are forwarded during a long request; a cancelled queued request is removed",
+                "result": "pass"
+              },
+              {
+                "title": "router: connection-scoped requests stay local; unattributed requests interleave without a FIFO",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued stream cancelled by its socket keeps the next request queued and its worker busy until the worker acks it, with or without a lifetime (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here",
+                "result": "pass"
+              },
+              {
+                "title": "router: a session worker's exit fails its queued requests but keeps one bound for the shared-state worker",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request cancelled while its worker is still starting never leaves the worker busy",
+                "result": "pass"
+              },
+              {
+                "title": "router: a request awaiting its ack stays pending past its reply; a duplicate or unknown completion message is ignored and onAck runs once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a postMessage failure answers 'request channel unavailable' and calls the ack once (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: detach answers a request awaiting its ack through the caller and hands back its ack; failWorker calls it after answering (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a pool start failure, a missing worker port and a cancel before the worker resolved each call the ack once; the pool ends an acked request at its ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a shared-state request sent with an ack waits for the shared-state worker's ack, whether that worker is attached or reached through the pool (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary request whose socket closes while it runs keeps the next request queued until the worker acks the first, after its handler settled (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued unary reply is delivered at once, but the session's next request starts only after the worker's ack, after the work it registered with registerDrain is done (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a worker exit answers the session's running request with 'session worker failed' and the next queued request runs (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: FIFO-exempt and unattributed requests keep today's ends: they never wait for an ack (ISSUE-7c39e5cd)",
+                "result": "pass"
+              },
+              {
+                "title": "router: two sessions' model checks and code-review turns reach the one shared-state worker; other step tools stay on the session's worker (Story 5d393a4b)",
+                "result": "pass"
+              },
+              {
+                "title": "router: a queued request refused under the maintenance lock is still acked by its worker and the session's queue moves on (ISSUE-7c39e5cd)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7a68f9c3d",
+        "ranAt": "2026-10-29T13:02:53.983Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "session-source-inventory.test.ts: the entries for files this Story edited match (or no production file was edited)",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13156,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

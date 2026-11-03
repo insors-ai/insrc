@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.ops.WorkflowsPageTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.001">
+  <properties/>
+  <testcase name="ac3 - the page shows a clear empty state when there are no chains()" classname="ai.insors.insrc.jetbrains.ops.WorkflowsPageTest" time="0.0"/>
+  <testcase name="ac2 - the page is strictly read-only - no interactive control and no daemon IPC (k6)()" classname="ai.insors.insrc.jetbrains.ops.WorkflowsPageTest" time="0.001"/>
+  <testcase name="k4 - the page does not touch the parent settings page()" classname="ai.insors.insrc.jetbrains.ops.WorkflowsPageTest" time="0.0"/>
+  <testcase name="ac1 - the page consumes sc1 and renders the chain from WorkflowChainReader via InsrcCollapsible()" classname="ai.insors.insrc.jetbrains.ops.WorkflowsPageTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

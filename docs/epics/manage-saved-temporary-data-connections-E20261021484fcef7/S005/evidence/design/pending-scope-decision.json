@@ -1,0 +1,14 @@
+{
+  "status": "resolved-by-user",
+  "reviewVerdict": "block",
+  "high": "Approved HLD requires insrc-ide; reviewer reports earlier instruction retiring fork in favor of vscode-plugin and jetbrains-plugin. Current supplied project instructions also describe fork IPC consumer, so do not silently supersede either source. Asked user to choose current client scope.",
+  "med": "Corrected ConnectionManagerState callsites to remove unrelated panels/types.ts; proposed dedicated extension connections/types,host,wiring,renderer modules; needs independent re-review.",
+  "reviewCallsThisCycle": 2,
+  "reviewCallHistory": [
+    "Canonical JSON path returned no artifact md; no stamp.",
+    "Document MD path completed independent review:HIGH1,MED1,7holds."
+  ],
+  "next": "Revised native TypeScript/Kotlin design ready for remaining independent review call; no implementation or LLD approval yet.",
+  "unchanged": "No external checkout edits or release activation; backend failures/limits retained.",
+  "decision": "insrc-ide is deprecated, only VS Code + JetBrains"
+}

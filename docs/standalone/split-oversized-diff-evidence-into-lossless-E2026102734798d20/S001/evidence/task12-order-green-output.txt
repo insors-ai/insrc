@@ -1,0 +1,449 @@
+TAP version 13
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"e459ec44-d8f8-494a-942e-8aac5ac259c7","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"7a68e64d-d388-47f4-84cd-880b6460f1df","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"777348ac-075c-4a27-8248-27c534c37971","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"83e42291-e613-4bb5-ac89-3c91de8dee4e","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"e459ec44-d8f8-494a-942e-8aac5ac259c7","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"7a68e64d-d388-47f4-84cd-880b6460f1df","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"777348ac-075c-4a27-8248-27c534c37971","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"83e42291-e613-4bb5-ac89-3c91de8dee4e","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:31] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122350802-n3oogz"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"5bbc68d5-88bb-49a6-8244-bbc03e48894c","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"c7a1b91d-343d-4428-a837-a3d6497c139f","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"943f8292-a056-47f0-a283-e7660c313b35","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"ddf21698-0494-4c42-aa42-c25c487ae5de","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"5bbc68d5-88bb-49a6-8244-bbc03e48894c","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"c7a1b91d-343d-4428-a837-a3d6497c139f","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"943f8292-a056-47f0-a283-e7660c313b35","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"ddf21698-0494-4c42-aa42-c25c487ae5de","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:33] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122352541-21c4d1"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# Subtest: DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite
+ok 1 - DIFF-PUBLISH-SOURCE: real daemon hooks reject source, HEAD and contract changes during review without a second start or CR overwrite
+  ---
+  duration_ms: 5360.535916
+  type: 'test'
+  ...
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"054d54ee-213c-4efd-a1f2-8a7729c17907","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"d1a1a591-2184-42e1-ba59-7f66e7bee1bd","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"e27204a1-2bb7-4624-84b0-c69ef4e7c549","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"a2aadfc9-2fd8-4e7c-a16c-f6f86e6e49f3","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"054d54ee-213c-4efd-a1f2-8a7729c17907","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"d1a1a591-2184-42e1-ba59-7f66e7bee1bd","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"e27204a1-2bb7-4624-84b0-c69ef4e7c549","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"a2aadfc9-2fd8-4e7c-a16c-f6f86e6e49f3","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:35] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122354399-r4z05g"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# [17:32:36] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"d2134b77-6a27-4f56-a757-ee30363a786b","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:36] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"3e19d1bf-db5d-454a-809f-3c9f16529cd4","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:36] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"11cf276f-a243-4936-b114-a746328f719a","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:36] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"9f3d74ff-36bb-463a-ac89-8680deb8b51f","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:37] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"d2134b77-6a27-4f56-a757-ee30363a786b","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:37] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"3e19d1bf-db5d-454a-809f-3c9f16529cd4","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:37] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"11cf276f-a243-4936-b114-a746328f719a","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:37] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"9f3d74ff-36bb-463a-ac89-8680deb8b51f","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:37] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122356153-ount90"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"81e6b1e7-4152-4d68-aa78-14059304d070","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"1a499c59-8e95-42d9-85b9-4791408e6312","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"522b5010-ce83-401c-8daa-fe749947a3c6","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"a04cf5e3-a44d-443b-828b-d48f5a31e6ec","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"81e6b1e7-4152-4d68-aa78-14059304d070","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"1a499c59-8e95-42d9-85b9-4791408e6312","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"522b5010-ce83-401c-8daa-fe749947a3c6","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"a04cf5e3-a44d-443b-828b-d48f5a31e6ec","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:38] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122357878-14emct"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# Subtest: DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata
+ok 2 - DIFF-PUBLISH-BUILD: rebuild and author replacement prevent publication; unchanged source records carry current fingerprint metadata
+  ---
+  duration_ms: 5651.57025
+  type: 'test'
+  ...
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"17942a13-9c2f-46a4-a1ae-276ea727d914","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"a269ba70-290e-44be-9cc5-51e6ddc12aff","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"b541458e-b4be-4fe6-b8b4-bcf5a096b7ba","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"bf3a96ad-8c35-44bc-aa6b-56788154d0d7","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"17942a13-9c2f-46a4-a1ae-276ea727d914","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"a269ba70-290e-44be-9cc5-51e6ddc12aff","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"b541458e-b4be-4fe6-b8b4-bcf5a096b7ba","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"bf3a96ad-8c35-44bc-aa6b-56788154d0d7","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:40] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122359517-11ndyy"
+#     [35mstoryId[39m: "S001"
+#     [35mverdict[39m: "warn"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 0,
+#       "low": 0
+#     }
+# Subtest: DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR
+ok 3 - DIFF-IDENTITY-TESTS: a TESTS-only update during the actual daemon review prevents a new CR
+  ---
+  duration_ms: 1459.988542
+  type: 'test'
+  ...
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"00e367c1-1e1a-4e69-adc7-f34d7b57b94b","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"b88849e1-da73-4980-ac31-069516b729af","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"a44fc0f7-8632-40c2-a5d8-94fa90285af4","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"243363fc-baf0-49f8-a7a3-a732d793d70e","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"00e367c1-1e1a-4e69-adc7-f34d7b57b94b","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"b88849e1-da73-4980-ac31-069516b729af","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"a44fc0f7-8632-40c2-a5d8-94fa90285af4","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"243363fc-baf0-49f8-a7a3-a732d793d70e","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:42] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122361684-on7x0f"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# Subtest: DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record
+ok 4 - DIFF-PUBLISH-SOURCE: post-publication mutation reports no accepted completion and leaves an explicitly stale fingerprinted record
+  ---
+  duration_ms: 1983.318792
+  type: 'test'
+  ...
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"feb8a07d-bc56-481f-a257-2f1120ff92e4","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"13e5d71a-93c1-4f7f-8c17-355e697e02ac","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"804056c7-6d48-45ba-8d53-bc855e9ed834","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"5c137e4f-c3d8-4f7d-8a39-501a77a24714","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"feb8a07d-bc56-481f-a257-2f1120ff92e4","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"13e5d71a-93c1-4f7f-8c17-355e697e02ac","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"804056c7-6d48-45ba-8d53-bc855e9ed834","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:43] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"5c137e4f-c3d8-4f7d-8a39-501a77a24714","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:44] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122363138-eshubb"
+#     [35mstoryId[39m: "S001"
+#     err: "Review inputs changed during capture; restart the independent review"
+# [17:32:46] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-publication-KQwe8d/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+# [17:32:46] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-publication-KQwe8d/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+# Subtest: DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity
+ok 5 - DIFF-PUBLISH-BUILD: real controller continuation rejects source, BUILD, TESTS and author changes against admitted identity
+  ---
+  duration_ms: 2647.5685
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models
+ok 6 - DIFF-PUBLISH-BUILD: ownership excludes a competing publisher and required hook admission fails before grounding or models
+  ---
+  duration_ms: 613.5055
+  type: 'test'
+  ...
+# [17:32:47] [33mWARN[39m: [36m[code-review:runner] code review failed; no completion accepted[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "missing-hook"
+#     [35mstoryId[39m: "S001"
+#     err: "Review publication identity hook is required"
+# Subtest: DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read
+ok 7 - DIFF-PUBLISH-SOURCE: hollow graph fallback cannot silently admit source edited during the first grounding read
+  ---
+  duration_ms: 525.856625
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result
+ok 8 - DIFF-PUBLISH-BUILD: RPC rechecks identity after the runner returns before sending its terminal result
+  ---
+  duration_ms: 2239.427125
+  type: 'test'
+  ...
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"8d7f072c-6bd8-4a14-9f0d-b25e81ea3d44","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"901fbf77-163b-42d4-9658-75cacdf118e2","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"f9ed2aea-95de-47d0-870a-c2468b61d0e1","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"e23dffaa-725c-4b8f-bba7-e087b2730d76","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"8d7f072c-6bd8-4a14-9f0d-b25e81ea3d44","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"901fbf77-163b-42d4-9658-75cacdf118e2","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"f9ed2aea-95de-47d0-870a-c2468b61d0e1","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:49] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"e23dffaa-725c-4b8f-bba7-e087b2730d76","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:50] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122368936-xdf8js"
+#     [35mstoryId[39m: "S001"
+#     [35mverdict[39m: "warn"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 0,
+#       "low": 0
+#     }
+# Subtest: DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review
+ok 9 - DIFF-PUBLISH-BUILD: completion cannot erase a known legacy BUILD author to bypass independent review
+  ---
+  duration_ms: 166.10525
+  type: 'test'
+  ...
+# Subtest: DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint
+ok 10 - DIFF-FINGERPRINT-SNAPSHOT: real multi-commit daemon diff review accepts equivalent path order and persists a fresh fingerprint
+  ---
+  duration_ms: 3053.168667
+  type: 'test'
+  ...
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"43e5b784-1e03-4ab4-bcf7-fd0b467d5714","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"1cbfd612-c264-49a7-a2db-5484cdbd1e9e","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"03671365-72b6-468a-a74a-83390a153316","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"prepared","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"24361286-4146-4e73-8eca-c6cf14eb2c85","single":true,"limitChars":384000,"chunks":[]}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"adherence","reviewId":"43e5b784-1e03-4ab4-bcf7-fd0b467d5714","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"conventions","reviewId":"1cbfd612-c264-49a7-a2db-5484cdbd1e9e","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"coverage","reviewId":"03671365-72b6-468a-a74a-83390a153316","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:52] [32mINFO[39m: [36m[review-pipeline:code-review] review pipeline: plan {"phase":"finished","epicHash":"e1a2b3c4d5e6f708","storyId":"S001","dimension":"quality","reviewId":"24361286-4146-4e73-8eca-c6cf14eb2c85","single":true,"limitChars":384000,"chunks":[],"pipelineCalls":null}[39m
+#     [35mmodule[39m: "review-pipeline:code-review"
+# [17:32:53] [32mINFO[39m: [36m[code-review:runner] code-review record written[39m
+#     [35mmodule[39m: "code-review:runner"
+#     [35mrunId[39m: "cr-1793122371830-hcjb3d"
+#     [35mstoryId[39m: "S001"
+#     [35mverdict[39m: "warn"
+#     [35mcounts[39m: {
+#       "high": 0,
+#       "med": 0,
+#       "low": 0
+#     }
+# Subtest: DIFF-APPROVE-COMMON: direct approval and reapproval preserve reviewed identity while stale source/BUILD/TESTS cannot be overridden
+ok 11 - DIFF-APPROVE-COMMON: direct approval and reapproval preserve reviewed identity while stale source/BUILD/TESTS cannot be overridden
+  ---
+  duration_ms: 4825.762959
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-GATE: stale review is a distinct non-overridable outcome with reason and no fabricated findings/counts
+ok 12 - DIFF-PUBLISH-GATE: stale review is a distinct non-overridable outcome with reason and no fabricated findings/counts
+  ---
+  duration_ms: 722.863375
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-WORKFLOW: single and batch approval project stale identity and leave fresh siblings approvable with no completion side effects
+ok 13 - DIFF-APPROVE-WORKFLOW: single and batch approval project stale identity and leave fresh siblings approvable with no completion side effects
+  ---
+  duration_ms: 2787.278
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-TUI: the actual TUI service rejects stale identity before tracker/commit work even with override
+ok 14 - DIFF-APPROVE-TUI: the actual TUI service rejects stale identity before tracker/commit work even with override
+  ---
+  duration_ms: 537.35375
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-IDENTITY: invalid/partial/unsupported/unreadable identities fail closed while genuinely unrecorded fingerprint fields remain explicitly legacy
+ok 15 - DIFF-APPROVE-IDENTITY: invalid/partial/unsupported/unreadable identities fail closed while genuinely unrecorded fingerprint fields remain explicitly legacy
+  ---
+  duration_ms: 2195.793791
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-IDENTITY: canonical BUILD path, metadata, repository and independent author must agree; file aliases cannot bypass checks
+ok 16 - DIFF-APPROVE-IDENTITY: canonical BUILD path, metadata, repository and independent author must agree; file aliases cannot bypass checks
+  ---
+  duration_ms: 2766.88375
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-RACE: prewrite changes stamp nothing; postwrite TESTS/source changes roll back only this approval metadata and preserve foreign BUILD edits
+ok 17 - DIFF-APPROVE-RACE: prewrite changes stamp nothing; postwrite TESTS/source changes roll back only this approval metadata and preserve foreign BUILD edits
+  ---
+  duration_ms: 4841.081791
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-RACE: framework BUILD writers share synchronous ownership and cannot overwrite a concurrent approval transaction
+ok 18 - DIFF-APPROVE-RACE: framework BUILD writers share synchronous ownership and cannot overwrite a concurrent approval transaction
+  ---
+  duration_ms: 1193.318458
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source
+ok 19 - DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source
+  ---
+  duration_ms: 2803.676083
+  type: 'test'
+  ...
+# [17:32:50] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/build-freshness-XBng1z/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 2 (line 1 column 3)"
+# [17:32:50] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/build-freshness-XBng1z/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 2 (line 1 column 3)"
+# Subtest: DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence
+ok 20 - DIFF-FINGERPRINT-SNAPSHOT: consistent source, scoped diff, author and contracts bind the actual resolved review evidence
+  ---
+  duration_ms: 4378.224542
+  type: 'test'
+  ...
+# Subtest: DIFF-FINGERPRINT-SNAPSHOT: exact BUILD approval exclusions preserve identity while semantic fields and capture races fail closed
+ok 21 - DIFF-FINGERPRINT-SNAPSHOT: exact BUILD approval exclusions preserve identity while semantic fields and capture races fail closed
+  ---
+  duration_ms: 2435.522458
+  type: 'test'
+  ...
+# Subtest: DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed states, reports and absence each affect identity
+ok 22 - DIFF-IDENTITY-TESTS: complete ordered TESTS content, ranAt, malformed states, reports and absence each affect identity
+  ---
+  duration_ms: 3560.908292
+  type: 'test'
+  ...
+# Subtest: DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS
+ok 23 - DIFF-FINGERPRINT-SNAPSHOT: admission accepts reordered file membership while rejecting missing duplicate and foreign paths and preserving ordered TESTS
+  ---
+  duration_ms: 1164.939875
+  type: 'test'
+  ...
+# [17:32:39] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-fingerprint-Y0XNGX/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+# [17:32:39] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-fingerprint-Y0XNGX/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+# [17:32:39] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-fingerprint-Y0XNGX/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+# [17:32:39] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record is unreadable; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-fingerprint-Y0XNGX/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+#     err: "Expected property name or '}' in JSON at position 1 (line 1 column 2)"
+# [17:32:39] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record does not have the record's shape; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-fingerprint-Y0XNGX/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+# [17:32:39] [33mWARN[39m: [36m[workflow:test-record] testRecordState: the stored record does not have the record's shape; treating it as absent[39m
+#     [35mmodule[39m: "workflow:test-record"
+#     [35mjsonPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-fingerprint-Y0XNGX/.insrc/artifacts/TESTS-e1a2b3c4d5e6f708-S001.json"
+# Subtest: DIFF-COMPLETION-NOOP: real completion preserves BUILD bytes, file identities, provenance order/version/author and TESTS ranAt
+ok 24 - DIFF-COMPLETION-NOOP: real completion preserves BUILD bytes, file identities, provenance order/version/author and TESTS ranAt
+  ---
+  duration_ms: 1097.3195
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-IDENTITY: approval metadata and no-op completion stay stable while normal validate persistence still refreshes semantic time
+ok 25 - DIFF-APPROVE-IDENTITY: approval metadata and no-op completion stay stable while normal validate persistence still refreshes semantic time
+  ---
+  duration_ms: 1075.901625
+  type: 'test'
+  ...
+# Subtest: DIFF-COMPLETION-CHANGE: new commits/files and changed tasks persist; unchanged per-file provenance survives the new Story revision
+ok 26 - DIFF-COMPLETION-CHANGE: new commits/files and changed tasks persist; unchanged per-file provenance survives the new Story revision
+  ---
+  duration_ms: 2115.427375
+  type: 'test'
+  ...
+# [17:32:34] [33mWARN[39m: [36m[workflow:build-record] persistBuildRecord: prior record has no epicHash/storyId; treating as absent (fail-open)[39m
+#     [35mmodule[39m: "workflow:build-record"
+#     [35mjsonPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-completion-identity-EKi1a3/.insrc/artifacts/BUILD-e1a2b3c4d5e6f708-S001.json"
+# [17:32:34] [33mWARN[39m: [36m[workflow:build-record] persistBuildRecord: prior record has no epicHash/storyId; treating as absent (fail-open)[39m
+#     [35mmodule[39m: "workflow:build-record"
+#     [35mjsonPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-completion-identity-EKi1a3/.insrc/artifacts/BUILD-e1a2b3c4d5e6f708-S001.json"
+# Subtest: DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint
+ok 27 - DIFF-COMPLETION-CHANGE: a malformed prior takes the fresh-record path and cannot retain the previous fingerprint
+  ---
+  duration_ms: 693.244
+  type: 'test'
+  ...
+# [17:32:34] [33mWARN[39m: [36m[workflow:build-record] persistBuildRecord: prior record has no epicHash/storyId; treating as absent (fail-open)[39m
+#     [35mmodule[39m: "workflow:build-record"
+#     [35mjsonPath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-completion-identity-EKi1a3/.insrc/artifacts/BUILD-e1a2b3c4d5e6f708-S001.json"
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 24405.386875

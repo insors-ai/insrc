@@ -1,0 +1,42 @@
+TAP version 13
+# (node:7315) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle
+ok 1 - CM-S2-A8: source and compiled one-shot workers use private IPC and quiet actual file lifecycle
+  ---
+  duration_ms: 5122.741167
+  type: 'test'
+  ...
+# Subtest: CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds
+ok 2 - CM-S2-A8: source and compiled private IPC admit all registered kinds and reject unlisted kinds
+  ---
+  duration_ms: 17706.867209
+  type: 'test'
+  ...
+# Subtest: CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode
+ok 3 - CM-S2-A8: cleared PostgreSQL credentials cannot fall back to HOME pgpass in either worker mode
+  ---
+  duration_ms: 385.894875
+  type: 'test'
+  ...
+# Subtest: CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable
+ok 4 - CM-S2-A8: actual private resource close is awaited and cleanup failures cannot produce reachable
+  ---
+  duration_ms: 2393.252083
+  type: 'test'
+  ...
+# Subtest: CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output
+ok 5 - CM-S2-E2: actual workers reject missing malformed or expired Dynamo auth without fallback or canary output
+  ---
+  duration_ms: 1360.989625
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 29228.169

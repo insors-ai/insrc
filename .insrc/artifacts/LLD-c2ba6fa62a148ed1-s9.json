@@ -1,0 +1,910 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793565101027-9glb2s",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T20:37:30.917Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 349880,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s9",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "hldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "hldAmendmentsApplied": [
+      "AMD-c2ba6fa62a148ed1-1",
+      "AMD-c2ba6fa62a148ed1-2",
+      "AMD-c2ba6fa62a148ed1-7",
+      "AMD-c2ba6fa62a148ed1-8",
+      "AMD-c2ba6fa62a148ed1-9",
+      "AMD-c2ba6fa62a148ed1-10"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1-ac4 and lc1 for S009 in DEF.md match the LLD's acceptance-mapping table and summary scope (Rust/C#/C/C++ entities+relationships, SQL tables/views+REFERENCES, per-language graceful degradation, languages-list request), and no language outside the stakeholder-named set (lc1: Rust, C#, SQL, C, C++) is added.",
+          "evidence": "docs/epics/.../DEF.md:323-330 — ac1..ac4 and lc1 ('The languages are those the stakeholder named: Rust, C#, SQL, C and C++') match LLD §6 acceptance mapping table rows for ac1-ac4 exactly. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "action": "Read DEF.md §6.9 and compared against LLD §6 acceptance-mapping table.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The two open questions (.h header language family, SQL cross-file REFERENCES resolution) are correctly left undecided rather than silently built either way, avoiding scope creep into the owning story's (s1) cross-file pass.",
+          "evidence": "LLD §10 states both as OPEN with 'Decide before the plan' rather than picking an implementation; §1 explicitly lists s1's cross-file pass extension as adjacent/owned-by-other-story.",
+          "action": "Read LLD §10 and §1 adjacent-scope block.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's registry/parser API (registerParser/getParser), Language union (no rust/csharp/c/cpp), and ENTITY_KIND_BYTE ending at externalEndpoint:13 are exactly as the design states.",
+          "evidence": "src/indexer/parser/registry.ts:7-15 matches §2.1/2.2 signatures; src/shared/types.ts:564-567 'python'|'go'|'typescript'|'javascript'|'java'|'scala'|'kotlin'|...|'sql'|... with no rust/csharp/c/cpp; src/db/graph/keys.ts:65-84 ENTITY_KIND_BYTE ends at externalEndpoint:13. [files: src/indexer/parser/registry.ts, src/shared/types.ts, src/db/graph/keys.ts]",
+          "action": "Read registry.ts, types.ts:555-589, keys.ts:55-94.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The artifact reader stores .sql as a whole-file document today at the exact lines the design cites (:40 extension map, :104 extensions list), and SharedModulesNamespace today is exactly 'jvm'|'npm'|'python'|'go' with ids 0xFFFFFFFE..0xFFFFFFFB, below WORKSPACE_REPO_ID_MAX 0xFFFFFFF0.",
+          "evidence": "src/indexer/parser/artifact.ts:40 ('.sql': 'sql') and :104 ('.sql' in extensions array); src/shared/repo-namespaces.ts:35,45-50,58 confirms the four namespaces/ids and the 0xFFFFFFF0 cap, with room below for the three new reserved ids (0xFFFFFFFA/F9/F8) the design proposes. [files: src/indexer/parser/artifact.ts, src/shared/repo-namespaces.ts]",
+          "action": "Read artifact.ts:1-115 and repo-namespaces.ts in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The five grammar packages the design calls 'new' dependencies (tree-sitter-rust, tree-sitter-c-sharp, tree-sitter-c, tree-sitter-cpp, @derekstride/tree-sitter-sql) are genuinely absent from package.json today, and the registerUnavailableReader function the design calls 'new' does not exist in registry.ts today.",
+          "evidence": "package.json tree-sitter block (lines 76-83) lists only tree-sitter, tree-sitter-go, -java, -javascript, -kotlin, -python, -scala, -typescript — none of the five new packages; registry.ts (15 lines) has only registerParser/getParser/supportedExtensions, no registerUnavailableReader. [files: package.json, src/indexer/parser/registry.ts]",
+          "action": "Grepped package.json for tree-sitter and read registry.ts in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The specific grammar version pins (tree-sitter-rust 0.24.0, tree-sitter-c-sharp 0.23.1, tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, @derekstride/tree-sitter-sql 0.3.11) actually install and load under this repo's Node 22 / tree-sitter 0.25 toolchain.",
+          "evidence": "The design cites a prior exploration output ([[c3]]: 'Probe in a scratch directory... probed') as the source of these pins, which I cannot independently re-run without installing packages from the network in this review.",
+          "action": "Would require running npm install of each pinned grammar in an isolated scratch dir and loading it under Node 22 — out of scope for a read-only review.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The cited call sites for the registry, resolver EXTENSION_MAP/EXT_TO_LANG, and daemon system.info are in the right files and functions, even if a couple of line ranges are off by a few lines from the exact declaration start.",
+          "evidence": "EXTENSION_MAP is declared at resolver.ts:231 (design cites 231-236, close enough to cover its body through 237); EXT_TO_LANG is declared at resolver.ts:274 (design cites 265-280, which correctly spans detectLanguage()+EXT_TO_LANG's start, i.e. the right vicinity to edit); system.info is at handler-runtime.ts:1263-1266 exactly as cited. [files: src/indexer/resolver.ts, src/daemon/handler-runtime.ts]",
+          "action": "Read resolver.ts:220-283 and handler-runtime.ts:1250-1274, comparing to the design's cited ranges.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The append-only, forward-only migration mechanism the design relies on (bump SCHEMA_VERSION, provision new rows, never rewrite/renumber existing ones) actually exists and is the established pattern in this codebase.",
+          "evidence": "src/db/graph/keys.ts:67-68 comment: 'u8 slot positions are fixed: never reorder, never reuse a removed slot (additive-only changes; bump SCHEMA_VERSION when adding)'; src/db/graph/migrations.ts:66,437,490 show META_SCHEMA_VERSION persisted via store.meta.put after each migration step, consistent with the design's 'forward-only migration step... no existing row is rewritten' claim. [files: src/db/graph/keys.ts, src/db/graph/migrations.ts]",
+          "action": "Read keys.ts comments and grepped migrations.ts for SCHEMA_VERSION handling.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design does not redesign s1's cross-file pass, s2's file-commit transaction, s3's entity-row write path, or s7's evidence encoding — it only consumes them as already-shipped behavior.",
+          "evidence": "resolveRelations (resolver.ts:63-120) already defers INHERITS/IMPLEMENTS to the cross-file pass ('INHERITS/IMPLEMENTS: defer') and already stamps evidence:'extracted' on parser-level resolutions — both are pre-existing, not something this LLD proposes to change; the LLD's §4 interaction table only lists sc2 as 'consumes', and its §1 adjacent-scope block explicitly excludes s1/s2/s3/s7's mechanics from this Story's contract sections. [files: src/indexer/resolver.ts]",
+          "action": "Read resolver.ts body and cross-checked LLD §1 and §4 against it; confirmed via git log that s7 (evidence byte) is already approved/shipped (commit 3fe8f60c7, e3c1ab762).",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The guarded-load try/catch + registerUnavailableReader pattern the design proposes for the four new code readers is a direct, working extension of the exact pattern already in production for Kotlin, so 'a grammar that fails to load never stops other readers' is a safe, evidenced claim rather than speculation.",
+          "evidence": "src/indexer/parser/kotlin.ts:630-645 — a try/catch around createRequire(tree-sitter)+createRequire(tree-sitter-kotlin) that logs a warn and returns null on failure, with the comment '(other parsers unaffected)', exactly the mechanism the design proposes to replicate for rust/csharp/c/cpp and extend with registerUnavailableReader's reason-tracking. [files: src/indexer/parser/kotlin.ts]",
+          "action": "Read kotlin.ts:600-646 in full.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every S009 acceptance criterion (ac1-ac4) has at least one proving test named in the LLD's acceptance-mapping table, and the fixture precedent files it cites as the pattern to follow (kotlin.test.ts, java.test.ts, scala.test.ts) actually exist.",
+          "evidence": "LLD §6 acceptance mapping lists integration+unit tests for ac1, ac2, ac3, ac4 with no gaps; Glob on src/indexer/parser/__tests__/*.test.ts confirms kotlin.test.ts, java.test.ts, scala.test.ts exist as the cited precedent for 'one small multi-construct source per language, as kotlin.test.ts'. [files: src/indexer/parser/__tests__/kotlin.test.ts, src/indexer/parser/__tests__/java.test.ts, src/indexer/parser/__tests__/scala.test.ts]",
+          "action": "Compared DEF.md ac1-ac4 to LLD §6 table rows; globbed the parser test directory.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T20:37:35.557Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-02T04:44:33.442Z",
+    "questionResolutions": {
+      "qdabf39b5": {
+        "question": "OPEN: which language a .h header belongs to. The cross-file pass matches calls only within one language, so a C caller and a header read as C++ never meet. Proposed: read .h with the C++ reader (a superset for declarations) and treat 'c' and 'cpp' as one family when the cross-file pass matches call targets; alternatives: read .h as C unless the repository has C++ sources, or as C always. Decide before the plan.",
+        "status": "resolved",
+        "choice": "Unify c/cpp as one family (proposed)",
+        "rationale": "User decision 2026-11-02: C and C++ are one family. .h headers are read with the C++ reader, and the cross-file pass treats 'c' and 'cpp' as one language family when it matches call targets, so a C caller links to a declaration in a header.",
+        "resolvedAt": "2026-11-02T04:46:40.906Z"
+      },
+      "qa7870f0b": {
+        "question": "OPEN: SQL references to objects defined in other files. The reader resolves same-file references itself; a reference to another file is written pending by name, and the cross-file pass (Story s1's) resolves only CALLS/INHERITS/IMPLEMENTS. Proposed: add REFERENCES-by-name for language 'sql' to the cross-file pass (match a schema-qualified or bare table/view name among the repository's SQL entities; several candidates stay ambiguous); alternative: leave them pending (no-candidate) in this Story. Decide before the plan.",
+        "status": "resolved",
+        "choice": "Leave all cross-file SQL references pending in this Story",
+        "rationale": "User decision 2026-11-02: same-file SQL references are resolved by the reader; references to tables/views defined in other files stay pending by name in s9. Recorded as a pending item: teach the cross-file pass to match SQL table and view names (a small addition to Story s1's pass), with several candidates staying ambiguous.",
+        "resolvedAt": "2026-11-02T04:48:31.406Z"
+      },
+      "q1e0c2c08": {
+        "question": "NOTE: C# 'using' imports a namespace, not a file, so a call into another file resolves across files only where the cross-file pass can map the namespace to files; this Story stores such calls pending and does not add namespace-to-file mapping.",
+        "status": "resolved",
+        "choice": "Ship with documented limitation",
+        "rationale": "As stated in the approved LLD (2026-11-02): C# calls reached only through a 'using' namespace stay pending; no namespace-to-file mapping in s9. Default stated to the user.",
+        "resolvedAt": "2026-11-02T04:49:44.386Z"
+      },
+      "q0ed1e247": {
+        "question": "NOTE (s8 cd1 partial): registerUnavailableReader and the 'index.languages' request are new names this Story introduces (the HLD names the request only by purpose).",
+        "status": "resolved",
+        "choice": "Accept as LLD-concrete (adopt as canonical)",
+        "rationale": "The HLD names the request only by purpose; registerUnavailableReader and 'index.languages' are the LLD's concrete names. Default stated to the user 2026-11-02.",
+        "resolvedAt": "2026-11-02T04:50:33.112Z"
+      },
+      "qe7326d3d": {
+        "question": "NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc2; the Epic constraints the criteria operationalize (k1, k2, k6) were not scored separately.",
+        "status": "resolved",
+        "choice": "Defer and flag as known gap",
+        "rationale": "As for the same note on s2 and s7: k1/k2/k6 are the constraints ac1-ac4 operationalize (the DEF's own 'operationalizes' fields), so their scores follow from the criteria. Default stated to the user 2026-11-02.",
+        "resolvedAt": "2026-11-02T04:50:56.835Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "The index learns to read Rust, C#, C and C++ code and to read SQL as structure: each language gets its own reader in the existing registry, loaded defensively so a grammar that cannot load on a machine skips only that language, with the reason kept. Code files yield the same entities (files, functions, methods, types) and relationships (includes and imports, calls, inheritance) as the languages read today; SQL files keep their whole-file document and add a table or view entity per definition with references to the tables they use. A daemon request lists every language the index reads and why any is skipped.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. It grows out of the existing whole-file replacement (reindexFile), which already replaces a file's entities in one transaction but removes relationships only for entities that disappeared from the file; the commit goes further and replaces the outgoing relationships of every entity of the file. The indexer's refresh, the delete event and the repair all call it; a file is selected for it by one filter built from the repository's ignore files. A relationship is never dropped in the commit: when its target is not stored it becomes a pending row, and pending rows are completed only by the passes that own them: the cross-file pass for code symbols, and the two endpoint passes of the external-services Epic for theirs. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete (relationships awaiting a target that is in an indexed repository, relationships that could not be written, entities without vectors). The four repository status values keep their meaning; completeness is a separate field read from this row and shown wherever status is shown, so a repository with anything outstanding does not read as fully ready. Layer 3, derived data: evidence is a one-byte value on the relationship row, written in the commit, by the cross-file pass and by every other writer of a stored relationship; subsystem grouping, subsystem summaries and model-proposed document relationships are queued passes that start only from a repository whose state is complete, write their own tables, and stamp what they wrote with the generation it was computed from. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
+      "ownedContracts": [],
+      "consumedContracts": [
+        {
+          "id": "sc2",
+          "name": "FileCommit",
+          "purpose": "The one write operation for a file's rows. Everything that adds, replaces or removes a file's entities and relationships hands the store one of these and gets one transaction. The commit removes the outgoing relationships of every entity of the file before writing the new set, leaves the incoming relationships of surviving entities in place, and returns to pending any incoming relationship whose target entity it removes. Entities that are not of the file (shared module stubs) are ensured to exist under the shared-modules rows and are otherwise untouched.",
+          "interfaceSketch": "interface RelationWrite {\n  from: string;                        // entity id in this file\n  kind: RelationKind;\n  target:\n    | { stored: string }               // id of an entity expected to be stored\n    | { pending: UnresolvedRef };      // name/path reference for the cross-file pass\n  evidence: RelationEvidence;          // see sc3; 'unknown' until Story s7 supplies it\n}\n\ninterface FileCommit {\n  repoPath: string;\n  filePath: string;\n  contentHash: string | null;          // null = the file is removed\n  entities: Entity[];                  // empty when removed; module stubs (no repo, no file) are routed to the shared-modules rows\n  relations: RelationWrite[];\n}\n\ninterface FileCommitResult {\n  generation: number;\n  entitiesWritten: number;\n  entitiesRemoved: number;\n  relationsStored: number;\n  relationsPending: number;            // includes { stored } targets found absent\n  relationsUnwritable: number;\n  relationsReturnedToPending: number;  // incoming relationships whose target entity was removed\n  vectorsOutstanding: number;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s7",
+            "s9",
+            "s10",
+            "s13"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s9",
+        "owns": [],
+        "depends": [
+          "sc2"
+        ],
+        "internal": "One reader per added language (Rust, C#, C, C++) in the existing parser registry with a guarded load, as the Kotlin reader has; the structured reading of SQL in place of the whole-file document, keeping the document entity for retrieval; any entity kinds this needs, appended to the fixed byte table without renumbering; the additions to the Language union; the daemon request that lists the languages read and why any was skipped. Each language can be delivered on its own."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The rule that a relationship with an absent target becomes pending instead of being skipped, at each of the six places in src/db/relations.ts where one is lost today (the resolved write's skip on a missing endpoint and its skip on a kind with no byte, promoteToResolved, promoteResolvedBatch, and the pending write's discard of a row without its file or repository and of a row whose repository is not registered), each either kept as pending or counted as unwritable with a reason; the set of files whose parse or commit failed in a full index, persisted with their paths until they next commit; which fields of the state are recounted on open and which are persisted and carried over; the classification of a pending relationship as awaiting-target, ambiguous or no-candidate, with the external-service rows classed apart and the two endpoint passes counted in when a full index is finished; the class is stored on the pending row itself, in its existing free-form record, so no stored form changes, a row the cross-file pass has not yet attempted counts as awaiting-target, and the recount on open reads the stored class and does not run resolution again; the extension of the cross-file pass to complete relationships awaiting a target by id, for imports and the other code-symbol kinds as well as calls and inheritance, and to follow a re-exporting file to the function it re-exports; the lookup of pending rows by the id they await, with its migration step, and the pass after a file event visiting the rows that await an entity of the files just committed; the change of the reindex request so that it deletes the repository's rows in the graph store and the vector store and builds them again from every file, in place of today's skip of unchanged files, with no separate repair request, returning to pending the relationships that other repositories hold into the deleted entities, and its queuing by the migration for every repository indexed before this change, which starts as not complete; the storing of the repository entity so that the manifest step's dependency relationships are written; the measurement on this repository, before and after a repair, of the awaiting-target, ambiguous, no-candidate and unwritable counts, with unwritable expected to be zero; the IndexState row, its migration step, its recount on open, and the derivation of repository status from it, as a completeness field returned beside the unchanged status by the daemon's status and stats requests and shown in the CLI's repository pane and in both editor plugins; and the analyzer's read of it: an analyzer lookup that reads relationships of a repository that is not complete says so in its result, with the counts, so that an answer over an incomplete graph is not returned as a plain fact. The choice, in this Story's design, of the function reached only through a re-exporting file that the repair is measured on, since the issue's own example (pickScope) has been removed from the source. Raising the log level of a refused relationship from debug is internal. Until Story s2 lands, s1 applies its rule inside the existing separate writes."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "The extension of the existing whole-file replacement into the file commit (relationships and pending rows in the same transaction as entities; outgoing relationships of surviving entities replaced, not only those of entities that disappeared; incoming relationships of a removed entity returned to pending), the move of the indexer's refresh and delete paths and of the clean-up pass's removal of a stored file onto it, and the retirement of the separate delete-then-upsert sequence in the indexer. The handling of vectors after the commit: writing the entity row with its embedding marker empty and setting it in a second transaction only after the vector write succeeds, counting an entity with an empty marker in IndexState, comparing entity ids with the vector table on open in both directions, so that a vector left behind by a failed removal is deleted before a plain insert can meet it, and the extension of the existing reembed job to run on daemon start and after an index, with a vector write for an entity whose marker is empty made an upsert, except for an entity first allocated in the same commit, which keeps the plain insert. Three things in that job change with it: it applies the embed step's own selection instead of forcing every entity, so empty-body entities (external endpoints, module stubs) stay unselected and uncounted; its update of an embedding writes the vector first and sets the marker in a second transaction, where today it sets the marker first; and the marker carries the model of the backend that is active, not one fixed name. Which entities count as unembedded (those the embed step selects) and the separate recorded reason when the embedding backend is unavailable. The count of a file whose commit fails on a file event. The queue rule that index jobs go ahead of other jobs and that a long job yields between its units, so that a commit is not held behind a model pass. How a reader sees the old or the new set during a commit is the store's ordinary transaction isolation and needs no new mechanism."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [],
+          "internal": "The by-file and by-repository index of entity rows, its migration step that builds it for an existing store, and its upkeep. No single entity-row write exists today: there are seven raw put and remove sites across src/db/entities.ts and src/db/graph/migrations.ts, and the existing name index is kept in step by a helper each site must remember to call. This Story introduces one put and one remove function for entity rows that maintain the name index and the new index together, routes every raw site through them, and adds a test that fails when a raw put or remove appears outside them. Upkeep therefore sits beneath every caller, so that neither today's writers nor the file commit need to know of it and this Story does not depend on s2. The two reads (findEntitiesByFile, listEntitiesForRepo) keep their results and their callers; a new existence check answers whether a repository holds any entity, and the analyzer's scope check uses it."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [],
+          "internal": "The cause, which ISSUE-0d577569 records as not known, was reproduced on 2026-10-11 and is not the system's semaphore limit, which the library's message names, but the loss of the daemon's own file lock on the store's lock file, after which another process that opens and closes the store removes the store's semaphores; the daemon's next write then fails with the library's message about the limit, and its exit hangs in the library's close. What in the daemon closes a second descriptor on the lock file is not yet identified. First, therefore, the remedy that does not depend on finding it: the live store is opened by the daemon alone, and any other process is refused it. Second, a bound on the whole shutdown including the store's close, so that a close that hangs ends in an exit. Third, recording a store failure of this kind and stating it in the daemon's status. None of this is consumed by another Story."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [],
+          "internal": "The refusal, with a named error and its own code, of a search or analyze request about a repository whose status is indexing, at the analyzer's scope check and at the daemon's search requests, carrying the status and how far the run has got (files done of files selected, and when it began), read from the indexer's running job; the tools that rest on the analyzer (the workflow steps, triage, code review) pass that error on as it is. The order of the analyzer's run: the refusal of a scope the index does not hold comes before a size is announced, or the announcement says the size could not be counted. The named cause and error code for a failed read of the last-indexed time and for a failed lookup, and the three other defects of ISSUE-e2bcadd9 (the wrong provider named, the scope resolved before the cache, and failure text matched inside echoed output). This Story does not read IndexState: it works with the checks the analyzer has today, so that it stays independent of s1."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The in-process matcher of the gitignore grammar over nested ignore files and its conformance test against git; the move onto the one filter of every site that reads the list today in src/indexer/index.ts (the full walk, the start-up scan for changed files, the file event, the clean-up pass, and the two places that seed the list when a repository is registered), of the watcher, and of the analyzer's reader, its two exploration walkers and its infra walker (src/analyze/runtimes/infra/_shared.ts), each of which has its own list of names today, and of the indexer's source-root detection (src/indexer/source-roots.ts), whose own list would otherwise hide a package in a directory the filter includes; a search of the source for such lists found five more, in the daemon's four file-search tools (glob, grep, list-dir, recent under src/daemon/tools/builtins/search) and in the review probe (src/workflow/review/probe.ts), which search the working tree as text, do not decide what the index holds, and are deliberately left as they are; the filter keeps answering for a directory that holds an included file, as the analyzer's reader does now; the retirement of the bare-name list and of the ignore entry in the repository's .insrc config; the two built-in exclusions (generated or minified files, the .insrc directory) applied inside the filter so that the full walk and the file event no longer differ on them; the handling of a change to an ignore file as an event that removes and adds files, and the comparison by content hash of the clone's exclude file and the global ignore file, which the watcher cannot see, whenever the filter is used; the queued step that proposes a root ignore file with the cheap-tier model when a repository is added without one, its fallback, and the rule that an existing file is never written. Two points were decided by the stakeholder: the filter honours all three of git's ignore sources (the .gitignore files, the clone's exclude file, the user's global ignore file), and a file git tracks is indexed even when a rule matches it, so the filter takes git's list of tracked files as an input and a plain folder is filtered by the rules alone."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The one-byte encoding of evidence as the value of a relationship row; the points in the per-file resolver and the cross-file pass that decide 'extracted' or 'inferred' ('chosen' is reserved and not written, since an ambiguous relationship stays pending with its candidates); the passing of evidence as an argument to the store's resolved write and promote operations, so that the two endpoint passes write 'inferred' and the manifest step writes 'extracted' and no relationship written after this change reads 'unknown'; the carrying of evidence through the store's traversal reads and the daemon's caller and callee requests; the marking of inferred and chosen relationships in the analyzer's lookups and answers. No migration rewrites existing rows, since an empty value reads as 'unknown'."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The grouping of a complete repository's code entities into subsystems, its determinism, the tables for membership, connections and summaries and their migration step; the queued pass and its trigger on a new generation; the cheap-tier summary of a subsystem whose membership changed; the daemon request that returns subsystems; the addition of subsystem context to the analyzer's context builder; the statement that groups rest on an incomplete or older graph. Which relationships count toward grouping, and with what weight by evidence, is decided here."
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The reading of links and references between documents, and from a document to code, as relationships of the existing REFERENCES kind written in the file commit with evidence 'extracted'; the queued mid-tier pass over new or changed documents and its own table of model-proposed relationships; the hand-checked set, the measurement, and the recorded figures that switch the capability on or leave it off; the merging of model-proposed relationships into reads with evidence 'model'; the status line when no CLI provider is available."
+        },
+        {
+          "storyId": "s11",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+        },
+        {
+          "storyId": "s12",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+        },
+        {
+          "storyId": "s13",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private implementation of s13: Settling file changes does work proportional to the changed files, never a scan of the repository or the store"
+        }
+      ],
+      "rolloutPhase": "Phase D — evidence and more languages",
+      "nonFunctional": {
+        "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows. A file commit is one write transaction whose size is bounded by one file. A first full index holds more pending rows than today until the cross-file pass runs, and that pass does more work; this is accepted under the accuracy rule. Index jobs take precedence in the queue and a derived pass yields between its units of work, so a commit waits for at most one unit of a pass. Model calls are serial; the mid-tier pass sends only new or changed documents. Vector writes keep the plain insert for entities first stored in the same commit, so a first full index writes vectors at today's cost; the upsert, which costs more against a large vector table, is used only for changed entities and for the backfill, and Story s2's design measures it on this repository.",
+        "security": "No store is opened outside the daemon and no model is reached except through the local provider or the CLI providers. The ignore-file proposal sends the model file names and manifest names, not file contents, and writes into the user's repository only when no root ignore file exists. Document text sent to the mid-tier model goes through the user's own CLI session, as other mid-tier calls do.",
+        "observability": "Repository status carries the completeness counts and the reason a repository is incomplete. A relationship the store refuses is logged at warn with its reason and counted, not logged at debug. A fallback ignore file, a skipped language reader, a store failure after its locks were taken away, and a model-proposed capability that is off each state their cause where status is read. Each derived row carries the generation it was computed from.",
+        "durability": "The file commit is atomic in LMDB: after a crash a file holds its old rows or its new rows. Vectors are written after the commit and may be missing after a crash; the gap is recorded by an empty embedding marker, checked against the vector table on open, and backfilled, and the repository reads as incomplete until it is, unless the embedding backend is unavailable, which is reported as its own reason. The IndexState fields that the tables can answer are recounted when the store is opened; the rest, including the paths of files that could not be committed, are persisted in the state row and survive a restart. Every new table and value arrives by a migration step applied on open; no existing key or kind byte changes, so an older store is brought forward without a re-index. Derived tables can be dropped and recomputed without loss."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "registerParser",
+          "signature": "function registerParser(parser: CodeParser): void; function registerUnavailableReader(language: Language, extensions: readonly string[], reason: string): void",
+          "parameters": [
+            {
+              "name": "parser",
+              "type": "CodeParser",
+              "purpose": "a reader whose grammar loaded (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "reason",
+              "type": "string",
+              "purpose": "the load error of a reader that could not be loaded, kept for the languages request",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "the registry (src/indexer/parser/registry.ts) also records readers that failed to load"
+          },
+          "errors": [],
+          "preconditions": [
+            "called once per language module at import"
+          ],
+          "postconditions": [
+            "a skipped language appears in the languages request with its reason; getParser never returns a reader for it"
+          ]
+        },
+        {
+          "name": "getParser",
+          "signature": "function getParser(filePath: string): CodeParser | null",
+          "parameters": [],
+          "returns": {
+            "type": "CodeParser | null",
+            "meaning": "unchanged; '.sql' now resolves to the SQL reader (the artifact reader no longer lists '.sql'), and .rs, .cs, .c, .h, .cc, .cpp, .cxx, .hpp, .hh, .hxx resolve to the new readers"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "the indexer's supported set (supportedExtensions) includes the new extensions only for readers that loaded"
+          ]
+        },
+        {
+          "name": "Language",
+          "signature": "type Language = ... | 'rust' | 'csharp' | 'c' | 'cpp' | 'sql' | ...",
+          "parameters": [],
+          "returns": {
+            "type": "type",
+            "meaning": "four values appended; 'sql' already present, now also a code-structure language"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "EXT_TO_LANG in src/indexer/resolver.ts maps the new extensions"
+          ]
+        },
+        {
+          "name": "ENTITY_KIND_BYTE",
+          "signature": "const ENTITY_KIND_BYTE = { ..., externalEndpoint: 13, table: 14, view: 15 } as const",
+          "parameters": [],
+          "returns": {
+            "type": "const",
+            "meaning": "two slots appended (never renumbered); EntityKind gains 'table' | 'view'; SCHEMA_VERSION is bumped as the table's rule requires"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "existing rows decode unchanged"
+          ]
+        },
+        {
+          "name": "SHARED_MODULES_NAMESPACE_BY_LANG",
+          "signature": "type SharedModulesNamespace = 'jvm' | 'npm' | 'python' | 'go' | 'cargo' | 'nuget' | 'native'; SHARED_MODULES_REPO_ID.cargo = 0xFFFFFFFA; .nuget = 0xFFFFFFF9; .native = 0xFFFFFFF8; SHARED_MODULES_NAMESPACE_BY_LANG += { rust: 'cargo', csharp: 'nuget', c: 'native', cpp: 'native' }",
+          "parameters": [],
+          "returns": {
+            "type": "const",
+            "meaning": "three namespaces with the next reserved ids, below which WORKSPACE_REPO_ID_MAX (0xFFFFFFF0) stays; their rows are provisioned by the forward-only migration step"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "a module stub of rust/csharp/c/cpp is stored under its namespace row instead of being refused"
+          ]
+        },
+        {
+          "name": "resolveImportPath",
+          "signature": "function resolveImportPath(fromFile: string, specifier: string, repo: string, language: Language): string | null",
+          "parameters": [],
+          "returns": {
+            "type": "string | null",
+            "meaning": "EXTENSION_MAP gains candidates for rust (a `mod x;` -> x.rs | x/mod.rs beside the declaring file) and c/cpp (a quoted include is the path itself, relative to the including file); C# has no relative imports"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "a resolved include or mod is an IMPORTS to the file entity, evidence 'extracted' (s7)"
+          ]
+        },
+        {
+          "name": "resolveRelations",
+          "signature": "function resolveRelations(relations: Relation[], filePath: string, repo: string, entities?: Entity[]): Relation[]",
+          "parameters": [],
+          "returns": {
+            "type": "Relation[]",
+            "meaning": "unchanged; same-file CALLS of the new languages resolve by name, relative imports through resolveImportPath"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "system.info",
+          "signature": "IPC 'index.languages' {} -> { languages: Array<{ language: Language; extensions: string[]; available: boolean; reason?: string }> }",
+          "parameters": [],
+          "returns": {
+            "type": "object",
+            "meaning": "a new request beside system.info, answered by the code-indexing worker (method class 'indexing') from its registry: every code and SQL language, its extensions, whether its reader loaded, and the load error when not (ac4)"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "lists python, go, typescript, javascript, java, scala, kotlin, rust, csharp, c, cpp and sql"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Rust / C# / C / C++ readers",
+        "change": "new",
+        "details": "Four modules beside src/indexer/parser/kotlin.ts, each a CodeParser registered behind the guarded createRequire load of tree-sitter and its grammar (tree-sitter-rust 0.24.0, tree-sitter-c-sharp 0.23.1 -- 0.23.5 is ESM with top-level await and cannot be required --, tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, all probed under tree-sitter 0.25 / Node 22). Entities: file; function (free functions, Rust fn, C/C++ function definitions); method (functions in a Rust impl/trait, C#/C++ class members); class (C# class/record/struct, C++ class/struct with members, Rust struct/enum/union), interface (C# interface, Rust trait), type (C typedef/struct/enum/union, C# enum/delegate); module stubs for external imports. Relationships: DEFINES/CONTAINS (file and type to member), IMPORTS (Rust mod/use crate paths and C/C++ quoted includes to files; Rust extern crates, C# using namespaces and C/C++ angle includes to module stubs), CALLS by callee name (pending for the resolver and the cross-file pass), INHERITS/IMPLEMENTS (C# base list, C++ base_class_clause, Rust impl Trait for Type -> IMPLEMENTS from the type).",
+        "callSites": [
+          "src/indexer/parser/registry.ts",
+          "src/indexer/parser/kotlin.ts:630-645",
+          "src/indexer/index.ts:36",
+          "src/indexer/resolver.ts:63-118"
+        ]
+      },
+      {
+        "entity": "SQL reader",
+        "change": "new",
+        "details": "A module owning '.sql' (removed from the artifact reader's extensions) behind the guarded load of @derekstride/tree-sitter-sql 0.3.11. It keeps the whole-file document entity the artifact reader writes (same id rule, so retrieval and existing vectors are unaffected) and adds, per CREATE TABLE / CREATE VIEW, a table or view entity named by its (schema-qualified) name, DEFINES from the file, and REFERENCES from a view to each relation in its FROM/JOIN and from a table to each table its REFERENCES clauses name. A reference to an object defined in the same file is resolved by the reader itself (evidence 'extracted'); one to another file is written pending by name.",
+        "callSites": [
+          "src/indexer/parser/artifact.ts",
+          "src/indexer/parser/artifact.ts:40",
+          "src/indexer/parser/artifact.ts:104"
+        ]
+      },
+      {
+        "entity": "ENTITY_KIND_BYTE / EntityKind",
+        "change": "field-add",
+        "details": "Append table (14) and view (15); keys of existing rows unchanged; SCHEMA_VERSION bumped with a migration step that is otherwise a no-op for entity rows.",
+        "schemaDiff": "ENTITY_KIND_BYTE: + table: 14, + view: 15",
+        "callSites": [
+          "src/db/graph/keys.ts:65-84",
+          "src/shared/types.ts:569-583"
+        ]
+      },
+      {
+        "entity": "SharedModulesNamespace rows",
+        "change": "field-add",
+        "details": "Three namespaces (cargo, nuget, native) with reserved ids 0xFFFFFFFA, 0xFFFFFFF9, 0xFFFFFFF8, provisioned by the same forward-only migration step; WORKSPACE_REPO_ID_MAX unchanged (0xFFFFFFF0, still below).",
+        "schemaDiff": "repo rows: + 0xFFFFFFFA cargo, + 0xFFFFFFF9 nuget, + 0xFFFFFFF8 native",
+        "callSites": [
+          "src/shared/repo-namespaces.ts:30-50",
+          "src/shared/repo-namespaces.ts:68-76"
+        ]
+      },
+      {
+        "entity": "Language / EXT_TO_LANG / EXTENSION_MAP",
+        "change": "field-add",
+        "details": "Language appends rust, csharp, c, cpp; EXT_TO_LANG maps .rs, .cs, .c, .h, .cc, .cpp, .cxx, .hpp, .hh, .hxx; EXTENSION_MAP gains the rust and c/cpp candidates.",
+        "callSites": [
+          "src/shared/types.ts:564-567",
+          "src/indexer/resolver.ts:231-236",
+          "src/indexer/resolver.ts:265-280"
+        ]
+      },
+      {
+        "entity": "unavailable-reader record and the languages request",
+        "change": "new",
+        "details": "The registry keeps, per language whose grammar failed to load, its extensions and the load error; a request answered by the code-indexing worker lists every reader with availability and reason.",
+        "callSites": [
+          "src/indexer/parser/registry.ts",
+          "src/daemon/threads/method-class.ts",
+          "src/daemon/handler-runtime.ts:1263-1266"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "The readers return the Entity[] / Relation[] the indexer hands to commitFile; module stubs of the new languages are routed to their shared-modules rows by the commit (sharedModulesRepoIdOf), which the new namespaces make possible; relationships the readers or the resolver decide carry evidence 'extracted' (s7) and the cross-file pass's 'inferred'."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A grammar's native binding cannot be loaded on this machine (no prebuild, ABI mismatch, missing package)",
+          "detection": "The guarded createRequire of tree-sitter or the grammar throws inside the reader module's load",
+          "response": "The reader is not registered; registerUnavailableReader records the language, its extensions and the error message; a warn is logged; every other reader registers",
+          "userImpact": "That language's files are not indexed; the languages request shows it unavailable with the reason (ac3)",
+          "recoverable": true
+        },
+        {
+          "scenario": "A file parses with error nodes (unsupported syntax, a dialect feature, a macro-heavy C file)",
+          "detection": "tree.rootNode.hasError is true after parse",
+          "response": "Entities and relationships are taken from the well-formed parts as the existing readers do; the file is not skipped",
+          "userImpact": "Some declarations in the broken region may be missing",
+          "recoverable": true
+        },
+        {
+          "scenario": "A module stub is written for a language with no namespace (a reader bug)",
+          "detection": "sharedModulesRepoIdOf throws UnregisteredRepoError in commitFile",
+          "response": "The commit fails for that file and the indexer records it uncommitted (s1/s2), so the gap is visible in completeness",
+          "userImpact": "The file's rows stay as they were and the repository reads not complete",
+          "recoverable": true
+        },
+        {
+          "scenario": "The migration step that provisions the new namespaces or bumps the schema fails",
+          "detection": "The migration chain throws on open",
+          "response": "The store does not open, as for any failed migration step (existing behaviour)",
+          "userImpact": "The daemon reports the store failure; nothing is half-migrated",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A .h header in a repository that has both C and C++ sources",
+          "expected": "Read by the reader the resolved open question chooses; until then the C++ reader (C++ is a superset for declarations), language 'cpp'"
+        },
+        {
+          "input": "A Rust file with `mod util;` and both util.rs and util/mod.rs present",
+          "expected": "util.rs is taken (Rust's own rule prefers the file beside); IMPORTS to it, evidence 'extracted'"
+        },
+        {
+          "input": "A C quoted include that names a file outside the repository or not on disk",
+          "expected": "Kept pending with class no-candidate, reason target-file-missing, as the resolver does today"
+        },
+        {
+          "input": "A C# file with several namespaces and partial classes across files",
+          "expected": "One class entity per declaration site; methods attach to the declaring class entity of their file"
+        },
+        {
+          "input": "A SQL file with CREATE OR REPLACE VIEW, quoted identifiers and a CTE",
+          "expected": "The view is one entity named by its unquoted name; the CTE name is not a reference to a table"
+        },
+        {
+          "input": "A SQL file that references a table defined in another file",
+          "expected": "REFERENCES written pending by name; resolved across files only if the open question on SQL cross-file resolution is decided so"
+        },
+        {
+          "input": "A .sql file previously stored as a document by the artifact reader",
+          "expected": "Its document entity keeps the same id, so its vector and retrieval stay; table/view entities are added on its next commit"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A grammar that fails to load never stops the other readers from registering (the guarded-load rule)",
+          "source": "c2"
+        },
+        {
+          "text": "getParser keeps returning the first registered reader for an extension; '.sql' is owned by exactly one reader",
+          "source": "c5"
+        },
+        {
+          "text": "Entity and relation kind bytes are append-only: no existing slot is renumbered",
+          "source": "c4"
+        },
+        {
+          "text": "Module stubs live under shared-modules rows, never under a workspace (s2 review fix)",
+          "source": "c6"
+        },
+        {
+          "text": "The cross-file pass matches call targets only within one language",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Each reader on fixture source: entities, kinds, relationships and evidence-ready shapes",
+          "subjects": [
+            "Rust reader",
+            "C# reader",
+            "C reader",
+            "C++ reader",
+            "SQL reader"
+          ],
+          "fixturesNeeded": [
+            "one small multi-construct source per language, as kotlin.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "A mixed repository indexed through the real IndexerService: per language its entities and its includes/imports and calls are stored; SQL tables, views and references are stored",
+          "subjects": [
+            "IndexerService over Rust/C#/C/C++/SQL files"
+          ],
+          "fixturesNeeded": [
+            "a temporary repository with one file set per language"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "A reader whose grammar cannot load is skipped with its reason and the others index",
+          "subjects": [
+            "registerUnavailableReader",
+            "guarded grammar load"
+          ],
+          "fixturesNeeded": [
+            "a load seam that makes one grammar's require throw"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The languages request lists every language with availability",
+          "subjects": [
+            "languages request"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The migration step provisions the new namespaces and bumps the schema; module stubs of the new languages are stored under them",
+          "subjects": [
+            "migration step for namespaces and kinds"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "On the installed daemon: a repository with files in all five languages indexes them and the languages request lists them",
+          "subjects": [
+            "installed daemon: five languages"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: a repository with Rust, C#, C and C++ files indexed through IndexerService stores, per language, file/function/type entities and IMPORTS (include/use/mod/using) and CALLS relationships",
+            "unit: each code reader's entities and relationships on its fixture"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: SQL files defining tables and views store a table/view entity per definition and a REFERENCES per foreign key and per relation a view selects from, beside the document entity",
+            "unit: the SQL reader on CREATE TABLE/VIEW with REFERENCES, joins, quoted names and a CTE"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: with one grammar's load made to fail, that language's files are not indexed, the languages request reports it unavailable with the load error, and every other language indexes"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: the languages request lists python, go, typescript, javascript, java, scala, kotlin, rust, csharp, c, cpp and sql with their extensions and availability"
+          ]
+        }
+      ],
+      "testFramework": "node:test with node:assert/strict, run with `npx tsx --test` (co-located __tests__ files)"
+    },
+    "migration": {
+      "stateBefore": "The registry holds seven code readers (python, go, typescript/javascript, java, scala, kotlin) plus the artifact reader, which stores a .sql file as one whole-file document (src/indexer/parser/artifact.ts:40, :104); Language has no rust/csharp/c/cpp (src/shared/types.ts:564-567); ENTITY_KIND_BYTE ends at externalEndpoint: 13 (src/db/graph/keys.ts:65-84); four shared-modules namespaces (src/shared/repo-namespaces.ts:35-50); no request lists the languages.",
+      "stateAfter": "Five more readers registered behind guarded loads (Rust, C#, C, C++, SQL); '.sql' owned by the SQL reader, which keeps the document entity and adds table/view entities and REFERENCES; ENTITY_KIND_BYTE ends at view: 15; namespaces cargo/nuget/native provisioned; the registry records unavailable readers; a request lists every language with availability.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the five grammar dependencies (tree-sitter-rust 0.24.0, tree-sitter-c-sharp 0.23.1, tree-sitter-c 0.24.1, tree-sitter-cpp 0.23.4, @derekstride/tree-sitter-sql 0.3.11) under the repository's .npmrc (Node 22 headers, legacy-peer-deps).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Append the Language values, the table/view kind slots and the three namespaces, with one forward-only migration step that provisions the namespace rows and bumps SCHEMA_VERSION; no existing row is rewritten.",
+          "rollbackable": false
+        },
+        {
+          "order": 3,
+          "action": "Add the unavailable-reader record to the registry and the languages request; a reader that has not landed yet simply does not appear as available.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Land each reader on its own (C, C++, Rust, C#), registering behind its guarded load; files of a language are indexed from the next full index or file event once its reader is present.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Land the SQL reader and move '.sql' off the artifact reader in the same change, keeping the document entity's id so existing documents and vectors stay.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Repositories indexed before the change pick up the new languages on their next full index (repo.reindex) or as their files change; no forced re-index.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive for every client: no request or field is removed or renamed; the languages request is new. The store migration only appends (two kind slots, three namespace rows) and bumps SCHEMA_VERSION; an older daemon cannot open a store migrated forward (as with every forward-only step), which is the existing migration contract. A .sql document entity keeps its id, so search and existing vectors are unaffected. A machine where a grammar cannot load keeps working and reports that language unavailable.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One tree-sitter reader per language, new SQL kinds and new module namespaces",
+        "oneLineSummary": "Rust, C#, C, C++ and SQL each get a reader in the registry behind a guarded grammar load; tables and views become new entity kinds; external imports become module stubs under new shared-modules namespaces; the registry keeps why a reader is missing and a daemon request lists the languages.",
+        "approach": "Five modules beside kotlin.ts (rust, csharp, c, cpp, sql) each load tree-sitter plus their grammar through the guarded createRequire pattern and register on success; on failure the registry records the language and the load error. Language gains rust, csharp, c, cpp ('sql' exists). Code readers emit file, function/method, class/interface/type entities and DEFINES/CONTAINS, IMPORTS (relative includes and Rust mod/use crate paths to files, external ones to module stubs), CALLS by name, INHERITS/IMPLEMENTS. ENTITY_KIND_BYTE appends table (14) and view (15); the SQL reader owns '.sql' (the artifact reader drops it), keeps the whole-file document entity for retrieval, and emits a table/view entity per CREATE plus REFERENCES from views to the relations they select from and from tables to the tables their foreign keys name. SharedModulesNamespace appends cargo, nuget and native with the next reserved ids, provisioned by a migration step with a SCHEMA_VERSION bump. A daemon request (code-indexing worker class) returns each language, its extensions and whether its reader loaded, with the reason when not.",
+        "pros": [
+          "Same entity and relationship kinds as the languages read today, external imports included",
+          "SQL objects are first-class kinds, so a lookup can ask for tables and views",
+          "A missing grammar is visible with its cause, per machine"
+        ],
+        "cons": [
+          "Adds five native grammar dependencies and one migration step",
+          "New entity kinds touch every exhaustive switch over EntityKind"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Same readers, no new kinds or namespaces",
+        "oneLineSummary": "As a1 for the readers and the languages request, but SQL tables and views are stored as kind 'type' (the statement in the signature) and external imports of the added languages are left as pending relationships instead of module stubs, so no stored form changes.",
+        "approach": "Readers, guarded loads, Language additions, the unavailable-reader record and the request as in a1. The SQL reader writes CREATE TABLE/VIEW as entities of kind 'type' with signature 'table'/'view', so ENTITY_KIND_BYTE and SCHEMA_VERSION are untouched. An import of an external crate, namespace or system header is emitted as an unresolved IMPORTS that the cross-file pass classes no-candidate, so no shared-modules namespace is added.",
+        "pros": [
+          "No migration step and no new entity kinds",
+          "Smallest stored-form footprint"
+        ],
+        "cons": [
+          "A lookup cannot tell a table from a type except by its signature text",
+          "External imports never become relationships, so ac1 ('its imports or includes ... as relationships') holds only for in-repository targets",
+          "Pending no-candidate rows grow with every external import"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Avoids a migration step but falls short on ac1 for external imports and blurs SQL objects into types."
+      },
+      {
+        "id": "a3",
+        "name": "Code readers by tree-sitter, SQL by a statement scanner",
+        "oneLineSummary": "The four code readers as in a1; SQL read by a small scanner of CREATE TABLE / CREATE VIEW statements and their FROM/JOIN/REFERENCES names instead of a SQL grammar.",
+        "approach": "Rust/C#/C/C++ readers as in a1. The SQL reader splits a file into statements and matches CREATE [OR REPLACE] TABLE|VIEW name, REFERENCES name and FROM/JOIN name with regular expressions over comment- and string-stripped text, emitting the same entities and REFERENCES as a1. No SQL grammar dependency.",
+        "pros": [
+          "No dependency for SQL; no dialect gaps from one grammar",
+          "Easy to extend for a dialect keyword"
+        ],
+        "cons": [
+          "A scanner misreads nested queries, quoted identifiers and CTE names that a grammar parses",
+          "Hand-written parsing is the less accurate path the project's accuracy rule warns against"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Drops one dependency at the cost of SQL accuracy, against the project's accuracy rule."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "OPEN: which language a .h header belongs to. The cross-file pass matches calls only within one language, so a C caller and a header read as C++ never meet. Proposed: read .h with the C++ reader (a superset for declarations) and treat 'c' and 'cpp' as one family when the cross-file pass matches call targets; alternatives: read .h as C unless the repository has C++ sources, or as C always. Decide before the plan.",
+      "OPEN: SQL references to objects defined in other files. The reader resolves same-file references itself; a reference to another file is written pending by name, and the cross-file pass (Story s1's) resolves only CALLS/INHERITS/IMPLEMENTS. Proposed: add REFERENCES-by-name for language 'sql' to the cross-file pass (match a schema-qualified or bare table/view name among the repository's SQL entities; several candidates stay ambiguous); alternative: leave them pending (no-candidate) in this Story. Decide before the plan.",
+      "NOTE: C# 'using' imports a namespace, not a file, so a call into another file resolves across files only where the cross-file pass can map the namespace to files; this Story stores such calls pending and does not add namespace-to-file mapping.",
+      "NOTE (s8 cd1 partial): registerUnavailableReader and the 'index.languages' request are new names this Story introduces (the HLD names the request only by purpose).",
+      "NOTE (s8 alt2 partial): alternatives were scored against ac1-ac4, lc1 and sc2; the Epic constraints the criteria operationalize (k1, k2, k6) were not scored separately."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: the parser registry and how a reader registers",
+      "quotedText": "src/indexer/parser/registry.ts holds one array of CodeParser; registerParser appends, getParser(filePath) returns the FIRST parser whose extensions include the file's extension, supportedExtensions() lists them all. The indexer builds its supported set from it at construction (src/indexer/index.ts:2"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example: the guarded grammar load",
+      "quotedText": "src/indexer/parser/kotlin.ts:630-645 loads tree-sitter and tree-sitter-kotlin through createRequire inside a try; on failure it logs a warn ('Kotlin files will not be indexed (other parsers unaffected)') and exports null instead of registering, so one native grammar that cannot load never stops the "
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 docs: grammar packages for the added languages (probe 2026-11-02)",
+      "quotedText": "Probe in a scratch directory with tree-sitter@0.25.0 under Node 22 and the repo's .npmrc (legacy-peer-deps, Node 22.22.1 headers): tree-sitter-rust@0.24.0, tree-sitter-c@0.24.1, tree-sitter-cpp@0.23.4 and @derekstride/tree-sitter-sql@0.3.11 load through require and parse samples with no error nodes "
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace: Language union, entity kinds and relation kinds",
+      "quotedText": "Language (src/shared/types.ts:564-567) has python, go, typescript, javascript, java, scala, kotlin and document languages including 'sql'; no rust/csharp/c/cpp. ENTITY_KIND_BYTE (src/db/graph/keys.ts:65-84) is append-only with slots 1-13 (repo..externalEndpoint) and its comment requires a SCHEMA_VER"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: SQL today",
+      "quotedText": "The artifact reader (src/indexer/parser/artifact.ts) stores a .sql file as one whole-file document entity (header comment line 9; extension map '.sql' -> 'sql' at :40; listed in its extensions at :104). Because getParser takes the first registered parser for an extension, a structured SQL reader mus"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 data-model.trace: module stubs and the shared-modules namespaces",
+      "quotedText": "Module stubs (kind 'module', repo '') live under reserved shared-modules rows keyed by namespace: SharedModulesNamespace is 'jvm' | 'npm' | 'python' | 'go' with reserved repo ids 0xFFFFFFFE..0xFFFFFFFB (src/shared/repo-namespaces.ts:35-50), mapped by SHARED_MODULES_NAMESPACE_BY_LANG (src/shared/repo"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example: per-file resolution the new readers rely on",
+      "quotedText": "resolveRelations (src/indexer/resolver.ts:63-118) resolves a CALLS by the callee's name to a unique entity of the same file for any language, and a relative IMPORTS through resolveImportPath with a per-language extension candidate map (EXTENSION_MAP, src/indexer/resolver.ts:231-236: only typescript/"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: where a daemon request would list languages",
+      "quotedText": "No request lists the languages the index reads. system.info (src/daemon/handler-runtime.ts:1263-1266) returns host facts. Indexing runs in the code-indexing worker (the readers are imported there via src/indexer/index.ts), and requests reach that worker by method class (src/daemon/threads/method-cla"
+    },
+    {
+      "id": "c9",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate: tests to extend",
+      "quotedText": "Per-language reader tests live in src/indexer/parser/__tests__/ (kotlin.test.ts, java.test.ts, scala.test.ts); indexer-level tests that run IndexerService on real files in src/indexer/__tests__/ (evidence-extracted.test.ts, file-refresh.test.ts); node:test + node:assert/strict via npx tsx --test."
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "HLD-c2ba6fa62a148ed1 s9 boundary and sc2 FileCommit"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "DEF-c2ba6fa62a148ed1 Story s9 acceptance criteria ac1-ac4 and lc1"
+    },
+    {
+      "id": "c12",
+      "kind": "step-output",
+      "ref": "s3 alternatives.judge: a1 chosen"
+    },
+    {
+      "id": "c13",
+      "kind": "step-output",
+      "ref": "s8 checklist.verify: cd1 partial, alt2 partial"
+    }
+  ]
+}

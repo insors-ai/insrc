@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: Scope fingerprint covers every exact field and strict validation rejects forged input
+ok 1 - Scope fingerprint covers every exact field and strict validation rejects forged input
+  ---
+  duration_ms: 2.516708
+  type: 'test'
+  ...
+# Subtest: Submitted confidence is preserved and public projections exclude private fields
+ok 2 - Submitted confidence is preserved and public projections exclude private fields
+  ---
+  duration_ms: 1.9905
+  type: 'test'
+  ...
+# Subtest: Nested scopes and transport versions fail closed on every envelope
+ok 3 - Nested scopes and transport versions fail closed on every envelope
+  ---
+  duration_ms: 0.728708
+  type: 'test'
+  ...
+# Subtest: Published version one consumer fixtures match runtime contracts
+ok 4 - Published version one consumer fixtures match runtime contracts
+  ---
+  duration_ms: 0.747458
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 304.737

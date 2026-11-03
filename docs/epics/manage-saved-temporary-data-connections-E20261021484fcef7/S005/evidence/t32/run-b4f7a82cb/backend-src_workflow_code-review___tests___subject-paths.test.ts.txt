@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: 0855311b — a subject holding NO LLD and NO build record still files the review in the story's folder
+ok 1 - 0855311b — a subject holding NO LLD and NO build record still files the review in the story's folder
+  ---
+  duration_ms: 6.407375
+  type: 'test'
+  ...
+# Subtest: b2e16601 — the label comes from the definition head, not from what the LLD stored
+ok 2 - b2e16601 — the label comes from the definition head, not from what the LLD stored
+  ---
+  duration_ms: 2.5745
+  type: 'test'
+  ...
+# Subtest: 0855311b — an LLD-only Small story: the review lands beside the LLD
+ok 3 - 0855311b — an LLD-only Small story: the review lands beside the LLD
+  ---
+  duration_ms: 1.863083
+  type: 'test'
+  ...
+# Subtest: an epic-parented story is unchanged: epic split, the DEF's label and anchor
+ok 4 - an epic-parented story is unchanged: epic split, the DEF's label and anchor
+  ---
+  duration_ms: 1.467875
+  type: 'test'
+  ...
+# Subtest: with nothing on disk the subject's own LLD is still the fallback (anchor, split and label)
+ok 5 - with nothing on disk the subject's own LLD is still the fallback (anchor, split and label)
+  ---
+  duration_ms: 0.506041
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 205.502

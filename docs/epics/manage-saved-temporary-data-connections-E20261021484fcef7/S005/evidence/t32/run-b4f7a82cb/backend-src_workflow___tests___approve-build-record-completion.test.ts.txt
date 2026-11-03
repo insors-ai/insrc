@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: single BUILD target with no prior json => the hook CREATES the record, then it completes (no ArtifactMissingError)
+ok 1 - single BUILD target with no prior json => the hook CREATES the record, then it completes (no ArtifactMissingError)
+  ---
+  duration_ms: 58.567083
+  type: 'test'
+  ...
+# Subtest: non-BUILD (LLD) target => no BUILD json is written (the hook is BUILD-scoped)
+ok 2 - non-BUILD (LLD) target => no BUILD json is written (the hook is BUILD-scoped)
+  ---
+  duration_ms: 2.677833
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 316.8745

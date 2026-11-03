@@ -1,0 +1,12 @@
+TAP version 13
+# Subtest: CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+ok 1 - CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+# Subtest: CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+ok 2 - CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+# tests 2
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9615.814625

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: backupAll snapshots LMDB to a single file at <target>/graph.lmdb
+ok 1 - backupAll snapshots LMDB to a single file at <target>/graph.lmdb
+  ---
+  duration_ms: 229.082125
+  type: 'test'
+  ...
+# Subtest: backupAll snapshot is openable + round-trips the source rows
+ok 2 - backupAll snapshot is openable + round-trips the source rows
+  ---
+  duration_ms: 140.3315
+  type: 'test'
+  ...
+# Subtest: backupAll leaves the source env writable + readable
+ok 3 - backupAll leaves the source env writable + readable
+  ---
+  duration_ms: 122.307542
+  type: 'test'
+  ...
+# Subtest: backupAll re-run over an existing target overwrites idempotently
+ok 4 - backupAll re-run over an existing target overwrites idempotently
+  ---
+  duration_ms: 127.954916
+  type: 'test'
+  ...
+# Subtest: backupAll skips Lance when the source directory is absent
+ok 5 - backupAll skips Lance when the source directory is absent
+  ---
+  duration_ms: 130.508917
+  type: 'test'
+  ...
+# Subtest: backupGraphStore throws when env is not open
+ok 6 - backupGraphStore throws when env is not open
+  ---
+  duration_ms: 118.000083
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1375.943042

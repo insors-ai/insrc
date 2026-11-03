@@ -44,22 +44,21 @@ import {
 import {
 	decodeEntityKey,
 	encodeEntityKey,
+	encodeEntityByFileKey,
 	encodeNameIndexKey,
 	encodeRepoKey,
 	ENTITY_KIND_BYTE,
-	absoluteEntityFilePath,
-	encodeEntityFileKey,
 } from './keys.js';
 import {
 	decodeEntityRow,
 	decodeRepoRow,
-	encodeEntityRow,
 	encodeIndexStateRow,
 	encodeRepoRow,
 	type EntityRow,
 	type RepoRow,
 } from './codec.js';
 import { emptyIndexStateRow, recountPending } from './pending-class.js';
+import { putEntityRowInTxn, removeEntityRowInTxn } from '../entities.js';
 import type { GraphStore } from './store.js';
 
 const log = getLogger('graph-migrations');
@@ -121,7 +120,11 @@ const MIGRATION_V1_TO_V2: Migration = {
 			reverseSeeded++;
 		}
 
-		// 2. Backfill name_index from the entity table.
+		// 2. Backfill name_index from the entity table. GUARD-TEST-EXEMPT
+		// (Epic c2ba6fa6 Story s3, t4): this is a standalone index-only
+		// backfill, not an entity-row write -- it never calls entity.put/
+		// entity.remove, so it is not one of the sites that must route
+		// through putEntityRowInTxn/removeEntityRowInTxn.
 		let nameSeeded = 0;
 		for (const { key, value } of store.entity.getRange()) {
 			const u64 = (key as Buffer).readBigUInt64BE(0);
@@ -229,7 +232,6 @@ const MIGRATION_V2_TO_V3: Migration = {
 			readonly newRow:        EntityRow;
 		}
 		const rewires: ModuleRewire[] = [];
-		const oldNameIndexKeys: Buffer[] = [];
 
 		for (const { key, value } of store.entity.getRange()) {
 			const row = decodeEntityRow(value as Buffer);
@@ -251,22 +253,16 @@ const MIGRATION_V2_TO_V3: Migration = {
 			const newRow: EntityRow = { ...row, repoId: newRepoId };
 
 			rewires.push({ u64, oldStringId, newStringId, oldRow: row, newRow });
-
-			// Cache the OLD name_index key so we can delete it
-			// (the new key is computed from newRow.repoId).
-			const oldKindByte = ENTITY_KIND_BYTE[row.kind];
-			if (oldKindByte !== undefined) {
-				oldNameIndexKeys.push(encodeNameIndexKey(row.repoId, oldKindByte, row.name));
-			}
 		}
 
 		let modulesRewired = 0;
-		for (let i = 0; i < rewires.length; i++) {
-			const r = rewires[i]!;
-			const oldKey = oldNameIndexKeys[i];
-
-			// Update the entity row itself (key is u64; unchanged).
-			store.entity.put(encodeEntityKey(r.u64), encodeEntityRow(r.newRow));
+		for (const r of rewires) {
+			// Update the entity row itself (key is u64; unchanged), and
+			// rewire name_index + entity_by_file together through the
+			// single entity-row write path (Epic c2ba6fa6 Story s3) -- the
+			// old (oldRepoId, kind, name) / (oldRepoId, filePath) entries
+			// are dropped and the new-repoId ones written.
+			putEntityRowInTxn(store, r.u64, r.oldRow, r.newRow);
 
 			// Swap the string-id indices. Module IDs become
 			// namespace-scoped, so the old `('', '', 'module', name)`
@@ -275,19 +271,6 @@ const MIGRATION_V2_TO_V3: Migration = {
 				store.entityIdByString.remove(r.oldStringId);
 				store.entityIdByString.put(r.newStringId, r.u64);
 				store.entityStringByU64.put(encodeEntityKey(r.u64), r.newStringId);
-			}
-
-			// Rewire name_index: drop old (oldRepoId, kind, name)
-			// dupsort entry; add new (newRepoId, kind, name) entry.
-			const kindByte = ENTITY_KIND_BYTE[r.newRow.kind];
-			if (kindByte !== undefined) {
-				if (oldKey !== undefined) {
-					store.nameIndex.remove(oldKey, encodeEntityKey(r.u64));
-				}
-				store.nameIndex.put(
-					encodeNameIndexKey(r.newRow.repoId, kindByte, r.newRow.name),
-					encodeEntityKey(r.u64),
-				);
 			}
 
 			modulesRewired++;
@@ -331,21 +314,16 @@ const MIGRATION_V2_TO_V3: Migration = {
 				const u64Key = encodeEntityKey(u64);
 				const entVal = store.entity.get(u64Key);
 				if (entVal !== undefined) {
-					const entRow = decodeEntityRow(entVal as Buffer);
-					const kindByte = ENTITY_KIND_BYTE[entRow.kind];
-					if (kindByte !== undefined) {
-						store.nameIndex.remove(
-							encodeNameIndexKey(entRow.repoId, kindByte, entRow.name),
-							u64Key,
-						);
-					}
+					// Drops the entity row, name_index and entity_by_file
+					// entries together through the single entity-row write
+					// path (Epic c2ba6fa6 Story s3).
+					removeEntityRowInTxn(store, u64, decodeEntityRow(entVal as Buffer));
 				}
 				const stringId = readStringByU64(store, u64);
 				if (stringId !== undefined) {
 					store.entityIdByString.remove(stringId);
 				}
 				store.entityStringByU64.remove(u64Key);
-				store.entity.remove(u64Key);
 				phantomEntitiesDropped++;
 			}
 			store.repo.remove(encodeRepoKey(p.repoId));
@@ -409,6 +387,59 @@ export const MIGRATION_V4_TO_V5: Migration = {
 };
 
 /**
+ * v5 -> v6: fast by-file / by-repo reads (Epic c2ba6fa6, Story s3 --
+ * ISSUE-61045de91faef1a0). Walks the existing entity table once and
+ * populates the new `entity_by_file` index for every row. Idempotent:
+ * a dupSort put of an (key, value) pair already present is a no-op, so
+ * a crash mid-migration followed by a re-run (schema_version still at
+ * 5) safely redoes the walk without creating duplicate entries. No
+ * existing key, value or kind byte is rewritten.
+ */
+export const MIGRATION_V5_TO_V6: Migration = {
+	from: 5,
+	to:   6,
+	description: 'entity_by_file (sc3): backfill the new by-file/by-repo entity index from the existing entity table',
+	run: (store) => {
+		// GUARD-TEST-EXEMPT (Epic c2ba6fa6 Story s3, t4): standalone
+		// index-only backfill, not an entity-row write -- it never calls
+		// entity.put/entity.remove.
+		let seeded = 0;
+		for (const { key, value } of store.entity.getRange()) {
+			const u64 = decodeEntityKey(key as Buffer);
+			const row = decodeEntityRow(value as Buffer);
+			store.entityByFile.put(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
+			seeded++;
+		}
+		log.info({ seeded }, 'v5->v6: entity_by_file backfill done');
+	},
+};
+
+/**
+ * v6 -> v7 (Epic c2ba6fa6 s9): the shared-modules rows of the three namespaces
+ * the added languages' module stubs live under (cargo, nuget, native). The two
+ * entity kinds appended with this version (table, view) need no data step: no
+ * existing row uses them and no key or byte is rewritten. Idempotent.
+ */
+export const MIGRATION_V6_TO_V7: Migration = {
+	from: 6,
+	to:   7,
+	description: 'shared-modules rows for the cargo, nuget and native namespaces (s9); table/view entity kinds appended',
+	run: (store) => {
+		const provisioned = provisionSharedModulesRows(store);
+		log.info({ provisioned }, 'v6->v7: shared-modules namespaces provisioned');
+	},
+};
+
+export const MIGRATION_V7_TO_V8: Migration = {
+	from: 7,
+	to:   8,
+	description: "subsystem and subsystem_by_file databases (s8); opened with the store, empty until a repository's first subsystem pass",
+	run: () => {
+		log.info('v7->v8: subsystem tables available; repositories are grouped on their next complete generation');
+	},
+};
+
+/**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
  * and we don't want to introduce a cycle).
@@ -426,31 +457,41 @@ function readStringByU64(store: GraphStore, u64: bigint): string | undefined {
 	return typeof v === 'string' ? v : (v as Buffer).toString('utf8');
 }
 
-/** Derived memberships are rebuilt atomically by the migration runner's child transaction. */
-export const MIGRATION_V5_TO_V6: Migration = {
-	from: 5,
-	to: 6,
-	description: 'Index entity memberships by exact file and repository',
-	run(store) {
-		for (const index of [store.entityByFile, store.entityByRepo]) {
-			for (const { key } of index.getRange()) index.remove(key as Buffer);
-		}
-		const roots = new Map<number, string>();
-		for (const { value } of store.repo.getRange()) {
-			const repo = decodeRepoRow(value as Buffer);
-			roots.set(repo.id, repo.path);
-		}
+/**
+ * v8 -> v9: repair of a store built by the retired v2 entity-membership index
+ * (merge of origin/main into v2, decision D1). That design shared schema number 6
+ * with main's `entity_by_file` but keyed the table by a hash of the absolute path
+ * and kept a second table `entity_by_repo`, so a v2-built store at 6 carries index
+ * rows main's code cannot find. The step clears `entity_by_file`, rebuilds it in
+ * main's shape (repoId, filePath) from the entity table and drops the legacy table.
+ * On a store already in main's shape it rebuilds the same rows, so it is safe to run
+ * on every store.
+ */
+export const MIGRATION_V8_TO_V9: Migration = {
+	from: 8,
+	to:   9,
+	description: 'entity_by_file: rebuild in the (repoId, filePath) shape and drop the legacy entity_by_repo table of the retired v2 index',
+	run: async (store) => {
+		let cleared = 0;
+		for (const { key } of store.entityByFile.getRange()) { store.entityByFile.remove(key as Buffer); cleared++; }
+		let seeded = 0;
 		for (const { key, value } of store.entity.getRange()) {
+			const u64 = decodeEntityKey(key as Buffer);
 			const row = decodeEntityRow(value as Buffer);
-			const root = roots.get(row.repoId);
-			if (root === undefined) throw new Error(`Cannot migrate entity membership: unregistered repository ${row.repoId}`);
-			const id = key as Buffer;
-			store.entityByFile.put(encodeEntityFileKey(absoluteEntityFilePath(row.filePath, root)), id);
-			store.entityByRepo.put(encodeRepoKey(row.repoId), id);
+			store.entityByFile.put(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
+			seeded++;
 		}
+		let dropped = false;
+		try {
+			const legacy = store.root.openDB({ name: 'entity_by_repo', keyEncoding: 'binary', encoding: 'binary', dupSort: true });
+			await legacy.drop();
+			dropped = true;
+		} catch (err) {
+			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'v8->v9: legacy entity_by_repo table could not be dropped; it is unused and harmless');
+		}
+		log.info({ cleared, seeded, dropped }, 'v8->v9: entity_by_file rebuilt');
 	},
 };
-
 
 /**
  * Production migration registry. Add new entries here as new
@@ -461,13 +502,15 @@ export const MIGRATION_V5_TO_V6: Migration = {
  * migrations (e.g. 1→3 fast path) are allowed but should always have
  * a corresponding 1→2 + 2→3 chain so older clients can step through.
  */
-
 export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V1_TO_V2,
 	MIGRATION_V2_TO_V3,
 	MIGRATION_V3_TO_V4,
 	MIGRATION_V4_TO_V5,
 	MIGRATION_V5_TO_V6,
+	MIGRATION_V6_TO_V7,
+	MIGRATION_V7_TO_V8,
+	MIGRATION_V8_TO_V9,
 ];
 
 /**

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -29,7 +30,7 @@ let _bootstrapped = false;
 
 export function registerBuiltinTemplates(): void {
 	if (_bootstrapped) {
-		log.debug('analyze templates already registered; skipping');
+		captureAnalysisDiagnostics(log).emit('debug', () => ['analyze templates already registered; skipping']);
 		return;
 	}
 	registerCodeTemplates();
@@ -38,7 +39,7 @@ export function registerBuiltinTemplates(): void {
 	registerGenericTemplates();
 	registerDocsTemplates();
 	_bootstrapped = true;
-	log.info({ count: getTemplateCatalog().length }, 'analyze templates registered');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ count: getTemplateCatalog().length }, 'analyze templates registered']);
 }
 
 /** Test-only -- resets the bootstrap latch so the next call re-runs. */

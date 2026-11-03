@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -165,6 +166,7 @@ export async function putCachedExploration(
  * Fine to over-delete: cache misses cost only a re-run.
  */
 export async function deleteCachedExplorationsForRepo(repo: string): Promise<void> {
+	assertNoSessionPersistence();
 	await withWriteTxn(s => {
 		const repoId = lookupRepoIdInTxn(s, repo);
 		if (repoId === undefined) return;

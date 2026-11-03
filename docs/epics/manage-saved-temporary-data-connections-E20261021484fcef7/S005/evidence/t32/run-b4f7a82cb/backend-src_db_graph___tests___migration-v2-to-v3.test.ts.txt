@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: v2->v3: provisions all 4 reserved shared-modules rows
+ok 1 - v2->v3: provisions all 4 reserved shared-modules rows
+  ---
+  duration_ms: 117.92175
+  type: 'test'
+  ...
+# Subtest: v2->v3: rewires Java module entity to jvm namespace + recomputes string ID
+ok 2 - v2->v3: rewires Java module entity to jvm namespace + recomputes string ID
+  ---
+  duration_ms: 98.367375
+  type: 'test'
+  ...
+# Subtest: v2->v3: rewires Python module entity to python namespace (separate from jvm)
+ok 3 - v2->v3: rewires Python module entity to python namespace (separate from jvm)
+  ---
+  duration_ms: 81.734959
+  type: 'test'
+  ...
+# Subtest: v2->v3: drops the phantom workspace row + its entities (cascade)
+ok 4 - v2->v3: drops the phantom workspace row + its entities (cascade)
+  ---
+  duration_ms: 126.72275
+  type: 'test'
+  ...
+# Subtest: v2->v3: idempotent on re-run from v3
+ok 5 - v2->v3: idempotent on re-run from v3
+  ---
+  duration_ms: 148.178375
+  type: 'test'
+  ...
+# Subtest: v2->v3: workspace row with valid path is preserved
+ok 6 - v2->v3: workspace row with valid path is preserved
+  ---
+  duration_ms: 82.803458
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 884.234

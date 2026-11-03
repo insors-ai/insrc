@@ -1,0 +1,54 @@
+TAP version 13
+# (node:73092) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: code-shaper.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - code-shaper.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.445166
+  type: 'test'
+  ...
+# Subtest: C1: tiny-multi-lang-repo run-mode -- all 3 languages + all 3 surfaces
+ok 2 - C1: tiny-multi-lang-repo run-mode -- all 3 languages + all 3 surfaces # SKIP
+  ---
+  duration_ms: 0.047375
+  type: 'test'
+  ...
+# Subtest: C2: monorepo-fixture (src/insrc) run-mode -- deferred (cost; covered by C1+C3 paths)
+ok 3 - C2: monorepo-fixture (src/insrc) run-mode -- deferred (cost; covered by C1+C3 paths) # TODO
+  ---
+  duration_ms: 0.03225
+  type: 'test'
+  ...
+# Subtest: C3: single-file scope -- surface narrows to that file
+ok 4 - C3: single-file scope -- surface narrows to that file # SKIP
+  ---
+  duration_ms: 0.037625
+  type: 'test'
+  ...
+# Subtest: C4: task-mode with one upstream output -- upstream rendered, surface trimmed
+ok 5 - C4: task-mode with one upstream output -- upstream rendered, surface trimmed # SKIP
+  ---
+  duration_ms: 0.040708
+  type: 'test'
+  ...
+# Subtest: C5: empty closure on unindexed repo -- requires P6 ensureNonEmptyClosure + driver wiring
+ok 6 - C5: empty closure on unindexed repo -- requires P6 ensureNonEmptyClosure + driver wiring # TODO
+  ---
+  duration_ms: 0.079666
+  type: 'test'
+  ...
+# Subtest: C6: identical re-run hits the run-bundle cache
+ok 7 - C6: identical re-run hits the run-bundle cache # SKIP
+  ---
+  duration_ms: 0.067209
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 5
+# todo 2
+# duration_ms 723.24575

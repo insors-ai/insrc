@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.014">
+  <properties/>
+  <testcase name="staleness matches CLI-derived golden effective-hash vectors()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.006"/>
+  <testcase name="readAll returns empty for an empty artifacts dir()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.0"/>
+  <testcase name="nextActionHint is Chain complete when everything is approved and current()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.001"/>
+  <testcase name="readAll projects a fully-populated Epic into the right stage and story marks()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.002"/>
+  <testcase name="readAll reports a story not stale when the HLD base is missing()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.0"/>
+  <testcase name="readAll returns empty for a missing dir and for no dirs, never throwing()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.0"/>
+  <testcase name="readAll swallows a malformed artifact file without throwing()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.001"/>
+  <testcase name="nextActionHint follows the documented precedence()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.001"/>
+  <testcase name="readAll marks an LLD missing its effective-hash meta as stale malformed()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.001"/>
+  <testcase name="readAll counts amendments by matching-epic status and excludes rejected()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.001"/>
+  <testcase name="readAll marks a matching-hash LLD not stale and a mismatching-hash LLD stale()" classname="ai.insors.insrc.jetbrains.workflow.WorkflowChainReaderTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

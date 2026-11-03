@@ -1,0 +1,1143 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793546114017-naphyg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T15:30:27.066Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 913011,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicHash": "17123b6d304af2a2",
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793536573467-3p0dt6",
+    "hldEffectiveHash": "18ac1fc6f9d6876c125e243762b023f8b6fc223d9c20904cdbbee1c8e5588af9",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S001's acceptance criteria ac1 (import has no side effects, readiness explicit, usable without insrc) and ac2 (duplicate-directory open refused; distinct directories independent; close preserves host-owned provider resources) are both designed by this LLD's open/ready/drain/close contract and §3.4 ownership section.",
+          "evidence": "DEF.md §6.1 ac1/ac2 state exactly those two cases; LLD §2.1 MemoryFactory.open, §2.4 close() postconditions ('Does not call dispose/close on supplied model, policy or logger objects'), and §3.4 ('A successful host open owns one canonical existing directory... Lock contention returns OWNERSHIP_CONFLICT') directly implement both. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No non-goal is built: the Epic's non-goal 'Add daemon/indexer dependencies to the reusable package' is honored by this Story.",
+          "evidence": "DEF.md §3 non-goal 3: 'Independent external applications must consume the feature without insrc startup.' LLD §3.1 states 'No imports/reexports from backend src are permitted in the emitted package dependency closure' and 'Do not export unfinished ./ipc or an executable placeholder.' [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The current root package.json has no 'workspaces' declaration and the root tsconfig.json compiles only rootDir=src, as the LLD's §3.1/§3.2 claim about today's build.",
+          "evidence": "package.json has no 'workspaces' key (confirmed by direct read and an explicit grep for \"workspaces\" returning no matches); tsconfig.json line 3: 'rootDir': 'src'. [files: package.json, tsconfig.json]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing root build pipeline the LLD says the package build must run ahead of is really 'tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs'.",
+          "evidence": "package.json 'scripts.build': \"tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs\" — matches LLD §3.2's 'existing backend tsc/model-definition/asset pipeline, preserving its existing steps and root output paths.' [files: package.json]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "fs-ext, which the LLD calls the package's new runtime dependency pinned 2.1.1, is not already present anywhere in the repo's dependency tree (so it is genuinely new, not a mislabeled existing resolution).",
+          "evidence": "Grepping package-lock.json for 'fs-ext' only matches the unrelated package 'fs-extra' (node_modules/fs-extra, version 11.3.0); no 'fs-ext' entry exists. Root package.json also lists no fs-ext dependency. [files: package-lock.json, package.json]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The 'new' sc1/sc2 public types the LLD declares (MemoryOptions, ModelPort, MemoryLifecycle, MemoryFactory, MemoryService, MemoryFailure codes) reproduce the shapes the HLD already approved for sc1/sc2, rather than diverging from the upstream-agreed contract.",
+          "evidence": "HLD.md §5.1/§5.2 interface sketches for ModelPort, MemoryLifecycle, MemoryFactory, DrainResult, MemoryService, MemoryFailure match the LLD §2 signatures field-for-field (e.g. ModelPort.complete/embed/embeddingModel/embeddingDimension identical in both documents). [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every MemoryFailure code the LLD's §2/§6 error tables use (INVALID_REQUEST, OWNERSHIP_CONFLICT, NOT_READY, STORE_UNAVAILABLE) is a member of the HLD-approved sc2 MemoryFailure.code union; no invented code is introduced.",
+          "evidence": "HLD.md §5.2: \"code: 'INVALID_REQUEST' | 'UNBOUND_PROJECT' | 'POLICY_DENIED' | 'BACKPRESSURE' | 'NOT_READY' | 'UNSUPPORTED_VERSION' | 'OWNERSHIP_CONFLICT' | 'REVISION_CONFLICT' | 'STORE_UNAVAILABLE' | ...\" — all four codes the LLD uses are in this set. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Method signatures in LLD §2 (open, ready, drain(deadlineMs), close, submit, context, search, inspect, operation) reproduce the HLD sc1/sc2 interface sketches' parameter and return types.",
+          "evidence": "HLD.md §5.1/§5.2 sketches (e.g. 'drain(deadlineMs: number): Promise<DrainResult>', 'context(request: ReadRequest): Promise<ContextResult>') match LLD §2.3/§2.6 verbatim; the only variance is submit's parameter name ('request' in the LLD vs 'command' in the HLD sketch for the same MemoryCommand type), a cosmetic rename that does not change the contract. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S1 introduces no change to any existing stored shape or older record — it is a brand-new package/directory with no prior on-disk format — and the one real compatibility hazard it does face (a crash leaving only a lock file or init temp file) is explicitly handled: recovery happens only after re-acquiring the same persistent lock, and the lock file is never unlinked to 'recover'.",
+          "evidence": "HLD.md §8 Rollout phase A: 'Backward compat: Existing index stores, conversation persistence and daemon IPC contracts remain intact; memory data directory is distinct. No implicit historical import.' LLD §3.4: 'Persist only layout/ownership metadata, not memory content; no Lance/queue files or authoritative memory store are created by S1' and the edge-case table: 'A persistent lock pathname alone is not ownership... never unlink the lock to recover.' [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's 'Adjacent scope (owned by other stories)' bullets for s2 and s7 reproduce the HLD §6 Story-boundaries ownership text verbatim, rather than paraphrasing it into something the LLD then redesigns.",
+          "evidence": "HLD.md §6.7 (s7): 'Private insrc registry binding, temporary-execution refusal, host provider translation and managed turn ownership. VS Code/JetBrains/MCP remain IPC clients; backend integration does not expose index/LMDB handles to the package. This story owns the explicit host admission/coordination design for daemon and memory model work; no existing global scheduler is assumed.' — this is reproduced word-for-word in the LLD's adjacent-scope list for s7 (and likewise s2 matches HLD §6.2 verbatim). [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD explicitly defers queue/Lance child layout to s2/s3 and host-level model-dispatch coordination across hosts to s7, rather than implementing durable ingestion, storage, or cross-host scheduling itself.",
+          "evidence": "LLD §3.4: 'Own queue/lance child layout remains reserved for s2/s3.' LLD §3.7: 's7 owns host-level coordination and no existing global scheduler is assumed.' These match the HLD's allocation of sc3 to s2 and sc4 to s3 (HLD §5.3/§5.4, §6.2/§6.3) and the sc8 coordination design to s7 (HLD §5.8/§6.7). [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each failure path's detection mechanism is a real, checkable condition rather than an inference — e.g. OWNERSHIP_CONFLICT is detected via flock EWOULDBLOCK/EAGAIN after a canonical realpath+inode check, and ownership is never conferred by PID/mtime/lease timeout — matching the HLD's own stated invariant that 'dead-process recovery never steals a live lock.'",
+          "evidence": "HLD.md §3 'Dependency and relationship directions': '...dead-process recovery never steals a live lock. Exact lock primitive and cross-platform support are qualification gates for s1.' LLD §6 'Second instance owns directory': 'Detection: flock exclusive/nonblocking reports EWOULDBLOCK/EAGAIN after canonical realpath and safe lockfile open... Never unlink, unlock another descriptor or wait for ownership.' [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The edge-case recovery rule for a crash leaving only '.owner.lock' or an init temp file does not contradict the general lock-lifetime invariant stated elsewhere in the same document.",
+          "evidence": "LLD §3.4 invariant: 'Never use PID/mtime/lease timeout to confer ownership and never unlink/recreate the lock file on normal close or crash recovery.' LLD §6 edge case: 'A persistent lock pathname alone is not ownership. Recognized incomplete bootstrap metadata is recovered only after acquiring the same persistent lock; never unlink the lock to recover.' Both rules agree: recovery is gated on acquiring the same lock, never on deleting/replacing it.",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Both of S001's DEF acceptance criteria (ac1, ac2) are mapped in the LLD's 'Acceptance mapping' table to concrete named tests, with no criterion left unmapped.",
+          "evidence": "LLD §7 'Acceptance mapping' table maps ac1 to 'Packed external consumer import/typecheck/open/drain/close under Node 22...', 'Import side-effect checks and NOT_READY behavior...', 'Root build order and public dependency closure/exports tests'; ac2 to 'Real same-process/package-copy/thread/process ownership contention and alias tests', 'Distinct-root independence...', 'Forced owner death versus stopped live owner; incomplete drain and concurrent close safety.' [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The stated test framework ('node:test with node:assert/strict, executed through tsx... existing exact lock test files use this pattern') matches the repo's actual existing convention.",
+          "evidence": "package.json 'scripts.test': 'tsx --test src/**/__tests__/*.test.ts'. src/shared/locks/__tests__/lock-manager-threads.test.ts imports `{ after, test } from 'node:test'` and `assert from 'node:assert/strict'`, and its header comment instructs 'Run: npx tsx --test src/shared/locks/__tests__/lock-manager-threads.test.ts' — exactly the pattern the LLD cites. [files: package.json, src/shared/locks/__tests__/lock-manager-threads.test.ts]",
+          "action": "none — verified sound",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 15,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T15:31:44.224Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T15:37:37.696Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "S1 creates the independently consumable package, its public host/service types and its embedded runtime foundation. Explicit open acquires exclusive directory ownership; shutdown releases only module-owned resources. Later stories supply durable ingestion, memory storage and recall, so this foundation reports those capabilities unavailable rather than pretending to save or return memory."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: ports-and-adapters library with optional local service host. The library owns one queue, one context-builder processing loop and one dedicated Lance connection per resolved data directory. Admission, project policy and source identity are common to both hosts. Standalone and embedded execution must pass the same behavioral and failure suite. [[c1]] [[c2]]",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Host ports and package lifecycle",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "purpose": "Versioned dependency boundary for independent embedded execution; no backend imports, implicit globals or ownership of supplied providers. All module model requests use a module-local dispatcher; supplied ports do not imply an existing daemon-wide scheduler.",
+          "interfaceSketch": "type Json = null | boolean | number | string | Json[] | { [key: string]: Json };\ninterface ProjectBinding { projectId: string; root: string; scopeEpoch: string; }\ninterface ModelRequest { role: 'normalize' | 'reconcile' | 'compress' | 'validate'; input: Json; schema: Json; signal: AbortSignal; }\ninterface ModelPort { complete(request: ModelRequest): Promise<Json>; embed(text: string, signal: AbortSignal): Promise<readonly number[]>; readonly embeddingModel: string; readonly embeddingDimension: number; }\ninterface HostPolicy { bind(projectId: string, sessionId?: string): Promise<ProjectBinding>; admit(binding: ProjectBinding, event: Json): Promise<Json>; }\ninterface MemoryOptions { dataDirectory: string; models: ModelPort; policy: HostPolicy; logger: MemoryLogger; limits: MemoryLimits; }\ninterface MemoryLogger { write(level: 'debug' | 'info' | 'warn' | 'error', event: string, fields: Record<string, string | number | boolean>): void; }\ninterface MemoryLimits { maxEventBytes: number; maxPendingBytes: number; segmentBytes: number; modelTimeoutMs: number; }\ninterface MemoryLifecycle { ready(): Promise<void>; drain(deadlineMs: number): Promise<DrainResult>; close(): Promise<void>; }\ninterface DrainResult { completed: boolean; pending: number; }\ninterface MemoryFactory { open(options: MemoryOptions): Promise<MemoryService>; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Application service and domain wire types",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9"
+          ],
+          "purpose": "One versioned typed command/query model shared by embedded, IPC and insrc adapters; all mutation paths enqueue.",
+          "interfaceSketch": "type OperationState = 'accepted' | 'processing' | 'committed' | 'failed' | 'quarantined' | 'cleanup-pending';\ninterface Scope { projectId: string; sessionId?: string; branch?: string; environment?: string; }\ninterface SourceIdentity { producerId: string; eventId: string; sessionId: string; turnId: string; sourceVersion: string; }\ninterface MemoryCommand { version: 1; scope: Scope; source: SourceIdentity; kind: 'capture' | 'correct' | 'forget' | 'resolve' | 'maintenance' | 'delivery'; payload: Json; expectedRevision?: string; }\ninterface OperationReceipt { operationId: string; eventId: string; state: OperationState; generation?: string; errorCode?: string; }\ninterface ReadRequest { scope: Scope; budgetTokens: number; afterOperationId?: string; deadlineMs?: number; }\ninterface SearchRequest extends ReadRequest { query: string; limit: number; }\ninterface InspectRequest { scope: Scope; memoryId: string; }\ninterface ContextResult { generation: string; items: readonly MemoryView[]; overflow: boolean; degraded: boolean; }\ninterface MemoryView { id: string; revision: string; kind: string; text: string; status: string; sourceIds: readonly string[]; }\ninterface OperationRequest { scope: Scope; operationId: string; }\ninterface MemoryService extends MemoryLifecycle { submit(command: MemoryCommand): Promise<OperationReceipt>; context(request: ReadRequest): Promise<ContextResult>; search(request: SearchRequest): Promise<ContextResult>; inspect(request: InspectRequest): Promise<Json>; operation(request: OperationRequest): Promise<OperationReceipt>; }\ninterface MemoryFailure { code: 'INVALID_REQUEST' | 'UNBOUND_PROJECT' | 'POLICY_DENIED' | 'BACKPRESSURE' | 'NOT_READY' | 'UNSUPPORTED_VERSION' | 'OWNERSHIP_CONFLICT' | 'REVISION_CONFLICT' | 'STORE_UNAVAILABLE' | 'CONTEXT_OVERFLOW' | 'DEADLINE_EXCEEDED'; retryable: boolean; operationId?: string; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Private lifecycle state machine, directory canonicalization and OS ownership guard. Public v1 types describe the final service; incremental builds must report unsupported/not-ready behavior explicitly rather than accept unimplemented work. Module-local model dispatch serialization is private to this foundation and covers all callers, including read embeddings."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private segment framing, append/fsync scheduling, checkpoint replacement, tail recovery and disk accounting. Producer source keys are retained through authoritative store receipts; queue recycling alone never authorizes forgetting retry identity."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Private Arrow/Lance physical row encoding, receipt lookup, single-table commit, current generation, revision checks and tombstone matching. No other story obtains a direct mutation handle."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Private bounded source-context expansion, slot normalization, candidate retrieval, authority and equivalence classification, fidelity checks and serial model scheduling. No normalization result becomes active before the guarded store commit."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc6"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5"
+          ],
+          "internal": "Private exact/lexical/vector ranking, mandatory-directive selection, generation-keyed caches and budget packing. Inspect and search share project binding and deletion filters."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Private local-socket framing, connection limits, version handshake, transport cancellation and process signal handling in the executable only. Embedded API import installs no handlers. Remote client disconnect never stops the server."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc8"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7"
+          ],
+          "internal": "Private insrc registry binding, temporary-execution refusal, host provider translation and managed turn ownership. VS Code/JetBrains/MCP remain IPC clients; backend integration does not expose index/LMDB handles to the package. This story owns the explicit host admission/coordination design for daemon and memory model work; no existing global scheduler is assumed."
+        },
+        {
+          "storyId": "s8",
+          "owns": [
+            "sc9"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8"
+          ],
+          "internal": "Private CLI-version qualification, trusted hook bootstrap, incremental transcript parser, local spool qualification and capability reporting. Adapter installation requires explicit host configuration; user approval and tool transcripts are not promoted to standing directives."
+        },
+        {
+          "storyId": "s9",
+          "owns": [
+            "sc10"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6",
+            "sc7",
+            "sc8",
+            "sc9"
+          ],
+          "internal": "Private retention planning, purge accounting, Lance version cleanup, migrations, source-qualified lesson proposals and corpus evaluation orchestration. No maintenance timer writes outside the command/worker path."
+        }
+      ],
+      "rolloutPhase": "A — Independent durable foundation",
+      "nonFunctional": {
+        "performance": "Bound source expansion, event size, pending disk bytes, candidate counts, model timeouts, IPC frames and context token budgets. Queue acceptance latency measures append+fsync separately from semantic commit latency. Initial target is bounded memory and nonblocking request handling; p50/p95 acceptance, commit, recall and cold-open thresholds must be measured on named hardware/corpus in LLDs before release. Accuracy takes precedence over throughput. Embedding/model calls are serial; cached reads perform no inference.",
+        "security": "Project/session binding and eligibility before enqueue; per-request scope validation and local endpoint access restrictions. No raw prompts/queue content in routine logs. Memory is subordinate context; no hidden reasoning, credentials or automatic cloud REST. Different projects and directories remain isolated. Temp/session-memory execution restrictions remain enforced in insrc and explicit equivalent policy is required of other hosts.",
+        "observability": "Bounded metadata: operation/event identity, project pseudonym, queue backlog/oldest age, processing stage/retries, generation, duration, privacy-safe failure code and capture/delivery capability state. Distinguish unavailable/empty, accepted/committed, prepared/delivered, logical delete/physical cleanup. Provide explicit inspection rather than routine payload logging.",
+        "durability": "No acknowledged event loss in the supported crash model; at-least-once replay with idempotent committed effects. OS process death, partial writes, fsync failure, lost IPC replies, commit-before-ack, ownership contention and shutdown require fault-injection evidence. Disk/controller failure outside the qualified fsync contract and external native transcript/backups have explicit limits. Lance atomicity/reader freshness are mandatory s3 evidence gates, not assumptions."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [
+        {
+          "name": "MemoryFactory.open",
+          "signature": "open(options: MemoryOptions): Promise<MemoryService>;",
+          "parameters": [
+            {
+              "name": "options",
+              "type": "MemoryOptions",
+              "purpose": "Explicit host ports, memory root and resource limits; no implicit insrc configuration.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<MemoryService>",
+            "meaning": "Resolves after foundation validation and exclusive ownership acquisition. The S1 facade's data methods remain NOT_READY until owning downstream capabilities exist."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(INVALID_REQUEST)",
+              "condition": "Invalid options, unsupported runtime/platform/filesystem or unrecognized/unsafe root."
+            },
+            {
+              "type": "MemoryFailure(OWNERSHIP_CONFLICT)",
+              "condition": "Another instance owns the canonical directory."
+            },
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "Native ownership binding is missing/incompatible."
+            },
+            {
+              "type": "MemoryFailure(STORE_UNAVAILABLE)",
+              "condition": "Ownership/directory I/O or safe initialization failure."
+            }
+          ],
+          "preconditions": [
+            "Host has explicitly selected an isolated local memory root that does not overlap its other stores or their cleanup roots.",
+            "Supported initial runtime is Node 22 >=22.22.1 on qualified local APFS/macOS or ext4/Linux; qualification is a build gate, not asserted from documentation."
+          ],
+          "postconditions": [
+            "No native addon, file, worker or global handler is touched by importing the public entry; only explicit open performs I/O.",
+            "Every instance uses its own opened lock descriptor, including copies of the package and worker-thread instances.",
+            "Failed open closes every resource it acquired; no usable service escapes an unsuccessful acquisition."
+          ]
+        },
+        {
+          "name": "MemoryLifecycle.ready",
+          "signature": "ready(): Promise<void>;",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Same stable readiness result for the initialized foundation; later queue/store startup is composed before readiness by its owner."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "Startup did not complete or service is no longer available."
+            }
+          ],
+          "preconditions": [
+            "Called on an instance returned by open."
+          ],
+          "postconditions": [
+            "S1 readiness does not assert s2-s6 memory functionality; no accepted event or empty recall is fabricated."
+          ]
+        },
+        {
+          "name": "MemoryLifecycle.drain",
+          "signature": "drain(deadlineMs: number): Promise<DrainResult>;",
+          "parameters": [
+            {
+              "name": "deadlineMs",
+              "type": "number",
+              "purpose": "Finite positive wall duration in milliseconds from method entry; measured using monotonic time.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DrainResult>",
+            "meaning": "Closes admission and waits up to deadline for owned tracked work; completed=false and pending>0 means work/ownership remains."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(INVALID_REQUEST)",
+              "condition": "Invalid duration."
+            },
+            {
+              "type": "MemoryFailure(STORE_UNAVAILABLE)",
+              "condition": "Owned work cannot be safely drained."
+            }
+          ],
+          "preconditions": [
+            "Service is ready or already draining."
+          ],
+          "postconditions": [
+            "Drain does not reopen admission or release ownership.",
+            "The S1 facade has no accepted memory commands; future queue/store participants contribute real work without inventing completed results."
+          ]
+        },
+        {
+          "name": "MemoryLifecycle.close",
+          "signature": "close(): Promise<void>;",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Idempotent shared close result after admission stops, owned work is quiescent and handles close safely."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(STORE_UNAVAILABLE)",
+              "condition": "A module-owned handle cannot be verified closed; ownership must not be released while owned work can still write."
+            }
+          ],
+          "preconditions": [
+            "May be called repeatedly or concurrently; no caller can force unsafe resource release."
+          ],
+          "postconditions": [
+            "Does not call dispose/close on supplied model, policy or logger objects and installs no process signal handlers.",
+            "Uncooperative model requests are aborted but do not permit ownership release while a continuation or owned writer can still act; close remains pending until safe quiescence or reports a qualified failure.",
+            "Closing a service never unlinks its lock file. OS process exit releases its descriptor-held lock."
+          ]
+        },
+        {
+          "name": "MemoryService.submit",
+          "signature": "submit(request: MemoryCommand): Promise<OperationReceipt>;",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "MemoryCommand",
+              "purpose": "Public v1 type defined by sc2; owning downstream stories supply full payload/behavior validation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<OperationReceipt>",
+            "meaning": "S1 always rejects with NOT_READY. No mutation, provider call, accepted receipt, operation existence or empty successful read is reported."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "Capability belongs to a later story or lifecycle has stopped admission."
+            }
+          ],
+          "preconditions": [
+            "S1 declares the compatible surface but does not implement semantic/durable capabilities."
+          ],
+          "postconditions": [
+            "No queue/Lance/backend storage is opened by the placeholder path."
+          ]
+        },
+        {
+          "name": "MemoryService.context",
+          "signature": "context(request: ReadRequest): Promise<ContextResult>;",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "ReadRequest",
+              "purpose": "Public v1 type defined by sc2; owning downstream stories supply full payload/behavior validation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ContextResult>",
+            "meaning": "S1 always rejects with NOT_READY. No mutation, provider call, accepted receipt, operation existence or empty successful read is reported."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "Capability belongs to a later story or lifecycle has stopped admission."
+            }
+          ],
+          "preconditions": [
+            "S1 declares the compatible surface but does not implement semantic/durable capabilities."
+          ],
+          "postconditions": [
+            "No queue/Lance/backend storage is opened by the placeholder path."
+          ]
+        },
+        {
+          "name": "MemoryService.search",
+          "signature": "search(request: SearchRequest): Promise<ContextResult>;",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "SearchRequest",
+              "purpose": "Public v1 type defined by sc2; owning downstream stories supply full payload/behavior validation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ContextResult>",
+            "meaning": "S1 always rejects with NOT_READY. No mutation, provider call, accepted receipt, operation existence or empty successful read is reported."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "Capability belongs to a later story or lifecycle has stopped admission."
+            }
+          ],
+          "preconditions": [
+            "S1 declares the compatible surface but does not implement semantic/durable capabilities."
+          ],
+          "postconditions": [
+            "No queue/Lance/backend storage is opened by the placeholder path."
+          ]
+        },
+        {
+          "name": "MemoryService.inspect",
+          "signature": "inspect(request: InspectRequest): Promise<Json>;",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "InspectRequest",
+              "purpose": "Public v1 type defined by sc2; owning downstream stories supply full payload/behavior validation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Json>",
+            "meaning": "S1 always rejects with NOT_READY. No mutation, provider call, accepted receipt, operation existence or empty successful read is reported."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "Capability belongs to a later story or lifecycle has stopped admission."
+            }
+          ],
+          "preconditions": [
+            "S1 declares the compatible surface but does not implement semantic/durable capabilities."
+          ],
+          "postconditions": [
+            "No queue/Lance/backend storage is opened by the placeholder path."
+          ]
+        },
+        {
+          "name": "MemoryService.operation",
+          "signature": "operation(request: OperationRequest): Promise<OperationReceipt>;",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "OperationRequest",
+              "purpose": "Public v1 type defined by sc2; owning downstream stories supply full payload/behavior validation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<OperationReceipt>",
+            "meaning": "S1 always rejects with NOT_READY. No mutation, provider call, accepted receipt, operation existence or empty successful read is reported."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "Capability belongs to a later story or lifecycle has stopped admission."
+            }
+          ],
+          "preconditions": [
+            "S1 declares the compatible surface but does not implement semantic/durable capabilities."
+          ],
+          "postconditions": [
+            "No queue/Lance/backend storage is opened by the placeholder path."
+          ]
+        },
+        {
+          "name": "ModelPort",
+          "signature": "interface ModelPort { complete(request: ModelRequest): Promise<Json>; embed(text: string, signal: AbortSignal): Promise<readonly number[]>; readonly embeddingModel: string; readonly embeddingDimension: number; }",
+          "parameters": [],
+          "returns": {
+            "type": "ModelPort",
+            "meaning": "Host-owned structural interface; no SDK/provider factory types leak into public core."
+          },
+          "errors": [
+            {
+              "type": "MemoryFailure(NOT_READY)",
+              "condition": "A runtime model request is cancelled or its provider is unavailable."
+            }
+          ],
+          "preconditions": [
+            "Complete and embed are callable; metadata identifies a local embedding implementation with positive safe-integer dimension.",
+            "Host adapters retain provider ownership and comply with the CLI-only cloud/local embedding policy."
+          ],
+          "postconditions": [
+            "All module invocations pass through one private serial dispatcher across processing, query embedding and maintenance.",
+            "Cancellation of queued work removes it before invocation; an active request holds the dispatch lane until its underlying promise settles, even if timeout/abort has already been reported."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Package manifest and build boundary",
+        "change": "new",
+        "callSites": [],
+        "details": "Proposed new package paths: packages/project-memory/package.json, packages/project-memory/tsconfig.json, packages/project-memory/src/index.ts, packages/project-memory/src/types.ts, packages/project-memory/src/host-node.ts, packages/project-memory/src/runtime.ts, packages/project-memory/src/ownership.ts, packages/project-memory/src/model-dispatcher.ts, packages/project-memory/src/__tests__/ and packages/project-memory/scripts/verify-pack.mjs. Root package.json/package-lock.json add a minimal npm workspace and root dependency linked by its matching 0.1.0 workspace version. Preserve root tsconfig.json rootDir=src. Proposed package exports '.' -> dist/index.js + dist/index.d.ts and './node' -> dist/host-node.js + declarations; root exposes the same MemoryFactory.open entry via a lazy dynamic import, with no top-level fs-ext/Lance imports. Do not export unfinished './ipc' or an executable placeholder; s6 adds those actual exports. No imports/reexports from backend src are permitted in the emitted package dependency closure. Build with an independent strict NodeNext config, .js specifiers, import type and explicit '| undefined' for optional properties. Package runtime owns fs-ext pinned 2.1.1 as its only S1 runtime dependency; lock resolved transitive dependencies in root lockfile. Lance/Arrow arrive in s3, not unused S1 dependencies. Types for the narrow native wrapper remain private. No root package lock/reformat beyond workspace dependency resolution is intended."
+      },
+      {
+        "entity": "Build and packed consumption",
+        "change": "new",
+        "callSites": [
+          "package.json",
+          "tsconfig.json"
+        ],
+        "details": "Package scripts: build runs tsc with rootDir src/outDir dist plus asset copying only when assets exist; test runs its own node:test TS suites using workspace dev tools; prepack runs package build; verify:pack performs an isolated tarball-install consumer test. Root build runs the package workspace build before the existing backend tsc/model-definition/asset pipeline, preserving its existing steps and root output paths. Add an explicit focused workspace-test command; do not silently replace the root full-sweep script with a subset. Pack allowlist includes dist, README, LICENSE and future runtime assets, excluding source/tests/fixtures, native binaries built for another runtime, root configuration and backend files. Isolated consumer installs with normal package dependency lifecycle scripts, has no NODE_PATH/workspace symlink/backend source, imports via public exports, typechecks and runs lifecycle tests with Node 22. Native compilation prerequisites and supported filesystem/runtime matrix are documented; optional skip cannot satisfy a required native gate. No publishing is performed by build or tests."
+      },
+      {
+        "entity": "MemoryOptions and v1 types",
+        "change": "new",
+        "callSites": [],
+        "details": "Implement all sc1/sc2 type declarations as one versioned package-owned source; no SDK types. Use readonly fields where external mutation would affect ownership. Optional fields retain explicit '| undefined' and JSON serialization omits absent optional values. MemoryCommand payload remains Json at this shared foundation layer; exact per-command semantic schemas are supplied by the owning later story before its implementation. Validate required configuration before creating directories: explicit nonempty absolute dataDirectory; callable policy.bind/admit and logger.write; callable models.complete/embed with nonempty embeddingModel and safe positive embeddingDimension; all four MemoryLimits values finite positive safe integers with maxEventBytes<=segmentBytes<=maxPendingBytes. No provider/model call occurs during open validation. Do not invent default paths, model IDs, credentials or registration. Root limits remain supplied by the host, not undocumented S1 defaults. Bad logger callbacks must not prevent cleanup or expose payloads."
+      },
+      {
+        "entity": "Directory identity and exclusive ownership",
+        "change": "new",
+        "callSites": [],
+        "details": "A successful host open owns one canonical existing directory identified by realpath plus device/inode. Create an explicit missing root with private permissions only after options pass; resolve aliases before claiming ownership. Existing nonempty roots must be recognized as memory layout rather than adopted from an index or arbitrary directory. Persist only layout/ownership metadata, not memory content; no Lance/queue files or authoritative memory store are created by S1. Reserve root/.owner.lock as a regular single-link private file, opened without following a final symlink, then acquire fs-ext flock(fd,'exnb') on a descriptor opened specifically for this instance; set close-on-exec and verify file/directory identities. Keep that descriptor reachable until safe close. Never use PID/mtime/lease timeout to confer ownership and never unlink/recreate the lock file on normal close or crash recovery. Lock contention returns OWNERSHIP_CONFLICT; no waiting ownership queue. Duplicate paths, symlink aliases, repeated package instances and worker threads each contend on the same underlying lock file. Invalid/moved/replaced lock/root identity fences further work and reports STORE_UNAVAILABLE; the protocol assumes cooperating hosts do not externally delete/rename a live memory directory. Host-specific cross-store cleanup containment is a required caller/adapter precondition (insrc integration owns its index paths); core cannot infer unknown external cleanup roots. Own queue/lance child layout remains reserved for s2/s3."
+      },
+      {
+        "entity": "Platform and ownership qualification",
+        "change": "new",
+        "callSites": [],
+        "details": "Initial adapter supports only Node 22 >=22.22.1 with local APFS on macOS and local ext4 on Linux after actual qualification; other runtimes/platforms/filesystems fail INVALID_REQUEST before readiness rather than degrade to a lease lock. Use fs.statfs to enforce the initial filesystem allowlist; implementation constants must be verified against target OS headers/primary docs. Do not advertise Windows, NFS/CIFS, tmpfs or overlayfs support from a passing macOS probe. A Python fcntl probe on this Mac confirmed separate-descriptor exclusion and close release only; it did not test the Node binding, threads or process crash. Active shell Node is 26.5.1 and a separate Node 22.23.2 binary is available; build/test evidence must identify actual runtime/header ABI, not infer compatibility from engines metadata."
+      },
+      {
+        "entity": "Lifecycle and private composition",
+        "change": "new",
+        "callSites": [],
+        "details": "Private states opening -> ready -> draining -> closing -> closed, with failed startup/cleanup states explicit. Public open resolves only after initialized ownership; ready is stable/idempotent, not proof of unavailable downstream features. Concurrent close calls share a terminal promise and do not double-close a reused descriptor. Private composition tracks module-owned participants added by later stories without a public plugin registry: stop admission, drain/abort tracked work, await quiescence, close writer/store/queue resources in dependency-safe order, then close ownership descriptor. A nonblocking native lock callback must finish before any cancellation cleanup closes its fd, preventing a late callback from acting on a reused fd. Drain deadline is monotonic and returns incomplete without releasing ownership. S1 service data methods reject NOT_READY; s2/s3/s5 replace these paths within their owned scope and readiness becomes contingent on their real startup. No child process, signal handler, timer heartbeat or process.exit is installed by public import/open. Host retains lifecycle control."
+      },
+      {
+        "entity": "Module-local model dispatcher",
+        "change": "new",
+        "callSites": [],
+        "details": "A private per-instance FIFO is shared by complete and embed, not one queue per method/consumer. At most one underlying provider promise runs; queued cancellations never invoke the provider. Timeout/abort requests abort the supplied controller but do not release the execution lane or ownership merely because Promise.race returns; wait for underlying settlement and prevent any late continuation from committing. Rejection advances the next queued item after settlement. No Promise.all reaches model providers. Queue depth and request timeout are bounded by validated host limits/owned configuration, with explicit overload errors. This does not serialize other daemon work or other independent instances: s7 owns host-level coordination and no existing global scheduler is assumed. Tests use controllable providers and record maximum underlying concurrency rather than only resolved wrapper counts."
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "Owns public host types, factory/lifecycle, independent package integration, private directory guard and module-local model serialization. No globally shared daemon lock block or configuration is imported. Public signature names follow the HLD; pure import and supplied-resource ownership are preserved."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "Owns versioned public service/domain types and safe fixed errors. Foundation unavailable methods return NOT_READY, never fake success. Downstream owners implement payload semantics through this surface without importing storage in callers. Readiness/lifecycle and command acceptance remain distinct."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Invalid options or runtime",
+          "detection": "Check exact required configuration shapes, finite positive safe-integer limits, callable ports, absolute root and supported Node/platform/filesystem before readiness; configuration validation precedes mkdir/native work.",
+          "response": "Reject INVALID_REQUEST with a fixed safe code/message; no usable instance and no provider calls.",
+          "userImpact": "Caller corrects explicit configuration or uses a supported runtime; no silent fallback.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Native binding absent/incompatible",
+          "detection": "Explicit open's dynamic import/load or native operation fails; runtime/ABI and module load error are classified without leaking paths or payloads.",
+          "response": "Reject NOT_READY, close any acquired descriptor and retain no active instance; never substitute a heartbeat/PID lock.",
+          "userImpact": "Required native dependency must build for the runtime before memory is enabled.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Second instance owns directory",
+          "detection": "flock exclusive/nonblocking reports EWOULDBLOCK/EAGAIN after canonical realpath and safe lockfile open.",
+          "response": "Reject OWNERSHIP_CONFLICT and close only contender's fd. Never unlink, unlock another descriptor or wait for ownership.",
+          "userImpact": "Caller connects to the existing service or waits until it safely closes.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unrecognized or replaced root/lock inode",
+          "detection": "Directory listing/layout marker validation and fd/path dev+inode, regular-file/link-count checks disagree; final lock path is a symlink or an opened root is moved/replaced.",
+          "response": "Fail closed with INVALID_REQUEST for unsafe initial selection or STORE_UNAVAILABLE for changed ownership identity. Fence writes and keep ownership until owned work stops.",
+          "userImpact": "Requires explicit root correction or operator recovery; no adoption of an index/arbitrary directory.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Startup fails after native acquisition",
+          "detection": "Any post-acquisition initialization step rejects, including metadata write or readiness setup.",
+          "response": "Unwind owned resources in reverse dependency order after native callback completion. Reject open and expose cleanup failure if ownership release cannot be verified.",
+          "userImpact": "No half-ready facade escapes; retry only after safe cleanup or process exit.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Drain deadline or ignored model cancellation",
+          "detection": "Monotonic deadline expires while private tracked work/underlying provider promise remains active.",
+          "response": "Drain reports incomplete without releasing descriptor ownership. Abort active request and cancel queued work; close waits for actual quiescence instead of treating wrapper timeout as completion.",
+          "userImpact": "A stuck host provider can delay close; caller may terminate its own process, which OS lock lifetime handles.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Logger callback throws or cleanup I/O fails",
+          "detection": "Catch supplied logger exceptions separately; await each owned handle close and preserve the first cleanup failure with bounded diagnostic codes.",
+          "response": "Logger failure cannot interrupt cleanup. Unverified close reports STORE_UNAVAILABLE and does not manufacture a successful unlocked state.",
+          "userImpact": "Host logging can be repaired independently; unsafe handle cleanup remains visible.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Foundation data method called",
+          "detection": "Facade routes submit/context/search/inspect/operation to an explicit capability-unavailable path until the owning later story wires it.",
+          "response": "Reject NOT_READY; never return accepted, committed, empty context or missing-operation success.",
+          "userImpact": "S1 proves foundation only; complete memory requires downstream stories.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two differently spelled or symlinked paths resolve to the same data directory.",
+          "expected": "Canonical file identity yields one ownership winner; each contender owns a separate descriptor and closes only its own resources."
+        },
+        {
+          "input": "Two distinct nonoverlapping directories use the same host providers.",
+          "expected": "Ownership is independent. Serialization is per instance; the host is responsible for any required coordination across its instances/work, and no global scheduler is claimed."
+        },
+        {
+          "input": "Two copies of the package or two worker threads open the same root.",
+          "expected": "Do not rely on module-local JS singleton maps; OS descriptor-lock contention remains authoritative."
+        },
+        {
+          "input": "Concurrent close and drain calls or repeated close after success.",
+          "expected": "Admission closes once; all close callers observe a shared safe terminal outcome with no double-close or unlock of a reused fd."
+        },
+        {
+          "input": "Process crashes with only .owner.lock or an initialization temp file present.",
+          "expected": "A persistent lock pathname alone is not ownership. Recognized incomplete bootstrap metadata is recovered only after acquiring the same persistent lock; never unlink the lock to recover."
+        },
+        {
+          "input": "Empty/new root and no downstream memory capabilities yet.",
+          "expected": "Initialize only versioned layout/ownership metadata. Accept an existing nonempty root only if its recognized marker/layout is valid; no queue/Lance data or memory rows are invented."
+        },
+        {
+          "input": "Queued model request is cancelled; active request later rejects or ignores abort briefly.",
+          "expected": "Queued request never calls provider. Lane remains occupied until the active underlying call settles; rejection does not permanently poison later work."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Existing backend build steps and root src-to-out compilation remain intact; package builds first and does not widen rootDir or move backend outputs.",
+          "source": "c1"
+        },
+        {
+          "text": "sc1/sc2 remain package-owned and independent of daemon, registry, provider factory and index storage. S1 does not implement sibling story semantics.",
+          "source": "c2"
+        },
+        {
+          "text": "Host-owned providers/policy/logging are never closed by the module; no direct cloud REST or parallel provider dispatch is introduced.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, executed through tsx for TypeScript; existing exact lock test files use this pattern. Native ownership and packed-consumer gates run under an identified Node 22 binary, not the current Node 26 shell by accident.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Freeze sc1/sc2 compatibility and keep the package independent.",
+          "subjects": [
+            "Public API typecheck under strict NodeNext/exactOptionalPropertyTypes including explicit undefined optional fields and no SDK imports.",
+            "No backend src/config/daemon/db or workspace-root runtime files in emitted import/declaration closure or tarball.",
+            "Import in a clean child process changes no selected temp-root files, listener counts or active native/provider state; negative test verifies an eager addon/daemon import would be caught.",
+            "S1 unsupported methods consistently reject NOT_READY without policy/model calls, accepted receipts or successful empty reads."
+          ],
+          "fixturesNeeded": [
+            "Minimal external TS/ESM consumer using only public exports.",
+            "Fake host policy/logger/model ports with call counters; no live LLM required."
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove lifecycle and model concurrency safety independently of disk persistence semantics.",
+          "subjects": [
+            "Option shape/range failures occur before I/O; required ports and supplied-resource ownership are checked.",
+            "Concurrent close/drain and startup failure unwind once; injected logger failures cannot break cleanup.",
+            "Controllable complete+embed calls across several simulated consumers never exceed one underlying call, including queued cancellation, rejection, timeout and a provider ignoring abort.",
+            "An aborted wrapper does not admit the next provider call until the first underlying promise settles; close/drain do not report safe quiescence early.",
+            "Bounded dispatcher overload returns explicit BACKPRESSURE rather than growing without limit; monotonic drain deadline is tested with controlled timing."
+          ],
+          "fixturesNeeded": [
+            "Deferred provider promises recording start/settle and maximum active count.",
+            "Private lifecycle-participant doubles that simulate stuck/failed cleanup without importing s2/s3 implementations."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Qualify real descriptor ownership and recovery on each advertised runtime/filesystem.",
+          "subjects": [
+            "Two real instances in one process, two separately loaded package copies, two worker threads and two processes compete for the same root; exactly one succeeds.",
+            "Canonical path aliases contend; distinct nonoverlapping directories can coexist; symlink/hardlink lockfile or replaced inode is refused.",
+            "Force-kill an owning child and reacquire the persistent lock without deleting it; stop/resume a live owner and verify no timeout-based takeover.",
+            "Failed initialization/native callback ordering cannot close a reused fd or leak an owner; concurrent reopen stays excluded until safe close.",
+            "Bootstrap interruption before/after marker write recovers recognized incomplete layout only under ownership; arbitrary/index-like nonempty directories are refused.",
+            "Runtime/filesystem gate refuses unsupported configurations and reports unavailable native binding honestly."
+          ],
+          "fixturesNeeded": [
+            "Child-process and worker-thread fixture protocols with explicit READY/HOLD/RELEASE barriers rather than sleep-based races.",
+            "Dedicated local APFS/macOS and ext4/Linux CI roots, Node 22 >=22.22.1, native build toolchain.",
+            "Fault-injected native/fs adapter for precise failure timing plus real binding tests; fakes alone do not satisfy qualification."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Prove independent packed package consumption and preserve backend build integration.",
+          "subjects": [
+            "Build package independently; npm pack; install tarball and its declared runtime deps in an isolated directory outside repository resolution; import/typecheck/open/drain/close using public entry.",
+            "Run packed import with native package deliberately unavailable: import stays pure; explicit open fails NOT_READY.",
+            "The isolated consumer has no backend source, NODE_PATH override, workspace node_modules or inherited backend config; supplied host provider remains usable after close.",
+            "Root build runs package first and retains backend tsc/model checks/copy-assets and existing output paths. No npm publish or full sweep is triggered by packaging."
+          ],
+          "fixturesNeeded": [
+            "Disposable clean consumer manifest/lock with actual install log and runtime/ABI report.",
+            "Filesystem snapshots and child process exit checks to prove cleanup/no daemon startup."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Packed external consumer import/typecheck/open/drain/close under Node 22 with no backend files or daemon.",
+            "Import side-effect checks and NOT_READY behavior for foundation data methods.",
+            "Root build order and public dependency closure/exports tests."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Real same-process/package-copy/thread/process ownership contention and alias tests.",
+            "Distinct-root independence and host-resource preservation after close.",
+            "Forced owner death versus stopped live owner; incomplete drain and concurrent close safety."
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Fixed Node host with fs-ext descriptor ownership",
+        "oneLineSummary": "Use a small existing native flock binding inside a private Node-host adapter, keeping public host/service contracts independent of it.",
+        "approach": "Keep sc1/sc2 public ESM types free of native bindings and backend imports. Opening a Node-host instance dynamically loads the qualified fs-ext binding and acquires a nonblocking exclusive lock on a persistent private lock file in the canonical data directory. Each instance opens a distinct descriptor, including in worker threads; release closes only that instance's descriptor after its owned work has stopped.\n\nInitial supported storage is local macOS/Linux filesystems whose descriptor-lock semantics pass qualification; unsupported platforms/filesystems fail explicitly. No lease expiry, PID-file ownership or lock-file deletion is used to steal a live owner. The package supplies this one implementation rather than requiring every embedding application to invent ownership.",
+        "pros": [
+          "Reuses an existing narrow native binding while keeping its types and import side effects outside the public core entry.",
+          "Descriptor lifetime supplies crash release without stale-lease takeover or a daemon-owned shared-memory table.",
+          "Supports same-process, thread and process contention when distinct descriptors are qualified on the target platform."
+        ],
+        "cons": [
+          "Adds a native dependency and toolchain requirement whose Node 22 ABI and packaging must be verified before release.",
+          "macOS/Linux local-filesystem support is explicit; Windows and network filesystems are not promised by this adapter."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Package-owned Node-API descriptor-lock binding",
+        "oneLineSummary": "Keep the same contracts and descriptor ownership semantics but implement and maintain a minimal native binding in the memory package.",
+        "approach": "The private Node host owns a minimal Node-API addon exposing nonblocking descriptor flock and close/release operations. Public sc1/sc2, lifecycle states, directory canonicalization and module-local model dispatch remain the same.\n\nThis avoids reliance on the existing addon dependency but makes the feature responsible for native code, build tooling, ABI packaging and platform qualification. Local macOS/Linux support still needs the same exclusion and crash tests; Node-API alone does not supply Windows or network-filesystem ownership semantics.",
+        "pros": [
+          "The native surface could be restricted to exactly the ownership operations needed by the package.",
+          "Node-API can reduce direct V8 API coupling when implemented and packaged correctly."
+        ],
+        "cons": [
+          "Adds new native implementation and release-maintenance work with no additional memory capability.",
+          "Requires the same filesystem/concurrency qualification plus native-source review instead of reusing a narrow existing binding."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Can meet the same contracts but adds native implementation scope without additional user value."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "embedded-foundation-ownership",
+      "narrative": "S1 imports without I/O, acquires one directory guard only on explicit open, and releases ownership only after safe close. The facade exposes the shared types but data capabilities remain unavailable until their owning stories are implemented.",
+      "participants": [
+        {
+          "id": "host",
+          "label": "Embedding host",
+          "description": "Supplies policy, model interfaces, logger and isolated data path; retains ownership of these supplied resources."
+        },
+        {
+          "id": "factory",
+          "label": "MemoryFactory.open",
+          "description": "Validates configuration and loads the private Node host only when called."
+        },
+        {
+          "id": "guard",
+          "label": "Directory guard",
+          "description": "Owns a distinct descriptor holding a nonblocking exclusive flock on the persistent lock inode."
+        },
+        {
+          "id": "runtime",
+          "label": "Foundation runtime",
+          "description": "Coordinates readiness, draining, model-call tracking and close; never fakes data success."
+        }
+      ],
+      "messages": [
+        {
+          "from": "host",
+          "to": "factory",
+          "label": "Explicit open with host options",
+          "description": "Public package import has already completed without file or native binding access."
+        },
+        {
+          "from": "factory",
+          "to": "factory",
+          "label": "Validate configuration/runtime/filesystem",
+          "kind": "recurse",
+          "description": "Validation of required configuration occurs before directory creation; unsupported configurations fail explicitly."
+        },
+        {
+          "from": "factory",
+          "to": "guard",
+          "label": "Open safe lock file and acquire exclusive nonblocking ownership",
+          "description": "Canonical root/file identity checks and private per-instance descriptor; no PID/heartbeat takeover."
+        },
+        {
+          "from": "guard",
+          "to": "factory",
+          "label": "Ownership acquired or typed conflict",
+          "kind": "return",
+          "description": "Only successful acquisition permits a ready runtime; contender closes its own descriptor."
+        },
+        {
+          "from": "factory",
+          "to": "runtime",
+          "label": "Initialize foundation and unavailable-capability facade",
+          "description": "S1 creates no queue, Lance store or accepted operation."
+        },
+        {
+          "from": "runtime",
+          "to": "host",
+          "label": "Ready foundation MemoryService",
+          "kind": "return",
+          "description": "Data methods report NOT_READY; readiness is not a semantic-memory completion claim."
+        },
+        {
+          "from": "host",
+          "to": "runtime",
+          "label": "Drain then close",
+          "description": "Repeated/concurrent closes share one safe terminal result."
+        },
+        {
+          "from": "runtime",
+          "to": "runtime",
+          "label": "Stop admission and await owned-work quiescence",
+          "kind": "recurse",
+          "description": "An abort or deadline does not prove an underlying provider promise has settled."
+        },
+        {
+          "from": "runtime",
+          "to": "guard",
+          "label": "Close owned descriptor after safe cleanup",
+          "description": "Lock pathname remains; host-owned providers and logger are untouched."
+        },
+        {
+          "from": "guard",
+          "to": "runtime",
+          "label": "Ownership released",
+          "kind": "return",
+          "description": "Failed cleanup cannot manufacture verified release."
+        },
+        {
+          "from": "runtime",
+          "to": "host",
+          "label": "Closed",
+          "kind": "return",
+          "description": "No signal handler or child process lifecycle was installed by embedded runtime."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "package.json"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/context-evidence.json"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "docs/reqs/shared-project-memory.html"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "https://github.com/baudehlo/node-fs-ext"
+    },
+    {
+      "id": "c6",
+      "kind": "doc",
+      "ref": "https://man7.org/linux/man-pages/man2/flock.2.html"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "https://developer.apple.com/library/archive/documentation/System/Conceptual/ManPages_iPhoneOS/man2/flock.2.html"
+    },
+    {
+      "id": "c8",
+      "kind": "doc",
+      "ref": "https://docs.npmjs.com/cli/v11/using-npm/workspaces/"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "tsconfig.json"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/shared/locks/lock-manager.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/shared/locks/__tests__/lock-manager-threads.test.ts"
+    }
+  ]
+}

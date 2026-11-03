@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -80,6 +81,7 @@ export const STUB_DIR    = 'docs/stub';
  *  under-repo checks; this function is a low-level primitive.
  */
 export function writeAtomic(absPath: string, content: string): void {
+	assertNoSessionPersistence();
 	if (typeof absPath !== 'string' || absPath.length === 0) {
 		throw new Error(`writeAtomic: empty path`);
 	}
@@ -338,6 +340,7 @@ export function appendRunLog(
 	runId:    string,
 	record:   Record<string, unknown>,
 ): void {
+	assertNoSessionPersistence();
 	const path = runLogPathFor(epicHash, workflow, runId);
 	try {
 		mkdirSync(dirname(path), { recursive: true });
@@ -351,6 +354,7 @@ export function appendRunLog(
  *  a controller relays it via a monitor) — independent of whether the calling
  *  MCP client surfaces `notifications/progress`. Best-effort. */
 export function appendProgressLog(runId: string, op: string, phase: string, detail?: string): void {
+	assertNoSessionPersistence();
 	try {
 		const ts = new Date().toISOString().slice(11, 19);
 		const line = `[${ts}] ${op} ${runId} · ${phase}${detail !== undefined && detail.length > 0 ? ' — ' + detail : ''}\n`;
@@ -571,6 +575,7 @@ export type WorkItemHeadKind = 'DEF' | 'ISSUE' | 'LLD';
  *  `workItemKindOf` treats only an explicit `true` as standalone, and this read
  *  must not manufacture one. */
 function readArtifactCore(repoPath: string, artifactId: string): EpicDefinitionCore {
+	assertNoSessionPersistence();
 	const json = join(repoPath, ARTIFACTS_DIR, `${artifactId}.json`);
 	if (!existsSync(json)) return {};
 	try {

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: deleteSessionFromLance: empty sessionId is a no-op + zero counts
+ok 1 - deleteSessionFromLance: empty sessionId is a no-op + zero counts
+  ---
+  duration_ms: 3.584833
+  type: 'test'
+  ...
+# Subtest: deleteSessionFromLance: unknown sessionId returns zero counts
+ok 2 - deleteSessionFromLance: unknown sessionId returns zero counts
+  ---
+  duration_ms: 23.688583
+  type: 'test'
+  ...
+# Subtest: deleteSessionFromLance: removes only the targeted session across all 4 tables
+ok 3 - deleteSessionFromLance: removes only the targeted session across all 4 tables
+  ---
+  duration_ms: 149.0625
+  type: 'test'
+  ...
+# Subtest: deleteSessionFromLance: re-running on the same session is idempotent
+ok 4 - deleteSessionFromLance: re-running on the same session is idempotent
+  ---
+  duration_ms: 69.036209
+  type: 'test'
+  ...
+# Subtest: deleteSessionFromLance: SQL-injection-safe (apostrophes in sessionId)
+ok 5 - deleteSessionFromLance: SQL-injection-safe (apostrophes in sessionId)
+  ---
+  duration_ms: 73.622459
+  type: 'test'
+  ...
+# Subtest: compactSessionVecTables: succeeds when tables exist + have tombstones
+ok 6 - compactSessionVecTables: succeeds when tables exist + have tombstones
+  ---
+  duration_ms: 145.408917
+  type: 'test'
+  ...
+# Subtest: compactSessionVecTables: succeeds when no tables exist yet
+ok 7 - compactSessionVecTables: succeeds when no tables exist yet
+  ---
+  duration_ms: 4.254333
+  type: 'test'
+  ...
+# Subtest: compactSessionVecTables: idempotent (call twice, second is cheap)
+ok 8 - compactSessionVecTables: idempotent (call twice, second is cheap)
+  ---
+  duration_ms: 82.065042
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 877.766

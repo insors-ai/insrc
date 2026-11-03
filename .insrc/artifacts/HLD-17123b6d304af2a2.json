@@ -1,0 +1,1056 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1793536573467-3p0dt6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T12:44:30.543Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 497062,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "17123b6d304af2a2",
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.epic",
+      "stage": "design.epic",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The DEF's section-2 epic-level FRs (FR001-FR006) and the requirements doc's acceptance criteria AC-01..AC-32 (referenced in the HLD's Qualification/Requirements-acceptance-ownership sections) are a real, enumerable set and the HLD's traceability table assigns each to a lead story.",
+          "evidence": "docs/reqs/shared-project-memory.html lines 442-473 contain exactly AC-01 through AC-32 as real <tr id=\"AC-NN\"> rows with the described scenarios (e.g. AC-11 'Cross-project lookup', AC-30 'External embedded consumer', AC-32 'Cross-mode ownership and lifecycle'). The HLD's Requirements acceptance ownership table (section 'Qualification and traceability') assigns a Lead story to each of AC-01..AC-32, matching this real set one-to-one with no gaps. [files: docs/reqs/shared-project-memory.html, docs/epics/.../HLD.md]",
+          "action": "none — the traceability table rests on a real, complete AC inventory",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD's non-goal discipline (no daemon/indexer dependency in the reusable package) matches the DEF's explicit non-goal 'Add daemon/indexer dependencies to the reusable package', so the HLD does not design something the DEF ruled out.",
+          "evidence": "DEF.md:74 states the non-goal verbatim: 'Add daemon/indexer dependencies to the reusable package. — Independent external applications must consume the feature without insrc startup.' The HLD's Architecture-shape section repeats this explicitly: 'Do not import src/daemon, src/config, src/db connection singletons or global insrc PATHS from this package,' and S007's boundary states 'backend integration does not expose index/LMDB handles to the package.' [files: docs/epics/.../DEF.md, docs/epics/.../HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "\"The current root package.json has no workspace declaration and tsconfig.json compiles only src\" (Architecture shape, Package build and backend consumption).",
+          "evidence": "package.json has no `workspaces` key (grep for 'workspaces' in package.json returned no match) and its only build script is `tsc --inlineSources && node scripts/check-model-definitions.mjs && node copy-assets.mjs`. tsconfig.json has `rootDir: 'src'`, `include: ['src/**/*.ts','src/**/*.tsx']`, confirming it compiles only src. [files: package.json, tsconfig.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD's sc1/sc8 claim that insrc already has 'existing LLMProvider, role policy, registered repos and privacy restrictions' for an adapter to translate is true — i.e. an LLMProvider abstraction exists in the backend.",
+          "evidence": "src/shared/types.ts:187 declares `export interface LLMProvider { ... }`, referenced again at line 891 (`provider: LLMProvider`) and documented via `LLMProvider.runReviewSession` at line 243 — confirming the abstraction the HLD says insrc adapters must translate into the package's injected ModelPort really exists. [files: src/shared/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "packages/project-memory is genuinely new work — no such package or equivalent reusable memory module already exists in the repo that the HLD should instead be extending.",
+          "evidence": "Glob for packages/** and src/**/memory*/** both returned no files. The only prior art is docs/cross-session-agent-memory-spec.md, explicitly marked 'Status: Proposed specification — not implemented or runtime-qualified' (line 3), describing scattered partial mechanics (src/db/conversations.ts, src/db/directives.ts regex extraction, src/config/feedback.ts heuristic LLM generalization) that were never wired into an automatic capture/recall path ('automatic recall callers were not found'). The requirements doc (docs/reqs/shared-project-memory.html:74) explicitly supersedes that earlier spec's LMDB-authority direction in favor of the new LanceDB-only module, so building new rather than extending the old partial mechanics is the documented, approved direction, not an unexamined duplication. [files: docs/cross-session-agent-memory-spec.md, docs/reqs/shared-project-memory.html]",
+          "action": "none — verified there is no existing reusable module being wrongly reinvented; the supersession is explicit and sourced",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Root package.json and package-lock.json are correctly identified as the s1 change sites needed to introduce an npm workspace, since no workspace infrastructure exists yet to conflict with or be duplicated by this change.",
+          "evidence": "package.json (read in full) has `dependencies`/`devDependencies`/`scripts`/`bin` only — no `workspaces` field and no reference to any packages/ directory, confirming the HLD's premise that this is new orchestration work, not a duplicate or conflicting change site. [files: package.json]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The HLD does not redesign functionality already owned by another approved Epic/Story or by an existing shared contract — in particular it does not quietly re-architect the existing conversation/session storage (src/db/conversations.ts) or the existing directive-extraction code (src/db/directives.ts), which belong to prior, separately-scoped work.",
+          "evidence": "The HLD explicitly scopes those files out: 'Do not import src/daemon, src/config, src/db connection singletons or global insrc PATHS from this package' and the Rollout section states 'Existing index stores, conversation persistence and daemon IPC contracts remain intact; memory data directory is distinct. No implicit historical import.' docs/cross-session-agent-memory-spec.md:57-60 independently confirms src/db/conversations.ts and src/db/directives.ts are existing, separately-owned mechanics that this HLD does not claim to modify or absorb — it builds an independent new package instead. [files: docs/epics/.../HLD.md, docs/cross-session-agent-memory-spec.md, src/db/conversations.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Admission-and-queue-contract section's failure handling ('Recover only a demonstrably incomplete final frame by truncating to the last verified boundary; non-tail corruption is isolated and fails closed with explicit affected-operation status rather than silently skipped') matches a real, non-contradicted requirement rather than being invented or weaker than the governing requirements doc.",
+          "evidence": "docs/reqs/shared-project-memory.html Q-02 (line 173) states verbatim: 'Startup MUST recover complete accepted frames. An incomplete final frame may be isolated using the qualified recovery procedure. Mid-segment corruption MUST be reported and quarantined; recovery must not skip unknown accepted content silently.' The HLD's phrasing ('fails closed with explicit affected-operation status rather than silently skipped') is a faithful, slightly stricter restatement — not a weakening or contradiction of the source requirement. [files: docs/reqs/shared-project-memory.html, docs/epics/.../HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Requirements-acceptance-ownership table's per-AC 'Test responsibility' description is a faithful paraphrase of the actual AC text in the requirements doc, not a mismatched or invented mapping (spot-checked AC-11, AC-29, AC-30, AC-32).",
+          "evidence": "HLD table: AC-11 lead s5 'Scope isolation across candidates/evidence/context' vs source AC-11 (line 452) 'Cross-project lookup... Other-project content is excluded from candidate results, source excerpts and final briefing' — matches. AC-29 lead s3 'Independent store/cleanup paths' vs source AC-29 (line 470) 'Independent memory and index stores... Unsafe overlapping cleanup paths are refused' — matches. AC-30 lead s5 'Complete external embedded consumer flow' vs source AC-30 (line 471) 'External embedded consumer... completes capture, processing, context retrieval, correction and forgetting' — matches. AC-32 lead s6 'Cross-mode ownership, import and shutdown lifecycle' vs source AC-32 (line 473) 'Embedded and standalone instances competing for one directory cannot obtain two writers... Import is side-effect-free; graceful stop and forced termination preserve accepted work' — matches. [files: docs/reqs/shared-project-memory.html, docs/epics/.../HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 9,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T13:00:25.134Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T15:15:13.817Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "One independently consumable memory package provides the complete ingestion, reconciliation, lifecycle and recall service. A host can run it in process or expose the same service through a private local IPC endpoint. insrc contributes adapters for its registered projects, providers and clients; it does not own the core package's runtime."
+    },
+    "frameworkSummary": "Choose a1: ports-and-adapters library with optional local service host. The library owns one queue, one context-builder processing loop and one dedicated Lance connection per resolved data directory. Admission, project policy and source identity are common to both hosts. Standalone and embedded execution must pass the same behavioral and failure suite. [[c1]] [[c2]]",
+    "architectureShape": "## Proposed package and hosting boundary\nAll package names and paths in this section are proposed, not existing code. Add an independently built ESM package at packages/project-memory with its own package.json, tsconfig, emitted types, packaged schema/prompt assets, focused tests and distribution smoke test. Proposed import name @insrc/project-memory exports the embedded factory and public types; @insrc/project-memory/ipc exports a lightweight client which does not import or open Lance. A node-host entry supplies queue and dedicated Lance adapters. The insrc-memory executable is separately exported by that package and owns process-level handlers only when invoked. Do not import src/daemon, src/config, src/db connection singletons or global insrc PATHS from this package. Node and native Lance compatibility are checked against the actual supported package runtime before release; dependency counts and footprint include Lance rather than describing the entire feature as tiny.\nA trusted local bootstrap adapter supplies ModelPort, project policy, limits and logging for standalone operation (explicit config/adapter module, never loaded from IPC input). Ship a documented independent local-provider example and external consumer fixture; no running daemon, index or registry is required. In insrc, an adapter outside the package translates the existing LLMProvider, role policy, registered repos and privacy restrictions. A host may embed one instance or connect to a standalone instance, but must not accidentally run both over the same directory. Both modes use the same application service; no mandatory child process in embedded mode.\n\n\n## Package build and backend consumption\nThe current root package.json has no workspace declaration and tsconfig.json compiles only src. The proposed s1 integration is a minimal npm workspace for packages/project-memory, with its own package.json, strict NodeNext tsconfig, public exports/types, scripts and packaged prompt/schema assets. No additional monorepo build framework is required. Root package.json and package-lock.json become explicit s1 change sites: npm installation links the workspace, and the root build orchestrates the package build before the existing backend tsc/model-definition/copy-assets pipeline. Backend adapters consume the package export, not its TypeScript sources; rootDir remains src. The package declares its own runtime dependencies and build/test commands and must pass npm pack plus installation in a separate minimal Node application without backend source or node_modules. s1's LLD defines exact scripts, dependency versions and native-module packaging evidence; the architectural choice is npm workspace orchestration plus independently consumable package output, not an implicit unresolved toolchain.\n\n## Dependency and relationship directions\nExternal application -> embedded MemoryService (many callers to one hosting instance). Remote clients -> IPC transport -> the same MemoryService (many clients to one instance). Service -> queue ingress (one serialized appender) -> context-builder worker (one store mutation owner) -> dedicated Lance connection (one memory database). Recall -> qualified committed snapshots (many side-effect-free reads). Core -> injected model/policy/logging ports; insrc adapter -> core, never the reverse. Multiple directories are independent instances with separate locks/queues/connections. Ownership is an OS-held process guard for the canonical existing directory, not merely a PID file; aliases/symlinks are resolved, parent containment with index and queue cleanup paths is validated and dead-process recovery never steals a live lock. Exact lock primitive and cross-platform support are qualification gates for s1.\nLifecycle: import performs no I/O; open validates binding/config, acquires ownership and recovers queue/store before readiness. Stop closes admission, drains to a deadline, leaves unfinished accepted events replayable, closes owned handles and releases ownership. A remote disconnect affects only that client. A timeout/cancellation cannot erase a durably accepted command; clients query its stable operation identity.\n\n## Admission and queue contract\nHost policy runs before durable persistence; deny private/temporary input and unbound scope. Assign string sequence numbers, scoped operation identity, source version and payload hash; same identity with different content is a conflict. A JSONL frame carries bounded payload, checksum and format version. Serialized append must finish writes, fsync the file, and synchronize new file/rename directory entries as qualified before returning accepted. Group commit is permitted only if every acknowledged frame is included in that sync. Size seals a segment; unresolved work is never evicted for disk limits. Backpressure is visible.\nCheckpoint/manifest replacement uses a compatible atomic-file helper or the qualified native temp/fsync/rename sequence, including required directory sync. It is an accelerator, not authority for whether inference/store mutation committed. Recover only a demonstrably incomplete final frame by truncating to the last verified boundary; non-tail corruption is isolated and fails closed with explicit affected-operation status rather than silently skipped. Recycle a sealed file only when all contained events have durably resolved outcomes. Quarantine payloads, retries, retention and backups remain privacy-governed.\n\n## Processing, consistency and mutable memory\nOne serialized context-builder execution path schedules extraction, local embedding, reconciliation, commit and maintenance. The package must provide a module-local serialized model dispatcher covering worker, read/query embedding and maintenance requests; serial awaits in one worker alone do not prevent concurrent read calls from overlapping. No reusable global model-concurrency scheduler is established by the current grounding. insrc per-role routing selects models; its serial-await convention is not a runtime mutex. The s7 LLD must explicitly design and qualify host-side admission/coordination with existing daemon model work before enabling that integration, without assuming an existing scheduling component. This can require a new adapter-level gate or cooperation with existing job lanes; a module-local dispatcher alone cannot prove cross-host non-overlap. All coordination remains outside the reusable core's daemon dependency boundary. Slow model work holds no database transaction. Bounded retries expose failure/quarantine; unrelated scopes may proceed, but corrections/forgetting cannot pass earlier same-scope or source-dependent work unsafely.\nKeep sources separate from canonical memory. Normalize atomic type, scope, conditions, polarity, identifiers, authority and evidence before scoped exact/hash/lexical/semantic candidate comparison. Classify equivalent, expanded, corrected, superseded, conflicted, related or new; nearest-neighbor similarity alone never merges. Validate compression against original typed facts, retain uncertainty and reject lossy activation. Structured explicit instructions bypass extraction only, preserving policy, guards and receipt processing. Reported tool output or recalled approval cannot become a new authorizing instruction.\nThe proposed physical commit unit is a single typed Lance table: current, revision, source, evidence, receipt, tombstone, control/generation and delivery rows with stable IDs, nullable embedding fields where qualified. Prepare one event's full row set and apply it with one qualified table mutation, including receipt and generation. Single writer validates expected revisions, duplicate keys and subject lifecycle before commit. No general multi-table transaction is assumed. After a lost response, inspect the committed receipt before repeating inference; after commit repair queue completion rather than reapply effects. If installed Lance cannot meet the documented atomicity, nullable-vector and read consistency contract, stop s3 for a reviewed design amendment rather than split authority across stores.\nRead context from one committed version; multi-query assembly pins a qualified table version or retries on generation change. Cache by project/scope/policy/provider budget and generation. Re-evaluate time eligibility on reads and expire cached bundles at the earliest applicable validity boundary, even when no new commit changes the generation. Invalidate on any relevant commit, correction or forgetting. Directives use scalar/current snapshots; hybrid recall returns authoritative content in the same query, with scope/lifecycle filters applied before ranking limits. Pending after-operation barriers wait to deadline or report a typed result, never return stale success.\n\n## Forgetting, evidence and compatibility\nA project owns many sessions/memories/events; a session owns admitted spans; a memory owns revisions; evidence joins revisions to spans many-to-many. Event identity maps to at most one committed receipt; retain replay barriers beyond queue recycling. Logical deletion atomically hides current/derived content and publishes minimal tombstones; source-scoped forgetting invalidates dependent memories, summaries, caches and future replay. Physical purge accounts separately for old Lance versions, queue segments/quarantine, native transcripts and backups. Never claim removal outside the module's control. Receipts/tombstones cannot be compacted until producer replay watermarks or explicit stale-event rejection make it safe.\nVersion public API, IPC, frame/schema, normalizer and embedding metadata. No silent import of existing transcript/vector stores. A migration/re-embedding command is resumable through the same writer and preserves source identity, deletion guards and reader freshness. Full command payload schemas, Arrow fields and migration compatibility belong to the owning LLD before implementation.\n\n## Local IPC and integration\nUse bounded versioned JSON-RPC framing over an OS-private local endpoint; same-host single-user scope, no TCP listener or implied multi-user security. Unix sockets require protected directory/endpoint permissions; Windows support, if shipped, requires named-pipe ACL qualification and parity, otherwise declare the release's supported platforms explicitly. Reject oversized/unknown/version-mismatched requests, cap connections and in-flight work and propagate deadlines. Idempotent retries retain command identity; transport request IDs are not operation IDs. Admin drain/stop belongs to explicit host management, not an unauthenticated per-client close method.\nManaged session adapters own capture for managed runs; native hooks do not recapture them. Native adapters own independent CLI deltas; MCP explicit capture is not proof of automatic per-turn capture or mandatory context delivery. Capability matrix is installed-version-specific. No transcript/schema/hook support is asserted until live qualified. Inspector/edit/forget UI layout is deferred to s7's LLD with necessary UX definitions; this HLD introduces no panel layout. Existing VS Code/JetBrains and CLI/MCP consume insrc adapters through IPC, never by opening memory storage.\n\n## Qualification and traceability\nThe authoritative requirements input is docs/reqs/shared-project-memory.html (all numbered requirements and AC-01 through AC-32), constrained by the approved DEF. Owning LLDs must trace their cases to these requirements. Foundation public contracts are owned by s1 so later stories never force reverse dependencies. Later interfaces remain private to their owner unless named below. s1 demonstrates external package import/lifecycle; complete functional service parity is evaluated after s6, not claimed from foundation scaffolding. All open implementation decisions OD-01 through OD-11 require evidence in their owning LLD; no benchmark, hook or atomicity claim is established by this HLD.\n\n## Requirements acceptance ownership\nEach requirements-document AC has exactly one lead story accountable for its final integrated test and evidence. Supporting stories supply focused component evidence; they do not replace the lead owner. Every story also retains its own approved DEF ac1/ac2/ac3 criteria. Foundation s1 owns the external-consumer harness, import/lifecycle, package isolation and ownership primitives; complete consumer and cross-mode cases necessarily finish after their downstream capabilities exist, under s5/s6. s9 reruns the full matrix at the release sweep without claiming all these integrated cases passed during s1. LLDs must preserve this allocation and enumerate concrete positive/failure tests; build records must link their actual results.\n\n| Requirements case | Lead story | Supporting stories | Test responsibility |\n| --- | --- | --- | --- |\n| AC-01 | s7 | s4, s5, s6 | Managed Claude/Codex/Vibe/Ollama handoff |\n| AC-02 | s4 | s3, s5 | Canonical paraphrase/evidence deduplication |\n| AC-03 | s4 | s3 | Fact/directive/product-decision separation |\n| AC-04 | s4 | s3 | Qualifier and negation fidelity |\n| AC-05 | s4 | s3, s5 | Explicit supersession and lineage |\n| AC-06 | s4 | s3, s5 | Inspectable unsettled conflicts |\n| AC-07 | s4 | s3 | Exact duplicate identity beyond ANN candidates |\n| AC-08 | s4 | s3 | Bounded reference resolution |\n| AC-09 | s4 | s2, s3 | Occurrence-time normalization |\n| AC-10 | s5 | s3, s4 | Exact identifier/path retrieval |\n| AC-11 | s5 | s1, s3, s7 | Scope isolation across candidates/evidence/context |\n| AC-12 | s7 | s4, s8 | No captured-context or assistant-authority feedback loop |\n| AC-13 | s4 | s2, s3 | Malformed inference/embedding failure outcomes |\n| AC-14 | s3 | s1, s2, s6 | Queue/store crash boundaries and idempotent committed effects |\n| AC-15 | s2 | s1, s3 | Segment rotation/tail/corruption recovery |\n| AC-16 | s2 | s1 | Backpressure without pending-event eviction |\n| AC-17 | s5 | s3, s4 | Revision/deletion read and cache freshness |\n| AC-18 | s5 | s3, s9 | Time-based expiry without a generation-changing write |\n| AC-19 | s3 | s2, s4, s5, s9 | Replay-safe forgetting and derived-context invalidation |\n| AC-20 | s9 | s2, s3, s5 | Logical deletion and honest physical-purge accounting |\n| AC-21 | s2 | s1, s3, s6 | Ownership guard and concurrent ingress |\n| AC-22 | s7 | s2, s6, s8 | Source rotation/detach/reconnect identity and durability |\n| AC-23 | s8 | s6, s7 | Version-qualified native hook/resume/compaction behavior |\n| AC-24 | s5 | s7, s8 | Mandatory-directive overflow and actual invocation budget |\n| AC-25 | s7 | s1, s2, s4, s8 | Pre-persistence temporary/private-execution refusal |\n| AC-26 | s9 | s3, s4, s5 | Deletion-preserving model/schema/embedding migration |\n| AC-27 | s4 | s1, s3 | Structured command bypasses extraction, not guards |\n| AC-28 | s5 | s1, s3, s6 | Store unavailable versus valid empty result |\n| AC-29 | s3 | s1, s9 | Independent store/cleanup paths |\n| AC-30 | s5 | s1, s2, s3, s4 | Complete external embedded consumer flow |\n| AC-31 | s6 | s1, s2, s3, s4, s5 | Daemon-stopped IPC and complete embedded/IPC parity |\n| AC-32 | s6 | s1, s2, s3 | Cross-mode ownership, import and shutdown lifecycle |\n",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Host ports and package lifecycle",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "purpose": "Versioned dependency boundary for independent embedded execution; no backend imports, implicit globals or ownership of supplied providers. All module model requests use a module-local dispatcher; supplied ports do not imply an existing daemon-wide scheduler.",
+        "interfaceSketch": "type Json = null | boolean | number | string | Json[] | { [key: string]: Json };\ninterface ProjectBinding { projectId: string; root: string; scopeEpoch: string; }\ninterface ModelRequest { role: 'normalize' | 'reconcile' | 'compress' | 'validate'; input: Json; schema: Json; signal: AbortSignal; }\ninterface ModelPort { complete(request: ModelRequest): Promise<Json>; embed(text: string, signal: AbortSignal): Promise<readonly number[]>; readonly embeddingModel: string; readonly embeddingDimension: number; }\ninterface HostPolicy { bind(projectId: string, sessionId?: string): Promise<ProjectBinding>; admit(binding: ProjectBinding, event: Json): Promise<Json>; }\ninterface MemoryOptions { dataDirectory: string; models: ModelPort; policy: HostPolicy; logger: MemoryLogger; limits: MemoryLimits; }\ninterface MemoryLogger { write(level: 'debug' | 'info' | 'warn' | 'error', event: string, fields: Record<string, string | number | boolean>): void; }\ninterface MemoryLimits { maxEventBytes: number; maxPendingBytes: number; segmentBytes: number; modelTimeoutMs: number; }\ninterface MemoryLifecycle { ready(): Promise<void>; drain(deadlineMs: number): Promise<DrainResult>; close(): Promise<void>; }\ninterface DrainResult { completed: boolean; pending: number; }\ninterface MemoryFactory { open(options: MemoryOptions): Promise<MemoryService>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc2",
+        "name": "Application service and domain wire types",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "purpose": "One versioned typed command/query model shared by embedded, IPC and insrc adapters; all mutation paths enqueue.",
+        "interfaceSketch": "type OperationState = 'accepted' | 'processing' | 'committed' | 'failed' | 'quarantined' | 'cleanup-pending';\ninterface Scope { projectId: string; sessionId?: string; branch?: string; environment?: string; }\ninterface SourceIdentity { producerId: string; eventId: string; sessionId: string; turnId: string; sourceVersion: string; }\ninterface MemoryCommand { version: 1; scope: Scope; source: SourceIdentity; kind: 'capture' | 'correct' | 'forget' | 'resolve' | 'maintenance' | 'delivery'; payload: Json; expectedRevision?: string; }\ninterface OperationReceipt { operationId: string; eventId: string; state: OperationState; generation?: string; errorCode?: string; }\ninterface ReadRequest { scope: Scope; budgetTokens: number; afterOperationId?: string; deadlineMs?: number; }\ninterface SearchRequest extends ReadRequest { query: string; limit: number; }\ninterface InspectRequest { scope: Scope; memoryId: string; }\ninterface ContextResult { generation: string; items: readonly MemoryView[]; overflow: boolean; degraded: boolean; }\ninterface MemoryView { id: string; revision: string; kind: string; text: string; status: string; sourceIds: readonly string[]; }\ninterface OperationRequest { scope: Scope; operationId: string; }\ninterface MemoryService extends MemoryLifecycle { submit(command: MemoryCommand): Promise<OperationReceipt>; context(request: ReadRequest): Promise<ContextResult>; search(request: SearchRequest): Promise<ContextResult>; inspect(request: InspectRequest): Promise<Json>; operation(request: OperationRequest): Promise<OperationReceipt>; }\ninterface MemoryFailure { code: 'INVALID_REQUEST' | 'UNBOUND_PROJECT' | 'POLICY_DENIED' | 'BACKPRESSURE' | 'NOT_READY' | 'UNSUPPORTED_VERSION' | 'OWNERSHIP_CONFLICT' | 'REVISION_CONFLICT' | 'STORE_UNAVAILABLE' | 'CONTEXT_OVERFLOW' | 'DEADLINE_EXCEEDED'; retryable: boolean; operationId?: string; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc3",
+        "name": "Durable ingestion and replay",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s3",
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "purpose": "Serialize admission, expose durable event identity and safely recycle only fully resolved segments.",
+        "interfaceSketch": "interface QueueFrame { formatVersion: 1; sequence: string; operationId: string; command: MemoryCommand; checksum: string; payloadHash: string; }\ninterface QueueCursor { segmentId: string; byteOffset: string; }\ninterface QueueStats { pendingBytes: number; oldestPendingMs: number; pendingEvents: number; }\ninterface DurableQueue { append(command: MemoryCommand): Promise<OperationReceipt>; replay(): AsyncIterable<QueueFrame>; markResolved(operationId: string, generation: string): Promise<void>; stats(): QueueStats; seal(): Promise<void>; recycleResolvedSegments(): Promise<void>; close(): Promise<void>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc4",
+        "name": "Single-writer atomic memory commit",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s4",
+          "s5",
+          "s6",
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "purpose": "Bind canonical transitions, provenance, generation, deletion protection and processing outcome in a qualified single-table commit.",
+        "interfaceSketch": "interface CommitPlan { operationId: string; scope: Scope; expectedGeneration: string; rows: readonly TypedMemoryRow[]; }\ninterface TypedMemoryRow { rowId: string; rowKind: 'current' | 'revision' | 'source' | 'evidence' | 'receipt' | 'tombstone' | 'control' | 'delivery'; projectId: string; payload: Json; embedding?: readonly number[]; }\ninterface CommittedSnapshot { version: string; generation: string; }\ninterface MemoryStore { receipt(scope: Scope, operationId: string): Promise<OperationReceipt | null>; snapshot(scope: Scope): Promise<CommittedSnapshot>; commit(plan: CommitPlan): Promise<OperationReceipt>; current(scope: Scope, snapshot: CommittedSnapshot): Promise<readonly MemoryView[]>; close(): Promise<void>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc5",
+        "name": "Semantic reconciliation and fidelity validation",
+        "ownedByStory": "s4",
+        "consumedByStories": [
+          "s5",
+          "s6",
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "purpose": "Produce meaning-preserving canonical changes; structured commands bypass extraction but never validation or commit guards.",
+        "interfaceSketch": "type Reconciliation = 'equivalent' | 'expand' | 'correct' | 'supersede' | 'conflict' | 'related' | 'new' | 'incomplete';\ninterface Candidate { kind: string; text: string; scope: Scope; polarity: string; conditions: readonly string[]; authority: string; sourceIds: readonly string[]; }\ninterface ReconciledCandidate { candidate: Candidate; relation: Reconciliation; targetId?: string; validation: 'faithful' | 'uncertain' | 'rejected'; }\ninterface SemanticProcessor { process(frame: QueueFrame, snapshot: CommittedSnapshot, signal: AbortSignal): Promise<readonly ReconciledCandidate[]>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc6",
+        "name": "Scoped recall and generation-aware context",
+        "ownedByStory": "s5",
+        "consumedByStories": [
+          "s6",
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "purpose": "Return bounded current directives, handoff and traceable deep recall with explicit freshness and overflow outcomes.",
+        "interfaceSketch": "interface RecallService { context(request: ReadRequest): Promise<ContextResult>; search(request: SearchRequest): Promise<ContextResult>; inspect(request: InspectRequest): Promise<Json>; invalidate(projectId: string, committedGeneration: string): void; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc7",
+        "name": "Independent local IPC service and client",
+        "ownedByStory": "s6",
+        "consumedByStories": [
+          "s7",
+          "s8",
+          "s9"
+        ],
+        "purpose": "Transport-neutral semantic parity with bounded versioned framing, private endpoint and reconnect-safe idempotency.",
+        "interfaceSketch": "interface IpcRequest { protocolVersion: 1; requestId: string; method: 'submit' | 'context' | 'search' | 'inspect' | 'operation' | 'status'; params: Json; }\ninterface IpcResponse { protocolVersion: 1; requestId: string; result?: Json; error?: MemoryFailure; }\ninterface IpcHostOptions { endpoint: string; maxFrameBytes: number; maxInFlight: number; requestTimeoutMs: number; }\ninterface MemoryIpcHost { listen(service: MemoryService, options: IpcHostOptions): Promise<void>; close(): Promise<void>; }\ninterface MemoryIpcClient { connect(options: IpcHostOptions): Promise<MemoryServiceClient>; }\ninterface MemoryServiceClient { submit(command: MemoryCommand): Promise<OperationReceipt>; context(request: ReadRequest): Promise<ContextResult>; search(request: SearchRequest): Promise<ContextResult>; inspect(request: InspectRequest): Promise<Json>; operation(request: OperationRequest): Promise<OperationReceipt>; disconnect(): Promise<void>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc8",
+        "name": "insrc-managed capture and context adapter",
+        "ownedByStory": "s7",
+        "consumedByStories": [
+          "s8",
+          "s9"
+        ],
+        "purpose": "Bind existing registered repo/session policy and provider abstraction to the standalone module without reversing dependency direction. The owning s7 LLD must define and qualify coordination with daemon model work; role selection and serial-await conventions are not a runtime scheduling gate.",
+        "interfaceSketch": "interface ManagedTurnBinding { scope: Scope; source: SourceIdentity; persistence: 'durable' | 'prohibited'; captureOwner: 'managed' | 'native'; }\ninterface DeliveryOutcome { state: 'prepared' | 'delivered' | 'failed' | 'unsupported'; generation?: string; reasonCode?: string; }\ninterface ManagedMemoryAdapter { capture(binding: ManagedTurnBinding, delta: Json): Promise<OperationReceipt>; prepare(binding: ManagedTurnBinding, budgetTokens: number): Promise<ContextResult>; recordDelivery(binding: ManagedTurnBinding, outcome: DeliveryOutcome): Promise<OperationReceipt>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc9",
+        "name": "Native agent capability and capture ownership",
+        "ownedByStory": "s8",
+        "consumedByStories": [
+          "s9"
+        ],
+        "purpose": "Qualify per-agent installed-version capture and context delivery without inferring unsupported automatic hooks from MCP availability.",
+        "interfaceSketch": "interface AgentCapability { agent: 'claude' | 'codex' | 'vibe'; version: string; capture: 'hook' | 'explicit' | 'unsupported'; context: 'hook' | 'explicit' | 'unsupported'; transcriptVersion?: string; }\ninterface NativeMemoryAdapter { capabilities(): Promise<AgentCapability>; capture(source: SourceIdentity, scope: Scope, delta: Json): Promise<OperationReceipt>; prepare(request: ReadRequest): Promise<DeliveryOutcome>; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc10",
+        "name": "Maintenance and quality evidence",
+        "ownedByStory": "s9",
+        "consumedByStories": [],
+        "purpose": "Deletion-safe retention, migration and duplicate review through the same worker; measured release criteria for the complete feature.",
+        "interfaceSketch": "interface MaintenanceRequest { kind: 'expire' | 'purge' | 'reembed' | 'compact' | 'reconcile-duplicates' | 'migrate'; scope: Scope; expectedGeneration: string; options: Json; }\ninterface MaintenanceResult { operationId: string; logicalComplete: boolean; physicalComplete: boolean; backupLimitations: readonly string[]; }\ninterface QualityEvidence { suiteVersion: string; fidelityFailures: number; falseAuthoritativeMerges: number; scopeLeaks: number; acceptedEventsLost: number; }",
+        "assumptions": []
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Private lifecycle state machine, directory canonicalization and OS ownership guard. Public v1 types describe the final service; incremental builds must report unsupported/not-ready behavior explicitly rather than accept unimplemented work. Module-local model dispatch serialization is private to this foundation and covers all callers, including read embeddings."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Private segment framing, append/fsync scheduling, checkpoint replacement, tail recovery and disk accounting. Producer source keys are retained through authoritative store receipts; queue recycling alone never authorizes forgetting retry identity."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Private Arrow/Lance physical row encoding, receipt lookup, single-table commit, current generation, revision checks and tombstone matching. No other story obtains a direct mutation handle."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Private bounded source-context expansion, slot normalization, candidate retrieval, authority and equivalence classification, fidelity checks and serial model scheduling. No normalization result becomes active before the guarded store commit."
+      },
+      {
+        "storyId": "s5",
+        "owns": [
+          "sc6"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5"
+        ],
+        "internal": "Private exact/lexical/vector ranking, mandatory-directive selection, generation-keyed caches and budget packing. Inspect and search share project binding and deletion filters."
+      },
+      {
+        "storyId": "s6",
+        "owns": [
+          "sc7"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6"
+        ],
+        "internal": "Private local-socket framing, connection limits, version handshake, transport cancellation and process signal handling in the executable only. Embedded API import installs no handlers. Remote client disconnect never stops the server."
+      },
+      {
+        "storyId": "s7",
+        "owns": [
+          "sc8"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7"
+        ],
+        "internal": "Private insrc registry binding, temporary-execution refusal, host provider translation and managed turn ownership. VS Code/JetBrains/MCP remain IPC clients; backend integration does not expose index/LMDB handles to the package. This story owns the explicit host admission/coordination design for daemon and memory model work; no existing global scheduler is assumed."
+      },
+      {
+        "storyId": "s8",
+        "owns": [
+          "sc9"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7",
+          "sc8"
+        ],
+        "internal": "Private CLI-version qualification, trusted hook bootstrap, incremental transcript parser, local spool qualification and capability reporting. Adapter installation requires explicit host configuration; user approval and tool transcripts are not promoted to standing directives."
+      },
+      {
+        "storyId": "s9",
+        "owns": [
+          "sc10"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4",
+          "sc5",
+          "sc6",
+          "sc7",
+          "sc8",
+          "sc9"
+        ],
+        "internal": "Private retention planning, purge accounting, Lance version cleanup, migrations, source-qualified lesson proposals and corpus evaluation orchestration. No maintenance timer writes outside the command/worker path."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Bound source expansion, event size, pending disk bytes, candidate counts, model timeouts, IPC frames and context token budgets. Queue acceptance latency measures append+fsync separately from semantic commit latency. Initial target is bounded memory and nonblocking request handling; p50/p95 acceptance, commit, recall and cold-open thresholds must be measured on named hardware/corpus in LLDs before release. Accuracy takes precedence over throughput. Embedding/model calls are serial; cached reads perform no inference.",
+      "security": "Project/session binding and eligibility before enqueue; per-request scope validation and local endpoint access restrictions. No raw prompts/queue content in routine logs. Memory is subordinate context; no hidden reasoning, credentials or automatic cloud REST. Different projects and directories remain isolated. Temp/session-memory execution restrictions remain enforced in insrc and explicit equivalent policy is required of other hosts.",
+      "observability": "Bounded metadata: operation/event identity, project pseudonym, queue backlog/oldest age, processing stage/retries, generation, duration, privacy-safe failure code and capture/delivery capability state. Distinguish unavailable/empty, accepted/committed, prepared/delivered, logical delete/physical cleanup. Provide explicit inspection rather than routine payload logging.",
+      "durability": "No acknowledged event loss in the supported crash model; at-least-once replay with idempotent committed effects. OS process death, partial writes, fsync failure, lost IPC replies, commit-before-ack, ownership contention and shutdown require fault-injection evidence. Disk/controller failure outside the qualified fsync contract and external native transcript/backups have explicit limits. Lance atomicity/reader freshness are mandatory s3 evidence gates, not assumptions."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "A — Independent durable foundation",
+          "includesStories": [
+            "s1",
+            "s2",
+            "s3"
+          ],
+          "rationale": "Establish package/host contracts and ownership before durable admission and qualified atomic replay. Demonstrate external consumption without insrc first; foundation alone does not claim semantic functionality.",
+          "backwardCompat": "Existing index stores, conversation persistence and daemon IPC contracts remain intact; memory data directory is distinct. No implicit historical import.",
+          "featureFlag": null
+        },
+        {
+          "name": "B — Canonical meaning and recall",
+          "includesStories": [
+            "s4",
+            "s5"
+          ],
+          "rationale": "Guarded store and receipt contracts precede semantic activation, correction/forgetting and generation-consistent context. Evaluate all meaning-preservation cases before enabling automatic capture.",
+          "backwardCompat": "Provider identity is provenance rather than a memory partition. Native authentication/execution loops remain unchanged; no stale context fallback.",
+          "featureFlag": null
+        },
+        {
+          "name": "C — Standalone service and managed integration",
+          "includesStories": [
+            "s6",
+            "s7"
+          ],
+          "rationale": "Prove complete embedded/IPC parity and service independence, then connect managed insrc sessions and its current IDE/CLI/MCP clients.",
+          "backwardCompat": "Integration adds a memory adapter without giving clients storage handles or changing indexer registration semantics. Failed/missing memory is explicit; mandatory context failures cannot be hidden.",
+          "featureFlag": null
+        },
+        {
+          "name": "D — Qualified native adapters",
+          "includesStories": [
+            "s8"
+          ],
+          "rationale": "Native hooks depend on stable capture, delivery and transport ownership contracts already exercised by managed sessions.",
+          "backwardCompat": "Version-qualified hooks coexist with native session history; MCP fallback remains explicit. No global/private history import or duplicate managed capture.",
+          "featureFlag": null
+        },
+        {
+          "name": "E — Lifecycle and release evidence",
+          "includesStories": [
+            "s9"
+          ],
+          "rationale": "Maintenance preserves earlier deletion/replay guarantees and collects full release-quality evidence after all integrations exist.",
+          "backwardCompat": "Migration and cleanup never reset external transcript/index stores. Existing tombstones/receipts stay effective across rebuild, re-embedding and backup restore.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "Follow the approved linear s1→s9 dependency graph. Foundation sc1/sc2 precede all consumers; queue/store and semantic/recall contracts precede transports and adapters. No story boundary is amended. Per-task relevant tests run during build; the agreed full sweep follows completion of planned feature tasks, while each public hosting increment has focused external-consumer and fault tests.",
+      "riskyBits": [
+        {
+          "area": "Durable commit and process ownership",
+          "why": "Single writer alone does not guarantee atomic receipt publication, uniqueness or reader freshness, and Node filesystem operations have platform-dependent durability.",
+          "mitigation": "Qualify OS ownership, partial-write/fsync/rename recovery and installed Lance single-table mutation/reader semantics in s1–s3 before automatic semantic work. If a mandatory invariant fails, stop for a reviewed design amendment."
+        },
+        {
+          "area": "False equivalence, compression and privacy",
+          "why": "Semantically similar instructions can differ in negation, scope, condition or authority; source deletion can be defeated by derived context or replay.",
+          "mitigation": "Typed-slot and semantic fidelity evaluation with adversarial pairs; reject uncertain activation; pre-enqueue privacy gate; deletion closure over sources/derived records/caches; retain minimal replay protection with explicit purge limits."
+        },
+        {
+          "area": "Package independence and agent delivery",
+          "why": "Backend imports can silently pull daemon globals into the package, and hook availability differs by installed CLI version.",
+          "mitigation": "Packed-package external application test, import graph boundary check, daemon-stopped IPC tests, shared parity suite, and a capability matrix with live lifecycle tests before declaring agent support."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Ports-and-adapters library with optional local service host",
+        "oneLineSummary": "A reusable in-process application service with injected dependencies, wrapped by an independent IPC host when needed.",
+        "approach": "A versioned package owns ingestion, processing, storage, recall and lifecycle behind explicit ports. It can be instantiated inside any compatible Node host using supplied project policy, providers, paths and logging. The daemon integrates through an adapter and does not become a core dependency.\n\nA thin executable and IPC client expose the same service semantics out of process. Ownership is enforced by resolved data directory across both modes; every memory mutation follows one queue and one writer. Package core, storage/queue adapters and transport are independently testable boundaries rather than separate competing owners.",
+        "pros": [
+          "Supports true embedded execution with no required child process or daemon startup.",
+          "A single application-service implementation allows one behavioral contract suite to test embedded and IPC modes.",
+          "Explicit host ports keep insrc registry, provider configuration and index connection out of the reusable package."
+        ],
+        "cons": [
+          "Public dependency interfaces and transport serialization require deliberate versioning and compatibility tests.",
+          "Independent package build, asset packaging and native Lance runtime must be qualified outside the monorepo."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1",
+          "c2"
+        ]
+      },
+      {
+        "id": "a2",
+        "name": "Process-isolated service with an embedded client facade",
+        "oneLineSummary": "Every consumer talks to a local worker process, even when its API looks embedded.",
+        "approach": "A local service always owns memory storage and model processing. Applications embed only a client facade that starts or connects to that process, with the daemon treated as another client.\n\nThis centralizes process ownership and resource isolation, but makes process spawning and IPC mandatory. True same-process embedding is unavailable, and consumer lifecycle becomes coupled to a child-service deployment.",
+        "pros": [
+          "A single physical service boundary simplifies ensuring that all clients use the same writer.",
+          "A processing failure is isolated from the consumer application's process."
+        ],
+        "cons": [
+          "Does not satisfy the requested true embedded mode; consumers must permit a background process.",
+          "Every operation incurs transport and child-process lifecycle behavior even for local library use."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1"
+        ],
+        "reasonRejected": "Fails the explicit embedded hosting requirement even though its process service can satisfy most data invariants."
+      },
+      {
+        "id": "a3",
+        "name": "Extract existing daemon services into a shared runtime",
+        "oneLineSummary": "Make daemon infrastructure a reusable runtime and host memory on that extracted stack.",
+        "approach": "Refactor configuration, provider dispatch, IPC, project binding and storage ownership from the existing backend into common infrastructure. Both the existing daemon and a memory-only host consume that runtime.\n\nMemory inherits extracted conventions and transports, but the extraction crosses mature storage and runtime boundaries before delivering the memory feature. It must remove global configuration, registry and index assumptions throughout the shared runtime to become independently consumable.",
+        "pros": [
+          "Could reduce duplicated infrastructure if several future standalone features share the extracted runtime.",
+          "Existing provider and IPC behavior can remain under common ownership once extraction is complete."
+        ],
+        "cons": [
+          "Broader cross-cutting changes risk existing daemon/indexer behavior unrelated to memory.",
+          "Independent delivery is blocked on extracting existing configuration/path/ownership dependencies identified in the grounding."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [
+          "c1",
+          "c2"
+        ],
+        "reasonRejected": "Could meet the final contracts but requires unrelated runtime extraction before independence is established."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "id": "shared-memory-record-relationships",
+      "narrative": "Logical ownership and provenance relationships for shared project memory. These classes are logical record types in one qualified Lance commit table, except queue events, which live in a separate durable journal; the diagram does not imply multiple independent databases or transactions.",
+      "classes": {
+        "Project": {
+          "description": "Host-validated isolation boundary; project identity is explicit and independent of any daemon registry.",
+          "attributes": {
+            "id": {
+              "description": "Stable host-issued project identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "memories": {
+              "description": "Project owns zero or more memories; a memory belongs to exactly one project.",
+              "range": "Memory",
+              "multivalued": true
+            },
+            "sessions": {
+              "description": "Project owns source sessions; cross-project capture is excluded.",
+              "range": "Session",
+              "multivalued": true
+            }
+          }
+        },
+        "Session": {
+          "description": "Agent session provenance, not a partition of shared project instructions.",
+          "attributes": {
+            "id": {
+              "description": "Stable session identity within its project.",
+              "range": "string",
+              "identifier": true
+            },
+            "project": {
+              "description": "Exactly one owning project.",
+              "range": "Project",
+              "required": true
+            },
+            "spans": {
+              "description": "Session owns zero or more eligible source spans; privacy filtering occurs before persistence.",
+              "range": "SourceSpan",
+              "multivalued": true
+            }
+          }
+        },
+        "SourceSpan": {
+          "description": "Bounded admitted evidence; shared references avoid repeating source text.",
+          "attributes": {
+            "id": {
+              "description": "Stable source identity and source-version key.",
+              "range": "string",
+              "identifier": true
+            },
+            "session": {
+              "description": "Exactly one originating session.",
+              "range": "Session",
+              "required": true
+            }
+          }
+        },
+        "Memory": {
+          "description": "Canonical scoped memory identity with explicit authority and lifecycle.",
+          "attributes": {
+            "id": {
+              "description": "Stable canonical memory identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "project": {
+              "description": "Exactly one owning project.",
+              "range": "Project",
+              "required": true
+            },
+            "revisions": {
+              "description": "Memory owns one or more immutable revisions; logical current status selects its visible revision.",
+              "range": "Revision",
+              "multivalued": true,
+              "minimum_cardinality": 1
+            }
+          }
+        },
+        "Revision": {
+          "description": "Meaning-preserving content revision; no equivalence is inferred from vector similarity alone.",
+          "attributes": {
+            "id": {
+              "description": "Stable revision identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "memory": {
+              "description": "Exactly one canonical memory owner.",
+              "range": "Memory",
+              "required": true
+            },
+            "evidence": {
+              "description": "Zero or more evidence links; unresolved or tombstoned revisions need not retain source content.",
+              "range": "EvidenceLink",
+              "multivalued": true
+            }
+          }
+        },
+        "EvidenceLink": {
+          "description": "Join entity allowing one span to support several revisions and one revision to cite several spans.",
+          "attributes": {
+            "id": {
+              "description": "Deterministic revision/span/role identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "revision": {
+              "description": "Exactly one supported revision.",
+              "range": "Revision",
+              "required": true
+            },
+            "source": {
+              "description": "Exactly one supporting source span, subject to forgetting policy.",
+              "range": "SourceSpan",
+              "required": true
+            }
+          }
+        },
+        "QueueEvent": {
+          "description": "Durably accepted independent journal event; queue file is physically separate from Lance memory records.",
+          "attributes": {
+            "id": {
+              "description": "Stable operation identity retained across retries.",
+              "range": "string",
+              "identifier": true
+            },
+            "project": {
+              "description": "Exactly one project binding.",
+              "range": "Project",
+              "required": true
+            },
+            "receipt": {
+              "description": "Zero receipts before processing; at most one authoritative committed outcome after processing.",
+              "range": "ProcessingReceipt",
+              "maximum_cardinality": 1
+            }
+          }
+        },
+        "ProcessingReceipt": {
+          "description": "Committed atomically with the event's complete memory effects, providing idempotent replay.",
+          "attributes": {
+            "id": {
+              "description": "Unique scoped operation identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "eventId": {
+              "description": "Stable event identity; receipt remains after queue segment recycling.",
+              "range": "string",
+              "required": true
+            }
+          }
+        },
+        "Tombstone": {
+          "description": "Minimal deletion/replay barrier; not a second copy of forgotten source text.",
+          "attributes": {
+            "id": {
+              "description": "Stable deletion guard identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "project": {
+              "description": "Exactly one project owner.",
+              "range": "Project",
+              "required": true
+            },
+            "targetId": {
+              "description": "Memory or source identity covered by forgetting, retained only as allowed by privacy policy.",
+              "range": "string",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "id": "durable-memory-capture-and-read",
+      "narrative": "Both hosting modes use this same flow. Journal durability precedes acceptance; one complete effects/receipt commit precedes active context and freshness-barrier success.",
+      "participants": [
+        {
+          "id": "caller",
+          "label": "Caller",
+          "description": "Embedded application or remote client represented by transport."
+        },
+        {
+          "id": "service",
+          "label": "Memory service",
+          "description": "Common binding/privacy/admission and query boundary."
+        },
+        {
+          "id": "journal",
+          "label": "Durable journal",
+          "description": "Serialized appender and independent queue segments."
+        },
+        {
+          "id": "worker",
+          "label": "Context builder",
+          "description": "Single mutation owner and serial semantic processing loop."
+        },
+        {
+          "id": "models",
+          "label": "Model ports",
+          "description": "Injected structured inference and local embedding providers."
+        },
+        {
+          "id": "store",
+          "label": "Dedicated Lance",
+          "description": "Atomic effects/receipt store and committed snapshots."
+        }
+      ],
+      "messages": [
+        {
+          "from": "caller",
+          "to": "service",
+          "label": "Submit scoped event with stable identity",
+          "description": "Caller retains identity across retry."
+        },
+        {
+          "from": "service",
+          "to": "service",
+          "label": "Validate binding, eligibility and limits",
+          "description": "Privacy policy runs before persistence.",
+          "kind": "recurse"
+        },
+        {
+          "from": "service",
+          "to": "journal",
+          "label": "Append and await qualified fsync",
+          "description": "Includes required new-file/rename directory durability."
+        },
+        {
+          "from": "journal",
+          "to": "service",
+          "label": "Durable operation receipt",
+          "description": "Acceptance is distinct from activation.",
+          "kind": "return"
+        },
+        {
+          "from": "service",
+          "to": "caller",
+          "label": "Accepted, with operation ID",
+          "description": "No active-memory claim before commit.",
+          "kind": "return"
+        },
+        {
+          "from": "journal",
+          "to": "worker",
+          "label": "Consume eligible durable event",
+          "description": "Crash recovery replays the same event identity."
+        },
+        {
+          "from": "worker",
+          "to": "store",
+          "label": "Check committed receipt and revision/deletion guards",
+          "description": "Committed events skip duplicate inference and repair queue acknowledgement."
+        },
+        {
+          "from": "worker",
+          "to": "models",
+          "label": "Normalize, reconcile, validate and embed serially",
+          "description": "Module-local dispatch serializes all memory model requests. Host coordination is separately designed and qualified by the insrc integration."
+        },
+        {
+          "from": "models",
+          "to": "worker",
+          "label": "Validated candidates or explicit failure",
+          "description": "Uncertain/lossy outputs cannot activate.",
+          "kind": "return"
+        },
+        {
+          "from": "worker",
+          "to": "store",
+          "label": "Commit complete effects, generation and receipt",
+          "description": "One qualified atomic table operation."
+        },
+        {
+          "from": "store",
+          "to": "worker",
+          "label": "Committed generation",
+          "description": "Establishes active memory atomically.",
+          "kind": "return"
+        },
+        {
+          "from": "worker",
+          "to": "journal",
+          "label": "Resolve event; recycle eligible sealed segments",
+          "description": "Only fully resolved segments are recyclable."
+        },
+        {
+          "from": "caller",
+          "to": "service",
+          "label": "Read context after operation",
+          "description": "Barrier waits to deadline rather than returning stale success."
+        },
+        {
+          "from": "service",
+          "to": "store",
+          "label": "Read one committed snapshot",
+          "description": "All records use consistent generation and scope."
+        },
+        {
+          "from": "service",
+          "to": "caller",
+          "label": "Compact context or explicit failure/overflow",
+          "description": "Read side effects enter the command path if persistence is needed.",
+          "kind": "return"
+        }
+      ]
+    },
+    "componentDependencyDefinition": {
+      "id": "independent-memory-hosting",
+      "narrative": "Arrows are dependency directions. Consumers use one shared core embedded or through the standalone IPC host; package internals do not depend on the insrc daemon or index store.",
+      "components": [
+        {
+          "id": "external",
+          "label": "External application",
+          "description": "Chooses true embedded use or IPC."
+        },
+        {
+          "id": "insrc",
+          "label": "insrc adapter",
+          "description": "Binds registry, providers, temporary-execution policy and clients outside the package."
+        },
+        {
+          "id": "client",
+          "label": "IPC client",
+          "description": "Wire-only client which does not load Lance or open storage."
+        },
+        {
+          "id": "host",
+          "label": "Standalone host",
+          "description": "Independent executable with private endpoint and trusted bootstrap adapter."
+        },
+        {
+          "id": "core",
+          "label": "Memory service",
+          "description": "Shared public application service and explicit lifecycle."
+        },
+        {
+          "id": "queue",
+          "label": "JSONL journal",
+          "description": "Separate durable ingestion segments."
+        },
+        {
+          "id": "worker",
+          "label": "Context builder",
+          "description": "Only store mutation owner."
+        },
+        {
+          "id": "recall",
+          "label": "Scoped recall",
+          "description": "Committed snapshots and generation-aware context."
+        },
+        {
+          "id": "store",
+          "label": "Dedicated Lance",
+          "description": "Independent memory connection and directory."
+        },
+        {
+          "id": "ports",
+          "label": "Host ports",
+          "description": "Injected project policy, logger and serial model interfaces."
+        }
+      ],
+      "dependencies": [
+        {
+          "from": "external",
+          "to": "core",
+          "label": "embedded"
+        },
+        {
+          "from": "external",
+          "to": "client",
+          "label": "standalone"
+        },
+        {
+          "from": "insrc",
+          "to": "core",
+          "label": "embedded integration"
+        },
+        {
+          "from": "insrc",
+          "to": "client",
+          "label": "standalone integration"
+        },
+        {
+          "from": "client",
+          "to": "host",
+          "label": "private versioned IPC"
+        },
+        {
+          "from": "host",
+          "to": "core",
+          "label": "one instance"
+        },
+        {
+          "from": "core",
+          "to": "queue",
+          "label": "all mutations enqueue"
+        },
+        {
+          "from": "core",
+          "to": "recall",
+          "label": "read service"
+        },
+        {
+          "from": "core",
+          "to": "ports",
+          "label": "policy and logging"
+        },
+        {
+          "from": "worker",
+          "to": "queue",
+          "label": "consume and resolve"
+        },
+        {
+          "from": "worker",
+          "to": "store",
+          "label": "sole mutations"
+        },
+        {
+          "from": "worker",
+          "to": "ports",
+          "label": "serial inference"
+        },
+        {
+          "from": "recall",
+          "to": "store",
+          "label": "committed reads"
+        },
+        {
+          "from": "recall",
+          "to": "ports",
+          "label": "policy/query embedding"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/sequence-diagram.html",
+        "title": "Sequence diagram"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/component-dependency.html",
+        "title": "Component dependencies"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md",
+      "quotedText": "Deliver one self-contained Node/TypeScript module with embedded and standalone IPC modes, public versioned interfaces, injected host dependencies and independent build/test consumption; insrc daemon is an adapter host."
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/reqs/shared-project-memory.html",
+      "quotedText": "The same core MUST run embedded in a host process or in an independent process accessed through IPC."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/hld-context-evidence.json"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "package.json"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "tsconfig.json"
+    }
+  ]
+}

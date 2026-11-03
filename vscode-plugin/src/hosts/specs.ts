@@ -22,6 +22,9 @@ export function matchesDetection(detection: HostDetection, env: HostEnv): boolea
   if (detection.kind === 'by-extension-id') {
     return env.getExtension(detection.extensionId);
   }
+  if (detection.kind === 'by-home-path') {
+    return env.homePathExists(detection.relPath);
+  }
   // by-editor-env: match on appName and/or uriScheme (whichever the descriptor pins).
   if (detection.appName !== undefined && env.appName === detection.appName) return true;
   if (detection.uriScheme !== undefined && env.uriScheme === detection.uriScheme) return true;
@@ -31,7 +34,7 @@ export function matchesDetection(detection: HostDetection, env: HostEnv): boolea
 /** Build a HostSpec from its descriptor + a home-relative config-path resolver. */
 function spec(
   descriptor: HostSpec['descriptor'],
-  paths: { mcp: readonly string[]; steering: readonly string[] },
+  paths: { mcp: readonly string[]; steering: readonly string[]; mcpFormat?: 'json' | 'toml' },
 ): HostSpec {
   return {
     descriptor,
@@ -40,6 +43,7 @@ function spec(
       mcpConfigPath: join(homedir(), ...paths.mcp),
       steeringPath: join(homedir(), ...paths.steering),
     }),
+    ...(paths.mcpFormat !== undefined ? { mcpFormat: paths.mcpFormat } : {}),
   };
 }
 
@@ -67,5 +71,16 @@ export const HOST_SPECS: readonly HostSpec[] = [
       detection: { kind: 'by-editor-env', appName: 'Cursor', uriScheme: 'cursor' },
     },
     { mcp: ['.cursor', 'mcp.json'], steering: ['.cursor', 'rules', 'insrc.md'] },
+  ),
+  // Detected by its home directory (the vibe CLI's default VIBE_HOME ~/.vibe);
+  // wires vibe's TOML MCP registry (~/.vibe/config.toml [[mcp_servers]]) + its
+  // user-global AGENTS.md guidance (vibe loads ~/.vibe/AGENTS.md at startup).
+  spec(
+    {
+      id: 'mistral.vibe',
+      displayName: 'Mistral Vibe',
+      detection: { kind: 'by-home-path', relPath: '.vibe' },
+    },
+    { mcp: ['.vibe', 'config.toml'], steering: ['.vibe', 'AGENTS.md'], mcpFormat: 'toml' },
   ),
 ];

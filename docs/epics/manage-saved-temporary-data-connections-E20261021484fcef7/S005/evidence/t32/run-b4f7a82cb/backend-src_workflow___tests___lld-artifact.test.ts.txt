@@ -1,0 +1,214 @@
+TAP version 13
+# Subtest: computeHldEffectiveHash returns a 64-char hex string
+ok 1 - computeHldEffectiveHash returns a 64-char hex string
+  ---
+  duration_ms: 0.829416
+  type: 'test'
+  ...
+# Subtest: computeHldEffectiveHash is deterministic
+ok 2 - computeHldEffectiveHash is deterministic
+  ---
+  duration_ms: 0.081958
+  type: 'test'
+  ...
+# Subtest: computeHldEffectiveHash differs when amendments change
+ok 3 - computeHldEffectiveHash differs when amendments change
+  ---
+  duration_ms: 0.06275
+  type: 'test'
+  ...
+# Subtest: computeHldEffectiveHash order-sensitive to amendment sequence
+ok 4 - computeHldEffectiveHash order-sensitive to amendment sequence
+  ---
+  duration_ms: 0.05175
+  type: 'test'
+  ...
+# Subtest: extractHldContextSlice returns owned + consumed contracts + boundary + phase
+ok 5 - extractHldContextSlice returns owned + consumed contracts + boundary + phase
+  ---
+  duration_ms: 0.148666
+  type: 'test'
+  ...
+# Subtest: extractHldContextSlice returns consumed contracts for consumer Story
+ok 6 - extractHldContextSlice returns consumed contracts for consumer Story
+  ---
+  duration_ms: 0.049083
+  type: 'test'
+  ...
+# Subtest: extractHldContextSlice throws when Story not in HLD
+ok 7 - extractHldContextSlice throws when Story not in HLD
+  ---
+  duration_ms: 0.158625
+  type: 'test'
+  ...
+# Subtest: extractHldContextSlice.adjacentBoundaries = sibling boundaries, current story excluded
+ok 8 - extractHldContextSlice.adjacentBoundaries = sibling boundaries, current story excluded
+  ---
+  duration_ms: 0.074292
+  type: 'test'
+  ...
+# Subtest: extractHldContextSlice.adjacentBoundaries preserves storyBoundaries order (self removed)
+ok 9 - extractHldContextSlice.adjacentBoundaries preserves storyBoundaries order (self removed)
+  ---
+  duration_ms: 0.948834
+  type: 'test'
+  ...
+# Subtest: extractHldContextSlice.adjacentBoundaries === [] for a single-story HLD
+ok 10 - extractHldContextSlice.adjacentBoundaries === [] for a single-story HLD
+  ---
+  duration_ms: 0.3505
+  type: 'test'
+  ...
+# Subtest: findAdjacentScopeViolations flags implementing a sibling-owned contract
+ok 11 - findAdjacentScopeViolations flags implementing a sibling-owned contract
+  ---
+  duration_ms: 1.524667
+  type: 'test'
+  ...
+# Subtest: findAdjacentScopeViolations ignores a consumes of a sibling-owned contract
+ok 12 - findAdjacentScopeViolations ignores a consumes of a sibling-owned contract
+  ---
+  duration_ms: 0.13125
+  type: 'test'
+  ...
+# Subtest: findAdjacentScopeViolations does not flag implementing your OWN owned contract
+ok 13 - findAdjacentScopeViolations does not flag implementing your OWN owned contract
+  ---
+  duration_ms: 0.06125
+  type: 'test'
+  ...
+# Subtest: findAdjacentScopeViolations returns [] for a standalone/single-story slice (no siblings)
+ok 14 - findAdjacentScopeViolations returns [] for a standalone/single-story slice (no siblings)
+  ---
+  duration_ms: 0.049125
+  type: 'test'
+  ...
+# Subtest: isLldBody accepts valid body
+ok 15 - isLldBody accepts valid body
+  ---
+  duration_ms: 0.07675
+  type: 'test'
+  ...
+# Subtest: isLldBody rejects missing testStrategy
+ok 16 - isLldBody rejects missing testStrategy
+  ---
+  duration_ms: 0.0425
+  type: 'test'
+  ...
+# Subtest: isLldBody rejects contractDetails without an api array
+ok 17 - isLldBody rejects contractDetails without an api array
+  ---
+  duration_ms: 0.040708
+  type: 'test'
+  ...
+# Subtest: isLldBody rejects testStrategy without an acceptanceMapping array
+ok 18 - isLldBody rejects testStrategy without an acceptanceMapping array
+  ---
+  duration_ms: 0.059917
+  type: 'test'
+  ...
+# Subtest: checkApiSignaturesTypeLevel: a body rejected by isLldBody never reaches it (no TypeError)
+ok 19 - checkApiSignaturesTypeLevel: a body rejected by isLldBody never reaches it (no TypeError)
+  ---
+  duration_ms: 0.044167
+  type: 'test'
+  ...
+# Subtest: checkSharedContractRefs passes when every id resolves
+ok 20 - checkSharedContractRefs passes when every id resolves
+  ---
+  duration_ms: 0.067416
+  type: 'test'
+  ...
+# Subtest: checkSharedContractRefs flags unknown contract id
+ok 21 - checkSharedContractRefs flags unknown contract id
+  ---
+  duration_ms: 0.043333
+  type: 'test'
+  ...
+# Subtest: checkImplementOwnership passes when owner matches
+ok 22 - checkImplementOwnership passes when owner matches
+  ---
+  duration_ms: 0.061625
+  type: 'test'
+  ...
+# Subtest: checkImplementOwnership flags claiming to implement a contract owned by another Story
+ok 23 - checkImplementOwnership flags claiming to implement a contract owned by another Story
+  ---
+  duration_ms: 0.038083
+  type: 'test'
+  ...
+# Subtest: checkImplementOwnership ignores role=consumes
+ok 24 - checkImplementOwnership ignores role=consumes
+  ---
+  duration_ms: 0.039333
+  type: 'test'
+  ...
+# Subtest: checkAcceptanceMapping passes when every criterion is mapped
+ok 25 - checkAcceptanceMapping passes when every criterion is mapped
+  ---
+  duration_ms: 0.115666
+  type: 'test'
+  ...
+# Subtest: checkAcceptanceMapping flags an unknown criterion in the mapping
+ok 26 - checkAcceptanceMapping flags an unknown criterion in the mapping
+  ---
+  duration_ms: 0.054208
+  type: 'test'
+  ...
+# Subtest: checkAcceptanceMapping flags an unmapped Story criterion
+ok 27 - checkAcceptanceMapping flags an unmapped Story criterion
+  ---
+  duration_ms: 0.038458
+  type: 'test'
+  ...
+# Subtest: checkApiSignaturesTypeLevel passes on TS signature
+ok 28 - checkApiSignaturesTypeLevel passes on TS signature
+  ---
+  duration_ms: 0.086708
+  type: 'test'
+  ...
+# Subtest: checkApiSignaturesTypeLevel flags a signature with a body containing return
+ok 29 - checkApiSignaturesTypeLevel flags a signature with a body containing return
+  ---
+  duration_ms: 0.078333
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown emits all sections
+ok 30 - renderLldMarkdown emits all sections
+  ---
+  duration_ms: 2.555125
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown emits the adjacent-scope subsection when adjacentBoundaries is non-empty
+ok 31 - renderLldMarkdown emits the adjacent-scope subsection when adjacentBoundaries is non-empty
+  ---
+  duration_ms: 1.91825
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown omits the adjacent-scope subsection for a single-story LLD (byte-compatible)
+ok 32 - renderLldMarkdown omits the adjacent-scope subsection for a single-story LLD (byte-compatible)
+  ---
+  duration_ms: 0.286916
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown adds a Tracker link only when meta.tracker.storyRef is set
+ok 33 - renderLldMarkdown adds a Tracker link only when meta.tracker.storyRef is set
+  ---
+  duration_ms: 0.601583
+  type: 'test'
+  ...
+# Subtest: renderLldMarkdown includes Migration section for enhancement (when present)
+ok 34 - renderLldMarkdown includes Migration section for enhancement (when present)
+  ---
+  duration_ms: 1.46925
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 304.388958

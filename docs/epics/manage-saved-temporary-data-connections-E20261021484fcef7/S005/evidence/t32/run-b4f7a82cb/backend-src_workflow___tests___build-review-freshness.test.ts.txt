@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: DIFF-APPROVE-COMMON: direct approval and reapproval preserve reviewed identity while stale source/BUILD/TESTS cannot be overridden
+ok 1 - DIFF-APPROVE-COMMON: direct approval and reapproval preserve reviewed identity while stale source/BUILD/TESTS cannot be overridden
+  ---
+  duration_ms: 4895.778084
+  type: 'test'
+  ...
+# Subtest: DIFF-PUBLISH-GATE: stale review is a distinct non-overridable outcome with reason and no fabricated findings/counts
+ok 2 - DIFF-PUBLISH-GATE: stale review is a distinct non-overridable outcome with reason and no fabricated findings/counts
+  ---
+  duration_ms: 714.85375
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-WORKFLOW: single and batch approval project stale identity and leave fresh siblings approvable with no completion side effects
+ok 3 - DIFF-APPROVE-WORKFLOW: single and batch approval project stale identity and leave fresh siblings approvable with no completion side effects
+  ---
+  duration_ms: 2816.484125
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-TUI: the actual TUI service rejects stale identity before tracker/commit work even with override
+ok 4 - DIFF-APPROVE-TUI: the actual TUI service rejects stale identity before tracker/commit work even with override
+  ---
+  duration_ms: 495.746917
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-IDENTITY: invalid/partial/unsupported/unreadable identities fail closed while genuinely unrecorded fingerprint fields remain explicitly legacy
+ok 5 - DIFF-APPROVE-IDENTITY: invalid/partial/unsupported/unreadable identities fail closed while genuinely unrecorded fingerprint fields remain explicitly legacy
+  ---
+  duration_ms: 2474.634916
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-IDENTITY: canonical BUILD path, metadata, repository and independent author must agree; file aliases cannot bypass checks
+ok 6 - DIFF-APPROVE-IDENTITY: canonical BUILD path, metadata, repository and independent author must agree; file aliases cannot bypass checks
+  ---
+  duration_ms: 3362.522958
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-RACE: prewrite changes stamp nothing; postwrite TESTS/source changes roll back only this approval metadata and preserve foreign BUILD edits
+ok 7 - DIFF-APPROVE-RACE: prewrite changes stamp nothing; postwrite TESTS/source changes roll back only this approval metadata and preserve foreign BUILD edits
+  ---
+  duration_ms: 5519.859042
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-RACE: framework BUILD writers share synchronous ownership and cannot overwrite a concurrent approval transaction
+ok 8 - DIFF-APPROVE-RACE: framework BUILD writers share synchronous ownership and cannot overwrite a concurrent approval transaction
+  ---
+  duration_ms: 1417.017
+  type: 'test'
+  ...
+# Subtest: DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source
+ok 9 - DIFF-APPROVE-TESTS: TESTS appearance, disappearance, malformed replacement, result ordering and ranAt-only changes invalidate approval independently of BUILD/source
+  ---
+  duration_ms: 3153.10125
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 25281.802208

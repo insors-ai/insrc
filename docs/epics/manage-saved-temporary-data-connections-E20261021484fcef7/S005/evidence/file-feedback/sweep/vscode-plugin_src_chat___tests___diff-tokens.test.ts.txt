@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: a TypeScript diff line is split into keyword, string and comment tokens carrying their classes
+ok 1 - a TypeScript diff line is split into keyword, string and comment tokens carrying their classes
+  ---
+  duration_ms: 13.499958
+  type: 'test'
+  ...
+# Subtest: a block comment opened on a context line colours an added line as comment
+ok 2 - a block comment opened on a context line colours an added line as comment
+  ---
+  duration_ms: 5.190208
+  type: 'test'
+  ...
+# Subtest: a removed line and an added line are each tokenised from their own side
+ok 3 - a removed line and an added line are each tokenised from their own side
+  ---
+  duration_ms: 2.786542
+  type: 'test'
+  ...
+# Subtest: an unknown extension and a failing highlighter leave every line as plain text
+ok 4 - an unknown extension and a failing highlighter leave every line as plain text
+  ---
+  duration_ms: 7.3335
+  type: 'test'
+  ...
+# Subtest: a diff line's text span holds no assigned markup
+ok 5 - a diff line's text span holds no assigned markup
+  ---
+  duration_ms: 3.417584
+  type: 'test'
+  ...
+# Subtest: the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on
+ok 6 - the diff widget keeps its signs, line numbers, add and del classes and collapse behaviour with highlighting on
+  ---
+  duration_ms: 4.812167
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 219.858625

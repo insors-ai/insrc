@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: ac1: admitBuild returns admitted:true with only the thin pointer when approved + recorded==current
+ok 1 - ac1: admitBuild returns admitted:true with only the thin pointer when approved + recorded==current
+  ---
+  duration_ms: 18.05275
+  type: 'test'
+  ...
+# Subtest: ac2: admitBuild returns plan-unapproved when the plan exists but was never approved
+ok 2 - ac2: admitBuild returns plan-unapproved when the plan exists but was never approved
+  ---
+  duration_ms: 3.238792
+  type: 'test'
+  ...
+# Subtest: ac2: approval is evaluated before staleness — unapproved AND drifted yields the single reason plan-unapproved
+ok 3 - ac2: approval is evaluated before staleness — unapproved AND drifted yields the single reason plan-unapproved
+  ---
+  duration_ms: 1.447667
+  type: 'test'
+  ...
+# Subtest: ac4: admitBuild returns plan-missing (precedence over staleness) when no plan record exists
+ok 4 - ac4: admitBuild returns plan-missing (precedence over staleness) when no plan record exists
+  ---
+  duration_ms: 1.303875
+  type: 'test'
+  ...
+# Subtest: ac3: admitBuild returns plan-stale with inline staleness when the recorded basis differs from current
+ok 5 - ac3: admitBuild returns plan-stale with inline staleness when the recorded basis differs from current
+  ---
+  duration_ms: 11.629333
+  type: 'test'
+  ...
+# Subtest: ac3: admitBuild conservatively refuses plan-stale when the recorded design hash is empty/absent
+ok 6 - ac3: admitBuild conservatively refuses plan-stale when the recorded design hash is empty/absent
+  ---
+  duration_ms: 9.657167
+  type: 'test'
+  ...
+# Subtest: t4: admitBuild propagates a malformed epicHash rather than remapping it
+ok 7 - t4: admitBuild propagates a malformed epicHash rather than remapping it
+  ---
+  duration_ms: 0.35525
+  type: 'test'
+  ...
+# Subtest: t4: admitBuild propagates a corrupt plan body rather than reporting plan-missing
+ok 8 - t4: admitBuild propagates a corrupt plan body rather than reporting plan-missing
+  ---
+  duration_ms: 0.754709
+  type: 'test'
+  ...
+# Subtest: t4: admitBuild propagates a missing current design.story rather than admitting or fabricating plan-stale
+ok 9 - t4: admitBuild propagates a missing current design.story rather than admitting or fabricating plan-stale
+  ---
+  duration_ms: 11.181875
+  type: 'test'
+  ...
+# Subtest: t2: approvalVerdict maps an unapproved plan to { unapproved }
+ok 10 - t2: approvalVerdict maps an unapproved plan to { unapproved }
+  ---
+  duration_ms: 1.583292
+  type: 'test'
+  ...
+# Subtest: t2: approvalVerdict maps a missing plan to { missing }
+ok 11 - t2: approvalVerdict maps a missing plan to { missing }
+  ---
+  duration_ms: 0.278709
+  type: 'test'
+  ...
+# Subtest: t2: approvalVerdict re-throws an unrelated (corrupt-body) error rather than swallowing it
+ok 12 - t2: approvalVerdict re-throws an unrelated (corrupt-body) error rather than swallowing it
+  ---
+  duration_ms: 0.832583
+  type: 'test'
+  ...
+# Subtest: t2: approvalVerdict returns { ok, plan } for an approved plan
+ok 13 - t2: approvalVerdict returns { ok, plan } for an approved plan
+  ---
+  duration_ms: 8.41025
+  type: 'test'
+  ...
+# Subtest: t3: driftVerdict yields stale with inline hashes when recorded differs from current
+ok 14 - t3: driftVerdict yields stale with inline hashes when recorded differs from current
+  ---
+  duration_ms: 0.919708
+  type: 'test'
+  ...
+# Subtest: t3: driftVerdict treats equal recorded/current hashes as fresh
+ok 15 - t3: driftVerdict treats equal recorded/current hashes as fresh
+  ---
+  duration_ms: 0.765292
+  type: 'test'
+  ...
+# Subtest: t3: driftVerdict conservatively yields stale when the recorded design hash is empty
+ok 16 - t3: driftVerdict conservatively yields stale when the recorded design hash is empty
+  ---
+  duration_ms: 1.03375
+  type: 'test'
+  ...
+# Subtest: guard: admitBuild is the public verdict surface of the admission module
+ok 17 - guard: admitBuild is the public verdict surface of the admission module
+  ---
+  duration_ms: 0.050916
+  type: 'test'
+  ...
+# Subtest: t1: BuildAdmissionResult discriminates on `admitted` (accepted branch carries only the thin pointer)
+ok 18 - t1: BuildAdmissionResult discriminates on `admitted` (accepted branch carries only the thin pointer)
+  ---
+  duration_ms: 9.253917
+  type: 'test'
+  ...
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 327.549166

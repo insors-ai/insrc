@@ -1,0 +1,101 @@
+{
+  "id": "03-mutations-03",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:38:44.635Z",
+  "finished": "2026-11-01T04:39:27.501Z",
+  "inputChars": 52817,
+  "inputSha256": "737a70691b9c9d4db089fc222170c1c8e7f1fbd9a971f5256d55c6e3ddcbff08",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the 6 supplied changed files (removal confirmation in TS and Kotlin, the Kotlin removal JUnit test, its TS runner, and the JVM fixture peer). I found no concrete, reachable defect in the supplied code. The TS and Kotlin ConnectionRemovals classes match each other on the shown paths: captured selection, dirty-draft resolution before confirm, zero-effect Cancel, confirmation cleared before the signed call, and operation cards kept in the controller rather than the prompt. Most assigned obligations depend on files I wasn't given (controller, draft, wire decoders, session service, gateway, capability/release gating), so they are could-not-verify. Nothing was executed. Test outcomes are not evidence here, and the JUnit runner expects 4 tests, which matches the 4 test methods in the Kotlin class.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:4",
+        "status": "could-not-verify",
+        "evidence": "TS removal.ts calls decodeSafeConnection(row) before use. Kotlin removals take an already-typed SafeConnection. The strict decoders (wire.ts, ConnectionProtocol.kt), DaemonGatewayService statelessness, descriptor-driven drafts and the credential Keep/Replace/Clear behavior are not in the supplied evidence."
+      },
+      {
+        "key": "lld:data-model:7",
+        "status": "holds",
+        "evidence": "Shown code matches the clauses it covers. Confirmation carries repo+scope+ID+revision and the source-data-preserved text (Kotlin removalConfirmation). Cancel and Discard send nothing (decide('cancel') returns null/undefined). Busy and conflict states are mapped by projectRemovalRejection. A removed-cleanup-pending card carries separate credentialCleanup and resourceCleanup. Unknown comes only from non-committed status, never from an absent row. Ticket-only retry and same-ID recreation safety are asserted only in the JUnit test, which I could not run, and the controller is not supplied. Rendering and keyboard evidence are not supplied."
+      },
+      {
+        "key": "lld:error:1",
+        "status": "could-not-verify",
+        "evidence": "No capability decoder, upgrade-required classification or control-disabling code in the supplied files. The fixture server advertises a capabilities reply for tests only."
+      },
+      {
+        "key": "lld:error:5",
+        "status": "holds",
+        "evidence": "The shown classes keep the confirmation, row and draft state out of busy/conflict handling. begin() throws 'busy' locally if controller.isBlocked. decide() sends only {key, expectedRevision} via controller.remove. The Kotlin test asserts busy/conflict keep the row and form serialization unchanged, and that stale revisions need a fresh begin. The controller (ticket-only retry) is not supplied and the tests were not run, so this is source-level only."
+      },
+      {
+        "key": "lld:edge:4",
+        "status": "holds",
+        "evidence": "begin() calls draft.requestExit({type:'remove'}) for a dirty draft and hides the confirmation until resolveDirty. Cancel clears the confirmation with zero ticket effects. Discard keeps the confirmation and discards only the draft. cancel() and dispose() on view close send nothing and leave operation cards in the controller. Root/filter/scope navigation guards are in draft.ts, which is not supplied."
+      },
+      {
+        "key": "lld:shared:3",
+        "status": "could-not-verify",
+        "evidence": "The removal classes only consume sc2 through the controller's remove/reconcile/retryCleanup. The shown Kotlin projectRemovalState validates operationId, registration=removed and activation=not-applicable on committed outcomes. Immutable same-ticket retry is implemented in the unseen controller."
+      },
+      {
+        "key": "lld:migration:6",
+        "status": "could-not-verify",
+        "evidence": "No release-gate or admission code in the changed files. The fixture server's capabilities handler is test-only and is registered in a fixture file, not production."
+      },
+      {
+        "key": "plan:t2",
+        "status": "could-not-verify",
+        "evidence": "wire.ts is not supplied. removal.ts only calls decodeSafeConnection."
+      },
+      {
+        "key": "plan:t10",
+        "status": "could-not-verify",
+        "evidence": "draft.ts and the Kotlin draft are not supplied. Only the removal-side requestExit/decideDiscard integration is visible."
+      },
+      {
+        "key": "plan:t13",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin controller, gateway and session service are not supplied. ConnectionRemovals only delegates to controller.remove."
+      },
+      {
+        "key": "plan:t16",
+        "status": "holds",
+        "evidence": "Shown TS removal.ts implements the t16 items it is responsible for: dirty draft resolved first, exact-selection confirmation, Cancel with zero calls, busy/conflict keeping state, and ticket-only retry delegated to the controller. The integration test CM-S5-REMOVE-TS is not in the supplied evidence, and the ticket-only retry check is not directly visible."
+      },
+      {
+        "key": "plan:t24",
+        "status": "could-not-verify",
+        "evidence": "No privacy-sink test or adapter was supplied. The Kotlin removal test only asserts that serialized records omit the fixture secret and 'signature', and that the object serializes to '{}'."
+      },
+      {
+        "key": "plan:t27",
+        "status": "could-not-verify",
+        "evidence": "Live JetBrains UI and keyboard acceptance is deferred by the user and not in the supplied evidence."
+      }
+    ],
+    "inspectedFiles": [
+      "src/shared/__tests__/fixtures/connection-test-server.ts",
+      "src/shared/connection-manager/removal.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovals.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt",
+      "src/shared/__tests__/connection-manager-kotlin-removal.test.ts"
+    ],
+    "limitations": [
+      "No tool calls or execution. Test pass/fail was not observed.",
+      "All six changed files were read, but only against their own text. controller.ts, draft.ts, wire.ts, connection-removal.ts, ConnectionMutationController/Backend, ConnectionsSessionService, ConnectionProtocol.kt, connection-junit.js, the plugin wiring and the release gate were not supplied.",
+      "Kotlin ConnectionRemovals invokes listeners from emit() while holding its own lock in begin/resolveDirty/decide/cancel. Whether that can deadlock depends on whether ConnectionMutationController calls onChange listeners while holding its own lock and whether the listeners call back into the removals view. Neither is shown, so this is not raised as a defect.",
+      "Live VS Code and JetBrains UI, keyboard and theme evidence, SQL Server, provider-service and worker-affinity coverage were not assessed. They are recorded as pending or user-reported and are not treated as passed."
+    ],
+    "evidenceRequests": [
+      "src/shared/connection-manager/controller.ts and ConnectionMutationController.kt: remove(), reconcile(), retryCleanup(), isBlocked(), and whether onChange listeners run while a controller lock is held.",
+      "src/shared/connection-manager/draft.ts and ConnectionDraft.kt: requestExit and decideDiscard effects for the 'remove' target.",
+      "src/shared/connection-manager/wire.ts and ConnectionProtocol.kt: decodeSafeConnection and the status/outcome decoders that gate the removal card.",
+      "src/shared/__tests__/connection-manager-removal*.test.ts (the TS counterpart of CM-S5-REMOVE-TS).",
+      "The production release-gate, capability and admission code for lld:migration:6 and lld:error:1."
+    ]
+  }
+}

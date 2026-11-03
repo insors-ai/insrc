@@ -144,14 +144,65 @@ test("listPendingArtifacts lists a pending BUILD record whose Story has a code r
 			[`BUILD-${HASH}-S003.json`]: buildRecord({ storyId: 'S003', standalone: true }),
 		});
 		try {
-			assert.deepEqual(listPendingArtifacts(solo).map(a => a.artifactId), [`BUILD-${HASH}-S001`, `CR-${HASH}-S001`, `CR-${HASH}-S002`], "another Story's code review does not list S003's build");
+			// ISSUE-16b8d3d50f14fc1d: a standalone BUILD is listed on its own meta.standalone
+			// marker — S003's build is listed even though only S001/S002 have CR siblings.
+			assert.deepEqual(listPendingArtifacts(solo).map(a => a.artifactId), [`BUILD-${HASH}-S001`, `BUILD-${HASH}-S003`, `CR-${HASH}-S001`, `CR-${HASH}-S002`], 'standalone BUILDs are listed without their own CR sibling; the CR-sibling gate binds only non-standalone BUILDs');
 		} finally { cleanup(solo); }
 	} finally {
 		cleanup(repo);
 	}
 });
 
-test('listPendingArtifacts leaves out a BUILD record with no code review record, an approved or a rejected one, and EXT, STUB and AMD records as before', () => {
+test('ISSUE-6dbf14435972af7a: EXT and AMD records are listed while pending (AMD with no mdPath, decided via its own status)', () => {
+	const repo = fixtureRepo({
+		[`EXT-${HASH}-s1.json`]: { meta: buildMeta(), body: { scope: 'more' } },
+		[`AMD-${HASH}-1.json`]: { id: `AMD-${HASH}-1`, epicHash: HASH, status: 'pending' },
+		[`AMD-${HASH}-2.json`]: { id: `AMD-${HASH}-2`, epicHash: HASH, status: 'applied' },
+		[`CR-${HASH}-s1.json`]: crRecord(),
+	});
+	try {
+		const list = listPendingArtifacts(repo);
+		const ids = list.map(a => a.artifactId);
+		assert.ok(ids.includes(`EXT-${HASH}-s1`), 'a pending EXT is listed');
+		assert.ok(ids.includes(`AMD-${HASH}-1`), 'a pending AMD is listed');
+		assert.ok(!ids.includes(`AMD-${HASH}-2`), 'an applied AMD is not pending');
+		const amd = list.find(a => a.artifactId === `AMD-${HASH}-1`)!;
+		assert.equal(amd.kind, 'AMD');
+		assert.equal(amd.mdPath, '', 'an AMD has no document: the pane opens it by id');
+		assert.equal(amd.title, `Amendment AMD-${HASH}-1`);
+		const ext = list.find(a => a.artifactId === `EXT-${HASH}-s1`)!;
+		assert.match(ext.mdPath, /S?001[\\/]EXT\.md$/, 'an EXT resolves its EXT.md');
+	} finally { cleanup(repo); }
+});
+
+test('ISSUE-16b8d3d50f14fc1d: a standalone BUILD record is listed WITHOUT a CR sibling, and resolves its BUILD.md path; the CR-sibling gate still binds non-standalone BUILDs', () => {
+	// Standalone, no CR sibling: listed, with its md path resolved via the marker.
+	const solo = fixtureRepo({
+		[`BUILD-${HASH}-S001.json`]: buildRecord({ storyId: 'S001', standalone: true }),
+	});
+	try {
+		const md = writeBuildMd(solo, buildMeta({ storyId: 'S001', standalone: true }), `<!-- insrc:artifact BUILD-${HASH}-S001 -->\n\n# Build (standalone)\n`);
+		const list = listPendingArtifacts(solo);
+		const b = list.find(a => a.artifactId === `BUILD-${HASH}-S001`);
+		assert.ok(b, 'the standalone BUILD record is listed with no CR sibling present');
+		assert.equal(b.kind, 'BUILD');
+		assert.equal(b.mdPath, md, 'its BUILD.md path resolves through deriveMdPath + the marker');
+	} finally { cleanup(solo); }
+	// Standalone but already approved: not pending, CR sibling or not.
+	const done = fixtureRepo({
+		[`BUILD-${HASH}-S001.json`]: buildRecord({ storyId: 'S001', standalone: true, approvedAt: '2026-10-31T00:00:00.000Z' }),
+	});
+	try {
+		assert.deepEqual(listPendingArtifacts(done), [], 'an approved standalone BUILD is not pending');
+	} finally { cleanup(done); }
+	// Non-standalone with no CR sibling: still gated out (the tracked-epic rule is intact).
+	const epic = fixtureRepo({ [`${BUILD_ID}.json`]: buildRecord() });
+	try {
+		assert.deepEqual(listPendingArtifacts(epic), [], 'a non-standalone BUILD without a CR sibling stays unlisted');
+	} finally { cleanup(epic); }
+});
+
+test('listPendingArtifacts leaves out a tracked-epic BUILD record with no code review record, an approved or a rejected one, and EXT, STUB and AMD records as before', () => {
 	// No code review record: a Story still being built.
 	const building = fixtureRepo({
 		[`${BUILD_ID}.json`]: buildRecord(),
@@ -167,11 +218,10 @@ test('listPendingArtifacts leaves out a BUILD record with no code review record,
 			assert.deepEqual(listPendingArtifacts(done).map(a => a.kind), ['CR'], JSON.stringify(stamp));
 		} finally { cleanup(done); }
 	}
-	// The kinds that stay out, unapproved and with a code review record of the same suffix.
+	// The kinds that stay out, unapproved and with a code review record of the same suffix:
+	// STUB and TESTS stay excluded (ISSUE-6dbf14435972af7a now lists EXT and AMD).
 	const others = fixtureRepo({
-		[`EXT-${HASH}-s1.json`]: { meta: buildMeta(), body: {} },
 		[`STUB-${HASH}-s1.json`]: { meta: buildMeta(), body: {} },
-		[`AMD-${HASH}-1.json`]: { id: `AMD-${HASH}-1`, status: 'pending' },
 		[`TESTS-${HASH}-s1.json`]: { meta: buildMeta(), body: {} },
 		[`CR-${HASH}-s1.json`]: crRecord(),
 	});

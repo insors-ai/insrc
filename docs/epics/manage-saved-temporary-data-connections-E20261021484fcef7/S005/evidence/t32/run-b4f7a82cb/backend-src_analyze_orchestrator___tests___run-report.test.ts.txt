@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: a run with one failed task and one limited task returns a report naming both, and its final report's text starts with the completeness line
+ok 1 - a run with one failed task and one limited task returns a report naming both, and its final report's text starts with the completeness line
+  ---
+  duration_ms: 39.498917
+  type: 'test'
+  ...
+# Subtest: a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources
+ok 2 - a run with a nested plan names an incomplete child task by its path; the planner-kind task and the aggregate-report task are not sources
+  ---
+  duration_ms: 78.092125
+  type: 'test'
+  ...
+# Subtest: a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)
+ok 3 - a run record written after the change resumes with its report (mutation: leave `report` out of the resume literal)
+  ---
+  duration_ms: 6.547916
+  type: 'test'
+  ...
+# Subtest: a run record written without a report resumes with none and its text form carries the not-recorded line
+ok 4 - a run record written without a report resumes with none and its text form carries the not-recorded line
+  ---
+  duration_ms: 8.431667
+  type: 'test'
+  ...
+# Subtest: a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text
+ok 5 - a run that completes stores its report in the run record, and resuming from that record returns the same report and the same text
+  ---
+  duration_ms: 18.595667
+  type: 'test'
+  ...
+# Subtest: the plan's and the run's tasksFailed and the daemon's response carry the code
+ok 6 - the plan's and the run's tasksFailed and the daemon's response carry the code
+  ---
+  duration_ms: 3.427042
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 855.401458

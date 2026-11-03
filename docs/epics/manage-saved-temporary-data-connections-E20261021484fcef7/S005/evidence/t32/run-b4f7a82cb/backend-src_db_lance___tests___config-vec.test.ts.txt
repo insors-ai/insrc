@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: writeConfigEmbedding + searchConfigVecs round-trip
+ok 1 - writeConfigEmbedding + searchConfigVecs round-trip
+  ---
+  duration_ms: 57.409958
+  type: 'test'
+  ...
+# Subtest: searchConfigVecs accepts caller-supplied where filter
+ok 2 - searchConfigVecs accepts caller-supplied where filter
+  ---
+  duration_ms: 25.146208
+  type: 'test'
+  ...
+# Subtest: searchConfigVecs scope filter via where
+ok 3 - searchConfigVecs scope filter via where
+  ---
+  duration_ms: 22.652417
+  type: 'test'
+  ...
+# Subtest: searchConfigVecs language=all-or-specific filter
+ok 4 - searchConfigVecs language=all-or-specific filter
+  ---
+  duration_ms: 33.404334
+  type: 'test'
+  ...
+# Subtest: upsert: writing same id replaces
+ok 5 - upsert: writing same id replaces
+  ---
+  duration_ms: 19.681167
+  type: 'test'
+  ...
+# Subtest: deleteConfigVec / deleteConfigVecsByIds / deleteConfigVecsForScope
+ok 6 - deleteConfigVec / deleteConfigVecsByIds / deleteConfigVecsForScope
+  ---
+  duration_ms: 33.831708
+  type: 'test'
+  ...
+# Subtest: returns [] for empty query
+ok 7 - returns [] for empty query
+  ---
+  duration_ms: 0.976042
+  type: 'test'
+  ...
+# Subtest: seed sentinel is excluded from search results
+ok 8 - seed sentinel is excluded from search results
+  ---
+  duration_ms: 6.51125
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 548.600333

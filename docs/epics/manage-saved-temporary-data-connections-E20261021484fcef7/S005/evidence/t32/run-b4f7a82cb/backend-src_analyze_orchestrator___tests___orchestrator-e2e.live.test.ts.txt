@@ -1,0 +1,24 @@
+TAP version 13
+# (node:73673) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: orchestrator-e2e.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - orchestrator-e2e.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.414834
+  type: 'test'
+  ...
+# Subtest: orchestrator-e2e.live: infra XS end-to-end -> result mirrors run.json
+ok 2 - orchestrator-e2e.live: infra XS end-to-end -> result mirrors run.json # SKIP
+  ---
+  duration_ms: 0.047375
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 848.661708

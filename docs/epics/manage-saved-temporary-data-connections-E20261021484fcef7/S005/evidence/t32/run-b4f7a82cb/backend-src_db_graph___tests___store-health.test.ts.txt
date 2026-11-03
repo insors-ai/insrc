@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: recordStoreFailureIfLockError: records both read failures once, and nothing else
+ok 1 - recordStoreFailureIfLockError: records both read failures once, and nothing else
+  ---
+  duration_ms: 3.224792
+  type: 'test'
+  ...
+# Subtest: the named error's message names another process and does not repeat the library's advice
+ok 2 - the named error's message names another process and does not repeat the library's advice
+  ---
+  duration_ms: 0.193292
+  type: 'test'
+  ...
+# [04:46:46] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request repo.list"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot: The reader lock pid 0, txn -1, doesn't match env pid 1"
+# [04:46:46] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "first read"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# Subtest: health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close
+ok 3 - health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close
+  ---
+  duration_ms: 159.721291
+  type: 'test'
+  ...
+# [04:46:46] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "a read"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot: The reader lock pid 0, txn -1, doesn't match env pid 1"
+# Subtest: health record: after locks-lost getGraphStore itself rejects with the named error
+ok 4 - health record: after locks-lost getGraphStore itself rejects with the named error
+  ---
+  duration_ms: 103.172583
+  type: 'test'
+  ...
+# [04:46:46] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request search"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [04:46:46] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "x"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# Subtest: sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok
+ok 5 - sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok
+  ---
+  duration_ms: 90.310333
+  type: 'test'
+  ...
+# Subtest: slow healthy write: the probe runs and returns, nothing is recorded, the write completes
+ok 6 - slow healthy write: the probe runs and returns, nothing is recorded, the write completes
+  ---
+  duration_ms: 548.02825
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1158.19675

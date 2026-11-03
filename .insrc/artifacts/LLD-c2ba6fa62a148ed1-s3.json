@@ -1,0 +1,633 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793509679068-pst4li",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T05:15:25.798Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 446714,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "hldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "hldAmendmentsApplied": [
+      "AMD-c2ba6fa62a148ed1-1",
+      "AMD-c2ba6fa62a148ed1-2",
+      "AMD-c2ba6fa62a148ed1-7",
+      "AMD-c2ba6fa62a148ed1-8",
+      "AMD-c2ba6fa62a148ed1-9",
+      "AMD-c2ba6fa62a148ed1-10"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's §2/§4/§5/§6 cover all four of S003's upstream acceptance criteria (ac1 file-scoped read; ac2 one-time migration on open; ac3 write/replace/delete consistency; ac4 existence check without materializing the list) and absorb ISSUE-61045de91faef1a0 per lc1.",
+          "evidence": "DEF.md:204-207 states ac1-ac4 verbatim for E20261011c2ba6fa6:S003 and lc1 ('absorbs ISSUE-61045de91faef1a0 in full; the two reads return what they return today and their callers do not change'); the LLD's contract postconditions (§2.1/§2.2), migration steps (§6) and acceptance-mapping table (§5) address each ac by name with a concrete mechanism and a named test. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design does not build anything the DEF names as a non-goal for this Story, e.g. does not add kind-scoped indexing or re-key the primary entity table (explicitly rejected in §7.3/§7.4 as out of scope).",
+          "evidence": "§7.3 and §7.4 of the LLD explicitly reject a kind-scoped key and a primary-key re-encoding as unneeded/out-of-boundary, and the chosen design (§7.1) adds exactly one new table plus a wrapper -- no evidence in the Story's HLD/DEF sections (6.3) of a broader ask than ac1-ac4. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "listEntitiesForRepo (entities.ts:819-833) and findEntitiesByFile (entities.ts:864-880) today both scan store.entity.getRange() over the whole table and filter in JS, matching the design's 'State before' description exactly.",
+          "evidence": "Read entities.ts:800-880: listEntitiesForRepo (defined 819, body 820-833) iterates store.entity.getRange() filtering by row.repoId; findEntitiesByFile (defined 864, body 865-880) iterates the same getRange(), recomputing each row's absolute path via toAbsolutePath(row.filePath, repoPath) and comparing to the input -- exactly the 'full-scan... with per-row path recomputation' the design describes. [files: src/db/entities.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The entity table's only side-table today is nameIndex, and it is kept in step by rewireNameIndexInTxn for SOME call sites and written inline by OTHERS (the specific 'gap' the design cites as precedent for needing one wrapper).",
+          "evidence": "entities.ts:289 (new-entity create path) writes `s.nameIndex.put(...)` inline, not via rewireNameIndexInTxn; entities.ts:1180's remove block (1160-1181) removes nameIndex inline via `s.nameIndex.remove(...)` at line 1171, also not via a shared wrapper. Sites 272 and 466 do call rewireNameIndexInTxn (lines 276, 467). This confirms the mixed inline/wrapper pattern the design names as the risk motivating one put/remove wrapper -- even though the function's own doc-comment at entities.ts:1023 claims it is 'called by every code path that does entity.put', which is itself stale/inaccurate relative to sites 289 and 1180. [files: src/db/entities.ts]",
+          "action": "No action needed on the design; optionally flag the stale doc-comment on rewireNameIndexInTxn as a separate minor cleanup, not a blocker for this Story.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed entityByFile table does not already exist anywhere in the codebase (it is genuinely new, not a rename/reuse of an existing index).",
+          "evidence": "grep for 'entityByFile|EntityByFile' across src/ returns only one unrelated hit (src/analyze/explore/manifests-locate.ts, an unrelated token), and no table of that name is registered in src/db/graph/store.ts's table list. [files: src/db/graph/store.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "unresolvedByFile exists exactly as cited (a dupSort table at store.ts:645) and encodeUnresolvedByFileKey exists exactly as cited (keys.ts:262-264, repoId+utf8-path key), so the design's claim to 'mirror' a real, already-working precedent is accurate, not invented.",
+          "evidence": "store.ts:645: `unresolvedByFile: open_('unresolved_by_file', { dupSort: true })`. keys.ts:261-264: `// unresolved_by_file: (u32 repo, utf8 from_file) -- dupsort u64 unresolved_id` / `export function encodeUnresolvedByFileKey(repoId, fromFile) { return Buffer.concat([encodeRepoKey(repoId), utf8(fromFile)]); }` -- structurally identical to the entityByFile key the design proposes. [files: src/db/graph/store.ts, src/db/graph/keys.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "All 7 raw entity.put/entity.remove call sites the design names (entities.ts:272,289,466,974,1180; migrations.ts:267,346) exist at exactly those lines, and no other raw site exists that the design's inventory would have missed.",
+          "evidence": "grep 'entity\\.put\\(|entity\\.remove\\(' over src/db/entities.ts returned exactly lines 272,289,466,974,1180 and over src/db/graph/migrations.ts returned exactly lines 267,346 -- 7 total, matching the design's inventory with no extras found. [files: src/db/entities.ts, src/db/graph/migrations.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ensureNonEmptyClosure's deps parameter type, its listEntitiesForRepo call site, and ScopeDeps/REAL_DEPS's current shape match the design's citations closely enough that the described widening (adding an optional repoHasAnyEntity to the Pick and to ScopeDeps/REAL_DEPS) is a correct, minimal, non-breaking change.",
+          "evidence": "invariants.ts:237 reads `deps?: Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'> & {...}` and body lines 289-298 do `deps.listEntitiesForRepo(best.path)` then `if (entities.length === 0) throw new ScopeNotIndexedError(...)` -- exact match to the design's citation. scope.ts:77-82 defines the ScopeDeps interface and 84-89 defines REAL_DEPS exactly as the design describes (the design's '77-89' span loosely covers both the interface and REAL_DEPS rather than the interface alone, a minor citation imprecision that doesn't affect correctness). [files: src/analyze/context/invariants.ts, src/analyze/context/scope.ts]",
+          "action": "No action needed on the design's substance; optionally tighten the line-range citation for the ScopeDeps interface alone (77-82) vs. REAL_DEPS (84-89) during authoring polish.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The migration mechanism is crash-safe and idempotent the way the design's error-path claims: a partially-run migration never leaves schema_version advanced, so a crash mid-migration always causes a full, safe re-run of the same step on next open (no data loss, no duplicate entries given dupSort semantics).",
+          "evidence": "migrations.ts:479-482 runs each step inside `store.root.childTransaction(async () => { await step.run(store); await store.meta.put(META_SCHEMA_VERSION, step.to); })`; the surrounding comment (473-478) explicitly states a child transaction aborts a throwing callback's writes, so neither the step's rows nor the version bump persist on failure. The design's description of 'a completion marker following the existing migration chain's convention' is a loose paraphrase of this single global schema_version meta key (there is no distinct per-migration marker), but the functional claim -- safe, full re-run on crash, no duplicate rows thanks to dupSort put being a no-op for an existing (key,value) pair -- is accurate and consistent with the chain's real mechanism. [files: src/db/graph/migrations.ts]",
+          "action": "No action needed on correctness; optionally reword 'completion marker' to 'schema_version advance' for precision during authoring polish.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The migration chain already has an established, working pattern (MIGRATION_V1_TO_V2 through V4_TO_V5, each a walk-and-backfill over the entity table) for the new entityByFile-populating migration to extend without disturbing existing versioning.",
+          "evidence": "migrations.ts:106 (MIGRATION_V1_TO_V2), 208 (V2_TO_V3), 371 (V3_TO_V4), 389 (V4_TO_V5) are all registered in the MIGRATIONS array (436-441); the v1->v2 comment (99) describes exactly the same shape the design proposes: 'the migration walks `entity` and seeds the index', confirming a new V5_TO_V6-style step following this convention is a reuse of an already-proven pattern, not a novel risk. [files: src/db/graph/migrations.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S003's by-file/by-repo index work is declared independent of the other in-flight Stories in this Epic (notably S002's atomic-refresh work, which touches some of the same entities.ts write sites), and no S002 LLD yet exists to conflict with S003's planned edits.",
+          "evidence": "HLD.md:45: 'INDEPENDENT STORIES. The by-file index (s3), the daemon's store being broken by another process, and its shutdown (s4)... do not depend on the commit and can be built in any order relative to it.' HLD.md:328-330 names S002's concern as atomic multi-row refresh and separately names the by-file index's own single-writer-per-file concern -- a different axis, not an overlapping redesign. A glob for docs/epics/.../S002/* found no LLD yet, so there is no existing design for S003 to contradict. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md]",
+          "action": "No action needed now; when S002's LLD is authored, re-check that its edits to the same 7 write sites land on top of this Story's wrapper rather than reopening raw writes.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The nested-repo-root edge case's claimed precedent (longestPrefixRepo using a path-segment-boundary comparison, not a plain string-prefix test) is real and exactly matches what the design quotes, supporting the claim that the new db-layer helper should copy this exact boundary-safe logic.",
+          "evidence": "scope.ts:174: `const contains = path === r.path || path.startsWith(\\`${r.path}/\\`);` -- this is precisely the comparison the design quotes as `(path === r.path || path.startsWith(r.path + '/'))`, confirming the precedent is real and the design's required re-implementation (since src/db cannot import src/analyze/context/scope.ts) is modeled on genuinely correct existing logic rather than an invented one. [files: src/analyze/context/scope.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "A source-scanning guard test (to catch a raw entity.put/remove call outside the new wrapper) is a workable, precedented test style in this codebase, not a novel or untested idea.",
+          "evidence": "grep for 'scans the source|guard test|fails if... found' style assertions across **/__tests__/*.test.ts found 6 existing files using this pattern (e.g. src/workflow/runners/build/__tests__/build-record.test.ts, src/workflow/__tests__/adjacent-scope-gate.test.ts), confirming the convention the design's guard test relies on already exists and works elsewhere in the repo. [files: src/workflow/runners/build/__tests__/build-record.test.ts, src/workflow/__tests__/adjacent-scope-gate.test.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "entities-lmdb.test.ts, the file the test strategy says it extends, exists and is the right kind of test (LMDB-backed entity persistence), making the stated extension plan concrete rather than aspirational.",
+          "evidence": "Glob confirmed src/db/__tests__/entities-lmdb.test.ts exists; this is the exact file the design's §5 Test framework line names as the pattern this Story's tests extend. [files: src/db/__tests__/entities-lmdb.test.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The ac4 test plan (a deps fixture supplying both a repoHasAnyEntity fake and a listEntitiesForRepo fake, to prove the fast path is preferred and the slow path is never called) is buildable against the existing invariants.test.ts harness without needing every other ScopeDeps fixture in the repo to change.",
+          "evidence": "invariants.test.ts already has a `readers(n)` helper (around line 227-237) that builds inline deps objects satisfying the current Pick<ScopeDeps,'listRepos'|'listEntitiesForRepo'> type; data-runtimes.test.ts:114 and root-bound-scope.ts:34 both construct full `: ScopeDeps` literals without a repoHasAnyEntity field, confirming that making the new field optional (as the design does) keeps all ~30 existing fixtures compiling unchanged while this Story's own new test adds the one fixture that supplies the new fake. [files: src/analyze/context/__tests__/invariants.test.ts, src/analyze/runtimes/data/__tests__/data-runtimes.test.ts, src/daemon/steps/__tests__/fixtures/root-bound-scope.ts]",
+          "action": "No action needed; approve as designed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 15,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T05:28:02.765Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T05:34:06.742Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story gives the graph store a real by-file and by-repository index of entity rows, so reading one file's or one repository's entities costs in proportion to what is returned instead of scanning every entity in the store. It absorbs ISSUE-61045de91faef1a0 in full. One new LMDB table, keyed by repository and file path, is kept exactly in step with every entity write through a single new put/remove wrapper that every one of the 7 existing raw write sites is routed through; a migration step builds the index for stores written before this change.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete. Layer 3, derived data: evidence is a one-byte value on the relationship row. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [],
+        "depends": [],
+        "internal": "The by-file and by-repository index of entity rows, its migration step that builds it for an existing store, and its upkeep. No single entity-row write exists today: there are seven raw put and remove sites across src/db/entities.ts and src/db/graph/migrations.ts, and the existing name index is kept in step by a helper each site must remember to call. This Story introduces one put and one remove function for entity rows that maintain the name index and the new index together, routes every raw site through them, and adds a test that fails when a raw put or remove appears outside them. Upkeep therefore sits beneath every caller, so that neither today's writers nor the file commit need to know of it and this Story does not depend on s2. The two reads (findEntitiesByFile, listEntitiesForRepo) keep their results and their callers; a new existence check answers whether a repository holds any entity, and the analyzer's scope check uses it."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "Phase B — nothing lost, nothing wrongly left out, fast reads",
+      "nonFunctional": {
+        "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "listEntitiesForRepo",
+          "signature": "listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Unused client handle, kept for call-site compatibility (existing signature).",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repo root path to resolve to a repoId.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Entity[]>",
+            "meaning": "Every entity of the given repository, same set as today, now read via a repoId-prefix range over the new by-file index instead of a full store.entity.getRange() scan."
+          },
+          "errors": [],
+          "preconditions": [
+            "repo must resolve to a registered repoId via lookupRepoIdInTxn, unchanged from today; an unregistered repo returns []."
+          ],
+          "postconditions": [
+            "Returns the identical entity set as the current full-scan implementation for every existing caller, with no caller-visible change."
+          ]
+        },
+        {
+          "name": "findEntitiesByFile",
+          "signature": "findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Unused client handle, kept for call-site compatibility (existing signature).",
+              "optional": false
+            },
+            {
+              "name": "file",
+              "type": "string",
+              "purpose": "Absolute file path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Entity[]>",
+            "meaning": "Every entity of the given file, same set as today, now read via a direct (repoId, relativeFilePath) key lookup on the new by-file index instead of a full store.entity.getRange() scan with per-row path recomputation."
+          },
+          "errors": [],
+          "preconditions": [
+            "file is resolved to its owning registered repoId by scanning the (small) repo table for a root that is a path-prefix of file -- unchanged behavior for an unregistered or unmatched file: returns []."
+          ],
+          "postconditions": [
+            "Returns the identical entity set as the current full-scan implementation for every existing caller, with no caller-visible change."
+          ]
+        },
+        {
+          "name": "repoHasAnyEntity",
+          "signature": "repoHasAnyEntity(_db: DbClient, repo: string): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "Unused client handle, kept for call-site compatibility with listEntitiesForRepo/findEntitiesByFile.",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Repo root path to resolve to a repoId.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "Whether the repository holds any stored entity, answered via a limit-1 range on entityByFile prefixed by repoId; never builds the repository's entity list."
+          },
+          "errors": [],
+          "preconditions": [
+            "repo must resolve to a registered repoId via lookupRepoIdInTxn; an unregistered repo answers false."
+          ],
+          "postconditions": [
+            "Answers the same yes/no listEntitiesForRepo(...).length > 0 would answer today, without constructing any Entity.",
+            "Real integration point (ac4/FR002's actual consumer): ensureNonEmptyClosure (src/analyze/context/invariants.ts:235-301) has a deps parameter typed Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'> & {...} (invariants.ts:237) and today calls deps.listEntitiesForRepo(best.path), throwing ScopeNotIndexedError when entities.length === 0 (invariants.ts:289-298). repoHasAnyEntity is added to ScopeDeps (scope.ts:77-87) and REAL_DEPS (scope.ts:84-89) as an OPTIONAL field: repoHasAnyEntity?: (repoPath: string) => Promise<boolean>. ensureNonEmptyClosure's deps parameter type widens to also Pick 'repoHasAnyEntity'; the function prefers deps.repoHasAnyEntity(best.path) when supplied, falling back to today's deps.listEntitiesForRepo(best.path).length === 0 check otherwise -- identical observable behaviour either way.",
+            "Optional, not required: a repo-wide grep (listEntitiesForRepo:) found 30 files constructing ScopeDeps-shaped object literals, several explicitly typed : ScopeDeps (e.g. data-runtimes.test.ts:114, root-bound-scope.ts:34). A required field would force all 30 to add a fake just to keep compiling; an optional field with a fallback needs updating only in REAL_DEPS (what production uses) and in this Story's own new ac4-wiring test."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "entityByFile (new LMDB table)",
+        "change": "new",
+        "details": "A new dupSort table, structurally identical to the existing unresolvedByFile table (src/db/graph/store.ts:645), keyed encodeEntityByFileKey(repoId, filePath) = repo u32 BE + utf8 filePath (mirroring encodeUnresolvedByFileKey, src/db/graph/keys.ts:262-264), dupSort value = the entity's u64 id. A getRange keyed to (repoId, filePath) answers findEntitiesByFile directly; a getRange prefixed by repoId alone (the same prefix-scan idiom nameIndex's encodeNameIndexPrefix already uses, keys.ts:255-259) answers listEntitiesForRepo and, with an iteration limit of 1, the ac4 existence check.",
+        "callSites": [
+          "src/db/graph/store.ts:641",
+          "src/db/graph/store.ts:645",
+          "src/db/graph/keys.ts:248-253",
+          "src/db/graph/keys.ts:255-259",
+          "src/db/graph/keys.ts:262-264"
+        ]
+      },
+      {
+        "entity": "entity row write/remove sites (src/db/entities.ts, src/db/graph/migrations.ts)",
+        "change": "invariant-change",
+        "details": "The invariant changes from 'any code may call store.entity.put/remove directly, and only nameIndex upkeep is a known side effect' to 'every entity row write or removal goes through one put/remove wrapper, which keeps the entity row, the name index, and the new entityByFile index in the same transaction.' All 7 existing raw sites (entities.ts:272, entities.ts:289, entities.ts:466, entities.ts:974, entities.ts:1180, migrations.ts:267, migrations.ts:346) are rewritten to call the wrapper instead of writing store.entity and the side tables directly.",
+        "callSites": [
+          "src/db/entities.ts:272",
+          "src/db/entities.ts:289",
+          "src/db/entities.ts:466",
+          "src/db/entities.ts:974",
+          "src/db/entities.ts:1180",
+          "src/db/graph/migrations.ts:267",
+          "src/db/graph/migrations.ts:346"
+        ]
+      },
+      {
+        "entity": "ScopeDeps (src/analyze/context/scope.ts:77-89)",
+        "change": "field-add",
+        "details": "Adds repoHasAnyEntity?: (repoPath: string) => Promise<boolean> (OPTIONAL) to the ScopeDeps interface, and a real implementation to REAL_DEPS, alongside the existing listEntitiesForRepo field. ensureNonEmptyClosure's deps parameter type (invariants.ts:237, currently Pick<ScopeDeps, 'listRepos' | 'listEntitiesForRepo'> & {...}) widens to also pick 'repoHasAnyEntity'; the function prefers deps.repoHasAnyEntity(best.path) when the caller's deps supplies it, falling back to today's deps.listEntitiesForRepo(best.path).length === 0 check otherwise -- this is the real wiring the Story's boundary text means by 'the analyzer's scope check uses it.' Optional + fallback (not required) because 30 files across the repo construct ScopeDeps-shaped object literals and none but this Story's own new tests need to change.",
+        "callSites": [
+          "src/analyze/context/scope.ts:77-87",
+          "src/analyze/context/scope.ts:84-89",
+          "src/analyze/context/invariants.ts:237",
+          "src/analyze/context/invariants.ts:289-298"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "findEntitiesByFile is called with an absolute path that matches no registered repository's root as a prefix.",
+          "detection": "The small store.repo.getRange() scan that resolves the owning repoId finds no repo root that is a path-prefix of the given file.",
+          "response": "Returns [] immediately, matching today's full-scan implementation's behavior for the same input (lc1: the two reads return what they return today).",
+          "userImpact": "No behavior change from today -- an unmatched file already yields an empty result.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A code path bypasses the new put/remove wrapper and calls store.entity.put or store.entity.remove directly, as all 7 sites did before this Story.",
+          "detection": "A new guard test (per the Story's own boundary text) scans the source for entity.put/entity.remove occurrences outside the wrapper's own implementation file and fails the build if any is found.",
+          "response": "The test fails at build/CI time, before the code ships, not at runtime -- this is a dev-time detection, not a production error path.",
+          "userImpact": "None in production; a developer adding a new raw write site is caught before merge.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon crashes or is killed mid-migration, after entityByFile has been partially populated for some entity rows but not all.",
+          "detection": "On the next open, the migration step's own idempotent marker check (consistent with the existing migration chain's convention) finds the migration not yet marked complete and re-runs it.",
+          "response": "The migration re-walks the entity table and re-populates entityByFile; a dupSort put of an already-present (key, value) pair is a no-op in LMDB, so re-running is safe and does not create duplicate entries.",
+          "userImpact": "A second daemon start after a crash mid-migration briefly redoes migration work; reads are correct once it completes, and no entity or index data is lost.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An entity with an empty filePath (an external endpoint, which listEntityFilesForRepo's own comment notes 'belongs to no file').",
+          "expected": "findEntitiesByFile never matches it (no absolute file resolves to an empty filePath), exactly as today's full scan already excludes it from a file-scoped read; listEntitiesForRepo still returns it, since the entityByFile key's repoId-prefix scan includes the (repoId, '') key range as part of that repository's rows, matching today's repo-scoped full scan which has no file-path filter at all."
+        },
+        {
+          "input": "Two different registered repositories each have an entity at the same relative file path (e.g. both have 'src/index.ts').",
+          "expected": "The repoId portion of the key (encoded first, as a fixed-width u32 BE) disambiguates them completely; a file-scoped read for one repo's absolute path never returns the other repo's entities at the same relative path."
+        },
+        {
+          "input": "An absolute file path lies under one registered repo root that is itself nested inside another registered repo root.",
+          "expected": "The repo-resolution helper must pick the longest (most specific) matching root, not an arbitrary one among the store.repo.getRange() results, so the file resolves to the repo that actually indexed it. The helper MUST use a path-segment-boundary comparison (path === r.path || path.startsWith(r.path + '/')), not a plain string-prefix test (which would wrongly match /x/repo2/a.ts against root /x/repo) -- this is the exact comparison longestPrefixRepo (src/analyze/context/scope.ts:168-179) already uses for the identical problem one layer up; src/db cannot import src/analyze/context/scope.ts (layering), so this helper is a small, independent re-implementation of the same boundary-safe logic, not a shared import."
+        },
+        {
+          "input": "listEntitiesForRepo is called for a repository that has zero stored entities.",
+          "expected": "The repoId-prefix range over entityByFile yields no rows; the function returns [], identical to today's full-scan behavior for an entity-free repository."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every one of the 7 existing raw entity.put/entity.remove call sites (migrations.ts:267,346; entities.ts:272,289,466,974,1180) must be routed through the new wrapper, with none left writing the entity table or its side-tables directly -- the exact gap the nameIndex precedent shows is otherwise easy to leave open (its own create and delete sites write nameIndex inline rather than through rewireNameIndexInTxn).",
+          "source": "c1"
+        },
+        {
+          "text": "listEntitiesForRepo and findEntitiesByFile return the identical entity set as their current full-scan implementations for every existing caller; this Story changes only how the read reaches that result, never what it returns.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the new entityByFile table and the put/remove wrapper keep it in exact step with the entity table across create, replace and delete, and that the two existing reads return the identical set as a full scan.",
+          "subjects": [
+            "the new entityByFile LMDB table and its encode/decode key functions",
+            "the new put/remove wrapper for entity rows",
+            "listEntitiesForRepo (src/db/entities.ts:819)",
+            "findEntitiesByFile (src/db/entities.ts:864)",
+            "the new repo-for-absolute-file resolution helper"
+          ],
+          "fixturesNeeded": [
+            "a temp LMDB graph store with two registered repos, one with many more entities than the other, to prove ac1's 'examines only that file's rows' claim is at least behaviorally correct",
+            "entities written, then replaced, then deleted for the same file, re-reading findEntitiesByFile after each step for ac3",
+            "an entity with an empty filePath (external endpoint) to prove the edge case: excluded from findEntitiesByFile, included in listEntitiesForRepo",
+            "two repos sharing the same relative file path, to prove repoId disambiguation",
+            "nested repo roots, to prove longest-prefix-match resolution"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Prove a raw entity.put/entity.remove call outside the new wrapper is caught before it ships.",
+          "subjects": [
+            "a source-scanning guard test over src/db/entities.ts and src/db/graph/migrations.ts"
+          ],
+          "fixturesNeeded": []
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove an existing on-disk store (written before this Story, with no entityByFile table) is brought to the new form exactly once when the daemon opens it, and that a second open does no further migration work.",
+          "subjects": [
+            "the migration step that populates entityByFile for a pre-existing store"
+          ],
+          "fixturesNeeded": [
+            "a store fixture built via the pre-this-Story write path (raw entity.put, no entityByFile) then opened twice in sequence, asserting the migration ran on the first open and not the second"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "entities-lmdb.test.ts: findEntitiesByFile on one file of the smaller of two indexed repos returns the same entities as a full-scan baseline, without touching the larger repo's rows"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "entities-lmdb.test.ts (or a new migration-focused test file): a store built via the pre-Story raw-write path, opened twice, migrates entityByFile on the first open only; reads work correctly after migration without a re-index"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "entities-lmdb.test.ts: write, replace, then delete a file's entities in sequence, asserting findEntitiesByFile after each step matches a full-scan-equivalent baseline every time"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "entities-lmdb.test.ts: repoHasAnyEntity answers yes for a repo with stored entities and no for one with none, without calling listEntitiesForRepo or any function that builds the full entity list",
+            "invariants.test.ts: a deps fixture supplying BOTH a repoHasAnyEntity fake and a listEntitiesForRepo fake proves ensureNonEmptyClosure calls repoHasAnyEntity and never calls listEntitiesForRepo when the former is present, with the ScopeNotIndexedError / pass-through outcome driven entirely by repoHasAnyEntity's answer"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), extending src/db/__tests__/entities-lmdb.test.ts's existing LMDB-backed entity-persistence test pattern"
+    },
+    "migration": {
+      "stateBefore": "listEntitiesForRepo (entities.ts:819-833) and findEntitiesByFile (entities.ts:864-880) both scan store.entity.getRange() over every entity row in the whole store, filtering in JS. There are 7 raw entity.put/entity.remove call sites (entities.ts:272,289,466,974,1180; migrations.ts:267,346) with no single put/remove function; the entity table's only side-table today is nameIndex, kept in step by rewireNameIndexInTxn for some sites and written inline by others. No by-file or by-repo index of entity rows exists. ISSUE-61045de91faef1a0 records this as unfixed.",
+      "stateAfter": "A new entityByFile dupSort table (keyed repoId + filePath, dupSort value = entity u64 id, structurally identical to the existing unresolvedByFile table) exists and is kept in exact step with the entity table by a new put/remove wrapper that all 7 raw sites call instead of writing store.entity (and nameIndex) directly. listEntitiesForRepo and findEntitiesByFile are rewritten to read entityByFile (by repoId-prefix and by exact key respectively) instead of scanning store.entity.getRange(), returning the identical result sets as before. A new existence-check function answers whether a repository holds any entity via a limit-1 range on entityByFile. A migration step walks the existing entity table once per store and populates entityByFile for every row, idempotently (a completion marker following the existing migration chain's convention prevents re-running on a later open).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the entityByFile LMDB table (dupSort) and its key-encode/decode functions, mirroring unresolvedByFile's shape.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the put/remove wrapper for entity rows that writes/removes the entity row, the nameIndex entry, and the entityByFile entry together in one transaction.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Route all 7 existing raw entity.put/entity.remove sites (entities.ts:272,289,466,974,1180; migrations.ts:267,346) through the new wrapper.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add a guard test that scans the source for an entity.put/entity.remove call outside the wrapper's own file and fails if one is found.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Add the small repo-for-absolute-file resolution helper (scans the registered-repo table, picks the longest matching root).",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Rewrite findEntitiesByFile to resolve the owning repoId via the new helper, then read entityByFile by exact (repoId, relativeFilePath) key instead of scanning store.entity.getRange().",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Rewrite listEntitiesForRepo to read entityByFile by repoId-prefix range instead of scanning store.entity.getRange().",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Add repoHasAnyEntity (limit-1 range over entityByFile by repoId-prefix); add it as an OPTIONAL field to the ScopeDeps interface and implement it on REAL_DEPS (src/analyze/context/scope.ts:77-89); widen ensureNonEmptyClosure's deps parameter type (invariants.ts:237) to also Pick 'repoHasAnyEntity'; change its body to prefer deps.repoHasAnyEntity(best.path) when supplied, falling back to today's deps.listEntitiesForRepo(best.path).length === 0 check otherwise -- no existing ScopeDeps test fixture needs to change, since the field is optional; this Story's own new tests (for the ac4 wiring itself) supply a repoHasAnyEntity fake to prove the fast path is taken when available.",
+          "rollbackable": true
+        },
+        {
+          "order": 9,
+          "action": "Add the migration step that walks the existing entity table once and populates entityByFile for every row, applied on the existing migration chain, marker-guarded against re-running.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "listEntitiesForRepo and findEntitiesByFile keep their existing signatures and return the identical entity sets as today for every existing caller (lc1); no caller changes. The new existence-check function and the entityByFile table are purely additive. The migration step adds data without touching or renumbering any existing key, kind byte, or stored value, per the HLD's migration-chain discipline (k5, k6); an older store is brought forward automatically on open with no user re-index.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One new by-file dupSort table, mirroring unresolvedByFile",
+        "oneLineSummary": "A single entityByFile table keyed (repoId, filePath) -> dupSort entity u64 id, read with a file-level key for ac1/ac3, a repo-only key prefix for listEntitiesForRepo, and a limit-1 range for the ac4 existence check; one put/remove wrapper routes all 7 raw sites through it alongside the existing nameIndex upkeep.",
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Two separate tables: by-file and by-repo-membership",
+        "oneLineSummary": "A by-file table for ac1/ac3 plus a SEPARATE by-repo-only table (repoId -> dupSort entity id) for listEntitiesForRepo and the ac4 existence check, kept in step together.",
+        "costEstimate": "M",
+        "reasonRejected": "Redundant with a1: the by-file table's key already starts with repoId, so a prefix-range over it already answers the repo-level and existence-check needs without a second table -- this duplicates storage and write cost for no behavior a1 doesn't already provide; also widens the wrapper's blast radius and the migration's work for no benefit."
+      },
+      {
+        "id": "a3",
+        "name": "By-file index with kind prepended to the key (repoId, kind, filePath)",
+        "oneLineSummary": "Mirror nameIndex's three-part key shape (repo, kind, name) onto the new index as (repo, kind, filePath), enabling a future repo+kind+file lookup alongside the plain by-file one.",
+        "costEstimate": "M",
+        "reasonRejected": "None of the Story's 4 ACs ask for a kind-scoped read; a kind byte in the key forces both reads (which return mixed-kind results per file/repo) to iterate once per kind byte or fall back to a kind-less scan, actively complicating the exact two reads this Story must serve -- unused flexibility nobody asked for."
+      },
+      {
+        "id": "a4",
+        "name": "Reorder the entity table's own primary key to (repoId, filePath, id) instead of a bare u64 id",
+        "oneLineSummary": "Change the entity table's primary key encoding itself to start with repoId+filePath, so a file-scoped or repo-scoped range query on the PRIMARY table answers ac1/ac3/ac4 directly, with no secondary index at all.",
+        "costEstimate": "L",
+        "reasonRejected": "Breaks the HLD's explicit framework constraint that no existing edge key or kind byte changes -- the entity's u64 id is the primary key every edge table (outEdge, inEdge, unresolved, nameIndex, and every relationship row) references directly; re-keying entities would cascade into every one of those tables, far outside this Story's declared M-sized, s2-independent boundary."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/db/graph/migrations.ts:267"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/db/entities.ts:1025-1044"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:645"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/entities.ts:819-833"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/db/repos.ts:313"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/analyze/context/invariants.ts:235-301"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/analyze/context/scope.ts:168-179"
+    }
+  ]
+}

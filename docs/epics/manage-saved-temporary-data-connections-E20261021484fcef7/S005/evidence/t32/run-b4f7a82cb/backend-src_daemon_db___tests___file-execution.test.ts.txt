@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: CM-S1-H: native CSV JSON JSONL and Parquet private resources read complete isolated tables without file writes installs or source-path errors
+ok 1 - CM-S1-H: native CSV JSON JSONL and Parquet private resources read complete isolated tables without file writes installs or source-path errors
+  ---
+  duration_ms: 125.064875
+  type: 'test'
+  ...
+# Subtest: CM-S1-H: BSON and XLSX rows use private typed tables with precise values target isolation and zero cache sidecars
+ok 2 - CM-S1-H: BSON and XLSX rows use private typed tables with precise values target isolation and zero cache sidecars
+  ---
+  duration_ms: 84.558
+  type: 'test'
+  ...
+# Subtest: CM-S1-H: typed empty and all-null tables preserve declared types and nullability before the first batch
+ok 3 - CM-S1-H: typed empty and all-null tables preserve declared types and nullability before the first batch
+  ---
+  duration_ms: 25.403083
+  type: 'test'
+  ...
+# Subtest: CM-S1-S: schema mismatches and decoder admission failures close partial tables native handles and retained budgets
+ok 4 - CM-S1-S: schema mismatches and decoder admission failures close partial tables native handles and retained budgets
+  ---
+  duration_ms: 133.339541
+  type: 'test'
+  ...
+# Subtest: CM-S1-H: query admission rejects writes multi-statements and unapproved sources while close waits for actual use
+ok 5 - CM-S1-H: query admission rejects writes multi-statements and unapproved sources while close waits for actual use
+  ---
+  duration_ms: 18.463334
+  type: 'test'
+  ...
+# Subtest: CM-S1-H: unavailable local readers fail explicitly without INSTALL and close their partial instance
+ok 6 - CM-S1-H: unavailable local readers fail explicitly without INSTALL and close their partial instance
+  ---
+  duration_ms: 8.8675
+  type: 'test'
+  ...
+# Subtest: CM-S1-H: resource close waits for decoder source cleanup after native work settles and closes the source once
+ok 7 - CM-S1-H: resource close waits for decoder source cleanup after native work settles and closes the source once
+  ---
+  duration_ms: 12.9955
+  type: 'test'
+  ...
+# Subtest: CM-S1-H: isolated native and converted execution leaves home cache temp config working roots and captured logs free of file or path leakage
+ok 8 - CM-S1-H: isolated native and converted execution leaves home cache temp config working roots and captured logs free of file or path leakage
+  ---
+  duration_ms: 1881.919125
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2955.159334

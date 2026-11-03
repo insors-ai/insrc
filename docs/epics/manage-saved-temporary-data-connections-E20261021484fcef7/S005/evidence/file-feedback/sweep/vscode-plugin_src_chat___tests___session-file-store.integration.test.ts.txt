@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: over a real temporary directory with two store instances on one session: each appends, then the first saves its held object twice more with a get between; the rows file holds every row of both, was never replaced, and a torn last line written by hand is dropped and cut back
+ok 1 - over a real temporary directory with two store instances on one session: each appends, then the first saves its held object twice more with a get between; the rows file holds every row of both, was never replaced, and a torn last line written by hand is dropped and cut back
+  ---
+  duration_ms: 11.13675
+  type: 'test'
+  ...
+# Subtest: a session the migration kept in globalState keeps its output files through the start-up sweep
+ok 2 - a session the migration kept in globalState keeps its output files through the start-up sweep
+  ---
+  duration_ms: 18.085625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 225.673625

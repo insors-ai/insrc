@@ -1,0 +1,88 @@
+name: Project memory qualification
+
+# Manual, package-only qualification; no automatic backend sweep or paid macOS job.
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Qualification scope
+        type: choice
+        options: [full, queue, store-sdk]
+        default: full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-memory-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-node22:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.1'
+      - name: Record actual runtime and require ext4
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/memory-evidence"
+          {
+            git rev-parse HEAD
+            node -p 'JSON.stringify(process.versions)'
+            uname -a
+            for location in "$RUNNER_TEMP" /tmp; do
+              findmnt -no SOURCE,FSTYPE,TARGET -T "$location"
+              test "$(findmnt -no FSTYPE -T "$location")" = ext4
+            done
+          } | tee "$RUNNER_TEMP/memory-evidence/platform.log"
+          test "${PIPESTATUS[0]}" = 0
+      - name: Install the independent package only
+        shell: bash
+        env:
+          CXXFLAGS: -std=c++17
+        run: |
+          cp -R packages/project-memory "$RUNNER_TEMP/project-memory"
+          cd "$RUNNER_TEMP/project-memory"
+          npm install --no-audit --no-fund 2>&1 | tee "$RUNNER_TEMP/memory-evidence/install.log"
+          npm run build
+          npm ls --all --json > "$RUNNER_TEMP/memory-evidence/dependency-graph.json"
+          cp package-lock.json "$RUNNER_TEMP/memory-evidence/package-lock.json"
+      - name: Native ownership and lifecycle qualification
+        if: inputs.suite == 'full'
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/project-memory"
+          node --import tsx --test --test-reporter=tap src/__tests__/native.test.ts src/__tests__/configuration.test.ts src/__tests__/ownership.test.ts src/__tests__/runtime.test.ts src/__tests__/contention.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/native-lifecycle.tap"
+      - name: Packed consumer and natural exit qualification
+        if: inputs.suite == 'full'
+        shell: bash
+        env:
+          CXXFLAGS: -std=c++17
+        run: |
+          cd "$RUNNER_TEMP/project-memory"
+          node --import tsx --test --test-reporter=tap src/__tests__/packed.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/packed-consumer.tap"
+      - name: Durable queue and process crash qualification
+        if: inputs.suite != 'store-sdk'
+        shell: bash
+        env:
+          INSRC_MEMORY_CRASH_EVIDENCE: ${{ runner.temp }}/memory-evidence/queue-crash.json
+        run: |
+          cd "$RUNNER_TEMP/project-memory"
+          node --import tsx --test --test-reporter=tap src/__tests__/queue-*.test.ts src/__tests__/runtime.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/queue-suite.tap"
+      - name: Native store SDK and process crash qualification
+        if: inputs.suite != 'queue'
+        shell: bash
+        env:
+          INSRC_MEMORY_STORE_PRIMITIVE_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-sdk.json
+        run: |
+          cd "$RUNNER_TEMP/project-memory"
+          node --import tsx --test --test-reporter=tap src/__tests__/store-codec.test.ts src/__tests__/store-embedding-profile.test.ts src/__tests__/store-native.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/store-sdk.tap"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: project-memory-linux-node22-${{ github.sha }}
+          path: ${{ runner.temp }}/memory-evidence/

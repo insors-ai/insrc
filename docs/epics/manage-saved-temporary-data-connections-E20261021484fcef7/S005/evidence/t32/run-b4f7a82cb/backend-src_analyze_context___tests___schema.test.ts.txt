@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: SCHEMA_VERSION is a positive integer
+ok 1 - SCHEMA_VERSION is a positive integer
+  ---
+  duration_ms: 0.77525
+  type: 'test'
+  ...
+# Subtest: BUNDLE_LAYER_NAMES matches the seven documented layers
+ok 2 - BUNDLE_LAYER_NAMES matches the seven documented layers
+  ---
+  duration_ms: 0.713625
+  type: 'test'
+  ...
+# Subtest: schema declares every layer as required
+ok 3 - schema declares every layer as required
+  ---
+  duration_ms: 0.192458
+  type: 'test'
+  ...
+# Subtest: validateBundle accepts a minimum valid bundle (all empty strings, no meta)
+ok 4 - validateBundle accepts a minimum valid bundle (all empty strings, no meta)
+  ---
+  duration_ms: 23.043208
+  type: 'test'
+  ...
+# Subtest: validateBundle accepts a fully-populated bundle with meta
+ok 5 - validateBundle accepts a fully-populated bundle with meta
+  ---
+  duration_ms: 0.162292
+  type: 'test'
+  ...
+# Subtest: validateBundleWithErrors returns ok=true on a valid bundle
+ok 6 - validateBundleWithErrors returns ok=true on a valid bundle
+  ---
+  duration_ms: 0.149625
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a bundle missing the 'system' layer
+ok 7 - validateBundle rejects a bundle missing the 'system' layer
+  ---
+  duration_ms: 0.093083
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a bundle missing the 'focus' layer
+ok 8 - validateBundle rejects a bundle missing the 'focus' layer
+  ---
+  duration_ms: 0.041125
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a bundle missing the 'summary' layer
+ok 9 - validateBundle rejects a bundle missing the 'summary' layer
+  ---
+  duration_ms: 0.212833
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a bundle missing the 'structure' layer
+ok 10 - validateBundle rejects a bundle missing the 'structure' layer
+  ---
+  duration_ms: 0.693459
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a bundle missing the 'surface' layer
+ok 11 - validateBundle rejects a bundle missing the 'surface' layer
+  ---
+  duration_ms: 0.078833
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a bundle missing the 'artefacts' layer
+ok 12 - validateBundle rejects a bundle missing the 'artefacts' layer
+  ---
+  duration_ms: 0.061625
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a bundle missing the 'upstream' layer
+ok 13 - validateBundle rejects a bundle missing the 'upstream' layer
+  ---
+  duration_ms: 0.051875
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects a non-string layer
+ok 14 - validateBundle rejects a non-string layer
+  ---
+  duration_ms: 0.065667
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects unknown top-level properties
+ok 15 - validateBundle rejects unknown top-level properties
+  ---
+  duration_ms: 0.1495
+  type: 'test'
+  ...
+# Subtest: validateBundle rejects unknown meta properties
+ok 16 - validateBundle rejects unknown meta properties
+  ---
+  duration_ms: 0.10175
+  type: 'test'
+  ...
+# Subtest: meta.mode rejects values outside the enum
+ok 17 - meta.mode rejects values outside the enum
+  ---
+  duration_ms: 0.099041
+  type: 'test'
+  ...
+# Subtest: meta.shaper rejects values outside the enum
+ok 18 - meta.shaper rejects values outside the enum
+  ---
+  duration_ms: 0.17825
+  type: 'test'
+  ...
+# Subtest: meta.schemaVersion must match SCHEMA_VERSION exactly
+ok 19 - meta.schemaVersion must match SCHEMA_VERSION exactly
+  ---
+  duration_ms: 0.059709
+  type: 'test'
+  ...
+# Subtest: meta.emptyLayers rejects an unknown layer name
+ok 20 - meta.emptyLayers rejects an unknown layer name
+  ---
+  duration_ms: 0.043667
+  type: 'test'
+  ...
+# Subtest: meta.emptyLayers rejects duplicate entries
+ok 21 - meta.emptyLayers rejects duplicate entries
+  ---
+  duration_ms: 0.040167
+  type: 'test'
+  ...
+# Subtest: meta.toolCalls rejects a negative count
+ok 22 - meta.toolCalls rejects a negative count
+  ---
+  duration_ms: 0.035917
+  type: 'test'
+  ...
+# Subtest: meta.toolCalls rejects a non-integer
+ok 23 - meta.toolCalls rejects a non-integer
+  ---
+  duration_ms: 0.040958
+  type: 'test'
+  ...
+# Subtest: meta.modelId rejects an empty string
+ok 24 - meta.modelId rejects an empty string
+  ---
+  duration_ms: 0.039
+  type: 'test'
+  ...
+# Subtest: meta.repoLastIndexedAt accepts a positive integer when present
+ok 25 - meta.repoLastIndexedAt accepts a positive integer when present
+  ---
+  duration_ms: 0.045916
+  type: 'test'
+  ...
+# Subtest: meta.repoLastIndexedAt rejects a negative value
+ok 26 - meta.repoLastIndexedAt rejects a negative value
+  ---
+  duration_ms: 0.035958
+  type: 'test'
+  ...
+# Subtest: bundle without meta is valid (driver stamps meta before persisting)
+ok 27 - bundle without meta is valid (driver stamps meta before persisting)
+  ---
+  duration_ms: 0.026167
+  type: 'test'
+  ...
+# Subtest: bundle with partial meta (missing required key) is rejected
+ok 28 - bundle with partial meta (missing required key) is rejected
+  ---
+  duration_ms: 0.059375
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 292.007167

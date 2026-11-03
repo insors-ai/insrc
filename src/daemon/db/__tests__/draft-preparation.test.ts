@@ -51,6 +51,17 @@ test('CM-S2-F1: production metadata admission precedes secrets and prepares only
   pause=async()=>{started();await blocked;};const pending=service.prepareDraft(context,base);await announced;
   let entered=false;const queued=withSavedRootGate(root,async()=>{entered=true;});await new Promise(r=>setImmediate(r));assert.equal(entered,false);release();await pending;await queued;pause=undefined;
   assert.equal(reload.mock.callCount(),0);assert.deepEqual(writes,[]);assert.deepEqual([...values],vault);assert.deepEqual(await readFile(path),before);
+  // An admitted existing-row probe keeps the same pool lease after preparation.
+  let releases=0;const originalLease=pool.lease.bind(pool);const leased=mock.method(pool,'lease',async id=>{const lease=await originalLease(id);return {...lease,release:async()=>{releases++;await lease.release();}};});
+  let drain!:()=>void;const drained=new Promise<void>(resolve=>{drain=resolve;});
+  await service.prepareDraft(context,base,undefined,drained);
+  assert.equal(pool.leaseState(key.id).active,1);
+  assert.throws(()=>pool.prepareRemoval(key.id,revision,randomUUID()),{code:'busy'});
+  drain();drain();await drained;await new Promise(resolve=>setImmediate(resolve));assert.equal(pool.leaseState(key.id).active,0);assert.equal(releases,1);leased.mock.restore();
+  const preparedRemoval=pool.prepareRemoval(key.id,revision,randomUUID());pool.cancelRemoval(preparedRemoval);
+  let unsavedDrain!:()=>void;const unsavedWork=new Promise<void>(resolve=>{unsavedDrain=resolve;});
+  await service.prepareDraft(context,{key:{...key,id:'unsaved'},publicPatch:{kind:'postgres',endpoint:'postgres://host/db'},credentials:{}},undefined,unsavedWork);
+  assert.equal(pool.leaseState('unsaved').active,0);unsavedDrain();
   const signing=[...values.keys()].find(ref=>ref.startsWith('db-management:'))!;const signingValue=values.get(signing)!;values.delete(signing);await assert.rejects(service.prepareDraft(context,base));values.set(signing,signingValue);
   await chmod(path,0o600);reads.length=0;await assert.rejects(service.prepareDraft(context,base));assert.deepEqual(reads,[]);await chmod(path,0o400);
   reload.mock.restore();

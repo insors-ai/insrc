@@ -1,0 +1,1067 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s2",
+    "createdAt": "2026-11-02T07:02:24.067Z",
+    "updatedAt": "2026-11-03T08:28:52.463Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "2688289f7",
+        "ranAt": "2026-11-02T11:39:57.149Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "canonical-json-frame-length-checksum-and-bounded-decoding",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+                "title": "canonical-json-frame-length-checksum-and-bounded-decoding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "immutable-policy-snapshot-before-persistence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+                "title": "immutable-policy-snapshot-before-persistence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "scoped-identity-exact-retry-and-conflicting-reuse",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+                "title": "scoped-identity-exact-retry-and-conflicting-reuse",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "canonical-json-frame-length-checksum-and-bounded-decoding",
+                "result": "pass"
+              },
+              {
+                "title": "immutable-policy-snapshot-before-persistence",
+                "result": "pass"
+              },
+              {
+                "title": "scoped-identity-exact-retry-and-conflicting-reuse",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e66611df5",
+        "ranAt": "2026-11-02T07:07:03.756Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "owned-bootstrap-short-write-and-directory-sync",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "owned-bootstrap-short-write-and-directory-sync",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "uncertain-write-fences-without-unsafe-cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "unsafe-queue-files-and-directory-replacement-are-refused",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+                "title": "file-sync-failure-preserves-written-bytes-and-ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-io.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1920,
+            "titles": [
+              {
+                "title": "owned-bootstrap-short-write-and-directory-sync",
+                "result": "pass"
+              },
+              {
+                "title": "uncertain-write-fences-without-unsafe-cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "unsafe-queue-files-and-directory-replacement-are-refused",
+                "result": "pass"
+              },
+              {
+                "title": "file-sync-failure-preserves-written-bytes-and-ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e2288ef98",
+        "ranAt": "2026-11-02T07:11:12.268Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "retained-byte-and-worst-case-metadata-reservations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "retained-byte-and-worst-case-metadata-reservations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "checkpoint-schema-generation-and-retry-state-validation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "checkpoint-schema-generation-and-retry-state-validation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+                "title": "checkpoint-publication-faults-preserve-current-or-complete-next",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-checkpoint.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1551,
+            "titles": [
+              {
+                "title": "retained-byte-and-worst-case-metadata-reservations",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint-schema-generation-and-retry-state-validation",
+                "result": "pass"
+              },
+              {
+                "title": "rotation-orphan-successor-and-checkpoint-replacement-matrix",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint-publication-faults-preserve-current-or-complete-next",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2688289f7",
+        "ranAt": "2026-11-02T11:42:45.468Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "partial-tail-intent-resumes-before-and-after-truncate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "published-checkpoint-and-sealed-corruption-fail-closed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "published-checkpoint-and-sealed-corruption-fail-closed",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+                "title": "exact-header-only-orphan-recovers-event-bearing-orphan-does-not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2855,
+            "titles": [
+              {
+                "title": "recovery-frontier-complete-suffix-and-unaccepted-partial-tail",
+                "result": "pass"
+              },
+              {
+                "title": "published-checkpoint-and-sealed-corruption-fail-closed",
+                "result": "pass"
+              },
+              {
+                "title": "exact-header-only-orphan-recovers-event-bearing-orphan-does-not",
+                "result": "pass"
+              },
+              {
+                "title": "partial-tail-intent-resumes-before-and-after-truncate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f14a8ef95",
+        "ranAt": "2026-11-02T07:27:05.062Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "durable-append-frontier-and-full-queue-refusal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-append.test.ts",
+                "title": "durable-append-frontier-and-full-queue-refusal",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-append.test.ts",
+                "title": "oversized-single-frame-rotates-without-exceeding-retained-budget",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-append.test.ts",
+                "title": "ambiguous-append-fences-and-reopen-deduplicates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-append.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1541,
+            "titles": [
+              {
+                "title": "durable-append-frontier-and-full-queue-refusal",
+                "result": "pass"
+              },
+              {
+                "title": "oversized-single-frame-rotates-without-exceeding-retained-budget",
+                "result": "pass"
+              },
+              {
+                "title": "ambiguous-append-fences-and-reopen-deduplicates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "54e12c6af",
+        "ranAt": "2026-11-02T07:30:49.857Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "concurrent-admission-fifo-and-idempotent-retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+                "title": "concurrent-admission-fifo-and-idempotent-retry",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+                "title": "admission-quota-refunds-and-hanging-policy-drains-safely",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "privacy-binding-and-scope-status-isolation-before-enqueue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+                "title": "privacy-binding-and-scope-status-isolation-before-enqueue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2143,
+            "titles": [
+              {
+                "title": "concurrent-admission-fifo-and-idempotent-retry",
+                "result": "pass"
+              },
+              {
+                "title": "privacy-binding-and-scope-status-isolation-before-enqueue",
+                "result": "pass"
+              },
+              {
+                "title": "admission-quota-refunds-and-hanging-policy-drains-safely",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "08549be1f",
+        "ranAt": "2026-11-02T08:10:27.157Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pinned-replay-and-qualified-operation-status",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-replay.test.ts",
+                "title": "pinned-replay-and-qualified-operation-status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "retry-holes-do-not-authorize-mixed-segment-deletion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-replay.test.ts",
+                "title": "retry-holes-do-not-authorize-mixed-segment-deletion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-replay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1205,
+            "titles": [
+              {
+                "title": "pinned-replay-and-qualified-operation-status",
+                "result": "pass"
+              },
+              {
+                "title": "retry-holes-do-not-authorize-mixed-segment-deletion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "a0d1fe628",
+        "ranAt": "2026-11-03T08:20:27.094Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sc3-receipt-verifier-proof-and-causal-order-contract",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts",
+                "title": "sc3-receipt-verifier-proof-and-causal-order-contract",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts",
+                "title": "invalid-and-nonterminal-proofs-never-resolve-or-delete",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts",
+                "title": "queue-only-mode-cannot-ack-terminal-state",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1502,
+            "titles": [
+              {
+                "title": "sc3-receipt-verifier-proof-and-causal-order-contract",
+                "result": "pass"
+              },
+              {
+                "title": "invalid-and-nonterminal-proofs-never-resolve-or-delete",
+                "result": "pass"
+              },
+              {
+                "title": "queue-only-mode-cannot-ack-terminal-state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4684,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "3b404c77a",
+        "ranAt": "2026-11-02T08:30:08.709Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "verified-terminal-ack-retirement-and-reader-pins",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "recycled-identity-requires-authoritative-receipt-capability",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4175,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "5cebe413a",
+        "ranAt": "2026-11-02T08:35:50.529Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "drain-close-startup-failure-preserve-backlog-and-ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "drain-close-startup-failure-preserve-backlog-and-ownership",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "queue-limit-validation-precedes-directory-ownership",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "all-quiescent-participants-close-before-unverified-ownership-is-retained",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1556,
+            "titles": [
+              {
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+                "result": "pass"
+              },
+              {
+                "title": "all-quiescent-participants-close-before-unverified-ownership-is-retained",
+                "result": "pass"
+              },
+              {
+                "title": "drain-close-startup-failure-preserve-backlog-and-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "queue-limit-validation-precedes-directory-ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "4d882859c",
+        "ranAt": "2026-11-02T08:49:31.404Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "write-sync-rename-unlink-failure-fences-the-lane",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "write-sync-rename-unlink-failure-fences-the-lane",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "partial-bootstrap-header-and-event-writes-recover-explicitly",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "adversarial-admission-and-recycled-scope-isolation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "maximum-qualified-identities-preserve-scope-and-epoch",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+                "title": "wall-clock-changes-preserve-sequence-and-clamp-age",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-fault-matrix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4659,
+            "titles": [
+              {
+                "title": "write-sync-rename-unlink-failure-fences-the-lane",
+                "result": "pass"
+              },
+              {
+                "title": "partial-bootstrap-header-and-event-writes-recover-explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "maximum-qualified-identities-preserve-scope-and-epoch",
+                "result": "pass"
+              },
+              {
+                "title": "wall-clock-changes-preserve-sequence-and-clamp-age",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3731,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "8e9b2be7d",
+        "ranAt": "2026-11-02T11:48:51.653Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "queue-resource-and-fsync-cost-measurement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-cost.test.ts",
+                "title": "queue-resource-and-fsync-cost-measurement",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/project-memory-s2-performance.test.ts",
+                "title": "full-current-source-queue-resource-study-evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-cost.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1568,
+            "titles": [
+              {
+                "title": "queue-resource-and-fsync-cost-measurement",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/project-memory-s2-performance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 354,
+            "titles": [
+              {
+                "title": "full-current-source-queue-resource-study-evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "8e9b2be7d",
+        "ranAt": "2026-11-02T11:51:06.132Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "accepted-set-survives-process-kill-at-every-boundary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-crash.test.ts",
+                "title": "accepted-set-survives-process-kill-at-every-boundary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "macos-apfs-linux-ext4-node22-queue-qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/queue-crash.test.ts",
+                "title": "macos-apfs-linux-ext4-node22-queue-qualification",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/project-memory-s2-qualification.test.ts",
+                "title": "current-source-macos-apfs-node22-crash-qualification",
+                "result": "pass"
+              },
+              {
+                "file": "scripts/__tests__/project-memory-s2-qualification.test.ts",
+                "title": "current-source-linux-ext4-node22-crash-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-crash.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15638,
+            "titles": [
+              {
+                "title": "accepted-set-survives-process-kill-at-every-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "macos-apfs-linux-ext4-node22-queue-qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "scripts/__tests__/project-memory-s2-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 699,
+            "titles": [
+              {
+                "title": "current-source-macos-apfs-node22-crash-qualification",
+                "result": "pass"
+              },
+              {
+                "title": "current-source-linux-ext4-node22-crash-qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "74dd4e383",
+        "ranAt": "2026-11-03T08:28:52.463Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "packed-external-submit-crash-reopen-and-operation",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pure-import-and-no-daemon-or-backend-storage-dependency",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "package-suite-root-build-and-current-source-ci-evidence",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "S002/evidence/backend/local-validation.json, root-build.log and SELF-REVIEW.md: source0f4ee7724 full local memory suite63/63; Linux full CI https://github.com/insors-ai/insrc/actions/runs/41602463831 passed14 lifecycle+4 packed+45 queue, no skips,55 actual SIGKILL boundaries on each platform. Current-source Mac/Linux/performance proof tests3/3 pass; benchmark rerun and root build pass. Prior backend full-sweep.json remains separately disclosed with18 failures,2 cancellations and source-change caveat; no clean current backend-wide pass is claimed."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1570,
+            "titles": [
+              {
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19277,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

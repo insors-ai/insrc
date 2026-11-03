@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress
+ok 1 - buildDaemonStatus keeps queueDepth as the total and adds queueLanes with each lane's depth, whether it is running, and the running sweep's progress
+  ---
+  duration_ms: 2.202459
+  type: 'test'
+  ...
+# Subtest: with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes
+ok 2 - with no sweep running the summary lane carries no sweep, and without a lane source the status carries no queueLanes
+  ---
+  duration_ms: 0.272875
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 369.441333

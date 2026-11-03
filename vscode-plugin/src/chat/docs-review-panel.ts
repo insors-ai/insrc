@@ -60,6 +60,18 @@ export interface DocsReviewHostDeps {
   readonly watchDocument?: ((relPaths: readonly string[], onChange: () => void) => { dispose(): void }) | undefined;
   /** The timer for the quiet period after a file change; setTimeout by default. */
   readonly setTimer?: ((fn: () => void, ms: number) => { cancel(): void }) | undefined;
+  /**
+   * ISSUE-6dbf14435972af7a: how often the pending list is re-read while the pane is alive,
+   * so a decision made on another surface (e.g. insrc_workflow_approve in the chat) is
+   * reflected in the list and in the open document's buttons. Default 5000 ms; 0 disables.
+   */
+  readonly pollMs?: number | undefined;
+  /**
+   * ISSUE-6dbf14435972af7a: the timer the pending-list poll runs on. Separate from
+   * `setTimer` (the quiet period) so the two never share a test's timer queue; defaults to
+   * a real timer, NOT to `setTimer`.
+   */
+  readonly pollTimer?: ((fn: () => void, ms: number) => { cancel(): void }) | undefined;
 }
 
 /** How long the open document's files must be quiet before it is read again. */
@@ -1284,6 +1296,14 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   // this document only and is sent, like its re-read, by its path, never by its id, so
   // neither depends on the document still being pending.
   let opened: OpenDocument | undefined;
+  // ISSUE-7fa297efd4bd1c59: the artifact ids presented by chat turns (quiet opens) since the
+  // pane opened, in order. The openSeq guard below still shows the LAST presented document;
+  // this list is what keeps the earlier ones reachable (the webview renders them as a strip).
+  let presentedIds: string[] = [];
+  // ISSUE-6dbf14435972af7a: the pending-list poll (see startPoll below) and the pending ids
+  // it saw on the previous tick, so a change in the OPEN document's membership re-renders it.
+  let pollTimer: { cancel(): void } | undefined;
+  let prevPendingIds: ReadonlySet<string> | undefined;
   // The nonce of the shell last rendered: an HTML companion's scripts run in its frame only
   // when they carry it.
   let shellNonce = '';
@@ -1317,6 +1337,41 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq !== refreshSeq) return;
       postUnavailable(err);
     }
+  }
+
+  /**
+   * ISSUE-6dbf14435972af7a: decisions made outside the pane (the chat's
+   * insrc_workflow_approve, an HLD amendment through approveAmendmentById) reach this pane
+   * only through the file watch on the OPEN document. While the pane is alive, poll the
+   * pending list so the list itself and the open document's buttons always follow the
+   * artifact's current state, whichever surface decided. When the open document's
+   * membership changes, it is re-read once, which flips its bar to the outcome.
+   */
+  function startPoll(): void {
+    pollTimer?.cancel();
+    const ms = deps.pollMs ?? 5000;
+    if (ms <= 0) return;
+    const schedule = deps.pollTimer ?? ((fn: () => void, wait: number) => {
+      const t = setTimeout(fn, wait);
+      return { cancel: () => clearTimeout(t) };
+    });
+    const tickPoll = (): void => {
+      pollTimer = schedule(() => {
+        if (disposed) return;
+        // Snapshot BEFORE the refresh: the first tick then compares the open-time
+        // membership (still in `pending`) with the post-refresh one.
+        const before = prevPendingIds ?? new Set(pending.keys());
+        void refreshPending().then(() => {
+          if (disposed) return;
+          const now = new Set(pending.keys());
+          prevPendingIds = now;
+          const o = opened;
+          if (o !== undefined && now.has(o.artifactId) !== before.has(o.artifactId)) void reopen();
+          tickPoll();
+        });
+      }, ms);
+    };
+    tickPoll();
   }
 
   /** A failed pending read: an empty list plus the inline unavailable notice. */
@@ -1487,6 +1542,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       post({
         type: 'docs-content',
         artifactId,
+        ...(presentedIds.length > 0 ? { presented: [...presentedIds] } : {}),
         markdown: content.markdown,
         openQuestions: content.openQuestions,
         blocked: content.blocked,
@@ -1755,6 +1811,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `.rv-pager{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:10px;padding:6px 14px;border-top:1px solid var(--vscode-panel-border);background:var(--vscode-sideBar-background);font-size:12px;}` +
       // One tab per document of the artifact: the markdown, then each HTML document.
       `.rv-tabs{display:flex;gap:2px;flex-wrap:wrap;}` +
+      // ISSUE-7fa297efd4bd1c59 — the strip of documents a chat turn presented for review.
+      `.rv-presented{display:none;gap:4px;flex-wrap:wrap;align-items:center;font-size:11px;color:var(--vscode-descriptionForeground);}` +
+      `.rv-presented .rv-pbtn{background:none;border:1px solid var(--vscode-panel-border);border-radius:3px;padding:1px 7px;font:inherit;font-size:11px;color:var(--vscode-textLink-foreground);cursor:pointer;}` +
+      `.rv-presented .rv-pbtn:hover{text-decoration:underline;}` +
+      `.rv-presented .rv-pbtn:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px;}` +
+      `.rv-presented .rv-pbtn.rv-on{color:var(--vscode-foreground);border-color:var(--vscode-focusBorder);}` +
       `.rv-tab{background:none;color:var(--vscode-descriptionForeground);border:0;border-bottom:2px solid var(--vscode-sideBar-background);border-radius:0;padding:3px 8px;font:inherit;cursor:pointer;}` +
       `.rv-tab.rv-on{color:var(--vscode-foreground);border-bottom-color:var(--vscode-focusBorder);}` +
       `.rv-tab:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:-1px;}` +
@@ -1979,6 +2041,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // The tabs, and the two views of the region: the markdown document's hosts, and an
       // HTML document's path, note and frame.
       `const tabsEl=document.getElementById('insrc-rv-tabs');` +
+      `const presentedEl=document.getElementById('insrc-rv-presented');` +
       `const mdEl=document.getElementById('insrc-rv-md');` +
       `const htmlEl=document.getElementById('insrc-rv-html');` +
       `const htmlPathEl=document.getElementById('insrc-rv-html-path');` +
@@ -2047,6 +2110,18 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `btn.approve.addEventListener('click',function(){rvSend('approve');});` +
       `btn.reject.addEventListener('click',function(){rvSend('reject');});` +
       `btn.feedback.addEventListener('click',function(){rvSend('feedback');});` +
+      // ISSUE-7fa297efd4bd1c59 — the presented strip: with more than one document presented
+      // for review, show them all so none is silently replaced by a later one; each button
+      // re-opens that document through the same open-doc path a list row uses. One (or no)
+      // presented document behaves as today: no strip.
+      `function rvPresented(list){if(!presentedEl)return;while(presentedEl.firstChild)presentedEl.removeChild(presentedEl.firstChild);` +
+      `if(!list||list.length<2){presentedEl.style.display='none';return;}` +
+      `presentedEl.style.display='flex';` +
+      `var label=document.createElement('span');label.textContent='Presented for review ('+list.length+'):';presentedEl.appendChild(label);` +
+      `list.forEach(function(id){var known=null;for(var i=0;i<items.length;i++)if(items[i].id===id){known=items[i];break;}` +
+      `var b=document.createElement('button');b.type='button';b.className='rv-pbtn'+(shown&&shown.artifactId===id?' rv-on':'');` +
+      `b.setAttribute('role','listitem');b.textContent=String((known&&known.title)||id);` +
+      `b.addEventListener('click',function(){vs.postMessage({v:1,payload:{type:'open-doc',artifactId:id}});});presentedEl.appendChild(b);});}` +
       // The tabs: one per document, the markdown first. With one document there is
       // nothing to choose and no tab is shown. Titles are set as text.
       `function rvTabs(){while(tabsEl.firstChild)tabsEl.removeChild(tabsEl.firstChild);` +
@@ -2235,7 +2310,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `if(companionFrame&&e.source===companionFrame.contentWindow){rvFrameMessage(e.data);return;}` +
       `var m=e.data&&e.data.payload;if(!m)return;` +
       `if(m.type==='docs-list'){renderList(m.artifacts);}` +
-      `else if(m.type==='docs-content'){renderContent(m);}` +
+      `else if(m.type==='docs-content'){renderContent(m);rvPresented(m.presented);}` +
       `else if(m.type==='docs-decision-result'){rvResult(m);}` +
       `else if(m.type==='docs-companion'){rvCompanion(m);}});` +
       `rvListLoad();renderTable();rvApplyView();rvShowTab('');renderBar();` +
@@ -2274,6 +2349,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       `<span id="insrc-rv-state" class="rv-dim"></span>` +
       `<span class="rv-sp"></span>` +
       `<span id="insrc-rv-tabs" class="rv-tabs" role="tablist" aria-label="documents of this artifact"></span>` +
+      `<span id="insrc-rv-presented" class="rv-presented" role="list" aria-label="documents presented for review by the chat"></span>` +
       `</div>` +
       // The one scrolling region: everything of the document, and nothing else.
       `<div id="insrc-rv-scroll" class="rv-scroll"><div id="insrc-rv-md" class="rv-doc">` +
@@ -2385,6 +2461,8 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     channel.onDidDispose(() => {
       disposed = true;
       channel = undefined;
+      pollTimer?.cancel();
+      pollTimer = undefined;
       pending.clear();
       setOpened(undefined);
     });
@@ -2393,6 +2471,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     // The webview boot ping also triggers refreshPending; post one now so a fast
     // consumer (test double) sees the list without waiting for the ping.
     void refreshPending();
+    startPoll();
   }
 
   const host: DocsReviewHost = {
@@ -2401,13 +2480,19 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     },
     openArtifact(target): void {
       show(target.quiet === true);
+      // A quiet open is a chat-presented document: remember it so the pane can offer every
+      // presented document, not just the last one (ISSUE-7fa297efd4bd1c59).
+      if (target.quiet === true && !presentedIds.includes(target.artifactId)) presentedIds.push(target.artifactId);
       void openArtifactFrom(target);
     },
     dispose(): void {
       disposed = true;
+      pollTimer?.cancel();
+      pollTimer = undefined;
       channel?.dispose();
       channel = undefined;
       pending.clear();
+      presentedIds = [];
       setOpened(undefined);
     },
   };

@@ -1,0 +1,24 @@
+{
+  "task": "t5",
+  "focusedNodeBridge": "pass",
+  "junit": {
+    "PersistentDaemonLaneTest": 10,
+    "UnixSocketDaemonRpcParseTest": 13,
+    "failures": 0,
+    "errors": 0
+  },
+  "transport": "production AF_UNIX and controlled actual TCP SocketChannel fixtures",
+  "limits": {
+    "pending": 64,
+    "requestAndFrameBytes": 16777216,
+    "abandonedIds": 256,
+    "deadlineMs": 15000
+  },
+  "fullSweep": "deferred until all implementation tasks",
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt": "c4f5cdc6f26908f83e003c111ed46fe34dc1f8b69ba90362dbc85c0614506bc6",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt": "9799279c6f9cfc9409fbf77c5017e4b6ed7eaf90beb0bf031aea9628abb11131",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PersistentDaemonLaneTest.kt": "07a668db79d4a3e724817aad6a78f985a0f7053b4872f6ad035db190592bef74",
+    "src/shared/__tests__/connection-manager-kotlin-transport.test.ts": "d1e3cf0ef934ca30ead4481403c2ef2157d49ddcf4741dd6cdc311ab45d6b771"
+  }
+}

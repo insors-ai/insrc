@@ -28,8 +28,10 @@ import {
 	validateModelCatalog,
 	type CliFamilyId,
 	type EffortLevel,
+	type FamilyHost,
 	type FamilyId,
 	type InputLimit,
+	type ModelHosting,
 	type TierDefault,
 } from './model-catalog.js';
 import { familyForClient, getModelRegistry, type FallbackReason, type ModelRegistry } from './model-registry.js';
@@ -41,7 +43,11 @@ export interface ModelDefinitionEntry {
 	readonly displayName?: string | undefined;
 	readonly efforts:      readonly EffortLevel[];
 	readonly inputLimit?:  InputLimit | undefined;
+	/** Ollama models only, when the definitions give it: approximate memory (MB) at base context. */
+	readonly memoryMb?:    number | undefined;
 	readonly source:       'shipped' | 'user-approved';
+	/** Models of an Ollama-hosted family only: where the model runs. */
+	readonly hosting?:     ModelHosting | undefined;
 	/** Ollama models only; absent when Ollama did not answer. */
 	readonly installed?:   boolean | undefined;
 }
@@ -49,7 +55,9 @@ export interface ModelDefinitionEntry {
 /** One family in the answer. */
 export interface FamilyDefinitionEntry {
 	readonly id:               FamilyId;
-	readonly cliKind?:         'claude' | 'codex' | undefined;
+	readonly cliKind?:         'claude' | 'codex' | 'vibe' | undefined;
+	/** Ollama-hosted families only: the CLI runs against Ollama. */
+	readonly host?:            FamilyHost | undefined;
 	readonly displayName:      string;
 	readonly tierDefaults?:    Readonly<Record<TierName, TierDefault>> | undefined;
 	readonly summariserModel?: string | undefined;
@@ -106,17 +114,21 @@ export function projectDefinitions(
 			...(m.displayName !== undefined ? { displayName: m.displayName } : {}),
 			efforts: m.efforts,
 			...(m.inputLimit !== undefined ? { inputLimit: m.inputLimit } : {}),
+			...(m.memoryMb !== undefined ? { memoryMb: m.memoryMb } : {}),
 			source:  m.source,
+			...(m.hosting !== undefined ? { hosting: m.hosting } : {}),
 			...(!cli && installed !== undefined ? { installed: installed.includes(m.id) } : {}),
 		}));
+		// Only a vendor CLI family (a CLI kind and no host) carries rejected ids.
 		// A rejected id the family also serves (a later shipped file lists it) is
 		// served as shipped, as the registry resolves it, so it is not "rejected".
-		const rejected = cli
+		const rejected = cli && f.host === undefined
 			? registry.rejected(f.id as CliFamilyId).filter(id => registry.find(f.id, id) === undefined)
 			: undefined;
 		return {
 			id:          f.id,
 			...(f.cliKind !== undefined ? { cliKind: f.cliKind } : {}),
+			...(f.host !== undefined ? { host: f.host } : {}),
 			displayName: f.displayName,
 			...(f.tierDefaults !== undefined ? { tierDefaults: f.tierDefaults } : {}),
 			...(f.summariserModel !== undefined ? { summariserModel: f.summariserModel } : {}),
@@ -170,7 +182,8 @@ export interface ResolvedRole {
 	readonly effort?:     EffortLevel | undefined;
 	readonly inputLimit?: InputLimit | undefined;
 	readonly fallback?:   { readonly reason: FallbackReason; readonly requested: string } | undefined;
-	readonly cli?:        { readonly kind: 'claude' | 'codex' } | undefined;
+	/** `ollama` is present for an Ollama-hosted family with a declared model: the CLI runs against that server. */
+	readonly cli?:        { readonly kind: 'claude' | 'codex' | 'vibe'; readonly ollama?: { readonly host: string; readonly hosting: ModelHosting } | undefined } | undefined;
 	readonly ollama?:     { readonly host: string; readonly numCtx: number; readonly numPredict: number } | undefined;
 }
 
@@ -198,6 +211,9 @@ export function resolveRoleWire(params: unknown, deps: ResolveRoleDeps = DEFAULT
 	const r = resolveRole(role, cfg, repoPath, { registry });
 	const model = registry.find(r.runner, r.model);
 	const kind = registry.cliKind(r.runner);
+	const ollamaTarget = registry.host(r.runner) !== undefined && model !== undefined
+		? { ollama: { host: loadLocalProviderConfig().host, hosting: model.hosting ?? 'cloud' as const } }
+		: {};
 	return {
 		tier:   r.tier,
 		family: r.runner,
@@ -206,7 +222,7 @@ export function resolveRoleWire(params: unknown, deps: ResolveRoleDeps = DEFAULT
 		...(model?.inputLimit !== undefined ? { inputLimit: model.inputLimit } : {}),
 		...(r.fallback !== undefined ? { fallback: r.fallback } : {}),
 		...(kind !== undefined
-			? { cli: { kind } }
+			? { cli: { kind, ...ollamaTarget } }
 			: { ollama: { host: loadLocalProviderConfig().host, numCtx: ollamaContextWindow(registry, model), numPredict: cfg.shaper.ollamaNumPredict } }),
 	};
 }

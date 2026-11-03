@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: attributionOf returns the stored aggregate when present (authoritative)
+ok 1 - attributionOf returns the stored aggregate when present (authoritative)
+  ---
+  duration_ms: 1.413708
+  type: 'test'
+  ...
+# Subtest: attributionOf preserves multiplicity — repeated identical rows are not deduped
+ok 2 - attributionOf preserves multiplicity — repeated identical rows are not deduped
+  ---
+  duration_ms: 0.081666
+  type: 'test'
+  ...
+# Subtest: attributionOf on a zero-output NEW artifact returns [] (empty aggregate is authoritative)
+ok 3 - attributionOf on a zero-output NEW artifact returns [] (empty aggregate is authoritative)
+  ---
+  duration_ms: 0.045292
+  type: 'test'
+  ...
+# Subtest: attributionOf shims a legacy scalar into a single (legacy)-role stamp
+ok 4 - attributionOf shims a legacy scalar into a single (legacy)-role stamp
+  ---
+  duration_ms: 0.092375
+  type: 'test'
+  ...
+# Subtest: attributionOf on a pre-attribution artifact (neither field) returns [] — no fabricated model
+ok 5 - attributionOf on a pre-attribution artifact (neither field) returns [] — no fabricated model
+  ---
+  duration_ms: 0.090792
+  type: 'test'
+  ...
+# Subtest: modelSummary collapses a homogeneous run to a single runner:model
+ok 6 - modelSummary collapses a homogeneous run to a single runner:model
+  ---
+  duration_ms: 0.061708
+  type: 'test'
+  ...
+# Subtest: modelSummary renders a heterogeneous run as mixed(...)
+ok 7 - modelSummary renders a heterogeneous run as mixed(...)
+  ---
+  duration_ms: 0.138209
+  type: 'test'
+  ...
+# Subtest: modelSummary of a legacy artifact returns its original scalar label unchanged
+ok 8 - modelSummary of a legacy artifact returns its original scalar label unchanged
+  ---
+  duration_ms: 0.034125
+  type: 'test'
+  ...
+# Subtest: modelSummary of a fully-unattributed artifact reads "unknown"
+ok 9 - modelSummary of a fully-unattributed artifact reads "unknown"
+  ---
+  duration_ms: 0.19375
+  type: 'test'
+  ...
+# Subtest: singleModelAttribution wraps a client label into one (client)-role stamp
+ok 10 - singleModelAttribution wraps a client label into one (client)-role stamp
+  ---
+  duration_ms: 0.342583
+  type: 'test'
+  ...
+# Subtest: singleModelAttribution parses an ollama:<model> label into runner+model
+ok 11 - singleModelAttribution parses an ollama:<model> label into runner+model
+  ---
+  duration_ms: 0.0475
+  type: 'test'
+  ...
+# Subtest: attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families
+ok 12 - attribution.test.ts: claude, client, codex, codex:<m>, ollama, ollama:<listed>, ollama:<unlisted> map to their historical families
+  ---
+  duration_ms: 0.255292
+  type: 'test'
+  ...
+# Subtest: attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to ollama-claude, not cli-claude
+ok 13 - attribution.test.ts: an 'ollama-claude:<model>' run label is attributed to ollama-claude, not cli-claude
+  ---
+  duration_ms: 0.054708
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.936042

@@ -1,0 +1,32 @@
+TAP version 13
+# [04:45:19] [31mERROR[39m: [36m[supervisor] supervisor: a worker failed[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "shared-state"
+#     [35mthreadId[39m: 4
+#     err: "the worker failed"
+# [04:45:19] [41mFATAL[49m: [36m[supervisor] supervisor: workers keep exiting; shutting the daemon down[39m
+#     [35mmodule[39m: "supervisor"
+#     [35mworker[39m: "shared-state"
+#     [35mrestarts[39m: 5
+#     [35mwindowMs[39m: 60000
+# Subtest: supervisor: a tracked worker is terminated by terminateAll and its error is logged
+ok 1 - supervisor: a tracked worker is terminated by terminateAll and its error is logged
+  ---
+  duration_ms: 27.027916
+  type: 'test'
+  ...
+# Subtest: supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown
+ok 2 - supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown
+  ---
+  duration_ms: 54.317625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 313.54425

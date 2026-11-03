@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793084200478-kps08s",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-27T06:56:40.478Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 60642,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "07dfdf71974a7c45",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-27T05:10:36.251Z",
+    "epicSlug": "make-vs-code-tier-picker-show",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "07dfdf71974a7c45",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+        "vscode-plugin/src/models/model-tier-picker.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": [
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts:unknown",
+            "message": "run's options declare raw, defs, write, restart, actions, and extra as optional without explicitly allowing undefined, contrary to the documented optional-property convention. Source line numbers were not supplied.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          },
+          {
+            "dimension": "conventions",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/models/__tests__/model-tier-picker.test.ts:unknown",
+            "message": "cur's array element type declares value and description as optional without explicit | undefined. The outer union with undefined does not apply to these properties. Source line numbers were not supplied.",
+            "expectationRef": "strict-optional-indexed",
+            "confidence": "breach"
+          }
+        ]
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 2
+    }
+  }
+}

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in
+ok 1 - storyChangeSet lists the Story's non-merge first-parent commits and leaves out files only a merge brought in
+  ---
+  duration_ms: 415.541625
+  type: 'test'
+  ...
+# Subtest: storyChangeSet records Story edits folded into a merge commit as a merge-edit unit
+ok 2 - storyChangeSet records Story edits folded into a merge commit as a merge-edit unit
+  ---
+  duration_ms: 265.11225
+  type: 'test'
+  ...
+# Subtest: storyChangeSet records a hand-resolved conflict as a merge-edit unit
+ok 3 - storyChangeSet records a hand-resolved conflict as a merge-edit unit
+  ---
+  duration_ms: 308.943042
+  type: 'test'
+  ...
+# Subtest: storyChangeSet includes a file the Story deleted and a root commit's files
+ok 4 - storyChangeSet includes a file the Story deleted and a root commit's files
+  ---
+  duration_ms: 259.190208
+  type: 'test'
+  ...
+# Subtest: storyChangeSet is empty when the range holds only a clean merge
+ok 5 - storyChangeSet is empty when the range holds only a clean merge
+  ---
+  duration_ms: 192.143791
+  type: 'test'
+  ...
+# Subtest: storyChangeSet throws NoBuildChangesError for an unresolvable base
+ok 6 - storyChangeSet throws NoBuildChangesError for an unresolvable base
+  ---
+  duration_ms: 142.0075
+  type: 'test'
+  ...
+# Subtest: mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed
+ok 7 - mergeInProgress is true while MERGE_HEAD exists and false after the merge is committed
+  ---
+  duration_ms: 224.949292
+  type: 'test'
+  ...
+# Subtest: mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG
+ok 8 - mergeInProgress is true while an uncommitted squash merge leaves SQUASH_MSG
+  ---
+  duration_ms: 255.7095
+  type: 'test'
+  ...
+# Subtest: known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work
+ok 9 - known limit: upstream commits fast-forwarded or squash-merged into the Story are counted as Story work
+  ---
+  duration_ms: 357.989834
+  type: 'test'
+  ...
+# Subtest: an octopus merge becomes one merge-edit unit over its whole change instead of a failure
+ok 10 - an octopus merge becomes one merge-edit unit over its whole change instead of a failure
+  ---
+  duration_ms: 466.409541
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3118.658833

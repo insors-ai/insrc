@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "9d8b55429378a3be",
+    "storyId": "S001",
+    "createdAt": "2026-11-02T07:33:53.688Z",
+    "updatedAt": "2026-11-02T08:12:44.741Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One story in one module with a clear approach: add REFERENCES (language sql) to Pass 2 of the cross-file pass with a name matcher over the repository's table/view entities; no storage or schema change.",
+    "epicCreatedAt": "2026-11-02T07:01:36.648Z",
+    "epicSlug": "resolve-sql-table-view-references-across",
+    "approvedAt": "2026-11-02T08:23:26.507Z",
+    "reviewOverride": {
+      "reason": "Manual code review, 2 cycles / 4 rounds, final verdict pass (interim rule: code-review framework being rewritten). Approved by the user in chat 2026-11-02.",
+      "at": "2026-11-02T08:23:26.507Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "The cross-file pass resolves pending SQL REFERENCES by name (REFERENCES in PASS2_KINDS, sqlByName/sqlByLastSegment, resolveSqlReference in a three-way dispatch). Unquoted names compare case-insensitively; a qualified name matches only that definition, a bare one also any qualified definition ending in it. One candidate is written 'inferred', several stay ambiguous, none is no-candidate. Manual code review over two cycles (4 rounds; last verdict pass). It added two things. First, a REFERENCES edge between SQL entities of one repository whose target is removed returns pending by name, under the names the SQL reader's own parse reads in the holder (SqlParser.referencesIn, registered through setSqlReferenceReader). A moved or re-schema'd table is then found again. With no reader or no matching name, it awaits the id as before. Second, a deviation from the LLD: a settle that commits any .sql file re-attempts all of the repository's pending SQL references, not only names the committed files define, so removals and renames are re-attempted too. Follow-ups, not fixed: L1, a stale inferred edge when a second candidate appears (as for CALLS); L2, a settle scans all pending rows on a .sql commit; L3, quoted identifiers lose case-sensitivity; L4, 2- and 3-part names don't meet.",
+    "testRecord": {
+      "md": "docs/standalone/resolve-sql-table-view-references-across-E202611029d8b5542/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/indexer/__tests__/cross-file-sql-references.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:12:44.741Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/sql-index.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:12:44.741Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/cross-file-resolver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:12:44.741Z"
+      },
+      {
+        "target": {
+          "file": "src/db/relations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:12:44.741Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:12:44.741Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/sql.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T08:12:44.741Z"
+      }
+    ],
+    "commit": "24a045cf2"
+  }
+}

@@ -1,3 +1,6 @@
+import { connectionExecutionErrorCode, ConnectionExecutionError, runWithConnectionExecution } from '../../shared/step-context.js';
+import { isReadOnlyShaperTool } from '../../analyze/context/tool-surface.js';
+import { assertNoSessionEmbedding } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -14,7 +17,7 @@
  * approval broker, which no caller can replace.
  */
 
-import { assertAnalysisConnectionExecution } from '../../analyze/connection-access.js';
+import { assertAnalysisConnectionExecution, captureAnalysisDiagnostics } from '../../analyze/connection-access.js';
 import { getLogger } from '../../shared/logger.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -82,9 +85,13 @@ export async function executeTool(
 	deps: ToolDeps,
 ): Promise<ToolResult> {
 	assertAnalysisConnectionExecution(deps.connectionExecution);
+	const execution = deps.connectionExecution;
+	const diagnostics = captureAnalysisDiagnostics(log, execution);
 	const tool = getTool(toolId);
+	if (execution?.mode === 'session-memory' && (!tool || !isReadOnlyShaperTool(tool.id))) throw new ConnectionExecutionError('unsupported-temporary');
+	if (tool && ['docs_retrieve', 'docs_project_context', 'docs_summary_get', 'docs_family_list', 'graph_search', 'data_lineage'].includes(tool.id)) assertNoSessionEmbedding(deps.connectionExecution);
 	if (!tool) {
-		log.error({ toolId }, 'unknown tool');
+		diagnostics.emit('error', () => [{ toolId }, 'unknown tool']);
 		return {
 			output: `Unknown tool: ${toolId}`,
 			format: 'text',
@@ -94,7 +101,7 @@ export async function executeTool(
 		};
 	}
 
-	log.info({ id: tool.id }, 'executing tool');
+	diagnostics.emit('info', () => [{ id: tool.id }, 'executing tool']);
 
 	// A tool that declares an outputSchema is checked on the way in and on the way out;
 	// a tool without one is run and returned exactly as before.
@@ -154,8 +161,9 @@ export async function executeTool(
 
 	if (aborted()) return cancelledResult();
 	try {
-		const result = await runWithToolSignal(signal, () => tool.execute(input, deps));
+		const result = await runWithToolSignal(signal, () => runWithConnectionExecution(execution, () => tool.execute(input, deps)));
 		assertAnalysisConnectionExecution(deps.connectionExecution);
+		if (execution?.mode === 'session-memory' && !result.success) return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
 		if (!result.success) return result;
 		if (outputSchema === undefined) return await withHooks(tool, input, deps, result);
 		if (result.data === undefined) {
@@ -171,9 +179,11 @@ export async function executeTool(
 		log.warn({ id: tool.id }, 'tool data does not fit its output schema');
 		return failed('schema-mismatch', `tool ${tool.id} returned data that does not fit its output schema: ${dataCheck.errors.join('; ')}`, result.output);
 	} catch (err) {
-		if (deps.connectionExecution?.mode === 'session-memory') return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
+		assertAnalysisConnectionExecution(execution);
+		const code = execution?.mode === 'session-memory' ? connectionExecutionErrorCode(err) : undefined; if (code) throw new ConnectionExecutionError(code);
+		if (execution?.mode === 'session-memory') return { output: 'Temporary connection operation failed.', format: 'text', success: false, error: 'Temporary connection operation failed.' };
 		const errMsg = err instanceof Error ? err.message : String(err);
-		log.error({ id: tool.id, err: errMsg }, 'tool execution failed');
+		diagnostics.emit('error', () => [{ id: tool.id, err: errMsg }, 'tool execution failed']);
 		return {
 			output: `[Tool failed] ${errMsg}`,
 			format: 'text',

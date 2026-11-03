@@ -1,0 +1,153 @@
+{
+  "id": "08-jetbrains-ui-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:50:17.523Z",
+  "finished": "2026-11-01T04:53:02.221Z",
+  "inputChars": 90755,
+  "inputSha256": "bba1ad5e72798b2e6ae02aedeb01e3355b250df6236ed08f498b73d405857782",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of four supplied JetBrains files: build.gradle.kts, ConnectionFieldsPanel.kt, ConnectionsManagerGateway.kt and ConnectionsManagerPanel.kt. I found two concrete defects. (1) Hiding the panel blanks the replacement-secret fields, but the gateway keeps the typed secret and Save stays enabled, so the user can submit a value they can't see. (2) `open()` removes a draft for an unregistered root after the emit and without a re-render, which can leave a stale, unresponsive form. The gateway/panel code shows Project-scoped service use, background executors, EDT-only rendering and generation guards for stale results. Most assigned obligations depend on files that were not supplied (plugin.xml, the Configurable, the session service, the model, extension.ts, package.json), so I marked them could-not-verify instead of inventing defects. This is not a canonical CR and does not approve BUILD.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt",
+        "line": 70,
+        "trigger": "The user selects Replace for a credential and types a secret. The panel is then hidden (Settings page switch, tool-window tab switch, or any SHOWING_CHANGED event) and shown again. The user then clicks Save.",
+        "defect": "On hide, the hierarchy listener calls `fields.suspendView()`, which blanks every JBPasswordField via `erase()`. It does not tell the gateway: `gateway.suspendView()` only calls `probes.setView(null)`. The draft still holds the replacement secret, so `view.valid` is still true and Save stays enabled. On resume, `ConnectionFieldsPanel.render` only clears fields when the action is not `replace` and never repopulates them. The UI therefore shows an empty 'Replacement value' while Save submits the earlier hidden value. For address-list slots the blank rows are inconsistent with the retained draft. A single-value slot's draft is overwritten by whatever the user types next.",
+        "evidence": "ConnectionsManagerPanel.kt:70 (hierarchy listener: `fields.suspendView()` / `gateway.suspendView()`). ConnectionFieldsPanel `suspendView(){active=false;erase()}` and `erase()` clear only the text fields. ConnectionsManagerGateway.kt:86 `suspendView(){runCatching{probes.setView(null)}}` does not touch the draft credential. `snapshot()` computes `valid` from `draft.serialize()`, which still succeeds.",
+        "remedy": "Keep the draft and the visible fields consistent on suspend. Either also reset replace-credentials in the gateway (for example `credential(slot,\"replace\",\"\")`, which makes the draft invalid until re-entered), or do not blank the fields while the draft retains the value. Add a test that hides, shows and then saves with a replace credential."
+      },
+      {
+        "severity": "LOW",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerGateway.kt",
+        "line": 93,
+        "trigger": "A project-retained draft exists for repo R. The manager is attached again (`attach()` calls `open()`) after R has been unregistered. The registry worker then runs.",
+        "defect": "The worker first calls `dispatch(RegisteredRoots)`, which emits. Only afterwards does it null the draft for the unregistered root and call `bump()`. `bump()` changes `uiGeneration` and rebinds the probe but does not `emit()` and does not increment `formId`. If the reduced model has no repoRoot, line 94 does not dispatch Refresh, so nothing emits after the removal. A panel that rendered before the removal keeps showing the stale editor. Its `action()` guard compares `renderedGeneration` with the new `uiGeneration`, so every action is silently ignored until some unrelated emit. The race depends on whether the EDT render runs before or after the worker's removal.",
+        "evidence": "ConnectionsManagerGateway.kt:92-94 order: `dispatch(RegisteredRoots)`, then draft removal plus `bump()`, then a conditional Refresh. ConnectionsManagerPanel.kt:76 `action()` requires `renderedGeneration==gateway.snapshot().generation`.",
+        "remedy": "Remove the out-of-roots draft before dispatching `RegisteredRoots`, or call `emit()` after the removal. Increment `formId` so the form rebuilds."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "lld:data-model:1",
+        "status": "could-not-verify",
+        "evidence": "The supplied sources are only under jetbrains-plugin/ and contain no deprecated-fork references. The call sites (vscode-plugin/src/extension.ts, InsrcSettingsConfigurable.kt) and the scope-update document were not supplied."
+      },
+      {
+        "key": "lld:data-model:3",
+        "status": "could-not-verify",
+        "evidence": "The panel and gateway derive list state, counts and search from `ConnectionsManagerModel.project`, and the root picker has a placeholder entry. plugin.xml, the Configurable, the Manage Connections action, package.json and the model itself were not supplied. Whether a single root is auto-selected, and the Settings project-choice flow, cannot be assessed."
+      },
+      {
+        "key": "lld:data-model:5",
+        "status": "could-not-verify",
+        "evidence": "Partial evidence: the gateway binds a probe identity (key, epoch, uiGeneration), cancels the probe on Save and on detach, and `test()` is one probe. Finding 1 shows draft/UI divergence on hide. The DraftTest core, the shared serializer and src/shared/connection-management.ts were not supplied."
+      },
+      {
+        "key": "lld:data-model:9",
+        "status": "could-not-verify",
+        "evidence": "Observed: the panel takes a Project, uses `project.service<ConnectionsSessionService>().manager()`, runs registry reads on a bounded single-thread worker, renders on the EDT and checks generation and `project.isDisposed`. Panel `dispose` closes only the view subscription and attachment. Not supplied: ConnectionsSessionService, plugin.xml, the Configurable and ManageConnectionsAction, so project-service disposal, socket isolation, and whether `manager()` returns a shared or per-call gateway (and who closes it) are unverified."
+      },
+      {
+        "key": "lld:edge:6",
+        "status": "could-not-verify",
+        "evidence": "Closing a view releases only the subscription and attachment; the gateway close path and draft/overlay retention are in the gateway. The sharing semantics of `manager()` and the session service were not supplied. Finding 1 touches secret-field behaviour across hide/show."
+      },
+      {
+        "key": "lld:migration:1",
+        "status": "could-not-verify",
+        "evidence": "No manifests or scope-update documents were supplied."
+      },
+      {
+        "key": "lld:migration:3",
+        "status": "could-not-verify",
+        "evidence": "Only the manager-side consumer of the session service was supplied. Project service implementation and two-owner isolation tests were not."
+      },
+      {
+        "key": "lld:migration:6",
+        "status": "could-not-verify",
+        "evidence": "The gateway gates Save/Test/Remove via `ConnectionActions.supported(features,...)`, which is consistent with capability gating. The release flag and the gate implementation were not supplied."
+      },
+      {
+        "key": "lld:state-after",
+        "status": "could-not-verify",
+        "evidence": "The native Kotlin manager exists in the supplied files. Shared-scenario parity and the VS Code side were not supplied."
+      },
+      {
+        "key": "plan:t3",
+        "status": "could-not-verify",
+        "evidence": "The gateway calls `ConnectionProtocol.descriptors(value)`, but ConnectionProtocol.kt and the fixture corpus were not supplied. build.gradle.kts adds ../test-fixtures as a test resource directory, which is consistent with a shared corpus."
+      },
+      {
+        "key": "plan:t7",
+        "status": "could-not-verify",
+        "evidence": "The gateway uses `ConnectionsManagerModel.create/reduce/project` with events and effects, but the model source was not supplied."
+      },
+      {
+        "key": "plan:t9",
+        "status": "could-not-verify",
+        "evidence": "ConnectionsSessionService was not supplied. The gateway's use of `session.selectRoot/requestSaved/requestTemporary` and the panel's project-service lookup are consistent with a project-scoped owner."
+      },
+      {
+        "key": "plan:t13",
+        "status": "could-not-verify",
+        "evidence": "The gateway delegates to mutation cores (`mutations.submit/reconcile/replay/retryActivation/retryCleanup/retryRefresh`) and observes refresh. The mutation core and the transport were not supplied."
+      },
+      {
+        "key": "plan:t17",
+        "status": "could-not-verify",
+        "evidence": "The gateway wires the removal prompt through `removals.begin/decide` and `requireAction`. The panel shows Delete/Discard with confirmation. The removal core and S004 snapshots were not supplied."
+      },
+      {
+        "key": "plan:t20",
+        "status": "could-not-verify",
+        "evidence": "The VS Code files (extension.ts, package.json) were not supplied."
+      },
+      {
+        "key": "plan:t22",
+        "status": "could-not-verify",
+        "evidence": "No isolation tests or transport sources were supplied."
+      },
+      {
+        "key": "plan:t24",
+        "status": "could-not-verify",
+        "evidence": "The code clears password documents and zeroes char arrays, and the render path does not echo secrets. The `String(it)` conversion cannot be zeroed. Finding 1 shows draft/UI divergence. No privacy tests or sinks were supplied."
+      },
+      {
+        "key": "plan:t26",
+        "status": "could-not-verify",
+        "evidence": "This is VS Code UI acceptance. Per the user, 0.5.23 manual testing is user-reported. Nothing was supplied."
+      },
+      {
+        "key": "plan:t28",
+        "status": "could-not-verify",
+        "evidence": "This is live lifecycle acceptance; no evidence was supplied. The JetBrains live UI is deferred by the user."
+      },
+      {
+        "key": "plan:t31",
+        "status": "could-not-verify",
+        "evidence": "Only the build.gradle.kts test-property and test-resource changes were supplied; they look consistent. No packaging or smoke output was supplied."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/build.gradle.kts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionFieldsPanel.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerGateway.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt"
+    ],
+    "limitations": [
+      "Only four files from the diff were supplied. The session service, model, protocol, mutation/probe/removal cores, plugin.xml, the Configurable, ManageConnectionsAction, and all VS Code files were not available. Any behaviour that depends on them is unassessed.",
+      "The cited line numbers for ConnectionsManagerPanel.kt and ConnectionsManagerGateway.kt were counted manually from the diff. ConnectionFieldsPanel.kt is cited by symbol because my manual count there could be off by about one line.",
+      "No tests, build output or live UI evidence were supplied. Nothing was run.",
+      "build.gradle.kts changes (the `insrc.parity.dir` system property, the optional JUnit XML output location and the ../test-fixtures test resource directory) were read but not executed."
+    ],
+    "evidenceRequests": [
+      "ConnectionsSessionService.kt: does `manager()` return one shared gateway per Project or a new one per call? Who calls `ConnectionsManagerGateway.close()`? If the gateway is shared, `gateway.suspendView()` from a hidden panel would unbind the probe view of a visible panel.",
+      "The Configurable and tool-window code that creates ConnectionsManagerPanel: does `disposeUIResources` or the tool-window content call `Disposer.dispose(panel)`? The panel registers itself under `project`, and the Close button calls `dispose()` directly when `closeView` is null, which leaves the Disposer node registered until the project closes.",
+      "ConnectionsManagerModel.kt: does `RegisteredRoots` clear `repoRoot` when the selected root is unregistered? This determines whether the Refresh/emit in `open()` follows the draft removal (finding 2).",
+      "plugin.xml, InsrcSettingsConfigurable.kt and ManageConnectionsAction.kt, for the Settings entry points, the live-project choice, and the no-project guidance."
+    ]
+  }
+}

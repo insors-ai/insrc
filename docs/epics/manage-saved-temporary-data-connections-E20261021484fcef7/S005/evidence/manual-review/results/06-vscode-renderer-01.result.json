@@ -1,0 +1,95 @@
+{
+  "id": "06-vscode-renderer-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:45:28.620Z",
+  "finished": "2026-11-01T04:47:23.351Z",
+  "inputChars": 94326,
+  "inputSha256": "2bc75630096c0738088415f136c8dc80ec686db83075af8465f67e07429c5742",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the three supplied VS Code files found no concrete, reachable defect that the supplied evidence demonstrates. Files: the static webview renderer (renderer.ts), the webview intent protocol and validator (types.ts), and the DOM harness fixture. The renderer builds all dynamic content through DOM text/value setters, with no innerHTML, no durable webview state, a nonce-based CSP and masked password inputs. The intent parser is a strict allowlist: it checks exact key sets, bounds, and the browse-file paths. Most assigned obligations depend on files that were not supplied (controller, model, host, JetBrains, live evidence), so they are could-not-verify. Two code-level observations are listed as evidence requests rather than findings because their reachability depends on host code or descriptor data I could not see.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:contract:1",
+        "status": "could-not-verify",
+        "evidence": "renderer.ts renders all eight listState values with fixed text. Stale or offline state shows a stale flag, and row buttons are disabled when list.canMutate is false. types.ts carries the projection fields. The model, controller and snapshot logic that produce counts, dirty and mutationOperationId were not supplied."
+      },
+      {
+        "key": "lld:data-model:5",
+        "status": "could-not-verify",
+        "evidence": "Test and Cancel test send fixed-shape intents, and the script posts cancel-test when the document is hidden. Test and Save share one draft in the UI. Test-controller matching on requestId, draftRevision, repoRoot, epoch and view-generation, the elapsed duration, and source-controller drain are in files not supplied."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "could-not-verify",
+        "evidence": "Session ownership, heartbeat and resume live in the shared IPC client, extension.ts and the JetBrains files, none of which were supplied. The renderer only exposes generation-stamped intents."
+      },
+      {
+        "key": "lld:error:2",
+        "status": "could-not-verify",
+        "evidence": "The renderer side is consistent: read-error and offline show stale-row text and disable row selection. Retry is a read-only refresh intent. A render exception shows a fixed local message. Strict decoding and last-good preservation happen in the decoder and controller, which were not supplied."
+      },
+      {
+        "key": "lld:edge:8",
+        "status": "could-not-verify",
+        "evidence": "Code-level support exists: VS Code theme variables, :focus-visible, forced-colors media query, label/for associations, aria-label on icon buttons, role=status live regions, focus restoration to the initiating row, a dialog focus trap, and password inputs with autocomplete new-password. #error, #notice and #test-status are static hidden spans that are never un-hidden, so status and errors rely on the footer messages channel. I could not confirm that the host routes test results and errors into messages. The VS Code live run is user-reported only."
+      },
+      {
+        "key": "lld:shared:6",
+        "status": "could-not-verify",
+        "evidence": "The renderer contains no session or lease logic. Workbench ownership, per-root lanes and the 90s lifetime are outside the supplied files."
+      },
+      {
+        "key": "lld:migration:4",
+        "status": "could-not-verify",
+        "evidence": "The Settings, command and plugin.xml wiring was not supplied. The dedicated webview document and intent protocol are present and are separate from global config Apply/reset."
+      },
+      {
+        "key": "lld:scope",
+        "status": "holds",
+        "evidence": "For the supplied files only. types.ts states that the intent set cannot name an RPC method, capability or ticket. The shared model, draft, controller, wire and removal modules are imported as types or parsers rather than re-implemented."
+      },
+      {
+        "key": "plan:t19",
+        "status": "could-not-verify",
+        "evidence": "This is a JetBrains task. No Kotlin files were supplied in this batch, and JetBrains live UI is deferred by the user."
+      },
+      {
+        "key": "plan:t26",
+        "status": "could-not-verify",
+        "evidence": "Live VS Code acceptance is user-reported and not independently documented in the supplied evidence. The harness fixture does not parse the HTML hidden attribute, so it cannot detect visibility regressions."
+      },
+      {
+        "key": "plan:t29",
+        "status": "could-not-verify",
+        "evidence": "This is a live source-preservation task covering both clients. It is not evidenced by the supplied files, and SQL Server is pending by user authorization."
+      },
+      {
+        "key": "plan:t32",
+        "status": "could-not-verify",
+        "evidence": "No sweep manifest or results were supplied. The user states the sweep has known recorded failures and timeouts."
+      }
+    ],
+    "inspectedFiles": [
+      "vscode-plugin/src/connections/renderer.ts",
+      "vscode-plugin/src/connections/types.ts",
+      "vscode-plugin/src/connections/__tests__/fixtures/renderer.ts"
+    ],
+    "limitations": [
+      "Only the three supplied new files were reviewed. The controller, model, panel host, messages.ts, datasource-icons.ts, the shared connection-manager modules, extension.ts and all JetBrains files were not supplied.",
+      "The DOM harness is a hand-written fake. It does not parse the HTML hidden attribute or CSS, so it gives no evidence for visibility, focus order or theme behavior.",
+      "Credential inputs are blanked on visibilitychange/pagehide and are never re-populated on rebuild. Whether the host also clears or keeps the pending replacement in sync (it has onVisibility) could not be checked.",
+      "The renderer's #error, #notice and #test-status spans are static hidden and never un-hidden. Whether test results and errors appear to the user depends on the host adding them to messages, which was not verified.",
+      "Operation recovery cards are rendered only inside the message-history dialog. That dialog opens only when messages exist and no dirty or confirmation prompt is pending. Whether recovery actions are always reachable depends on host message generation, which was not verified.",
+      "Manual 0.5.23 VS Code testing is user-reported. JetBrains live UI, SQL Server, provider-service and worker-affinity coverage are pending. These were not treated as passed."
+    ],
+    "evidenceRequests": [
+      "Controller or view-builder source that produces ConnectionRenderView: the meaning of `dirty` (pending guard vs. modified draft) and how `messages` is populated from test results, errors, notices and operations.",
+      "Panel host source for the VS Code webview: retainContextWhenHidden, and the onVisibility handler's effect on pending credential replacements and in-flight tests.",
+      "Driver descriptor schema subset or fixtures: whether any publicInputSchema uses anyOf with branches of type integer, array or null. renderer.ts `branchFor` compares `c.type===typeof v`, which can never match those types and falls back to branch 0.",
+      "messages.ts and datasource-icons.ts, to confirm CONNECTION_PROBLEMS and DATASOURCE_ICONS are static, script-safe constants with a 'fixed-width' fallback entry."
+    ]
+  }
+}

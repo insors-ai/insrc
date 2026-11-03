@@ -6,7 +6,7 @@
 /**
  * Contract test for the shipped model definitions file (Epic ce99b72065d03b1b,
  * Story s1 · t1): it validates, ships via copy-assets, lists every model and
- * alias today's defaults use, and its tier defaults equal DEFAULT_TIERS. Since
+ * alias today's defaults use, and its tier defaults equal SHIPPED_MODEL_DEFAULTS. Since
  * s3 the installer reads its defaults from this file and the summariser comes
  * from each family's summariserModel.
  *
@@ -19,7 +19,8 @@ import { readFileSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assembleConfig, DEFAULT_TIERS } from '../../config/analyze.js';
+import { assembleConfig } from '../../config/analyze.js';
+import { SHIPPED_MODEL_DEFAULTS } from '../../config/model-defaults.js';
 import { buildSummariserProvider } from '../../analyze/context/shaper-provider.js';
 import { buildModelRegistry } from '../model-registry.js';
 import {
@@ -44,7 +45,7 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 	assert.equal(process.env['INSRC_MODEL_CATALOG_DIR'], undefined);
 	const file = validateModelCatalog();
 	assert.equal(file.defaultFamily, 'cli-claude');
-	assert.deepEqual(file.families.map(f => f.id), ['cli-claude', 'cli-codex', 'ollama']);
+	assert.deepEqual(file.families.map(f => f.id), ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama', 'ollama-claude']);
 
 	// Ships via copy-assets: the file lives under src/assets/, which copy-assets copies whole to out/assets/.
 	assert.equal(relative(join(repoRoot, 'src'), MODEL_CATALOG_DIR).split(/[\\/]/).join('/'), 'assets/models');
@@ -65,11 +66,13 @@ test('model-catalog-asset.test.ts: shipped asset validates, ships via copy-asset
 	const qwen = ollama.models.find(m => m.id === 'qwen3.6:27b');
 	assert.deepEqual(qwen?.inputLimit, { unit: 'tokens', max: 32768 });
 	assert.equal(ollama.toolLoopModel, 'qwen3.6:27b');
+	const qwen38 = ollama.models.find(m => m.id === 'qwen3.8:27b');
+	assert.deepEqual([qwen38?.efforts, qwen38?.inputLimit], [[], { unit: 'tokens', max: 32768 }], 'qwen3.8:27b listed with the local context window');
 
-	// Tier defaults equal DEFAULT_TIERS (cli-claude) and the installer's Codex block.
+	// Tier defaults equal SHIPPED_MODEL_DEFAULTS (cli-claude) and the installer's Codex block.
 	for (const tier of ['core', 'mid', 'cheap'] as const) {
-		assert.equal(DEFAULT_TIERS[tier].runner, 'cli-claude');
-		assert.deepEqual(claude.tierDefaults?.[tier], { model: DEFAULT_TIERS[tier].model });
+		assert.equal(SHIPPED_MODEL_DEFAULTS.tiers[tier].runner, 'cli-claude');
+		assert.deepEqual(claude.tierDefaults?.[tier], { model: SHIPPED_MODEL_DEFAULTS.tiers[tier].model });
 	}
 	// The installer reads the tier defaults and the tool-loop model from this file (installer-defs.test.ts runs it).
 	const installer = readFileSync(join(repoRoot, 'scripts', 'insrc-daemon-install.sh'), 'utf8');
@@ -93,4 +96,32 @@ test('model-catalog-asset.test.ts: Codex models carry the 1048576-char inputLimi
 	for (const m of codex.models) {
 		assert.deepEqual(m.inputLimit, { unit: 'chars', max: 1_048_576 }, m.id);
 	}
+});
+
+test('model-catalog-asset.test.ts: every shipped Ollama model has memoryMb and the build gate passes', async () => {
+	const ollama = validateModelCatalog().families.find(f => f.id === 'ollama')!;
+	assert.ok(ollama.models.length > 0);
+	for (const m of ollama.models) assert.ok(Number.isInteger(m.memoryMb) && m.memoryMb! > 0, `${m.id} has memoryMb`);
+	const { spawnSync } = await import('node:child_process');
+	// The gate against the current source validator (the built out/ module may be stale).
+	const r = spawnSync(process.execPath, ['--import', 'tsx', join(repoRoot, 'scripts', 'check-model-definitions.mjs'), '--module', join(repoRoot, 'src', 'daemon', 'model-catalog.ts')], { cwd: repoRoot, encoding: 'utf8', timeout: 60_000 });
+	assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+});
+
+test("model-catalog-asset.test.ts: the shipped file validates, lists ollama-claude after the existing families, and every host-family model has hosting 'cloud' with its efforts", () => {
+	const ids = validateModelCatalog().families.map(f => f.id);
+	assert.equal(ids.at(-1), 'ollama-claude', 'appended after the existing families');
+	const host = family('ollama-claude');
+	assert.deepEqual([host.cliKind, host.host, host.tierDefaults, host.summariserModel], ['claude', 'ollama', undefined, undefined]);
+	const three = ['low', 'high', 'max'];
+	assert.deepEqual(host.models.map(m => [m.id, m.hosting, m.efforts]), [
+		['deepseek-v4-pro:cloud', 'cloud', []],
+		['deepseek-v4.1-flash:cloud', 'cloud', three],
+		['glm-5.3:cloud', 'cloud', three],
+		['glm-5.3-flash:cloud', 'cloud', three],
+		['mistral-large-4:cloud', 'cloud', []],
+		['kimi-k3:cloud', 'cloud', three],
+	]);
+	// The installer takes the first family per CLI kind: still the vendor claude family.
+	assert.equal(validateModelCatalog().families.find(f => f.cliKind === 'claude')!.id, 'cli-claude');
 });

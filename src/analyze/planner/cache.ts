@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -149,7 +150,7 @@ export function writeAttempt(
 	assertSessionContinuationNow(plan, execution);
 	const path = planAttemptPathFor(args, attemptNumber, execution);
 	atomicWriteJson(path, plan);
-	log.debug({ runId: args.runId, attempt: attemptNumber, parentTaskPath: args.parentTaskPath, path }, 'wrote plan attempt');
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ runId: args.runId, attempt: attemptNumber, parentTaskPath: args.parentTaskPath, path }, 'wrote plan attempt']);
 	return path;
 }
 
@@ -168,7 +169,7 @@ export function writeFeedback(
 	assertSessionContinuationNow(failure, execution);
 	const path = planFeedbackPathFor(args, attemptNumber, execution);
 	atomicWriteJson(path, failure);
-	log.debug({ runId: args.runId, attempt: attemptNumber, invariantId: failure.invariantId, path }, 'wrote plan feedback');
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ runId: args.runId, attempt: attemptNumber, invariantId: failure.invariantId, path }, 'wrote plan feedback']);
 	return path;
 }
 
@@ -183,7 +184,7 @@ export function writePlanFinal(args: PersistArgs, plan: PlanTask, execution?: Co
 	assertSessionContinuationNow(plan, execution);
 	const path = planFinalPathFor(args, execution);
 	atomicWriteJson(path, plan);
-	log.info({ runId: args.runId, parentTaskPath: args.parentTaskPath, taskCount: plan.tasks.length, path }, 'wrote final plan');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ runId: args.runId, parentTaskPath: args.parentTaskPath, taskCount: plan.tasks.length, path }, 'wrote final plan']);
 	return path;
 }
 
@@ -208,7 +209,7 @@ export function readPlanFinal(args: PersistArgs, execution?: ConnectionExecution
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as PlanTask;
 	} catch (err) {
-		log.warn({ path, err: (err as Error).message }, 'plan.json unreadable; treating as miss');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ path, err: (err as Error).message }, 'plan.json unreadable; treating as miss']);
 		return null;
 	}
 }
@@ -249,7 +250,7 @@ function safeRm(path: string): void {
 		rmSync(path);
 	} catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.debug({ path, err: (err as Error).message }, 'safeRm: non-ENOENT error');
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ path, err: (err as Error).message }, 'safeRm: non-ENOENT error']);
 		}
 	}
 }
@@ -259,7 +260,7 @@ function safeRmDir(path: string): void {
 		rmSync(path, { recursive: true });
 	} catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.debug({ path, err: (err as Error).message }, 'safeRmDir: non-ENOENT error');
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ path, err: (err as Error).message }, 'safeRmDir: non-ENOENT error']);
 		}
 	}
 }

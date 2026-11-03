@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: startup-check drift: notify shows Update/Dismiss; update() runs ONLY on 'Update'
+ok 1 - startup-check drift: notify shows Update/Dismiss; update() runs ONLY on 'Update'
+  ---
+  duration_ms: 2.344583
+  type: 'test'
+  ...
+# Subtest: startup-check drift: Dismiss (and closed→undefined) does NOT call update()
+ok 2 - startup-check drift: Dismiss (and closed→undefined) does NOT call update()
+  ---
+  duration_ms: 0.201084
+  type: 'test'
+  ...
+# Subtest: skip paths: unreachable / installedCommit==="" / up-to-date / ls-remote fail → no notify, no update
+ok 3 - skip paths: unreachable / installedCommit==="" / up-to-date / ls-remote fail → no notify, no update
+  ---
+  duration_ms: 0.177875
+  type: 'test'
+  ...
+# Subtest: self-update: current!==lastSeen + drift → update() with NO prompt (notify-after), setLastSeen recorded
+ok 4 - self-update: current!==lastSeen + drift → update() with NO prompt (notify-after), setLastSeen recorded
+  ---
+  duration_ms: 0.274959
+  type: 'test'
+  ...
+# Subtest: first-ever activation (lastSeen undefined) is treated as self-update when there is drift
+ok 5 - first-ever activation (lastSeen undefined) is treated as self-update when there is drift
+  ---
+  duration_ms: 0.115042
+  type: 'test'
+  ...
+# Subtest: self-update mode but daemon already up to date → no update, no notify, still setLastSeen (fire-once, k4)
+ok 6 - self-update mode but daemon already up to date → no update, no notify, still setLastSeen (fire-once, k4)
+  ---
+  duration_ms: 0.131833
+  type: 'test'
+  ...
+# Subtest: an undeterminable current version ("") falls back to the prompt path, never auto-updates
+ok 7 - an undeterminable current version ("") falls back to the prompt path, never auto-updates
+  ---
+  duration_ms: 0.136042
+  type: 'test'
+  ...
+# Subtest: reconnect-and-confirm success: updateOutcome().state==="succeeded" → success notify
+ok 8 - reconnect-and-confirm success: updateOutcome().state==="succeeded" → success notify
+  ---
+  duration_ms: 2.81175
+  type: 'test'
+  ...
+# Subtest: reconnect tolerates a socket drop across passes: throws on pass 1, confirms on pass 2
+ok 9 - reconnect tolerates a socket drop across passes: throws on pass 1, confirms on pass 2
+  ---
+  duration_ms: 0.551958
+  type: 'test'
+  ...
+# Subtest: a STALE succeeded outcome (finished before the update started) is ignored; commit-advance decides
+ok 10 - a STALE succeeded outcome (finished before the update started) is ignored; commit-advance decides
+  ---
+  duration_ms: 0.411959
+  type: 'test'
+  ...
+# Subtest: failure: update() rejects → exactly ONE failure notify with the raw error, no retry
+ok 11 - failure: update() rejects → exactly ONE failure notify with the raw error, no retry
+  ---
+  duration_ms: 0.161708
+  type: 'test'
+  ...
+# Subtest: failure: updateOutcome().state==="failed" (fresh) → one failure notify carrying the raw error
+ok 12 - failure: updateOutcome().state==="failed" (fresh) → one failure notify carrying the raw error
+  ---
+  duration_ms: 0.100792
+  type: 'test'
+  ...
+# Subtest: failure: commit never advances within the budget → one failure notify, no second update()
+ok 13 - failure: commit never advances within the budget → one failure notify, no second update()
+  ---
+  duration_ms: 0.087209
+  type: 'test'
+  ...
+# Subtest: launched:false → a single failure notify, no confirm loop
+ok 14 - launched:false → a single failure notify, no confirm loop
+  ---
+  duration_ms: 0.071333
+  type: 'test'
+  ...
+# Subtest: never-throws: a throwing seam is swallowed; runDaemonFreshnessCheck resolves; setLastSeen still runs
+ok 15 - never-throws: a throwing seam is swallowed; runDaemonFreshnessCheck resolves; setLastSeen still runs
+  ---
+  duration_ms: 0.14075
+  type: 'test'
+  ...
+# Subtest: setLastSeen(current) is recorded on the skip path too (self-update fires once)
+ok 16 - setLastSeen(current) is recorded on the skip path too (self-update fires once)
+  ---
+  duration_ms: 0.087875
+  type: 'test'
+  ...
+# Subtest: post-update nudge: on a confirmed update, notify is called with the reload-nudge message AND a Reload Window action
+ok 17 - post-update nudge: on a confirmed update, notify is called with the reload-nudge message AND a Reload Window action
+  ---
+  duration_ms: 0.107459
+  type: 'test'
+  ...
+# Subtest: post-update nudge: choosing 'Reload Window' with the seam present invokes reloadWindow() exactly once
+ok 18 - post-update nudge: choosing 'Reload Window' with the seam present invokes reloadWindow() exactly once
+  ---
+  duration_ms: 0.070209
+  type: 'test'
+  ...
+# Subtest: post-update nudge: dismissing the nudge (undefined) does NOT invoke reloadWindow()
+ok 19 - post-update nudge: dismissing the nudge (undefined) does NOT invoke reloadWindow()
+  ---
+  duration_ms: 0.111375
+  type: 'test'
+  ...
+# Subtest: post-update nudge: with reloadWindow omitted, the flow is notification-only and never crashes
+ok 20 - post-update nudge: with reloadWindow omitted, the flow is notification-only and never crashes
+  ---
+  duration_ms: 0.077125
+  type: 'test'
+  ...
+# Subtest: post-update nudge: a reloadWindow rejection is swallowed — runDaemonFreshnessCheck still resolves
+ok 21 - post-update nudge: a reloadWindow rejection is swallowed — runDaemonFreshnessCheck still resolves
+  ---
+  duration_ms: 0.084334
+  type: 'test'
+  ...
+# Subtest: post-update nudge: the nudge also follows the startup-check prompt path (Update → success → nudge)
+ok 22 - post-update nudge: the nudge also follows the startup-check prompt path (Update → success → nudge)
+  ---
+  duration_ms: 0.070208
+  type: 'test'
+  ...
+# Subtest: post-update nudge: NO nudge on a no-op update (already current) or a failed update
+ok 23 - post-update nudge: NO nudge on a no-op update (already current) or a failed update
+  ---
+  duration_ms: 0.104666
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 243.592

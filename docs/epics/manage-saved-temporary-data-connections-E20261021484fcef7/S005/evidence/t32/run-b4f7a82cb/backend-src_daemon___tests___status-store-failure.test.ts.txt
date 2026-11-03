@@ -1,0 +1,42 @@
+TAP version 13
+# Subtest: daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost
+ok 1 - daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost
+  ---
+  duration_ms: 2.794208
+  type: 'test'
+  ...
+# Subtest: status handler with the store failed returns an empty repository list and storeFailure and does not throw
+ok 2 - status handler with the store failed returns an empty repository list and storeFailure and does not throw
+  ---
+  duration_ms: 0.673083
+  type: 'test'
+  ...
+# [04:40:39] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request search"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [04:40:39] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "job full"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot"
+# [04:40:39] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request daemon.status"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot"
+# [04:40:39] [31mERROR[39m: [36m[graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted[39m
+#     [35mmodule[39m: "graph-store"
+#     [35moperation[39m: "request daemon.status"
+#     [35mdetectedBy[39m: "read"
+#     [35mlibraryMessage[39m: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 327.767292

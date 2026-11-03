@@ -32,7 +32,7 @@ import type { Language } from './types.js';
  * so on next daemon boot after deploy the new namespace's row gets
  * created automatically (gated by `meta.schema_version`).
  */
-export type SharedModulesNamespace = 'jvm' | 'npm' | 'python' | 'go';
+export type SharedModulesNamespace = 'jvm' | 'npm' | 'python' | 'go' | 'cargo' | 'nuget' | 'native';
 
 /**
  * Reserved u32 repoIds for the shared-modules registry rows. Top
@@ -47,6 +47,10 @@ export const SHARED_MODULES_REPO_ID: Readonly<Record<SharedModulesNamespace, num
 	npm:    0xFFFFFFFD,
 	python: 0xFFFFFFFC,
 	go:     0xFFFFFFFB,
+	// Epic c2ba6fa6 s9: Rust crates, C# namespaces/packages, C/C++ system headers.
+	cargo:  0xFFFFFFFA,
+	nuget:  0xFFFFFFF9,
+	native: 0xFFFFFFF8,
 } as const;
 
 /**
@@ -73,6 +77,10 @@ export const SHARED_MODULES_NAMESPACE_BY_LANG: Readonly<Partial<Record<Language,
 	javascript: 'npm',
 	python:     'python',
 	go:         'go',
+	rust:       'cargo',
+	csharp:     'nuget',
+	c:          'native',
+	cpp:        'native',
 };
 
 /**
@@ -99,4 +107,7 @@ export const SHARED_MODULES_NAME: Readonly<Record<SharedModulesNamespace, string
 	npm:    'shared-modules:npm',
 	python: 'shared-modules:python',
 	go:     'shared-modules:go',
+	cargo:  'shared-modules:cargo',
+	nuget:  'shared-modules:nuget',
+	native: 'shared-modules:native',
 } as const;

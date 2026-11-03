@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0
+ok 1 - all-green: auth ok, scopes present, config exists, labels/types already, project skipped → manualRemaining 0
+  ---
+  duration_ms: 2.452417
+  type: 'test'
+  ...
+# Subtest: missing scopes: issue-types + project are manual carrying the refresh command
+ok 2 - missing scopes: issue-types + project are manual carrying the refresh command
+  ---
+  duration_ms: 1.198459
+  type: 'test'
+  ...
+# Subtest: missing config: the config step writes github.json and reports done
+ok 3 - missing config: the config step writes github.json and reports done
+  ---
+  duration_ms: 1.50225
+  type: 'test'
+  ...
+# Subtest: project views step is always manual with the UI click-list
+ok 4 - project views step is always manual with the UI click-list
+  ---
+  duration_ms: 0.79525
+  type: 'test'
+  ...
+# Subtest: ensureLabels with a timing-out label create records the label as failed and continues
+ok 5 - ensureLabels with a timing-out label create records the label as failed and continues
+  ---
+  duration_ms: 0.810708
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 289.015334

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: every valid up-message parses and a wrong version, unknown type or mistyped field gives null
+ok 1 - every valid up-message parses and a wrong version, unknown type or mistyped field gives null
+  ---
+  duration_ms: 1.687209
+  type: 'test'
+  ...
+# Subtest: show-more is accepted only for one of the six stages
+ok 2 - show-more is accepted only for one of the six stages
+  ---
+  duration_ms: 0.125292
+  type: 'test'
+  ...
+# Subtest: parseBoardUpMessage accepts { type: 'clear-filters' } and rejects it with extra fields
+ok 3 - parseBoardUpMessage accepts { type: 'clear-filters' } and rejects it with extra fields
+  ---
+  duration_ms: 0.070458
+  type: 'test'
+  ...
+# Subtest: every new up-message parses and a malformed crumb, back or set-view gives null
+ok 4 - every new up-message parses and a malformed crumb, back or set-view gives null
+  ---
+  duration_ms: 0.122292
+  type: 'test'
+  ...
+# Subtest: the removed set-scope, select-item, close-details and set-view board give null
+ok 5 - the removed set-scope, select-item, close-details and set-view board give null
+  ---
+  duration_ms: 0.123291
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 184.249417

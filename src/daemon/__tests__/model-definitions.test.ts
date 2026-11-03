@@ -51,6 +51,11 @@ function fixture(): Record<string, unknown> {
 				],
 				toolLoopModel: 'qwen:1b',
 			},
+			{
+				id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama',
+				models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }, { id: 'qwen:local', efforts: [], hosting: 'local' }],
+			},
+			{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 		],
 	};
 }
@@ -112,6 +117,20 @@ test('model-definitions.test.ts: every sc3 field of a fixture file, aliases alwa
 					{ id: 'qwen3.6:27b', aliases: [], efforts: [], inputLimit: { unit: 'tokens', max: 32768 }, source: 'shipped', installed: false },
 				],
 			},
+			{
+				id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama',
+				models: [
+					{ id: 'glm:cloud', aliases: [], efforts: ['low'], source: 'shipped', hosting: 'cloud' },
+					{ id: 'qwen:local', aliases: [], efforts: [], source: 'shipped', hosting: 'local' },
+				],
+			},
+			{
+				id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe',
+				tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } },
+				summariserModel: 'vibe-a',
+				rejectedModels: [],
+				models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'], source: 'shipped' }],
+			},
 		],
 	});
 	// Optional fields are omitted, never present as undefined.
@@ -151,4 +170,59 @@ test('model-definitions.test.ts: installed exact-match true/false, absent when t
 	const ollamaDown = down.families.find(f => f.id === 'ollama')!;
 	assert.equal(ollamaDown.models.length, 2, 'the request still succeeds with every listed model');
 	assert.ok(ollamaDown.models.every(m => !('installed' in m)));
+});
+
+test('model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it', async () => {
+	const assets = tmp();
+	const f = fixture() as { families: Array<{ id: string; models: Array<Record<string, unknown>> }> };
+	f.families.find(x => x.id === 'ollama')!.models[0]!['memoryMb'] = 1200;
+	writeFileSync(join(assets, 'cloud-model-catalog.json'), JSON.stringify(f));
+	_setModelCatalogDirForTests(assets);
+	_setApprovedModelsPathForTests(join(tmp(), 'approved-models.json'));
+	const r = await modelDefinitions(deps(async () => []));
+	const models = r.families.find(x => x.id === 'ollama')!.models;
+	assert.equal(models[0]!.memoryMb, 1200);
+	assert.ok(!('memoryMb' in models[1]!), 'omitted when the definitions do not give it');
+	for (const fam of r.families.filter(x => x.id !== 'ollama')) for (const m of fam.models) assert.ok(!('memoryMb' in m));
+});
+
+// ── the Ollama-hosted family (Epic b220bb61, Story s1 · t4) ──────────────────
+
+async function answer(): Promise<Awaited<ReturnType<typeof modelDefinitions>>> {
+	use({ version: 1, profiles: [
+		{ family: 'cli-claude', modelId: 'claude-gone', status: 'rejected', efforts: [], decidedAt: '2026-10-02T00:00:00Z', cliVersion: '1.0.0' },
+	] });
+	return modelDefinitions(deps(async () => [{ id: 'qwen:1b' }, { id: 'qwen:local' }]));
+}
+
+test("model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting", async () => {
+	const r = await answer();
+	assert.ok(!('error' in r));
+	const host = r.families.find(f => f.id === 'ollama-claude')!;
+	assert.equal(host.host, 'ollama');
+	assert.equal(host.cliKind, 'claude');
+	assert.deepEqual(host.models.map(m => [m.id, m.hosting]), [['glm:cloud', 'cloud'], ['qwen:local', 'local']]);
+});
+
+test('model-definitions.test.ts: a host-family model with efforts lists them and one without lists []', async () => {
+	const host = (await answer()).families.find(f => f.id === 'ollama-claude')!;
+	assert.deepEqual(host.models.map(m => [m.id, m.efforts]), [['glm:cloud', ['low']], ['qwen:local', []]]);
+});
+
+test("model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed", async () => {
+	const r = await answer();
+	const byId = (id: string) => r.families.find(f => f.id === id)!;
+	const host = byId('ollama-claude');
+	assert.ok(!('rejectedModels' in host), 'no rejectedModels on the host family');
+	for (const m of host.models) assert.ok(!('installed' in m), `${m.id}: no installed, though Ollama lists it`);
+	// The existing families keep today's shape: no host or hosting, rejectedModels on vendor families, installed on Ollama.
+	for (const id of ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama']) {
+		const f = byId(id);
+		assert.ok(!('host' in f), `${id}: no host`);
+		for (const m of f.models) assert.ok(!('hosting' in m), `${id}/${m.id}: no hosting`);
+	}
+	assert.deepEqual(byId('cli-claude').rejectedModels, ['claude-gone']);
+	assert.deepEqual([byId('cli-codex').rejectedModels, byId('cli-vibe').rejectedModels], [[], []]);
+	assert.ok(!('rejectedModels' in byId('ollama')));
+	assert.deepEqual(byId('ollama').models.map(m => [m.id, m.installed]), [['qwen:1b', true], ['qwen3.6:27b', false]]);
 });

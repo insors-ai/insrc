@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "0f4ee7724215c3661e2193d761338c290a1b99e9",
+  "platform": "darwin",
+  "node": "22.23.2",
+  "filesystem": "APFS",
+  "scenarios": 55,
+  "command": "Node 22.23.2 --import tsx --test packages/project-memory/src/__tests__/*.test.ts (permitted installed-tarball run)",
+  "limits": "Process SIGKILL qualification only; no hardware power-loss or S3 Lance claim.",
+  "packageTests": 63
+}

@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason
+ok 1 - review decision: approve approves first and then saves the comments with decision approve; a withheld approval saves them as feedback and reports the reason
+  ---
+  duration_ms: 18.884625
+  type: 'test'
+  ...
+# Subtest: review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject
+ok 2 - review decision: reject records the rejection with the first whole-document comment as the reason, or the default reason when there is none, and saves the comments with decision reject
+  ---
+  duration_ms: 9.103292
+  type: 'test'
+  ...
+# Subtest: review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused
+ok 3 - review decision: feedback saves the comments and changes no state, in any state of the artifact; with no comments it is refused
+  ---
+  duration_ms: 13.5065
+  type: 'test'
+  ...
+# Subtest: review decision: a decision with no comments writes no feedback entry
+ok 4 - review decision: a decision with no comments writes no feedback entry
+  ---
+  duration_ms: 12.423583
+  type: 'test'
+  ...
+# Subtest: review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing
+ok 5 - review decision: an invalid request (unknown decision, blank or over-long comment, a file that is not the artifact's document, too many comments, a non-pending artifact for approve or reject) answers an error and writes nothing
+  ---
+  duration_ms: 43.1365
+  type: 'test'
+  ...
+# Subtest: review decision: a failing comment write after the decision took effect reports the outcome with commentsError
+ok 6 - review decision: a failing comment write after the decision took effect reports the outcome with commentsError
+  ---
+  duration_ms: 11.407916
+  type: 'test'
+  ...
+# Subtest: review decision: the author is the one resolveReviewer gives and is never taken from the request
+ok 7 - review decision: the author is the one resolveReviewer gives and is never taken from the request
+  ---
+  duration_ms: 4.994208
+  type: 'test'
+  ...
+# Subtest: daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged
+ok 8 - daemon handlers: 'workflow.reviewDecision' is registered and delegates to handleReviewDecision, and the 'workflow.approve', 'workflow.resolveComment' and 'artifact.feedback.append' handlers are unchanged
+  ---
+  duration_ms: 1.221083
+  type: 'test'
+  ...
+# Subtest: handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it
+ok 9 - handleReviewDecision on a BUILD record: approve goes through the same approve call as any record and a result that call withholds is returned with its reason; reject stamps the record, after which it is not listed and the pane's call refuses a further decision on it
+  ---
+  duration_ms: 5.869291
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 553.725125

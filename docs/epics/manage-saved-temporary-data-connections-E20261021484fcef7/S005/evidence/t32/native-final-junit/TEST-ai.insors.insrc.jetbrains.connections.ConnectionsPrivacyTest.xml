@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionsPrivacyTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:20:59" hostname="subho-office-mac" time="3.225">
+  <properties/>
+  <testcase name="testActualProjectTempActionsHaveZeroPersistenceAndNoPrivateStateSerialization" classname="ai.insors.insrc.jetbrains.connections.ConnectionsPrivacyTest" time="1.898"/>
+  <testcase name="testNativePasswordErasureAndDetachedCallbacksAcrossKeepRebuildAndAddressRemoval" classname="ai.insors.insrc.jetbrains.connections.ConnectionsPrivacyTest" time="1.326"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

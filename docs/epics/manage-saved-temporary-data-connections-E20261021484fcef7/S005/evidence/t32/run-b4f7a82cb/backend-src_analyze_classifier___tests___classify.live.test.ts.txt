@@ -1,0 +1,54 @@
+TAP version 13
+# (node:73045) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: classifier.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - classifier.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.5355
+  type: 'test'
+  ...
+# Subtest: classifier: code-dominant workspace + code question -> target=code
+ok 2 - classifier: code-dominant workspace + code question -> target=code # SKIP
+  ---
+  duration_ms: 0.044375
+  type: 'test'
+  ...
+# Subtest: classifier: data-dominant workspace + data question -> target=data
+ok 3 - classifier: data-dominant workspace + data question -> target=data # SKIP
+  ---
+  duration_ms: 0.032584
+  type: 'test'
+  ...
+# Subtest: classifier: infra-dominant workspace + infra question -> target=infra
+ok 4 - classifier: infra-dominant workspace + infra question -> target=infra # SKIP
+  ---
+  duration_ms: 0.039291
+  type: 'test'
+  ...
+# Subtest: classifier: mixed workspace + broad question -> target=generic OR a primary single target
+ok 5 - classifier: mixed workspace + broad question -> target=generic OR a primary single target # SKIP
+  ---
+  duration_ms: 0.03925
+  type: 'test'
+  ...
+# Subtest: classifier: a pointed question lands with focused=true + non-empty focus
+ok 6 - classifier: a pointed question lands with focused=true + non-empty focus # SKIP
+  ---
+  duration_ms: 0.072375
+  type: 'test'
+  ...
+# Subtest: classifier: emitted scopeRef.value matches a path the user surfaced
+ok 7 - classifier: emitted scopeRef.value matches a path the user surfaced # SKIP
+  ---
+  duration_ms: 0.064917
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 7
+# todo 0
+# duration_ms 616.536542

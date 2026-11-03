@@ -15,7 +15,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -61,6 +61,13 @@ test.beforeEach(async () => {
 	setLanceConnPath(join(store, 'lance'));
 	repoA = mkdtempSync(join(tmpdir(), 'insrc-2764-a-'));
 	repoC = mkdtempSync(join(tmpdir(), 'insrc-2764-c-'));
+	// Epic c2ba6fa6 s6: FileFilter is the one rule now, taken from the
+	// repo's real ignore files -- the old universal bare-name default (which
+	// included `out`/`vendor`) is retired (ac2). These tests' own "ignored
+	// directory" fixtures name a real rule instead, to exercise the SAME
+	// clean-up behaviour this file is about, not FileFilter itself.
+	writeFileSync(join(repoA, '.gitignore'), '/out/\n/vendor/\n', 'utf8');
+	writeFileSync(join(repoC, '.gitignore'), '/out/\n/vendor/\n', 'utf8');
 	await addRepo(null, { path: repoA, name: '', addedAt: NOW, status: 'ready', lastIndexed: NOW });
 	await addRepo(null, { path: repoC, name: '', addedAt: NOW, status: 'ready', lastIndexed: NOW });
 });
@@ -386,7 +393,7 @@ test('the vector rows of a removed file are gone after the clean-up and those of
 	assert.deepEqual(await idsInVectorTable(), [keep.id]);
 });
 
-test('a kept file\'s link into a removed entity is removed with it, and the kept file\'s other links and entities stay', async () => {
+test('a kept file\'s link into a removed entity is removed with it and returns to pending awaiting it, and the kept file\'s other links and entities stay', async () => {
 	const keepFile = join(repoA, 'src', 'keep.ts');
 	const otherFile = join(repoA, 'src', 'other.ts');
 	const goneFile = join(repoA, 'src', 'gone.ts');
@@ -408,8 +415,11 @@ test('a kept file\'s link into a removed entity is removed with it, and the kept
 	assert.equal(await exists(keep), true);
 	assert.equal(await exists(keepCls), true);
 	assert.equal(await exists(other), true);
-	// The design's stated limit: no unresolved relation is put back for the lost link.
-	assert.equal((await listUnresolvedRelations(null, repoA)).length, 0);
+	// The lost link is not dropped (Epic c2ba6fa6 s2, sc2): the file commit that
+	// removes gone.ts returns keep -> gone to pending, awaiting gone's id, so the
+	// cross-file pass completes it if the entity comes back.
+	const pendingRows = await listUnresolvedRelations(null, repoA);
+	assert.deepEqual(pendingRows.map(r => [r.fromEntity, r.kind, r.rawTo]), [[keep.id, 'CALLS', gone.id]]);
 });
 
 // ---------------------------------------------------------------------------
@@ -604,6 +614,25 @@ test('a create or update file job for a file under an ignored directory indexes 
 	assert.equal(await exists(leftover), false);
 });
 
+test('ac6: adding a repo with no root ignore file results in one existing before the first index runs', async () => {
+	const fresh = mkdtempSync(join(tmpdir(), 'insrc-2764-fresh-'));
+	try {
+		await addRepo(null, { path: fresh, name: '', addedAt: NOW, status: 'ready', lastIndexed: NOW });
+		const queue = new RecordingQueue();
+		const svc = new (class extends IndexerService {})(db, queue, standInWatcher(), undefined, 600_000);
+
+		await svc.addRepo(fresh);
+
+		// The ignore file exists before the queued full index is even looked
+		// at: addRepo() writes it (via proposeIgnoreFile) synchronously before
+		// returning, strictly earlier than any 'full' job the queue runs.
+		assert.equal(existsSync(join(fresh, '.gitignore')), true);
+		assert.deepEqual(queue.of(fresh), ['full']);
+	} finally {
+		rmSync(fresh, { recursive: true, force: true });
+	}
+});
+
 // ---------------------------------------------------------------------------
 // When the clean-up runs
 // ---------------------------------------------------------------------------
@@ -623,8 +652,9 @@ test('a ready repository gets a clean-up job at daemon start, one that gets a fu
 	await finishFullIndexState(repoA, false);
 	await svc.start([registered(repoA, 'ready', future), registered(repoC, 'pending')]);
 
-	assert.deepEqual(queue.of(repoA), ['reconcile'], 'no changed file, and still one clean-up job');
-	assert.deepEqual(queue.of(repoC), ['full'], 'the full index cleans up itself: no separate job');
+	// Each repository also gets the vector backfill, in its own lane (Epic c2ba6fa6 s2).
+	assert.deepEqual(queue.of(repoA), ['reconcile', 'reembed'], 'no changed file, and still one clean-up job');
+	assert.deepEqual(queue.of(repoC), ['full', 'reembed'], 'the full index cleans up itself: no separate job');
 
 	// A full index of a repository that holds a stale stored file.
 	const stale = ent(repoA, join(repoA, 'src', 'gone.ts'), 'function', 'gone');

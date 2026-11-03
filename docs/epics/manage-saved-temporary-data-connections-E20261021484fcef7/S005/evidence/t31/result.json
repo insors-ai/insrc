@@ -1,0 +1,32 @@
+{
+  "task": "t31",
+  "node": "22.23.2",
+  "java": "21",
+  "passed": true,
+  "tests": {
+    "typescriptRecoveryAndPackaging": {
+      "total": 18,
+      "passed": 18,
+      "evidence": "typescript-regression-fixed.tap"
+    },
+    "nativeRecovery": {
+      "cases": 6,
+      "passed": 6,
+      "evidence": "native-recovery.tap"
+    },
+    "targetedPackaging": {
+      "passed": true,
+      "nodePackagingCases": 11,
+      "nativeDescriptorCases": 2,
+      "evidence": "packaging-smoke.tap"
+    }
+  },
+  "corrections": [
+    "Both gateways retain the selected root when a late offscreen commit is recovered; its refresh remains failed/retryable until the original root is selected. No repeated mutation.",
+    "Packaging command whitelist includes the five approved Connections routes.",
+    "External require boundary check parses JavaScript AST rather than matching inert Ajv code-generation strings."
+  ],
+  "retainedInitialFailures": "typescript-regression.tap:16 pass2 fail; incomplete two-root fixture registration and packaging string-regex false positive corrected.",
+  "fullSweepStarted": false,
+  "liveAcceptance": "pending-user-manual"
+}

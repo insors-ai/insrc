@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: [skip] MongoDriver integration: INSRC_DB_TESTS != 1
+ok 1 - [skip] MongoDriver integration: INSRC_DB_TESTS != 1 # SKIP
+  ---
+  duration_ms: 0.446917
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 199.110334

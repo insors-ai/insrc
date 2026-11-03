@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: T1 author: the explicit field wins over a contradicting model label
+ok 1 - T1 author: the explicit field wins over a contradicting model label
+  ---
+  duration_ms: 0.563125
+  type: 'test'
+  ...
+# Subtest: T1 author: without the field the attribution labels decide
+ok 2 - T1 author: without the field the attribution labels decide
+  ---
+  duration_ms: 0.094709
+  type: 'test'
+  ...
+# Subtest: T1 author: nothing stored reads as unknown, and so does a BUILD record with no field
+ok 3 - T1 author: nothing stored reads as unknown, and so does a BUILD record with no field
+  ---
+  duration_ms: 0.101125
+  type: 'test'
+  ...
+# Subtest: T1 reviewer: the explicit field wins over a contradicting model label
+ok 4 - T1 reviewer: the explicit field wins over a contradicting model label
+  ---
+  duration_ms: 0.056792
+  type: 'test'
+  ...
+# Subtest: T1 reviewer: without the field the model label decides
+ok 5 - T1 reviewer: without the field the model label decides
+  ---
+  duration_ms: 0.040916
+  type: 'test'
+  ...
+# Subtest: T1 reviewer: nothing stored reads as unknown
+ok 6 - T1 reviewer: nothing stored reads as unknown
+  ---
+  duration_ms: 0.04675
+  type: 'test'
+  ...
+# Subtest: T1 the other party
+ok 7 - T1 the other party
+  ---
+  duration_ms: 0.094625
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 180.978333

@@ -1,0 +1,54 @@
+TAP version 13
+# (node:6366) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required
+ok 1 - CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required
+  ---
+  duration_ms: 11.022916
+  type: 'test'
+  ...
+# Subtest: CM-S1-J: v2 safe reads legacy projections and label-only edits preserve credentials without raw fields or stored references
+ok 2 - CM-S1-J: v2 safe reads legacy projections and label-only edits preserve credentials without raw fields or stored references
+  ---
+  duration_ms: 273.006083
+  type: 'test'
+  ...
+# Subtest: CM-S1-J: malformed unknown-field wrong-root ticket and scope payloads fail safely before mutation effects
+ok 3 - CM-S1-J: malformed unknown-field wrong-root ticket and scope payloads fail safely before mutation effects
+  ---
+  duration_ms: 231.834334
+  type: 'test'
+  ...
+# Subtest: CM-S1-R: a v2 refresh failure retries only safe list and preserves exact committed receipt revision bytes and keys
+ok 4 - CM-S1-R: a v2 refresh failure retries only safe list and preserves exact committed receipt revision bytes and keys
+  ---
+  duration_ms: 186.159458
+  type: 'test'
+  ...
+# Subtest: CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state
+ok 5 - CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state
+  ---
+  duration_ms: 113.75225
+  type: 'test'
+  ...
+# Subtest: CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preserve safe exact outcomes
+ok 6 - CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preserve safe exact outcomes
+  ---
+  duration_ms: 286.1925
+  type: 'test'
+  ...
+# Subtest: CM-S4-INPUT/RPC: saved removal requires sc6 and accepts only exact authenticated ticket requests
+ok 7 - CM-S4-INPUT/RPC: saved removal requires sc6 and accepts only exact authenticated ticket requests
+  ---
+  duration_ms: 234.053792
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2517.604375

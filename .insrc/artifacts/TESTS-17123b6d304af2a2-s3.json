@@ -1,0 +1,1049 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s3",
+    "createdAt": "2026-11-03T12:09:27.140Z",
+    "updatedAt": "2026-11-03T14:57:31.085Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "0604e8443",
+        "ranAt": "2026-11-03T12:09:27.140Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-runtime-package-qualification",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-existing-packed-allowlists-and-native-absence",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-lance-dependency-stays-lazy-on-import",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 18381,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "packed-lance-dependency-stays-lazy-on-import",
+                "result": "pass"
+              },
+              {
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "6028061ce",
+        "ranAt": "2026-11-03T12:32:31.653Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-row-codec-and-effect-reservations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-canonical-roundtrip-all-row-kinds",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-reserves-bounded-immutable-effect-batches",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-qualified-identities-and-explicit-arrow-schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-persisted-payload-v1-required-fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-rejects-missing-extra-and-duplicated-envelope-fields",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-validates-nested-lineage-outcomes-and-source-shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-normalization-profile-v1",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-vector-bearing-plan-requires-compatible-embedding-metadata",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+                "title": "store-embedding-profile-preserves-text-and-converts-float32-once",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+                "title": "store-embedding-profile-rejects-missing-or-mismatched-metadata",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+                "title": "store-embedding-profile-rejects-unsafe-text-and-vectors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 596,
+            "titles": [
+              {
+                "title": "store-codec-canonical-roundtrip-all-row-kinds",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-rejects-missing-extra-and-duplicated-envelope-fields",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-validates-nested-lineage-outcomes-and-source-shapes",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-reserves-bounded-immutable-effect-batches",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-qualified-identities-and-explicit-arrow-schema",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-vector-bearing-plan-requires-compatible-embedding-metadata",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 449,
+            "titles": [
+              {
+                "title": "store-embedding-profile-preserves-text-and-converts-float32-once",
+                "result": "pass"
+              },
+              {
+                "title": "store-embedding-profile-rejects-missing-or-mismatched-metadata",
+                "result": "pass"
+              },
+              {
+                "title": "store-embedding-profile-rejects-unsafe-text-and-vectors",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5cd990bd1",
+        "ranAt": "2026-11-03T12:58:15.256Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-runtime-package-qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-one-mutation-effects-receipt-generation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-null-vectors-version-pinned-reads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-macos-apfs-linux-ext4-qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3997,
+            "titles": [
+              {
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "ad4f1b289",
+        "ranAt": "2026-11-03T13:39:59.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-directory-separation-and-no-empty-replacement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-startup-rollback-every-open-boundary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-profile-reopen-plan-query-compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7357,
+            "titles": [
+              {
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "43b310c1b",
+        "ranAt": "2026-11-03T13:57:17.082Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-row-codec-and-effect-reservations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-scope-epoch-predicate-escaping",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-scope-epoch-predicates-never-interpolate-untrusted-text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-revision-tombstone-reference-guards",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-exact-generation-predecessor-reference-and-history-guards",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-exact-tombstones-supersession-and-no-effect-dispositions",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-paired-supersession-is-atomic-and-acyclic",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-persisted-payload-v1-required-fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-lifecycle-transition-matrix",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-lifecycle-complete-matrix-and-reason-constraints",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-paired-supersession-is-atomic-and-acyclic",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-profile-reopen-plan-query-compatibility",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 414,
+            "titles": [
+              {
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-scope-epoch-predicates-never-interpolate-untrusted-text",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-exact-generation-predecessor-reference-and-history-guards",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-lifecycle-complete-matrix-and-reason-constraints",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-paired-supersession-is-atomic-and-acyclic",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-exact-tombstones-supersession-and-no-effect-dispositions",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6626,
+            "titles": [
+              {
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "40b1b5ab1",
+        "ranAt": "2026-11-03T14:13:08.824Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-one-mutation-effects-receipt-generation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-generation-revision-conflicts-and-exact-retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-serial-generation-revisions-conflicts-and-retained-identity",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-bounds-admission-before-copy-and-drains-admitted-retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-native-uncertain-writes-fence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-native-rejection-fences-until-verified-close-and-reopen",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6670,
+            "titles": [
+              {
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-serial-generation-revisions-conflicts-and-retained-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-native-rejection-fences-until-verified-close-and-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-bounds-admission-before-copy-and-drains-admitted-retries",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "38bc67cfe",
+        "ranAt": "2026-11-03T14:35:41.123Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-proof-port-retained-and-recycled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-scope-epoch-and-projection-do-not-leak-domain-content",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4670,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4874,
+            "titles": [
+              {
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-scope-epoch-and-projection-do-not-leak-domain-content",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "ef702f35b",
+        "ranAt": "2026-11-03T14:57:31.085Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-revision-tombstone-reference-guards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-control-syntax-scope-and-frame-authority-fail-before-mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-broad-forget-selector-and-closed-lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-replay-forget-no-resurrection-scoped",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-broad-forget-unseen-pending-event",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-forget-after-plan-before-commit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-closed-lifecycle-explicit-new-activity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8598,
+            "titles": [
+              {
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-control-syntax-scope-and-frame-authority-fail-before-mutation",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-protection-overflow-is-explicit-before-partial-matching",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

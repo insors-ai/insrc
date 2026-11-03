@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: parseKinds: undefined yields all four kinds
+ok 1 - parseKinds: undefined yields all four kinds
+  ---
+  duration_ms: 125.934917
+  type: 'test'
+  ...
+# Subtest: parseKinds: subset is honoured
+ok 2 - parseKinds: subset is honoured
+  ---
+  duration_ms: 99.577334
+  type: 'test'
+  ...
+# Subtest: parseKinds: unknown kind rejected
+ok 3 - parseKinds: unknown kind rejected
+  ---
+  duration_ms: 114.538334
+  type: 'test'
+  ...
+# Subtest: parseKinds: empty array rejected
+ok 4 - parseKinds: empty array rejected
+  ---
+  duration_ms: 99.96675
+  type: 'test'
+  ...
+# Subtest: parseKinds: non-array rejected
+ok 5 - parseKinds: non-array rejected
+  ---
+  duration_ms: 97.524458
+  type: 'test'
+  ...
+# Subtest: buildSnippet: first non-empty line, trimmed
+ok 6 - buildSnippet: first non-empty line, trimmed
+  ---
+  duration_ms: 102.077875
+  type: 'test'
+  ...
+# Subtest: buildSnippet: caps at 200 chars with ellipsis
+ok 7 - buildSnippet: caps at 200 chars with ellipsis
+  ---
+  duration_ms: 79.150792
+  type: 'test'
+  ...
+# Subtest: buildSnippet: empty body returns undefined
+ok 8 - buildSnippet: empty body returns undefined
+  ---
+  duration_ms: 105.19325
+  type: 'test'
+  ...
+# Subtest: execute: empty entityId returns 400
+ok 9 - execute: empty entityId returns 400
+  ---
+  duration_ms: 104.428958
+  type: 'test'
+  ...
+# Subtest: execute: unknown kinds rejected before DB lookup
+ok 10 - execute: unknown kinds rejected before DB lookup
+  ---
+  duration_ms: 101.282667
+  type: 'test'
+  ...
+# Subtest: execute: missing entity returns success: false
+ok 11 - execute: missing entity returns success: false
+  ---
+  duration_ms: 94.758875
+  type: 'test'
+  ...
+# Subtest: execute: non-class entity rejected
+ok 12 - execute: non-class entity rejected
+  ---
+  duration_ms: 94.25075
+  type: 'test'
+  ...
+# Subtest: execute: surfaces INHERITS / IMPLEMENTS / CALLS / REFERENCES with per-kind counts
+ok 13 - execute: surfaces INHERITS / IMPLEMENTS / CALLS / REFERENCES with per-kind counts
+  ---
+  duration_ms: 105.818584
+  type: 'test'
+  ...
+# Subtest: execute: kinds filter narrows the result set
+ok 14 - execute: kinds filter narrows the result set
+  ---
+  duration_ms: 112.329334
+  type: 'test'
+  ...
+# Subtest: execute: snippet captures the first body line, trimmed
+ok 15 - execute: snippet captures the first body line, trimmed
+  ---
+  duration_ms: 108.644083
+  type: 'test'
+  ...
+# Subtest: execute: empty class -> empty references with all-zero counts
+ok 16 - execute: empty class -> empty references with all-zero counts
+  ---
+  duration_ms: 95.9365
+  type: 'test'
+  ...
+# Subtest: execute: REF_LIMIT cap stops at 200 and sets truncated: true
+ok 17 - execute: REF_LIMIT cap stops at 200 and sets truncated: true
+  ---
+  duration_ms: 116.618958
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2004.0875

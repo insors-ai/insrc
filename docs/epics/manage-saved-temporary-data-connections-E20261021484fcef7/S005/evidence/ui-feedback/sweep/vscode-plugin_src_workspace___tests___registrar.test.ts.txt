@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: state(root) returns registered:true iff a repo.list row path equals the normalized root; false otherwise
+ok 1 - state(root) returns registered:true iff a repo.list row path equals the normalized root; false otherwise
+  ---
+  duration_ms: 1.228709
+  type: 'test'
+  ...
+# Subtest: state(root) returns registered:false (never throws) when repo.list rejects or returns a non-array
+ok 2 - state(root) returns registered:false (never throws) when repo.list rejects or returns a non-array
+  ---
+  duration_ms: 0.162
+  type: 'test'
+  ...
+# Subtest: state(root) normalizes both sides so a trailing-slash / "." difference still matches a registered row
+ok 3 - state(root) normalizes both sides so a trailing-slash / "." difference still matches a registered row
+  ---
+  duration_ms: 0.079916
+  type: 'test'
+  ...
+# Subtest: register(root) calls rpc(repo.add, { path: root }) with NO steering key and returns { root, registered:true } on { ok:true }
+ok 4 - register(root) calls rpc(repo.add, { path: root }) with NO steering key and returns { root, registered:true } on { ok:true }
+  ---
+  duration_ms: 0.088875
+  type: 'test'
+  ...
+# Subtest: register(root) surfaces the error (does not mark registered) when repo.add rejects
+ok 5 - register(root) surfaces the error (does not mark registered) when repo.add rejects
+  ---
+  duration_ms: 0.203042
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 148.923625

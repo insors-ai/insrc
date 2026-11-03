@@ -8,14 +8,16 @@
  * `renderRepoConfig` is a (selected)=>Promise<string> that reads its OWN data
  * (registeredRepos + the raw config over config.show) so the host stays a pure
  * dispatcher: it renders a repo <select> (the daemon's registered repos, folder-
- * independent — ac1/lc1) and, for the selected repo, DISCRETE form fields for that
- * repo's per-repo model-tiering overrides (models.byRepo[repoPath].tiers.<tier>.
- * {runner,model}) — authored through inputs, NOT raw JSON (ac3). Each field emits a
+ * independent — ac1/lc1) and, for the selected repo, DISCRETE form fields for what a
+ * repo may choose: the tier each role uses (models.byRepo[repoPath].tasks[roleId]) and
+ * the repo's core floor — never a runner, model or effort, which are global (Epic
+ * ce99b72065d03b1b, Story s6, k6). Each field emits a
  * {type:'repoWrite',repoPath,segments,value} message. A registeredRepos()/rawConfig()
  * rejection PROPAGATES so the host degrades the panel.
  *
  * `createRepoConfigWriteHandler` is the onRepoConfigWrite sink: it validates the
- * write, cross-checks the repoPath is a registered repo, asks sc4 consent (a write
+ * write (only ['tasks', roleId] and ['coreFloor'] are accepted), cross-checks the repoPath
+ * is a registered repo, asks sc4 consent (a write
  * mutates daemon config, k4), and ONLY on 'accepted' writes via the sc8 writeKeyPath
  * ARRAY form (['models','byRepo',repoPath,...segments]) — reusing the existing
  * config.write (no new daemon capability, k3). The outcome surfaces via sc2 and the
@@ -23,29 +25,79 @@
  * vscode, no cloud (k2/k5).
  */
 
-import { buildSettingsRows } from '../../../src/cli/panes/repo-settings-model.js';
+import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
+import type { Criticality, RoleDescriptor } from '../../../src/config/role-taxonomy.js';
 import { escapeHtml } from './html.js';
-import type { RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoRef, RepoTrackerWrite } from './types.js';
+import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
+import type { McpClient, McpClientOutcome, SteeringSelection } from '../../../src/shared/types.js';
 
-/** The per-repo tiers rendered as discrete fields (the primary per-repo override surface). */
-const TIERS = ['core', 'mid', 'cheap'] as const;
-/** The two editable fields of each tier. */
-const TIER_FIELDS = ['runner', 'model'] as const;
+/** The tier names a role or the core floor may choose ('' = use the global choice). */
+const TIER_CHOICES = ['core', 'mid', 'cheap'] as const;
 
 /** Injected inputs for the consent-gated per-repo write orchestration (S007). */
 export interface RepoConfigWriteDeps {
   readonly consent: ConsentGate;
   readonly writeKeyPath: (segments: readonly string[], value: unknown) => Promise<ConfigWriteResult>;
-  /** The consent-gated tracker-row write (repo.settings.set); a daemon refusal comes back as a reason. */
-  readonly writeRepoSetting: (repoPath: string, key: string, value: string | boolean | null) => Promise<ConfigWriteResult>;
   readonly registeredRepos: () => Promise<readonly RepoRef[]>;
   readonly status: StatusSurface;
   readonly logger: { warn(message: string): void };
   /** Re-render the panel from fresh config after a write (truthful; the k5 discipline). */
   readonly refresh: () => void;
+  /** Offer a daemon restart for a write that applies only after one (a 'Restart daemon' action). */
+  readonly offerRestart: (message: string) => void;
+}
+
+/** Whether a write targets what a repo may set: ['tasks', roleId] or ['coreFloor']. */
+function isRepoModelWrite(segments: readonly string[]): boolean {
+  return (segments.length === 2 && segments[0] === 'tasks' && segments[1] !== '') || (segments.length === 1 && segments[0] === 'coreFloor');
+}
+
+/** A role row: a label and a tier <select> carrying its write segments; '' (global) clears the repo's choice. */
+function tierRow(label: string, segments: readonly string[], current: string): string {
+  // The segments are carried as a JSON array (NOT a dot-joined string): a role id is
+  // dotted (`context.assemble`) and a naive split('.') would mis-nest it — the hazard the
+  // config.write ARRAY form exists to avoid. escapeHtml keeps the attribute intact.
+  const options = ['', ...TIER_CHOICES]
+    .map((t) => `<option value="${t}"${t === current ? ' selected' : ''}>${t === '' ? 'global' : t}</option>`)
+    .join('');
+  return `<div class="role-row"><span>${escapeHtml(label)}</span><select data-segments="${escapeHtml(JSON.stringify(segments))}">${options}</select></div>`;
+}
+
+/** The section heading for a criticality group (exhaustive — a future
+ *  Criticality member is a compile-time error here, not a silently-dropped role). */
+function groupLabel(c: Criticality): string {
+  switch (c) {
+    case 'critical':
+      return 'Critical roles';
+    case 'peripheral':
+      return 'Peripheral roles';
+  }
+}
+
+/** Partition roles by criticality. The bucket literal is typed as a total
+ *  Record<Criticality, ...> — a future Criticality member makes this literal
+ *  fail to compile (missing key), so a role can never be silently dropped from
+ *  every group the way a hand-maintained ['critical','peripheral'] list could. */
+function partitionRolesByCriticality(roles: readonly RoleDescriptor[]): Readonly<Record<Criticality, readonly RoleDescriptor[]>> {
+  const buckets: Record<Criticality, RoleDescriptor[]> = { critical: [], peripheral: [] };
+  for (const role of roles) buckets[role.criticality].push(role);
+  return buckets;
+}
+
+/** One <details> section of role rows for a single criticality, open only for 'critical'. */
+function roleGroupSection(criticality: Criticality, roles: readonly RoleDescriptor[], raw: Record<string, unknown>, active: string): string {
+  const rows = roles
+    .map((role) => tierRow(role.id, ['tasks', role.id], readStringAt(raw, ['models', 'byRepo', active, 'tasks', role.id]) ?? ''))
+    .join('');
+  return (
+    `<details class="section"${criticality === 'critical' ? ' open' : ''}>` +
+    `<summary class="section-head">${groupLabel(criticality)} <span class="count">${roles.length}</span></summary>` +
+    `<div class="rows">${rows}</div>` +
+    `</details>`
+  );
 }
 
 /** Read a nested string at `path` in an unknown object tree, or undefined. */
@@ -56,33 +108,6 @@ function readStringAt(root: Record<string, unknown>, path: readonly string[]): s
     cur = (cur as Record<string, unknown>)[key];
   }
   return typeof cur === 'string' ? cur : undefined;
-}
-
-/**
- * The Tracker section (Story s3): the rows the daemon defines (`repoFields`) with this
- * repo's values (`repo.settings.get`). Local rows are inputs that post `repoTrackerWrite`;
- * sign-in, target and policy rows are read-only text. A refusal from the daemon is shown
- * as its message. A transport rejection propagates so the host degrades the panel.
- */
-async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
-  const fields = await deps.repoFields();
-  if (fields.length === 0) return '';
-  const result = await deps.repoSettings(repoPath);
-  if (!result.ok) {
-    return `<section id="insrc-tracker"><h3>Tracker</h3><p class="error">${escapeHtml(result.error.message)}</p></section>`;
-  }
-  const rows = buildSettingsRows(fields, result.payload)
-    .map((row) => {
-      const note = row.note !== undefined ? ` <span class="note">${escapeHtml(row.note)}</span>` : '';
-      const control = row.editable
-        ? `<input type="text" data-tracker-key="${escapeHtml(row.key)}" value="${escapeHtml(row.current)}" ` +
-          `placeholder="${escapeHtml(row.value)}" />`
-        : `<span class="value readonly" data-readonly-key="${escapeHtml(row.key)}">${escapeHtml(row.value)}</span> ` +
-          `<span class="note">(read-only)</span>`;
-      return `<label class="field tracker-row" data-kind="${escapeHtml(row.kind)}">${escapeHtml(row.label)} ${control}${note}</label>`;
-    })
-    .join('');
-  return `<section id="insrc-tracker"><h3>Tracker</h3><p class="hint">Blank clears a row.</p>${rows}</section>`;
 }
 
 /**
@@ -116,37 +141,74 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
       return `${picker}<p class="placeholder">Choose a repo to edit its per-repo overrides.</p>`;
     }
 
-    // The per-repo form: the model-tiering overrides at models.byRepo[repoPath].tiers.
-    // Each field is a discrete input (NOT raw JSON, ac3), pre-filled from the daemon's
-    // stored value (empty = using the global/default tier), posting a repoWrite.
+    // The per-repo form: the tier each role uses (tasks) and the core floor — what a repo
+    // may choose. Pre-filled from the daemon's stored value; 'global' = no repo choice.
     const raw = await deps.rawConfig();
-    const rows = TIERS.map((tier) => {
-      const fields = TIER_FIELDS.map((field) => {
-        const cur = readStringAt(raw, ['models', 'byRepo', active, 'tiers', tier, field]) ?? '';
-        // The trailing segments are carried as a JSON array (NOT a dot-joined string):
-        // a config segment may legitimately contain a dot (a dotted roleId like
-        // `context.assemble`), and a naive split('.') would mis-nest it — the exact
-        // hazard the config.write ARRAY form exists to avoid. JSON survives a `"`-bearing
-        // value because the attribute is escapeHtml'd (browser decodes it back before parse).
-        const segments = JSON.stringify(['tiers', tier, field]);
-        return (
-          `<label class="field">${escapeHtml(field)} ` +
-          `<input type="text" data-segments="${escapeHtml(segments)}" value="${escapeHtml(cur)}" ` +
-          `placeholder="(default)" /></label>`
-        );
-      }).join('');
-      return `<fieldset class="tier"><legend>${escapeHtml(tier)}</legend>${fields}</fieldset>`;
-    }).join('');
+    const buckets = partitionRolesByCriticality(reasoningRoleTaxonomy().roles);
+    const groups = (['critical', 'peripheral'] as const satisfies readonly Criticality[])
+      .map((c) => roleGroupSection(c, buckets[c], raw, active))
+      .join('');
+    const floor = tierRow('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
+    const floorSection = `<div class="section"><div class="section-head">Core floor</div><div class="floor-row">${floor}</div></div>`;
 
-    const tracker = await renderTrackerSection(deps, active);
+    // The Providers section: per-provider MCP registration state from the
+    // daemon's mcp.status read — already-registered providers render as
+    // non-checkable; only unregistered, available ones are checkboxes.
+    let providers: string;
+    try {
+      providers = renderProvidersSection(await deps.mcpRegistration(active));
+    } catch (err) {
+      // An old daemon answers 'unknown method: mcp.status' — say so and point at the update.
+      const msg = err instanceof Error ? err.message : String(err);
+      providers = /unknown method/.test(msg)
+        ? `<p class="hint">The running daemon predates provider registration — run <b>insrc: Update daemon</b> (or restart the daemon) and reopen this panel.</p>`
+        : `<p class="hint">Provider registration state is unavailable right now.</p>`;
+    }
+
     return (
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
-      `<p class="hint">Per-repo model tiers for this repo. Leave a field blank to use the global default.</p>${rows}` +
-      `${tracker}` +
+      `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
+      groups +
+      floorSection +
+      `<h3>Providers</h3>${providers}` +
       `</section>`
     );
   };
+}
+
+/** Human label for a provider client id. */
+function providerLabel(client: string): string {
+  return client === 'claude' ? 'Claude Code' : client === 'codex' ? 'Codex' : client === 'vibe' ? 'Mistral Vibe' : client;
+}
+
+/** The Providers section: a status-card row per provider — registered shows a
+ *  'registered' chip (no checkbox); unavailable shows a 'CLI not found on PATH'
+ *  chip (no checkbox); only unregistered + available ones stay checkable,
+ *  alongside a 'not registered' chip. */
+function renderProvidersSection(regs: readonly McpRegistrationView[]): string {
+  const rows = regs.map((r) => {
+    const label = providerLabel(r.client);
+    if (r.registered) {
+      return `<div class="provider-row"><span>${escapeHtml(label)}</span><span class="status-chip ok">registered</span></div>`;
+    }
+    if (!r.available) {
+      return `<div class="provider-row"><span>${escapeHtml(label)}</span><span class="status-chip off">CLI not found on PATH</span></div>`;
+    }
+    return (
+      `<div class="provider-row"><label><input type="checkbox" data-provider="${escapeHtml(r.client)}"> ${escapeHtml(label)}</label>` +
+      `<span class="status-chip warn">not registered</span></div>`
+    );
+  });
+  const checkable = regs.some((r) => r.available && !r.registered);
+  const button = checkable
+    ? `<button id="insrc-register-providers" type="button">Register selected providers</button>`
+    : '';
+  return (
+    `<p class="hint">Register the insrc MCP server (and inject the steering block) for a provider in this repo. Already-registered providers are not checkable. vibe reads its config once at startup — after registering, restart vibe inside this repo to load the server (it is written to the repo's own .vibe/config.toml).</p>` +
+    `<div class="providers">${rows.join('')}</div>` +
+    button
+  );
 }
 
 /**
@@ -157,17 +219,21 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
  */
 export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write: RepoConfigWrite) => void {
   return (write: RepoConfigWrite): void => {
-    if (typeof write !== 'object' || write === null || typeof write.repoPath !== 'string' || write.repoPath.length === 0) return;
-    if ('key' in write) {
-      handleTrackerWrite(deps, write);
-      return;
-    }
     // Shape guard (defence-in-depth; the host already validates before forwarding).
     if (
+      typeof write !== 'object' ||
+      write === null ||
+      typeof write.repoPath !== 'string' ||
+      write.repoPath.length === 0 ||
       !Array.isArray(write.segments) ||
       !write.segments.every((s) => typeof s === 'string') ||
       write.segments.length === 0
     ) {
+      return;
+    }
+    // A repo chooses only role tiers and its core floor: tiers are global (k6).
+    if (!isRepoModelWrite(write.segments)) {
+      deps.logger.warn(`insrc: ignoring a per-repo write to ${JSON.stringify(write.segments)} — a repo sets only tasks and coreFloor`);
       return;
     }
     void (async () => {
@@ -189,8 +255,9 @@ export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write:
           state: deps.status.current().state,
           detail: result.ok
             ? `updated ${label} for ${write.repoPath}`
-            : `per-repo write refused: ${result.reason}`,
+            : `per-repo write refused: ${result.reason}${result.detail !== undefined ? ` — ${result.detail}` : ''}`,
         });
+        if (result.ok && result.restartRequired === true) deps.offerRestart(`insrc: updated ${label} for ${write.repoPath} — restart the daemon to apply`);
         deps.refresh(); // truthful re-render from fresh config (accepted-ok OR refused).
       } catch (err) {
         deps.logger.warn(`insrc: the per-repo config write failed — ${err instanceof Error ? err.message : String(err)}`);
@@ -199,37 +266,90 @@ export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write:
   };
 }
 
-/** The tracker-row edit: registered-repo check, consent (k4), then repo.settings.set; a refusal is shown with its message. */
-function handleTrackerWrite(deps: RepoConfigWriteDeps, write: RepoTrackerWrite): void {
-  if (
-    typeof write.key !== 'string' || write.key.length === 0 ||
-    !(write.value === null || typeof write.value === 'string' || typeof write.value === 'boolean')
-  ) {
-    return;
-  }
-  void (async () => {
-    try {
-      const repos = await deps.registeredRepos();
-      if (!repos.some((r) => r.path === write.repoPath)) {
-        deps.logger.warn(`insrc: ignoring a tracker write for an unregistered repo (${write.repoPath})`);
-        return;
-      }
-      const outcome = await deps.consent.ask({
-        title: 'Apply tracker setting change?',
-        detail: `${write.value === null ? 'Clear' : 'Set'} ${write.key} for the repo ${write.repoPath}?`,
-        acceptLabel: 'Apply',
-      });
-      if (outcome !== 'accepted') return; // declined / dismissed — write NOTHING (k4).
-      const result = await deps.writeRepoSetting(write.repoPath, write.key, write.value);
-      deps.status.set({
-        state: deps.status.current().state,
-        detail: result.ok
-          ? `updated ${write.key} for ${write.repoPath}`
-          : `tracker setting refused: ${result.reason}`,
-      });
-      deps.refresh();
-    } catch (err) {
-      deps.logger.warn(`insrc: the tracker setting write failed — ${err instanceof Error ? err.message : String(err)}`);
+// ---- provider registration sink (post-setup `mcp.register`) -----------------
+
+/** The known provider clients a repo form may check. */
+const KNOWN_PROVIDERS: readonly McpClient[] = ['claude', 'codex', 'vibe'];
+
+/** Injected inputs for the consent-gated provider-registration orchestration. */
+export interface RepoRegisterProvidersDeps {
+  readonly consent: ConsentGate;
+  readonly status: StatusSurface;
+  readonly logger: { warn(message: string): void };
+  readonly registeredRepos: () => Promise<readonly RepoRef[]>;
+  /** The daemon's `mcp.register`: steering injection + per-client MCP registration. */
+  readonly registerProviders: (repoPath: string, steering: SteeringSelection) => Promise<{
+    readonly ok: boolean;
+    readonly mcp?: { readonly clients: readonly McpClientOutcome[] } | undefined;
+    readonly steering?: unknown;
+  }>;
+  /** Re-render the panel after a registration (truthful). */
+  readonly refresh: () => void;
+}
+
+/** Map the checked provider clients to the daemon's SteeringSelection flags
+ *  (claude → CLAUDE.md + claude client, codex → AGENTS.md + codex client,
+ *  vibe → vibe client; vibe reads the same AGENTS.md block via the agents flag). */
+export function steeringForClients(clients: readonly string[]): SteeringSelection {
+  return {
+    claude: clients.includes('claude'),
+    agents: clients.includes('codex'),
+    vibe: clients.includes('vibe'),
+  };
+}
+
+/**
+ * Build the consent-gated provider-registration handler (the host's
+ * onRepoRegisterProviders sink). Validates the repo is registered and the
+ * clients are known providers, prompts sc4 consent, and ONLY on 'accepted'
+ * calls the daemon's `mcp.register` — the full setup (steering-block injection
+ * into the repo's client files + MCP registration per selected client).
+ * Surfaces the outcome via sc2 and re-renders. Never throws.
+ */
+export function createRepoRegisterProvidersHandler(deps: RepoRegisterProvidersDeps): (reg: RepoProviderRegistration) => void {
+  return (reg: RepoProviderRegistration): void => {
+    if (
+      typeof reg !== 'object' ||
+      reg === null ||
+      typeof reg.repoPath !== 'string' ||
+      reg.repoPath.length === 0 ||
+      !Array.isArray(reg.clients) ||
+      !reg.clients.every((c) => typeof c === 'string') ||
+      reg.clients.length === 0 ||
+      !reg.clients.every((c) => (KNOWN_PROVIDERS as readonly string[]).includes(c))
+    ) {
+      return;
     }
-  })();
+    void (async () => {
+      try {
+        const repos = await deps.registeredRepos();
+        if (!repos.some((r) => r.path === reg.repoPath)) {
+          deps.logger.warn(`insrc: ignoring a provider registration for an unregistered repo (${reg.repoPath})`);
+          return;
+        }
+        const labels = reg.clients.map(providerLabel);
+        const outcome = await deps.consent.ask({
+          title: 'Register providers for this repo?',
+          detail: `Register ${labels.join(', ')} for ${reg.repoPath}: inject the insrc steering block into the repo's client files and register the insrc MCP server for each. Reversible.`,
+          acceptLabel: 'Register',
+          items: labels,
+        });
+        if (outcome !== 'accepted') return; // declined / dismissed — write NOTHING (k4).
+        const result = await deps.registerProviders(reg.repoPath, steeringForClients(reg.clients));
+        const mcpLine = (result.mcp?.clients ?? [])
+          .filter((c) => c.action !== 'skipped')
+          .map((c) => `${c.client} ${c.action}${c.note !== undefined && c.note !== '' ? ` (${c.note})` : ''}`)
+          .join(', ');
+        deps.status.set({
+          state: deps.status.current().state,
+          detail: result.ok
+            ? `provider registration for ${reg.repoPath}${mcpLine ? `: ${mcpLine}` : ' — nothing to do'}`
+            : `provider registration refused for ${reg.repoPath}`,
+        });
+        deps.refresh();
+      } catch (err) {
+        deps.logger.warn(`insrc: the provider registration failed — ${err instanceof Error ? err.message : String(err)}`);
+      }
+    })();
+  };
 }

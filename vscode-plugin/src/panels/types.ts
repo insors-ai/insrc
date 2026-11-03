@@ -15,10 +15,9 @@
  * (s5 daemon/workflows, s6 debug, s7 repo form).
  */
 
-import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
-import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 import type { DisposableLike } from '../surfaces/types.js';
 import type { RegisteredRepo, RepoCompleteness } from '../../../src/shared/types.js';
+import type { ModelTiersRenderer, ModelTiersWrite } from './model-tiers.js';
 
 // ---------------------------------------------------------------------------
 // sc9 host + view types (verbatim from the HLD interfaceSketch)
@@ -38,7 +37,13 @@ export interface WebviewPanelHost {
   openDetailedStatus(tab?: DetailTab): void;
   /** Create-or-reveal the separate Repo Configuration panel (shell only in S004). */
   openRepoConfiguration(): void;
-  /** Show the status-bar 2-item menu and route the choice to the matching open method. */
+  /** Create-or-reveal the separate Model Tiers panel (Story S001). */
+  openModelTiers(): void;
+  /** Open the separate, already-complete Connections panel (Story S001, E202610302ab0484d). */
+  openConnections(): void;
+  /** Open the separate, already-complete Delivery Board panel (Story S001, E202610317b6a5fa9). */
+  openDeliveryBoard(): void;
+  /** Show the status-bar menu and route the choice to the matching open method. */
   showStatusMenu(): Promise<void>;
 }
 
@@ -51,6 +56,9 @@ export interface DaemonDataGateway {
   status(): Promise<DaemonStatusView>;
   workflowChain(): Promise<WorkflowChainView>;
   mcpClients(): Promise<readonly McpClientView[]>;
+  /** Per-provider MCP registration state (the daemon's `mcp.status` read): what is
+   *  already registered, so a settings UI can offer only the rest. */
+  mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
   registeredRepos(): Promise<readonly RepoRef[]>;
   scanOrphans(): Promise<readonly OrphanProcess[]>;
 }
@@ -76,6 +84,15 @@ export interface WorkflowChainRow {
 export interface McpClientView {
   readonly host: string;
   readonly wired: boolean;
+}
+
+/** One provider's MCP registration state (`mcp.status`): `available` = its CLI is
+ *  on PATH and answerable; `registered` = the insrc MCP server is already in its
+ *  config. Providers already registered render as non-checkable in settings. */
+export interface McpRegistrationView {
+  readonly client: string;
+  readonly available: boolean;
+  readonly registered: boolean;
 }
 
 /** One stray daemon/mcp process the scan found (s6 consent-gated kill consumes it). */
@@ -178,38 +195,40 @@ export interface RepoConfigRendererDeps {
   registeredRepos(): Promise<readonly RepoRef[]>;
   /** The raw ~/.insrc/config.json (config.show) — the source of per-repo overrides. */
   rawConfig(): Promise<Record<string, unknown>>;
-  /** The repo-scoped tracker rows the daemon defines (config.catalog `repoFields`). */
-  repoFields(): Promise<readonly RepoFieldDef[]>;
-  /** One repo's tracker settings payload (repo.settings.get); a rejection propagates so the host degrades the panel. */
-  repoSettings(repoPath: string): Promise<SettingsResult>;
+  /** Per-provider MCP registration state (mcp.status) — the Providers section source. */
+  mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
 }
 
 /**
  * One per-repo field write emitted by the Repo Configuration form (S007). `segments`
- * is the trailing path UNDER models.byRepo[repoPath] (e.g. ['tiers','core','runner']);
+ * is the trailing path UNDER models.byRepo[repoPath]: ['tasks', roleId] or ['coreFloor'] (a repo
+ * never sets a tier's runner, model or effort — Epic ce99b72065d03b1b, Story s6);
  * the write handler prefixes ['models','byRepo',repoPath] before the config.write
  * ARRAY form. `value` is the field value, or null to clear an override.
  */
-export interface RepoModelWrite {
+export interface RepoConfigWrite {
   readonly repoPath: string;
   readonly segments: readonly string[];
   readonly value: unknown;
 }
 
-/** One edit of a local tracker row (Story s3); `value` null clears the row. Posted as `repoTrackerWrite`. */
-export interface RepoTrackerWrite {
+/**
+ * One provider-registration request emitted by the Repo Configuration form's
+ * Providers section: the repo plus the CHECKED (not yet registered) provider
+ * clients to register. The host forwards it to the injected sink; extension.ts
+ * maps clients to a SteeringSelection (claude→claude, codex→agents, vibe→vibe)
+ * and calls the daemon's `mcp.register` (steering injection + MCP registration).
+ */
+export interface RepoProviderRegistration {
   readonly repoPath: string;
-  readonly key: string;
-  readonly value: string | boolean | null;
+  readonly clients: readonly string[];
 }
-
-export type RepoConfigWrite = RepoModelWrite | RepoTrackerWrite;
 
 /** One choice offered in the status-bar menu (VS Code's `QuickPickItem` satisfies it). */
 export interface MenuItem {
   readonly label: string;
   /** Which host action this item maps to (kept out of the visible label). */
-  readonly action: 'detailed' | 'repoConfig';
+  readonly action: 'detailed' | 'repoConfig' | 'modelTiers' | 'connections' | 'deliveryBoard';
 }
 
 /**
@@ -271,6 +290,43 @@ export interface WebviewPanelHostDeps {
    * config.write, k4); the host performs no write itself.
    */
   readonly onRepoConfigWrite?: ((write: RepoConfigWrite) => void) | undefined;
+  /**
+   * OPTIONAL sink for a provider registration (the repo form's Providers section).
+   * The form posts {type:'repoRegisterProviders', repoPath, clients}; the host
+   * forwards a validated RepoProviderRegistration here. extension.ts owns the
+   * effect (the consent-gated `mcp.register` IPC, k4); the host performs none itself.
+   */
+  readonly onRepoRegisterProviders?: ((reg: RepoProviderRegistration) => void) | undefined;
+  /**
+   * OPTIONAL Model Tiers panel body renderer (Story S001). When wired,
+   * openModelTiers renders its body (one card per tier + the Core-floor
+   * footer) instead of the placeholder. A host built without it renders the
+   * placeholder exactly (fallback preserved, mirroring repoRenderer).
+   */
+  readonly modelTiersRenderer?: ModelTiersRenderer | undefined;
+  /**
+   * OPTIONAL sink for a Model Tiers field write (Story S001). The panel posts
+   * a {type:'modelTiersWrite', ...} message; the host forwards a validated
+   * ModelTiersWrite here. extension.ts owns the effect (the global
+   * config.write — no per-repo consent, k6); the host performs no write itself.
+   */
+  readonly onModelTiersWrite?: ((write: ModelTiersWrite) => void) | undefined;
+  /**
+   * OPTIONAL sink for the Manage Connections menu entry (Story S001,
+   * E202610302ab0484d). The Connections panel is a separate, already-complete
+   * webview owned by extension.ts's own ConnectionsManagerHost — this host
+   * renders no body for it. A host built without it logs a warning instead of
+   * opening anything (no placeholder exists for an externally-owned panel).
+   */
+  readonly onOpenConnections?: (() => void) | undefined;
+  /**
+   * OPTIONAL sink for the Delivery Board menu entry (Story S001,
+   * E202610317b6a5fa9). The Delivery Board is a separate, already-complete
+   * webview owned by extension.ts's own registerDeliveryBoard() host — this
+   * host renders no body for it. A host built without it logs a warning
+   * instead of opening anything, matching onOpenConnections.
+   */
+  readonly onOpenDeliveryBoard?: (() => void) | undefined;
 }
 
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */

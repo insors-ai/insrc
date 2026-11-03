@@ -1,0 +1,8 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"next\": \"done\",\n  \"verdict\": \"pass\",\n  \"counts\": {\n    \"high\": 0,\n    \"med\": 0,\n    \"low\": 16,\n    \"unverified\": 0\n  },\n  \"report\": \"### ✅ Review `PASS` — design.story (design.story)\\n\\n**0 do not hold · 0 could not be verified · 16 hold** · template `design-spec` · model `cli-claude:claude-sonnet-5` · reviewed 2026-10-29T14:06:32.143Z\\n\\nOnly a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.\\n\\n#### Does not hold (blocks approval)\\n\\n_None._\\n\\n#### Could not verify (does not block)\\n\\n_None._\",\n  \"applied\": 0,\n  \"pending\": 0,\n  \"path\": \"/Users/subhagho/work/projects/insors/insrc/docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md\",\n  \"jsonPath\": \"/Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/LLD-484fcef7efaf229e-s5.json\",\n  \"reviewedBy\": \"daemon\"\n}"
+    }
+  ]
+}

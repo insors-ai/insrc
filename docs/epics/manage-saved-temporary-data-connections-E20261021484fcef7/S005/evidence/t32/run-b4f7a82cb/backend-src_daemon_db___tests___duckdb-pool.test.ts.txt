@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: getDuckDB lazy-inits a singleton and returns the same instance
+ok 1 - getDuckDB lazy-inits a singleton and returns the same instance
+  ---
+  duration_ms: 75.071625
+  type: 'test'
+  ...
+# Subtest: parallel first-callers collapse onto one init
+ok 2 - parallel first-callers collapse onto one init
+  ---
+  duration_ms: 57.5115
+  type: 'test'
+  ...
+# Subtest: withConnection runs a query and disposes the connection
+ok 3 - withConnection runs a query and disposes the connection
+  ---
+  duration_ms: 91.323083
+  type: 'test'
+  ...
+# Subtest: memory_limit PRAGMA is applied
+ok 4 - memory_limit PRAGMA is applied
+  ---
+  duration_ms: 58.909583
+  type: 'test'
+  ...
+# Subtest: extension auto-install/load disabled blocks DB attaches
+ok 5 - extension auto-install/load disabled blocks DB attaches
+  ---
+  duration_ms: 55.712291
+  type: 'test'
+  ...
+# Subtest: closeDuckDB clears the singleton; next getDuckDB rebuilds
+ok 6 - closeDuckDB clears the singleton; next getDuckDB rebuilds
+  ---
+  duration_ms: 109.195875
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 737.830125

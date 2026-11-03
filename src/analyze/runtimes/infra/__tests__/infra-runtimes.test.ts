@@ -325,7 +325,8 @@ function resolveRelativeToInsrcRoot(relPath: string): string {
 //       ci.yml                    (github-actions; not k8s by content)
 //     docker-compose.yml          (compose; not k8s)
 //     README.md                   (no family)
-//     node_modules/skipped.tf     (SHOULD be skipped by SKIP_DIRS)
+//     .gitignore                  (node_modules/)
+//     node_modules/skipped.tf     (SHOULD be skipped: the repository ignores it)
 // ---------------------------------------------------------------------------
 
 let fixtureRoot: string;
@@ -453,7 +454,9 @@ test.before(() => {
 	// README (no family)
 	write('README.md', '# fixture\n');
 
-	// SKIP_DIRS test: a tf file inside node_modules MUST be ignored.
+	// A tf file inside node_modules, which the repository's ignore file
+	// excludes, MUST be ignored (Epic c2ba6fa6 s6: the walk asks FileFilter).
+	write('.gitignore', 'node_modules/\n');
 	write('node_modules/skipped.tf',
 		'resource "aws_should_not_appear" "x" { }\n');
 });
@@ -465,10 +468,10 @@ test.after(() => {
 });
 
 // ---------------------------------------------------------------------------
-// walkFiles: SKIP_DIRS smoke
+// walkFiles: the repository's ignore rules
 // ---------------------------------------------------------------------------
 
-test('walkFiles: node_modules is skipped (SKIP_DIRS); other files visible', async () => {
+test('walkFiles: a node_modules directory the repository ignores is skipped; other files visible', async () => {
 	const { files } = await walkFiles(fixtureRoot);
 	const paths = files.map(f => f.relPath);
 	assert.ok(paths.some(p => p === 'tf/main.tf'),               'tf/main.tf should be walked');

@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: design.story: a missed sbdry5 verdict is a non-retryable boundary hard-fail
+ok 1 - design.story: a missed sbdry5 verdict is a non-retryable boundary hard-fail
+  ---
+  duration_ms: 1.325958
+  type: 'test'
+  ...
+# Subtest: design.story: sbdry1-4 still hard-fail (regression — set was extended, not replaced)
+ok 2 - design.story: sbdry1-4 still hard-fail (regression — set was extended, not replaced)
+  ---
+  duration_ms: 0.173083
+  type: 'test'
+  ...
+# Subtest: design.story: a PASSED sbdry5 does not trigger the boundary hard-fail
+ok 3 - design.story: a PASSED sbdry5 does not trigger the boundary hard-fail
+  ---
+  duration_ms: 0.354167
+  type: 'test'
+  ...
+# Subtest: sbdry5 is added to exactly ONE orchestrator boundaryIds set (the design.story s8 set)
+ok 4 - sbdry5 is added to exactly ONE orchestrator boundaryIds set (the design.story s8 set)
+  ---
+  duration_ms: 0.310834
+  type: 'test'
+  ...
+# Subtest: the anti-overreach rule is wired into both the design.story and plan runners
+ok 5 - the anti-overreach rule is wired into both the design.story and plan runners
+  ---
+  duration_ms: 1.133542
+  type: 'test'
+  ...
+# Subtest: ANTI_OVERREACH_RULE names adjacentBoundaries + consume-not-redesign + flag-not-silent
+ok 6 - ANTI_OVERREACH_RULE names adjacentBoundaries + consume-not-redesign + flag-not-silent
+  ---
+  duration_ms: 0.0975
+  type: 'test'
+  ...
+# Subtest: epic-parented design.story: implementing a sibling-owned contract is a deterministic boundary hard-fail
+ok 7 - epic-parented design.story: implementing a sibling-owned contract is a deterministic boundary hard-fail
+  ---
+  duration_ms: 5.766084
+  type: 'test'
+  ...
+# Subtest: epic-parented design.story: CONSUMING a sibling-owned contract is not an adjacent-scope boundary fail
+ok 8 - epic-parented design.story: CONSUMING a sibling-owned contract is not an adjacent-scope boundary fail
+  ---
+  duration_ms: 17.438959
+  type: 'test'
+  ...
+# Subtest: the alternatives prompt carries the design rule next to the scope rule and keeps its other rules
+ok 9 - the alternatives prompt carries the design rule next to the scope rule and keeps its other rules
+  ---
+  duration_ms: 0.418875
+  type: 'test'
+  ...
+# Subtest: each prompt site references the shared rule constants instead of carrying its own copy of the wording
+ok 10 - each prompt site references the shared rule constants instead of carrying its own copy of the wording
+  ---
+  duration_ms: 0.956042
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 340.391417

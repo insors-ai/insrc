@@ -251,6 +251,45 @@ test('ensureNonEmptyClosure: given readers it reads the registry and the entitie
 	);
 });
 
+// ---------------------------------------------------------------------------
+// repoHasAnyEntity fast path (Epic c2ba6fa6 Story s3, ac4)
+// ---------------------------------------------------------------------------
+
+test('ensureNonEmptyClosure: with both repoHasAnyEntity and listEntitiesForRepo supplied, it calls repoHasAnyEntity and never listEntitiesForRepo', async () => {
+	const calls: string[] = [];
+	const deps = {
+		listRepos:           async () => { calls.push('listRepos'); return [{ path: '/standin/app', status: 'ready' } as unknown as RegisteredRepo]; },
+		listEntitiesForRepo: async (repoPath: string) => { calls.push(`listEntitiesForRepo:${repoPath}`); return [makeEntity(repoPath, `${repoPath}/a.ts`)]; },
+		repoHasAnyEntity:    async (repoPath: string) => { calls.push(`repoHasAnyEntity:${repoPath}`); return true; },
+	};
+	const result = await ensureNonEmptyClosure(scopeOf(codeIntent('/standin/app/src', 'module')), deps);
+	assert.equal(result, '/standin/app');
+	assert.deepEqual(calls, ['listRepos', 'repoHasAnyEntity:/standin/app'], 'listEntitiesForRepo is never called when repoHasAnyEntity is present');
+});
+
+test('ensureNonEmptyClosure: repoHasAnyEntity answering false throws ScopeNotIndexedError, driven entirely by its own answer', async () => {
+	const deps = {
+		listRepos:           async () => [{ path: '/standin/app', status: 'ready' } as unknown as RegisteredRepo],
+		listEntitiesForRepo: async () => { throw new Error('must not be read when repoHasAnyEntity is present'); },
+		repoHasAnyEntity:    async () => false,
+	};
+	await assert.rejects(
+		() => ensureNonEmptyClosure(scopeOf(codeIntent('/standin/app')), deps),
+		(err: unknown) => err instanceof ScopeNotIndexedError && err.registeredAs === '/standin/app',
+	);
+});
+
+test('ensureNonEmptyClosure: without repoHasAnyEntity supplied, the ~30 existing ScopeDeps-shaped fixtures keep behaving via the listEntitiesForRepo fallback, unchanged', async () => {
+	const calls: string[] = [];
+	const deps = {
+		listRepos:           async () => [{ path: '/standin/app', status: 'ready' } as unknown as RegisteredRepo],
+		listEntitiesForRepo: async (repoPath: string) => { calls.push(`listEntitiesForRepo:${repoPath}`); return [makeEntity(repoPath, `${repoPath}/a.ts`)]; },
+	};
+	const result = await ensureNonEmptyClosure(scopeOf(codeIntent('/standin/app/src', 'module')), deps);
+	assert.equal(result, '/standin/app');
+	assert.deepEqual(calls, ['listEntitiesForRepo:/standin/app']);
+});
+
 test('ensureNonEmptyClosure: with readers the check keeps its leniency for a registry that cannot be read or holds no repo', async () => {
 	const entities = async (): Promise<Entity[]> => { throw new Error('must not be read'); };
 	assert.equal(await ensureNonEmptyClosure(scopeOf(codeIntent('/x/app')), {

@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: detectRepoType: marker files map to types (polyglot returns all)
+ok 1 - detectRepoType: marker files map to types (polyglot returns all)
+  ---
+  duration_ms: 7.754
+  type: 'test'
+  ...
+# Subtest: detectRepoType: empty repo → no types
+ok 2 - detectRepoType: empty repo → no types
+  ---
+  duration_ms: 5.854208
+  type: 'test'
+  ...
+# Subtest: repoTypeIgnoreDirs: java → target/build, python → __pycache__/.venv, node → node_modules/dist
+ok 3 - repoTypeIgnoreDirs: java → target/build, python → __pycache__/.venv, node → node_modules/dist
+  ---
+  duration_ms: 0.129
+  type: 'test'
+  ...
+# Subtest: gitignoreDirs: extracts bare dir names, skips comments/negations/globs/nested
+ok 4 - gitignoreDirs: extracts bare dir names, skips comments/negations/globs/nested
+  ---
+  duration_ms: 10.833542
+  type: 'test'
+  ...
+# Subtest: gitignoreDirs: no .gitignore → empty
+ok 5 - gitignoreDirs: no .gitignore → empty
+  ---
+  duration_ms: 5.635
+  type: 'test'
+  ...
+# Subtest: initRepoIgnore: with .gitignore → base ∪ gitignore dirs, persisted to .insrc/config.json
+ok 6 - initRepoIgnore: with .gitignore → base ∪ gitignore dirs, persisted to .insrc/config.json
+  ---
+  duration_ms: 17.302917
+  type: 'test'
+  ...
+# Subtest: initRepoIgnore: no .gitignore → base ∪ repo-type defaults (java)
+ok 7 - initRepoIgnore: no .gitignore → base ∪ repo-type defaults (java)
+  ---
+  duration_ms: 3.643417
+  type: 'test'
+  ...
+# Subtest: initRepoIgnore: idempotent — never overwrites an existing ignore
+ok 8 - initRepoIgnore: idempotent — never overwrites an existing ignore
+  ---
+  duration_ms: 3.182667
+  type: 'test'
+  ...
+# Subtest: resolveRepoIgnore: config present → its ignore; absent → IGNORE_DIRS fallback
+ok 9 - resolveRepoIgnore: config present → its ignore; absent → IGNORE_DIRS fallback
+  ---
+  duration_ms: 2.592792
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 289.831709

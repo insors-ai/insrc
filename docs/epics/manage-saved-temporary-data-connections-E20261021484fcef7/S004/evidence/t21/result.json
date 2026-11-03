@@ -1,0 +1,45 @@
+{
+  "subject": "CM-S4-COMPAT",
+  "runtime": "Node22.23.2",
+  "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-reporter=tap src/shared/__tests__/connection-management.test.ts src/daemon/db/__tests__/saved-management.test.ts src/daemon/db/__tests__/connection-management-rpc.test.ts src/daemon/db/__tests__/driver-profiles.test.ts src/daemon/db/__tests__/connection-reservations.test.ts src/daemon/db/__tests__/session-ledger.test.ts src/daemon/db/__tests__/session-entries.test.ts src/daemon/db/__tests__/session-owner.test.ts src/daemon/db/__tests__/draft-preparation.test.ts src/daemon/db/__tests__/probe-disposal.test.ts src/daemon/db/__tests__/runtime-config.test.ts src/daemon/db/__tests__/connection-leases.test.ts src/daemon/db/__tests__/session-resources.test.ts src/daemon/db/__tests__/draft-test-supervisor.test.ts",
+  "result": {
+    "tests": 114,
+    "pass": 114,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "todo": 0
+  },
+  "typecheck": "Node22 tsc --noEmit passed",
+  "postRunHead": "9e6c3cc25a10ddb483b0c15e7f36b6e0384611e6",
+  "postRunTestManifest": {
+    "src/shared/__tests__/connection-management.test.ts": "37d8f5edac23a9923f4e00c1f176d4501f24c9a5fc486225a7d3c7e1b154aaf8",
+    "src/daemon/db/__tests__/saved-management.test.ts": "f9bdbf60c077e9d84d062fd93460c2a1687082e7885a7090498841cff67fa158",
+    "src/daemon/db/__tests__/connection-management-rpc.test.ts": "3740a41af31fd57f64abf453b85a104475cd6bc77bc87394ed515b5324b9f6b8",
+    "src/daemon/db/__tests__/driver-profiles.test.ts": "e4b181d82356af2ae9188c6c203da64012ae8a0732484628bed6f63e37f99c3a",
+    "src/daemon/db/__tests__/connection-reservations.test.ts": "5cacf4be7c06029e634608b92527a332c651ef1aa135d37e008498b35b881d2e",
+    "src/daemon/db/__tests__/session-ledger.test.ts": "c8e450a373675f11d806dc6f79bea5ed98c7b122119598c57813b7bf10e2e06a",
+    "src/daemon/db/__tests__/session-entries.test.ts": "0f4a294fa1e0b0b83a5ef0f0985c65f5c0f46ef54737d4ad12e7a2027ee8866f",
+    "src/daemon/db/__tests__/session-owner.test.ts": "68c13f4569fb366362f3ecdd7f3a083a4a2ef744fd6288bf3902f842415090c6",
+    "src/daemon/db/__tests__/draft-preparation.test.ts": "343b767d4f7845baaa2b6f5c17e0fa89f2fe9f96aad69f0f493a529b08259af7",
+    "src/daemon/db/__tests__/probe-disposal.test.ts": "c59a9d9541dca377f65f8ddc953bb1302aede619a000cf4bcee0d9638e708f84",
+    "src/daemon/db/__tests__/runtime-config.test.ts": "ead90277e547e5f9397650513399c30aa277318d3bd399d8725ad5d4a137b853",
+    "src/daemon/db/__tests__/connection-leases.test.ts": "eda66b58d1dc2249f1d335212e840c0ad9f1001880c1d0dbfe08e52fa16b70bb",
+    "src/daemon/db/__tests__/session-resources.test.ts": "70a56fe9caa035f2eba1159f63d1dfd2db75f5361b88ada01b5b89bbc638fa4e",
+    "src/daemon/db/__tests__/draft-test-supervisor.test.ts": "b2bded4263ce24b9d8652bd634039df22ed1ff20db9dfa5f92f36125b81abb0c"
+  },
+  "proof": [
+    "Unchanged exact v2 ticket/receipt/status shapes and strict legacy behavior.",
+    "Credential Keep/Replace/Clear, pinned families and readonly unsupported fields.",
+    "Saved/temporary namespace collision, alias/relative/trailing root refusal and default Saved lookup.",
+    "Session auth/replay/expiry/resume, full-use callback and iterator lifetimes, cancellation, timeout and owned child drain.",
+    "Managed remove never falls back to legacy delete."
+  ],
+  "otherFocusedEvidence": [
+    "t17/result.json: real SQL/KV source preservation",
+    "t18/result.json: native/converted source+compiled file lifecycle regressions",
+    "t20/result.json: normal SDK/probe logging and safe new removal projections"
+  ],
+  "fullSweepRun": false,
+  "tapHash": "32e3a461f1fc179269eb2b09cf49230b61380554fb745fa9a8c8f374c4a8ef21"
+}

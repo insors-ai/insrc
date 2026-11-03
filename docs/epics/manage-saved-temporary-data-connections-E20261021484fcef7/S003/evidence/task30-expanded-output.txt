@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: CM-S1-H: native CSV JSON JSONL and Parquet private resources read complete isolated tables without file writes installs or source-path errors
+ok 1 - CM-S1-H: native CSV JSON JSONL and Parquet private resources read complete isolated tables without file writes installs or source-path errors
+# Subtest: CM-S1-H: BSON and XLSX rows use private typed tables with precise values target isolation and zero cache sidecars
+ok 2 - CM-S1-H: BSON and XLSX rows use private typed tables with precise values target isolation and zero cache sidecars
+# Subtest: CM-S1-H: typed empty and all-null tables preserve declared types and nullability before the first batch
+ok 3 - CM-S1-H: typed empty and all-null tables preserve declared types and nullability before the first batch
+# Subtest: CM-S1-S: schema mismatches and decoder admission failures close partial tables native handles and retained budgets
+ok 4 - CM-S1-S: schema mismatches and decoder admission failures close partial tables native handles and retained budgets
+# Subtest: CM-S1-H: query admission rejects writes multi-statements and unapproved sources while close waits for actual use
+ok 5 - CM-S1-H: query admission rejects writes multi-statements and unapproved sources while close waits for actual use
+# Subtest: CM-S1-H: unavailable local readers fail explicitly without INSTALL and close their partial instance
+ok 6 - CM-S1-H: unavailable local readers fail explicitly without INSTALL and close their partial instance
+# Subtest: CM-S1-H: resource close waits for decoder source cleanup after native work settles and closes the source once
+ok 7 - CM-S1-H: resource close waits for decoder source cleanup after native work settles and closes the source once
+# Subtest: CM-S1-H: isolated native and converted execution leaves home cache temp config working roots and captured logs free of file or path leakage
+ok 8 - CM-S1-H: isolated native and converted execution leaves home cache temp config working roots and captured logs free of file or path leakage
+# Subtest: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+ok 9 - CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+# Subtest: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+ok 10 - CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+# Subtest: CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases
+ok 11 - CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases
+# Subtest: CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays
+ok 12 - CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays
+# Subtest: CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes
+ok 13 - CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes
+# Subtest: CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit
+ok 14 - CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit
+# Subtest: CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control
+ok 15 - CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control
+# Subtest: CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication
+ok 16 - CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication
+# Subtest: CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease
+ok 17 - CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease
+# Subtest: CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences
+ok 18 - CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences
+# Subtest: CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal
+ok 19 - CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal
+# Subtest: CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers
+ok 20 - CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers
+# Subtest: CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change
+ok 21 - CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change
+# Subtest: CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience
+ok 22 - CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience
+# Subtest: CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+ok 23 - CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+# Subtest: CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+ok 24 - CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+# Subtest: CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+ok 25 - CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+# Subtest: CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+ok 26 - CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+# Subtest: CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+ok 27 - CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+# Subtest: CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+ok 28 - CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+# Subtest: CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+ok 29 - CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+# Subtest: CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+ok 30 - CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+# Subtest: CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+ok 31 - CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+# tests 31
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10325.467292

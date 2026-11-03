@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)
+ok 1 - assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)
+  ---
+  duration_ms: 2.165417
+  type: 'test'
+  ...
+# Subtest: assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)
+ok 2 - assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)
+  ---
+  duration_ms: 0.374875
+  type: 'test'
+  ...
+# Subtest: assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles
+ok 3 - assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles
+  ---
+  duration_ms: 0.2735
+  type: 'test'
+  ...
+# Subtest: assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)
+ok 4 - assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)
+  ---
+  duration_ms: 0.149584
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: unrecoverable truncated input refuses before any grounding is returned
+ok 5 - DIFF-READER: unrecoverable truncated input refuses before any grounding is returned
+  ---
+  duration_ms: 0.187833
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder
+ok 6 - DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder
+  ---
+  duration_ms: 0.114042
+  type: 'test'
+  ...
+# Subtest: assembler: a working-tree git failure propagates (DiffUnavailableError)
+ok 7 - assembler: a working-tree git failure propagates (DiffUnavailableError)
+  ---
+  duration_ms: 0.118916
+  type: 'test'
+  ...
+# Subtest: assembler: a range git failure propagates at once — no step-down to the working tree or a last commit
+ok 8 - assembler: a range git failure propagates at once — no step-down to the working tree or a last commit
+  ---
+  duration_ms: 0.080875
+  type: 'test'
+  ...
+# Subtest: assembler (integration): a real repo with no base is refused, and the assembler is read-only
+ok 9 - assembler (integration): a real repo with no base is refused, and the assembler is read-only
+  ---
+  duration_ms: 202.318125
+  type: 'test'
+  ...
+# Subtest: a base and no globs: the range then the working tree, with no excludeGlobs argument
+ok 10 - a base and no globs: the range then the working tree, with no excludeGlobs argument
+  ---
+  duration_ms: 0.688166
+  type: 'test'
+  ...
+# Subtest: a base and globs: the RANGE is read first, then the working tree, both with the globs
+ok 11 - a base and globs: the RANGE is read first, then the working tree, both with the globs
+  ---
+  duration_ms: 0.176042
+  type: 'test'
+  ...
+# Subtest: a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope
+ok 12 - a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope
+  ---
+  duration_ms: 0.177333
+  type: 'test'
+  ...
+# Subtest: T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported
+ok 13 - T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported
+  ---
+  duration_ms: 0.109709
+  type: 'test'
+  ...
+# Subtest: seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read
+ok 14 - seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read
+  ---
+  duration_ms: 0.081334
+  type: 'test'
+  ...
+# Subtest: an error that is not a diff failure propagates at once
+ok 15 - an error that is not a diff failure propagates at once
+  ---
+  duration_ms: 0.082458
+  type: 'test'
+  ...
+# Subtest: T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions
+ok 16 - T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions
+  ---
+  duration_ms: 326.748166
+  type: 'test'
+  ...
+# Subtest: integration, real git: with no base and a clean tree nothing is reviewed in the Story's place
+ok 17 - integration, real git: with no base and a clean tree nothing is reviewed in the Story's place
+  ---
+  duration_ms: 98.440625
+  type: 'test'
+  ...
+# Subtest: the range diff carries full hunks for the Story files and none for merged-in files
+ok 18 - the range diff carries full hunks for the Story files and none for merged-in files
+  ---
+  duration_ms: 298.604875
+  type: 'test'
+  ...
+# Subtest: a file changed by both a Story commit and the merge carries only the Story's own hunks
+ok 19 - a file changed by both a Story commit and the merge carries only the Story's own hunks
+  ---
+  duration_ms: 266.992875
+  type: 'test'
+  ...
+# Subtest: edits folded into a merge commit are reviewed and marked
+ok 20 - edits folded into a merge commit are reviewed and marked
+  ---
+  duration_ms: 295.795167
+  type: 'test'
+  ...
+# Subtest: a range with no Story change gives an empty grounding without calling git_diff
+ok 21 - a range with no Story change gives an empty grounding without calling git_diff
+  ---
+  duration_ms: 265.971
+  type: 'test'
+  ...
+# Subtest: a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first
+ok 22 - a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first
+  ---
+  duration_ms: 381.253208
+  type: 'test'
+  ...
+# Subtest: without hunksByFile buildDiffSymbols splits the body as before
+ok 23 - without hunksByFile buildDiffSymbols splits the body as before
+  ---
+  duration_ms: 0.52675
+  type: 'test'
+  ...
+# Subtest: the range diff applies the exclusions to every per-unit call
+ok 24 - the range diff applies the exclusions to every per-unit call
+  ---
+  duration_ms: 0.196708
+  type: 'test'
+  ...
+# Subtest: a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable
+ok 25 - a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable
+  ---
+  duration_ms: 241.902125
+  type: 'test'
+  ...
+# Subtest: splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes
+ok 26 - splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes
+  ---
+  duration_ms: 0.583208
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte
+ok 27 - DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte
+  ---
+  duration_ms: 426.387459
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence
+ok 28 - DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence
+  ---
+  duration_ms: 0.440709
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file
+ok 29 - DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file
+  ---
+  duration_ms: 0.113708
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3043.794417

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: reachable model renders running + uptime + socket + version/pid + repos with index state
+ok 1 - reachable model renders running + uptime + socket + version/pid + repos with index state
+  ---
+  duration_ms: 42.092625
+  type: 'test'
+  ...
+# Subtest: unreachable model renders a single stopped/unreachable line and no running fields
+ok 2 - unreachable model renders a single stopped/unreachable line and no running fields
+  ---
+  duration_ms: 28.499625
+  type: 'test'
+  ...
+# Subtest: zero-repo reachable model renders repo-count 0 with no per-repo rows
+ok 3 - zero-repo reachable model renders repo-count 0 with no per-repo rows
+  ---
+  duration_ms: 29.358
+  type: 'test'
+  ...
+# Subtest: version/pid lines are omitted when those optional fields are undefined
+ok 4 - version/pid lines are omitted when those optional fields are undefined
+  ---
+  duration_ms: 27.852458
+  type: 'test'
+  ...
+# Subtest: orphan area (POSIX) renders scan rows as recommendations
+ok 5 - orphan area (POSIX) renders scan rows as recommendations
+  ---
+  duration_ms: 28.946542
+  type: 'test'
+  ...
+# Subtest: orphan area: empty scan renders the no-orphans line
+ok 6 - orphan area: empty scan renders the no-orphans line
+  ---
+  duration_ms: 26.930583
+  type: 'test'
+  ...
+# Subtest: orphan area: select pid + kill opens ConfirmPrompt; Yes kills EXACTLY the selection + shows outcomes
+ok 7 - orphan area: select pid + kill opens ConfirmPrompt; Yes kills EXACTLY the selection + shows outcomes
+  ---
+  duration_ms: 110.742292
+  type: 'test'
+  ...
+# Subtest: orphan area: choosing No never calls killOrphans and dismisses the prompt
+ok 8 - orphan area: choosing No never calls killOrphans and dismisses the prompt
+  ---
+  duration_ms: 133.083167
+  type: 'test'
+  ...
+# Subtest: orphan area: a kill request with an empty selection is inert
+ok 9 - orphan area: a kill request with an empty selection is inert
+  ---
+  duration_ms: 54.725291
+  type: 'test'
+  ...
+# Subtest: orphan area: multi-select across rows kills exactly both chosen pids
+ok 10 - orphan area: multi-select across rows kills exactly both chosen pids
+  ---
+  duration_ms: 190.504792
+  type: 'test'
+  ...
+# Subtest: orphan area (non-POSIX) renders the not-supported line with no scan/kill control
+ok 11 - orphan area (non-POSIX) renders the not-supported line with no scan/kill control
+  ---
+  duration_ms: 54.857125
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1232.406166

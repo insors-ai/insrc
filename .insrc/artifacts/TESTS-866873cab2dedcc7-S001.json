@@ -1,0 +1,556 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "866873cab2dedcc7",
+    "storyId": "S001",
+    "createdAt": "2026-11-01T09:19:56.874Z",
+    "updatedAt": "2026-11-01T09:27:22.352Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-01T07:02:58.354Z",
+    "epicSlug": "write-versioned-marker-delimited-insrc-steering"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t2",
+        "commit": "42f077889",
+        "ranAt": "2026-11-01T09:27:22.352Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/mcp-register.test.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "unselected clients are always emitted as skipped, never omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "{claude:true} registers claude (mcp add --scope user); codex is skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "{agents:true} maps to the codex client (agents flag → codex, --scope omitted)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "{vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe add failure → failed carrying the CLI stderr; other clients unaffected",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeAgentsSteering: creates AGENTS.md with the marked steering block when absent, idempotent on second call",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeAgentsSteering: replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeAgentsSteering: malformed markers (open without close) are a guarded no-op — file untouched, never clobbered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "registerMcpClients with {vibe:true} also upserts the AGENTS.md steering block (in-memory seam), and registration still succeeds",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "an existing `insrc` entry in `mcp list` → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "an `insrc` substring only inside a path (not a line-start name) does NOT count as registered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "a non-zero `mcp add` exit → failed carrying the CLI stderr",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "per-client isolation: claude add fails, codex still registers independently",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "mixed idempotency: claude already present, codex absent → unchanged + registered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "registerMcpClients never rejects even if the injected run throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "probeMcpClients: per-client availability + registration from the same pre-checks registration uses; never throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "probeMcpClients: an unreachable CLI resolves available:false, registered:false; a vibe without config text is registered:false",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe + repoPath: writes [[mcp_servers]] insrc into the repo's own .vibe/config.toml, never spawns `vibe mcp add`, note says restart vibe",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe + repoPath: existing project entry → unchanged, nothing written; existing unrelated content is preserved on write",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "probeMcpClients with a repoPath counts the repo's project .vibe/config.toml as registered for vibe",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, idempotent, valid entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/mcp-register.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 828,
+            "titles": [
+              {
+                "title": "unselected clients are always emitted as skipped, never omitted",
+                "result": "pass"
+              },
+              {
+                "title": "{claude:true} registers claude (mcp add --scope user); codex is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "{agents:true} maps to the codex client (agents flag → codex, --scope omitted)",
+                "result": "pass"
+              },
+              {
+                "title": "{vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe add failure → failed carrying the CLI stderr; other clients unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: creates AGENTS.md with the marked steering block when absent, idempotent on second call",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: malformed markers (open without close) are a guarded no-op — file untouched, never clobbered",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients with {vibe:true} also upserts the AGENTS.md steering block (in-memory seam), and registration still succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values",
+                "result": "pass"
+              },
+              {
+                "title": "an existing `insrc` entry in `mcp list` → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "an `insrc` substring only inside a path (not a line-start name) does NOT count as registered",
+                "result": "pass"
+              },
+              {
+                "title": "an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add",
+                "result": "pass"
+              },
+              {
+                "title": "a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero `mcp add` exit → failed carrying the CLI stderr",
+                "result": "pass"
+              },
+              {
+                "title": "per-client isolation: claude add fails, codex still registers independently",
+                "result": "pass"
+              },
+              {
+                "title": "mixed idempotency: claude already present, codex absent → unchanged + registered",
+                "result": "pass"
+              },
+              {
+                "title": "a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients never rejects even if the injected run throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: per-client availability + registration from the same pre-checks registration uses; never throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: an unreachable CLI resolves available:false, registered:false; a vibe without config text is registered:false",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: writes [[mcp_servers]] insrc into the repo's own .vibe/config.toml, never spawns `vibe mcp add`, note says restart vibe",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: existing project entry → unchanged, nothing written; existing unrelated content is preserved on write",
+                "result": "pass"
+              },
+              {
+                "title": "vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients with a repoPath counts the repo's project .vibe/config.toml as registered for vibe",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, idempotent, valid entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t1",
+        "commit": "e726a7f08",
+        "ranAt": "2026-11-01T09:25:26.181Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/mcp-register.test.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "unselected clients are always emitted as skipped, never omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "{claude:true} registers claude (mcp add --scope user); codex is skipped",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "{agents:true} maps to the codex client (agents flag → codex, --scope omitted)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "{vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe add failure → failed carrying the CLI stderr; other clients unaffected",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeAgentsSteering: creates AGENTS.md with the marked steering block when absent, idempotent on second call",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeAgentsSteering: replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeAgentsSteering: malformed markers (open without close) are a guarded no-op — file untouched, never clobbered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "registerMcpClients with {vibe:true} also upserts the AGENTS.md steering block (in-memory seam), and registration still succeeds",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "an existing `insrc` entry in `mcp list` → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "an `insrc` substring only inside a path (not a line-start name) does NOT count as registered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "a non-zero `mcp add` exit → failed carrying the CLI stderr",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "per-client isolation: claude add fails, codex still registers independently",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "mixed idempotency: claude already present, codex absent → unchanged + registered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "registerMcpClients never rejects even if the injected run throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "probeMcpClients: per-client availability + registration from the same pre-checks registration uses; never throws",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "probeMcpClients: an unreachable CLI resolves available:false, registered:false; a vibe without config text is registered:false",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe + repoPath: writes [[mcp_servers]] insrc into the repo's own .vibe/config.toml, never spawns `vibe mcp add`, note says restart vibe",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe + repoPath: existing project entry → unchanged, nothing written; existing unrelated content is preserved on write",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "probeMcpClients with a repoPath counts the repo's project .vibe/config.toml as registered for vibe",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/mcp-register.test.ts",
+                "title": "upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, idempotent, valid entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/mcp-register.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 614,
+            "titles": [
+              {
+                "title": "unselected clients are always emitted as skipped, never omitted",
+                "result": "pass"
+              },
+              {
+                "title": "{claude:true} registers claude (mcp add --scope user); codex is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "{agents:true} maps to the codex client (agents flag → codex, --scope omitted)",
+                "result": "pass"
+              },
+              {
+                "title": "{vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "vibe add failure → failed carrying the CLI stderr; other clients unaffected",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: creates AGENTS.md with the marked steering block when absent, idempotent on second call",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeAgentsSteering: malformed markers (open without close) are a guarded no-op — file untouched, never clobbered",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients with {vibe:true} also upserts the AGENTS.md steering block (in-memory seam), and registration still succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values",
+                "result": "pass"
+              },
+              {
+                "title": "an existing `insrc` entry in `mcp list` → unchanged, no add spawned",
+                "result": "pass"
+              },
+              {
+                "title": "an `insrc` substring only inside a path (not a line-start name) does NOT count as registered",
+                "result": "pass"
+              },
+              {
+                "title": "an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add",
+                "result": "pass"
+              },
+              {
+                "title": "a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero `mcp add` exit → failed carrying the CLI stderr",
+                "result": "pass"
+              },
+              {
+                "title": "per-client isolation: claude add fails, codex still registers independently",
+                "result": "pass"
+              },
+              {
+                "title": "mixed idempotency: claude already present, codex absent → unchanged + registered",
+                "result": "pass"
+              },
+              {
+                "title": "a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess",
+                "result": "pass"
+              },
+              {
+                "title": "registerMcpClients never rejects even if the injected run throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: per-client availability + registration from the same pre-checks registration uses; never throws",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients: an unreachable CLI resolves available:false, registered:false; a vibe without config text is registered:false",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: writes [[mcp_servers]] insrc into the repo's own .vibe/config.toml, never spawns `vibe mcp add`, note says restart vibe",
+                "result": "pass"
+              },
+              {
+                "title": "vibe + repoPath: existing project entry → unchanged, nothing written; existing unrelated content is preserved on write",
+                "result": "pass"
+              },
+              {
+                "title": "vibe without repoPath keeps the user-global `vibe mcp add` path (unchanged behavior)",
+                "result": "pass"
+              },
+              {
+                "title": "probeMcpClients with a repoPath counts the repo's project .vibe/config.toml as registered for vibe",
+                "result": "pass"
+              },
+              {
+                "title": "upsertVibeProjectServer on a real temp dir: creates .vibe/config.toml, idempotent, valid entry",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

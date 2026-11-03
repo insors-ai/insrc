@@ -36,7 +36,7 @@ async function until(cond: () => boolean, what: string): Promise<void> {
 
 const label = (job: IndexJob): string => {
 	switch (job.kind) {
-		case 'full': case 'reembed': case 'reconcile': case 'doc-summarise-repo': return `${job.kind}:${job.repoPath}`;
+		case 'full': case 'reembed': case 'reconcile': case 'doc-summarise-repo': case 'subsystems': return `${job.kind}:${job.repoPath}`;
 		case 'file': case 'config-file': return `${job.kind}:${job.filePath}`;
 		case 'doc-summarise-entity': return `${job.kind}:${job.entityId}`;
 		case 'config-full': case 'config-reindex': return job.kind;
@@ -77,17 +77,17 @@ test('each lane runs its jobs one at a time in order, every kind goes to its lan
 		{ kind: 'config-reindex', scope: { kind: 'project', repoPath: A } },
 	];
 	for (const j of jobs) q.enqueue(j);
-	assert.deepEqual(q.laneStatus(), { index: { depth: 7, running: false }, summary: { depth: 2, running: false } });
+	assert.deepEqual(q.laneStatus(), { index: { depth: 6, running: false }, summary: { depth: 2, running: false }, backfill: { depth: 1, running: false } });
 
-	const order: Record<'index' | 'summary', string[]> = { index: [], summary: [] };
-	const active = { index: 0, summary: 0 };
-	let maxActive = { index: 0, summary: 0 };
+	const order: Record<'index' | 'summary' | 'backfill', string[]> = { index: [], summary: [], backfill: [] };
+	const active = { index: 0, summary: 0, backfill: 0 };
+	let maxActive = { index: 0, summary: 0, backfill: 0 };
 	let overlapped = false;
 	let lastIndexEnd = -1, firstSummaryStart = -1, clock = 0;
 	const running = q.start(async job => {
-		const lane = job.kind.startsWith('doc-summarise') ? 'summary' : 'index';
+		const lane = job.kind.startsWith('doc-summarise') ? 'summary' : job.kind === 'reembed' ? 'backfill' : 'index';
 		active[lane]++;
-		maxActive = { index: Math.max(maxActive.index, active.index), summary: Math.max(maxActive.summary, active.summary) };
+		maxActive = { index: Math.max(maxActive.index, active.index), summary: Math.max(maxActive.summary, active.summary), backfill: Math.max(maxActive.backfill, active.backfill) };
 		if (active.index > 0 && active.summary > 0) overlapped = true;
 		if (lane === 'summary' && firstSummaryStart < 0) firstSummaryStart = clock++;
 		order[lane].push(label(job));
@@ -95,13 +95,14 @@ test('each lane runs its jobs one at a time in order, every kind goes to its lan
 		active[lane]--;
 		if (lane === 'index') lastIndexEnd = clock++;
 	});
-	await until(() => order.index.length + order.summary.length === jobs.length && q.depth === 0 && !q.isProcessing, 'every job to run');
+	await until(() => order.index.length + order.summary.length + order.backfill.length === jobs.length && q.depth === 0 && !q.isProcessing, 'every job to run');
 	q.stop();
 	await running;
 
-	assert.deepEqual(order.index, jobs.filter(j => !j.kind.startsWith('doc-summarise')).map(label), 'the index lane runs in enqueue order');
+	assert.deepEqual(order.index, jobs.filter(j => !j.kind.startsWith('doc-summarise') && j.kind !== 'reembed').map(label), 'the index lane runs in enqueue order');
 	assert.deepEqual(order.summary, [`doc-summarise-repo:${A}`, 'doc-summarise-repo:/repos/b']);
-	assert.deepEqual(maxActive, { index: 1, summary: 1 }, 'one job at a time in each lane');
+	assert.deepEqual(order.backfill, [`reembed:${A}`], 'the backfill runs in its own lane (Epic c2ba6fa6 s2)');
+	assert.deepEqual(maxActive, { index: 1, summary: 1, backfill: 1 }, 'one job at a time in each lane');
 	assert.equal(overlapped, false, 'the summary lane yields to queued code work (Story 0f0e4f45)');
 	assert.ok(firstSummaryStart > lastIndexEnd, 'the first summary started after the last index job ended');
 });
@@ -130,7 +131,7 @@ test('a single-document job goes ahead of a queued sweep, after earlier single-d
 	assert.deepEqual(q2.takeDocSummaryEdit(), { kind: 'doc-summarise-entity', entityId: 'e2' });
 	assert.equal(q2.takeDocSummaryEdit(), undefined);
 	assert.equal(q2.depth, 2, 'a taken job is no longer queued');
-	assert.deepEqual(q2.laneStatus(), { index: { depth: 1, running: false }, summary: { depth: 1, running: false } });
+	assert.deepEqual(q2.laneStatus(), { index: { depth: 1, running: false }, summary: { depth: 1, running: false }, backfill: { depth: 0, running: false } });
 });
 
 test('depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane', async () => {
@@ -152,7 +153,7 @@ test('depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor rea
 	// The index lane holds on the file; the summary lane waits for it with both summary jobs queued.
 	await until(() => q.laneStatus().index.running, 'the file job to start');
 	await tick(); await tick();
-	assert.deepEqual(q.laneStatus(), { index: { depth: 0, running: true }, summary: { depth: 2, running: false } }, 'summaries wait behind code work');
+	assert.deepEqual(q.laneStatus(), { index: { depth: 0, running: true }, summary: { depth: 2, running: false }, backfill: { depth: 0, running: false } }, 'summaries wait behind code work');
 	assert.equal(q.depth, 2);
 	assert.equal(q.isProcessing, true);
 	assert.deepEqual(q.codeIndexWorkFor(A), { inFlight: true, pending: 0 });
@@ -161,7 +162,7 @@ test('depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor rea
 	await until(() => q.depth === 0 && q.laneStatus().summary.running && !q.laneStatus().index.running, 'the sweep to start');
 	assert.equal(q.isProcessing, true, 'the summary lane runs a job');
 	assert.deepEqual(q.codeIndexWorkFor(A), { inFlight: false, pending: 0 }, 'a running sweep is not code-index work');
-	assert.deepEqual(q.laneStatus(), { index: { depth: 0, running: false }, summary: { depth: 0, running: true } });
+	assert.deepEqual(q.laneStatus(), { index: { depth: 0, running: false }, summary: { depth: 0, running: true }, backfill: { depth: 0, running: false } });
 	sweep.open();
 	await until(() => !q.isProcessing, 'the sweep to finish');
 	q.stop();
@@ -251,6 +252,50 @@ test('a summary never starts after a code job was queued: with the index lane id
 	file.open();
 	await until(() => order.includes('start:e2'), 'e2 to run');
 	assert.deepEqual(order, ['start:e1', 'queued:file', 'start:file', 'start:e2']);
+	q.stop();
+	await running;
+});
+
+test('Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and never delays a file job queued after it; its lane is published', async () => {
+	const published: string[] = [];
+	const q = new IndexQueue({ publishLane: (lane, status) => { published.push(`${lane}:${status.depth}:${status.processing}`); } });
+	const backfill = gate();
+	let fileDone = false;
+	let backfillDone = false;
+	const running = q.start(async job => {
+		if (job.kind === 'reembed') { await backfill.wait; backfillDone = true; }
+		if (job.kind === 'file') fileDone = true;
+	});
+	q.enqueue({ kind: 'reembed', repoPath: A });
+	await until(() => q.laneStatus().backfill.running, 'the backfill to start');
+	q.enqueue({ kind: 'file', filePath: join(A, 'x.ts'), event: 'update' });
+	await until(() => fileDone, 'the file job to finish');
+	assert.equal(backfillDone, false, 'the file job finished while the backfill was still running');
+	assert.ok(published.includes('backfill:0:true'), `the backfill lane is published: ${published.join(', ')}`);
+	assert.equal(q.depthForRepo(A), 0);
+	backfill.open();
+	await until(() => backfillDone && !q.isProcessing, 'the backfill to finish');
+	q.stop();
+	await running;
+});
+
+
+test('Epic c2ba6fa6 s2 review: a second backfill for a repository already queued is dropped, one queued while it runs is kept, and another repository\'s is kept', async () => {
+	const ran: string[] = [];
+	const q = new IndexQueue();
+	const first = gate();
+	const running = q.start(async job => {
+		if (job.kind === 'reembed') { ran.push(job.repoPath); if (ran.length === 1) await first.wait; }
+	});
+	q.enqueue({ kind: 'reembed', repoPath: A });
+	await until(() => q.laneStatus().backfill.running, 'the first backfill to start');
+	q.enqueue({ kind: 'reembed', repoPath: A });   // queued while A's runs: kept (it listed earlier)
+	q.enqueue({ kind: 'reembed', repoPath: A });   // a duplicate of the queued one: dropped
+	q.enqueue({ kind: 'reembed', repoPath: join(A, '..', 'other') });
+	assert.equal(q.laneStatus().backfill.depth, 2);
+	first.open();
+	await until(() => ran.length === 3 && !q.isProcessing, 'the backfills to finish');
+	assert.deepEqual(ran, [A, A, join(A, '..', 'other')]);
 	q.stop();
 	await running;
 });

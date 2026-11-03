@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: T4 severity follows outcome
+ok 1 - T4 severity follows outcome
+  ---
+  duration_ms: 0.784709
+  type: 'test'
+  ...
+# Subtest: T5 the verdict blocks only on a premise that does not hold
+ok 2 - T5 the verdict blocks only on a premise that does not hold
+  ---
+  duration_ms: 0.178166
+  type: 'test'
+  ...
+# Subtest: T5 findings with no outcome give the verdict they gave before
+ok 3 - T5 findings with no outcome give the verdict they gave before
+  ---
+  duration_ms: 0.227084
+  type: 'test'
+  ...
+# Subtest: the unverified count appears only on a template review
+ok 4 - the unverified count appears only on a template review
+  ---
+  duration_ms: 0.796
+  type: 'test'
+  ...
+# Subtest: T6 the rendered review lists the two problem kinds separately and says which one blocks
+ok 5 - T6 the rendered review lists the two problem kinds separately and says which one blocks
+  ---
+  duration_ms: 0.420917
+  type: 'test'
+  ...
+# Subtest: T6 an empty list says so rather than disappearing
+ok 6 - T6 an empty list says so rather than disappearing
+  ---
+  duration_ms: 0.064417
+  type: 'test'
+  ...
+# Subtest: T7 a design with only unverified premises is approvable
+ok 7 - T7 a design with only unverified premises is approvable
+  ---
+  duration_ms: 3.206917
+  type: 'test'
+  ...
+# Subtest: T7 a premise that does not hold refuses approval until resolved or overridden
+ok 8 - T7 a premise that does not hold refuses approval until resolved or overridden
+  ---
+  duration_ms: 1.671291
+  type: 'test'
+  ...
+# Subtest: T8 a review record written before this change keeps its verdict, rendering and gate result
+ok 9 - T8 a review record written before this change keeps its verdict, rendering and gate result
+  ---
+  duration_ms: 1.019417
+  type: 'test'
+  ...
+# Subtest: T17 a premise that holds is not among the findings that need a human
+ok 10 - T17 a premise that holds is not among the findings that need a human
+  ---
+  duration_ms: 0.44025
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 346.64125

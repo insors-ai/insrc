@@ -1,0 +1,40 @@
+{
+  "id": "10-assets-packaging-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:55:26.760Z",
+  "finished": "2026-11-01T04:55:41.290Z",
+  "inputChars": 36672,
+  "inputSha256": "da253ca1457f18e379a73dea0b93d9664d94f910ca10bfb33bf8197925c058c4",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the batch 10 icon assets and provenance files found no concrete defects. Seven SVGs (natsdotio, oracle, postgresql, redis, sqlite, text, valkey) have SHA-256 values that match their sources.json entries. Two things could not be checked from the supplied evidence: the SVG contents, and whether MIT/Apache license texts for the other upstream sources are bundled. I recorded both as limitations and evidence requests, not defects. This is not a canonical CR and does not approve BUILD.",
+    "findings": [],
+    "obligations": [],
+    "inspectedFiles": [
+      "vscode-plugin/media/datasources/sources.json",
+      "vscode-plugin/media/datasources/simple-icons-LICENSE.txt",
+      "vscode-plugin/media/datasources/vscode-icons-LICENSE.txt",
+      "vscode-plugin/media/datasources/natsdotio.svg (metadata: bytes, sha256 only)",
+      "vscode-plugin/media/datasources/oracle.svg (metadata only)",
+      "vscode-plugin/media/datasources/postgresql.svg (metadata only)",
+      "vscode-plugin/media/datasources/redis.svg (metadata only)",
+      "vscode-plugin/media/datasources/sqlite.svg (metadata only)",
+      "vscode-plugin/media/datasources/text.svg (metadata only)",
+      "vscode-plugin/media/datasources/valkey.svg (metadata only)"
+    ],
+    "limitations": [
+      "No obligations were assigned to this batch, so there are no holds/does-not-hold results.",
+      "The SVG file contents were not supplied, only byte counts and SHA-256 values. I could not check for scripts or external references, or confirm that the bytes match the upstream files. The seven supplied hashes match their sources.json entries.",
+      "sources.json lists icons that are not in this batch (mysql, mariadb, mongodb, memcached, mssql, dynamodb, csv, json, excel, keydb and others). I could not check those files, and I could not check the upstream URLs or commits.",
+      "sources.json lists devicons (MIT), gilbarbara/logos (CC0) and Apache-2.0-labelled brand entries. Only the simple-icons CC0 and vscode-icons MIT texts appear in this batch. A devicon MIT notice, a gilbarbara notice or Apache attribution may be in another batch, so I cannot tell whether the bundled attribution is complete.",
+      "I did not check packaging inclusion (.vscodeignore, package files) or any code that maps database kinds to these icons, because none was supplied.",
+      "I did not check the Content-Security-Policy or webview resource handling for these assets."
+    ],
+    "evidenceRequests": [
+      "Directory listing of vscode-plugin/media/datasources/ showing whether a devicon MIT license file and any gilbarbara/logos or Apache attribution/NOTICE file are bundled.",
+      "The SVG contents, or an independent hash check of all files against sources.json, to confirm there are no script or external-reference elements.",
+      "The code that maps datasource kinds to icon files, and the packaging configuration (.vscodeignore or files list) that includes media/datasources in the VSIX."
+    ]
+  }
+}

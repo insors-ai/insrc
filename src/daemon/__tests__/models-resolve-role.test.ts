@@ -39,6 +39,8 @@ const FIXTURE = {
 		{ id: 'cli-claude', cliKind: 'claude', displayName: 'C', models: [{ id: 'claude-a', efforts: ['low'] }], tierDefaults: { core: { model: 'claude-a' }, mid: { model: 'claude-a' }, cheap: { model: 'claude-a' } }, summariserModel: 'claude-a' },
 		{ id: 'cli-codex', cliKind: 'codex', displayName: 'X', models: [{ id: 'gpt-x', aliases: ['x'], efforts: ['low', 'turbo'], inputLimit: { unit: 'chars', max: 5000 } }], tierDefaults: { core: { model: 'gpt-x', effort: 'turbo' }, mid: { model: 'gpt-x' }, cheap: { model: 'gpt-x' } }, summariserModel: 'gpt-x' },
 		{ id: 'ollama', displayName: 'O', models: [{ id: 'llama:big', efforts: [], inputLimit: { unit: 'tokens', max: 65536 } }], toolLoopModel: 'llama:big' },
+		{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+		{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 	],
 };
 
@@ -103,4 +105,14 @@ test('models-resolve-role.test.ts: CLI and Ollama tiers match the router and pro
 	for (const bad of [undefined, null, {}, { role: CRITICAL }, { repoPath: REPO }, { role: '', repoPath: REPO }, { role: 3, repoPath: REPO }]) {
 		assert.deepEqual(resolveRoleWire(bad, { config: () => cfg, registry: getModelRegistry }), { error: 'invalid-params: role and repoPath (non-empty strings) are required', recoverable: false }, JSON.stringify(bad));
 	}
+});
+
+test("models-resolve-role.test.ts: an ollama-claude role carries the Ollama target; a refused one carries none and names 'model-not-supported'", () => {
+	const declared = resolveWith(configOf({ tiers: { core: { runner: 'ollama-claude', model: 'glm:cloud' } } }), CRITICAL);
+	assert.deepEqual([declared.family, declared.model, declared.cli], ['ollama-claude', 'glm:cloud', { kind: 'claude', ollama: { host: loadLocalProviderConfig().host, hosting: 'cloud' } }]);
+	assert.equal(declared.ollama, undefined, 'no plain-Ollama settings');
+	const refused = resolveWith(configOf({ tiers: { core: { runner: 'ollama-claude', model: 'kimi-k9:cloud' } } }), CRITICAL);
+	assert.deepEqual([refused.cli, refused.fallback], [{ kind: 'claude' }, { reason: 'model-not-supported', requested: 'kimi-k9:cloud' }]);
+	// A vendor family still carries the CLI kind alone.
+	assert.deepEqual(resolveWith(configOf({ tiers: { core: { runner: 'cli-claude', model: 'claude-a' } } }), CRITICAL).cli, { kind: 'claude' });
 });

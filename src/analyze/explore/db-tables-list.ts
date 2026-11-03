@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -141,16 +142,13 @@ export async function runDbTablesList(
 				`each connection is a single target and does not enumerate multiple tables.`;
 		}
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 				runId:        ctx.runId,
 				connectionId: params.connectionId,
 				family,
 				tables:       tables.length,
 				truncated,
-			},
-			'db.tables.list: complete',
-		);
+		}, 'db.tables.list: complete']);
 
 		const completeness = buildCompleteness({
 			returned: tables.length,

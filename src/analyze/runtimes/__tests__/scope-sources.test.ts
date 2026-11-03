@@ -50,7 +50,7 @@ test("the infra and data scope functions are gone and no infra or data runtime u
 		assert.match(code, /resolveTaskScope\(scopeRef as AnalyzeScopeRef, 'infra', TEMPLATE_ID\)/, file);
 	}
 	// ... and the data runtimes through their one helper, which calls it with the data family.
-	assert.match(data.get('data/_shared.ts')!, /resolveTaskScope\(args\.intent\.scopeRef, 'data', templateLabel\)/);
+	assert.match(data.get('data/_shared.ts')!, /resolveTaskScope\(args\.intent\.scopeRef, 'data', templateLabel, undefined, undefined, args\.connectionExecution\)/);
 	for (const file of ['data/discovery-connections.ts', 'data/discovery-objects.ts', 'data/schema-table.ts']) {
 		assert.match(data.get(file)!, /resolveDataScope\(args, TEMPLATE_ID\)/, file);
 	}
@@ -88,7 +88,7 @@ test("the code family's scope function and its test hook are gone and no code ru
 	// resolves its constraints, and hands it to every reader (the excerpts, the
 	// stored-document ids, the enumeration of a topic).
 	const adherence = shared.get('shared/adherence.ts')!;
-	assert.match(adherence, /graphRepoOf\(await resolveTaskScope\(args\.intent\.scopeRef, familyOfTemplate\(templateId\), templateId\)\)/);
+	assert.match(adherence, /graphRepoOf\(await resolveTaskScope\(args\.intent\.scopeRef, familyOfTemplate\(templateId\), templateId, undefined, undefined, args\.connectionExecution\)\)/);
 	assert.equal(adherence.match(/await adherenceRepoPath\(/g)!.length, 1);
 	assert.equal(adherence.match(/const repoPath = await adherenceRepoPath\(/g)!.length, 1);
 	assert.equal(adherence.match(/\brepoPath\s*=/g)!.length, 1, 'no other source of a repo path in the adherence check');

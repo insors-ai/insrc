@@ -1,0 +1,72 @@
+TAP version 13
+# (node:8506) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners
+ok 1 - CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners
+  ---
+  duration_ms: 2.468458
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete
+ok 2 - CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete
+  ---
+  duration_ms: 0.399375
+  type: 'test'
+  ...
+# Subtest: CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+ok 3 - CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+  ---
+  duration_ms: 44.991708
+  type: 'test'
+  ...
+# Subtest: CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+ok 4 - CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+  ---
+  duration_ms: 8.204208
+  type: 'test'
+  ...
+# Subtest: CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+ok 5 - CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+  ---
+  duration_ms: 10.419833
+  type: 'test'
+  ...
+# Subtest: CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+ok 6 - CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+  ---
+  duration_ms: 7.745584
+  type: 'test'
+  ...
+# Subtest: CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+ok 7 - CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+  ---
+  duration_ms: 10.041084
+  type: 'test'
+  ...
+# Subtest: CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+ok 8 - CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+  ---
+  duration_ms: 9.722125
+  type: 'test'
+  ...
+# Subtest: CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+ok 9 - CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+  ---
+  duration_ms: 999.371292
+  type: 'test'
+  ...
+# Subtest: CM-S4-RACES: temporary remove replay and cleanup create races invalidate access before paused close
+ok 10 - CM-S4-RACES: temporary remove replay and cleanup create races invalidate access before paused close
+  ---
+  duration_ms: 23.627166
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2054.464542

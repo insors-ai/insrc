@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: resolveCodeReviewSubject: changedFiles equals the git set exactly, build record not mutated
+ok 1 - resolveCodeReviewSubject: changedFiles equals the git set exactly, build record not mutated
+  ---
+  duration_ms: 1.373
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9)
+ok 2 - resolveCodeReviewSubject: an empty Story set declines with no-build-record — nothing attributable to review (ISSUE-b97752e9)
+  ---
+  duration_ms: 0.104583
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)
+ok 3 - resolveCodeReviewSubject: LLD+plan approved -> ok:true both set (mode A)
+  ---
+  duration_ms: 0.109125
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)
+ok 4 - resolveCodeReviewSubject: LLD approved, plan missing/unapproved -> ok:true, approvedPlan null (mode B)
+  ---
+  duration_ms: 0.079209
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)
+ok 5 - resolveCodeReviewSubject: plan approved, LLD missing -> ok:true, approvedLld null (asymmetric)
+  ---
+  duration_ms: 0.068333
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)
+ok 6 - resolveCodeReviewSubject: both missing/unapproved but changed files present -> ok:true, both null (mode C)
+  ---
+  duration_ms: 0.074875
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)
+ok 7 - resolveCodeReviewSubject: non-Artifact error while resolving a contract propagates (not mapped to null)
+  ---
+  duration_ms: 0.263208
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: git derivation failure -> no-build-record
+ok 8 - resolveCodeReviewSubject: git derivation failure -> no-build-record
+  ---
+  duration_ms: 0.071375
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed to a reason)
+ok 9 - resolveCodeReviewSubject: UnregisteredRepoError propagates (not collapsed to a reason)
+  ---
+  duration_ms: 0.2855
+  type: 'test'
+  ...
+# Subtest: resolveCodeReviewSubject: read-only — only the injected read seams are called
+ok 10 - resolveCodeReviewSubject: read-only — only the injected read seams are called
+  ---
+  duration_ms: 0.351
+  type: 'test'
+  ...
+# Subtest: T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files
+ok 11 - T39: the Story committed and ONLY an approval-stamped artifact json dirty -> changedFiles is exactly the Story's source files
+  ---
+  duration_ms: 194.879417
+  type: 'test'
+  ...
+# Subtest: T39: the Story's committed ledger files (artifact json, build-start, rendered docs) are not in the reviewed set either
+ok 12 - T39: the Story's committed ledger files (artifact json, build-start, rendered docs) are not in the reviewed set either
+  ---
+  duration_ms: 179.578166
+  type: 'test'
+  ...
+# Subtest: T40: a Story that edited .insrc/artifacts/templates/t.json (and other user-authored .insrc files) keeps them in changedFiles
+ok 13 - T40: a Story that edited .insrc/artifacts/templates/t.json (and other user-authored .insrc files) keeps them in changedFiles
+  ---
+  duration_ms: 171.061083
+  type: 'test'
+  ...
+# Subtest: T41: a base naming a commit that does not exist -> no-build-record, never the working tree, and exactly one warning (ISSUE-b97752e9)
+ok 14 - T41: a base naming a commit that does not exist -> no-build-record, never the working tree, and exactly one warning (ISSUE-b97752e9)
+  ---
+  duration_ms: 121.398709
+  type: 'test'
+  ...
+# Subtest: T41: with NO resolvable base the review declines and the changed-file seam is never called — no base is invented
+ok 15 - T41: with NO resolvable base the review declines and the changed-file seam is never called — no base is invented
+  ---
+  duration_ms: 0.254125
+  type: 'test'
+  ...
+# Subtest: the resolver is asked for THIS Story's base, and that base plus the ledger globs reach the seam
+ok 16 - the resolver is asked for THIS Story's base, and that base plus the ledger globs reach the seam
+  ---
+  duration_ms: 0.095791
+  type: 'test'
+  ...
+# Subtest: T43: a seam that throws on the anchored derivation -> no-build-record after ONE attempt; there is no plainer one
+ok 17 - T43: a seam that throws on the anchored derivation -> no-build-record after ONE attempt; there is no plainer one
+  ---
+  duration_ms: 0.082
+  type: 'test'
+  ...
+# Subtest: T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback
+ok 18 - T43: an error that is NOT a derivation failure propagates from the first attempt — it is not swallowed by the fallback
+  ---
+  duration_ms: 0.093208
+  type: 'test'
+  ...
+# Subtest: the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built
+ok 19 - the default deps read the Story's BUILD and TESTS records onto the subject; an absent or misshapen record is null and the subject is still built
+  ---
+  duration_ms: 631.378
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1568.004041

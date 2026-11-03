@@ -1,0 +1,106 @@
+{
+  "id": "01-transport-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:27:40.386Z",
+  "finished": "2026-11-01T04:29:08.752Z",
+  "inputChars": 74508,
+  "inputSha256": "89e1450e511554eb22ab9c9a286705ad815202309f5c63fe76b95bea327e0e89",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of 3 supplied files: src/shared/connection-manager/wire.ts, its unit test, and Kotlin ConnectionProtocol.kt. I found one concrete defect, and the review does not approve BUILD. The Kotlin public-config check uses java.net.URI to detect credentials embedded in an endpoint. For endpoints like `redis://:pw@my_host:6379`, java.net.URI silently drops the userinfo, so Kotlin accepts a safe read that the TypeScript decoder rejects. The rest of the TS/Kotlin decoder parity looks consistent, and I found no other defects there. The transport, session-owner and UI files that most of the assigned obligations depend on were not supplied, so those obligations are could-not-verify.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+        "line": 217,
+        "trigger": "A safe read or list reply from a daemon, or a draft public patch, carries `publicConfig.endpoint` such as `redis://:pw@my_host:6379` or `postgresql://u:p@a:1,b:2/db`. These have an underscore in the host or multiple hosts.",
+        "defect": "The credential-in-endpoint check uses `java.net.URI(...).rawUserInfo`. When the authority is not a valid server-based authority (underscore host, multi-host list), java.net.URI falls back to a registry-based authority. That fallback leaves `rawUserInfo` null and throws nothing, so the endpoint passes. The TS decoder uses WHATWG `new URL`, which sees the password (opaque host for non-special schemes) or throws on the invalid port, and refuses the row. Kotlin therefore accepts a safe read with an embedded credential that TS refuses. This breaks the shared strict privacy boundary and cross-language parity. The same java.net.URI strictness can also throw on endpoints WHATWG accepts, such as a space or `{` in the query. That turns one row into a whole-list read-error in Kotlin only.",
+        "evidence": "ConnectionProtocol.kt around line 217: `val uri = URI(child.asString); if (uri.scheme == null || uri.rawUserInfo != null) fail()`. wire.ts safePublicFields: `const url=new URL(child);if(url.username||url.password)fail();`. The line number is counted from the supplied diff and may be off by one or two. The corpus-based TS test covers only the single-host `postgresql://secret:password@fixture.invalid/db` case. No supplied Kotlin test covers underscore or multi-host userinfo. Java's fallback behavior comes from my knowledge of java.net.URI, not from supplied evidence.",
+        "remedy": "Do not rely on java.net.URI userinfo detection. Extract the authority textually: the segment after `scheme://` up to the first `/`, `?` or `#`. Fail if it contains `@`. Alternatively, reject any `@` in the authority before parsing. Add Kotlin fixtures for an underscore host with a password, multi-host with userinfo, and an endpoint with a space. Make the TS and Kotlin corpus assert identical outcomes for all of them."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "lld:contract:1",
+        "status": "could-not-verify",
+        "evidence": "ConnectionManagerState (sc7 model, dirty/draft/list-state transitions) is not in the supplied files. wire.ts and ConnectionProtocol.kt only supply strict decoders; read-error is a thrown fixed-message error with no empty-list fallback."
+      },
+      {
+        "key": "lld:data-model:4",
+        "status": "does-not-hold",
+        "evidence": "The TS and Kotlin decoders are otherwise exact and bounded, with fixed messages and no raw JSON editing. The Kotlin endpoint-credential check (ConnectionProtocol.kt ~217) is weaker than the TS check, so strict safe-read validation is not equivalent across clients (see finding). DaemonGatewayService and UnixSocketDaemonRpc.kt were not supplied."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "could-not-verify",
+        "evidence": "The session owner, ipc-client.ts, extension.ts, ConnectionsSessionService.kt and the Kotlin persistent lane were not supplied. Only the decoders were."
+      },
+      {
+        "key": "lld:error:3",
+        "status": "could-not-verify",
+        "evidence": "No transport or recovery-effect code for written-unanswered state, freezing ticket+payload or same-ticket replay was supplied. Decoders do tie operationId, key and mode to the expectation, which helps replay matching."
+      },
+      {
+        "key": "lld:invariant:3",
+        "status": "could-not-verify",
+        "evidence": "ConnectionProtocol.kt adds no state to a gateway and is a separate object. DaemonGatewayService.kt itself was not supplied, so statelessness is not verifiable."
+      },
+      {
+        "key": "lld:shared:6",
+        "status": "could-not-verify",
+        "evidence": "Workbench control-owner, delegated-lane and 90s lease code were not supplied."
+      },
+      {
+        "key": "lld:backward-compat",
+        "status": "could-not-verify",
+        "evidence": "New decoders are additive in new files. Preservation of the one-shot IpcClient and the Kotlin gateway cannot be confirmed without the transport diffs."
+      },
+      {
+        "key": "plan:t2",
+        "status": "holds",
+        "evidence": "wire.ts copies data descriptors only (no accessors, prototypes, symbols, sparse or cyclic data) with byte, depth, node, string and item limits. It validates exact discriminated shapes, expected key/operation/epoch/mode, disables unknown descriptor schemas, and emits fixed error text. It imports no daemon runtime (the test imports the daemon, which is fine). The shared parsers in connection-management-wire.ts were not seen, and tests were not run."
+      },
+      {
+        "key": "plan:t5",
+        "status": "could-not-verify",
+        "evidence": "No Kotlin persistent lane code or transport tests (UnixSocketDaemonRpc.kt) were supplied. ConnectionProtocol.requestData and parseData are only helper boundaries."
+      },
+      {
+        "key": "plan:t15",
+        "status": "could-not-verify",
+        "evidence": "Kotlin Test/cancel wiring and EDT delivery were not supplied. Only the testResult decoder was."
+      },
+      {
+        "key": "plan:t22",
+        "status": "could-not-verify",
+        "evidence": "No two-owner isolation implementation or tests were supplied."
+      },
+      {
+        "key": "plan:t28",
+        "status": "could-not-verify",
+        "evidence": "Live lifecycle verification is out of scope of the supplied static files. Per the user, JetBrains live UI is deferred."
+      }
+    ],
+    "inspectedFiles": [
+      "src/shared/connection-manager/wire.ts",
+      "src/shared/__tests__/connection-manager-wire.test.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt"
+    ],
+    "limitations": [
+      "No tool calls were made, and no tests were run.",
+      "This batch is named transport-1, but the transport code was not supplied: src/shared/ipc-client.ts, UnixSocketDaemonRpc.kt, DaemonGatewayService.kt, ConnectionsSessionService.kt, extension.ts and InsrcProjectOpenActivity.kt.",
+      "The shared parsers in src/shared/connection-management-wire.ts (managementHandshake, parseDraftTestResult, parseOperationTicket) and the fixture corpus were not seen. TS-versus-Kotlin ticket, capability and test-result parity was therefore compared only structurally.",
+      "No Kotlin tests were supplied for ConnectionProtocol.kt.",
+      "The line number in the finding is counted by hand from the diff."
+    ],
+    "evidenceRequests": [
+      "src/shared/ipc-client.ts persistent-lane diff and tests",
+      "jetbrains-plugin UnixSocketDaemonRpc.kt persistent lane and transport tests",
+      "DaemonGatewayService.kt diff",
+      "src/shared/connection-management-wire.ts",
+      "Kotlin ConnectionProtocol tests and the fixture corpus, including endpoint cases",
+      "ConnectionsSessionService.kt and the VS Code workbench owner"
+    ]
+  }
+}

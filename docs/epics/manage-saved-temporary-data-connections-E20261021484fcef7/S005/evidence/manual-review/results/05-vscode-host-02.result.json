@@ -1,0 +1,74 @@
+{
+  "id": "05-vscode-host-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:43:07.853Z",
+  "finished": "2026-11-01T04:45:03.622Z",
+  "inputChars": 76356,
+  "inputSha256": "29bd09b5b33a4121e776636896cd96ced2af49561f50d49c3616e96a79a5d8ad",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of host.ts and host.test.ts (batch 05-vscode-host-2) found no concrete, demonstrable defects in the supplied code. The host keeps all draft and attempt state in memory and sends the webview only a projected view. Intents are bound to the current viewId and generation, hidden panels accept only ready and cancel-test, and a closed panel's late repository read is dropped. Test binding is re-keyed on every generation bump, and the file picker re-checks panel, generation, epoch and draft revision after the dialog returns. Most assigned obligations depend on files that were not supplied (session-owner, gateway, test-controller, removal, renderer, types, the Kotlin sources and the shared model), so they stay could-not-verify. No claim of acceptance is made.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:2",
+        "status": "could-not-verify",
+        "evidence": "host.ts supports it. Draft, credential and attempt state are memory-only private fields. Only pure shared modules are imported. The renderer gets a projected view and `ready` posts only a safe projection. The test greps the posted messages for credential canaries. The test also asserts there is no setState, localStorage or fetch in the renderer script. Not verifiable here: the Kotlin counterpart, the fixture-corpus version/digest check, reducer parity, session-owner.ts, types.ts and renderer.ts."
+      },
+      {
+        "key": "lld:data-model:5",
+        "status": "could-not-verify",
+        "evidence": "Host side: Test and Save both use `#validationMessages` and `draft.serialize()`. Test requires a daemon epoch and passes key, epoch and viewGeneration. `#bump` re-keys or clears the test view on hide, close, root, selection, scope and kind changes. Save calls `tests.cancel()` first. Not verifiable here: the test-controller (requestId/draftRevision matching, cancellation on field edit, source-controller drain retention, fixed local messages), because only the host call sites were supplied."
+      },
+      {
+        "key": "lld:error:7",
+        "status": "could-not-verify",
+        "evidence": "Host side: messages are accepted only from the actual panel object for the current viewId and generation, and unparsed raw messages such as generic RPC are dropped. Tests cover a stale old-panel save and a generic `rpc` intent causing no calls. Refusal before socket send, and non-routing from caller-supplied project/window IDs, belong to session-owner and transport code that was not supplied."
+      },
+      {
+        "key": "lld:shared:1",
+        "status": "could-not-verify",
+        "evidence": "The host consumes projectConnectionManager/reduceConnectionManager from the shared pure model and renders list state, counts, repo root, filter and dirty navigation independently. Tests cover the distinct list states, retained repo, empty-filter versus empty-registry, and dirty confirmation. The reducer itself, the fixture corpus and the Kotlin parity were not supplied."
+      },
+      {
+        "key": "plan:t5",
+        "status": "could-not-verify",
+        "evidence": "This is a Kotlin task. No Kotlin transport files are in the changed evidence for this batch."
+      },
+      {
+        "key": "plan:t12",
+        "status": "could-not-verify",
+        "evidence": "host.ts only calls mutations.submit/reconcile/replay/retryActivation/retryCleanup/retryRefresh/dismiss and observeRefresh. The signed attempts, same-ticket replay and phase-separated recovery live in gateway/controller files that were not supplied."
+      },
+      {
+        "key": "plan:t18",
+        "status": "could-not-verify",
+        "evidence": "host.test.ts exercises strict intent parsing, CSP and escaping, all list states, masked blank credentials, view-only close with a retained draft, and the file picker. The host supports these. renderer.ts, types.ts and the harness fixtures were not supplied, and test execution results were not supplied."
+      },
+      {
+        "key": "plan:t26",
+        "status": "could-not-verify",
+        "evidence": "The user reports VS Code 0.5.23 manual testing as completed, with individual cases not independently documented. No screenshots, action logs or live-run evidence were supplied. This is not treated as passed or failed."
+      }
+    ],
+    "inspectedFiles": [
+      "vscode-plugin/src/connections/host.ts",
+      "vscode-plugin/src/connections/__tests__/host.test.ts"
+    ],
+    "limitations": [
+      "Only host.ts and host.test.ts were supplied. session-owner.ts, gateway.ts, types.ts, renderer.ts, messages.ts, the test fixtures and the shared model/draft/controller/test-controller/removal/wire modules were not visible.",
+      "The Kotlin/JetBrains side was not supplied, so cross-language parity and plan:t5 cannot be assessed.",
+      "No test execution output was supplied. Test-body assertions were read statically only.",
+      "The manual VS Code run and the deferred JetBrains UI were taken as user-reported and not re-assessed.",
+      "All changed files in this batch were assessed."
+    ],
+    "evidenceRequests": [
+      "vscode-plugin/src/connections/session-owner.ts: what `requestSaved` throws when the owner is offline, expired or disposed. host.ts:#load wraps every failure other than a non-remote IpcLaneError into 'upgrade-required', which would mislabel a ConnectionOwnerError('offline'). Also request the exact refusal path before socket send.",
+      "vscode-plugin/src/connections/types.ts parseConnectionIntent for `browse-file`, and the descriptor schemas. host.test.ts expects the picker not to open for ['endpoint'], but host.ts only checks that the schema type is 'string'. Show what blocks the endpoint path.",
+      "vscode-plugin/src/connections/renderer.ts: where `view.notice` is displayed. host.ts never clears `#notice` after it is set ('Repository list loaded.', 'Unsaved draft retained… Reopen Connections', 'Temporary connections expired…'). Show whether it stays visible after reopen or later actions.",
+      "src/shared/connection-manager/test-controller.ts: confirm that probe cancellation happens on field or credential edits (host `field` and `credential` cases do not call cancel or bump), and that source-controller retention continues after panel close.",
+      "Test execution output for host.test.ts and the related connections tests."
+    ]
+  }
+}

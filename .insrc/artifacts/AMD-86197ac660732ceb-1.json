@@ -1,0 +1,45 @@
+{
+  "id": "AMD-86197ac660732ceb-1",
+  "epicHash": "86197ac660732ceb",
+  "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+  "hldBaseRunId": "wf-1792588079400-heeqp4",
+  "amendment": {
+    "type": "sharedContract.fieldAdd",
+    "contractId": "sc3",
+    "field": {
+      "name": "shared",
+      "type": "true | undefined",
+      "optional": true,
+      "purpose": "Marks the one shared-state session worker, which serves the session-class families whose state is one process-wide copy (chat, todos, understanding); the registry keys it 'session:shared', checked before the unattributed case."
+    },
+    "breaking": false
+  },
+  "rationale": "The HLD keeps every session-class method on a per-session or unattributed worker, but the chat session pool, the todos event bus and the understanding service are single process-wide copies (src/daemon/chat-handler.ts:39-67, src/daemon/todos-rpc.ts:122-138); splitting them per session would break cross-session reads such as chat.list. One shared-state target keeps each whole while moving them off the main thread.",
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/chat-handler.ts:39"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/todos-rpc.ts:122"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/threads/registry.ts:32"
+    }
+  ],
+  "proposedBy": {
+    "workflow": "design.story",
+    "runId": "wf-1793162175819-ezajul",
+    "storyId": "s3",
+    "stepId": "s4"
+  },
+  "proposedAt": "2026-10-28T04:55:50.696Z",
+  "status": "approved",
+  "approvedAt": "2026-10-28T05:23:44.099Z",
+  "approvedBy": "Subho Ghosh (in-chat approval)"
+}

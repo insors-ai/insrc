@@ -119,3 +119,14 @@ async function run() {
 		assert.ok(actual.some(s => s.expression === 'dynamicEmbed.embedQuery' && s.boundary === 'unresolved-call'));
 	} finally { rmSync(fixture, { recursive: true, force: true }); }
 });
+
+test('CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity',()=>{
+ const baseline=JSON.parse(readFileSync(new URL('./fixtures/session-source-inventory.json',import.meta.url),'utf8')) as {sc6Sources:Record<string,{classification:string;rationale:string;sourceDigest:string}>};
+ const expected=['src/shared/connection-removal.ts','src/daemon/db/removal-retirement.ts','src/daemon/threads/method-class.ts','src/daemon/db/management-enablement.ts','src/daemon/connection-management-rpc.ts','src/daemon/connection-session-rpc.ts','src/daemon/db-rpc.ts','src/daemon/db/draft-test.ts','src/daemon/db/management.ts','src/daemon/db/pool.ts','src/daemon/db/secrets.ts','src/daemon/db/session-entries.ts','src/daemon/db/session-ledger.ts','src/daemon/db/session-management.ts','src/daemon/db/session-resources.ts','src/shared/connection-management-wire.ts','src/shared/connection-management.ts'];
+ assert.deepEqual(Object.keys(baseline.sc6Sources).sort(),expected.sort());
+ for(const [file,row] of Object.entries(baseline.sc6Sources)){
+  assert.ok(row.classification&&row.rationale.length>80,file);assert.equal(row.sourceDigest,digest(readFileSync(join(root,file))),file+' requires fresh boundary review');
+ }
+ assert.match(baseline.sc6Sources['src/daemon/threads/method-class.ts']!.rationale,/affinity remains release-blocking/);
+ const gate=JSON.parse(readFileSync(join(root,'src/assets/connection-management-gates.json'),'utf8'));assert.equal(gate.ready,false);assert.deepEqual(gate.scopes,[]);
+});

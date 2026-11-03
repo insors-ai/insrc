@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: unfocused.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - unfocused.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.45725
+  type: 'test'
+  ...
+# Subtest: unfocused code request on this repository returns a bundle with a no-focus focus layer
+ok 2 - unfocused code request on this repository returns a bundle with a no-focus focus layer # SKIP
+  ---
+  duration_ms: 0.216625
+  type: 'test'
+  ...
+# Subtest: file scope and symbol scope return a bundle
+ok 3 - file scope and symbol scope return a bundle # SKIP
+  ---
+  duration_ms: 0.04425
+  type: 'test'
+  ...
+# Subtest: real planning call follows the no-focus recipe for code and returns a free-form lookup for docs
+ok 4 - real planning call follows the no-focus recipe for code and returns a free-form lookup for docs # SKIP
+  ---
+  duration_ms: 0.042708
+  type: 'test'
+  ...
+# Subtest: failure codes: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped
+ok 5 - failure codes: 'scope-ref-unresolved' with the model running, 'shaper-llm-unavailable' with it stopped # SKIP
+  ---
+  duration_ms: 0.043916
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 5
+# todo 0
+# duration_ms 776.883125

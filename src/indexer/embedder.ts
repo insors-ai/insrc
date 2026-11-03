@@ -1,3 +1,6 @@
+import { assertNoSessionEmbedding } from '../shared/connection-provider.js';
+import { connectionExecutionErrorCode, ConnectionExecutionError } from '../shared/step-context.js';
+import type { ConnectionExecutionContext } from '../shared/step-context.js';
 import { Ollama } from 'ollama';
 import type { Entity } from '../shared/types.js';
 import { loadLocalProviderConfig } from '../config/local.js';
@@ -155,8 +158,9 @@ export function formatQuery(text: string): string {
  */
 export async function embedEntities(
   entities: Entity[],
-  opts?: { force?: boolean },
+	opts?: { force?: boolean; connectionExecution?: ConnectionExecutionContext | undefined },
 ): Promise<void> {
+	assertNoSessionEmbedding(opts?.connectionExecution);
   const toEmbed = opts?.force
     ? entities
     : entities.filter(e => e.embedding.length === 0 && e.body !== '');
@@ -179,11 +183,12 @@ export async function embedEntities(
           const entity    = batch[j];
           const embedding = result.embeddings[j];
           if (entity && embedding) {
-            entity.embedding      = embedding;
-            entity.embeddingModel = embeddingModel();
+            // The stored marker is set by the store once the vector is written (Epic c2ba6fa6 s2).
+            entity.embedding = embedding;
           }
         }
-      } catch (err) {
+			} catch (err) {
+				const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
         // Timeout or transport error -- leave embeddings empty; reembed
         // job backfills next pass. LOG so a persistent stall is visible
         // (silent catch is what let the pre-timeout hang go unnoticed).
@@ -207,11 +212,11 @@ export async function embedEntities(
         const entity = batch[j];
         const embedding = vectors[j];
         if (entity && embedding) {
-          entity.embedding      = embedding;
-          entity.embeddingModel = ONNX_EMBEDDING_MODEL;
+          entity.embedding = embedding;
         }
       }
-    } catch (err) {
+		} catch (err) {
+			const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
       log.warn({ err: (err as Error).message }, 'ONNX embedEntities batch failed');
     }
   }
@@ -222,11 +227,12 @@ export async function embedEntities(
  * Returns an empty array if no embedder backend is active or the
  * active backend fails.
  */
-export async function embedQuery(text: string): Promise<number[]> {
+export async function embedQuery(text: string, execution?: ConnectionExecutionContext): Promise<number[]> {
+	assertNoSessionEmbedding(execution);
   if (activeBackend === 'disabled' || activeBackend === 'unknown') return [];
   if (activeBackend === 'onnx') {
     try { return await onnxEmbedQuery(text); }
-    catch (err) { log.warn({ err: (err as Error).message }, 'ONNX embedQuery failed'); return []; }
+		catch (err) { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); log.warn({ err: (err as Error).message }, 'ONNX embedQuery failed'); return []; }
   }
   try {
     const result = await withTimeout(
@@ -239,7 +245,8 @@ export async function embedQuery(text: string): Promise<number[]> {
       'ollama.embed (query)',
     );
     return result.embeddings[0] ?? [];
-  } catch (err) {
+	} catch (err) {
+		const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
     log.warn({ err: (err as Error).message }, 'ollama embedQuery failed');
     return [];
   }
@@ -251,12 +258,13 @@ export async function embedQuery(text: string): Promise<number[]> {
  * Returns an empty array if no embedder backend is active or the
  * active backend fails.
  */
-export async function embedText(text: string): Promise<number[]> {
+export async function embedText(text: string, execution?: ConnectionExecutionContext): Promise<number[]> {
+	assertNoSessionEmbedding(execution);
   if (!text) return [];
   if (activeBackend === 'disabled' || activeBackend === 'unknown') return [];
   if (activeBackend === 'onnx') {
     try { return await onnxEmbedDocument(text); }
-    catch (err) { log.warn({ err: (err as Error).message }, 'ONNX embedText failed'); return []; }
+		catch (err) { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); log.warn({ err: (err as Error).message }, 'ONNX embedText failed'); return []; }
   }
   // Cap at ~8000 chars same as entity documents
   const input = text.length > 8_000 ? text.slice(0, 8_000) : text;
@@ -271,7 +279,8 @@ export async function embedText(text: string): Promise<number[]> {
       'ollama.embed (text)',
     );
     return result.embeddings[0] ?? [];
-  } catch (err) {
+	} catch (err) {
+		const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code);
     log.warn({ err: (err as Error).message }, 'ollama embedText failed');
     return [];
   }

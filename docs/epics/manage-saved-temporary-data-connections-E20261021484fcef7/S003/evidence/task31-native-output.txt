@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture
+not ok 1 - CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture
+# Subtest: CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications
+not ok 2 - CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications
+# Subtest: SQLite file URLs preserve encoded pathname text and explicit path takes precedence
+ok 3 - SQLite file URLs preserve encoded pathname text and explicit path takes precedence
+# Subtest: CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots
+ok 4 - CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 5 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 6 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+1..6
+# tests 6
+# suites 0
+# pass 4
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 13072.089708

@@ -16,6 +16,7 @@
  * worker's payload becomes when it crosses threads.
  */
 
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 import { assertReviewOwnerActive, retireReviewOwner } from '../review-request-owner.js';
 import { currentStepContext } from '../../shared/step-context.js';
 import { requireReviewOwnerContext } from '../../shared/review-owner-context.js';
@@ -110,9 +111,10 @@ export class LocalStepStateStore implements SharedStepStateStore {
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
 
-	async mint<P>(kind: StepKind, payload: P): Promise<string> { return this.mintSync(kind, payload); }
+	async mint<P>(kind: StepKind, payload: P): Promise<string> { assertNoSessionPersistence(); return this.mintSync(kind, payload); }
 
 	async read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> {
+		assertNoSessionPersistence();
 		const entry = this.map(kind).get(token);
 		if (entry === undefined) return undefined;
 		entry.touchedAt = this.now();
@@ -120,6 +122,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 	}
 
 	async update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> {
+		assertNoSessionPersistence();
 		if (token !== undefined && this.map(kind).get(token)?.review !== undefined) throw new ReviewStateRefused('review-state-invalid');
 		if (LIFECYCLES[kind].update === 'stable-token') {
 			const entry = token === undefined ? undefined : this.map(kind).get(token);
@@ -134,6 +137,7 @@ export class LocalStepStateStore implements SharedStepStateStore {
 	}
 
 	async release(kind: StepKind, token: string): Promise<void> {
+		assertNoSessionPersistence();
 		if (this.map(kind).get(token)?.review !== undefined) throw new ReviewStateRefused('review-state-invalid');
 		this.map(kind).delete(token);
 	}
@@ -146,8 +150,8 @@ export class LocalStepStateStore implements SharedStepStateStore {
 			.sort((a, b) => b[1].touchedAt - a[1].touchedAt || b[1].createdAt - a[1].createdAt)
 			.map(([token, e]) => ({ token, kind, payload: structuredClone(e.payload) as P, touchedAt: e.touchedAt }));
 	}
-	async clearForTests(kind: StepKind): Promise<void> { this.map(kind).clear(); }
-	async sizeForTests(kind: StepKind): Promise<number> { return this.map(kind).size; }
+	async clearForTests(kind: StepKind): Promise<void> { assertNoSessionPersistence(); this.map(kind).clear(); }
+	async sizeForTests(kind: StepKind): Promise<number> { assertNoSessionPersistence(); return this.map(kind).size; }
 
 	async mintReviewState<P>(kind: ReviewStateKind, payload: P, expected: ReviewStateExpected): Promise<string> {
 		this.validateExpected(kind, expected);
@@ -299,13 +303,13 @@ export class HubStepStateStore implements SharedStepStateStore {
 	invalidateReviewOwner(owner: string): Promise<void> { this.checkOwner(owner); return this.hub.request('step.review.owner-end', { owner }); }
 
 	lifecycle(kind: StepKind): StepLifecycle { return LIFECYCLES[kind]; }
-	mint<P>(kind: StepKind, payload: P): Promise<string> { return this.hub.request('step.mint', { kind, payload }); }
-	read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> { return this.hub.request('step.read', { kind, token }); }
-	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> { return this.hub.request('step.update', { kind, token, payload }); }
-	release(kind: StepKind, token: string): Promise<void> { return this.hub.request('step.release', { kind, token }); }
+	mint<P>(kind: StepKind, payload: P): Promise<string> { assertNoSessionPersistence(); return this.hub.request('step.mint', { kind, payload }); }
+	read<P>(kind: StepKind, token: string): Promise<StepStateEntry<P> | undefined> { assertNoSessionPersistence(); return this.hub.request('step.read', { kind, token }); }
+	update<P>(kind: StepKind, token: string | undefined, payload: P): Promise<string> { assertNoSessionPersistence(); return this.hub.request('step.update', { kind, token, payload }); }
+	release(kind: StepKind, token: string): Promise<void> { assertNoSessionPersistence(); return this.hub.request('step.release', { kind, token }); }
 	listLocal<P>(_kind: StepKind): readonly StepStateEntry<P>[] { throw new Error('step-state entries are listed on the main thread only'); }
-	clearForTests(kind: StepKind): Promise<void> { return this.hub.request('step.clear', { kind }); }
-	sizeForTests(kind: StepKind): Promise<number> { return this.hub.request('step.size', { kind }); }
+	clearForTests(kind: StepKind): Promise<void> { assertNoSessionPersistence(); return this.hub.request('step.clear', { kind }); }
+	sizeForTests(kind: StepKind): Promise<number> { assertNoSessionPersistence(); return this.hub.request('step.size', { kind }); }
 }
 
 // ---------------------------------------------------------------------------

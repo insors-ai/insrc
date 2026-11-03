@@ -1,0 +1,160 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t5",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Retired temporary handles stay memory-only and reserve one existing session resource slot until close completes across roots. [[c1]]",
+        "satisfied": true,
+        "evidence": "TemporaryDriverResources.commitRemoval (session-resources.ts:101-111) calls the injected retainRemovalSlot() exactly once per committed removal and only releases it inside RemovalRetirementOwner.commit's close callback after retire() resolves (session-resources.ts:109-110). session-entries.ts:56-60 wires retainRemovalSlot to increment/decrement the SAME session budget counter (#budget.retired) used by #quota (session-entries.ts:68), so a retirement consumes an existing MAX_SESSION_CONNECTIONS slot rather than a fresh one. The cross-root sharing is exercised directly in session-resources.test.ts:50-70 ('CM-S4-TEMP: retired resources retain a shared slot across roots...'): two TemporaryDriverResources instances for rootA/rootB share one `retain` callback; shared.slots stays 1 from commitRemoval until the retried close succeeds, and only drops to 0 after that close completes, with sibling root B's own resource (otherCloses) left untouched. Driver construction still goes through fileExecutionPolicy(...,{persistence:'memory-only'}) (session-resources.ts:44), consistent with 'memory-only'."
+      },
+      {
+        "check": "Failed closes retain exact handles; session end/expiry/shutdown cancel/drain owned resources without fresh admission or arbitrary source cleanup. [[c1]]",
+        "satisfied": true,
+        "evidence": "retire()/#closeFile() mark only the failing record/file and keep it in #records / fileClosures until a successful retry (session-resources.ts:63-128); the 'removal' flag suppresses the #failedClose session-wide circuit-breaker only for committed removals so other owners aren't poisoned (session-resources.ts:69,106,124). session-resources.test.ts:50-70 and :72-86 show a failing close is retried and only the exact handle (calls===1 throws, retry succeeds) is affected, with no effect on a sibling resource. session-cleanup.test.ts:23-38 ('shutdown drains retained resources at capacity...') fills 64 revisions, calls close() (shutdown), observes it reject 'recovery-required' while slots stay at 1 (the failed one), asserts prepareRemoval now throws 'session-expired' (no fresh admission after stopAdmission), then clears the failure and re-closes to drain the last retained slot. session-cleanup.test.ts:40-54 ('cancellation and owner expiry...') exercises prepareRemoval/cancelRemoval/commitRemoval ordering plus a late-constructing driver that is still closed exactly once when owner close()+construction race, with slots returning to 0."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Both acceptance checks are genuinely met by the code in session-resources.ts/session-entries.ts and are exercised by all 4 named CM-S4-TEMP test cases, which the daemon reports as passing; scope stayed inside session-resources.ts and the existing session-entries.ts budget port, matching the stated surface and leaving t6/t7's surfaces (secrets.ts, management.ts) untouched. However the daemon's own Tests check is FAILED: the same run of session-cleanup.test.ts shows two pre-existing CM-S3-EXPIRY/CM-S3-RECONNECT tests failing on a spawned-child reporter-format mismatch ('# pass 24' expected vs the child's actual 'ℹ pass 24' output) unrelated to this Task's code, but a failing check result fails the Task regardless of my judgment of the two acceptance checks.",
+    "testsPassed": false,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 5512,
+        "outputTail": "\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n"
+      },
+      "tests": {
+        "ok": false,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-VBARaV/report.tap src/daemon/db/__tests__/session-cleanup.test.ts\nnpx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-4fDmtI/report.tap src/daemon/db/__tests__/session-resources.test.ts",
+        "exitCode": 1,
+        "timedOut": false,
+        "durationMs": 5048,
+        "outputTail": "TAP version 13\n# Subtest: CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners\nok 1 - CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners\n  ---\n  duration_ms: 1.602208\n  type: 'test'\n  ...\n# Subtest: CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete\nok 2 - CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete\n  ---\n  duration_ms: 0.302625\n  type: 'test'\n  ...\n# Subtest: CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation\nok 3 - CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation\n  ---\n  duration_ms: 35.466167\n  type: 'test'\n  ...\n# Subtest: CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once\nok 4 - CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once\n  ---\n  duration_ms: 4.572667\n  type: 'test'\n  ...\n# Subtest: CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal\nok 5 - CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal\n  ---\n  duration_ms: 3.942791\n  type: 'test'\n  ...\n# Subtest: CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal\nok 6 - CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal\n  ---\n  duration_ms: 3.444416\n  type: 'test'\n  ...\n# Subtest: CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes\nok 7 - CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes\n  ---\n  duration_ms: 6.31325\n  type: 'test'\n  ...\n# Subtest: CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision\nok 8 - CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision\n  ---\n  duration_ms: 6.383333\n  type: 'test'\n  ...\n# Subtest: CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions\nok 9 - CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions\n  ---\n  duration_ms: 663.50875\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 728.011125\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-VBARaV/report.tap src/daemon/db/__tests__/session-cleanup.test.ts",
+            "exitCode": 1,
+            "timedOut": false,
+            "durationMs": 3489,
+            "titles": [
+              {
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "depth": 0,
+                "result": "fail"
+              },
+              {
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "depth": 0,
+                "result": "fail"
+              },
+              {
+                "title": "CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_daemon_db___tests___session-cleanup.test.ts.1793269652404.2282.tap"
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-resources.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-4fDmtI/report.tap src/daemon/db/__tests__/session-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1559,
+            "titles": [
+              {
+                "title": "CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_daemon_db___tests___session-resources.test.ts.1793269653964.2282.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "CM-S4-RETIRE/TEMP: extend src/daemon/db/__tests__/session-resources.test.ts and src/daemon/db/__tests__/session-cleanup.test.ts for retained resource slots, cross-root pressure and expiry drains.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S004/TESTS.md"
+    }
+  },
+  "passed": false
+}

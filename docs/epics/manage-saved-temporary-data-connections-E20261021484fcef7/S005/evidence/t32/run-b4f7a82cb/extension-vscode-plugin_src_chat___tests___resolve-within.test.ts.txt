@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: resolveWithin refuses .. escapes, absolute paths, missing files and a symlink that points outside the root
+ok 1 - resolveWithin refuses .. escapes, absolute paths, missing files and a symlink that points outside the root
+  ---
+  duration_ms: 8.696625
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 185.494209

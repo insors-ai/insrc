@@ -1,0 +1,13 @@
+{
+  "epicHash": "484fcef7efaf229e",
+  "storyId": "s5",
+  "authority": "User instruction in current conversation, 2026-10-29",
+  "statement": "insrc-ide is deprecated, only VS Code + JetBrains",
+  "targets": [
+    "vscode-plugin/",
+    "jetbrains-plugin/"
+  ],
+  "supersedes": "All IDE-fork integration, mirrored-TypeScript source-copy, external-checkout edits and IDE-fork release gates in the historical DEF/HLD/PRD and S005 draft. Backend ownership and protocol contracts remain unchanged.",
+  "upstreamHistory": "Approved canonical DEF/HLD and S001\u2013S004 JSON bodies/hashes are retained as historical approvals; this explicit scope correction governs S005. No typed HLD amendment shape supports replacing a client target, so no unrelated amendment type is fabricated.",
+  "status": "User-decided scope; S005 LLD still requires independent review and approval."
+}

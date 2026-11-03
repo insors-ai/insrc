@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: the implement prompt asks for the Insrc-Story trailer with the Story's epicHash and storyId
+ok 1 - the implement prompt asks for the Insrc-Story trailer with the Story's epicHash and storyId
+  ---
+  duration_ms: 1.038958
+  type: 'test'
+  ...
+# Subtest: the no-plan standalone prompt asks for the Insrc-Story trailer with the Story's epicHash
+ok 2 - the no-plan standalone prompt asks for the Insrc-Story trailer with the Story's epicHash
+  ---
+  duration_ms: 0.165875
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 402.469375

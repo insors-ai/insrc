@@ -47,6 +47,8 @@ const FIXTURE = {
 			summariserModel: 'gpt-x',
 		},
 		{ id: 'ollama', displayName: 'O', models: [{ id: 'o:1', efforts: [], inputLimit: { unit: 'tokens', max: 4096 } }], toolLoopModel: 'o:1' },
+		{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+		{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 	],
 };
 
@@ -111,7 +113,7 @@ test('config-write-models.test.ts: refusal via model leaf, runner switch, whole-
 	];
 	for (const [label, path, value] of refusals) {
 		const before = reset();
-		const r = await write({ path, value }) as { ok: boolean; reason?: string; detail?: string };
+		const r = await write({ path, value }) as { ok: boolean; reason?: string | undefined; detail?: string | undefined };
 		assert.equal(r.ok, false, label);
 		assert.equal(r.reason, 'rejected-model', label);
 		assert.match(r.detail ?? '', /'gpt-gone' is rejected in cli-codex/, label);
@@ -161,5 +163,65 @@ test("config-write-models.test.ts: restartRequired for tier, tasks, coreFloor an
 	for (const [label, path, value] of none) {
 		reset();
 		assert.deepEqual(await write({ path, value }), { ok: true }, label);
+	}
+});
+
+test("config-write-models.test.ts: writes adding or changing models.byRepo.<repo>.tiers (directly or through a parent object) are refused with 'per-repo-tier'; tasks / coreFloor and unrelated writes succeed", async () => {
+	const tier = { runner: 'cli-codex', model: 'gpt-x', effort: '' };
+	const refusals: Array<[string, unknown, unknown, RegExp]> = [
+		['tier leaf', ['models', 'byRepo', '/w/repo', 'tiers', 'core', 'model'], 'gpt-x', /refused: models\.byRepo\.\/w\/repo\.tiers$/],
+		['byRepo object', ['models', 'byRepo'], { '/w/repo': { tasks: { 'tracker.render': 'mid' }, tiers: { core: tier } } }, /refused: models\.byRepo\.\/w\/repo\.tiers$/],
+		['models object', ['models'], { ...BASE.models, byRepo: { '/w/a': { tiers: { mid: tier } }, '/w/b': { tiers: { cheap: tier } } } }, /refused: models\.byRepo\.\/w\/a\.tiers, models\.byRepo\.\/w\/b\.tiers$/],
+	];
+	for (const [label, path, value, detail] of refusals) {
+		const before = reset();
+		const r = await write({ path, value }) as { ok: boolean; reason?: string | undefined; detail?: string | undefined };
+		assert.equal(r.ok, false, label);
+		assert.equal(r.reason, 'per-repo-tier', label);
+		assert.match(r.detail ?? '', /^tiers are global \(models\.tiers\); per-repo settings take only tasks and coreFloor/, label);
+		assert.match(r.detail ?? '', detail, label);
+		assert.equal(readFileSync(PATHS.config, 'utf8'), before, `${label}: config.json unchanged`);
+	}
+
+	// tasks and coreFloor under a repo stay writable.
+	reset();
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/repo', 'tasks'], value: { 'tracker.render': 'core' } }) as { ok: boolean }).ok, true);
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/repo', 'coreFloor'], value: 'core' }) as { ok: boolean }).ok, true);
+	const written = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { models: { byRepo: Record<string, unknown> } };
+	assert.deepEqual(written.models.byRepo['/w/repo'], { tasks: { 'tracker.render': 'core' }, coreFloor: 'core' });
+
+	// A config that already holds a per-repo tier (pruned at the next boot) still takes unrelated writes, and removing the tier is accepted.
+	const withLegacy = { ...BASE, models: { ...BASE.models, byRepo: { '/w/old': { tasks: {}, tiers: { core: tier } } } } };
+	writeFileSync(PATHS.config, JSON.stringify(withLegacy, null, 2));
+	// Changing an existing per-repo tier — its leaf, the whole tier, or through the byRepo parent — is refused, config.json unchanged.
+	const changes: Array<[string, unknown, unknown]> = [
+		['existing tier leaf', ['models', 'byRepo', '/w/old', 'tiers', 'core', 'model'], 'gpt-y'],
+		['existing whole tier', ['models', 'byRepo', '/w/old', 'tiers', 'core'], { ...tier, effort: 'high' }],
+		['existing via byRepo', ['models', 'byRepo'], { '/w/old': { tasks: {}, tiers: { core: { ...tier, model: 'gpt-y' } } } }],
+	];
+	for (const [label, path, value] of changes) {
+		const before = readFileSync(PATHS.config, 'utf8');
+		const r = await write({ path, value }) as { ok: boolean; reason?: string | undefined; detail?: string | undefined };
+		assert.equal(r.ok, false, label);
+		assert.equal(r.reason, 'per-repo-tier', label);
+		assert.match(r.detail ?? '', /refused: models\.byRepo\.\/w\/old\.tiers$/, label);
+		assert.equal(readFileSync(PATHS.config, 'utf8'), before, `${label}: config.json unchanged`);
+	}
+	assert.equal((await write({ path: 'logLevel', value: 'debug' }) as { ok: boolean }).ok, true);
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'coreFloor'], value: 'mid' }) as { ok: boolean }).ok, true);
+	assert.equal((await write({ path: ['models', 'byRepo', '/w/old', 'tiers'], value: null }) as { ok: boolean }).ok, true);
+});
+
+test("config-write-models.test.ts: the tier write's model check treats a host family as not open to unlisted ids", async () => {
+	// Ids rejected in the vendor families are not rejected on the host family, which keeps no rejected
+	// ids of its own: the write is not refused as 'rejected-model' (an undeclared host model is refused
+	// at resolution as 'model-not-supported', never checked or approved as a vendor id).
+	for (const model of ['gpt-gone', 'claude-back', 'kimi:cloud']) {
+		reset();
+		const r = await write({ path: 'models.tiers.mid', value: { runner: 'ollama-claude', model, effort: '' } }) as { ok: boolean; reason?: string | undefined };
+		assert.equal(r.ok, true, model);
+		assert.notEqual(r.reason, 'rejected-model', model);
+		const written = JSON.parse(readFileSync(PATHS.config, 'utf8')) as { models: { tiers: { mid: { runner: string; model: string } } } };
+		assert.deepEqual([written.models.tiers.mid.runner, written.models.tiers.mid.model], ['ollama-claude', model]);
 	}
 });

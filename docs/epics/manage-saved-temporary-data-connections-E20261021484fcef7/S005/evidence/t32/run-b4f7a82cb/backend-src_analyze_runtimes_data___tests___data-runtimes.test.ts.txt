@@ -1,0 +1,124 @@
+TAP version 13
+# Subtest: a data task with a connection scope works on that connection only
+ok 1 - a data task with a connection scope works on that connection only
+  ---
+  duration_ms: 16.251125
+  type: 'test'
+  ...
+# Subtest: a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)
+ok 2 - a data task on an unregistered directory and on a manifest directory inside a registered repo opens its pool at that directory (mutation: open it at the containing repo)
+  ---
+  duration_ms: 29.629416
+  type: 'test'
+  ...
+# Subtest: the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code
+ok 3 - the connection-listing task gives the same result for a repo scope as before, its scopeRefValue parameter still takes precedence, and a kind outside the data row is refused with the mismatch code
+  ---
+  duration_ms: 44.783208
+  type: 'test'
+  ...
+# Subtest: requireStringParam: present non-empty -> returns; missing -> throws INV-5
+ok 4 - requireStringParam: present non-empty -> returns; missing -> throws INV-5
+  ---
+  duration_ms: 0.34525
+  type: 'test'
+  ...
+# Subtest: requireStringParam: empty string -> throws (empty != non-empty)
+ok 5 - requireStringParam: empty string -> throws (empty != non-empty)
+  ---
+  duration_ms: 0.322834
+  type: 'test'
+  ...
+# Subtest: optionalStringParam: present -> value; missing -> undefined; empty -> throws
+ok 6 - optionalStringParam: present -> value; missing -> undefined; empty -> throws
+  ---
+  duration_ms: 0.55025
+  type: 'test'
+  ...
+# Subtest: registerBuiltinRuntimes registers all 4 data runtimes
+ok 7 - registerBuiltinRuntimes registers all 4 data runtimes
+  ---
+  duration_ms: 3.188334
+  type: 'test'
+  ...
+# Subtest: runtime templateIds match expected ids
+ok 8 - runtime templateIds match expected ids
+  ---
+  duration_ms: 0.955791
+  type: 'test'
+  ...
+# Subtest: DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+ok 9 - DATA_AGGREGATE_PROMPT_PATH resolves to an existing non-empty file
+  ---
+  duration_ms: 1.075916
+  type: 'test'
+  ...
+# Subtest: data runtimes integration: skipped (set INSRC_LIVE_TESTS=1)
+ok 10 - data runtimes integration: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.306583
+  type: 'test'
+  ...
+# Subtest: discovery.connections: lists the registered sqlite connection (no secret leak)
+ok 11 - discovery.connections: lists the registered sqlite connection (no secret leak) # SKIP
+  ---
+  duration_ms: 0.157333
+  type: 'test'
+  ...
+# Subtest: discovery.objects: lists rdbms tables for the sqlite connection
+ok 12 - discovery.objects: lists rdbms tables for the sqlite connection # SKIP
+  ---
+  duration_ms: 0.048416
+  type: 'test'
+  ...
+# Subtest: discovery.objects: kind filter narrows the result
+ok 13 - discovery.objects: kind filter narrows the result # SKIP
+  ---
+  duration_ms: 0.035875
+  type: 'test'
+  ...
+# Subtest: discovery.objects: unknown connectionId -> throws (no such connection)
+ok 14 - discovery.objects: unknown connectionId -> throws (no such connection) # SKIP
+  ---
+  duration_ms: 0.033917
+  type: 'test'
+  ...
+# Subtest: discovery.objects: missing connectionId param -> INV-5 message
+ok 15 - discovery.objects: missing connectionId param -> INV-5 message # SKIP
+  ---
+  duration_ms: 0.297083
+  type: 'test'
+  ...
+# Subtest: schema.table: describes the users table -- columns + types + nullability
+ok 16 - schema.table: describes the users table -- columns + types + nullability # SKIP
+  ---
+  duration_ms: 0.149458
+  type: 'test'
+  ...
+# Subtest: schema.table: describes orders table -- FK to users surfaces
+ok 17 - schema.table: describes orders table -- FK to users surfaces # SKIP
+  ---
+  duration_ms: 0.279125
+  type: 'test'
+  ...
+# Subtest: schema.table: missing table param -> INV-5 message
+ok 18 - schema.table: missing table param -> INV-5 message # SKIP
+  ---
+  duration_ms: 0.322625
+  type: 'test'
+  ...
+# Subtest: schema.table: nonexistent table -> driver error propagates
+ok 19 - schema.table: nonexistent table -> driver error propagates # SKIP
+  ---
+  duration_ms: 0.142166
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 10
+# todo 0
+# duration_ms 1184.539417

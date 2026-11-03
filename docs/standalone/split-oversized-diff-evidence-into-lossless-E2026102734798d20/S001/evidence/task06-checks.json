@@ -1,0 +1,17 @@
+{
+  "task": "t6",
+  "tests": {
+    "total": 100,
+    "passed": 97,
+    "failed": 0,
+    "skipped": 3,
+    "log": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task06-parent-tests.txt"
+  },
+  "typecheck": {
+    "exitCode": 0
+  },
+  "behavior": "Quality diff parents force measured chunk/gather even for one fitting chunk. Every carried fragment needs exactly one validated parent note. Gather validates complete source coverage, renders compact source ranges and refuses missing/duplicate/foreign evidence. Bounded reduction retains out-of-band atom IDs and existing note provenance. Parent findings use original source locations, not expectationRef or note IDs.",
+  "scopeLimits": "Symbol duplicate-stage fragment filtering and global cross-parent duplication are t7; these tests prove parent correctness and bounded evidence mechanics with scripted answers, not real reviewer verdicts.",
+  "fullSweep": "Deferred until all implementation tasks finish",
+  "pending": "Daemon task validation"
+}

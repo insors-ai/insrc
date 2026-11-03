@@ -8,6 +8,8 @@
  */
 
 import { test } from 'node:test';
+import { savedAnalysisExecution } from '../../connection-access.js';
+import { requireConnectionExecution } from '../../../shared/step-context.js';
 import assert from 'node:assert/strict';
 
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
@@ -37,7 +39,7 @@ import {
 	ShaperPromptMissingError,
 	ShaperSchemaUnrecoverable,
 	_fallbackFreeformPlanForTest,
-	_runExplorationPipelineForTest as runPipeline,
+	_runExplorationPipelineForTest as privatePipeline,
 	type PipelineCause,
 	type PipelineOutcome,
 	type PipelineSteps,
@@ -94,6 +96,25 @@ function core(o: PipelineOutcome): unknown {
 	return o.kind === 'bundle' ? { kind: o.kind, raw: o.raw, explorationCount: o.explorationCount } : o;
 }
 
+// This seam is internal: the public context entry mints Saved authority first.
+const runPipeline = (
+	args: Omit<Parameters<typeof privatePipeline>[0], 'connectionExecution'>,
+	...rest: [PipelineSteps?]
+) => privatePipeline({ ...args, connectionExecution: savedAnalysisExecution(args.scope.lookupPath) }, ...rest);
+function savedCall<T extends { connectionExecution?: import('../../../shared/step-context.js').ConnectionExecutionContext | undefined }>(args: T) {
+	const execution = requireConnectionExecution(args.connectionExecution);
+	assert.equal(execution.mode, 'saved');
+	const { connectionExecution: _opaque, ...data } = args;
+	return data;
+}
+
+test('private pipeline refuses missing authority before reading request data', async () => {
+	let reads = 0;
+	const input = { get invocationMode() { reads++; throw new Error('must not read'); } };
+	await assert.rejects(privatePipeline(input as never), { code: 'session-expired' });
+	assert.equal(reads, 0);
+});
+
 const EMPTY_LAYERS = { system: '', focus: '', summary: '', structure: '', surface: '', artefacts: '', upstream: '' };
 
 interface Calls {
@@ -114,9 +135,9 @@ interface StandIns {
 function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
 	const calls: Calls = { decompose: [], executePlan: [], synthesize: [], fallback: [], executed: [] };
 	const s: PipelineSteps = {
-		decompose: async (a) => { calls.decompose.push(a); return (over.decompose ?? (async () => PLAN))(a); },
+		decompose: async (a) => { calls.decompose.push(savedCall(a)); return (over.decompose ?? (async () => PLAN))(a); },
 		executePlan: async (a) => {
-			calls.executePlan.push(a);
+			calls.executePlan.push(savedCall(a));
 			const executed = {
 				plan: a.plan,
 				results: a.plan.explorations.map(e => ({
@@ -136,7 +157,7 @@ function steps(over: StandIns = {}): { steps: PipelineSteps; calls: Calls } {
 			calls.executed.push(executed);
 			return executed;
 		},
-		synthesize: async (a) => { calls.synthesize.push(a); return (over.synthesize ?? (async () => RAW))(); },
+		synthesize: async (a) => { calls.synthesize.push(savedCall(a)); return (over.synthesize ?? (async () => RAW))(); },
 		fallbackFreeformPlan: (intent, shaperId) => {
 			calls.fallback.push({ intent, shaperId });
 			return (over.fallback ?? _fallbackFreeformPlanForTest)(intent, shaperId);

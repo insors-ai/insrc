@@ -1,0 +1,116 @@
+{
+  "id": "03-mutations-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:34:34.433Z",
+  "finished": "2026-11-01T04:37:32.845Z",
+  "inputChars": 73682,
+  "inputSha256": "57013caaef8e8f80e6f1f0c28ff2e75b9d10dfe5b8d8d6db626e3d6e12cf063a",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the 4 supplied files (TS mutation controller, Kotlin mutation controller, Kotlin project gateway, Kotlin test backend fixture). I found one concrete defect, which is in both clients. When a signed ticket is expired and its status is `not-seen`, or the ticket is already expired on receipt, the record moves to `reconciliation-required`. That phase blocks its key, and no code path dismisses it, replays it, or releases the block. The rest of the controller and gateway logic looked consistent: the TS and Kotlin controllers are close mirrors. Most assigned obligations depend on files that were not supplied (wire decoders, draft, removal projection, owner, IPC lanes, UI, tests), so they are marked could-not-verify. This is not canonical CR approval and does not approve BUILD.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "src/shared/connection-manager/controller.ts",
+        "line": 162,
+        "trigger": "1) A ticket whose `expiresAt` has passed on receipt (line 90). The cause could be client/daemon clock skew or a slow ticket reply. Or 2) a mutation answered `not-seen` that the user leaves until the ticket expires, after which Replay (line 176) or Reconcile (line 162) is pressed. In the second case, `canReplay` is false once expired, so the only available action is Reconcile.",
+        "defect": "The expired-ticket path sets `phase='reconciliation-required'`, which is in the `blocking` set. `isBlocked(key)` then rejects every later `submit`/`remove` for that key with `busy`. `canDismiss` is false for this phase. `request` has been released at line 90, so it cannot be replayed. Reconcile on a `not-seen` status with an expired ticket maps back to the same phase (line 162), so the state never changes. Nothing in the controller leaves this state short of a daemon status of `committed`. For an expired, never-seen ticket, a `committed` status can no longer arrive. The connection is therefore stuck, with no edit, delete or dismiss, until `dispose()` (workbench reload). The Kotlin controller has the identical path.",
+        "evidence": "TS: `#view` canDismiss (line 62) excludes 'reconciliation-required'. `blocking` (line 43) includes it. The expiry branch at line 90 sets it and calls `#release`. `#status` (line 162) sets `phase=result.status==='not-seen'&&!this.#unexpired(r)?'reconciliation-required':result.status`. `replay` (line 176) sets it when expired. Kotlin ConnectionMutationController.kt: expiry in `submitInput` (~line 144), `status` (~line 260), and `view` dismiss predicate (line 59). Neither client has a transition out of this phase. This weakens the contract:1 postcondition that an unknown state is reconciled before another mutation of that target.",
+        "remedy": "When the daemon reports `not-seen` for an expired ticket, the mutation can never commit. Resolve the attempt to a terminal, dismissible state instead of the blocking `reconciliation-required` phase. Examples are a `rejected`/`ticket-error`-class phase with a fixed 'ticket expired, nothing was saved' code, or allowing `dismiss` plus a fresh ticket for this phase. Apply the same change to the expired-on-receipt branch, where nothing was sent. Make the change in both clients and add a parity test for ticket-expired then Reconcile then new submit on the same key."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "lld:contract:1",
+        "status": "could-not-verify",
+        "evidence": "`ConnectionManagerState` and the list/filter/dirty projection are not in the supplied files. The controller partly enforces the unknown-state-blocks-mutation postcondition (`isBlocked`/`blocking` set), but the finding shows `reconciliation-required` can never be exited."
+      },
+      {
+        "key": "lld:data-model:5",
+        "status": "could-not-verify",
+        "evidence": "The draft-test request, probe cancellation and result-identity code is not in the changed evidence. The controller handles Save/remove only. It reuses `draft.serialize()` (TS) and `draft.serialize()` (Kotlin) for Save, but their definitions were not supplied."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin gateway shows a per-owner temporary stamp (`daemonEpoch:lifetime`) revoked via `onTemporaryInvalidated`, and Saved routed separately with no stamp. The owner service, `ipc-client.ts`, `UnixSocketDaemonRpc.kt`, the TS workbench owner and lifecycle disposal were not supplied."
+      },
+      {
+        "key": "lld:error:2",
+        "status": "could-not-verify",
+        "evidence": "Controller refresh failure sets `refresh='failed'` and keeps committed truth, with no empty-list fallback. List decoding is in `wire.ts`/`ConnectionProtocol`, and last-good stale rendering is in the view layer. Neither was supplied."
+      },
+      {
+        "key": "lld:error:6",
+        "status": "could-not-verify",
+        "evidence": "Supporting evidence: `endTemporary()` in both clients clears ticket/outcome/input and sets `session-ended`/`session-expired`. In Kotlin it is invoked on owner invalidation and on authenticated `session-expired`. Probe cancellation, view-generation invalidation and the resume logic are not in the supplied files."
+      },
+      {
+        "key": "lld:edge:5",
+        "status": "could-not-verify",
+        "evidence": "Read-only legacy and pinned-family handling is not in the supplied files."
+      },
+      {
+        "key": "lld:shared:5",
+        "status": "could-not-verify",
+        "evidence": "Draft-test serializer/cancel/result-identity code is not in the supplied files."
+      },
+      {
+        "key": "lld:migration:7",
+        "status": "could-not-verify",
+        "evidence": "Supporting evidence: both controllers end only on `dispose()`/`close()`, and Kotlin `close()` shuts down its worker and scheduler. TS `dispose()` clears timers. The admission-gate-first sequencing and the actual disposal wiring are not in the supplied files."
+      },
+      {
+        "key": "plan:t4",
+        "status": "could-not-verify",
+        "evidence": "The persistent IPC lane code (`ipc-client.ts`, `UnixSocketDaemonRpc.kt`) and its transport tests were not supplied. Only the fixture backend opens `PersistentDaemonLane`."
+      },
+      {
+        "key": "plan:t11",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin draft/form model and its tests were not supplied."
+      },
+      {
+        "key": "plan:t14",
+        "status": "could-not-verify",
+        "evidence": "The TS draft-test implementation and tests were not supplied."
+      },
+      {
+        "key": "plan:t17",
+        "status": "could-not-verify",
+        "evidence": "Supporting evidence: Kotlin `remove` sends only `{key,mode,expectedRevision}` plus the ticket, and cleanup retry sends only `{ticket}`. `RemovalCard`, `projectRemovalState`, UI copy and the S004 snapshot tests were not supplied. The `reconciliation-required` dead end applies to removals as well."
+      },
+      {
+        "key": "plan:t25",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin gateway refuses with `upgrade-required` via `ConnectionActions.mutation` when a capability is missing, with no legacy fallback visible. The TS side, legacy projections and CM-S5-COMPAT tests were not supplied."
+      },
+      {
+        "key": "plan:t28",
+        "status": "could-not-verify",
+        "evidence": "This is a live both-client acceptance task. The user states JetBrains live UI is deferred. No live evidence was supplied. The fixture backend only provides a test subprocess."
+      }
+    ],
+    "inspectedFiles": [
+      "src/shared/connection-manager/controller.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationGateway.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationBackend.kt"
+    ],
+    "limitations": [
+      "Only fragments for 4 files were supplied. The wire decoders (`wire.ts`, `ConnectionProtocol`), draft (`draft.ts`, `ConnectionDraft`), removal projection (`connection-removal.ts`, `RemovalCard`), `ConnectionsSessionOwner`, `ConnectionActions`, the persistent IPC lanes, the VS Code extension wiring, UI/renderers and the actual test suites were not available.",
+      "The set of daemon `status` values and the `credentialCleanup` enumeration were not visible. Whether a committed create without credentials ever reaches `credentialCleanup==='complete'` (the dismiss precondition) is therefore unverified.",
+      "`ConnectionMutationBackend.kt` was read as a test fixture only. The fixture server `connection-mutation-server.ts` and any tests using it were not supplied.",
+      "Kotlin line numbers after roughly line 144 are counted from the supplied diff and may be off by a few lines.",
+      "No compile or run evidence was supplied. Kotlin SAM and overload resolution (for example `scheduler.schedule(callback,...)`) was not assessed beyond reading.",
+      "This is a manual workaround review. It is not a canonical CR and does not approve BUILD."
+    ],
+    "evidenceRequests": [
+      "The `decodeOperationStatus` / `ConnectionProtocol.status` and `CommittedOutcome` type definitions: the status values and the `credentialCleanup` enumeration. These show whether non-credential commits are ever dismissible and whether a daemon status can resolve an expired ticket.",
+      "Any test or LLD text defining the exit from `reconciliation-required` (CM-S5 recovery matrix), or a test covering ticket-expired then Reconcile then a new submit on the same key.",
+      "`ConnectionsSessionOwner.requestTemporary`/`requestSaved` and `onTemporaryInvalidated`. These show whether the post-Saved-commit `db.connections.v2.list` refresh (routed through `requestTemporary` in the gateway) works when no temporary session is admitted.",
+      "The TS `ports.call` / refresh wiring in `vscode-plugin/src/extension.ts` and the `ipc-client.ts` request deadline. The TS controller has no call timeout of its own, unlike Kotlin's 16s."
+    ]
+  }
+}

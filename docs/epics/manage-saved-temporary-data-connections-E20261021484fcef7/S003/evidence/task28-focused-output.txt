@@ -1,0 +1,188 @@
+TAP version 13
+# Subtest: measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)
+ok 1 - measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)
+# Subtest: measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)
+ok 2 - measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)
+# Subtest: a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)
+ok 3 - a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)
+# Subtest: measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)
+ok 4 - measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)
+# Subtest: measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not
+ok 5 - measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not
+# Subtest: dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id
+ok 6 - dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id
+# Subtest: an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)
+ok 7 - an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)
+# Subtest: a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution
+ok 8 - a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution
+# Subtest: a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count
+ok 9 - a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count
+# Subtest: a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing
+ok 10 - a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing
+# Subtest: one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count
+ok 11 - one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count
+# Subtest: the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection
+ok 12 - the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection
+# Subtest: the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds
+ok 13 - the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds
+# Subtest: a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read
+ok 14 - a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read
+# Subtest: a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before
+ok 15 - a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before
+# Subtest: sizeOfCounts gives each size at and just above each of the eight thresholds, takes the larger of the two sizes, never gives a smaller size for a larger count, and throws RangeError for a negative or fractional count (mutation: take the smaller of the two sizes)
+ok 16 - sizeOfCounts gives each size at and just above each of the eight thresholds, takes the larger of the two sizes, never gives a smaller size for a larger count, and throws RangeError for a negative or fractional count (mutation: take the smaller of the two sizes)
+# Subtest: measureNamedArea counts the entities of the scope's area and their distinct file paths for a repo, a module, a file and a symbol scope, and does not count the whole repo for a narrower scope (mutation: count every entity given)
+ok 17 - measureNamedArea counts the entities of the scope's area and their distinct file paths for a repo, a module, a file and a symbol scope, and does not count the whole repo for a narrower scope (mutation: count every entity given)
+# Subtest: measureNamedArea gives XS with determined true for an area that holds nothing, and counts files by distinct path when the repo has no entity of kind 'file'
+ok 18 - measureNamedArea gives XS with determined true for an area that holds nothing, and counts files by distinct path when the repo has no entity of kind 'file'
+# Subtest: measureLookupResults sums the returned counts of the outputs that carry a completeness record, counts each file once through filesNamedBy, records the characters, and adds nothing for a failed or unsupported lookup (mutation: count a failed lookup's partial findings)
+ok 19 - measureLookupResults sums the returned counts of the outputs that carry a completeness record, counts each file once through filesNamedBy, records the characters, and adds nothing for a failed or unsupported lookup (mutation: count a failed lookup's partial findings)
+# Subtest: measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record
+ok 20 - measureLookupResults gives a measure that is not determined, with size XL, when no output carries a completeness record
+# Subtest: every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)
+ok 21 - every measure records the hint it was given and the hint never changes the size, whether the hint is smaller or larger than the measured size (mutation: use the hint when it is larger)
+# Subtest: renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given
+ok 22 - renderMeasureLine states the size, the source and the counts for each of the three sources, the characters for lookup results, the note when not determined, and the hint when one was given
+# Subtest: filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union
+ok 23 - filesNamedBy returns the file paths of a fixture of every lookup output type, none for the three data outputs and for a failed or unsupported output, and is a switch the compiler checks for every member of the output union
+# Subtest: measureLookupResults never throws: an output with a count that is not a whole number, with files that cannot be read or that cannot be written as text is named in the note and the rest is counted; anything unforeseen gives a measure that is not determined
+ok 24 - measureLookupResults never throws: an output with a count that is not a whole number, with files that cannot be read or that cannot be written as text is named in the note and the rest is counted; anything unforeseen gives a measure that is not determined
+# Subtest: CM-S1-V: measure timeouts and cancelled waiters share one full-use lease until late connect/list success or rejection then clear pendingListings
+ok 25 - CM-S1-V: measure timeouts and cancelled waiters share one full-use lease until late connect/list success or rejection then clear pendingListings
+# Subtest: shaperProvider=ollama returns an OllamaProvider
+ok 26 - shaperProvider=ollama returns an OllamaProvider
+# Subtest: shaperProvider=cli-claude returns a CliProvider (claude kind)
+ok 27 - shaperProvider=cli-claude returns a CliProvider (claude kind)
+# Subtest: shaperProvider=cli-codex returns a CliProvider
+ok 28 - shaperProvider=cli-codex returns a CliProvider
+# Subtest: cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)
+ok 29 - cli-claude + explicit Ollama shaperModel → CliProvider with NO model (CLI default)
+# Subtest: cli-claude + a listed claude shaperModel → forwarded as its canonical id; an unlisted one is not forwarded
+ok 30 - cli-claude + a listed claude shaperModel → forwarded as its canonical id; an unlisted one is not forwarded
+# Subtest: cli-claude + a role-tier claude model → forwarded as its canonical id (role model wins)
+ok 31 - cli-claude + a role-tier claude model → forwarded as its canonical id (role model wins)
+# Subtest: cli-claude + a role-tier model that is Ollama-shaped → also dropped
+ok 32 - cli-claude + a role-tier model that is Ollama-shaped → also dropped
+# Subtest: ollama path is unchanged: the Ollama model id is still used
+ok 33 - ollama path is unchanged: the Ollama model id is still used
+# Subtest: shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx
+ok 34 - shaperProvider=ollama honours cfg.shaperModel + cfg.shaper.ollamaNumCtx
+# Subtest: shaperProvider=cli-* is idempotent -- repeated calls return distinct instances
+ok 35 - shaperProvider=cli-* is idempotent -- repeated calls return distinct instances
+# Subtest: clientDefault picks the matching CLI when config does NOT pin a provider
+ok 36 - clientDefault picks the matching CLI when config does NOT pin a provider
+# Subtest: explicit config shaperProvider overrides the clientDefault
+ok 37 - explicit config shaperProvider overrides the clientDefault
+# Subtest: ambient runWithClientProviderContext supplies the default
+ok 38 - ambient runWithClientProviderContext supplies the default
+# Subtest: resolveShaperKind: explicit global wins over the per-run caller
+ok 39 - resolveShaperKind: explicit global wins over the per-run caller
+# Subtest: resolveShaperKind: per-run caller used when the global is unset
+ok 40 - resolveShaperKind: per-run caller used when the global is unset
+# Subtest: resolveShaperKind: the definitions' default family when all signals are unset
+ok 41 - resolveShaperKind: the definitions' default family when all signals are unset
+# Subtest: a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)
+ok 42 - a plan in which one of three producers failed has a final report written from the two that exist, with the third named as absent (mutation: skip the aggregate task as before)
+# Subtest: a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run
+ok 43 - a plan in which every producer failed has no final report; a task other than the aggregate task with a missing input is still skipped; an aggregate task that throws still fails the run
+# Subtest: a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)
+ok 44 - a plan whose aggregate task consumes nothing runs with and without a failed task before it (mutation: skip an aggregate task that consumes nothing)
+# Subtest: a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path
+ok 45 - a nested plan in which one child task failed gives a root report, and the answer report names the child's task by its path
+# Subtest: through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params
+ok 46 - through the plan walk, eight tasks of one template each produce the same name and the report task receives all eight, in plan order, each with its task id, template and params
+# Subtest: a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task
+ok 47 - a root plan with four planner tasks hands its report task four child reports, each attributed to its planner task
+# Subtest: when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged
+ok 48 - when one of several producers of a name fails, the report task runs on the others and is handed the failed producer as absent, with its task id and reason; the prompt says that task's output is absent and that the other outputs under the name are available, and when no absent name has an output the absent section is unchanged
+# Subtest: a task that is not the report task receives every output of a name it consumes
+ok 49 - a task that is not the report task receives every output of a name it consumes
+# Subtest: a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates
+ok 50 - a writing failure while the walk handles one task fails that task and the walk goes on; an error not tied to a task propagates
+# Subtest: unmetDependencies: no consumes -> null
+ok 51 - unmetDependencies: no consumes -> null
+# Subtest: unmetDependencies: every consume present -> null
+ok 52 - unmetDependencies: every consume present -> null
+# Subtest: unmetDependencies: first missing name reported
+ok 53 - unmetDependencies: first missing name reported
+# Subtest: projectUpstream: limits to consumed names only
+ok 54 - projectUpstream: limits to consumed names only
+# Subtest: checkOutputShape: exact match -> null
+ok 55 - checkOutputShape: exact match -> null
+# Subtest: checkOutputShape: missing name reported
+ok 56 - checkOutputShape: missing name reported
+# Subtest: checkOutputShape: extra name reported
+ok 57 - checkOutputShape: extra name reported
+# Subtest: runExecutor: 2-task happy path -- discovery + aggregator
+ok 58 - runExecutor: 2-task happy path -- discovery + aggregator
+# Subtest: runExecutor: missing runtime -> task fails; downstream cascades
+ok 59 - runExecutor: missing runtime -> task fails; downstream cascades
+# Subtest: runExecutor: runtime throws -> failed status with reason; cascade
+ok 60 - runExecutor: runtime throws -> failed status with reason; cascade
+# Subtest: runExecutor: runtime returns extra/missing produces -> output-shape-mismatch
+ok 61 - runExecutor: runtime returns extra/missing produces -> output-shape-mismatch
+# Subtest: runExecutor: planner-template task materialises child report as parent.report
+ok 62 - runExecutor: planner-template task materialises child report as parent.report
+# Subtest: runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade
+ok 63 - runExecutor: planner task whose child build failed -> child-plan-unavailable + cascade
+# Subtest: taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json
+ok 64 - taskOutputPathFor: lands under ~/.insrc/analyze/<runId>/tasks/<taskId>.json
+# Subtest: readTaskOutput: miss returns null
+ok 65 - readTaskOutput: miss returns null
+# Subtest: purgeTaskOutput on a missing slot is a silent no-op
+ok 66 - purgeTaskOutput on a missing slot is a silent no-op
+# Subtest: onTaskEvent: 2-task happy path emits started+completed per task in plan order
+ok 67 - onTaskEvent: 2-task happy path emits started+completed per task in plan order
+# Subtest: onTaskEvent: failed task emits started + completed with status="failed"
+ok 68 - onTaskEvent: failed task emits started + completed with status="failed"
+# Subtest: onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set
+ok 69 - onTaskEvent: planner-template task -- child plan events fire BETWEEN parent started + completed, with parentTaskPath set
+# Subtest: onTaskEvent: throwing subscriber does not crash the executor
+ok 70 - onTaskEvent: throwing subscriber does not crash the executor
+# Subtest: SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)
+ok 71 - SINGLE-PASS: child plan tasks execute exactly once (regression for the executePlanNode double-walk)
+# Subtest: the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed
+ok 72 - the plan walk copies the record to the task record, and a runtime that returns none is recorded as failed
+# Subtest: a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)
+ok 73 - a runtime that throws each typed scope error is a failed task with that code and no 'runtime-threw:' prefix; any other error has no code (mutation: drop the class check)
+# Subtest: a task refused for naming a connection outside the scope is a failed task with a code and its own message
+ok 74 - a task refused for naming a connection outside the scope is a failed task with a code and its own message
+# Subtest: plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping
+ok 75 - plan walk: the walker (executor/walker.ts) records a task whose scope's repository is under index with code 'repo-indexing' through taskRefusalMapping
+# Subtest: the plan walk imports nothing from the run driver
+ok 76 - the plan walk imports nothing from the run driver
+# Subtest: every task of every plan in a tree keeps its own record
+ok 77 - every task of every plan in a tree keeps its own record
+# Subtest: a planner task whose child produced no report fails with the child's cause
+ok 78 - a planner task whose child produced no report fails with the child's cause
+# Subtest: a plan two levels down keeps its own records and names its tasks by their full path
+ok 79 - a plan two levels down keeps its own records and names its tasks by their full path
+# Subtest: executor dispatches to the registered runner
+ok 80 - executor dispatches to the registered runner
+# Subtest: executor hands the request's resolved scope to the runner; without one the runner gets none
+ok 81 - executor hands the request's resolved scope to the runner; without one the runner gets none
+# Subtest: stepPlan hands the resolved scope to the runner too
+ok 82 - stepPlan hands the resolved scope to the runner too
+# Subtest: the step tool's plan phase resolves the scope from the token and runs the lookups there
+ok 83 - the step tool's plan phase resolves the scope from the token and runs the lookups there
+# Subtest: unsupported exploration type produces a diagnostic output
+ok 84 - unsupported exploration type produces a diagnostic output
+# Subtest: runner throw produces a `failed` output; does not stop the plan
+ok 85 - runner throw produces a `failed` output; does not stop the plan
+# Subtest: deterministic exploration is cached across executions
+ok 86 - deterministic exploration is cached across executions
+# Subtest: lastIndexedAt bump invalidates the cache
+ok 87 - lastIndexedAt bump invalidates the cache
+# Subtest: readDep exposes prior exploration outputs to later runners
+ok 88 - readDep exposes prior exploration outputs to later runners
+# Subtest: CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path
+ok 89 - CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path
+# Subtest: CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence
+ok 90 - CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence
+# tests 90
+# pass 90
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4642.046625

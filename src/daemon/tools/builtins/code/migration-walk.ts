@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../../../analyze/connection-access.js';
 /**
  * code_migration_walk -- enumerate a repo's migrations + parse the
  * DDL into typed operations (code-analyzer-skills.md Phase 0.5).
@@ -95,7 +96,7 @@ const codeMigrationWalkTool: Tool = {
 				try {
 					if (await h.detect(repoPath)) { chosen = h; break; }
 				} catch (err) {
-					log.warn({ tool: h.id, err: errMessage(err) }, 'detect failed; continuing');
+					captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('warn', () => [{ tool: h.id, err: errMessage(err) }, 'detect failed; continuing']);
 				}
 			}
 		} else {
@@ -104,7 +105,7 @@ const codeMigrationWalkTool: Tool = {
 
 		if (chosen === undefined) {
 			const out: MigrationWalkOutput = { detected: false, migrations: [] };
-			log.info({ tool, repoPath }, 'code_migration_walk: no migrations detected');
+			captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('info', () => [{ tool, repoPath }, 'code_migration_walk: no migrations detected']);
 			return ok(out);
 		}
 
@@ -120,10 +121,7 @@ const codeMigrationWalkTool: Tool = {
 			tool:       chosen.id,
 			migrations,
 		};
-		log.info(
-			{ tool: chosen.id, repoPath, count: migrations.length },
-			'code_migration_walk',
-		);
+		captureAnalysisDiagnostics(log, _deps.connectionExecution).emit('info', () => [{ tool: chosen.id, repoPath, count: migrations.length }, 'code_migration_walk']);
 		return ok(out);
 	},
 };

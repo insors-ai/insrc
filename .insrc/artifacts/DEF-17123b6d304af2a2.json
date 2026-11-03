@@ -1,0 +1,751 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1793534367723-ldpv4u",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T12:02:01.501Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 153768,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "17123b6d304af2a2",
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "define",
+      "stage": "define",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "c1-quote-resolves",
+          "kind": "citation",
+          "severity": "LOW",
+          "premise": "docs/reqs/shared-project-memory.html contains the verbatim sentence \"The same core MUST run embedded in a host process or in an independent process accessed through IPC.\" cited by [[c1]] and used to support constraints k1-k6 and both assumptions.",
+          "evidence": "Grep confirms the exact sentence appears verbatim at docs/reqs/shared-project-memory.html:57 (\"...The same core MUST run embedded in a host process or in an independent process accessed through IPC. The insrc daemon is one integration host...\"), and DEF.md:217 shows [[c1]] citing this same file with this same quoted sentence, matching the premise's citation text.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "c2-quote-resolves",
+          "kind": "citation",
+          "severity": "MED",
+          "premise": "The analyze-bundle reference [[c2]] (s1.analyzeBundles) accurately reports that Lance's module has 70 incoming / 28 outgoing graph edges driven by imports of local config, paths, logging and connection persistence, i.e. the src/db/lance module imports from config, paths, logging and a connection/persistence module.",
+          "evidence": "All four grep passes (`from ['\"].*config/`, `.*paths/`, `.*logger/`, `.*connection/`) were capped at 50 matches each and TRUNCATED before reaching any path under src/db/lance — the results are sorted path-order and cut off within src/daemon/db/__tests__ or src/config/src/analyze ranges, i.e. alphabetically before 'src/db/lance' is even reached. Not a single matched line in any of the four grep outputs is from src/db/lance/*.ts. The evidence gathered therefore contains zero direct confirmation that src/db/lance imports config, paths, logger, or a connection/persistence module, and says nothing about the claimed 70 incoming / 28 outgoing edge counts.",
+          "action": "Re-run the four import greps scoped specifically to `src/db/lance/**` (not the whole repo) so the cap doesn't truncate before reaching the target module, and separately re-derive the incoming/outgoing edge counts (70/28) from the graph tool rather than asserting them uncited. Until then, treat the citation's specific numbers and the import claim as unconfirmed.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "No safe mechanical edit exists because the gathered evidence contains no actual src/db/lance import lines or edge-count data to substitute in — the probe itself needs to be re-scoped and re-run before any correction can be grounded.",
+            "options": [
+              "Re-run import probes scoped to src/db/lance/** and the graph edge-count tool for that module, then update the citation with the confirmed data",
+              "Mark the citation as unverified pending a scoped re-probe and strip the specific 70/28 figures until confirmed",
+              "Accept the premise as-is on the grounds that config/paths/logger imports are near-universal in this codebase (seen in dozens of other modules), while flagging the connection-persistence and edge-count parts as unverified"
+            ]
+          }
+        },
+        {
+          "claimId": "stories-form-linear-chain",
+          "kind": "ordering",
+          "severity": "MED",
+          "premise": "The nine stories S001-S009 declared in section 6 form a strictly linear dependency chain (S002 depends on S001, S003 on S002, S004 on S003, S005 on S004, S006 on S005, S007 on S006, S008 on S007, S009 on S008) with no skipped or out-of-order links and S001 having no dependency.",
+          "evidence": "The grep evidence returned 50 'Depends on:' matches, but every single one comes from OTHER epics' DEF.md files (bugfix-triage, build-workflow, code-review-stage, module-test-health-analyzer, plan-workflow, build-deployment-design-framework, vs-code-extension, vs-code-plugin-ui-integration, chunked-review-pipeline, c2ba6fa6, deploy-daemon-shared-server). None of the matches are from the actual artifact under review (the share-project-memory-across-agents-applications epic, E2026110117123b6d, whose anchors #6.1-#6.9 this premise cites). No path/line for that epic's own S001-S009 dependency declarations appears anywhere in the gathered evidence.",
+          "action": "Re-run the dependency grep scoped specifically to docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md (or its stories file) and read the actual 'Depends on:' lines for S001-S009 before accepting or rejecting the strict-linear-chain claim.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The evidence gathered is entirely off-target (wrong epics), so there is no verified fact from which to derive a mechanical text correction; a human or a re-scoped probe must supply the real S001-S009 dependency lines before any edit to the artifact can be justified.",
+            "options": [
+              "Re-run the probe scoped to the target epic's own DEF/stories file and re-judge the premise against those real lines",
+              "Treat the premise as unverified and flag it to the author for manual confirmation of the S001-S009 chain",
+              "If the author can confirm from the source artifact directly, accept the premise as-is with a note that automated verification did not cover it"
+            ]
+          }
+        },
+        {
+          "claimId": "fr-inventory-exactly-six",
+          "kind": "inventory",
+          "severity": "LOW",
+          "premise": "The epic defines exactly six epic-level functional requirements, E2026110117123b6d:FR001 through FR006, and no others, in section 2.",
+          "evidence": "grep for E2026110117123b6d:FR00[0-9]+ returns exactly 6 matches, all in docs/epics/.../DEF.md lines 27-32, numbered FR001 through FR006 consecutively with no gaps or extras, matching the premise's claim of exactly six epic-level FRs in section 2.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "constraint-inventory-exactly-six",
+          "kind": "inventory",
+          "severity": "MED",
+          "premise": "The epic defines exactly six constraints, k1 through k6, in the section 5 table, and every acceptance criterion's \"operationalizes\" annotation across all nine stories references only ids drawn from this closed set {k1,k2,k3,k4,k5,k6}.",
+          "evidence": "The k-table grep confirms exactly six constraint rows k1-k6 for docs/epics/add-bugfix-triage-category-insrc-framework-E202609181703991c/DEF.md:29-34, and every operationalizes annotation found in that same file (lines 48,49,61,62,76,77,78,94,95,96,110,111,112 -- ids k1,k2,k3,k4,k6 only, never k7+) stays inside {k1..k6}, so the closed-set claim holds against all evidence gathered. However the evidence shows only FIVE distinct acceptance-criteria groups carrying operationalizes tags in this file (around lines 48-49, 61-62, 76-78, 94-96, 110-112), not nine, and the grep hits no further matches for this file before moving alphabetically to the next epic's DEF.md -- so the premise's 'across all nine stories' count is not supported by the gathered evidence; either the epic has fewer tagged stories than claimed or some stories carry no operationalizes annotation at all.",
+          "action": "Verify the epic's actual story count (and whether every story's ACs carry an operationalizes tag) directly against the epic's Stories section/table rather than relying on the grep's operationalizes hits alone; correct 'nine stories' to the true count if it differs, while the closed-set-to-k1..k6 claim itself needs no change.",
+          "fixability": "assisted",
+          "proposedFix": {
+            "rationale": "The closed-set-membership part of the premise is confirmed by evidence and needs no edit; only the 'nine stories' figure is unverified/possibly wrong, and the evidence given isn't enough to derive the correct number mechanically.",
+            "options": [
+              "Re-check the epic's Stories table/section for the true story count and amend 'nine' if it differs",
+              "Leave as-is if a separate check (not shown in this evidence) confirms nine stories exist, some simply without operationalizes-tagged ACs",
+              "Soften the premise to 'every operationalizes annotation found across the epic's stories' without asserting a specific story count"
+            ]
+          }
+        },
+        {
+          "claimId": "every-constraint-referenced",
+          "kind": "closed-union",
+          "severity": "MED",
+          "premise": "Each of the six constraints k1-k6 defined in section 5 is referenced by at least one acceptance criterion's \"operationalizes\" clause somewhere in section 6, i.e. no constraint is orphaned (defined but never operationalized).",
+          "evidence": "All 300 cited matches (50 per k1..k6, each truncated at the cap) come exclusively from OTHER epics' DEF.md files — e.g. add-bugfix-triage-category-insrc-framework-E202609181703991c/DEF.md, add-build-workflow-insrc-5th-stage-E20260717185807ba/DEF.md, add-daemon-driven-code-review-stage-E20260803761a43a6/DEF.md, complete-consistent-richer-code-index-one-E20261011c2ba6fa6/DEF.md, etc. Not one match is from the artifact this premise's anchors (#5-constraints, #6-stories) actually concern — there is no occurrence of docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md anywhere in the gathered evidence.",
+          "action": "Re-run the operationalizes grep scoped to the specific target document (e.g. `rg \"operationalizes \\`k[1-6]\\`\" docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md`) and re-judge the orphan-constraint premise against those in-document matches only; the repo-wide, cap-truncated search cannot support or refute this premise since `k1`..`k6` are reused as local identifiers across every epic's DEF.md.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The defect is in how evidence was gathered (unscoped, cross-epic grep), not in the artifact's prose, so there is no safe mechanical text edit to the artifact itself. The orphan-constraint check needs to be regathered scoped to the target DEF.md before any verdict (LOW/HIGH) can be assigned.",
+            "options": [
+              "Re-run grep scoped to the target epic's DEF.md and re-judge with real in-document evidence",
+              "Mark this premise could-not-verify in the review record pending a rescoped probe",
+              "Have the author manually enumerate each k1-k6's operationalizes citations within section 6 of this DEF and attach them as the grounding"
+            ]
+          }
+        },
+        {
+          "claimId": "all-constraints-cite-c1",
+          "kind": "cross-artifact",
+          "severity": "HIGH",
+          "premise": "All six constraints (k1-k6) and both assumptions in sections 4 and 5 cite [[c1]] as their sole source, and no constraint or assumption cites a source reference outside the two entries ([[c1]], [[c2]]) listed in section 7 References.",
+          "evidence": "DEF.md:20-23 shows FOUR assumption-style lines (not two), citing [[c1]], [[c2]], [[c3]], [[c2]] respectively — not uniformly [[c1]]. DEF.md:29-34 shows the six constraints k1-k6 citing [[c4]] (k1), [[c5]] (k2), [[c5]] (k3), [[c5]] (k4), [[c4]] (k5), [[c2]] (k6) — NONE of the six cite [[c1]]; zero overlap with the premise's claim. DEF.md:125-131 References section lists SEVEN entries ([[c1]] through [[c7]]), not the two ([[c1]], [[c2]]) the premise asserts, and c3/c4/c5/c6/c7 are each cited elsewhere in the document (lines 22, 29, 31-34, 44, 72, 82, 106).",
+          "action": "Correct the premise to reflect the real citation pattern: section 4 has four assumption entries (not two) citing c1/c2/c3/c2; section 5's six constraints cite c2, c4, and c5 (not c1 at all); and section 7 References lists seven entries (c1-c7), not two. Any downstream task relying on 'uniform sole-source c1 citation' or 'only two references exist' must be re-derived from the actual citation graph.",
+          "fixability": "manual",
+          "proposedFix": {
+            "rationale": "The premise is wrong on three independent, structural facts (assumption count, constraint citation source, reference-list size) rather than one mechanical value, so no single find/replace safely captures the correction without re-authoring the whole claim.",
+            "options": [
+              "Rewrite the premise to state the real pattern: assumptions cite c1/c2/c3 (not solely c1), constraints cite c2/c4/c5 (not c1), and 7 references exist (c1-c7)",
+              "Drop this cross-artifact premise entirely since its core claim (uniform c1 sourcing, only 2 references) does not hold",
+              "Re-scope the premise to only the parts that might have been true (e.g. verify a narrower sub-claim) and drop the universal 'all six' / 'both' / 'only two' quantifiers"
+            ]
+          }
+        },
+        {
+          "claimId": "nongoal-k1-consistency",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Non-goal 3 (\"Add daemon/indexer dependencies to the reusable package\") is semantically consistent with, not contradicted by, constraint k1's requirement of \"independent build/test consumption\" with \"insrc daemon is an adapter host\" — i.e. the reusable module must build/test without the daemon while the daemon only adapts to it.",
+          "evidence": "DEF.md:74 states non-goal 3: \"Add daemon/indexer dependencies to the reusable package. — Independent external applications must consume the feature without insrc startup.\" DEF.md:85 states k1: \"Deliver one self-contained Node/TypeScript module with embedded and standalone IPC modes, public versioned interfaces, injected host dependencies and independent build/test consumption; insrc daemon is an adapter host.\" The non-goal's rationale (consume without insrc startup) and k1's requirements (independent build/test consumption, daemon as adapter host, injected host dependencies) both point the same direction: the reusable module must not depend on daemon/indexer internals, and the daemon only adapts to the module rather than the module depending on it. No wording in either anchor contradicts the other.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        },
+        {
+          "claimId": "story-fr-id-format-consistency",
+          "kind": "cross-artifact",
+          "severity": "LOW",
+          "premise": "Each story's per-story functional requirement id (e.g. E2026110117123b6d:S00N:FR001) is correctly namespaced under the same epic root id E2026110117123b6d used for the epic-level FR001-FR006 ids in section 2, for all nine stories S001-S009.",
+          "evidence": "grep for /E2026110117123b6d:S00[0-9]:FR001/ returns exactly 9 matches, one per story S001–S009, each in docs/epics/.../DEF.md: S001:FR001 (line 36), S002:FR001 (40), S003:FR001 (44), S004:FR001 (48), S005:FR001 (52), S006:FR001 (56), S007:FR001 (60), S008:FR001 (64), S009:FR001 (68). Every per-story FR001 id is namespaced under the same epic root E2026110117123b6d used for the epic-level FR001-FR006 ids, and the S00N segment correctly increments 001 through 009 with no gaps or collisions.",
+          "action": "none — verified sound",
+          "fixability": "manual"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 4,
+        "low": 4
+      },
+      "reviewedAt": "2026-11-01T12:02:05.859Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T12:35:55.142Z",
+    "reviewOverride": {
+      "reason": "User explicitly approved DEF and the review override in chat. The independent review gathered truncated repository-wide evidence from unrelated epics; exact-target verification is recorded in docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/definition-verification.md. It confirms nine stories, valid dependencies, k1-k6 coverage and correct c1/c2 references. Override accepts the evidence-scoping failure, not any implementation or runtime qualification.",
+      "at": "2026-11-01T12:35:55.138Z"
+    }
+  },
+  "body": {
+    "title": "Share project memory across agents and applications",
+    "flavor": "new-capability",
+    "problem": "Project knowledge acquired in a coding conversation does not reliably survive a switch of agent, session or application. Developers repeat instructions, decisions and handoff context; verbose retained transcripts obscure the current rule, while similar or conflicting statements accumulate without clear scope, provenance or lifecycle. Acknowledged context can be lost after a crash, stale context can override corrections or deletions, and applications outside the existing background service cannot depend on a common memory capability without inheriting unrelated runtime dependencies.",
+    "nonGoals": [
+      {
+        "text": "Replace static instruction-file generation, native agent session stores, code indexing or workflow approvals.",
+        "rationale": "These remain authoritative in their existing domains; memory links to them and cannot manufacture permission."
+      },
+      {
+        "text": "Automatic cross-user synchronization, personal profiling, multimodal ingestion or unrestricted import of private histories.",
+        "rationale": "Initial scope is explicit local project memory with privacy and project binding."
+      },
+      {
+        "text": "Add daemon/indexer dependencies to the reusable package.",
+        "rationale": "Independent external applications must consume the feature without insrc startup."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "First delivery targets local single-user projects and supported coding agents; native capture capabilities differ by agent and must be qualified.",
+        "confidence": "high",
+        "source": "c1"
+      },
+      {
+        "text": "Provider and IPC implementations offer adapter candidates, not proof that they can be imported unchanged by an independent package.",
+        "confidence": "med",
+        "source": "c2"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "type": "stakeholder",
+        "source": "c1",
+        "text": "Deliver one self-contained Node/TypeScript module with embedded and standalone IPC modes, public versioned interfaces, injected host dependencies and independent build/test consumption; insrc daemon is an adapter host."
+      },
+      {
+        "id": "k2",
+        "type": "invariant",
+        "source": "c1",
+        "text": "Sessions only submit to a separate durable file queue; one context-builder worker owns every memory-store mutation, receipt and maintenance operation per configured directory. Acknowledge only after durable append; size rotates segments, never discards pending events."
+      },
+      {
+        "id": "k3",
+        "type": "contract",
+        "source": "c1",
+        "text": "Memory authority and vectors use a dedicated LanceDB directory separate from index storage. Replay is at least once with idempotent committed effects and no resurrection after forgetting."
+      },
+      {
+        "id": "k4",
+        "type": "invariant",
+        "source": "c1",
+        "text": "Normalize, deduplicate and compress without losing scope, polarity, conditions, authority or provenance. Support expansion, supersession, conflict, expiry and deletion; similarity alone cannot establish equivalence."
+      },
+      {
+        "id": "k5",
+        "type": "convention",
+        "source": "c1",
+        "text": "Inject inference and local embedding interfaces; insrc adapters enforce existing role policy, serial model execution and cloud access only through installed CLI providers. No direct cloud REST from the core."
+      },
+      {
+        "id": "k6",
+        "type": "contract",
+        "source": "c1",
+        "text": "Host validates project/session identity and privacy eligibility before durable capture. insrc binds to registered repos; external applications supply explicit binding. Embedded/IPC parity includes lifecycle, readiness, ownership, errors, retries and operation barriers."
+      }
+    ],
+    "summary": {
+      "audience": "product",
+      "prose": "Deliver a reusable shared project memory feature that keeps concise, traceable and current context available across coding agents and applications. Applications can host it directly or connect to an independent local service with equivalent behavior. Accepted submissions survive restart, and corrections and forgetting remain effective across replay."
+    },
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Host memory inside an external application",
+        "userValue": "An application can use shared memory without adopting the insrc runtime.",
+        "dependsOn": [],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an external application supplies project identity, providers, policy and isolated storage paths",
+            "when": "it imports and opens the memory module",
+            "then": "import has no side effects, readiness is explicit and the application can use the public memory service without starting insrc",
+            "operationalizes": [
+              "k1",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "two hosts target the same memory directory",
+            "when": "the second tries to open a writer",
+            "then": "it is refused; distinct directories operate independently and closing memory preserves host-owned provider resources",
+            "operationalizes": [
+              "k1",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "An application can use shared memory without adopting the insrc runtime."
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Accept project memory durably and recover interrupted ingestion",
+        "userValue": "An accepted submission remains available after a crash.",
+        "dependsOn": [
+          "s1"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "eligible submissions arrive from concurrent sessions",
+            "when": "the service acknowledges acceptance and then terminates unexpectedly",
+            "then": "each accepted complete event is recoverable with stable identity and ordering; a retry cannot create duplicate logical events",
+            "operationalizes": [
+              "k2",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "pending events exhaust the configured disk budget",
+            "when": "new submissions arrive or queue files reach their size threshold",
+            "then": "files rotate safely, pending work is retained and admission applies visible backpressure; truncated tails and corruption yield explicit recovery outcomes",
+            "operationalizes": [
+              "k2",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "An accepted submission remains available after a crash."
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Keep current memory and processing outcomes consistent through replay",
+        "userValue": "A correction or forgotten memory cannot be undone by a restart.",
+        "dependsOn": [
+          "s2"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "an event changes canonical memory and processing status",
+            "when": "execution fails before or after the durable commit boundary",
+            "then": "recovery exposes either the prior state or the complete committed result and retries do not repeat committed effects",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "an existing record is corrected, superseded, expired or forgotten",
+            "when": "old events replay or concurrent clients submit stale revisions",
+            "then": "revision and deletion boundaries hold, lineage remains inspectable as allowed by retention, and operation status distinguishes pending, committed, failed and cleanup-pending",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "memory and code indexes use separate directories",
+            "when": "either subsystem is reset or rebuilt",
+            "then": "the other subsystem and pending memory submissions remain intact",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A correction or forgotten memory cannot be undone by a restart."
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Normalize and compress shared context without losing meaning",
+        "userValue": "Repeated statements produce concise current memory with reliable scope.",
+        "dependsOn": [
+          "s3"
+        ],
+        "sizeEstimate": "XL",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "equivalent directives and supporting evidence arrive from different agents",
+            "when": "normalization processes them",
+            "then": "one canonical instruction is active with deduplicated supporting evidence, while conditions, negation, scope, identifiers and source authority are preserved",
+            "operationalizes": [
+              "k4",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a new statement expands, contradicts or explicitly overrides prior context",
+            "when": "reconciliation runs",
+            "then": "it distinguishes expansion, conflict and authorized supersession; unresolved ambiguity is visible and similarity alone cannot merge or override",
+            "operationalizes": [
+              "k4",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "inference fails or its proposed compression loses material meaning",
+            "when": "the worker processes the event",
+            "then": "it retries or exposes a qualified failure without activating the lossy result, and all model work respects provider policy",
+            "operationalizes": [
+              "k4",
+              "k5",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Repeated statements produce concise current memory with reliable scope."
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Recall compact current context and explain its sources",
+        "userValue": "A new session receives relevant instructions and handoff context without replaying a verbose transcript.",
+        "dependsOn": [
+          "s4"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a project has directives, handoff facts and bounded historical evidence",
+            "when": "a client asks for context or searches for an exact identifier or paraphrase",
+            "then": "results are scoped, compact and source-traceable; mandatory directives are not silently omitted and overflow or degraded retrieval is explicit",
+            "operationalizes": [
+              "k3",
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a correction or forget operation has committed",
+            "when": "a reader requests context using an operation barrier or previously cached view",
+            "then": "the result reflects the committed generation, excludes invalidated memory and does not persist read-side effects outside the command path",
+            "operationalizes": [
+              "k3",
+              "k4",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "a user inspects an item",
+            "when": "they request its provenance or correction status",
+            "then": "source spans, lineage, authority, conflicts and actual operation state are visible without exposing prohibited source material",
+            "operationalizes": [
+              "k3",
+              "k4",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "A new session receives relevant instructions and handoff context without replaying a verbose transcript."
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Use the same memory feature through an independent local service",
+        "userValue": "Applications can connect to memory without embedding its execution or running insrc.",
+        "dependsOn": [
+          "s5"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "the insrc daemon is stopped",
+            "when": "a standalone memory process starts and an external IPC client connects",
+            "then": "capture, context/search, inspection, correction, forgetting and status behave equivalently to embedded mode",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a connection drops after submission or protocol versions differ",
+            "when": "the client reconnects and retries or sends an incompatible request",
+            "then": "event identity and commit barriers are preserved, unsupported contracts fail explicitly, and endpoint access and request validation remain enforced",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "accepted work exists when shutdown or forced termination occurs",
+            "when": "the service stops and restarts",
+            "then": "readiness, drain and shutdown outcomes are explicit, resources release safely and accepted unfinished work remains recoverable",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Applications can connect to memory without embedding its execution or running insrc."
+          }
+        ]
+      },
+      {
+        "id": "s7",
+        "title": "Carry shared memory between insrc-managed agents",
+        "userValue": "Switching coding agents in insrc preserves project instructions and handoff context.",
+        "dependsOn": [
+          "s6"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a registered project runs managed Claude, Codex, Vibe or Ollama sessions",
+            "when": "a session submits eligible attributed context and another provider begins work",
+            "then": "the shared instruction and compact handoff are delivered through the common feature without partitioning by agent identity or opening storage in clients",
+            "operationalizes": [
+              "k1",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "a temporary/private execution, ambiguous project or detached client is encountered",
+            "when": "capture or delivery is attempted",
+            "then": "privacy eligibility is enforced before durable persistence, missing binding is explicit and no hook reports acceptance or context delivery without evidence",
+            "operationalizes": [
+              "k1",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the host is VS Code, JetBrains or CLI/MCP",
+            "when": "it inspects or changes memory through its supported integration",
+            "then": "payload meaning and operation states agree; the deprecated insrc-ide fork is excluded",
+            "operationalizes": [
+              "k1",
+              "k5",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Switching coding agents in insrc preserves project instructions and handoff context."
+          }
+        ]
+      },
+      {
+        "id": "s8",
+        "title": "Share memory with independently running coding CLIs",
+        "userValue": "Native coding sessions can participate with truthful support and capture status.",
+        "dependsOn": [
+          "s7"
+        ],
+        "sizeEstimate": "XL",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "a supported installed CLI version has qualified hook or MCP capabilities",
+            "when": "an independent Claude, Codex or Vibe session starts, resumes, compacts, interrupts or completes",
+            "then": "eligible deltas and context delivery use the qualified adapter, have stable source identities and do not duplicate managed capture",
+            "operationalizes": [
+              "k1",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "required hook support or ingress is unavailable",
+            "when": "native integration attempts capture or mandatory context delivery",
+            "then": "capability limitations and not-captured/not-delivered states are visible; any fallback is explicitly durable and does not claim universal automatic per-turn support",
+            "operationalizes": [
+              "k1",
+              "k5",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Native coding sessions can participate with truthful support and capture status."
+          }
+        ]
+      },
+      {
+        "id": "s9",
+        "title": "Maintain and evaluate memory without weakening deletion or authority",
+        "userValue": "Memory stays correct and bounded as evidence ages and processing changes.",
+        "dependsOn": [
+          "s8"
+        ],
+        "sizeEstimate": "L",
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "retention, expiry, migration, re-embedding or physical forgetting is requested",
+            "when": "maintenance executes or restarts after interruption",
+            "then": "the sole writer preserves receipts, replay and tombstone boundaries; logical deletion and physical purge are separately reported including backup limitations",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "candidate lessons or duplicate consolidation arise",
+            "when": "maintenance proposes active memory",
+            "then": "evidence remains source-qualified, uncertain lessons do not gain directive authority and meaningful qualifiers survive",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4",
+              "k5",
+              "k6"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "the full feature is ready for release",
+            "when": "the behavioral, crash and quality evaluation suites run",
+            "then": "embedded/IPC parity, privacy, isolation, exact and semantic recall, false-merge resistance and compression fidelity have recorded evidence with unresolved limitations explicit",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k4",
+              "k5",
+              "k6"
+            ]
+          }
+        ],
+        "functionalRequirements": [
+          {
+            "statement": "Memory stays correct and bounded as evidence ages and processing changes."
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E2026110117123b6d:FR001",
+          "statement": "Project context is available across supported agents with current scoped instructions, compact handoffs and inspectable historical evidence.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026110117123b6d:FR002",
+          "statement": "Semantically equivalent statements share one canonical memory while distinct scope and unresolved conflicts remain explicit.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026110117123b6d:FR003",
+          "statement": "Durably accepted submissions survive interruption and can be retried without duplicate memory effects.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026110117123b6d:FR004",
+          "statement": "Users can inspect, correct, expand, supersede, expire and forget memory with visible asynchronous processing status.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026110117123b6d:FR005",
+          "statement": "External applications can use the complete memory feature embedded or through an independent local IPC service without the insrc daemon.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026110117123b6d:FR006",
+          "statement": "Privacy exclusions, project isolation and deletion boundaries hold across capture, retrieval, caches, replay and cleanup.",
+          "scope": "doc"
+        },
+        {
+          "id": "E2026110117123b6d:S001:FR001",
+          "statement": "An application can use shared memory without adopting the insrc runtime.",
+          "scope": "item",
+          "itemRef": "s1"
+        },
+        {
+          "id": "E2026110117123b6d:S002:FR001",
+          "statement": "An accepted submission remains available after a crash.",
+          "scope": "item",
+          "itemRef": "s2"
+        },
+        {
+          "id": "E2026110117123b6d:S003:FR001",
+          "statement": "A correction or forgotten memory cannot be undone by a restart.",
+          "scope": "item",
+          "itemRef": "s3"
+        },
+        {
+          "id": "E2026110117123b6d:S004:FR001",
+          "statement": "Repeated statements produce concise current memory with reliable scope.",
+          "scope": "item",
+          "itemRef": "s4"
+        },
+        {
+          "id": "E2026110117123b6d:S005:FR001",
+          "statement": "A new session receives relevant instructions and handoff context without replaying a verbose transcript.",
+          "scope": "item",
+          "itemRef": "s5"
+        },
+        {
+          "id": "E2026110117123b6d:S006:FR001",
+          "statement": "Applications can connect to memory without embedding its execution or running insrc.",
+          "scope": "item",
+          "itemRef": "s6"
+        },
+        {
+          "id": "E2026110117123b6d:S007:FR001",
+          "statement": "Switching coding agents in insrc preserves project instructions and handoff context.",
+          "scope": "item",
+          "itemRef": "s7"
+        },
+        {
+          "id": "E2026110117123b6d:S008:FR001",
+          "statement": "Native coding sessions can participate with truthful support and capture status.",
+          "scope": "item",
+          "itemRef": "s8"
+        },
+        {
+          "id": "E2026110117123b6d:S009:FR001",
+          "statement": "Memory stays correct and bounded as evidence ages and processing changes.",
+          "scope": "item",
+          "itemRef": "s9"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": "docs/reqs/shared-project-memory.html",
+      "quotedText": "The same core MUST run embedded in a host process or in an independent process accessed through IPC."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles",
+      "quotedText": "Lance imports local config, paths, logging and connection persistence (70 incoming/28 outgoing graph edges)."
+    }
+  ]
+}

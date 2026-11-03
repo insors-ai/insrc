@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: upsertEntities persists vectors to entity_vec when embedding is non-empty
+ok 1 - upsertEntities persists vectors to entity_vec when embedding is non-empty
+  ---
+  duration_ms: 247.610792
+  type: 'test'
+  ...
+# Subtest: upsertEntities skips Lance write when embedding is empty
+ok 2 - upsertEntities skips Lance write when embedding is empty
+  ---
+  duration_ms: 237.7605
+  type: 'test'
+  ...
+# Subtest: upsertEntities re-embed (existing entity, new vector) replaces the Lance row
+ok 3 - upsertEntities re-embed (existing entity, new vector) replaces the Lance row
+  ---
+  duration_ms: 256.249584
+  type: 'test'
+  ...
+# Subtest: updateEmbedding persists vector to entity_vec
+ok 4 - updateEmbedding persists vector to entity_vec
+  ---
+  duration_ms: 241.459334
+  type: 'test'
+  ...
+# Subtest: updateEmbedding on unknown entity is silent no-op
+ok 5 - updateEmbedding on unknown entity is silent no-op
+  ---
+  duration_ms: 215.18525
+  type: 'test'
+  ...
+# Subtest: updateEmbedding with empty embedding only updates LMDB model field
+ok 6 - updateEmbedding with empty embedding only updates LMDB model field
+  ---
+  duration_ms: 202.478292
+  type: 'test'
+  ...
+# Subtest: searchEntities returns hydrated Entity objects via Lance ANN
+ok 7 - searchEntities returns hydrated Entity objects via Lance ANN
+  ---
+  duration_ms: 267.211459
+  type: 'test'
+  ...
+# Subtest: searchEntities returns [] for empty query vector
+ok 8 - searchEntities returns [] for empty query vector
+  ---
+  duration_ms: 195.795625
+  type: 'test'
+  ...
+# Subtest: searchEntities returns [] for empty closure
+ok 9 - searchEntities returns [] for empty closure
+  ---
+  duration_ms: 219.979875
+  type: 'test'
+  ...
+# Subtest: searchEntities respects closure-repo scope
+ok 10 - searchEntities respects closure-repo scope
+  ---
+  duration_ms: 249.0255
+  type: 'test'
+  ...
+# Subtest: deleteEntitiesForFile cascades Lance rows
+ok 11 - deleteEntitiesForFile cascades Lance rows
+  ---
+  duration_ms: 224.75325
+  type: 'test'
+  ...
+# Subtest: deleteEntitiesForRepo cascades all Lance rows for the repo
+ok 12 - deleteEntitiesForRepo cascades all Lance rows for the repo
+  ---
+  duration_ms: 309.700708
+  type: 'test'
+  ...
+# Subtest: reindexFile cascades Lance rows for tombstoned entities
+ok 13 - reindexFile cascades Lance rows for tombstoned entities
+  ---
+  duration_ms: 270.925083
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3473.540125

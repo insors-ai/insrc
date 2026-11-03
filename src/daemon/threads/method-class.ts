@@ -33,16 +33,20 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['daemon.update', 'admin', false],
 	['daemon.updateOutcome', 'admin', false],
 	['repo.list', 'admin', false],
+	['mcp.status', 'admin', false],
 	['config.show', 'admin', false],
 	['config.catalog', 'admin', false],
 	['guide.list', 'admin', false],
 	['guide.get', 'admin', false],
 	// Indexing: they change or scan the whole index, or read the queue.
 	['repo.add', 'indexing', false],
+	['mcp.register', 'indexing', false],
 	['repo.remove', 'indexing', false],
 	['repo.reindex', 'indexing', false],
 	['repo.stats', 'indexing', false],
 	['index.file', 'indexing', false],
+	['index.languages', 'indexing', false],
+	['index.subsystems', 'indexing', false],
 	['config.enqueue', 'indexing', false],
 	['config.reindex', 'indexing', false],
 	['daemon.compact', 'indexing', false],
@@ -128,6 +132,8 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['db.connections.v2.mutate', 'session', false],
 	['db.connections.v2.read', 'session', false],
 	['db.connections.v2.status', 'session', false],
+ ['db.connections.v2.removalState', 'session', false],
+ ['db.connections.v2.retryRemovalCleanup', 'session', false],
 	['db.connections.v2.test', 'session', false],
 	['db.connections.v2.cancelTest', 'session', false],
 	['db.connections.v2.ticket', 'session', false],
@@ -171,6 +177,9 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['providers.getConfig', 'session', false],
 	['models.definitions', 'session', false],
 	['models.resolveRole', 'session', false],
+	['models.check', 'session', false],
+	['models.approve', 'session', false],
+	['models.reject', 'session', false],
 	['providers.listModels', 'session', false],
 	['providers.setConfig', 'session', false],
 	['providers.testKey', 'session', false],
@@ -294,6 +303,63 @@ export const methodClasses: MethodClassRegistry = Object.freeze({
 	entries: (): readonly MethodClassEntry[] => ENTRIES,
 });
 
+/**
+ * The session-class families whose state is one process-wide copy (s3): chat (the chat session pool), todos (the todos event bus)
+ * and understanding (the understanding service); and (Story 5d393a4b) models, whose checks run one at a time and are decided by a
+ * later call, and codeReview, whose running operations later turns look up.
+ */
+const SHARED_STATE_FAMILIES = ['chat.', 'todos.', 'understanding.', 'models.', 'codeReview.'] as const;
+
+/** The session-class methods served on the one shared-state worker (s3), so their state stays whole. */
+export const SHARED_STATE_METHODS: ReadonlySet<string> = new Set(
+	ENTRIES.filter(e => e.cls === 'session' && SHARED_STATE_FAMILIES.some(f => e.method.startsWith(f))).map(e => e.method),
+);
+
+/** The step.call tools served on the shared-state worker (Story 5d393a4b): the code-review step's turns reach the operations codeReview.run started there. */
+export const SHARED_STATE_STEP_TOOLS: ReadonlySet<string> = new Set(['insrc_code_review_step']);
+
+/** Whether a session-class request is served on the shared-state worker: a shared-state method, or step.call for a shared-state step tool. */
+export function servedOnSharedState(method: string, params: unknown): boolean {
+	if (SHARED_STATE_METHODS.has(method)) return true;
+	const tool = method === 'step.call' && typeof params === 'object' && params !== null ? (params as { tool?: unknown }).tool : undefined;
+	return typeof tool === 'string' && SHARED_STATE_STEP_TOOLS.has(tool);
+}
+
+/**
+ * The session-class methods a session's FIFO does not hold back (s3): subscriptions, and
+ * methods that observe or control a request of the same session that is still running.
+ */
+export const FIFO_EXEMPT_METHODS: ReadonlySet<string> = new Set([
+	'understanding.watch', 'todos.subscribe',
+	'chat.cancel', 'chat.inject', 'chat.redirect', 'chat.status',
+	'workflow.run.poll', 'workflow.run.abort',
+]);
+
+/** Methods the shared-state worker serves to in-daemon calls only; the socket answers them 'unknown method' (s3). */
+export const IN_DAEMON_SHARED_METHODS: ReadonlySet<string> = new Set(['chat.dropSession']);
+
+/** What a thread's in-daemon route knows: the classes routed to workers, and whether it is the shared-state worker. */
+export interface InDaemonRouteView {
+	readonly routed: ReadonlySet<MethodClass>;
+	readonly onSharedWorker: boolean;
+}
+
+/**
+ * Where a nested in-daemon call runs (s3): an admin or indexing method on its class's worker
+ * when that class is routed; a shared-state method on the shared-state worker once session
+ * work is routed, unless this is that worker; anything else inline, on the calling thread.
+ */
+export function inDaemonTarget(method: string, view: InDaemonRouteView): { readonly cls: MethodClass; readonly shared?: true } | undefined {
+	const cls = methodClasses.classOf(method);
+	if (cls !== undefined && cls !== 'session' && view.routed.has(cls)) return { cls };
+	const shared = SHARED_STATE_METHODS.has(method) || IN_DAEMON_SHARED_METHODS.has(method);
+	if (shared && view.routed.has('session') && !view.onSharedWorker) return { cls: 'session', shared: true };
+	return undefined;
+}
+
+/** Served on the main thread, which owns their state and pushes it to every worker (Story 5d393a4b): the IDE's tool settings. */
+export const MAIN_THREAD_STATE_METHODS: ReadonlySet<string> = new Set(['tools.config.set']);
+
 /** These operations own process-local admission and transport lifetimes. */
 export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'workflow.approve', 'workflow.approvePipeline',
@@ -301,6 +367,7 @@ export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
  'db.connections.v2.capabilities','db.connections.v2.drivers','db.connections.v2.list','db.connections.v2.read',
  'db.connections.v2.ticket','db.connections.v2.mutate','db.connections.v2.status','db.connections.v2.activate',
  'db.connections.v2.test','db.connections.v2.cancelTest',
+ 'db.connections.v2.removalState','db.connections.v2.retryRemovalCleanup',
  'db.connections.v2.session.open','db.connections.v2.session.resume','db.connections.v2.session.attach',
  'db.connections.v2.session.delegate','db.connections.v2.session.heartbeat','db.connections.v2.session.end',
 ]);

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.steering.SteeringInjectionIntegrationTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.078">
+  <properties/>
+  <testcase name="testProjectOpen_writesRulesDelimitedSteeringIntoHostRulesFilePath_ac1" classname="ai.insors.insrc.jetbrains.steering.SteeringInjectionIntegrationTest" time="0.025"/>
+  <testcase name="testBothHostsPresent_eachGetsSteeringInOwnRulesFilePath_ac3" classname="ai.insors.insrc.jetbrains.steering.SteeringInjectionIntegrationTest" time="0.029"/>
+  <testcase name="testPreExistingDeveloperContent_preservedByteForByte_onlyInsrcSectionChanged_ac2" classname="ai.insors.insrc.jetbrains.steering.SteeringInjectionIntegrationTest" time="0.024"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

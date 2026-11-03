@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.freshness.LastSeenPluginVersionStoreTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.001">
+  <properties/>
+  <testcase name="an empty recorded value reads back as null (treated as no prior version)()" classname="ai.insors.insrc.jetbrains.freshness.LastSeenPluginVersionStoreTest" time="0.001"/>
+  <testcase name="getState-loadState round-trips the lastSeenPluginVersion()" classname="ai.insors.insrc.jetbrains.freshness.LastSeenPluginVersionStoreTest" time="0.0"/>
+  <testcase name="getLastSeen is null before any write and returns the value after setLastSeen()" classname="ai.insors.insrc.jetbrains.freshness.LastSeenPluginVersionStoreTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

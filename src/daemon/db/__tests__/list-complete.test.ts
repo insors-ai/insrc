@@ -217,7 +217,11 @@ test("the table listing of sqlite, pg and mysql applies no clamp in the complete
 		assert.deepEqual(await etcd.listNamespaces({ complete: true }), etcdDefault, 'etcd: the same sample with the mode');
 		assert.deepEqual([etcdDefault.namespaces.length, etcdDefault.truncated], [200, true], 'etcd: 200 prefixes of a sample that was cut');
 		const redisKeys = Array.from({ length: 7000 }, (_, i) => `svc${i % 300}:k${i}`);
-		const redis = standIn(RedisDriver.prototype, { client: { scan: async (cursor: string) => {
+		const redis = new RedisDriver('listing-fixture', 'redis', 'redis://127.0.0.1:1', { id: 'listing-fixture', kind: 'redis', url: 'redis://127.0.0.1:1' });
+		const idleClient = (redis as unknown as { client: { disconnect(): void } }).client; idleClient.disconnect();
+		Object.assign(redis, {
+			client: {
+				status: 'ready', scan: async (cursor: string) => {
 			const from = Number(cursor);
 			const batch = redisKeys.slice(from, from + 500);
 			return [from + 500 >= redisKeys.length ? '0' : String(from + 500), batch];

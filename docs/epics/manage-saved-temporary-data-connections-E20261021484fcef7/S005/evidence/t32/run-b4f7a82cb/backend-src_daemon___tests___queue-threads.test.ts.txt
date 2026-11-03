@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: the code-busy and stopping words track the index lane and stop()
+ok 1 - the code-busy and stopping words track the index lane and stop()
+  ---
+  duration_ms: 6.331708
+  type: 'test'
+  ...
+# Subtest: pause() resolves once no job is in flight and no job starts until resume()
+ok 2 - pause() resolves once no job is in flight and no job starts until resume()
+  ---
+  duration_ms: 2.183125
+  type: 'test'
+  ...
+# Subtest: every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged
+ok 3 - every lane change publishes the lane's depth and processing, and lane order and the summary yield are unchanged
+  ---
+  duration_ms: 1.36475
+  type: 'test'
+  ...
+# Subtest: a pause() whose resume() came first still resolves only once the job in flight has finished, never before
+ok 4 - a pause() whose resume() came first still resolves only once the job in flight has finished, never before
+  ---
+  duration_ms: 1.38025
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 346.62475

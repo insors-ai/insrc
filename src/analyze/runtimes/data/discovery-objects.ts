@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -155,10 +156,7 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 							what: 'files', limit: FILE_LIST_LIMIT, scope: 'source',
 							reason: `the file listing stops at ${FILE_LIST_LIMIT} files; how many more the connection holds is not known`,
 						});
-						log.warn(
-							{ runId: args.runId, taskId: args.task.taskId, connectionId, limit: FILE_LIST_LIMIT },
-							'file listing truncated; raise FILE_LIST_LIMIT if downstream needs the full set',
-						);
+						captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, taskId: args.task.taskId, connectionId, limit: FILE_LIST_LIMIT }, 'file listing truncated; raise FILE_LIST_LIMIT if downstream needs the full set']);
 					}
 					void (driver as FileDriver);
 					break;
@@ -180,17 +178,14 @@ export const dataDiscoveryObjectsRuntime: TemplateRuntime = {
 				return ka < kb ? -1 : ka > kb ? 1 : 0;
 			});
 
-			log.info(
-				{
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 					runId:        args.runId,
 					taskId:       args.task.taskId,
 					connectionId,
 					driverFamily: driver.family,
 					kindFilter:   kindFilter ?? '(none)',
 					objectCount:  filtered.length,
-				},
-				'data.discovery.objects: enumerated',
-			);
+			}, 'data.discovery.objects: enumerated']);
 
 			return {
 				outputs: new Map<string, unknown>([['objects', filtered]]),

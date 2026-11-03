@@ -1,0 +1,408 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793514227546-4iy7v6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T07:02:58.354Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 2350801,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "866873cab2dedcc7",
+    "epicSlug": "write-versioned-marker-delimited-insrc-steering",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793514227546-4iy7v6",
+    "hldEffectiveHash": "866873cab2dedcc72545f64c97958101db8ab87151855f1f9afb2a763e949600",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One cohesive change in the daemon's MCP registration (src/daemon/mcp-register.ts): when the vibe client is registered, ensure the user-level ~/.vibe/AGENTS.md carries the insrc steering block between insrc:steering markers, replacing any existing marked block so re-registration and future releases update it in place instead of duplicating. Clear approach, a handful of files plus tests; no design ceremony beyond that.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The four acceptance criteria (ac1 replace-on-reregistration-no-duplicate, ac2 asset-change-updates-content, ac3 surrounding-content-byte-identical, ac4 idempotent-second-call-writes-nothing) each map to a real, passing unit test in src/daemon/__tests__/mcp-register.test.ts, and no out-of-scope capability (e.g. project-level AGENTS.md/CLAUDE.md writing, versioning tokens) was added.",
+          "evidence": "mcp-register.test.ts contains 'creates AGENTS.md ... idempotent on second call' (ac4), 'replaces only the marked span on re-registration (future release updates content in place), preserves surrounding user content' (ac1/ac2/ac3), and 'malformed markers ... guarded no-op' — these exercise create/replace/idempotent/preserve exactly as the LLD's acceptance-mapping table (section 6) states; no project-level write or version-token logic was added anywhere in mcp-register.ts.",
+          "action": "none — coverage matches stated intent.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Before this Story, nothing wrote the user-level ~/.vibe/AGENTS.md, and vibe has no `mcp list` (pre-checked via config.toml instead), as the HLD-context paragraph states.",
+          "evidence": "clientPlans() in src/daemon/mcp-register.ts gives vibe no `listArgs` (only claude/codex have one), confirming the no-`mcp list` claim; a repo-wide grep for 'AGENTS.md' shows every other reference (steering-inject.ts, ReposPane.tsx, command.ts, repo.ts) is about the project-level repo AGENTS.md, not ~/.vibe/AGENTS.md — upsertVibeAgentsSteering (this Story's new function) is the only code that reads/writes the user-level file.",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Section 2.2 names `vibeAgentsSteeringBlock: () => string` as a contract function of this Story, reading the shipped `prompts/steering-block.md` asset.",
+          "evidence": "No such function exists anywhere in the source tree (grep for `vibeAgentsSteeringBlock` only matches the LLD.md and its JSON artifact, never a `.ts` file). The actual implementation has no new asset-reading function at all: `upsertVibeAgentsSteering` in src/daemon/mcp-register.ts:201-213 uses `const block = deps.steeringBlockText ?? readSteeringBlock;` — it reuses the existing `readSteeringBlock` from steering-inject.ts directly through an optional seam, exactly as section 3.1 separately (and correctly) describes. Section 2.2 documents a contract member that was never built and that contradicts the Story's own 'reused, not new' framing in section 3.1. [files: src/daemon/mcp-register.ts, docs/standalone/write-versioned-marker-delimited-insrc-steering-E20261101866873ca/S001/LLD.md]",
+          "action": "Drop section 2.2 (or rename it to document the `steeringBlockText` seam + its `readSteeringBlock` default) so the contract table matches what was actually built.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "Section 4's shared-contract row states 'registerMcpClients calls upsertVibeAgentsSteering on the vibe path after the MCP outcome'.",
+          "evidence": "In `registerOne` (src/daemon/mcp-register.ts:324-397), the vibe steering upsert block (lines 340-347) runs immediately after the `entrypointExists` check and BEFORE the idempotency pre-check (`listArgs`/`repoPath` branch) and the `add` call that actually produce the 'registered'/'unchanged'/'failed' MCP outcome — i.e. before, not after, the outcome is known. [files: src/daemon/mcp-register.ts]",
+          "action": "Correct the sequencing description in section 4 to 'before the MCP registration outcome is determined' so a reader relying on the contract table for ordering isn't misled.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "VIBE_HOME is honored consistently for both the read and write defaults of the new AGENTS.md seams (invariant [[c1]]).",
+          "evidence": "`defaultVibeHome()` (mcp-register.ts:115-117) resolves `process.env['VIBE_HOME'] ?? join(homedir(), '.vibe')`; `upsertVibeAgentsSteering`'s default read path (`defaultVibeAgentsMdText(home())`, line 203) and default write path (`writeFileSync(join(home(), 'AGENTS.md'), ...)`, line 204) both call the same `home` function, so a read and a write in the same invocation always target the same directory.",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The Story reuses the existing marker constants/upsert logic owned by the prior steering-inject Story without redesigning that shared contract.",
+          "evidence": "git status shows only src/daemon/mcp-register.ts and its test modified for this change; src/daemon/steering-inject.ts (owner of STEERING_MARKER_START/END and upsertMarkedSection) is untouched, and mcp-register.ts imports `readSteeringBlock`/`upsertMarkedSection` from it unchanged (line 35) rather than forking or altering that module.",
+          "action": "none.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The error-cases table states that when AGENTS.md is absent, the response is to 'create file with heading + marked block', and the edge-case table states an empty file yields 'heading + block written'.",
+          "evidence": "`upsertMarkedSection(null, block)` in steering-inject.ts:119-125 (the function this Story reuses unmodified) returns `content: section + '\\n'` — only the marked span, with no heading of any kind. The Story's own test confirms this: 'upsertVibeAgentsSteering: creates AGENTS.md ... ' (mcp-register.test.ts:141-155) asserts the written text matches `/<!-- insrc:steering:start -->\\nSTEERING BLOCK v1\\n<!-- insrc:steering:end -->/` with no heading text at all. [files: src/daemon/steering-inject.ts, src/daemon/__tests__/mcp-register.test.ts]",
+          "action": "Remove the 'heading +' wording from the error-case and edge-case rows (or state explicitly that no heading is written) so the error-path table matches the reused upsert function's real behavior.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each of the four stated acceptance criteria has a proving test present in the Story's test file, and those tests assert behavior consistent with the real (not the mis-described) implementation.",
+          "evidence": "mcp-register.test.ts contains the create/idempotent test (ac4), the replace-preserves-surrounding-content/asset-change test (ac1/ac2/ac3), plus a malformed-marker guard test and a registerMcpClients-integration test — all pass against the actual `upsertVibeAgentsSteering`/`upsertMarkedSection` behavior (no heading, replace-in-place, VIBE_HOME-seamed).",
+          "action": "none — test coverage itself is sound even though two prose sections (2.2 and the error-case heading claim) are inaccurate.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 3,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T08:06:26.267Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T08:33:46.009Z",
+    "rangeBase": "6e67f713a3dc8357461fcfe22ddcf073835a2bd4",
+    "reviewOverride": {
+      "reason": "User-directed: no more review rounds. Three daemon review rounds completed; every blocking finding was author-fixed in the LLD (round 1: malformed-marker handling aligned to the steering-inject.ts never-clobber convention by reusing upsertMarkedSection; round 2: LLD corrected to the shared insrc:steering markers + shipped asset instead of a phantom versioned marker pair; round 3: phantom vibeAgentsSteeringBlock API entry removed, contract now matches the built code). Implementation: upsertVibeAgentsSteering in mcp-register.ts reusing readSteeringBlock/upsertMarkedSection; 27/27 unit tests green; tsc clean.",
+      "at": "2026-11-01T08:33:46.009Z"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "When vibe is registered as an insrc MCP client, the daemon also ensures the user-level ~/.vibe/AGENTS.md carries the insrc steering block between the shared insrc:steering markers (the same markers and prompts/steering-block.md asset repo.add writes into repo AGENTS.md/CLAUDE.md, via steering-inject.ts's upsertMarkedSection). Re-registration replaces only the marked span: idempotent, and future releases change the block content by shipping a new asset. The repo AGENTS.md insrc:steering block remains the project-level source of truth.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "mcp-register.ts registers the insrc MCP per CLI; vibe has no `mcp list`, so it is pre-checked via config.toml and registered into the repo's .vibe/config.toml (upsertVibeProjectServer) or the user-global config. Nothing wrote ~/.vibe/AGENTS.md, so the insrc:steering-following rule was lost on fresh machines and could not evolve across releases.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "src/daemon/mcp-register.ts vibe registration path + its tests"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "n/a (standalone small)",
+      "nonFunctional": {
+        "security": "write stays inside $VIBE_HOME|~/.vibe; content outside the markers preserved byte-identical"
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "upsertVibeAgentsSteering",
+          "signature": "(deps?: McpRegisterDeps) => 'unchanged' | 'updated'",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "McpRegisterDeps",
+              "purpose": "injected seams; defaults read/write $VIBE_HOME|~/.vibe/AGENTS.md",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "'unchanged' | 'updated'",
+            "meaning": "whether the file was written"
+          },
+          "errors": [
+            {
+              "type": "IOError",
+              "condition": "AGENTS.md unwritable; propagates to the guarded caller"
+            }
+          ],
+          "preconditions": [
+            "vibe plan selected"
+          ],
+          "postconditions": [
+            "exactly one insrc:steering marked block after any call",
+            "content outside the markers byte-identical",
+            "malformed markers -> no write"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "shared insrc:steering markers (steering-inject.ts STEERING_MARKER_START/END)",
+        "change": "new",
+        "details": "<!-- insrc:steering:start --> ... <!-- insrc:steering:end -->; version in the start marker",
+        "callSites": [
+          "src/daemon/mcp-register.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "steering-inject",
+        "role": "consumes",
+        "howDetails": "Reuses steering-inject.ts's pure upsertMarkedSection (marker-delimited replace, never-clobber guards) and readSteeringBlock (shipped prompts/steering-block.md asset) — the same writer repo.add uses for repo AGENTS.md/CLAUDE.md, so the user-level ~/.vibe/AGENTS.md block and repo blocks share one asset and one marker convention; future releases change the asset and the marked span is replaced on next registration."
+      },
+      {
+        "contractId": "mcp-register-deps",
+        "role": "implements",
+        "howDetails": "McpRegisterDeps gains vibeHome / vibeAgentsMdText / writeVibeAgentsMd / steeringBlockText seams; defaults use $VIBE_HOME ?? ~/.vibe. registerOne calls upsertVibeAgentsSteering on the vibe path, guarded so a steering write failure never fails registration."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "AGENTS.md absent or unreadable",
+          "detection": "read seam returns undefined",
+          "response": "create file with the marked steering block; return 'updated'",
+          "userImpact": "none; steering appears on next vibe start",
+          "recoverable": true
+        },
+        {
+          "scenario": "marked block present (any content)",
+          "detection": "exactly one start and one end marker, in order",
+          "response": "replace only the span start..end inclusive; never append a second block",
+          "userImpact": "none",
+          "recoverable": true
+        },
+        {
+          "scenario": "malformed markers (open without close, or duplicates)",
+          "detection": "marker counts differ or out of order",
+          "response": "guarded no-op: file left byte-for-byte untouched, note logged — the same 'never guess, never clobber' convention as steering-inject.ts upsertMarkedSection",
+          "userImpact": "steering not updated this time; de-duplicate manually",
+          "recoverable": true
+        },
+        {
+          "scenario": "AGENTS.md unwritable",
+          "detection": "write throws",
+          "response": "propagate to the guarded caller; registration outcome unaffected, error logged",
+          "userImpact": "steering retried next registration",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "empty file",
+          "expected": "marked block written"
+        },
+        {
+          "input": "file with only the block",
+          "expected": "one block remains"
+        },
+        {
+          "input": "CRLF outside block",
+          "expected": "preserved byte-identical"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "content outside the marked span byte-identical",
+          "source": "c1"
+        },
+        {
+          "text": "exactly one marked block after any call",
+          "source": "c1"
+        },
+        {
+          "text": "same-version second call writes nothing",
+          "source": "c1"
+        },
+        {
+          "text": "VIBE_HOME honored for read and write",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "upsertVibeAgentsSteering via injected seams: create, replace, idempotent, preserve, asset change, unterminated marker, registerMcpClients vibe path invokes it",
+          "subjects": [
+            "src/daemon/__tests__/mcp-register.test.ts"
+          ],
+          "fixturesNeeded": [
+            "in-memory AGENTS.md via seams"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "replace on re-registration, no duplicate"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "asset change updates content"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "surrounding content byte-identical"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "idempotent second call writes nothing"
+          ]
+        }
+      ],
+      "testFramework": "node:test via tsx"
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Append every time",
+        "oneLineSummary": "Append block per registration",
+        "approach": "append at end",
+        "pros": [
+          "simplest"
+        ],
+        "cons": [
+          "duplicates",
+          "frozen"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "not idempotent, not evolvable"
+      },
+      {
+        "id": "a2",
+        "name": "Marker-delimited replace-in-place",
+        "oneLineSummary": "Replace marked span per registration",
+        "approach": "replace span if markers present, else append",
+        "pros": [
+          "idempotent",
+          "evolvable",
+          "preserves content"
+        ],
+        "cons": [
+          "more parsing"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a3",
+        "name": "Write once ever",
+        "oneLineSummary": "Write only when no marker",
+        "approach": "write if absent",
+        "pros": [
+          "never rewrites"
+        ],
+        "cons": [
+          "content frozen forever"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "future releases cannot update"
+      },
+      {
+        "id": "a4",
+        "name": "Project-level only",
+        "oneLineSummary": "No user-level write",
+        "approach": "repo AGENTS.md only",
+        "pros": [
+          "scoped"
+        ],
+        "cons": [
+          "no user-level default"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "does not fix the ask"
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/mcp-register.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/mcp-register.test.ts"
+    }
+  ]
+}

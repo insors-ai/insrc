@@ -1,0 +1,308 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b220bb6174a2f5ed",
+    "storyId": "s3",
+    "createdAt": "2026-10-30T06:40:16.334Z",
+    "updatedAt": "2026-10-30T07:54:20.022Z",
+    "epicCreatedAt": "2026-10-29T16:20:04.352Z",
+    "epicSlug": "run-claude-codex-ollama-models"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "83f7a2625",
+        "ranAt": "2026-10-30T07:54:20.022Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-tiers.test.ts: computeEffectiveTiers marks a host family's served model with its hosting and an undeclared one as notSupported; vendor, plain Ollama and host-less families are unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/model-tiers.test.ts",
+                "title": "model-tiers.test.ts: computeEffectiveTiers marks a host family's served model with its hosting and an undeclared one as notSupported; vendor, plain Ollama and host-less families are unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-tiers.test.ts: resolveTypedModel refuses an unlisted id for a host family and keeps 'check' for a vendor CLI family; switchFamily to the host family takes its first declared model",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/model-tiers.test.ts",
+                "title": "model-tiers.test.ts: resolveTypedModel refuses an unlisted id for a host family and keeps 'check' for a vendor CLI family; switchFamily to the host family takes its first declared model",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/model-tiers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 654,
+            "titles": [
+              {
+                "title": "empty tiering: tiers = the definitions' tier defaults as canonical ids (source default), coreFloor = mid (default)",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiering: a critical role resolves to its core default (source taxonomy), unclamped",
+                "result": "pass"
+              },
+              {
+                "title": "empty tiering: a peripheral role resolves to its taxonomy default (mid/cheap)",
+                "result": "pass"
+              },
+              {
+                "title": "a configured tier model overrides the default and is marked source=config",
+                "result": "pass"
+              },
+              {
+                "title": "a roleTiers override changes the effective tier and is marked source=override",
+                "result": "pass"
+              },
+              {
+                "title": "a critical role overridden below coreFloor is clamped UP to the floor (clamped=true)",
+                "result": "pass"
+              },
+              {
+                "title": "a peripheral role below coreFloor is NEVER clamped",
+                "result": "pass"
+              },
+              {
+                "title": "a roleTiers key that is not a current taxonomy role is surfaced as a stale override",
+                "result": "pass"
+              },
+              {
+                "title": "config dot-path helpers target the right keys",
+                "result": "pass"
+              },
+              {
+                "title": "isTierName guards the tier union",
+                "result": "pass"
+              },
+              {
+                "title": "ROLE_TIERS_PATH is the dotless map key (no role id appended)",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers keeps a dotted role id as a single FLAT key",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers merges into an existing map without disturbing other roles",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers with tier=null clears the override (sparse) and leaves siblings",
+                "result": "pass"
+              },
+              {
+                "title": "nextRoleTiers does not mutate the input map",
+                "result": "pass"
+              },
+              {
+                "title": "model-tiers.test.ts: computeEffectiveTiers over a fake definitions answer, with the daemon's effort precedence",
+                "result": "pass"
+              },
+              {
+                "title": "model-tiers.test.ts: tier edit helpers (family without tierDefaults, effort drop, alias, unserved ids)",
+                "result": "pass"
+              },
+              {
+                "title": "model-tiers.test.ts: computeEffectiveTiers marks a host family's served model with its hosting and an undeclared one as notSupported; vendor, plain Ollama and host-less families are unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "model-tiers.test.ts: resolveTypedModel refuses an unlisted id for a host family and keeps 'check' for a vendor CLI family; switchFamily to the host family takes its first declared model",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "83f7a2625",
+        "ranAt": "2026-10-30T07:53:11.199Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "tui-models.test.ts: 'f' reaches the Ollama-hosted runner and writes its first declared model as a whole tier, labelled cloud or local",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: 'f' reaches the Ollama-hosted runner and writes its first declared model as a whole tier, labelled cloud or local",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tui-models.test.ts: on a host-family tier 'm' and 'e' cycle only declared values, 'n' is hidden and opens nothing, and a model with no efforts says so",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: on a host-family tier 'm' and 'e' cycle only declared values, 'n' is hidden and opens nothing, and a model with no efforts says so",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tui-models.test.ts: an undeclared host-family model shows 'not supported ... will not run'; a vendor unserved model keeps the vendor note",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: an undeclared host-family model shows 'not supported ... will not run'; a vendor unserved model keeps the vendor note",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tui-models.test.ts: a tier saved on the Ollama-hosted runner shows its runner, model, cloud/local label and effort after reload",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/__tests__/tui-models.test.ts",
+                "title": "tui-models.test.ts: a tier saved on the Ollama-hosted runner shows its runner, model, cloud/local label and effort after reload",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/cli/__tests__/tui-models.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8777,
+            "titles": [
+              {
+                "title": "tui-models.test.ts: Model Tiers pane cycles the fake answer's families, models and efforts and writes whole tiers; unserved model has no effort edit; refusals and restart shown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: daemon down shows the not-running message in the Model Tiers pane and Setup",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: unknown model check, approve then restart then save, reject, runs:false",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: interrupted check and outcome-unknown decision",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: repo models view edits only tasks and coreFloor",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: Model Tiers pane retries after the daemon starts, names an older daemon, shows aliases and an effort the model does not take",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: check screen recovers from an expired check, offers an already-served id as a pick, reports the restart a save needs, and holds while restarting",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: an edit waits for the previous save to reload; a save whose connection drops is read back; an older daemon refusing the check is named",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: a lost connection reads as daemon down; r waits for a pending repo save; an unreadable read-back is reported as unknown",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: 'f' reaches the Ollama-hosted runner and writes its first declared model as a whole tier, labelled cloud or local",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: on a host-family tier 'm' and 'e' cycle only declared values, 'n' is hidden and opens nothing, and a model with no efforts says so",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: an undeclared host-family model shows 'not supported ... will not run'; a vendor unserved model keeps the vendor note",
+                "result": "pass"
+              },
+              {
+                "title": "tui-models.test.ts: a tier saved on the Ollama-hosted runner shows its runner, model, cloud/local label and effort after reload",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "304f3fc8d",
+        "ranAt": "2026-10-30T06:49:02.199Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-literal-scan.test.ts: every CLI family id of the shipped definitions, including ollama-claude and cli-vibe, is flagged outside the owners",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: every CLI family id of the shipped definitions, including ollama-claude and cli-vibe, is flagged outside the owners",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/model-literal-scan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2250,
+            "titles": [
+              {
+                "title": "model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story",
+                "result": "pass"
+              },
+              {
+                "title": "model-literal-scan.test.ts: the scan covers src/cli and the recommender",
+                "result": "pass"
+              },
+              {
+                "title": "model-literal-scan.test.ts: every CLI family id of the shipped definitions, including ollama-claude and cli-vibe, is flagged outside the owners",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

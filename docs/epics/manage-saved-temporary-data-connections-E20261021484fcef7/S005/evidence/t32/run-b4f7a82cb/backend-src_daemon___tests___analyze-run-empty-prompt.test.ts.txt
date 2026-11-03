@@ -1,0 +1,74 @@
+TAP version 13
+# Subtest: an empty prompt with a stated kind of source is accepted and gives an unfocused intent; with none it is refused with the new message
+ok 1 - an empty prompt with a stated kind of source is accepted and gives an unfocused intent; with none it is refused with the new message
+  ---
+  duration_ms: 266.290291
+  type: 'test'
+  ...
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-code-159e3488"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-data-175b7afd"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-infra-1346370e"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-generic-3d8f003"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-docs-137c61d2"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# Subtest: a prompt of only white space is accepted with and without a stated kind of source (mutation: treat white space as empty at the parser)
+ok 2 - a prompt of only white space is accepted with and without a stated kind of source (mutation: treat white space as empty at the parser)
+  ---
+  duration_ms: 237.416166
+  type: 'test'
+  ...
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-d1ac038"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-hinted-7c5c3e2"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-32661069"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-hinted-22d8f621"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-2df65f49"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-hinted-e8e2eb0"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-2c5403dc"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+# [04:39:47] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "empty-prompt-ws-hinted-33adb058"
+#     [35mmessage[39m: "stand-in: the request was accepted"
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1208.072584

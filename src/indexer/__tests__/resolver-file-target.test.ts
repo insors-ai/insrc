@@ -112,6 +112,6 @@ test('a Pass 1 rewire carries the repository and the importing file\'s absolute 
 	const byId = new Map<string, Entity>([['f1', { id: 'f1', kind: 'file', file } as Entity]]);
 	assert.deepEqual(
 		rewireImportRelation({ fromId: 'f1', oldModuleId: 'm', targetFileId: 't' }, repo, byId),
-		{ kind: 'IMPORTS', from: 'f1', to: 't', resolved: true, meta: { repo, file } },
+		{ kind: 'IMPORTS', from: 'f1', to: 't', resolved: true, meta: { repo, file }, evidence: 'inferred' },   // located across files (Epic c2ba6fa6 s7)
 	);
 });

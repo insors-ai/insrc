@@ -1,3 +1,5 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -95,6 +97,7 @@ export const DOC_CONSTRAINTS_SCHEMA: StructuredSchema = {
 // ---------------------------------------------------------------------------
 
 export interface RunDocConstraintEnumerateArgs {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly subject:     string;
 	readonly repoPath:    string;
 	readonly db:          DbClient;
@@ -116,6 +119,7 @@ export interface RunDocConstraintEnumerateArgs {
 export async function runSharedDocConstraintEnumerate(
 	args: RunDocConstraintEnumerateArgs,
 ): Promise<DocConstraintEnumerateOutput> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	const prepared = await prepareDocConstraintEnumerate({
 		subject:    args.subject,
 		repoPath:   args.repoPath,
@@ -221,10 +225,7 @@ export async function prepareDocConstraintEnumerate(
 	});
 
 	if (sections.length === 0) {
-		log.info(
-			{ runId: args.runId, subject, ctx: args.logContext },
-			'doc.constraint.enumerate: no matching sections',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, subject, ctx: args.logContext }, 'doc.constraint.enumerate: no matching sections']);
 		return {
 			kind: 'short-circuit',
 			shortCircuit: {
@@ -298,17 +299,14 @@ export function finalizeDocConstraintEnumerate(
 	const validIds = new Set(prepared.validEntityIds);
 	const filtered = raw.constraints.filter(c => validIds.has(c.sourceEntityId));
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log).emit('info', () => [{
 			runId,
 			ctx:       logContext,
 			subject:   prepared.subject,
 			retrieved: prepared.retrievedSectionCount,
 			extracted: raw.constraints.length,
 			surviving: filtered.length,
-		},
-		'doc.constraint.enumerate: extraction complete',
-	);
+	}, 'doc.constraint.enumerate: extraction complete']);
 
 	return {
 		type:                  'doc.constraint.enumerate',
@@ -348,6 +346,7 @@ export async function runDocConstraintEnumerate(
 	const params = parseExplorationParams(exp);
 	const db = await getDb();
 	return runSharedDocConstraintEnumerate({
+		connectionExecution: ctx.connectionExecution,
 		subject:    params.subject,
 		repoPath:   ctx.repoPath,
 		db,

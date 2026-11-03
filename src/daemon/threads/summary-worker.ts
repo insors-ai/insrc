@@ -17,9 +17,10 @@ import type { MessagePort } from 'node:worker_threads';
 import type { SummariseDocResult } from '../../analyze/summariser/index.js';
 import { ConfigStore } from '../../config/store.js';
 import { getDb } from '../../db/client.js';
+import { withWriteTxn } from '../../db/graph/store.js';
 import { IndexerService } from '../../indexer/index.js';
 import { Watcher } from '../../indexer/watcher.js';
-import type { Entity } from '../../shared/types.js';
+import type { Entity, LLMProvider } from '../../shared/types.js';
 import { IndexingBlock } from './indexing-block.js';
 import type { WorkerConnection } from './main-services.js';
 import { SUMMARY_PORT_OP, SummaryWorkerLink } from './summary-link.js';
@@ -39,13 +40,20 @@ const db = await getDb();
 /**
  * Test-only (INSRC_TEST_STUB_SUMMARISER=1): a summariser that needs no model.
  * It reports each document it summarises, and whether code work was queued at
- * that moment, to the test.
+ * that moment, to the test, and records it in the store (meta `test-summary:<id>`).
  */
 class StubSummaryIndexer extends IndexerService {
 	protected override async summariseEntity(entity: Entity): Promise<SummariseDocResult> {
 		parentPort!.postMessage({ summarised: entity.id, codeBusy: block.codeBusy });
+		// A real write from this thread, so a test can see it land (e.g. in the store maintenance compacted).
+		await withWriteTxn(s => { s.meta.put(`test-summary:${entity.id}`, Buffer.from([1])); });
 		await new Promise(r => setTimeout(r, 20));
 		return { ok: true };
+	}
+
+	/** The subsystem pass (Epic c2ba6fa6 s8) with a stand-in for the cheap tier: stub mode calls no model. */
+	protected override subsystemProvider(): LLMProvider {
+		return { capabilities: {}, completeStructured: async () => ({ summary: 'stub summary' }) } as unknown as LLMProvider;
 	}
 }
 

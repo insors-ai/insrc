@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: d9f85b3c t1 — er: a described definition (narrative + descriptions) gets no HIGH
+ok 1 - d9f85b3c t1 — er: a described definition (narrative + descriptions) gets no HIGH
+  ---
+  duration_ms: 18.018875
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — er: a sound definition without the new fields still returns []
+ok 2 - d9f85b3c t1 — er: a sound definition without the new fields still returns []
+  ---
+  duration_ms: 0.703125
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — ux: a described definition (narrative + descriptions) gets no HIGH
+ok 3 - d9f85b3c t1 — ux: a described definition (narrative + descriptions) gets no HIGH
+  ---
+  duration_ms: 13.674584
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — ux: a sound definition without the new fields still returns []
+ok 4 - d9f85b3c t1 — ux: a sound definition without the new fields still returns []
+  ---
+  duration_ms: 0.23025
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — sequence: a described definition (narrative + descriptions) gets no HIGH
+ok 5 - d9f85b3c t1 — sequence: a described definition (narrative + descriptions) gets no HIGH
+  ---
+  duration_ms: 0.173333
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — sequence: a sound definition without the new fields still returns []
+ok 6 - d9f85b3c t1 — sequence: a sound definition without the new fields still returns []
+  ---
+  duration_ms: 0.12075
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — component: a described definition (narrative + descriptions) gets no HIGH
+ok 7 - d9f85b3c t1 — component: a described definition (narrative + descriptions) gets no HIGH
+  ---
+  duration_ms: 0.156917
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — component: a sound definition without the new fields still returns []
+ok 8 - d9f85b3c t1 — component: a sound definition without the new fields still returns []
+  ---
+  duration_ms: 0.034542
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t1 — the closed schemas still reject an unknown field, so the additions are deliberate
+ok 9 - d9f85b3c t1 — the closed schemas still reject an unknown field, so the additions are deliberate
+  ---
+  duration_ms: 0.420875
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 332.132166

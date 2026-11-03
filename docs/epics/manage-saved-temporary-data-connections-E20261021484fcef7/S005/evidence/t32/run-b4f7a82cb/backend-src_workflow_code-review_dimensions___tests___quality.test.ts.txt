@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: judgeQuality: the four risk classes each map to a finding with location + severity (ac1)
+ok 1 - judgeQuality: the four risk classes each map to a finding with location + severity (ac1)
+  ---
+  duration_ms: 18.467291
+  type: 'test'
+  ...
+# Subtest: QUALITY_FINDINGS_SCHEMA: distinctive field is counterpartRef (not expectationRef); shape 1:1 with sc3 (ac1)
+ok 2 - QUALITY_FINDINGS_SCHEMA: distinctive field is counterpartRef (not expectationRef); shape 1:1 with sc3 (ac1)
+  ---
+  duration_ms: 0.724959
+  type: 'test'
+  ...
+# Subtest: judgeQuality: a duplication finding maps counterpartRef through naming the existing symbol (ac2)
+ok 3 - judgeQuality: a duplication finding maps counterpartRef through naming the existing symbol (ac2)
+  ---
+  duration_ms: 0.43375
+  type: 'test'
+  ...
+# Subtest: buildQualityPrompt: charge instructs counterpartRef on duplication and the payload includes the callers/callees edges (ac2)
+ok 4 - buildQualityPrompt: charge instructs counterpartRef on duplication and the payload includes the callers/callees edges (ac2)
+  ---
+  duration_ms: 0.13225
+  type: 'test'
+  ...
+# Subtest: judgeQuality: a matter-of-taste finding maps through at LOW severity (ac3)
+ok 5 - judgeQuality: a matter-of-taste finding maps through at LOW severity (ac3)
+  ---
+  duration_ms: 0.693375
+  type: 'test'
+  ...
+# Subtest: buildQualityPrompt: charge caps matters of taste at LOW severity, never HIGH (ac3)
+ok 6 - buildQualityPrompt: charge caps matters of taste at LOW severity, never HIGH (ac3)
+  ---
+  duration_ms: 0.145458
+  type: 'test'
+  ...
+# Subtest: judgeQuality: issues exactly ONE completeStructured call, no other provider method (ac4/k3/k4)
+ok 7 - judgeQuality: issues exactly ONE completeStructured call, no other provider method (ac4/k3/k4)
+  ---
+  duration_ms: 0.441666
+  type: 'test'
+  ...
+# Subtest: judgeQuality: a finding whose location file is outside changedFiles is dropped
+ok 8 - judgeQuality: a finding whose location file is outside changedFiles is dropped
+  ---
+  duration_ms: 0.59525
+  type: 'test'
+  ...
+# Subtest: judgeQuality: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+ok 9 - judgeQuality: invalid model output exhausts the retry cap and PROPAGATES (no fabricated pass)
+  ---
+  duration_ms: 0.826958
+  type: 'test'
+  ...
+# Subtest: judgeQuality: empty grounding yields a valid empty result (edge)
+ok 10 - judgeQuality: empty grounding yields a valid empty result (edge)
+  ---
+  duration_ms: 0.549375
+  type: 'test'
+  ...
+# Subtest: judgeQuality: no-risk code => empty findings, no manufactured finding (edge)
+ok 11 - judgeQuality: no-risk code => empty findings, no manufactured finding (edge)
+  ---
+  duration_ms: 0.56375
+  type: 'test'
+  ...
+# Subtest: buildQualityPrompt: the output-shape reminder is TRAILING (after the changed symbols)
+ok 12 - buildQualityPrompt: the output-shape reminder is TRAILING (after the changed symbols)
+  ---
+  duration_ms: 0.071542
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 337.943958

@@ -1,0 +1,300 @@
+TAP version 13
+# Subtest: saveSession + getSessionById round-trip
+ok 1 - saveSession + getSessionById round-trip
+# Subtest: saveSession with explicit fields preserves them
+ok 2 - saveSession with explicit fields preserves them
+# Subtest: saveSession upsert preserves single row
+ok 3 - saveSession upsert preserves single row
+# Subtest: getSessionById on unknown id returns null
+ok 4 - getSessionById on unknown id returns null
+# Subtest: setSessionAgent updates agent + category
+ok 5 - setSessionAgent updates agent + category
+# Subtest: setSessionStatus mutates only the status
+ok 6 - setSessionStatus mutates only the status
+# Subtest: bumpSessionActivity is silent no-op for unknown id
+ok 7 - bumpSessionActivity is silent no-op for unknown id
+# Subtest: closeSession upserts the row + sets status=completed
+ok 8 - closeSession upserts the row + sets status=completed
+# Subtest: saveTurn + getTurnsForSession round-trip
+ok 9 - saveTurn + getTurnsForSession round-trip
+# Subtest: getTurnsForSession returns idx-ordered turns only of type "turn"
+ok 10 - getTurnsForSession returns idx-ordered turns only of type "turn"
+# Subtest: saveTurn round-trips assertionRefs (G6 of memory-context design)
+ok 11 - saveTurn round-trips assertionRefs (G6 of memory-context design)
+# Subtest: saveTurn omits assertionRefs when not provided (back-compat)
+ok 12 - saveTurn omits assertionRefs when not provided (back-compat)
+# Subtest: saveTurn upsert preserves single row by (sessionId, idx)
+ok 13 - saveTurn upsert preserves single row by (sessionId, idx)
+# Subtest: saveTurn bumps session lastActivityAt
+ok 14 - saveTurn bumps session lastActivityAt
+# Subtest: addCompactedTurns sets defaults: type=merged, tier=cold
+ok 15 - addCompactedTurns sets defaults: type=merged, tier=cold
+# Subtest: addCompactedTurns on empty array is a no-op
+ok 16 - addCompactedTurns on empty array is a no-op
+# Subtest: getAllTurnsForRepo returns only that repo's turns
+ok 17 - getAllTurnsForRepo returns only that repo's turns
+# Subtest: getAllTurns returns every turn across repos
+ok 18 - getAllTurns returns every turn across repos
+# Subtest: listSessions returns sessions in createdAt-desc order
+ok 19 - listSessions returns sessions in createdAt-desc order
+# Subtest: listSessions filters by repo
+ok 20 - listSessions filters by repo
+# Subtest: listSessionRecords filters by status
+ok 21 - listSessionRecords filters by status
+# Subtest: getConversationStats counts turns + sessions
+ok 22 - getConversationStats counts turns + sessions
+# Subtest: deleteSession removes the session + all its turns
+ok 23 - deleteSession removes the session + all its turns
+# Subtest: deleteSession on unknown id returns 0/0
+ok 24 - deleteSession on unknown id returns 0/0
+# Subtest: deleteTurnsForSession removes all turns, leaves session
+ok 25 - deleteTurnsForSession removes all turns, leaves session
+# Subtest: deleteSessionRecord removes only the session row
+ok 26 - deleteSessionRecord removes only the session row
+# Subtest: deleteSessionsForRepo removes only that repo's sessions
+ok 27 - deleteSessionsForRepo removes only that repo's sessions
+# Subtest: deleteTurnsForRepo removes only that repo's turns
+ok 28 - deleteTurnsForRepo removes only that repo's turns
+# Subtest: deleteTurnsByIds removes the specific turns
+ok 29 - deleteTurnsByIds removes the specific turns
+# Subtest: deleteTurnsByIds on empty list is a no-op
+ok 30 - deleteTurnsByIds on empty list is a no-op
+# Subtest: searchTurnsByRepo returns [] (Phase 3.3 wires Lance)
+ok 31 - searchTurnsByRepo returns [] (Phase 3.3 wires Lance)
+# Subtest: seedFromPrior returns [] (Phase 3.3 wires Lance)
+ok 32 - seedFromPrior returns [] (Phase 3.3 wires Lance)
+# Subtest: sessions + turns survive close + reopen
+ok 33 - sessions + turns survive close + reopen
+# Subtest: resetTableCaches is a no-op (back-compat shim)
+ok 34 - resetTableCaches is a no-op (back-compat shim)
+# Subtest: upsertEntities + getEntity round-trip
+ok 35 - upsertEntities + getEntity round-trip
+# Subtest: upsertEntities preserves all flag fields
+ok 36 - upsertEntities preserves all flag fields
+# Subtest: getEntity on unknown id returns null
+ok 37 - getEntity on unknown id returns null
+# Subtest: getEntitiesByIds returns matched subset (unmatched omitted)
+ok 38 - getEntitiesByIds returns matched subset (unmatched omitted)
+# Subtest: getEntitiesByIds on empty array returns []
+ok 39 - getEntitiesByIds on empty array returns []
+# Subtest: upsert overwrites a non-module entity
+ok 40 - upsert overwrites a non-module entity
+# Subtest: module-stub upsert is ensure-exists (does not overwrite)
+ok 41 - module-stub upsert is ensure-exists (does not overwrite)
+# Subtest: upsertEntities dedupes intra-batch duplicates (last-wins)
+ok 42 - upsertEntities dedupes intra-batch duplicates (last-wins)
+# Subtest: upsertEntities on empty array is a no-op
+ok 43 - upsertEntities on empty array is a no-op
+# Subtest: listEntitiesForRepo returns only the requested repo
+ok 44 - listEntitiesForRepo returns only the requested repo
+# Subtest: listEntitiesForRepo on unknown repo returns []
+ok 45 - listEntitiesForRepo on unknown repo returns []
+# Subtest: findEntitiesByFile filters by absolute path
+ok 46 - findEntitiesByFile filters by absolute path
+# Subtest: findEntitiesByName matches names + kind filter
+ok 47 - findEntitiesByName matches names + kind filter
+# Subtest: findEntitiesByName respects repo filter
+ok 48 - findEntitiesByName respects repo filter
+# Subtest: findEntitiesByName respects multi-repo `repos` filter
+ok 49 - findEntitiesByName respects multi-repo `repos` filter
+# Subtest: findEntitiesByName: empty `repos` array returns []
+ok 50 - findEntitiesByName: empty `repos` array returns []
+# Subtest: findEntitiesByName: `repos` with unknown paths drops them silently
+ok 51 - findEntitiesByName: `repos` with unknown paths drops them silently
+# Subtest: findEntitiesByName: passing both `repo` and `repos` throws
+ok 52 - findEntitiesByName: passing both `repo` and `repos` throws
+# Subtest: findEntitiesByName respects limit
+ok 53 - findEntitiesByName respects limit
+# Subtest: findEntitiesByName on empty input returns []
+ok 54 - findEntitiesByName on empty input returns []
+# Subtest: listUnembeddedEntities filters on empty embeddingModel
+ok 55 - listUnembeddedEntities filters on empty embeddingModel
+# Subtest: updateEmbedding sets the model name (vector goes to Lance in 3.2)
+ok 56 - updateEmbedding sets the model name (vector goes to Lance in 3.2)
+# Subtest: updateEmbedding on unknown id is a silent no-op
+ok 57 - updateEmbedding on unknown id is a silent no-op
+# Subtest: deleteEntitiesForFile removes only that file's entities
+ok 58 - deleteEntitiesForFile removes only that file's entities
+# Subtest: deleteEntitiesForFile cascades to out_edge and in_edge
+ok 59 - deleteEntitiesForFile cascades to out_edge and in_edge
+# Subtest: deleteEntitiesForRepo removes all entities for that repo only
+ok 60 - deleteEntitiesForRepo removes all entities for that repo only
+# Subtest: deleteEntitiesForRepo on unknown repo is a silent no-op
+ok 61 - deleteEntitiesForRepo on unknown repo is a silent no-op
+# Subtest: entities survive close + reopen
+ok 62 - entities survive close + reopen
+# Subtest: absolute file path -> repo-relative on write, back to absolute on read
+ok 63 - absolute file path -> repo-relative on write, back to absolute on read
+# Subtest: repo IDs are auto-allocated on first sighting
+ok 64 - repo IDs are auto-allocated on first sighting
+# Subtest: insertList creates a list with a seed transfer entry
+ok 65 - insertList creates a list with a seed transfer entry
+# Subtest: insertList rejects unknown owner / source
+ok 66 - insertList rejects unknown owner / source
+# Subtest: insertList with parentListId validates session match
+ok 67 - insertList with parentListId validates session match
+# Subtest: insertList with missing parent rejects
+ok 68 - insertList with missing parent rejects
+# Subtest: insertItem creates an item under an existing list
+ok 69 - insertItem creates an item under an existing list
+# Subtest: insertItem on missing list rejects
+ok 70 - insertItem on missing list rejects
+# Subtest: listItems returns items sorted by order
+ok 71 - listItems returns items sorted by order
+# Subtest: listItems supports fractional ordering for insert-between
+ok 72 - listItems supports fractional ordering for insert-between
+# Subtest: insertComment + listCommentsForItem round-trip
+ok 73 - insertComment + listCommentsForItem round-trip
+# Subtest: listCommentsForItem returns comments sorted by createdAt
+ok 74 - listCommentsForItem returns comments sorted by createdAt
+# Subtest: updateComment updates body + agentAcknowledged
+ok 75 - updateComment updates body + agentAcknowledged
+# Subtest: deleteComment removes the comment
+ok 76 - deleteComment removes the comment
+# Subtest: updateItem rejects illegal status transitions
+ok 77 - updateItem rejects illegal status transitions
+# Subtest: updateItem -> completed sets completedAt
+ok 78 - updateItem -> completed sets completedAt
+# Subtest: updateItem -> blocked requires non-empty blockedReason
+ok 79 - updateItem -> blocked requires non-empty blockedReason
+# Subtest: updateList rejects illegal status transitions
+ok 80 - updateList rejects illegal status transitions
+# Subtest: transferList changes owner + appends transfer history
+ok 81 - transferList changes owner + appends transfer history
+# Subtest: reparentList sets the parent
+ok 82 - reparentList sets the parent
+# Subtest: reparentList rejects cycles
+ok 83 - reparentList rejects cycles
+# Subtest: assertParentAllowed accepts valid hierarchies
+ok 84 - assertParentAllowed accepts valid hierarchies
+# Subtest: listListsBySession returns roots first then children
+ok 85 - listListsBySession returns roots first then children
+# Subtest: listListsBySession filters by includeArchived flag
+ok 86 - listListsBySession filters by includeArchived flag
+# Subtest: listAllLists filters by status + source
+ok 87 - listAllLists filters by status + source
+# Subtest: deleteItem removes the item + its comments
+ok 88 - deleteItem removes the item + its comments
+# Subtest: deleteList cascades through items + comments
+ok 89 - deleteList cascades through items + comments
+# Subtest: deleteListsBySession returns the count
+ok 90 - deleteListsBySession returns the count
+# Subtest: lists + items + comments survive close + reopen
+ok 91 - lists + items + comments survive close + reopen
+# Subtest: a withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen
+ok 92 - a withWriteTxn callback that writes in two sub-DBs and throws rejects with its own error and leaves nothing, in-process and after a reopen
+# Subtest: of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept
+ok 93 - of two callers queued together, one throwing and one succeeding, only the successful one's writes are kept
+# Subtest: an async callback is refused with "withWriteTxn callbacks must be synchronous" and keeps nothing; the type rejects it
+ok 94 - an async callback is refused with "withWriteTxn callbacks must be synchronous" and keeps nothing; the type rejects it
+# Subtest: a refused async callback that rejects later raises no unhandled rejection
+ok 95 - a refused async callback that rejects later raises no unhandled rejection
+# Subtest: upsertArtifactVec + queryArtifactVec round-trip
+ok 96 - upsertArtifactVec + queryArtifactVec round-trip
+# Subtest: queryArtifactVec scopes by sessionId
+ok 97 - queryArtifactVec scopes by sessionId
+# Subtest: queryArtifactVec scopes by intent when provided
+ok 98 - queryArtifactVec scopes by intent when provided
+# Subtest: getArtifactById returns the row by exact id (no ANN)
+ok 99 - getArtifactById returns the row by exact id (no ANN)
+# Subtest: deleteArtifactsForSession removes all rows for a session and returns count
+ok 100 - deleteArtifactsForSession removes all rows for a session and returns count
+# Subtest: upsert: writing the same id replaces
+ok 101 - upsert: writing the same id replaces
+# Subtest: returns [] for empty query / empty session / k=0
+ok 102 - returns [] for empty query / empty session / k=0
+# Subtest: deleteArtifactsForSession on empty session returns 0 cleanly
+ok 103 - deleteArtifactsForSession on empty session returns 0 cleanly
+# Subtest: default summary on a freshly-spilled row is empty string
+ok 104 - default summary on a freshly-spilled row is empty string
+# Subtest: upsertArtifactVec persists explicit summary verbatim
+ok 105 - upsertArtifactVec persists explicit summary verbatim
+# Subtest: updateArtifactSummary overwrites only the summary column
+ok 106 - updateArtifactSummary overwrites only the summary column
+# Subtest: updateArtifactSummary returns false for unknown id (soft-fail)
+ok 107 - updateArtifactSummary returns false for unknown id (soft-fail)
+# Subtest: updateArtifactSummary refuses empty id + the seed sentinel
+ok 108 - updateArtifactSummary refuses empty id + the seed sentinel
+# Subtest: listArtifactsForSession returns rows newest-first
+ok 109 - listArtifactsForSession returns rows newest-first
+# Subtest: listArtifactsForSession scopes by session and excludes seed
+ok 110 - listArtifactsForSession scopes by session and excludes seed
+# Subtest: listArtifactsForSession honours skillIdPrefix filter
+ok 111 - listArtifactsForSession honours skillIdPrefix filter
+# Subtest: listArtifactsForSession honours afterTimestamp lower bound (exclusive)
+ok 112 - listArtifactsForSession honours afterTimestamp lower bound (exclusive)
+# Subtest: listArtifactsForSession returns [] for empty sessionId
+ok 113 - listArtifactsForSession returns [] for empty sessionId
+# Subtest: listArtifactsForSession defaults summary to empty string for rows without one
+ok 114 - listArtifactsForSession defaults summary to empty string for rows without one
+# Subtest: queryArtifactVec results carry the summary field
+ok 115 - queryArtifactVec results carry the summary field
+# Subtest: getLanceConn creates the directory + opens a connection
+ok 116 - getLanceConn creates the directory + opens a connection
+# Subtest: subsequent getLanceConn calls return the same instance
+ok 117 - subsequent getLanceConn calls return the same instance
+# Subtest: concurrent first-callers share the init promise
+ok 118 - concurrent first-callers share the init promise
+# Subtest: close + reopen works (data persists)
+ok 119 - close + reopen works (data persists)
+# Subtest: setLanceConnPath isolates between tests (different tmpdirs)
+ok 120 - setLanceConnPath isolates between tests (different tmpdirs)
+# Subtest: openOrCreateTable creates the table on first call
+ok 121 - openOrCreateTable creates the table on first call
+# Subtest: openOrCreateTable opens an existing table without re-seeding
+ok 122 - openOrCreateTable opens an existing table without re-seeding
+# Subtest: openOrCreateTable rejects empty seed when creating
+ok 123 - openOrCreateTable rejects empty seed when creating
+# Subtest: writeEntityEmbedding stores a single row
+ok 124 - writeEntityEmbedding stores a single row
+# Subtest: writeEntityEmbedding upsert: same id replaces row
+ok 125 - writeEntityEmbedding upsert: same id replaces row
+# Subtest: writeEntityEmbeddings bulk upsert
+ok 126 - writeEntityEmbeddings bulk upsert
+# Subtest: writeEntityEmbeddings on empty array is a no-op
+ok 127 - writeEntityEmbeddings on empty array is a no-op
+# Subtest: searchEntityVecs returns ANN hits ordered by distance
+ok 128 - searchEntityVecs returns ANN hits ordered by distance
+# Subtest: searchEntityVecs respects closure-repo scope
+ok 129 - searchEntityVecs respects closure-repo scope
+# Subtest: searchEntityVecs filter=code excludes artifacts
+ok 130 - searchEntityVecs filter=code excludes artifacts
+# Subtest: searchEntityVecs filter=artifact returns only artifacts
+ok 131 - searchEntityVecs filter=artifact returns only artifacts
+# Subtest: searchEntityVecs returns [] for empty query vector
+ok 132 - searchEntityVecs returns [] for empty query vector
+# Subtest: searchEntityVecs returns [] for empty closureRepos
+ok 133 - searchEntityVecs returns [] for empty closureRepos
+# Subtest: searchEntityVecs excludes the seed sentinel row
+ok 134 - searchEntityVecs excludes the seed sentinel row
+# Subtest: the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before
+ok 135 - the vector search given an empty list of ids makes no query; given a large list it returns the nearest of them, in one query or in batches merged by distance; with no area the query is as before
+# Subtest: deleteEntityVec removes a single row
+ok 136 - deleteEntityVec removes a single row
+# Subtest: deleteEntityVecsByIds bulk drop
+ok 137 - deleteEntityVecsByIds bulk drop
+# Subtest: deleteEntityVecsForRepo removes all rows for a repo
+ok 138 - deleteEntityVecsForRepo removes all rows for a repo
+# Subtest: delete on empty input is a silent no-op
+ok 139 - delete on empty input is a silent no-op
+# Subtest: strings with single quotes are escaped in delete + search
+ok 140 - strings with single quotes are escaped in delete + search
+# Subtest: rows survive close + reopen
+ok 141 - rows survive close + reopen
+# Subtest: compactEntityVecTable reduces on-disk fragment count
+ok 142 - compactEntityVecTable reduces on-disk fragment count
+# Subtest: compactEntityVecTable preserves all rows + searchability
+ok 143 - compactEntityVecTable preserves all rows + searchability
+# Subtest: compactEntityVecTable on a fresh / single-fragment table is a cheap no-op
+ok 144 - compactEntityVecTable on a fresh / single-fragment table is a cheap no-op
+# Subtest: compactEntityVecTable result survives close + reopen
+ok 145 - compactEntityVecTable result survives close + reopen
+1..145
+# tests 145
+# suites 0
+# pass 145
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 11426.304416

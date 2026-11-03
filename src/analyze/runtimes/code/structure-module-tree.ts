@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -143,7 +144,7 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 			} catch (err) {
 				// Expected for a single file: its imports are missing from the tree,
 				// and the record names it so the missing edges are not read as none.
-				log.warn({ fileId: f.id, err: (err as Error).message }, 'findImports failed -- skipping');
+				captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ fileId: f.id, err: (err as Error).message }, 'findImports failed -- skipping']);
 				skipped.push({ what: f.file, reason: `its imports could not be read from the graph (${(err as Error).message})` });
 				continue;
 			}
@@ -171,16 +172,13 @@ export const codeStructureModuleTreeRuntime: TemplateRuntime = {
 
 		const tree = { repo: repoPath, modules: moduleNodes, edges };
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:        args.runId,
 				taskId:       args.task.taskId,
 				repoPath,
 				moduleCount:  moduleNodes.length,
 				edgeCount:    edges.length,
-			},
-			'code.structure.module-tree: emitted module graph',
-		);
+		}, 'code.structure.module-tree: emitted module graph']);
 
 		return {
 			outputs: new Map<string, unknown>([['module-tree', tree]]),

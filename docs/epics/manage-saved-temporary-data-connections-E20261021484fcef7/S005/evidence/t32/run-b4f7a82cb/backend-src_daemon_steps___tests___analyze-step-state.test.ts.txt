@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: encodeState + decodeState round-trip preserves every field
+ok 1 - encodeState + decodeState round-trip preserves every field
+  ---
+  duration_ms: 8.801708
+  type: 'test'
+  ...
+# Subtest: encodeState mints a short URL-safe base64 token (22 chars, no padding)
+ok 2 - encodeState mints a short URL-safe base64 token (22 chars, no padding)
+  ---
+  duration_ms: 0.836625
+  type: 'test'
+  ...
+# Subtest: decodeState rejects a bogus token with StepStateDecodeError
+ok 3 - decodeState rejects a bogus token with StepStateDecodeError
+  ---
+  duration_ms: 1.071042
+  type: 'test'
+  ...
+# Subtest: decodeState rejects a token of the wrong shape (too short)
+ok 4 - decodeState rejects a token of the wrong shape (too short)
+  ---
+  duration_ms: 0.461333
+  type: 'test'
+  ...
+# Subtest: assertStage passes for a matching stage
+ok 5 - assertStage passes for a matching stage
+  ---
+  duration_ms: 0.139208
+  type: 'test'
+  ...
+# Subtest: assertStage throws on a stage mismatch
+ok 6 - assertStage throws on a stage mismatch
+  ---
+  duration_ms: 0.110083
+  type: 'test'
+  ...
+# Subtest: releaseState drops the entry so a subsequent decodeState fails
+ok 7 - releaseState drops the entry so a subsequent decodeState fails
+  ---
+  duration_ms: 2.131459
+  type: 'test'
+  ...
+# Subtest: token round-trips a state with an executed plan attached
+ok 8 - token round-trips a state with an executed plan attached
+  ---
+  duration_ms: 0.614208
+  type: 'test'
+  ...
+# Subtest: analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted
+ok 9 - analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted
+  ---
+  duration_ms: 14.788959
+  type: 'test'
+  ...
+# Subtest: analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)
+ok 10 - analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)
+  ---
+  duration_ms: 0.448083
+  type: 'test'
+  ...
+# Subtest: analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)
+ok 11 - analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)
+  ---
+  duration_ms: 0.30175
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 348.323416

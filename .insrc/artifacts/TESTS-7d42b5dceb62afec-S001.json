@@ -1,0 +1,322 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7d42b5dceb62afec",
+    "storyId": "S001",
+    "createdAt": "2026-11-03T14:34:09.725Z",
+    "updatedAt": "2026-11-03T15:31:50.313Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:44:58.745Z",
+    "epicSlug": "subsystem-pass-regroups-whole-repository-after"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f8e36664f",
+        "ranAt": "2026-11-03T14:39:01.676Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t1: every change site records its source file in the same transaction, and a non-grouping kind records nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-changes.test.ts",
+                "title": "S001 t1: every change site records its source file in the same transaction, and a non-grouping kind records nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: entity-row removal records its file on every path, and a whole-repository delete drops the contributions and bumps the reset counter",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-changes.test.ts",
+                "title": "S001 t1: entity-row removal records its file on every path, and a whole-repository delete drops the contributions and bumps the reset counter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: a record entry is consumed only while its stamp is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-changes.test.ts",
+                "title": "S001 t1: a record entry is consumed only while its stamp is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/subsystem-changes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1300,
+            "titles": [
+              {
+                "title": "S001 t1: every change site records its source file in the same transaction, and a non-grouping kind records nothing",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: entity-row removal records its file on every path, and a whole-repository delete drops the contributions and bumps the reset counter",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: a record entry is consumed only while its stamp is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "577df4ff8",
+        "ranAt": "2026-11-03T14:55:18.938Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t2: after each edit in the sequence the incremental pass stores what a forced full pass stores, and a comment-only edit is unchanged with one file read",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+                "title": "S001 t2: after each edit in the sequence the incremental pass stores what a forced full pass stores, and a comment-only edit is unchanged with one file read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: an unchanged importer stays correct while its target gains, loses and regains code entities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+                "title": "S001 t2: an unchanged importer stays correct while its target gains, loses and regains code entities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+                "title": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2444,
+            "titles": [
+              {
+                "title": "S001 t2: after each edit in the sequence the incremental pass stores what a forced full pass stores, and a comment-only edit is unchanged with one file read",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: an unchanged importer stays correct while its target gains, loses and regains code entities",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1467e753a",
+        "ranAt": "2026-11-03T15:00:39.422Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t3: a fault in the publication transaction changes nothing, and the next pass converges",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+                "title": "S001 t3: a fault in the publication transaction changes nothing, and the next pass converges",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t3: an edge written while the pass runs keeps its record entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+                "title": "S001 t3: an edge written while the pass runs keeps its record entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+                "title": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2320,
+            "titles": [
+              {
+                "title": "S001 t3: a fault in the publication transaction changes nothing, and the next pass converges",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: an edge written while the pass runs keeps its record entry",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "8f06acfa0",
+        "ranAt": "2026-11-03T15:31:50.313Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t4: after an outage a retry writes the summaries, one call at a time after code work",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: after an outage a retry writes the summaries, one call at a time after code work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: a timer that fires while the queue is stopping queues nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6119,
+            "titles": [
+              {
+                "title": "S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: after an outage a retry writes the summaries, one call at a time after code work",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: a timer that fires while the queue is stopping queues nothing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

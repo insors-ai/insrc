@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase
+ok 1 - a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase
+  ---
+  duration_ms: 225.835834
+  type: 'test'
+  ...
+# Subtest: the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member
+ok 2 - the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member
+  ---
+  duration_ms: 137.811625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 953.466875

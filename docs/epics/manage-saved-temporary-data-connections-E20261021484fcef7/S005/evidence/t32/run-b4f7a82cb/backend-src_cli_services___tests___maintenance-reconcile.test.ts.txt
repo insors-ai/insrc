@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: success: fills a newly-catalogued key, reports counts + one detail line per key, preserves dynamic namespaces
+ok 1 - success: fills a newly-catalogued key, reports counts + one detail line per key, preserves dynamic namespaces
+  ---
+  duration_ms: 5.07175
+  type: 'test'
+  ...
+# Subtest: no change → an explicit no-change onLog line (silence would fail)
+ok 2 - no change → an explicit no-change onLog line (silence would fail)
+  ---
+  duration_ms: 2.288875
+  type: 'test'
+  ...
+# Subtest: ancestor-collision repair → detail line names both the catalog path and the discarded scalar
+ok 3 - ancestor-collision repair → detail line names both the catalog path and the discarded scalar
+  ---
+  duration_ms: 2.500792
+  type: 'test'
+  ...
+# Subtest: shipped-catalog bug → distinguishable message + configReconcile.error, nothing written
+ok 4 - shipped-catalog bug → distinguishable message + configReconcile.error, nothing written
+  ---
+  duration_ms: 3.120208
+  type: 'test'
+  ...
+# Subtest: stale-catalog: built catalog not loadable → defers to daemon boot, reports the deferral, writes nothing
+ok 5 - stale-catalog: built catalog not loadable → defers to daemon boot, reports the deferral, writes nothing
+  ---
+  duration_ms: 1.314
+  type: 'test'
+  ...
+# Subtest: runUpdateReconcile never throws — a read failure is captured into the summary (inner try/catch)
+ok 6 - runUpdateReconcile never throws — a read failure is captured into the summary (inner try/catch)
+  ---
+  duration_ms: 3.063916
+  type: 'test'
+  ...
+# Subtest: summarizeReconcile emits exactly one summary line + one detail line per filled/repaired/pruned key
+ok 7 - summarizeReconcile emits exactly one summary line + one detail line per filled/repaired/pruned key
+  ---
+  duration_ms: 0.524667
+  type: 'test'
+  ...
+# Subtest: summarizeReconcile: a config with ONLY retired keys to prune reports pruned>0, changed, filled/repaired 0
+ok 8 - summarizeReconcile: a config with ONLY retired keys to prune reports pruned>0, changed, filled/repaired 0
+  ---
+  duration_ms: 0.072334
+  type: 'test'
+  ...
+# Subtest: SOURCE contract: the reconcile is sequenced after build, is unconditional, and adds no UpdateOptions flag
+ok 9 - SOURCE contract: the reconcile is sequenced after build, is unconditional, and adds no UpdateOptions flag
+  ---
+  duration_ms: 1.341375
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 400.85475

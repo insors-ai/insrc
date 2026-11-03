@@ -1,0 +1,84 @@
+TAP version 13
+# (node:75306) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: analyze-rpc.live: skipped (set INSRC_LIVE_TESTS=1)
+ok 1 - analyze-rpc.live: skipped (set INSRC_LIVE_TESTS=1) # SKIP
+  ---
+  duration_ms: 0.654292
+  type: 'test'
+  ...
+# Subtest: buildClassification: happy path + cache hit on identical re-invocation
+ok 2 - buildClassification: happy path + cache hit on identical re-invocation # SKIP
+  ---
+  duration_ms: 0.048042
+  type: 'test'
+  ...
+# Subtest: buildRun (infra target): happy path returns schema-valid bundle
+ok 3 - buildRun (infra target): happy path returns schema-valid bundle # SKIP
+  ---
+  duration_ms: 0.033917
+  type: 'test'
+  ...
+# Subtest: buildTask (code target): happy path with upstream mix
+ok 4 - buildTask (code target): happy path with upstream mix # SKIP
+  ---
+  duration_ms: 0.039292
+  type: 'test'
+  ...
+# Subtest: buildRun (code target): unindexed registered repo -> scope-not-indexed error code
+ok 5 - buildRun (code target): unindexed registered repo -> scope-not-indexed error code # SKIP
+  ---
+  duration_ms: 0.041083
+  type: 'test'
+  ...
+# Subtest: classify: happy path returns ok:true with a ClassifiedIntent
+ok 6 - classify: happy path returns ok:true with a ClassifiedIntent # SKIP
+  ---
+  duration_ms: 0.033458
+  type: 'test'
+  ...
+# Subtest: classify: nonexistent scopeRef.value -> scope-ref-unresolved error code
+ok 7 - classify: nonexistent scopeRef.value -> scope-ref-unresolved error code # SKIP
+  ---
+  duration_ms: 0.071917
+  type: 'test'
+  ...
+# Subtest: plan (infra XS): end-to-end -> ok:true with a validator-passing PlanTask
+ok 8 - plan (infra XS): end-to-end -> ok:true with a validator-passing PlanTask # SKIP
+  ---
+  duration_ms: 0.133416
+  type: 'test'
+  ...
+# Subtest: plan: currentDepth=99 -> max-plan-depth-exceeded error code in <5s
+ok 9 - plan: currentDepth=99 -> max-plan-depth-exceeded error code in <5s # SKIP
+  ---
+  duration_ms: 0.215917
+  type: 'test'
+  ...
+# Subtest: buildRun: malformed intent -> invalid-params error code
+ok 10 - buildRun: malformed intent -> invalid-params error code # SKIP
+  ---
+  duration_ms: 0.12425
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): infra workspace end-to-end via streaming RPC; result mirrors run.json
+ok 11 - runStart (streaming): infra workspace end-to-end via streaming RPC; result mirrors run.json # SKIP
+  ---
+  duration_ms: 0.028291
+  type: 'test'
+  ...
+# Subtest: runStart (streaming): invalid scopeRef.kind -> invalid-params in analyze.result, fast (no LLM)
+ok 12 - runStart (streaming): invalid scopeRef.kind -> invalid-params in analyze.result, fast (no LLM) # SKIP
+  ---
+  duration_ms: 0.023416
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 0
+# fail 0
+# cancelled 0
+# skipped 12
+# todo 0
+# duration_ms 974.474

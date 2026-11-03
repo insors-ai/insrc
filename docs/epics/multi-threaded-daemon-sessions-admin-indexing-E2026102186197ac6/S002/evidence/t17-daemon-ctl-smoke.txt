@@ -1,0 +1,22 @@
+# s2/t17 daemon-ctl smoke, 2026-10-27T08:23:19Z, commit 35b2b0afa
+    }
+[copy-assets] copied prompts/ -> /Users/subhagho/work/projects/insors/insrc/out/prompts
+[copy-assets] copied assets/ -> /Users/subhagho/work/projects/insors/insrc/out/assets
+TAP version 13
+# Subtest: scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind
+ok 1 - scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind
+  ---
+  duration_ms: 2419.057083
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2686.758959
+exit 0
+SMOKEDONE

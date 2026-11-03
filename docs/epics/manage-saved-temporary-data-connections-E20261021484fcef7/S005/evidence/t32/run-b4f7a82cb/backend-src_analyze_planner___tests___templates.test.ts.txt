@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: registerTemplate accepts a well-formed template
+ok 1 - registerTemplate accepts a well-formed template
+  ---
+  duration_ms: 1.071333
+  type: 'test'
+  ...
+# Subtest: registerTemplate rejects id collision
+ok 2 - registerTemplate rejects id collision
+  ---
+  duration_ms: 0.236875
+  type: 'test'
+  ...
+# Subtest: registerTemplate rejects missing inputSchema
+ok 3 - registerTemplate rejects missing inputSchema
+  ---
+  duration_ms: 0.061375
+  type: 'test'
+  ...
+# Subtest: registerTemplate rejects empty produces
+ok 4 - registerTemplate rejects empty produces
+  ---
+  duration_ms: 0.047208
+  type: 'test'
+  ...
+# Subtest: registerTemplate rejects missing description
+ok 5 - registerTemplate rejects missing description
+  ---
+  duration_ms: 0.211375
+  type: 'test'
+  ...
+# Subtest: registerTemplate: family=aggregate without isAggregator flag is rejected
+ok 6 - registerTemplate: family=aggregate without isAggregator flag is rejected
+  ---
+  duration_ms: 0.049584
+  type: 'test'
+  ...
+# Subtest: registerTemplate: isAggregator without family=aggregate is rejected
+ok 7 - registerTemplate: isAggregator without family=aggregate is rejected
+  ---
+  duration_ms: 0.091833
+  type: 'test'
+  ...
+# Subtest: registerTemplate: family=aggregate AND isAggregator:true is accepted
+ok 8 - registerTemplate: family=aggregate AND isAggregator:true is accepted
+  ---
+  duration_ms: 0.063041
+  type: 'test'
+  ...
+# Subtest: registerBuiltinTemplates registers exactly 27 builtins (7 code + 5 data + 8 infra + 1 generic + 6 docs) without collision
+ok 9 - registerBuiltinTemplates registers exactly 27 builtins (7 code + 5 data + 8 infra + 1 generic + 6 docs) without collision
+  ---
+  duration_ms: 0.431375
+  type: 'test'
+  ...
+# Subtest: registerBuiltinTemplates is idempotent (latch prevents double-register)
+ok 10 - registerBuiltinTemplates is idempotent (latch prevents double-register)
+  ---
+  duration_ms: 0.350625
+  type: 'test'
+  ...
+# Subtest: every per-target subset has its own aggregator
+ok 11 - every per-target subset has its own aggregator
+  ---
+  duration_ms: 0.164084
+  type: 'test'
+  ...
+# Subtest: getTemplatesForTarget(code) returns 7 code templates (6 leaf + 1 planner)
+ok 12 - getTemplatesForTarget(code) returns 7 code templates (6 leaf + 1 planner)
+  ---
+  duration_ms: 0.083584
+  type: 'test'
+  ...
+# Subtest: getTemplatesForTarget(data) returns 5 data templates
+ok 13 - getTemplatesForTarget(data) returns 5 data templates
+  ---
+  duration_ms: 0.052875
+  type: 'test'
+  ...
+# Subtest: getTemplatesForTarget(infra) returns 8 infra templates
+ok 14 - getTemplatesForTarget(infra) returns 8 infra templates
+  ---
+  duration_ms: 0.047708
+  type: 'test'
+  ...
+# Subtest: getTemplatesForTarget(docs) returns 6 docs templates (5 leaf + 1 planner)
+ok 15 - getTemplatesForTarget(docs) returns 6 docs templates (5 leaf + 1 planner)
+  ---
+  duration_ms: 0.052125
+  type: 'test'
+  ...
+# Subtest: getTemplatesForTarget(generic) returns the FULL catalog (INV-4 permits cross-target)
+ok 16 - getTemplatesForTarget(generic) returns the FULL catalog (INV-4 permits cross-target)
+  ---
+  duration_ms: 0.043334
+  type: 'test'
+  ...
+# Subtest: every builtin template has a syntactically valid inputSchema (Ajv compiles)
+ok 17 - every builtin template has a syntactically valid inputSchema (Ajv compiles)
+  ---
+  duration_ms: 35.106916
+  type: 'test'
+  ...
+# Subtest: every builtin template produces non-empty string entries
+ok 18 - every builtin template produces non-empty string entries
+  ---
+  duration_ms: 0.193625
+  type: 'test'
+  ...
+# Subtest: every builtin template id namespaces its target as the leading prefix
+ok 19 - every builtin template id namespaces its target as the leading prefix
+  ---
+  duration_ms: 0.147875
+  type: 'test'
+  ...
+# Subtest: every builtin template description is at least one sentence (>= 20 chars)
+ok 20 - every builtin template description is at least one sentence (>= 20 chars)
+  ---
+  duration_ms: 0.064584
+  type: 'test'
+  ...
+# Subtest: aggregator templates produce exactly ['report']
+ok 21 - aggregator templates produce exactly ['report']
+  ---
+  duration_ms: 1.113125
+  type: 'test'
+  ...
+# Subtest: every builtin template's scopeRef lists exactly the kinds of scope its family accepts, and the catalog shows the planner those kinds only
+ok 22 - every builtin template's scopeRef lists exactly the kinds of scope its family accepts, and the catalog shows the planner those kinds only
+  ---
+  duration_ms: 0.38125
+  type: 'test'
+  ...
+# Subtest: a plan whose task carries a kind of scope its family does not accept fails validation with the task, the kind and the accepted kinds
+ok 23 - a plan whose task carries a kind of scope its family does not accept fails validation with the task, the kind and the accepted kinds
+  ---
+  duration_ms: 26.883375
+  type: 'test'
+  ...
+# Subtest: the scope of a child plan is held to the kinds its own kind of source accepts
+ok 24 - the scope of a child plan is held to the kinds its own kind of source accepts
+  ---
+  duration_ms: 12.211417
+  type: 'test'
+  ...
+# Subtest: a scopeRef that is not an object, or whose kind is not a string, still fails validation by the schema
+ok 25 - a scopeRef that is not an object, or whose kind is not a string, still fails validation by the schema
+  ---
+  duration_ms: 11.010125
+  type: 'test'
+  ...
+# Subtest: a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow
+ok 26 - a plan whose adherence task has no topic, no inline constraints and no stored-document ids fails validation with the task, the three ways to give constraints and the option to leave the task out (code, data and infra), and the INV-5 fix hint sent with the message gives the same remedies, including removing the task and renumbering the ids that follow
+  ---
+  duration_ms: 0.981959
+  type: 'test'
+  ...
+# Subtest: an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override
+ok 27 - an adherence task with a topic, with an inline list, or with stored-document ids validates; one whose only source is an empty topic or an empty list does not, a non-empty override with an empty list beside it still validates, one with the removed constraintsSource does not, and for constraintsSource the message says to give constraintTopic instead, also in a generic plan that holds the docs task and also beside a usable override
+  ---
+  duration_ms: 124.621833
+  type: 'test'
+  ...
+# Subtest: the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate
+ok 28 - the catalog shown to the planner for each adherence template names constraintTopic and does not name constraintsSource or docs.constraint.enumerate
+  ---
+  duration_ms: 0.446542
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 760.779208

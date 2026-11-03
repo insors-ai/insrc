@@ -1,0 +1,35 @@
+{
+  "task": "s5/t3",
+  "node": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "actualJUnit": {
+    "corpusTests": 2,
+    "protocolTests": 6,
+    "failures": 0
+  },
+  "typecheck": "Node22 tsc --noEmit passed; Gradle compiles/tests actual Kotlin via isolated invocation-owned reports",
+  "commonCorpusExtension": "Add actual29driverDescriptors and5current backend draft-test messages; retain18wire cases/12transcripts/20S004snapshots/20pending subjects. Byte manifest updated; historical t1 evidence untouched.",
+  "checks": [
+    "Strict typed DTOs, no legacy gateway changes",
+    "Bounded streaming parse with duplicate-key rejection and no Gson numeric/boolean string coercion",
+    "Depth/node/item/string/byte limits before unbounded tree construction; bounded copies reject constructed cycles",
+    "29actual descriptors and unsupported schema compatibility",
+    "Root/key/op/mode/epoch/stale test identity",
+    "Synthetic private token/userinfo and raw error copy refusal",
+    "Native/production acceptance stays pending"
+  ],
+  "fullSweepRun": false,
+  "releaseEnabled": false,
+  "sourceHashes": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt": "541e6a50eb415944b1a45f877d1aa6f7d6f50a9c2a6a386357cd87210f567f8f",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt": "b136bfee2d59724462b2f0e0d0508a67a6b9d29d301c43a45f23cc3cae11a330",
+    "test-fixtures/connection-management/v1/corpus.json": "d8554d29a6597558429f57fb4aafef0b15974d23de33762ceea184ab46869a2a",
+    "test-fixtures/connection-management/v1/manifest.json": "4eecffb696f3ef16e67514b740df8870ebfe87ee6451dc930eb5516cf562dc1f"
+  }
+}

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: T18 a DEF authored by the controller is stamped with a passing review by the daemon
+ok 1 - T18 a DEF authored by the controller is stamped with a passing review by the daemon
+  ---
+  duration_ms: 5.318292
+  type: 'test'
+  ...
+# Subtest: T18 a DEF authored by the daemon is stamped with a passing review by the controller
+ok 2 - T18 a DEF authored by the daemon is stamped with a passing review by the controller
+  ---
+  duration_ms: 2.457958
+  type: 'test'
+  ...
+# Subtest: T18 a DEF with no author gets a daemon review, which no known author can match
+ok 3 - T18 a DEF with no author gets a daemon review, which no known author can match
+  ---
+  duration_ms: 3.062584
+  type: 'test'
+  ...
+# Subtest: T18 a HLD authored by the controller is stamped with a passing review by the daemon
+ok 4 - T18 a HLD authored by the controller is stamped with a passing review by the daemon
+  ---
+  duration_ms: 2.55075
+  type: 'test'
+  ...
+# Subtest: T18 a HLD authored by the daemon is stamped with a passing review by the controller
+ok 5 - T18 a HLD authored by the daemon is stamped with a passing review by the controller
+  ---
+  duration_ms: 2.448167
+  type: 'test'
+  ...
+# Subtest: T18 a HLD with no author gets a daemon review, which no known author can match
+ok 6 - T18 a HLD with no author gets a daemon review, which no known author can match
+  ---
+  duration_ms: 2.914208
+  type: 'test'
+  ...
+# Subtest: T18 a LLD authored by the controller is stamped with a passing review by the daemon
+ok 7 - T18 a LLD authored by the controller is stamped with a passing review by the daemon
+  ---
+  duration_ms: 1.415208
+  type: 'test'
+  ...
+# Subtest: T18 a LLD authored by the daemon is stamped with a passing review by the controller
+ok 8 - T18 a LLD authored by the daemon is stamped with a passing review by the controller
+  ---
+  duration_ms: 1.246875
+  type: 'test'
+  ...
+# Subtest: T18 a LLD with no author gets a daemon review, which no known author can match
+ok 9 - T18 a LLD with no author gets a daemon review, which no known author can match
+  ---
+  duration_ms: 1.510708
+  type: 'test'
+  ...
+# Subtest: T18 an older fixture is read by its attribution labels: written by `client`, reviewed by the daemon
+ok 10 - T18 an older fixture is read by its attribution labels: written by `client`, reviewed by the daemon
+  ---
+  duration_ms: 1.731583
+  type: 'test'
+  ...
+# Subtest: T18 a BUILD record (author: controller) gets a passing code-review record beside it, by the daemon
+ok 11 - T18 a BUILD record (author: controller) gets a passing code-review record beside it, by the daemon
+  ---
+  duration_ms: 1.581792
+  type: 'test'
+  ...
+# Subtest: T18 a BUILD record (author: daemon) gets a passing code-review record beside it, by the controller
+ok 12 - T18 a BUILD record (author: daemon) gets a passing code-review record beside it, by the controller
+  ---
+  duration_ms: 1.367167
+  type: 'test'
+  ...
+# Subtest: T18 a BUILD record (author: none) gets a passing code-review record beside it, by the daemon
+ok 13 - T18 a BUILD record (author: none) gets a passing code-review record beside it, by the daemon
+  ---
+  duration_ms: 2.363916
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 348.794792

@@ -1,0 +1,154 @@
+TAP version 13
+# Subtest: claude reviewer-session arguments allow reading and insrc analyze only
+ok 1 - claude reviewer-session arguments allow reading and insrc analyze only
+  ---
+  duration_ms: 1.352542
+  type: 'test'
+  ...
+# Subtest: codex reviewer-session arguments use a read-only sandbox
+ok 2 - codex reviewer-session arguments use a read-only sandbox
+  ---
+  duration_ms: 0.113916
+  type: 'test'
+  ...
+# Subtest: a claude reviewer session runs in the repo with the session arguments and returns the checked answer
+ok 3 - a claude reviewer session runs in the repo with the session arguments and returns the checked answer
+  ---
+  duration_ms: 394.328125
+  type: 'test'
+  ...
+# Subtest: a codex reviewer session takes the LAST message as the answer
+ok 4 - a codex reviewer session takes the LAST message as the answer
+  ---
+  duration_ms: 135.504583
+  type: 'test'
+  ...
+# Subtest: a session with no checked answer fails
+ok 5 - a session with no checked answer fails
+  ---
+  duration_ms: 117.205792
+  type: 'test'
+  ...
+# Subtest: a transient CLI error is retried once
+ok 6 - a transient CLI error is retried once
+  ---
+  duration_ms: 215.717125
+  type: 'test'
+  ...
+# Subtest: a transient CLI error is never retried more than once
+ok 7 - a transient CLI error is never retried more than once
+  ---
+  duration_ms: 194.856667
+  type: 'test'
+  ...
+# Subtest: an error that is not transient is not retried
+ok 8 - an error that is not transient is not retried
+  ---
+  duration_ms: 124.22625
+  type: 'test'
+  ...
+# Subtest: a session is stopped at its deadline and that is not retried
+ok 9 - a session is stopped at its deadline and that is not retried
+  ---
+  duration_ms: 1510.66075
+  type: 'test'
+  ...
+# Subtest: the retry gets only the time that remains
+ok 10 - the retry gets only the time that remains
+  ---
+  duration_ms: 2508.258208
+  type: 'test'
+  ...
+# Subtest: no attempt starts once the deadline has passed
+ok 11 - no attempt starts once the deadline has passed
+  ---
+  duration_ms: 2.162958
+  type: 'test'
+  ...
+# Subtest: one-shot calls and the edit session build the same arguments as before
+ok 12 - one-shot calls and the edit session build the same arguments as before
+  ---
+  duration_ms: 255.045333
+  type: 'test'
+  ...
+# Subtest: a codex reviewer session that produces no model output is killed early and retried once as a fresh run
+ok 13 - a codex reviewer session that produces no model output is killed early and retried once as a fresh run
+  ---
+  duration_ms: 1072.433541
+  type: 'test'
+  ...
+# Subtest: a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit
+ok 14 - a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit
+  ---
+  duration_ms: 4629.948083
+  type: 'test'
+  ...
+# Subtest: only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit
+ok 15 - only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit
+  ---
+  duration_ms: 2635.532209
+  type: 'test'
+  ...
+# Subtest: a structured codex call with stallMs kills a run that prints no output and throws CliStallError
+ok 16 - a structured codex call with stallMs kills a run that prints no output and throws CliStallError
+  ---
+  duration_ms: 1013.274667
+  type: 'test'
+  ...
+# Subtest: a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output
+ok 17 - a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output
+  ---
+  duration_ms: 1748.438833
+  type: 'test'
+  ...
+# Subtest: a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed
+ok 18 - a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed
+  ---
+  duration_ms: 5170.822917
+  type: 'test'
+  ...
+# Subtest: claude ignores stallMs and reviewer sessions keep the first-output watchdog
+ok 19 - claude ignores stallMs and reviewer sessions keep the first-output watchdog
+  ---
+  duration_ms: 5309.373917
+  type: 'test'
+  ...
+# Subtest: a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError
+ok 20 - a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError
+  ---
+  duration_ms: 5403.482416
+  type: 'test'
+  ...
+# Subtest: a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall
+ok 21 - a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall
+  ---
+  duration_ms: 3668.812292
+  type: 'test'
+  ...
+# Subtest: a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is
+ok 22 - a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is
+  ---
+  duration_ms: 403.187708
+  type: 'test'
+  ...
+# Subtest: with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions
+ok 23 - with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions
+  ---
+  duration_ms: 865.699209
+  type: 'test'
+  ...
+# Subtest: without effort every argv is byte-identical to today's
+ok 24 - without effort every argv is byte-identical to today's
+  ---
+  duration_ms: 449.175416
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 38142.73925

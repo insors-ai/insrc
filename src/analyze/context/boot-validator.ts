@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -30,6 +31,7 @@ import {
 } from '../classifier/index.js';
 import { PLANNER_PROMPT_PATH } from '../planner/index.js';
 import { DOC_SUMMARISER_PROMPT_PATH } from '../summariser/index.js';
+import { SUBSYSTEM_SUMMARISER_PROMPT_PATH } from '../summariser/subsystem-prompt.js';
 import { DECOMPOSE_PROMPT_PATH } from './decomposer.js';
 import {
 	SYNTHESIZE_ADHERENCE_PROMPT_PATH,
@@ -118,6 +120,7 @@ function collectComponentPrompts(): ReadonlyArray<{ componentId: string; relPath
 	out.push({ componentId: 'classifier',        relPath: CLASSIFY_PROMPT_PATH });
 	out.push({ componentId: 'planner',           relPath: PLANNER_PROMPT_PATH });
 	out.push({ componentId: 'doc-summariser',    relPath: DOC_SUMMARISER_PROMPT_PATH });
+	out.push({ componentId: 'subsystem-summariser', relPath: SUBSYSTEM_SUMMARISER_PROMPT_PATH });
 	out.push({ componentId: 'decomposer',            relPath: DECOMPOSE_PROMPT_PATH        });
 	out.push({ componentId: 'synthesize.code',       relPath: SYNTHESIZE_CODE_PROMPT_PATH       });
 	out.push({ componentId: 'synthesize.docs',       relPath: SYNTHESIZE_DOCS_PROMPT_PATH       });
@@ -173,14 +176,14 @@ export function validateAnalyzePrompts(): void {
 			continue;
 		}
 
-		log.debug({ componentId, path: abs, bytes: body.length }, 'analyze prompt loaded');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ componentId, path: abs, bytes: body.length }, 'analyze prompt loaded']);
 	}
 
 	if (failures.length > 0) {
 		throw new AnalyzePromptValidationError(failures);
 	}
 
-	log.info({ count: components.length }, 'analyze prompts validated');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ count: components.length }, 'analyze prompts validated']);
 }
 
 function resolveRelativeToInsrcRoot(relativePath: string): string {

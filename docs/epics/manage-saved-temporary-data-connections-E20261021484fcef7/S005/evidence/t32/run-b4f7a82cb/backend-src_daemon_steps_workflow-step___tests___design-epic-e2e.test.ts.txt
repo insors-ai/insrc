@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../
+ok 1 - design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../
+  ---
+  duration_ms: 21.724
+  type: 'test'
+  ...
+# Subtest: design.epic: refuses to start without an approved Define
+ok 2 - design.epic: refuses to start without an approved Define
+  ---
+  duration_ms: 1.455417
+  type: 'test'
+  ...
+# Subtest: design.epic: refuses without epicHash param
+ok 3 - design.epic: refuses without epicHash param
+  ---
+  duration_ms: 0.331708
+  type: 'test'
+  ...
+# Subtest: design.epic: s6 sbdry1=missed forces synthesize hard-fail
+ok 4 - design.epic: s6 sbdry1=missed forces synthesize hard-fail
+  ---
+  duration_ms: 4.541625
+  type: 'test'
+  ...
+# Subtest: design.epic: refuses when a Story from Epic is missing from storyBoundaries
+ok 5 - design.epic: refuses when a Story from Epic is missing from storyBoundaries
+  ---
+  duration_ms: 5.106125
+  type: 'test'
+  ...
+# Subtest: design.epic: refuses when interfaceSketch contains a return
+ok 6 - design.epic: refuses when interfaceSketch contains a return
+  ---
+  duration_ms: 4.04225
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 521.521042

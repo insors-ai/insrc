@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: CM-S1-W: XLSX sheet names legacy slugs dates shared strings formula normalization and saved rows have complete typed parity
+ok 1 - CM-S1-W: XLSX sheet names legacy slugs dates shared strings formula normalization and saved rows have complete typed parity
+  ---
+  duration_ms: 105.905125
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: XLSX empty and all-null worksheets keep declared stub/header schemas with zero rows
+ok 2 - CM-S1-W: XLSX empty and all-null worksheets keep declared stub/header schemas with zero rows
+  ---
+  duration_ms: 47.434917
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: XLSX compatible no-target union merged headers fallback names and hyperlinks retain saved semantics
+ok 3 - CM-S1-W: XLSX compatible no-target union merged headers fallback names and hyperlinks retain saved semantics
+  ---
+  duration_ms: 56.029042
+  type: 'test'
+  ...
+# Subtest: CM-S1-S: XLSX retained shared-string tables fail cumulative admission and source close clears parser tables
+ok 4 - CM-S1-S: XLSX retained shared-string tables fail cumulative admission and source close clears parser tables
+  ---
+  duration_ms: 132.637416
+  type: 'test'
+  ...
+# Subtest: CM-S1-W: directory XLSX conversion preserves all worksheets through its returned recursive Parquet glob
+ok 5 - CM-S1-W: directory XLSX conversion preserves all worksheets through its returned recursive Parquet glob
+  ---
+  duration_ms: 42.904542
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 969.321625

@@ -1,0 +1,72 @@
+TAP version 13
+# Subtest: Java HTTP recognizer (import-gated)
+    # Subtest: RestTemplate.getForObject + WebClient .uri each emit one CALLS_HTTP (file imports spring-web)
+    ok 1 - RestTemplate.getForObject + WebClient .uri each emit one CALLS_HTTP (file imports spring-web)
+      ---
+      duration_ms: 4.718
+      type: 'test'
+      ...
+    # Subtest: PRECISION: non-HTTP `.exchange`/`.url`/`.uri` in a file with NO HTTP import emit NO CALLS_HTTP
+    ok 2 - PRECISION: non-HTTP `.exchange`/`.url`/`.uri` in a file with NO HTTP import emit NO CALLS_HTTP
+      ---
+      duration_ms: 0.932959
+      type: 'test'
+      ...
+    # Subtest: a non-HTTP method_invocation stays a plain CALLS edge even in an HTTP-importing file
+    ok 3 - a non-HTTP method_invocation stays a plain CALLS edge even in an HTTP-importing file
+      ---
+      duration_ms: 0.734167
+      type: 'test'
+      ...
+    # Subtest: a file with no HTTP calls yields no CALLS_HTTP
+    ok 4 - a file with no HTTP calls yields no CALLS_HTTP
+      ---
+      duration_ms: 0.458583
+      type: 'test'
+      ...
+    1..4
+ok 1 - Java HTTP recognizer (import-gated)
+  ---
+  duration_ms: 7.414417
+  type: 'suite'
+  ...
+# Subtest: Scala HTTP recognizer (import-gated)
+    # Subtest: Play-WS ws.url(u) emits one CALLS_HTTP (file imports play.api.libs.ws)
+    ok 1 - Play-WS ws.url(u) emits one CALLS_HTTP (file imports play.api.libs.ws)
+      ---
+      duration_ms: 6.3355
+      type: 'test'
+      ...
+    # Subtest: PRECISION: Play reverse-routing `.url` / resource `.uri` in a file with NO HTTP import emit NO CALLS_HTTP
+    ok 2 - PRECISION: Play reverse-routing `.url` / resource `.uri` in a file with NO HTTP import emit NO CALLS_HTTP
+      ---
+      duration_ms: 0.543416
+      type: 'test'
+      ...
+    # Subtest: a non-HTTP call stays no CALLS_HTTP
+    ok 3 - a non-HTTP call stays no CALLS_HTTP
+      ---
+      duration_ms: 0.287
+      type: 'test'
+      ...
+    # Subtest: a file with no HTTP calls yields no CALLS_HTTP
+    ok 4 - a file with no HTTP calls yields no CALLS_HTTP
+      ---
+      duration_ms: 0.811
+      type: 'test'
+      ...
+    1..4
+ok 2 - Scala HTTP recognizer (import-gated)
+  ---
+  duration_ms: 8.129083
+  type: 'suite'
+  ...
+1..2
+# tests 8
+# suites 2
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 220.906208

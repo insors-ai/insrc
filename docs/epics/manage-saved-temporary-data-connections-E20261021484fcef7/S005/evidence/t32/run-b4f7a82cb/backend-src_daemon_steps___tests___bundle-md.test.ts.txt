@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: render includes the meta comment prefix by default
+ok 1 - render includes the meta comment prefix by default
+  ---
+  duration_ms: 1.505667
+  type: 'test'
+  ...
+# Subtest: meta line can be suppressed via includeMeta=false
+ok 2 - meta line can be suppressed via includeMeta=false
+  ---
+  duration_ms: 0.13125
+  type: 'test'
+  ...
+# Subtest: the completeness line is the first line of the rendered answer, and an answer with no report says completeness was not recorded
+ok 3 - the completeness line is the first line of the rendered answer, and an answer with no report says completeness was not recorded
+  ---
+  duration_ms: 0.33725
+  type: 'test'
+  ...
+# Subtest: render walks the seven layers in order + emits headings
+ok 4 - render walks the seven layers in order + emits headings
+  ---
+  duration_ms: 0.074958
+  type: 'test'
+  ...
+# Subtest: empty layers are dropped from the rendered output
+ok 5 - empty layers are dropped from the rendered output
+  ---
+  duration_ms: 0.09475
+  type: 'test'
+  ...
+# Subtest: layers filter narrows the rendered output
+ok 6 - layers filter narrows the rendered output
+  ---
+  duration_ms: 0.12475
+  type: 'test'
+  ...
+# Subtest: missing meta renders "(unset)" instead of throwing
+ok 7 - missing meta renders "(unset)" instead of throwing
+  ---
+  duration_ms: 0.092042
+  type: 'test'
+  ...
+# Subtest: meta includes repoIndexedAt when set
+ok 8 - meta includes repoIndexedAt when set
+  ---
+  duration_ms: 0.045209
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 231.018542

@@ -13,7 +13,7 @@
  * that is no longer a registered workspace repository.
  */
 
-import { decodeIndexStateRow, decodeRepoRow, encodeIndexStateRow, type IndexStateRow, type PendingClass } from './codec.js';
+import { decodeEntityRow, decodeIndexStateRow, decodeRepoRow, encodeIndexStateRow, type IndexStateRow, type PendingClass } from './codec.js';
 import { encodeRepoKey } from './keys.js';
 import { emptyIndexStateRow, recountPending, zeroPending } from './pending-class.js';
 import type { GraphStore } from './store.js';
@@ -97,9 +97,46 @@ export function readUnattributedUnwritableInTxn(s: GraphStore): UnattributedUnwr
 /** A correction the recount on open made, for the caller to log. */
 export interface IndexStateCorrection {
 	repoId: number;
-	kind:   'counts-corrected' | 'row-deleted';
+	kind:   'counts-corrected' | 'row-deleted' | 'unembedded-corrected';
 	stored?:   { pending: Record<PendingClass, number>; awaiting: Record<string, number> } | undefined;
 	recounted?: { pending: Record<PendingClass, number>; awaiting: Record<string, number> } | undefined;
+	/** For 'unembedded-corrected': the stored and the recounted number. */
+	unembedded?: { stored: number; recounted: number } | undefined;
+}
+
+/**
+ * Whether an entity row counts as unembedded (Epic c2ba6fa6 s2): the embed
+ * step selects it (a non-empty body; endpoints and module stubs never are)
+ * and its embedding marker is empty, meaning no vector is stored for it.
+ */
+export function isUnembeddedRow(row: { readonly body: string; readonly embeddingModel: string }): boolean {
+	return row.body !== '' && row.embeddingModel === '';
+}
+
+/** Keep a repository's unembedded count in step with one entity-row change
+ *  (`prev` null: a new row; `next` null: a removed row). */
+export function trackUnembeddedInTxn(
+	s: GraphStore,
+	prev: { readonly repoId: number; readonly body: string; readonly embeddingModel: string } | null,
+	next: { readonly repoId: number; readonly body: string; readonly embeddingModel: string } | null,
+): void {
+	if (prev !== null && prev.repoId === next?.repoId) {
+		const delta = (isUnembeddedRow(next) ? 1 : 0) - (isUnembeddedRow(prev) ? 1 : 0);
+		if (delta !== 0) updateIndexStateRowInTxn(s, prev.repoId, row => { row.unembedded = Math.max(0, row.unembedded + delta); });
+		return;
+	}
+	if (prev !== null && isUnembeddedRow(prev)) updateIndexStateRowInTxn(s, prev.repoId, row => { row.unembedded = Math.max(0, row.unembedded - 1); });
+	if (next !== null && isUnembeddedRow(next)) updateIndexStateRowInTxn(s, next.repoId, row => { row.unembedded++; });
+}
+
+/** Per repository, the entity rows that count as unembedded. */
+function recountUnembedded(s: GraphStore): Map<number, number> {
+	const out = new Map<number, number>();
+	for (const { value } of s.entity.getRange()) {
+		const row = decodeEntityRow(value as Buffer);
+		if (isUnembeddedRow(row)) out.set(row.repoId, (out.get(row.repoId) ?? 0) + 1);
+	}
+	return out;
 }
 
 function sameCounts(a: Record<string, number>, b: Record<string, number>): boolean {
@@ -121,6 +158,7 @@ export function reconcileIndexStateInTxn(s: GraphStore): IndexStateCorrection[] 
 		if (r.kind === 'workspace') workspace.add(r.id);
 	}
 	const counts = recountPending(s);
+	const unembedded = recountUnembedded(s);
 	const corrections: IndexStateCorrection[] = [];
 	const stale: Buffer[] = [];
 	for (const { key, value } of s.indexState.getRange()) {
@@ -140,6 +178,12 @@ export function reconcileIndexStateInTxn(s: GraphStore): IndexStateCorrection[] 
 			});
 			row.pending = { ...c.pending };
 			row.reasonCounts.awaiting = { ...c.awaiting };
+			putIndexStateRowInTxn(s, repoId, row);
+		}
+		const recounted = unembedded.get(repoId) ?? 0;
+		if (row.unembedded !== recounted) {
+			corrections.push({ repoId, kind: 'unembedded-corrected', unembedded: { stored: row.unembedded, recounted } });
+			row.unembedded = recounted;
 			putIndexStateRowInTxn(s, repoId, row);
 		}
 	}

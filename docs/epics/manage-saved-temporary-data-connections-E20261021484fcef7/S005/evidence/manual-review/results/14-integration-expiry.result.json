@@ -1,0 +1,50 @@
+{
+  "id": "14-integration-expiry",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:57:30.868Z",
+  "finished": "2026-11-01T04:58:01.855Z",
+  "inputChars": 54285,
+  "inputSha256": "fe4be0fd07f758caaa0578e265a89707ca4eaa66251bafdfd7f324b0b0866687",
+  "missingObligations": [],
+  "result": {
+    "summary": "Candidate 03-mutations-01:1 is confirmed, with a narrower mechanism than the candidate states. Once an attempt enters `reconciliation-required`, neither client has a transition out of it. This is safe when a mutation may still be unknown. It is not safe in the expired-on-receipt branch, where nothing was sent, so the outcome is known. The candidate's claim that the daemon answers `not-seen` for an expired ticket is wrong. The daemon answers `reconciliation-required`, but that gives the same stuck result. No other defects were found in the supplied files.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "src/shared/connection-manager/controller.ts",
+        "line": 90,
+        "trigger": "A ticket arrives with `expiresAt` already past (client/daemon clock skew or a slow ticket reply). The controller sets `reconciliation-required` and releases the request without ever calling `mutate`. The user then presses Reconcile, or tries to edit or delete the same connection.",
+        "defect": "The record is stuck. `reconciliation-required` is in `blocking`, so `isBlocked(key)` rejects every later `submit`/`remove` for that key with `busy`. `canDismiss` is false for this phase, and `canReplay` is false because the request was released. Reconcile calls daemon `status`. For an expired ticket with no receipt, the daemon returns `reconciliation-required` (management.ts:416), so `#status` sets the same phase again (controller.ts:162). The only exit is a workbench reload or `dispose()`. In this branch no mutation was sent, so the outcome is known not to have committed. Keeping the key blocked therefore protects no unknown state.",
+        "evidence": "controller.ts:43 (`blocking` includes the phase). controller.ts:62 (`canDismiss` excludes it). controller.ts:67 (`isBlocked`). controller.ts:90 (the expired-on-receipt branch sets the phase and calls `#release`, before the `#mutate` call at line 94). controller.ts:162 and 176 (every later transition returns to the same phase). management.ts:416-417 (an expired ticket with no receipt returns `reconciliation-required`; `not-seen` is returned only at line 420, after that check). management-tickets.ts:158 (expired tickets are never silently `not-seen`). Kotlin ConnectionMutationController.kt:144-147, 259 and 277 have the same path. The LLD §3.6 requires 'expired/unreceipted => reconciliation-required, no replay' and a reconciliation record before a new target mutation. It does not say the record can never be resolved in-session.",
+        "remedy": "Keep the no-replay rule and the LLD phase name. Add an explicit resolution for the case where nothing was sent. In the expired-on-receipt branch (TS line 90, Kotlin 144), end the attempt as a dismissible `ticket-error`-class phase with a fixed 'ticket expired before submit, nothing was sent' code. Do not use `reconciliation-required` there. For an expired ticket after a mutation was sent, add an explicit acknowledge or dismiss step. It would be offered only after daemon `status` reports no receipt and the authoritative list refresh succeeds. It would release the block without any replay. Apply the change in the TS and Kotlin controllers. Add a parity test for: expired ticket, Reconcile, then a new submit on the same key. If product policy needs the block to stay for the post-send case, resolve that separately."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "03-mutations-01:1",
+        "status": "holds",
+        "evidence": "Confirmed with a correction. `blocking` (controller.ts:43) includes `reconciliation-required`. `canDismiss` (line 62) excludes it. `canReplay` needs a retained request and an unexpired ticket. Line 90 releases the request without sending. Reconcile on an expired, unreceipted ticket gets `reconciliation-required` from the daemon (management.ts:416). The candidate says the daemon returns `not-seen`; it does not (the `not-seen` return at line 420 comes after that check). Line 162 still maps the result back to the same phase. The Kotlin controller has the same path. The LLD allows a reload to reset state, but it does not require an in-session dead end. The no-send branch is clearly safe to resolve."
+      }
+    ],
+    "inspectedFiles": [
+      "src/shared/connection-manager/controller.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationController.kt",
+      "vscode-plugin/src/connections/gateway.ts",
+      "src/daemon/db/management.ts (lines 370-429)",
+      "src/daemon/db/management-tickets.ts (lines 155-181)",
+      "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/LLD.md (lines 130-138)"
+    ],
+    "limitations": [
+      "The UI and view layers were not supplied. I could not check whether they offer an exit other than the controller's `dismiss`, `replay` or `reconcile`.",
+      "`decodeOperationStatus` in wire.ts was not supplied. I assumed it passes the daemon's `reconciliation-required` status through to line 162.",
+      "The temporary-scope daemon path was not supplied. I checked only the saved-scope ticket inspection and status code.",
+      "I did not assess other candidates, the UI acceptance status or the pending external service coverage."
+    ],
+    "evidenceRequests": [
+      "The view-layer code that renders `reconciliation-required` records and their available actions.",
+      "wire.ts `decodeOperationStatus`.",
+      "Controller tests covering ticket-expired followed by Reconcile followed by a new submit."
+    ]
+  }
+}

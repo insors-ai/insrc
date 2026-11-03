@@ -82,6 +82,23 @@ function defaults(): ToolSettings {
 
 let current: ToolSettings = defaults();
 
+/**
+ * With daemon threads the main thread owns the snapshot (Story 5d393a4b): tools.config.set is
+ * served there, and every change is pushed to each worker (TOOL_SETTINGS_OP), which mirrors it.
+ */
+export const TOOL_SETTINGS_OP = 'tools.settings';
+let changed: ((settings: ToolSettings) => void) | undefined;
+
+/** Told of every update (the main thread pushes it to the workers); undefined stops it. */
+export function onToolSettingsChange(fn: ((settings: ToolSettings) => void) | undefined): void {
+  changed = fn;
+}
+
+/** A worker takes the main thread's snapshot as it stands. */
+export function replaceToolSettings(settings: ToolSettings): void {
+  current = settings;
+}
+
 /** Return the current tool settings snapshot. Never throws. */
 export function getToolSettings(): ToolSettings {
   return current;
@@ -125,6 +142,7 @@ export function updateToolSettings(incoming: Record<string, unknown>): ToolSetti
   };
   current = next;
   log.info({ maxIterations: next.loop.maxIterations }, 'tool settings updated');
+  changed?.(next);
   return next;
 }
 

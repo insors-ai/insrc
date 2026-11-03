@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: Complete namespace inventory opens fresh and existing stores without data loss
+ok 1 - Complete namespace inventory opens fresh and existing stores without data loss
+  ---
+  duration_ms: 432.079375
+  type: 'test'
+  ...
+# Subtest: Schema corruption fails closed and owner pagination is isolated and bounded
+ok 2 - Schema corruption fails closed and owner pagination is isolated and bounded
+  ---
+  duration_ms: 250.426416
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1034.1265

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -43,7 +44,8 @@
  *      design/analyze-plan-builder.md "Failure surface"
  */
 
-import { ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { runWithConnectionExecution, ConnectionExecutionError, assertExplicitConnectionExecution } from '../../shared/step-context.js';
+import { withRunFileFilters } from '../context/run-file-filter.js';
 import { beginSessionReuse, assertSessionReuseNow, assertSessionContinuationNow, rememberSessionContinuation } from '../session-reuse.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { isCompletenessRecord } from '../completeness.js';
@@ -51,7 +53,7 @@ import { taskRefusalMapping, type TaskRefusalCode } from '../context/invariants.
 import { getLogger } from '../../shared/logger.js';
 
 import { writeTaskOutput } from './cache.js';
-import { getRuntime } from './registry.js';
+import { getRuntime, assertRuntimeExecution } from './registry.js';
 import {
 	ExecutorOutputShapeError,
 	ExecutorRuntimeMissingError,
@@ -88,10 +90,10 @@ export async function runExecutor(args: RunExecutorArgs): Promise<ExecutorResult
 	if (execution?.mode === 'session-memory') { await beginSessionReuse(execution); await rememberSessionContinuation(args.tree, execution); }
 	else assertSessionContinuationNow(args.tree, execution);
 	assertSessionReuseNow(execution);
-	const result = await executePlan(args.tree, args.intent, args.runId, {
+	const result = await runWithConnectionExecution(execution, () => withRunFileFilters(() => executePlan(args.tree, args.intent, args.runId, {
 		onTaskEvent: args.onTaskEvent,
 		connectionExecution: args.connectionExecution,
-	});
+	})));
 	assertSessionReuseNow(execution);
 	return result;
 }
@@ -175,7 +177,7 @@ async function executePlan(
 			perTask.set(task.taskId, record);
 			failed.add(task.taskId);
 			tasksFailed.push({ taskId: task.taskId, reason: record.error! });
-			log.info({ runId, taskId: task.taskId, reason: unmet }, 'task skipped (dependency-unavailable)');
+			captureAnalysisDiagnostics(log, opts.connectionExecution).emit('info', () => [{ runId, taskId: task.taskId, reason: unmet }, 'task skipped (dependency-unavailable)']);
 
 			emit(opts, {
 				type:   'task-completed',
@@ -243,7 +245,7 @@ async function executePlan(
 		tasksCompleted,
 		tasksFailed,
 	};
-	return { root, children };
+	return rememberSessionContinuation({ root, children }, opts.connectionExecution);
 }
 
 // ---------------------------------------------------------------------------
@@ -261,11 +263,13 @@ async function executeLeafTask(
 ): Promise<TaskExecutionRecord> {
 	const runtime = getRuntime(task.template);
 	if (runtime === undefined) {
+		if (execution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 		const err = new ExecutorRuntimeMissingError(task.template);
-		log.error({ runId, taskId: task.taskId, template: task.template }, err.message);
+		captureAnalysisDiagnostics(log).emit('error', () => [{ runId, taskId: task.taskId, template: task.template }, err.message]);
 		return failedRecord(task, err.message);
 	}
 
+	assertRuntimeExecution(runtime, execution);
 	const upstreamOutputs = projectUpstream(task, outputs);
 
 	let result: TemplateExecuteResult;
@@ -277,16 +281,17 @@ async function executeLeafTask(
 	} catch (err) {
 		if (err instanceof ConnectionExecutionError) throw err;
 		assertSessionReuseNow(execution);
+		if (execution?.mode === 'session-memory') return failedRecord(task, 'Temporary task failed.');
 		const msg = err instanceof Error ? err.message : String(err);
 		// A refused scope is a failure the caller can act on: it keeps the scope
 		// error's code and its own message, with no 'runtime-threw:' in front.
 		// So does a task that names a connection outside the request's scope.
 		const refused = taskRefusalMapping(err);
 		if (refused !== undefined) {
-			log.warn({ runId, taskId: task.taskId, code: refused.code, err: msg }, 'leaf task was refused');
+			captureAnalysisDiagnostics(log).emit('warn', () => [{ runId, taskId: task.taskId, code: refused.code, err: msg }, 'leaf task was refused']);
 			return failedRecord(task, refused.message, refused.code);
 		}
-		log.warn({ runId, taskId: task.taskId, err: msg }, 'leaf task runtime threw');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ runId, taskId: task.taskId, err: msg }, 'leaf task runtime threw']);
 		return failedRecord(task, `runtime-threw: ${msg}`);
 	}
 
@@ -294,7 +299,8 @@ async function executeLeafTask(
 	// Output shape check: every produces name must be present; no extras.
 	const shapeError = checkOutputShape(task, result);
 	if (shapeError !== null) {
-		log.warn({ runId, taskId: task.taskId, err: shapeError.message }, 'leaf task output shape mismatch');
+		if (execution?.mode === 'session-memory') return failedRecord(task, 'Temporary task output is unavailable.');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ runId, taskId: task.taskId, err: shapeError.message }, 'leaf task output shape mismatch']);
 		return failedRecord(task, `output-shape-mismatch: ${shapeError.message}`);
 	}
 
@@ -303,7 +309,7 @@ async function executeLeafTask(
 	const completeness = (result as { completeness?: unknown }).completeness;
 	if (!isCompletenessRecord(completeness)) {
 		const reason = 'no-completeness-record: the runtime returned a result that does not state its completeness';
-		log.warn({ runId, taskId: task.taskId, template: task.template }, reason);
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ runId, taskId: task.taskId, template: task.template }, reason]);
 		return failedRecord(task, reason);
 	}
 
@@ -341,11 +347,12 @@ async function executePlannerTask(
 	assertSessionContinuationNow(parent, opts.connectionExecution);
 	const childNode = parent.children.get(task.taskId);
 	if (childNode === undefined) {
+		if (opts.connectionExecution?.mode === 'session-memory') throw new ConnectionExecutionError('unsupported-temporary');
 		const childErr = parent.childErrors.get(task.taskId);
 		const reason   = childErr !== undefined
 			? `child-plan-unavailable: ${childErr.message}`
 			: 'child-plan-unavailable: tree has no child for this planner task';
-		log.warn({ runId, taskId: task.taskId }, reason);
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('warn', () => [{ runId, taskId: task.taskId }, reason]);
 		return { record: failedRecord(task, reason) };
 	}
 
@@ -357,8 +364,9 @@ async function executePlannerTask(
 	assertSessionReuseNow(opts.connectionExecution);
 
 	if (childResult.root.finalReport === undefined) {
+		if (opts.connectionExecution?.mode === 'session-memory') return { record: failedRecord(task, 'Temporary child report is unavailable.'), childResult };
 		const reason = `child-plan-unavailable: ${childFailureCause(childNode, childResult, opts.parentTaskPath)}`;
-		log.warn({ runId, taskId: task.taskId }, reason);
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('warn', () => [{ runId, taskId: task.taskId }, reason]);
 		return { record: failedRecord(task, reason), childResult };
 	}
 
@@ -545,13 +553,13 @@ async function persistTaskRecord(
 		return record;
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
-		log.warn({ runId, taskId: task.taskId, status: record.status, err: msg }, "the task's record could not be written");
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ runId, taskId: task.taskId, status: record.status, err: msg }, "the task's record could not be written"]);
 		// A task that had already failed or been skipped keeps its own reason.
 		if (record.status !== 'ok') return record;
 		const failed = failedRecord(task, `task-record-unwritable: ${msg}`);
 		try { writeTaskOutput(runId, failed, parentTaskPath, execution); }
 		catch (again) {
-			log.warn({ runId, taskId: task.taskId, err: (again as Error).message }, "the task's failure could not be written either; it is in the plan's result");
+			captureAnalysisDiagnostics(log).emit('warn', () => [{ runId, taskId: task.taskId, err: (again as Error).message }, "the task's failure could not be written either; it is in the plan's result"]);
 		}
 		return failed;
 	}
@@ -585,13 +593,12 @@ function nowIso(): string {
  * orchestrator's emit() helper.
  */
 function emit(opts: WalkOpts, event: TaskExecutionEvent): void {
+	assertSessionReuseNow(opts.connectionExecution);
 	if (opts.onTaskEvent === undefined) return;
 	try { opts.onTaskEvent(event); }
 	catch (err) {
-		log.warn(
-			{ eventType: event.type, err: (err as Error).message },
-			'executor: onTaskEvent subscriber threw; ignoring',
-		);
+		if (opts.connectionExecution?.mode === 'session-memory') return;
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('warn', () => [{ eventType: event.type, err: (err as Error).message }, 'executor: onTaskEvent subscriber threw; ignoring']);
 	}
 }
 

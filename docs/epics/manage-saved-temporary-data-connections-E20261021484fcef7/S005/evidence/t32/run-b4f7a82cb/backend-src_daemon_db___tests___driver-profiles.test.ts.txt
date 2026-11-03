@@ -1,0 +1,66 @@
+TAP version 13
+# (node:6812) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation
+ok 1 - CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation
+  ---
+  duration_ms: 108.764834
+  type: 'test'
+  ...
+# Subtest: CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection
+ok 2 - CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection
+  ---
+  duration_ms: 0.943792
+  type: 'test'
+  ...
+# Subtest: CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched
+ok 3 - CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched
+  ---
+  duration_ms: 19.68125
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only
+ok 4 - CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only
+  ---
+  duration_ms: 0.692292
+  type: 'test'
+  ...
+# Subtest: CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects
+ok 5 - CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects
+  ---
+  duration_ms: 0.45275
+  type: 'test'
+  ...
+# Subtest: CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly
+ok 6 - CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly
+  ---
+  duration_ms: 0.5125
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied
+ok 7 - CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied
+  ---
+  duration_ms: 1.171583
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints
+ok 8 - CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints
+  ---
+  duration_ms: 0.763084
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully
+ok 9 - CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully
+  ---
+  duration_ms: 0.751375
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2024.347459

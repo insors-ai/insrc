@@ -1,0 +1,92 @@
+[
+  {
+    "id": "01-transport-01:1",
+    "severity": "MED",
+    "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+    "line": 217,
+    "trigger": "A safe read or list reply from a daemon, or a draft public patch, carries `publicConfig.endpoint` such as `redis://:pw@my_host:6379` or `postgresql://u:p@a:1,b:2/db`. These have an underscore in the host or multiple hosts.",
+    "defect": "The credential-in-endpoint check uses `java.net.URI(...).rawUserInfo`. When the authority is not a valid server-based authority (underscore host, multi-host list), java.net.URI falls back to a registry-based authority. That fallback leaves `rawUserInfo` null and throws nothing, so the endpoint passes. The TS decoder uses WHATWG `new URL`, which sees the password (opaque host for non-special schemes) or throws on the invalid port, and refuses the row. Kotlin therefore accepts a safe read with an embedded credential that TS refuses. This breaks the shared strict privacy boundary and cross-language parity. The same java.net.URI strictness can also throw on endpoints WHATWG accepts, such as a space or `{` in the query. That turns one row into a whole-list read-error in Kotlin only.",
+    "evidence": "ConnectionProtocol.kt around line 217: `val uri = URI(child.asString); if (uri.scheme == null || uri.rawUserInfo != null) fail()`. wire.ts safePublicFields: `const url=new URL(child);if(url.username||url.password)fail();`. The line number is counted from the supplied diff and may be off by one or two. The corpus-based TS test covers only the single-host `postgresql://secret:password@fixture.invalid/db` case. No supplied Kotlin test covers underscore or multi-host userinfo. Java's fallback behavior comes from my knowledge of java.net.URI, not from supplied evidence.",
+    "remedy": "Do not rely on java.net.URI userinfo detection. Extract the authority textually: the segment after `scheme://` up to the first `/`, `?` or `#`. Fail if it contains `@`. Alternatively, reject any `@` in the authority before parsing. Add Kotlin fixtures for an underscore host with a password, multi-host with userinfo, and an endpoint with a space. Make the TS and Kotlin corpus assert identical outcomes for all of them."
+  },
+  {
+    "id": "02-state-draft-02:1",
+    "severity": "LOW",
+    "file": "src/shared/connection-manager/draft.ts",
+    "line": 58,
+    "trigger": "Open Create or Edit forms repeatedly, or re-render the kind list, in a long-lived VS Code workbench.",
+    "defect": "`validators()` calls `ajv.compile()` on freshly built schema objects every time, using a single module-level `Ajv` instance. The constructor deep-copies the descriptor with `data(descriptor)`, and `editingSchema()` builds a new object on every call. I believe Ajv caches compiled schemas by schema-object identity in a strong internal Map. If so, no call ever hits the cache, and every `new ConnectionDraft` and every `connectionDriverChoices` call leaves compiled validators in the shared instance. `connectionDriverChoices` compiles two validators for each of about 29 descriptors per call.",
+    "evidence": "Line 29 creates one module-level `ajv`. Line 58 compiles `descriptor.publicInputSchema` and `editingSchema(descriptor.publicInputSchema)`. The constructor passes `freeze(data(descriptor))` to `validators`, so its schema objects are new on every call. Nothing calls `ajv.removeSchema` or keys validators by kind. The Ajv cache behaviour is my knowledge of the library, not shown in the supplied evidence.",
+    "remedy": "Cache the `{full, editing}` pair by a stable key (kind plus JSON of the schema) in a bounded Map. Alternatively, remove the compiled schema with `ajv.removeSchema(schema)` after use, or use a short-lived `Ajv` per draft."
+  },
+  {
+    "id": "03-mutations-01:1",
+    "severity": "MED",
+    "file": "src/shared/connection-manager/controller.ts",
+    "line": 162,
+    "trigger": "1) A ticket whose `expiresAt` has passed on receipt (line 90). The cause could be client/daemon clock skew or a slow ticket reply. Or 2) a mutation answered `not-seen` that the user leaves until the ticket expires, after which Replay (line 176) or Reconcile (line 162) is pressed. In the second case, `canReplay` is false once expired, so the only available action is Reconcile.",
+    "defect": "The expired-ticket path sets `phase='reconciliation-required'`, which is in the `blocking` set. `isBlocked(key)` then rejects every later `submit`/`remove` for that key with `busy`. `canDismiss` is false for this phase. `request` has been released at line 90, so it cannot be replayed. Reconcile on a `not-seen` status with an expired ticket maps back to the same phase (line 162), so the state never changes. Nothing in the controller leaves this state short of a daemon status of `committed`. For an expired, never-seen ticket, a `committed` status can no longer arrive. The connection is therefore stuck, with no edit, delete or dismiss, until `dispose()` (workbench reload). The Kotlin controller has the identical path.",
+    "evidence": "TS: `#view` canDismiss (line 62) excludes 'reconciliation-required'. `blocking` (line 43) includes it. The expiry branch at line 90 sets it and calls `#release`. `#status` (line 162) sets `phase=result.status==='not-seen'&&!this.#unexpired(r)?'reconciliation-required':result.status`. `replay` (line 176) sets it when expired. Kotlin ConnectionMutationController.kt: expiry in `submitInput` (~line 144), `status` (~line 260), and `view` dismiss predicate (line 59). Neither client has a transition out of this phase. This weakens the contract:1 postcondition that an unknown state is reconciled before another mutation of that target.",
+    "remedy": "When the daemon reports `not-seen` for an expired ticket, the mutation can never commit. Resolve the attempt to a terminal, dismissible state instead of the blocking `reconciliation-required` phase. Examples are a `rejected`/`ticket-error`-class phase with a fixed 'ticket expired, nothing was saved' code, or allowing `dismiss` plus a fresh ticket for this phase. Apply the same change to the expired-on-receipt branch, where nothing was sent. Make the change in both clients and add a parity test for ticket-expired then Reconcile then new submit on the same key."
+  },
+  {
+    "id": "03-mutations-02:1",
+    "severity": "LOW",
+    "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt",
+    "line": 79,
+    "trigger": "The daemon returns a MutationOutcome-shaped rejection for a draft test (e.g. invalid-input for a file path outside the repository, conflict, not-found, secret-unavailable) and the user presses Test in the JetBrains manager.",
+    "defect": "Kotlin has no rejected-outcome branch. The reply goes through ConnectionProtocol.testResult, which expects a DraftTestResult carrying requestId/draftRevision/daemonEpoch. A rejection therefore parses to null and is published as 'unavailable' with cleanupUnverified=true. The reservation also stays in the map, which counts toward the 128 limit. TypeScript decodes the rejection, shows a code-specific message, and drops the reservation when the rejection is not uncertain. The Kotlin result is a misleading 'Retry after cleanup completes.' message for a permanent input error, which breaks parity with TypeScript (plan t15 requires the same Test behaviour as TypeScript).",
+    "evidence": "test-controller.ts decodes via decodeMutationOutcome and rejectedMessages, then deletes the slot when !uncertain. ConnectionDraftTests.kt:79 uses only runCatching{ConnectionProtocol.testResult(...)}.getOrNull(), and line 84 maps parsed==null to publish(\"unavailable\",true). ConnectionDraftTestsTest corrupts only requestId/draftRevision/repoRoot/daemonEpoch/safeMessage and never sends a rejected outcome. ConnectionProtocol itself is not supplied, so I assumed testResult rejects the rejection shape.",
+    "remedy": "Decode MutationOutcome rejections in the Kotlin controller using the same code-to-message table and uncertain/busy rules as TypeScript. Remove the reservation when the rejection is fresh and not busy. Add a Kotlin test that sends rejected invalid-input and busy replies."
+  },
+  {
+    "id": "04-vscode-lifecycle-01:1",
+    "severity": "LOW",
+    "file": "vscode-plugin/src/connections/session-owner.ts",
+    "line": 163,
+    "trigger": "A session is live with temporary overlays on root A. The user selects root B, or a reconnect runs, and any daemon handler for `capabilities`, `session.open`, `session.resume`, `session.delegate` or `session.attach` replies with an ordinary RPC error (`IpcLaneError` code `remote-error`) instead of a structured `status:'rejected'` reply. An example is an internal failure while checking whether the root is registered.",
+    "defect": "The catch block in `#ensure` treats every `remote-error` (and every non-`IpcLaneError`) as proof that the daemon lacks the feature. It calls `#invalidate('upgrade-required')` and throws `upgrade-required`. That cancels timers, drops all data lanes, disposes the control lane, nulls the resume credentials, clears all feature metadata and fires the temporary-invalidation listeners. A failure scoped to one root or one call therefore destroys the whole workbench session and erases root A's retained overlays and drafts. The user is then told to upgrade. The LLD only classifies unknown-method replies as upgrade-required, and it requires root A\u2192B\u2192A to retain overlays.",
+    "evidence": "session-owner.ts:163-165: `if(!(error instanceof IpcLaneError)||error.code==='remote-error'){ this.#invalidate('upgrade-required'); throw new ConnectionOwnerError('upgrade-required'); }`. `#invalidate` (lines 69-77) runs the invalidation listeners, clears `#features`, disposes the control lane and sets `#resume=null`. The visible tests cover only the globally disabled-feature case (`setEnabled(false)`), not a transient `remote-error` on a live session. I could not see `ipc-client.ts`, so I did not confirm whether `remote-error` carries a distinguishable unknown-method code. I also did not confirm which daemon paths throw rather than return a rejected status.",
+    "remedy": "Treat only a missing required feature or an unknown-method reply as `upgrade-required`. Map other remote or decode errors to a transient `offline` or error outcome that disposes only the failing lane and keeps the session, resume credentials and overlays. Add a test that injects a one-off `remote-error` on `delegate` for root B and asserts that root A's overlay and the temporary-invalidation count are unchanged."
+  },
+  {
+    "id": "07-jetbrains-lifecycle-01:1",
+    "severity": "MED",
+    "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt",
+    "line": 273,
+    "trigger": "A daemon reply to `capabilities`, `session.open`, `session.resume`, `session.delegate` or `session.attach` takes longer than 16 seconds during `selectRoot`. For example, the daemon is busy or a lane is stalled. `rpc()` (lines 209-211) then throws `TimeoutException` from `.get(16,SECONDS)`.",
+    "defect": "The `ensure()` catch treats every exception that is not a `ConnectionLaneException` as a protocol or version mismatch (`if(e !is ConnectionLaneException||e.code==\"remote-error\")`). A timeout is therefore reported as `upgrade-required`, and `invalidate(\"upgrade-required\")` runs. That call clears `authority`, closes the control lane and all data lanes, and clears feature snapshots. It also fires the temporary-invalidation listeners, which erase temporary drafts and attempts. A transient slowness is turned into a permanent-looking upgrade error. The daemon-side session and its temporary overlays are abandoned without `session.end`. The next `selectRoot` opens a fresh session instead of resuming. Any `TimeoutException` or `InterruptedException` that is not a lane exception takes the same path.",
+    "evidence": "Lines 209-211: `lane.request(...).result.toCompletableFuture().get(16,TimeUnit.SECONDS)` with only `ExecutionException` unwrapped. Line 273: `if(e !is ConnectionLaneException||e.code==\"remote-error\"){invalidate(\"upgrade-required\");throw ConnectionOwnerException(\"upgrade-required\")}`. Lines 274-275: only a `ConnectionLaneException` reaches the offline path that preserves the authority for same-epoch resume. No test in the supplied files exercises a reply timeout.",
+    "remedy": "Handle `TimeoutException` and `InterruptedException` before the upgrade-required branch. Close the control lane and call `lost(lane)` so the status becomes offline and the authority is kept for same-epoch resume, then throw `ConnectionOwnerException(\"offline\")`. Reserve `invalidate(\"upgrade-required\")` for decode or validation failures and `remote-error`. Add a test where the fixture delays a capabilities or delegate reply beyond the timeout and then asserts the status is offline, the authority is retained and the next `selectRoot` resumes."
+  },
+  {
+    "id": "08-jetbrains-ui-01:1",
+    "severity": "MED",
+    "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt",
+    "line": 70,
+    "trigger": "The user selects Replace for a credential and types a secret. The panel is then hidden (Settings page switch, tool-window tab switch, or any SHOWING_CHANGED event) and shown again. The user then clicks Save.",
+    "defect": "On hide, the hierarchy listener calls `fields.suspendView()`, which blanks every JBPasswordField via `erase()`. It does not tell the gateway: `gateway.suspendView()` only calls `probes.setView(null)`. The draft still holds the replacement secret, so `view.valid` is still true and Save stays enabled. On resume, `ConnectionFieldsPanel.render` only clears fields when the action is not `replace` and never repopulates them. The UI therefore shows an empty 'Replacement value' while Save submits the earlier hidden value. For address-list slots the blank rows are inconsistent with the retained draft. A single-value slot's draft is overwritten by whatever the user types next.",
+    "evidence": "ConnectionsManagerPanel.kt:70 (hierarchy listener: `fields.suspendView()` / `gateway.suspendView()`). ConnectionFieldsPanel `suspendView(){active=false;erase()}` and `erase()` clear only the text fields. ConnectionsManagerGateway.kt:86 `suspendView(){runCatching{probes.setView(null)}}` does not touch the draft credential. `snapshot()` computes `valid` from `draft.serialize()`, which still succeeds.",
+    "remedy": "Keep the draft and the visible fields consistent on suspend. Either also reset replace-credentials in the gateway (for example `credential(slot,\"replace\",\"\")`, which makes the draft invalid until re-entered), or do not blank the fields while the draft retains the value. Add a test that hides, shows and then saves with a replace credential."
+  },
+  {
+    "id": "08-jetbrains-ui-01:2",
+    "severity": "LOW",
+    "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerGateway.kt",
+    "line": 93,
+    "trigger": "A project-retained draft exists for repo R. The manager is attached again (`attach()` calls `open()`) after R has been unregistered. The registry worker then runs.",
+    "defect": "The worker first calls `dispatch(RegisteredRoots)`, which emits. Only afterwards does it null the draft for the unregistered root and call `bump()`. `bump()` changes `uiGeneration` and rebinds the probe but does not `emit()` and does not increment `formId`. If the reduced model has no repoRoot, line 94 does not dispatch Refresh, so nothing emits after the removal. A panel that rendered before the removal keeps showing the stale editor. Its `action()` guard compares `renderedGeneration` with the new `uiGeneration`, so every action is silently ignored until some unrelated emit. The race depends on whether the EDT render runs before or after the worker's removal.",
+    "evidence": "ConnectionsManagerGateway.kt:92-94 order: `dispatch(RegisteredRoots)`, then draft removal plus `bump()`, then a conditional Refresh. ConnectionsManagerPanel.kt:76 `action()` requires `renderedGeneration==gateway.snapshot().generation`.",
+    "remedy": "Remove the out-of-roots draft before dispatching `RegisteredRoots`, or call `emit()` after the removal. Increment `formId` so the form rebuilds."
+  },
+  {
+    "id": "10-assets-packaging-01:1",
+    "severity": "LOW",
+    "file": "vscode-plugin/package-lock.json",
+    "line": 3,
+    "trigger": "Any build, package or release step that reads package.json (version 0.5.24) alongside package-lock.json (root version 0.5.23). The next `npm install` also rewrites the lock.",
+    "defect": "The lockfile root version, at lines 3 and 9, is 0.5.23. package.json was bumped to 0.5.24 in this same batch. The two files disagree, so the lock is stale and the next npm install produces a diff.",
+    "evidence": "package.json diff: \"version\": \"0.5.16\" \u2192 \"0.5.24\". package-lock.json diff: \"version\": \"0.5.16\" \u2192 \"0.5.23\", on both the top-level entry and packages[\"\"].",
+    "remedy": "Regenerate the lock, for example with `npm install --package-lock-only`, so both root version fields read 0.5.24. Alternatively, if 0.5.23 is the intended released version, align package.json to it."
+  }
+]

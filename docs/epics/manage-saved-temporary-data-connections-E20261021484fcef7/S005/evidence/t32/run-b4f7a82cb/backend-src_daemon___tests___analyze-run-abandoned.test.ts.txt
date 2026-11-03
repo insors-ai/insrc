@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: a record in progress with no live run is rewritten as 'run-abandoned' by the status request, on disk too (mutation: return the record as read)
+ok 1 - a record in progress with no live run is rewritten as 'run-abandoned' by the status request, on disk too (mutation: return the record as read)
+  ---
+  duration_ms: 7.239
+  type: 'test'
+  ...
+# Subtest: the daemon's purge request purges such a record without force; purgeRun with no liveness refuses it; a live run's record is returned unchanged and refused
+ok 2 - the daemon's purge request purges such a record without force; purgeRun with no liveness refuses it; a live run's record is returned unchanged and refused
+  ---
+  duration_ms: 3.436166
+  type: 'test'
+  ...
+# Subtest: the daemon's handler writes the record and sends its stage, not 'classify', for a runAnalyze that throws, and sends both frames when the record cannot be written
+ok 3 - the daemon's handler writes the record and sends its stage, not 'classify', for a runAnalyze that throws, and sends both frames when the record cannot be written
+  ---
+  duration_ms: 2.49325
+  type: 'test'
+  ...
+# Subtest: with a record that cannot be written the status request still says 'run-abandoned' and the purge still removes the directory (mutation: let the rewrite's error escape)
+ok 4 - with a record that cannot be written the status request still says 'run-abandoned' and the purge still removes the directory (mutation: let the rewrite's error escape)
+  ---
+  duration_ms: 2.076875
+  type: 'test'
+  ...
+# Subtest: no reader changes a record that is 'ok' or 'failed'
+ok 5 - no reader changes a record that is 'ok' or 'failed'
+  ---
+  duration_ms: 2.471958
+  type: 'test'
+  ...
+# [04:39:46] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "run-abandoned-handler-2ff72588"
+#     [35mmessage[39m: "the run function failed outside its own guard"
+# [04:39:46] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "run-abandoned-handler-own-38a0ceb4"
+#     [35mmessage[39m: "thrown after its own record"
+# [04:39:46] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "run-abandoned-handler-none-34ed9ac2"
+#     [35mmessage[39m: "thrown before any record"
+# [04:39:46] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: uncaught orchestrator error[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "run-abandoned-handler-locked-68f48a8"
+#     [35mmessage[39m: "the disk is full"
+# [04:39:46] [31mERROR[39m: [36m[analyze-rpc] analyze.run.start: the failed run record could not be written[39m
+#     [35mmodule[39m: "analyze-rpc"
+#     [35mrunId[39m: "run-abandoned-handler-locked-68f48a8"
+#     err: "EACCES: permission denied, open '/private/tmp/s5-frozen-qldpq8za/home/.insrc/analyze/run-abandoned-handler-locked-68f48a8/run.json.tmp-75327-1793335186963'"
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 781.761625

@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: the daemon's error payload, the one-shot tool's message and the workflow runner's step failure carry the report and the reason
+ok 1 - the daemon's error payload, the one-shot tool's message and the workflow runner's step failure carry the report and the reason
+  ---
+  duration_ms: 3.256542
+  type: 'test'
+  ...
+# Subtest: a failure with no report is passed on as before: its code and message, and nothing about completeness
+ok 2 - a failure with no report is passed on as before: its code and message, and nothing about completeness
+  ---
+  duration_ms: 0.215125
+  type: 'test'
+  ...
+# Subtest: a grounded step gets the flattened findings of a successful request
+ok 3 - a grounded step gets the flattened findings of a successful request
+  ---
+  duration_ms: 0.0995
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1020.466167

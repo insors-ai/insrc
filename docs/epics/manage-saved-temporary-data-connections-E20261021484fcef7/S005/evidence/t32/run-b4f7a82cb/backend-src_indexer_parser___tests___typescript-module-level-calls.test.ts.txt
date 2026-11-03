@@ -1,0 +1,65 @@
+TAP version 13
+# Subtest: TypeScript/JavaScript calls outside any function
+    # Subtest: program-level statements, non-function and exported initializers and export default are CALLS from the file entity (.ts)
+    ok 1 - program-level statements, non-function and exported initializers and export default are CALLS from the file entity (.ts)
+      ---
+      duration_ms: 5.873541
+      type: 'test'
+      ...
+    # Subtest: calls in functions, methods, exported functions and classes and function-valued declarators keep their caller (.ts)
+    ok 2 - calls in functions, methods, exported functions and classes and function-valued declarators keep their caller (.ts)
+      ---
+      duration_ms: 1.888
+      type: 'test'
+      ...
+    # Subtest: built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (.ts)
+    ok 3 - built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (.ts)
+      ---
+      duration_ms: 0.475833
+      type: 'test'
+      ...
+    # Subtest: class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.ts)
+    ok 4 - class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.ts)
+      ---
+      duration_ms: 0.554042
+      type: 'test'
+      ...
+    # Subtest: program-level statements, non-function and exported initializers and export default are CALLS from the file entity (.js)
+    ok 5 - program-level statements, non-function and exported initializers and export default are CALLS from the file entity (.js)
+      ---
+      duration_ms: 3.501125
+      type: 'test'
+      ...
+    # Subtest: calls in functions, methods, exported functions and classes and function-valued declarators keep their caller (.js)
+    ok 6 - calls in functions, methods, exported functions and classes and function-valued declarators keep their caller (.js)
+      ---
+      duration_ms: 1.370167
+      type: 'test'
+      ...
+    # Subtest: built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (.js)
+    ok 7 - built-ins are skipped and a module-level HTTP call is a CALLS_HTTP from the file entity (.js)
+      ---
+      duration_ms: 0.441375
+      type: 'test'
+      ...
+    # Subtest: class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.js)
+    ok 8 - class field initializers and the constructor body are CALLS from the class entity; a function-valued field is not, and a generator-valued declarator is its own caller (.js)
+      ---
+      duration_ms: 0.563833
+      type: 'test'
+      ...
+    1..8
+ok 1 - TypeScript/JavaScript calls outside any function
+  ---
+  duration_ms: 15.316667
+  type: 'suite'
+  ...
+1..1
+# tests 8
+# suites 1
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 216.082375

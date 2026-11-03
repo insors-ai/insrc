@@ -4,7 +4,7 @@
     "epicHash": "484fcef7efaf229e",
     "storyId": "s3",
     "createdAt": "2026-10-25T13:49:15.323Z",
-    "updatedAt": "2026-10-26T07:05:50.981Z",
+    "updatedAt": "2026-10-29T07:05:57.321Z",
     "epicCreatedAt": "2026-10-21T05:28:15.025Z",
     "epicSlug": "manage-saved-temporary-data-connections"
   },
@@ -1649,6 +1649,1062 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "11d7d4a0e",
+        "ranAt": "2026-10-26T08:27:38.643Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/task-persistence.test.ts",
+                "title": "CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/task-persistence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2233,
+            "titles": [
+              {
+                "title": "CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t24",
+        "commit": "a4df478e8",
+        "ranAt": "2026-10-26T10:11:31.210Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
+                "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only adapter refuses internal helper substitution before native construction",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-PROVIDER: actual admitted local Ollama no-persistence smoke; unavailable evidence is pending and admission stays refused",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task24-provider-admission.md; final actual isolated Ollama source/compiled runs each pass zero skips (task24-live-source-output.txt, task24-live-compiled-output.txt), using src/daemon/steps/__tests__/provider-admission.live.test.ts with INSRC_PROVIDER_LIVE=1 then INSRC_PROVIDER_MODE=compiled, Node22. Actual complete/completeStructured, callback persistence denial, immutable method/profile proof, cancellation/expiry and private output snapshots through server close. Production configured-service proof stays pending; release disabled."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1930,
+            "titles": [
+              {
+                "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only adapter refuses internal helper substitution before native construction",
+                "result": "pass"
+              },
+              {
+                "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/provider-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 746,
+            "titles": [
+              {
+                "title": "CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t25",
+        "commit": "9a9e14ad5",
+        "ranAt": "2026-10-26T10:35:13.787Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+                "title": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+                "title": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1571,
+            "titles": [
+              {
+                "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only adapter refuses internal helper substitution before native construction",
+                "result": "pass"
+              },
+              {
+                "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/provider-diagnostics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1088,
+            "titles": [
+              {
+                "title": "CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t26",
+        "commit": "1f0151e05",
+        "ranAt": "2026-10-26T11:02:19.774Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/embedding-denial.test.ts",
+                "title": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/embedding-denial.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 922,
+            "titles": [
+              {
+                "title": "CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t27",
+        "commit": "7b17b4a50",
+        "ranAt": "2026-10-26T11:16:16.198Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/adherence-cache.test.ts",
+                "title": "CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/adherence-cache.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 873,
+            "titles": [
+              {
+                "title": "CM-S3-ADHERENCE-CACHE: warm topic record denied before read/write/enumeration; in-memory constraints positive path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t28",
+        "commit": "ca4b9f987",
+        "ranAt": "2026-10-26T11:32:56.351Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/analysis-diagnostics.test.ts",
+                "title": "CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/analysis-diagnostics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2427,
+            "titles": [
+              {
+                "title": "CM-S3-CONSUMER-LOGS: runtime/exploration/task/measure success/raw/late errors, lazy formatters and normal trace sink",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t29",
+        "commit": "54e4f7be4",
+        "ranAt": "2026-10-26T12:28:35.972Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/rpc-diagnostics.test.ts",
+                "title": "CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/rpc-diagnostics.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2897,
+            "titles": [
+              {
+                "title": "CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t30",
+        "commit": "64ae043a3",
+        "ranAt": "2026-10-26T14:22:18.043Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-resources.test.ts",
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-probe.test.ts",
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-probe.test.ts",
+                "title": "CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
+                "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-owner.test.ts",
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6297,
+            "titles": [
+              {
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-file-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1352,
+            "titles": [
+              {
+                "title": "CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 467,
+            "titles": [
+              {
+                "title": "CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9013,
+            "titles": [
+              {
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-resources.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1634,
+            "titles": [
+              {
+                "title": "CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t31",
+        "commit": "d8928fce2",
+        "ranAt": "2026-10-26T16:11:42.294Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-service-isolation.test.ts",
+                "title": "CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-service-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6090,
+            "titles": [
+              {
+                "title": "CM-S3-ISOLATION: two real workbenches/roots SQL+KV positive rows, replay and full route canary snapshots",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t32",
+        "commit": "c14001644",
+        "ranAt": "2026-10-26T16:32:59.145Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-file-matrix.test.ts",
+                "title": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/session-cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 15496,
+            "titles": [
+              {
+                "title": "CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-file-matrix.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8216,
+            "titles": [
+              {
+                "title": "CM-S3-FILES: native and converted actual source/compiled matrix, distinct rows, overbudget/unsupported negative controls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t33",
+        "commit": "e166feb0e",
+        "ranAt": "2026-10-29T07:05:57.321Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S3-INVENTORY: final resolved production site audit and saved compatibility regressions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+                "title": "CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+                "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-management.test.ts",
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+                "title": "CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+                "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+                "title": "CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-probe.test.ts",
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+                "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance",
+            "level": "live",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+                "title": "CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/connection-leases.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1462,
+            "titles": [
+              {
+                "title": "CM-S1-M: nested full-use callbacks block mutations and idle close; retained driver views are revoked",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback timeout and abandoned async work retain one lease until actual settle or rejection",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: asynchronous iterator lifetime survives cancellation of a waiter and releases exactly once on late settle",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: callback errors and shutdown wait for active use; reload never closes a leased revision",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: duplicate missing stale and busy mutation barriers reject before factory credential or writer effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: safe resolver keeps own-directory lookup and permits an injected session overlay without implementing session storage",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: a lease arriving during idle close waits for close and rebuild before driver use",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: late iterator creation is closed before release and nested raw driver results cannot escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: accessor inherited and collection-held raw drivers reject before callback results escape",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: early iterator return and abort while a read is pending release only after underlying cancellation completes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: executable function-held references reject while date binary and database JSON values retain wire semantics",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-M: sync throws promise rejections iterator failures metadata getters and factory failures cannot carry source objects out",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-management-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1428,
+            "titles": [
+              {
+                "title": "CM-S1-J: v2 handshake routes remain mutation-disabled before adoption and old-daemon replies become fixed upgrade-required",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: v2 safe reads legacy projections and label-only edits preserve credentials without raw fields or stored references",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: malformed unknown-field wrong-root ticket and scope payloads fail safely before mutation effects",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-R: a v2 refresh failure retries only safe list and preserves exact committed receipt revision bytes and keys",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-J: legacy unmanaged success hides secret references and managed removal refuses without changing state",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-C: v2 credential Keep Replace Clear and activation-only retry preserve safe exact outcomes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/connection-reservations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1889,
+            "titles": [
+              {
+                "title": "CM-S3-COLLISION: managed-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-v2 saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: managed-v2 temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: unmanaged-legacy saved-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: unmanaged-legacy temporary-first real socket race has one winner and zero loser writes",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-COLLISION: independent workbench reservations remain until every same-ID owner ends",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/draft-test-routes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1867,
+            "titles": [
+              {
+                "title": "CM-S2-C1: actual v2 legacy IPC routes share main-owned probes and isolate cancellation by socket",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S2-C2: actual IPC disconnect cancels owned preparation while its maintenance hold remains until drain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/driver-field-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6601,
+            "titles": [
+              {
+                "title": "CM-S1-A: every registered kind has a grounded fail-closed field classification and preservation fixture",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-L: typed production acquisition aliases and factory sites have explicit migration classifications",
+                "result": "pass"
+              },
+              {
+                "title": "SQLite file URLs preserve encoded pathname text and explicit path takes precedence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-management.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1762,
+            "titles": [
+              {
+                "title": "CM-S1-B: actual mutation path rejects duplicate stale missing and busy intent before credential or writer ports",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-D: same-root concurrent creates commit once and independent roots do not share serialization",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: v2 dispatch and real legacy save reject corrupt unreadable registries before every staging and writer effect",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-B: legacy upsert is serialized through the same managed gate and preserves private fields and pinned family",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S1-U: unmanaged legacy compatibility also rejects corrupt registry reads before password extraction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-probe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8327,
+            "titles": [
+              {
+                "title": "CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-release-gate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3217,
+            "titles": [
+              {
+                "title": "CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11923,
+            "titles": [
+              {
+                "title": "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t34",
+        "commit": "11c4b50f7",
+        "ranAt": "2026-10-26T18:35:22.559Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-final-source-sweep.json"
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: CM-S3-SWEEP: final Node22 build then one full regression sweep after t1-t33; report failures/skips/timeouts/TODO and pending gates"
       }
     ]
   }

@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion
+ok 1 - effectiveJudges keeps diagram only for a subject with an erDefinition/diagram companion
+  ---
+  duration_ms: 1.272084
+  type: 'test'
+  ...
+# Subtest: DEFAULT_DEPS carries the diagram slot (conditional at run time)
+ok 2 - DEFAULT_DEPS carries the diagram slot (conditional at run time)
+  ---
+  duration_ms: 0.253417
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass
+ok 3 - runCodeReview: a sound erDefinition runs the diagram dimension + folds to pass
+  ---
+  duration_ms: 21.384
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a broken (dangling) erDefinition folds a diagram HIGH to block
+ok 4 - runCodeReview: a broken (dangling) erDefinition folds a diagram HIGH to block
+  ---
+  duration_ms: 0.613417
+  type: 'test'
+  ...
+# Subtest: runCodeReview: a no-ER subject runs exactly the base dimensions (byte-shape compatible with pre-S003)
+ok 5 - runCodeReview: a no-ER subject runs exactly the base dimensions (byte-shape compatible with pre-S003)
+  ---
+  duration_ms: 0.233125
+  type: 'test'
+  ...
+# Subtest: expectedDimensions appends diagram only with an ER/diagram; schema enum + arity follow
+ok 6 - expectedDimensions appends diagram only with an ER/diagram; schema enum + arity follow
+  ---
+  duration_ms: 0.203292
+  type: 'test'
+  ...
+# Subtest: enforceCodeReviewGate: a diagram block withholds under enforce=true, is advisory-warn under false
+ok 7 - enforceCodeReviewGate: a diagram block withholds under enforce=true, is advisory-warn under false
+  ---
+  duration_ms: 2.148458
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 388.783208

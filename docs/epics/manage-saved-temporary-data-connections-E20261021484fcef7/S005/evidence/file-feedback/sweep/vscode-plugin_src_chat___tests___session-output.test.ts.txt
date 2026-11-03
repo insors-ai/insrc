@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: a turn's segment is the lines between its turn-start and turn-end markers; tail yields only complete CLI lines with the cursor after each, skips marker lines, holds back a half-written line until its newline, and follows growth until the writer finishes
+ok 1 - a turn's segment is the lines between its turn-start and turn-end markers; tail yields only complete CLI lines with the cursor after each, skips marker lines, holds back a half-written line until its newline, and follows growth until the writer finishes
+  ---
+  duration_ms: 66.982333
+  type: 'test'
+  ...
+# Subtest: tailing again from a yielded cursor resumes exactly after that line; a segment without a turn-end marker ends at the next turn-start or once the writer is finished
+ok 2 - tailing again from a yielded cursor resumes exactly after that line; a segment without a turn-end marker ends at the next turn-start or once the writer is finished
+  ---
+  duration_ms: 11.050708
+  type: 'test'
+  ...
+# Subtest: the err log keeps only the current turn, and errTail returns its end
+ok 3 - the err log keeps only the current turn, and errTail returns its end
+  ---
+  duration_ms: 2.377167
+  type: 'test'
+  ...
+# Subtest: the file rolls over at a turn start once past maxBytes, keeping one previous generation, and a cursor in the previous generation is still read from <sessionId>.1.ndjson
+ok 4 - the file rolls over at a turn start once past maxBytes, keeping one previous generation, and a cursor in the previous generation is still read from <sessionId>.1.ndjson
+  ---
+  duration_ms: 8.065167
+  type: 'test'
+  ...
+# Subtest: remove deletes a session's files; sweep removes old files of sessions not in keep and leaves the rest; one session uses one file pair however many turns it runs
+ok 5 - remove deletes a session's files; sweep removes old files of sessions not in keep and leaves the rest; one session uses one file pair however many turns it runs
+  ---
+  duration_ms: 49.383792
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 363.0515

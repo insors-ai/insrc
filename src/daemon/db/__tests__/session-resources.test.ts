@@ -8,7 +8,8 @@ import { connectionManagementHandlers } from '../../connection-management-rpc.js
 import { IpcServer, directDispatch } from '../../server.js';
 import { TemporaryConnectionOverlay, createTemporaryOverlay } from '../session-entries.js';
 import { createConnectionResolver } from '../pool-cache.js';
-import { contextualDriverFactory } from '../driver-log-policy.js';
+import { contextualDriverFactory, temporaryDriverOwner, temporaryFileExecutionOwner } from '../driver-log-policy.js';
+import { TemporaryDriverResources } from '../session-resources.js';
 import { DriverPool } from '../pool.js';
 import { connectionsPath } from '../config.js';
 import { environment } from './fixtures/saved-management-fixture.js';
@@ -24,7 +25,7 @@ function committed(value: MutationOutcome) { assert.equal(value.status, 'committ
 async function fixture(ports: TemporaryResourcePorts = {}) {
  const env = await environment(), a = join(env.directory, 'a'), b = join(env.directory, 'b');
  for (const root of [a, b]) { await mkdir(root); await mkdir(dirname(connectionsPath(root)), { recursive: true }); await writeFile(connectionsPath(root), '{"connections":[]}'); }
- const runtime = new ConnectionSessionRpc<TemporaryConnectionOverlay>({ enabled: async () => true, isRegistered: async root => root === a || root === b,
+ const runtime = new ConnectionSessionRpc<TemporaryConnectionOverlay>({ enabled: async () => true, removalEnabled: async () => true, isRegistered: async root => root === a || root === b,
   createOverlay: (root, handle, context) => createTemporaryOverlay(root, handle, context, ports.factory ? { factory: kind => { const selected = ports.factory!(kind); return selected ? contextualDriverFactory(selected) : undefined; } } : ports), dropOverlay: overlay => overlay.close() });
  const queued: { entered: ReturnType<typeof deferred<TrustedRpcContext>>; release: ReturnType<typeof deferred> }[] = [];
  const held: { response: Promise<unknown>; release: ReturnType<typeof deferred> }[] = [];
@@ -42,9 +43,51 @@ async function request(client: Awaited<ReturnType<typeof sessionRpcClient>>, roo
  const ticket = await client.call<OperationTicket>('db.connections.v2.ticket', { key, mode }); assert.ok(ticket.signature, JSON.stringify(ticket));
  return { ticket, operationId: ticket.operationId, key, mode, publicPatch: patch, credentials, ...(revision ? { expectedRevision: revision } : {}) };
 }
+async function removeRequest(client: Awaited<ReturnType<typeof sessionRpcClient>>, root: string, revision: string): Promise<MutationRequest> {
+ const key={repoRoot:root,scope:'temporary' as const,id:'same'},ticket=await client.call<OperationTicket>('db.connections.v2.ticket',{key,mode:'remove'});
+ return {key,ticket,operationId:ticket.operationId,mode:'remove',expectedRevision:revision};
+}
 function raw(config: ConnectionConfig, closed: () => void, marker = config.label): Driver {
  return { id: config.id, kind: config.kind, family: 'rdbms', privateConfig: config, describe: async () => ({ columns: [{ name: 'marker', type: 'text', nullable: false }] }), sample: async () => ({ rows: [{ marker }] }), close: async () => { closed(); } } as unknown as Driver;
 }
+
+test('CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners',async()=>{
+ const shared={slots:0};const retain=()=>{shared.slots++;let released=false;return()=>{if(!released){released=true;shared.slots--;}};};
+ let calls=0,otherCloses=0;
+ const rootA='/s4-resource-root-a',rootB='/s4-resource-root-b';
+ const a=new TemporaryDriverResources(rootA,'owner',()=>{},temporaryDriverOwner('owner',rootA,()=>{}),
+  {factory:()=>contextualDriverFactory(async config=>raw(config,()=>{calls++;if(calls===1)throw new Error('private-close-canary');}))},retain);
+ const b=new TemporaryDriverResources(rootB,'owner',()=>{},temporaryDriverOwner('owner',rootB,()=>{}),
+  {factory:()=>contextualDriverFactory(async config=>raw(config,()=>{otherCloses++;}))},retain);
+ try {
+  await a.acquire({id:'old',kind:'postgres',url:'postgres://host/db'},'old-revision');
+  const cleanup=a.commitRemoval(a.prepareRemoval('old-revision','old-operation'));
+  assert.equal(shared.slots,1);
+  await assert.rejects(cleanup.close(),{code:'recovery-required'});assert.equal(shared.slots,1);
+  assert.ok(a.removalCleanupPending('old-operation','old-revision'));
+  await b.acquire({id:'other',kind:'postgres',url:'postgres://host/db'},'other-revision');
+  await a.acquire({id:'new',kind:'postgres',url:'postgres://host/db'},'new-revision');
+  await a.retryRemovalCleanup('old-operation','old-revision');assert.equal(shared.slots,0);assert.equal(calls,2);
+  await cleanup.close();assert.equal(calls,2);assert.equal(otherCloses,0);
+ } finally {await a.close();await b.close();}
+ assert.equal(shared.slots,0);assert.equal(otherCloses,1);
+});
+
+test('CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete',async()=>{
+ let files=0,drivers=0,slots=0;
+ const root='/s4-resource-file';
+ const resources=new TemporaryDriverResources(root,'owner',()=>{},temporaryDriverOwner('owner',root,()=>{}),
+  {factory:()=>contextualDriverFactory(async(config,context)=>{
+   temporaryFileExecutionOwner(context)!({close:async()=>{files++;if(files===1)throw new Error('private-file-canary');}});
+   return raw(config,()=>{drivers++;});
+  })},()=>{slots++;return()=>{slots--;};});
+ try {
+  await resources.acquire({id:'private-file',kind:'postgres',url:'postgres://host/db'},'file-revision');
+  const cleanup=resources.commitRemoval(resources.prepareRemoval('file-revision','file-operation'));
+  await assert.rejects(cleanup.close(),{code:'recovery-required'});assert.equal(slots,1);assert.equal(drivers,1);
+  await cleanup.close();assert.equal(slots,0);assert.equal(files,2);assert.equal(drivers,1);
+ } finally {await resources.close();}
+});
 
 test('CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation', async () => {
  let builds = 0, closes = 0; const f = await fixture({ factory: () => async config => { builds++; return raw(config, () => { closes++; }); } });
@@ -57,6 +100,7 @@ test('CM-S3-LEASE: full callback pins revision through multiple calls busy updat
   const work = f.resolver.withConnection(access, 'same', async driver => { retained = driver; assert.equal((driver as unknown as Record<string, unknown>)['privateConfig'], undefined); assert.equal(Object.getPrototypeOf(driver), null); await driver.describe!('data'); entered.resolve(); await release.promise; if (driver.family !== 'rdbms') throw new Error('Expected relational driver'); await driver.sample('data', { limit: 1 }); return 7; });
   await entered.promise;
   const edit = await request(ui, f.a, { label: 'second' }, {}, initial.revision); rejected(await ui.call('db.connections.v2.mutate', edit), 'busy'); assert.equal(builds, 1); assert.equal(closes, 0);
+  rejected(await ui.call('db.connections.v2.mutate',await removeRequest(ui,f.a,initial.revision)),'busy');
   release.resolve(); assert.equal(await work, 7); assert.throws(() => retained!.describe!('data'), { code: 'conflict' });
   const updated = committed(await ui.call<MutationOutcome>('db.connections.v2.mutate', edit)); assert.notEqual(updated.revision, initial.revision); assert.equal(updated.activation, 'active'); assert.equal(builds, 2); assert.equal(closes, 1);
   const before = f.lookups;
@@ -85,6 +129,8 @@ for (const outcome of ['driver', 'rejection'] as const) test(`CM-S3-LEASE: late 
  try {
   const ui = await f.client(); await ui.call('db.connections.v2.session.open', { repoRoot: f.a }); const input = await request(ui, f.a, { kind: 'postgres', endpoint: 'postgres://host/db' });
   const pending = ui.call('db.connections.v2.mutate', input); await entered.promise;
+  const selected=await ui.call<{revision:string}>('db.connections.v2.read',{key:input.key});
+  rejected(await ui.call('db.connections.v2.mutate',await removeRequest(ui,f.a,selected.revision)),'busy');
   const ending = ui.call('db.connections.v2.session.end').then(value => { ended = true; return value; }); rejected(await ui.call('db.connections.v2.status', { ticket: input.ticket }), 'session-expired'); assert.equal(ended, false);
   release.resolve(); rejected(await pending, 'session-expired'); assert.deepEqual(await ending, { status: 'ended' }); assert.equal(closed, outcome === 'driver' ? 1 : 0);
  } finally { release.resolve(); await f.close(); }
@@ -99,6 +145,7 @@ test('CM-S3-LEASE: abandoned late iterator retains its lease and closes before e
   const use = f.resolver.withConnection(access, 'same', async driver => { void (driver as unknown as { scan(): Promise<unknown> }).scan(); });
   await called.promise;
   const edit = await request(ui, f.a, { label: 'blocked' }, {}, first.revision); rejected(await ui.call('db.connections.v2.mutate', edit), 'busy');
+  rejected(await ui.call('db.connections.v2.mutate',await removeRequest(ui,f.a,first.revision)),'busy');
   let ended = false; const ending = ui.call('db.connections.v2.session.end').then(result => { ended = true; return result; });
   rejected(await ui.call('db.connections.v2.status', { ticket: input.ticket }), 'session-expired'); assert.equal(ended, false);
   late.resolve({ [Symbol.asyncIterator]() { return { next: async () => ({ done: false, value: 'private-late-row' }), return: async () => { returned++; return { done: true, value: undefined }; } }; } });
@@ -121,16 +168,34 @@ test('CM-S3-ISOLATION: private factory receives only the matching owner root and
 });
 
 test('CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions', async () => {
- const f = await fixture();
- try {
-  for (const [root, name, marker] of [[f.a, 'a.sqlite', 'owner-A'], [f.a, 'b.sqlite', 'owner-B'], [f.b, 'c.sqlite', 'root-B'], [f.a, 'next.sqlite', 'next-revision']] as const) { const db = new DatabaseSync(join(root, name)); db.exec(`CREATE TABLE data(marker TEXT); INSERT INTO data VALUES ('${marker}');`); db.close(); }
-  const a = await f.client(), b = await f.client(); await a.call('db.connections.v2.session.open', { repoRoot: f.a }); await b.call('db.connections.v2.session.open', { repoRoot: f.a });
-  const requests: MutationRequest[] = [];
-  for (const [client, root, path] of [[a, f.a, 'a.sqlite'], [b, f.a, 'b.sqlite'], [a, f.b, 'c.sqlite']] as const) { const input = await request(client, root, { kind: 'sqlite', path }); requests.push(input); committed(await client.call<MutationOutcome>('db.connections.v2.mutate', input)); }
-  const ha = await f.hold(a), hb = await f.hold(b), aa = await f.runtime.accessFor(ha.context, f.a), ab = await f.runtime.accessFor(hb.context, f.a), ac = await f.runtime.accessFor(ha.context, f.b);
-  const rows = (access: ConnectionAccessContext) => f.resolver.withConnection(access, 'same', async driver => { assert.equal(driver.family, 'rdbms'); if (driver.family !== 'rdbms') throw new Error('Expected SQLite'); return driver.sample('data', { limit: 1 }); });
-  for (const [access, marker] of [[aa, 'owner-A'], [ab, 'owner-B'], [ac, 'root-B']] as const) assert.ok(JSON.stringify(await rows(access)).includes(marker));
-  const initial = await a.call<{ revision: string }>('db.connections.v2.read', { key: requests[0]!.key }), edit = await request(a, f.a, { path: 'next.sqlite' }, {}, initial.revision); committed(await a.call<MutationOutcome>('db.connections.v2.mutate', edit));
-  assert.ok(JSON.stringify(await rows(aa)).includes('next-revision')); assert.ok(JSON.stringify(await rows(ab)).includes('owner-B')); assert.ok(JSON.stringify(await rows(ac)).includes('root-B'));
- } finally { await f.close(); }
+	const { spawn } = await import('node:child_process'); const { fileURLToPath } = await import('node:url');
+	const baseline = Object.fromEntries(['DEBUG', 'NODE_DEBUG', 'OLLAMA_DEBUG', 'GRPC_TRACE', 'GRPC_VERBOSITY', 'DPI_DEBUG_LEVEL', 'NODE_ORACLEDB_TRACE_LEVEL', 'NODE_ORACLEDB_DEBUG_PACKETS', 'ORA_DEBUG_JDWP'].map(key => [key, '']));
+	const child = spawn(process.execPath, ['--import', 'tsx', fileURLToPath(new URL('./fixtures/native-sqlite-isolation-child.ts', import.meta.url))], { env: { ...process.env, ...baseline, INSRC_MODE: 'probe-worker', NODE_TEST_CONTEXT: undefined }, stdio: ['ignore', 'pipe', 'pipe'] });
+	let output = ''; child.stdout.on('data', b => { output += b; }); child.stderr.on('data', b => { output += b; }); const timer = setTimeout(() => child.kill('SIGKILL'), 15000);
+	try { const code = await new Promise<number | null>((resolve, reject) => { child.once('error', reject); child.once('close', resolve); }); assert.equal(code, 0, output); assert.match(output, /native-sqlite-isolation-ok/); } finally { clearTimeout(timer); child.kill('SIGKILL'); }
+});
+
+test('CM-S4-RACES: temporary remove replay and cleanup create races invalidate access before paused close',async()=>{
+ const entered=deferred(),release=deferred();let oldCloses=0,newCloses=0,builds=0;
+ const f=await fixture({factory:()=>async config=>{const generation=++builds;return {...raw(config,()=>{}),close:async()=>{if(generation===1){oldCloses++;entered.resolve();await release.promise;}else newCloses++;}} as Driver;}});
+ try{
+  const ui=await f.client();await ui.call('db.connections.v2.session.open',{repoRoot:f.a});
+  const create=await request(ui,f.a,{kind:'postgres',endpoint:'postgres://host/db'}),initial=committed(await ui.call<MutationOutcome>('db.connections.v2.mutate',create));
+  const held=await f.hold(ui),access=await f.runtime.accessFor(held.context,f.a),remove=await removeRequest(ui,f.a,initial.revision);
+  const [a,b]=await Promise.all([ui.call<MutationOutcome>('db.connections.v2.mutate',remove),ui.call<MutationOutcome>('db.connections.v2.mutate',structuredClone(remove))]);
+  const removed=committed(a);assert.deepEqual(a,b);await entered.promise;assert.equal(oldCloses,1);
+  const list=await f.resolver.list(access);assert.equal(list.some(row=>row.key.id==='same'),false);
+  await assert.rejects(f.resolver.lease(access,'same'),{code:'not-found'});await assert.rejects(f.resolver.withConnection(access,'same',async()=>{}),{code:'not-found'});
+  const edit=await request(ui,f.a,{label:'late'},{},initial.revision);rejected(await ui.call('db.connections.v2.mutate',edit),'busy');
+  const recreate=await request(ui,f.a,{kind:'postgres',endpoint:'postgres://host/new'});rejected(await ui.call('db.connections.v2.mutate',recreate),'busy');
+  const retry=ui.call('db.connections.v2.retryRemovalCleanup',{ticket:remove.ticket});
+  assert.equal((await ui.call<{state:string}>('db.connections.v2.removalState',{ticket:remove.ticket})).state,'removed-cleanup-pending');
+  release.resolve();assert.equal((await retry as {state:string}).state,'removed');assert.equal(oldCloses,1);
+  const fresh=committed(await ui.call<MutationOutcome>('db.connections.v2.mutate',recreate));assert.notEqual(fresh.revision,initial.revision);
+  assert.deepEqual(committed(await ui.call<MutationOutcome>('db.connections.v2.mutate',remove)),removed);
+  await ui.call('db.connections.v2.retryRemovalCleanup',{ticket:remove.ticket});assert.equal(newCloses,0);assert.equal(oldCloses,1);
+  assert.equal((await f.resolver.list(access)).find(row=>row.key.id==='same')!.revision,fresh.revision);
+  held.release.resolve();await held.response;
+ }finally{release.resolve();await f.close();}
+ assert.equal(newCloses,1);
 });

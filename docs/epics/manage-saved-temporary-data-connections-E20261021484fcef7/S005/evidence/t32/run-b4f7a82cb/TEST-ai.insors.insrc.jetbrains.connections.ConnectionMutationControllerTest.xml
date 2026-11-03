@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:08" hostname="subho-office-mac" time="8.312">
+  <properties/>
+  <testcase name="testSameTicketReplayIsExplicitAndIdenticalWhileExpiredUnknownBlocksNewMutation" classname="ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest" time="1.729"/>
+  <testcase name="testFiniteRecordsRefuseBeforeTicketWithoutEvictingUnknowns" classname="ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest" time="1.456"/>
+  <testcase name="testProjectMemoryUnknownSurvivesViewCloseAndLostReplyReconcilesWithoutAnotherCreate" classname="ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest" time="1.277"/>
+  <testcase name="testPostcommitActivationCleanupAndRefreshRemainSeparateFromRegistration" classname="ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest" time="1.269"/>
+  <testcase name="testPendingAndMalformedOutcomesRecoverByStatusWithoutRecreating" classname="ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest" time="1.315"/>
+  <testcase name="testTemporaryExpiryErasesOnlyItsAttemptAndNewProjectReloadCannotInventLostTicketOutcome" classname="ai.insors.insrc.jetbrains.connections.ConnectionMutationControllerTest" time="1.266"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code
+ok 1 - the docs tasks give the same result for a repo scope as before the change, and refuse a symbol scope with the mismatch code
+  ---
+  duration_ms: 298.144125
+  type: 'test'
+  ...
+# Subtest: the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's
+ok 2 - the family-summary task with a module scope keeps only the summaries of documents under that directory, and with a file scope only that file's
+  ---
+  duration_ms: 144.407083
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 921.535042

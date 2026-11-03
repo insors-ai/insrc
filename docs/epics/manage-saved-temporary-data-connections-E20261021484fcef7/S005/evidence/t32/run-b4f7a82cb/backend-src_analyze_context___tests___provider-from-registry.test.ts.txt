@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel
+ok 1 - provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel
+  ---
+  duration_ms: 4.306833
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit
+ok 2 - provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit
+  ---
+  duration_ms: 1.27425
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution
+ok 3 - provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution
+  ---
+  duration_ms: 1.17025
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: an Ollama shaper never runs a CLI family's model, and the run label names what buildShaperProvider builds
+ok 4 - provider-from-registry.test.ts: an Ollama shaper never runs a CLI family's model, and the run label names what buildShaperProvider builds
+  ---
+  duration_ms: 0.667541
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: the router's summariser resolution names the model its provider runs
+ok 5 - provider-from-registry.test.ts: the router's summariser resolution names the model its provider runs
+  ---
+  duration_ms: 0.763
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: a refused ollama-claude cheap tier makes the summariser refuse with model-not-supported, never substitute
+ok 6 - provider-from-registry.test.ts: a refused ollama-claude cheap tier makes the summariser refuse with model-not-supported, never substitute
+  ---
+  duration_ms: 0.961875
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: the run label of an ollama-claude shaper names the host family, and attribution maps it there
+ok 7 - provider-from-registry.test.ts: the run label of an ollama-claude shaper names the host family, and attribution maps it there
+  ---
+  duration_ms: 1.126833
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 627.538291

@@ -1,0 +1,386 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s1",
+    "createdAt": "2026-11-01T18:52:29.474Z",
+    "updatedAt": "2026-11-01T21:01:56.149Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "approvedAt": "2026-11-02T04:44:41.445Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented the requested ownership-coordination and duplicate-preflight fixes plus follow-up review items: direct factory type alias, distinct candidate/post-lock validation phases and one model failure path. All 20 local package tests, 15 source-matched Linux checks and root build pass; no review exceptions requested.",
+    "testRecord": {
+      "md": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "package-lock.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/.gitignore"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/LICENSE"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/README.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/contracts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/public-consumer.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/errors.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/host-node.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/tsconfig.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/t2/qualification.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/native.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/native.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/node22.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/configuration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/options.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/configuration.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/ownership.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/ownership.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/model-dispatcher.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/contention.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/fixtures/owner-peer.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/packed.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": ".github/workflows/project-memory.yml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/linux/native-lifecycle.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/linux/packed-consumer.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/linux/run.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "scripts/__tests__/project-memory-qualification.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/linux/platform.log"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/FOUNDATION-EVIDENCE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/macos-combined.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/root-build.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-17123b6d304af2a2-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/private-file.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/review-round-1.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/review-round-2.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/review-cycle-1-round-3.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/review-cycle-2-round-1.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T20:53:40.807Z"
+      }
+    ],
+    "commit": "36c384082"
+  }
+}

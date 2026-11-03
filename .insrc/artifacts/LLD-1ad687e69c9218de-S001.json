@@ -1,0 +1,546 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793687010733-gsei9y",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T06:25:39.684Z",
+    "epicCreatedAt": "2026-11-02T11:44:58.712Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 128948,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1ad687e69c9218de",
+    "epicSlug": "typescript-reader-drops-calls-user-functions",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793687010733-gsei9y",
+    "hldEffectiveHash": "140afac384d058e032df68cd42d07bdf3156a78ced030df739687535b0f20df7",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's fix (receiver-aware filter, a1) addresses the ISSUE's stated root cause and fix intent without leaving out any part of it.",
+          "evidence": "ISSUE.md root cause: 'resolveCalleeName returns the bare identifier for foo() and the property name for obj.foo(); only a receiver that is itself a built-in object... is filtered by the receiver... BUILTIN_METHODS... cannot tell a built-in arr.map() from a user map() or repo.find()'. Fix intent: 'Calls to user-defined TypeScript functions and methods are recorded whatever their name... calls to genuine built-in methods do not create false CALLS edges... Existing repositories regain the missing edges on re-index. Tests cover a bare call and a member call to a user function named like a built-in, and a built-in call next to a same-named user function.' The LLD's a1 design (section 7.1), postconditions (2.1) and migration section (6) implement exactly this: bare calls never filtered by BUILTIN_METHODS, member calls filtered only when the receiver is not proven a user object, re-index restores edges, and the test strategy (section 5) explicitly covers a bare call, a member call on a proven receiver, and a built-in-named call beside a same-named user function.",
+          "action": "Confirmed by reading docs/standalone/.../ISSUE.md and comparing to LLD sections 2.1, 6, 7.1.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today the reader drops a call by callee name alone, applying BUILTIN_METHODS to both bare calls and member calls with no receiver-awareness beyond BUILTIN_OBJECTS.",
+          "evidence": "src/indexer/parser/typescript.ts:1013-1023: `const calleeName = resolveCalleeName(funcNode); if (calleeName && !seen.has(calleeName) && !BUILTIN_OBJECTS.has(calleeName) && !BUILTIN_METHODS.has(calleeName)) { ... }` — this single check runs identically whether funcNode is an `identifier` (bare call) or a `member_expression` (member call); resolveCalleeName (line 1042-1059) collapses both shapes to a bare string before the filter, so a user `parse()` or `this.store.find()` is filtered exactly like `JSON.parse()` or `arr.find()` today.",
+          "action": "Read src/indexer/parser/typescript.ts lines 946-1060 directly.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The functions and line ranges the design names as change sites (walkForCalls, resolveCalleeName, collectClassHttpFields, the AxiosScope/collectScopeFrame machinery, the per-parse reset block, extractImport) exist at the stated locations and are the right places to carry the new logic.",
+          "evidence": "Verified each: parse()'s per-file reset block at lines 115-119 (currentClassHttpFields/fileCallsSeen/messagingEnabled resets); extractImport at line 620 (receives the full import_statement node incl. its import_clause, currently only reads the `source` field — a legitimate site to add local-binding collection); collectClassHttpFields at 804-822 (class-field proof collector, stops at nested-class boundaries, the natural site to extend for non-built-in-typed fields); the AxiosScope interface, collectScopeFrame and isProvenAxios spanning 857-904 (the per-scope-frame stack the design extends with a 'user-object names' set); walkForCalls at 946 (signature at 946-955 matches the LLD's section 2.1 signature exactly, and lines 1013-1022 are exactly where the filter decision is made, matching section 3.2's call sites and citation [[c1]]). All cited files/lines are real and match the quoted snippets.",
+          "action": "Read src/indexer/parser/typescript.ts across lines 1-150, 700-1060 and src/indexer/cross-file-resolver.ts lines 700-790; compared line numbers and quoted snippets to the LLD's citations.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "resolveCall's same-file-then-imported-export resolution rule, which the LLD says stays unchanged, is in fact unchanged by anything in this design (verifying the invariant that resolution precision does not degrade) and matches citation [[c2]].",
+          "evidence": "src/indexer/cross-file-resolver.ts:729-781 `resolveCall()` still: filters same-file entities by name/kind/language and returns resolved/ambiguous accordingly, then falls back to entities exported from imported files (plus re-export resolution) — identical in structure and quoted text to the design's citation [[c2]] ('const sameFile = (index.byFile.get(row.fromFile) ?? []).filter(...)'). The LLD makes no change to this file, consistent with its claim 'They resolve through the existing resolveCall rules... unchanged.'",
+          "action": "Read src/indexer/cross-file-resolver.ts lines 700-790 and compared to LLD section 3.2 and citation [[c2]].",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The ac1 reader/integration tests ('a bare call to parse/find/create records a CALLS row'; 'a bare call to an imported user parse resolves to it') would fail against the current code and thus actually exercise the fix.",
+          "evidence": "Per the current-behaviour premise above, src/indexer/parser/typescript.ts:1013-1023 filters a bare call named parse/find/create today (BUILTIN_METHODS applies to bare calls unconditionally), so a test asserting a CALLS row is emitted for `parse()` would fail on current code and only pass once the design's receiver-aware filter (never applying BUILTIN_METHODS to a bare identifier call) is implemented — the test is a genuine regression guard for the stated fix, not a vacuous pass-either-way check.",
+          "action": "Traced the current filter logic (same code read as the current-behaviour item) against the ac1 test descriptions in LLD section 5.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-11-03T06:29:45.902Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-03T07:19:08.791Z",
+    "rangeBase": "530fd95dbb19de4a14f03ad070f5de25e2d89110"
+  },
+  "body": {
+    "summary": {
+      "prose": "The TypeScript reader stops dropping calls to user code just because the callee shares a name with a built-in method. A bare call such as `parse()` is always recorded, and so is a member call whose receiver is known to be a user object: `this` or `super`, a name the file imports (`ns.parse()`, `registry.create()`), a class field typed as or created with a non-built-in class (`this.store.find(id)`), or a parameter or local typed as or created with one (`repo.find(id)`). A member call with a built-in method name on any other receiver (`items.map()`, `p.then()`, an untyped local) is still dropped, so name-based resolution cannot link built-in calls to same-named user functions. Existing repositories pick up the restored calls when they are re-indexed.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Keep TypeScript calls to user functions that share a built-in method's name"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "walkForCalls",
+          "signature": "function walkForCalls(node: SyntaxNode, callerId: string, repo: string, filePath: string, relations: Relation[], seen: Set<string>, axiosScopes: AxiosScope[], skip?: (n: SyntaxNode) => boolean): void",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "SyntaxNode",
+              "purpose": "subtree walked for call_expression nodes (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "callerId",
+              "type": "string",
+              "purpose": "the calling entity (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "repository root (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "filePath",
+              "type": "string",
+              "purpose": "file being read (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "relations",
+              "type": "Relation[]",
+              "purpose": "CALLS rows are appended here (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "seen",
+              "type": "Set<string>",
+              "purpose": "callee names already recorded for this caller (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "axiosScopes",
+              "type": "AxiosScope[]",
+              "purpose": "HTTP-client scope frames (unchanged)",
+              "optional": false
+            },
+            {
+              "name": "skip",
+              "type": "(n: SyntaxNode) => boolean",
+              "purpose": "subtrees to skip (unchanged)",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Appends CALLS rows; signature unchanged."
+          },
+          "errors": [
+            {
+              "type": "none",
+              "condition": "The walk does not throw; an unrecognised callee shape yields no row, as today."
+            }
+          ],
+          "preconditions": [
+            "The file's import-bound local names are collected once per parse; the class's user-object fields are collected when the walk enters a class; each scope's user-object names are collected when the walk enters that scope (per-file and per-walk state, reset at the start of each parse)."
+          ],
+          "postconditions": [
+            "A call whose callee is a bare identifier records a CALLS row unless the name is in BUILTIN_OBJECTS (global functions such as setTimeout, parseInt, require); BUILTIN_METHODS no longer applies to bare calls.",
+            "A member call whose receiver is proven a user object records a CALLS row for the property name, whatever the name. Proven: `this` or `super`; `this.<field>` where the enclosing class declares the field or a constructor parameter property with a type that names a non-built-in class, or initialises it with `new X()` of a non-built-in class, or assigns `this.<field> = new X()`; an identifier whose nearest declaring scope declares it with such a type annotation or `new` initialiser, the file's import bindings (default, namespace, named, aliased) forming the outermost scope.",
+            "A type proves a user object only when it is a single type name (optionally generic, e.g. `Repo<T>`) that is not on the built-in class list; unions, intersections, array types, function types, literal and primitive types never do.",
+            "Any other member call whose property name is in BUILTIN_METHODS records no row, as today; a member call on a BUILTIN_OBJECTS receiver records no row, as today.",
+            "Rows are otherwise unchanged: kind CALLS, from the caller, to the bare name, resolved false, one per callee name per caller (the seen set)."
+          ]
+        },
+        {
+          "name": "resolveCalleeName",
+          "signature": "function resolveCalleeName(node: SyntaxNode): string | null",
+          "parameters": [
+            {
+              "name": "node",
+              "type": "SyntaxNode",
+              "purpose": "the call_expression's function node (unchanged)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string | null",
+            "meaning": "Unchanged: the identifier, or the member property name; null for a BUILTIN_OBJECTS receiver."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged; the receiver-aware method-name decision is made in walkForCalls, where the receiver shape is known."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "per-file, per-class and per-scope receiver proofs in the TypeScript reader",
+        "change": "new",
+        "details": "Three in-memory sets, none stored: (1) per parse, the local names the file's import statements bind (default name, namespace name of `import * as ns`, each named import's local name or alias); (2) per class, the `this.<field>` names whose field or constructor parameter property is typed with a non-built-in class name, initialised with `new X()` of one, or assigned `this.<field> = new X()` - collected alongside currentClassHttpFields and switched with it for nested classes; (3) per lexical scope, in the existing frame the call walk pushes (AxiosScope, which gains a set of user-object names), the parameters and locals declared with such a type annotation or `new` initialiser; the import bindings form the outermost frame. A receiver identifier resolves against the nearest frame that declares it, so a local or parameter shadows an import or outer local. All are reset per parse, like currentClassHttpFields, fileCallsSeen and messagingEnabled.",
+        "callSites": [
+          "src/indexer/parser/typescript.ts:115-119",
+          "src/indexer/parser/typescript.ts:620",
+          "src/indexer/parser/typescript.ts:804-822",
+          "src/indexer/parser/typescript.ts:857-904",
+          "src/indexer/parser/typescript.ts:946"
+        ]
+      },
+      {
+        "entity": "CALLS rows the TypeScript reader emits",
+        "change": "invariant-change",
+        "details": "More rows: bare calls and this/super/imported-receiver member calls whose callee shares a built-in method name are now emitted. They resolve through the existing resolveCall rules (same-file name, then exported entities of imported files), unchanged. Built-in-named member calls on other receivers stay unemitted, so the invariant that built-in calls create no edge to user code still holds. Stored edges change for existing repositories only when files are re-read (an edit, or repo.reindex).",
+        "callSites": [
+          "src/indexer/parser/typescript.ts:1013-1022",
+          "src/indexer/cross-file-resolver.ts:729-781"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "An import statement the reader cannot read names from (unusual syntax, a parse error inside the import)",
+          "detection": "The import-binding collection finds no import_clause / named_imports child it recognises on that import_statement node",
+          "response": "That import binds no names; its receivers fall under the existing method-name filter",
+          "userImpact": "A call on such an import's name with a built-in method name stays missing, as today; never a false edge",
+          "recoverable": true
+        },
+        {
+          "scenario": "A restored call resolves to the wrong same-named entity",
+          "detection": "resolveCall finds the name in the same file or among exported entities of imported files; several candidates leave the row ambiguous (unchanged rule)",
+          "response": "Resolution rules are unchanged: one candidate resolves, several stay ambiguous, none stays unresolved",
+          "userImpact": "Same precision as for any other call name today",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "`export function parse() {}` in one file; `import { parse } from './p.js'; parse('x')` in another",
+          "expected": "A CALLS row to `parse`, resolved to the exported function"
+        },
+        {
+          "input": "`this.find(id)` inside a class with a method `find`",
+          "expected": "A CALLS row to `find`, resolved to the same-file method"
+        },
+        {
+          "input": "`import * as cfg from './config.js'; cfg.parse(text)`",
+          "expected": "A CALLS row to `parse`"
+        },
+        {
+          "input": "`import { registry as reg } from './r.js'; reg.create(spec)`",
+          "expected": "A CALLS row to `create` (the alias is the bound name)"
+        },
+        {
+          "input": "`constructor(private store: Store) {}` then `this.store.find(id)`; or `private store = new Store()`; or `this.store = new Store()` in the constructor",
+          "expected": "A CALLS row to `find` in each case"
+        },
+        {
+          "input": "`function load(repo: Repo) { return repo.find(1) }`; `const r = new Repo(); r.find(1)`",
+          "expected": "A CALLS row to `find` in both"
+        },
+        {
+          "input": "`items.find(x => x.ok)` with `items` untyped or typed `Item[]` / `Array<Item>` / `Map<K,V>`, in a file that also defines `function find()`",
+          "expected": "No CALLS row for `find` from that call"
+        },
+        {
+          "input": "`const ns = []; ns.map(f)` inside a function while `ns` is also an import name",
+          "expected": "No row: the local declaration shadows the import"
+        },
+        {
+          "input": "`p: Promise<T>`; `p.then(f)`; `e: EventEmitter`; `e.emit('x')`",
+          "expected": "No row: built-in classes on the fixed list"
+        },
+        {
+          "input": "`x: Repo | undefined`; `x.find(1)`",
+          "expected": "No row: a union never proves a user object (documented residual)"
+        },
+        {
+          "input": "`const r = makeRepo(); r.find(1)` (no annotation, no `new`)",
+          "expected": "No row (documented residual: no type information)"
+        },
+        {
+          "input": "`JSON.parse(s)`, `console.log(x)`, `Promise.all(ps)`",
+          "expected": "No row (built-in object receiver), as today"
+        },
+        {
+          "input": "`setTimeout(fn, 1)`, `require('x')` called bare",
+          "expected": "No row (BUILTIN_OBJECTS still applies to bare calls)"
+        },
+        {
+          "input": "A JavaScript file (.js/.jsx) read by the same reader",
+          "expected": "Same rules; without annotations only `new`-initialised receivers, imports and this/super prove a user object"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Calls on built-in objects (console, JSON, Math, Promise, ...) and bare calls to global functions (setTimeout, parseInt, require) produce no CALLS row.",
+          "source": "c1"
+        },
+        {
+          "text": "One CALLS row per callee name per caller (the seen set).",
+          "source": "c1"
+        },
+        {
+          "text": "resolveCall's same-file and imported-export rules are unchanged.",
+          "source": "c2"
+        },
+        {
+          "text": "No per-file reader state leaks into the next file (reset at the start of every parse).",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run through tsx (npx tsx --test), as in src/indexer/parser/__tests__/ and src/indexer/__tests__/",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The reader's CALLS output for each call shape: bare calls; this/super calls; calls on default/namespace/named/aliased import bindings; on typed and `new`-initialised class fields, constructor parameter properties and `this.x = new X()` fields; on typed parameters and `new`-initialised locals - all emitted with built-in method names. Not emitted: built-in-named member calls on untyped locals, on receivers typed with built-in classes, arrays or unions, on a local that shadows an import, on built-in object receivers, and bare global functions. Per-file state does not leak to the next file.",
+          "subjects": [
+            "walkForCalls in src/indexer/parser/typescript.ts"
+          ],
+          "fixturesNeeded": [
+            "TypeScript source strings parsed with the TypeScript reader"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Over a temporary store and two real files: a bare call and a namespace-import call to a user `parse` resolve to it; a this-call resolves to the same-file method; `items.find()` beside a same-file `function find` creates no edge to it.",
+          "subjects": [
+            "resolution of the restored calls through the cross-file resolver"
+          ],
+          "fixturesNeeded": [
+            "temporary repository with TypeScript files, indexed with IndexerService"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "On the installed daemon after the push: a small TypeScript repository with a user `parse` called bare and through an import shows its callers through search.callers; repo.reindex of an existing repository restores callers of a built-in-named function.",
+          "subjects": [
+            "installed daemon search.callers after index and repo.reindex"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "reader: a bare call to parse/find/create records a CALLS row",
+            "integration: a bare call to an imported user parse resolves to it"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "reader: this.find() and super.emit() record rows",
+            "reader: calls on default, namespace, named and aliased import bindings record rows",
+            "reader: calls on typed/new-initialised fields, constructor parameter properties, typed parameters and new-initialised locals record rows",
+            "integration: a this-call, a field call (this.store.find) and a namespace-import call resolve to the user definitions"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "reader: untyped locals, built-in-typed, array-typed and union-typed receivers, a local shadowing an import, built-in object receivers and bare global functions record no row for built-in method names",
+            "integration: items.find() beside a same-file function find creates no edge to it"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "reader: import bindings and class fields of one file do not apply to the next file parsed"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "smoke: callers of a built-in-named user function appear after index and after repo.reindex on the installed daemon"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The TypeScript reader drops every call whose callee name is on BUILTIN_METHODS, bare or member (src/indexer/parser/typescript.ts:1013-1022, s1 bundle 1), so user functions and methods named parse, find, create, emit, ... have no stored callers in any indexed repository (s1 bundle 4).",
+      "stateAfter": "The method-name filter applies only to member calls whose receiver is not proven a user object (this, super, an import, or a field/parameter/local typed as or created with a non-built-in class); such calls on user code are emitted and resolved by the unchanged resolver. Receivers with no type information stay filtered (documented limit). Repositories indexed before the change keep their old edges for unchanged files until re-read.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Ship the reader change; no schema or stored-data change.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Files re-read after the update (edited files, full indexes) gain the restored calls automatically.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "For a complete call graph in an existing repository, run repo.reindex once (documented in the BUILD record and docs); until then unchanged files keep their old, smaller set of edges.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No API, IPC or storage change. The only visible difference is more CALLS edges: search.callers / callees and the analyzer now show calls to user functions and methods named like built-ins.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Receiver-aware filter in the reader",
+        "oneLineSummary": "Apply the built-in method names only to member calls whose receiver is not known to be a user object; never to bare calls.",
+        "approach": "The reader keeps the built-in object filter (receivers and global functions such as JSON, console, setTimeout) and narrows the built-in METHOD filter by receiver: a bare call `parse()` is never dropped for its name; a member call is never dropped for its name when its receiver is proven a user object: (1) `this` or `super`; (2) `this.<field>` where the class declares the field (or a constructor parameter property) with a type naming a non-built-in class, initialises it with `new X()` of a non-built-in class, or assigns `this.<field> = new X()` in the constructor (collected per class, as collectClassHttpFields collects HTTP-client fields); (3) an identifier whose nearest declaring scope declares it with such a type annotation or `new` initialiser (parameters and locals, through the existing per-scope frames of the call walk), with the file's import bindings (default, namespace, named, aliased) as the outermost frame so a nearer local shadows an import. Any other member call with a built-in method name (`items.map()`, `p.then()`, an untyped local or field) is dropped as today. Built-in classes are a fixed list (Array, Map, Set, Promise, Date, RegExp, Error, Buffer, typed arrays, EventEmitter, utility types such as Record/Partial/Readonly, ...); unions, arrays (`T[]`) and primitive types never prove a user object. No resolver or storage change.",
+        "pros": [
+          "Restores bare calls, this/super calls, calls on imports, and calls on typed or `new`-created fields, parameters and locals - including the ISSUE's own `this.store.find(id)` and `registry.create(spec)`",
+          "Built-in member calls on other receivers still produce no CALLS row, so name resolution cannot link them to user code and no new unresolved rows are stored",
+          "Reuses the reader's existing per-class field collection and per-scope frames; reader-only change"
+        ],
+        "cons": [
+          "Receivers with no type information at all (`const r = makeRepo(); r.find()`, an untyped field) are still dropped: the reader has no type inference",
+          "A user class that the fixed built-in list happens to name (a user class called `Map`) is treated as built-in"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Emit every call; filter built-ins at resolution",
+        "oneLineSummary": "The reader stops filtering method names and marks built-in-named member calls; the resolver refuses to link a marked row by name.",
+        "approach": "Every call becomes a CALLS row; rows whose callee is a built-in method name on a member call carry a marker in meta. resolveCall resolves a marked row only when the receiver is this/super/an import binding, recorded in meta by the reader; otherwise it leaves the row unresolved.",
+        "pros": [
+          "Keeps the call site recorded even when it cannot be resolved"
+        ],
+        "cons": [
+          "Every `.map()`, `.then()`, `.push()` call becomes a stored unresolved row: large growth in pending rows and the unresolved counts the completeness report shows, for no resolvable edge",
+          "Touches the reader, the row meta and the resolver for the same outcome as a1"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Same edges as a1 at the cost of storing every built-in member call as a pending row."
+      },
+      {
+        "id": "a3",
+        "name": "Drop the method-name filter",
+        "oneLineSummary": "Remove BUILTIN_METHODS; keep only the built-in object filter.",
+        "approach": "Every member and bare call except those on built-in objects becomes a CALLS row resolved by name.",
+        "pros": [
+          "Smallest code change; restores every user call"
+        ],
+        "cons": [
+          "Name resolution links built-in calls to user code: `items.find()` in a file defining or importing a function `find` gains a false edge; violates the issue's fix intent",
+          "Adds a pending row for every built-in member call"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Violates fi-2."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/parser/typescript.ts:1013-1022",
+      "quotedText": "if (calleeName && !seen.has(calleeName) && !BUILTIN_OBJECTS.has(calleeName) && !BUILTIN_METHODS.has(calleeName)) {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:729-781",
+      "quotedText": "const sameFile = (index.byFile.get(row.fromFile) ?? []).filter(e => sameFamily(e.language, language) && CALL_TARGET_KINDS.includes(e.kind) && e.name === row.rawTo && e.id !== row.fromEntity);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/indexer/parser/typescript.ts:115-119",
+      "quotedText": "currentClassHttpFields = new Set();  // S001 (t3): reset per file; set per class"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/indexer/parser/typescript.ts:759-782",
+      "quotedText": "const BUILTIN_METHODS = new Set(["
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/indexer/parser/typescript.ts:1043-1060",
+      "quotedText": "if (object?.type === 'identifier' && BUILTIN_OBJECTS.has(object.text)) {"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:678",
+      "quotedText": "'repo.reindex': async (params) => {"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/ISSUE.md"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/indexer/parser/typescript.ts:804-822",
+      "quotedText": "if (typeNode && /:\\s*HttpClient\\b/.test(typeNode.text)) {"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/indexer/parser/typescript.ts:857-904",
+      "quotedText": "interface AxiosScope { declared: Set<string>; axios: Set<string>; }"
+    }
+  ]
+}

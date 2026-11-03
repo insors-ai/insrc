@@ -41,17 +41,21 @@ export const INDEXING_DRAINED = 'indexing-drained';
 export class IndexingPortClient implements RuntimeQueue, RuntimeIndexer {
 	constructor(
 		private readonly request: (method: string, params: unknown) => Promise<unknown>,
-		private readonly board: StatusBoard,
+		private readonly board: Pick<StatusBoard, 'snapshot'>,
 	) {}
 
 	private get indexing(): IndexingStatus { return this.board.snapshot().indexing; }
 
-	get depth(): number { return this.indexing.index.depth + this.indexing.summary.depth; }
-	get isProcessing(): boolean { return this.indexing.index.processing || this.indexing.summary.processing; }
+	get depth(): number { return this.indexing.index.depth + this.indexing.summary.depth + (this.indexing.backfill?.depth ?? 0); }
+	get isProcessing(): boolean { return this.indexing.index.processing || this.indexing.summary.processing || (this.indexing.backfill?.processing ?? false); }
 
-	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } } {
-		const { index, summary } = this.indexing;
-		return { index: { depth: index.depth, running: index.processing }, summary: { depth: summary.depth, running: summary.processing } };
+	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean }; backfill?: { depth: number; running: boolean } | undefined } {
+		const { index, summary, backfill } = this.indexing;
+		return {
+			index: { depth: index.depth, running: index.processing },
+			summary: { depth: summary.depth, running: summary.processing },
+			...(backfill !== undefined && { backfill: { depth: backfill.depth, running: backfill.processing } }),
+		};
 	}
 
 	summarySweepProgress(): SummarySweepProgress | undefined { return this.indexing.sweep; }
@@ -67,9 +71,9 @@ export class IndexingPortClient implements RuntimeQueue, RuntimeIndexer {
 		return await this.request(INDEXING_PORT.codeIndexWorkFor, { repoPath }) as CodeIndexWork;
 	}
 
-	/** repo.stats, its only caller, runs on the code-indexing worker against the real queue. */
-	depthForRepo(_repoPath: string): number {
-		throw new Error('depthForRepo is answered on the code-indexing worker; ask it with INDEXING_PORT.depthForRepo');
+	/** The repository's queued jobs, answered by the code-indexing worker's queue. */
+	async depthForRepo(repoPath: string): Promise<number> {
+		return await this.request(INDEXING_PORT.depthForRepo, { repoPath }) as number;
 	}
 
 	async addRepo(repoPath: string): Promise<void> { await this.request(INDEXING_PORT.addRepo, { repoPath }); }

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause
+ok 1 - OllamaProvider: stream creation and stream iteration failures are raised as ModelCallFailedError with the client error as cause
+  ---
+  duration_ms: 2.233791
+  type: 'test'
+  ...
+# Subtest: OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError
+ok 2 - OllamaProvider: completeStructured failures on the call and during iteration are raised as ModelCallFailedError
+  ---
+  duration_ms: 0.876583
+  type: 'test'
+  ...
+# Subtest: OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError
+ok 3 - OllamaProvider: complete() raises a connection refused and a socket hang up (after its retry) as ModelCallFailedError
+  ---
+  duration_ms: 5003.412917
+  type: 'test'
+  ...
+# Subtest: retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix
+ok 4 - retry helper: a ModelCallFailedError on the last attempt is re-thrown as a ModelCallFailedError with the attempt prefix
+  ---
+  duration_ms: 0.436625
+  type: 'test'
+  ...
+# Subtest: retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call
+ok 5 - retry helper: a shape failure on the last attempt stays a plain Error even after an earlier failed call
+  ---
+  duration_ms: 0.159292
+  type: 'test'
+  ...
+# Subtest: OllamaProvider: a cancelled call (AbortError) reaches the caller as it was raised, on the call and during iteration, and is not taken for a failed model call
+ok 6 - OllamaProvider: a cancelled call (AbortError) reaches the caller as it was raised, on the call and during iteration, and is not taken for a failed model call
+  ---
+  duration_ms: 5.142542
+  type: 'test'
+  ...
+# Subtest: retry helper: a cancelled attempt (AbortError) ends the helper at once and is re-thrown as it was raised, not retried and not reported as a failure of shape
+ok 7 - retry helper: a cancelled attempt (AbortError) ends the helper at once and is re-thrown as it was raised, not retried and not reported as a failure of shape
+  ---
+  duration_ms: 0.220583
+  type: 'test'
+  ...
+# Subtest: OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found), a 408 or 429 (not reached in time) and a 5xx stay failed model calls
+ok 8 - OllamaProvider (ISSUE-fb584b48): a request the server rejected for its content (ResponseError 4xx) reaches the caller as it was raised, with its status, not as a failed model call; a 404 (model not found), a 408 or 429 (not reached in time) and a 5xx stay failed model calls
+  ---
+  duration_ms: 1.852417
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5339.444667

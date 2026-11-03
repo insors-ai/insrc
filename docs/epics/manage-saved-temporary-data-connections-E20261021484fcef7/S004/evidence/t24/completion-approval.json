@@ -1,0 +1,19 @@
+{
+  "story": "484fcef7efaf229e/s4",
+  "approvedAt": "2026-10-29T13:33:26.936Z",
+  "approvalArtifact": ".insrc/artifacts/BUILD-484fcef7efaf229e-s4.json",
+  "approved": true,
+  "skipped": [],
+  "formalCodeReviewStatus": "no-review",
+  "exceptions": "User accepted failed full sweep and session-author manual review; no independent formal CR claimed.",
+  "t24Passed": false,
+  "releaseEnabled": false,
+  "nextStory": "S005 client implementation/acceptance; no current LLD or PLAN for this epic found.",
+  "pendingPrerequisites": [
+    "SQL Server coverage",
+    "Positive all-consumer Saved worker affinity",
+    "S001/provider prerequisite evidence",
+    "S005 both-client acceptance",
+    "Original and historical full-sweep findings"
+  ]
+}

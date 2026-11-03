@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: manifest requires exact inventory portable paths and regular files
+ok 1 - manifest requires exact inventory portable paths and regular files
+  ---
+  duration_ms: 26.233875
+  type: 'test'
+  ...
+# Subtest: manifest validates exact record references and rejects duplicate self and cyclic relations
+ok 2 - manifest validates exact record references and rejects duplicate self and cyclic relations
+  ---
+  duration_ms: 6.346583
+  type: 'test'
+  ...
+# Subtest: manifest detects tampering across raw record candidate review and release hashes
+ok 3 - manifest detects tampering across raw record candidate review and release hashes
+  ---
+  duration_ms: 4.157125
+  type: 'test'
+  ...
+# Subtest: manifest format limits and accessor boundaries fail explicitly
+ok 4 - manifest format limits and accessor boundaries fail explicitly
+  ---
+  duration_ms: 3.149833
+  type: 'test'
+  ...
+# Subtest: manifest overrides and diagnostic pointers identify actual candidate fields
+ok 5 - manifest overrides and diagnostic pointers identify actual candidate fields
+  ---
+  duration_ms: 4.811791
+  type: 'test'
+  ...
+# Subtest: specimens cannot reference metadata records or unbound coverage bytes
+ok 6 - specimens cannot reference metadata records or unbound coverage bytes
+  ---
+  duration_ms: 2.622958
+  type: 'test'
+  ...
+# Subtest: coverage decode errors and Unicode-equivalent inventory paths are rejected
+ok 7 - coverage decode errors and Unicode-equivalent inventory paths are rejected
+  ---
+  duration_ms: 1.977792
+  type: 'test'
+  ...
+# Subtest: release validation snapshots manifest and bytes and rejects C1 controls
+ok 8 - release validation snapshots manifest and bytes and rejects C1 controls
+  ---
+  duration_ms: 0.673625
+  type: 'test'
+  ...
+# Subtest: malformed coverage membership preserves missing and duplicate diagnostics
+ok 9 - malformed coverage membership preserves missing and duplicate diagnostics
+  ---
+  duration_ms: 1.715167
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 448.265084

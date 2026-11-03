@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: validateDocgenAssets: all present + non-empty → returns silently
+ok 1 - validateDocgenAssets: all present + non-empty → returns silently
+  ---
+  duration_ms: 22.14325
+  type: 'test'
+  ...
+# Subtest: validateDocgenAssets: missing runtime.json → throws naming runtime.json + one copy-assets Fix: line
+ok 2 - validateDocgenAssets: missing runtime.json → throws naming runtime.json + one copy-assets Fix: line
+  ---
+  duration_ms: 2.879875
+  type: 'test'
+  ...
+# Subtest: validateDocgenAssets: both bundles missing → ONE throw listing BOTH (not just the first)
+ok 3 - validateDocgenAssets: both bundles missing → ONE throw listing BOTH (not just the first)
+  ---
+  duration_ms: 5.928125
+  type: 'test'
+  ...
+# Subtest: validateDocgenAssets: a whitespace-only bundle → reason 'file is empty'
+ok 4 - validateDocgenAssets: a whitespace-only bundle → reason 'file is empty'
+  ---
+  duration_ms: 8.522625
+  type: 'test'
+  ...
+# Subtest: validateDocgenAssets: malformed runtime.json → manifest parse failure, short-circuits the bundle checks
+ok 5 - validateDocgenAssets: malformed runtime.json → manifest parse failure, short-circuits the bundle checks
+  ---
+  duration_ms: 11.488167
+  type: 'test'
+  ...
+# Subtest: DOCGEN_ASSET_DIR is the dir docgenAssetDir()/loadRuntime resolve by default (one source of truth)
+ok 6 - DOCGEN_ASSET_DIR is the dir docgenAssetDir()/loadRuntime resolve by default (one source of truth)
+  ---
+  duration_ms: 0.225375
+  type: 'test'
+  ...
+# Subtest: integration: validateDocgenAssets passes against the real resolved DOCGEN_ASSET_DIR
+ok 7 - integration: validateDocgenAssets passes against the real resolved DOCGEN_ASSET_DIR
+  ---
+  duration_ms: 22.507334
+  type: 'test'
+  ...
+# Subtest: integration: the built out/assets/docgen stages runtime.json + its referenced bundles, non-empty
+ok 8 - integration: the built out/assets/docgen stages runtime.json + its referenced bundles, non-empty
+  ---
+  duration_ms: 0.6955
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 515.360416

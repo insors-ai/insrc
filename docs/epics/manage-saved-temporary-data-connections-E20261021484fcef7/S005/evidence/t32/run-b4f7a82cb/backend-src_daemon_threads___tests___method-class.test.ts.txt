@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique
+ok 1 - classOf/entries: the ten admin and ten indexing methods have their class, every other entry is session, entries unique
+  ---
+  duration_ms: 1.7315
+  type: 'test'
+  ...
+# Subtest: coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry
+ok 2 - coverage: the method set equals the keys of the constructed rpcHandlers and streamHandlers after all merges, failing on a missing or a stale entry
+  ---
+  duration_ms: 5.079333
+  type: 'test'
+  ...
+# Subtest: method sets: every shared-state and FIFO-exempt member is a session-class method
+ok 3 - method sets: every shared-state and FIFO-exempt member is a session-class method
+  ---
+  duration_ms: 0.098209
+  type: 'test'
+  ...
+# Subtest: method sets: every served chat.*, todos.*, understanding.*, models.* and codeReview.* method is in the shared-state set
+ok 4 - method sets: every served chat.*, todos.*, understanding.*, models.* and codeReview.* method is in the shared-state set
+  ---
+  duration_ms: 0.659708
+  type: 'test'
+  ...
+# Subtest: in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline
+ok 5 - in-daemon route: targetOf sends admin/indexing to their workers, shared-state methods to the shared-state target (inline on it), others inline
+  ---
+  duration_ms: 0.337709
+  type: 'test'
+  ...
+# Subtest: the method-class module loads on a worker without importing a handler module
+ok 6 - the method-class module loads on a worker without importing a handler module
+  ---
+  duration_ms: 120.030042
+  type: 'test'
+  ...
+# Subtest: CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership
+ok 7 - CM-S4-RPC/GATE: source and freshly compiled removal methods agree with handlers and main ownership
+  ---
+  duration_ms: 463.494458
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1235.507041

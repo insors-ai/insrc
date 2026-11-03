@@ -1,0 +1,62 @@
+TAP version 13
+# Subtest: s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it
+not ok 1 - s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it
+  ---
+  duration_ms: 33012.304291
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/s4-acceptance.test.ts:1:887'
+  failureType: 'testCodeFailure'
+  error: 'timed out waiting for: the build logged'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    until (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/helpers/daemon-socket.ts:100:36)
+    async TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/s4-acceptance.test.ts:59:2)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated
+not ok 2 - s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated
+  ---
+  duration_ms: 4752.117416
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/s4-acceptance.test.ts:1:2038'
+  failureType: 'testCodeFailure'
+  error: "SIGTERM: the workers exited, then the stores closed, then 'bye'"
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/s4-acceptance.test.ts:84:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session
+ok 3 - s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session
+  ---
+  duration_ms: 3340.402583
+  type: 'test'
+  ...
+# Subtest: s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running
+ok 4 - s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running
+  ---
+  duration_ms: 14924.174333
+  type: 'test'
+  ...
+# Subtest: s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition
+ok 5 - s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition
+  ---
+  duration_ms: 4752.784875
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 2
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 61503.501541

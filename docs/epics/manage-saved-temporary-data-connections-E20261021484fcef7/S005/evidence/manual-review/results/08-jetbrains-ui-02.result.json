@@ -1,0 +1,138 @@
+{
+  "id": "08-jetbrains-ui-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:53:02.228Z",
+  "finished": "2026-11-01T04:53:54.413Z",
+  "inputChars": 83588,
+  "inputSha256": "6fbdc5c60ad2fd98a69c8dd7a19f5ef36087ecc16618980a65d1512dcb533376",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the JetBrains entry wiring and native-panel tests in batch 08. I found no concrete, reachable defect in the supplied code. The Settings page, the Tools-menu action, the chooser panel and plugin.xml are internally consistent. Settings apply/reset/isModified are no-ops. The action passes only the real action-context Project, and it rejects null, disposed and default projects. The chooser guards stale buttons with a generation counter, and view disposal does not end the project service. The core JetBrains pieces were not in the supplied evidence: ConnectionsManagerPanel, ConnectionsSessionService, the ConnectionProtocol DTOs/decoders, the persistent socket lane, DaemonGatewayService and the fixture backend. Most assigned obligations therefore stay could-not-verify rather than failed. None of the Kotlin tests were executed here, and JetBrains live UI is deferred by user decision. Nothing here approves BUILD.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:2",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin ConnectionManagerState/reducer/controller and the TypeScript shared model, controller and wire modules are not in the supplied diff. Only entry wiring and tests are visible. The tests do exercise a gateway snapshot, dirty state, filter and counts, and they assert that the snapshot JSON excludes secrets and that the gateway serializes to {}. Node/JUnit fixture-digest parity cannot be judged from this evidence."
+      },
+      {
+        "key": "lld:data-model:4",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin DTOs/decoders and DaemonGatewayService are not supplied. The panel test iterates 29 corpus descriptors and checks that no JTextArea exists and that password fields render blank. That is partial evidence for typed fields and no raw JSON editing, but strict decoding and the keep/replace/clear patches are not visible."
+      },
+      {
+        "key": "lld:data-model:8",
+        "status": "could-not-verify",
+        "evidence": "ConnectionsSessionService and UnixSocketDaemonRpc are not supplied. Tests use project.service<ConnectionsSessionService>() and assert that the same gateway survives panel close. Draft retention is asserted across panel reopen, and project close is asserted to clear the draft and mark the list closed. The entry code never calls session end on view or Settings close. Heartbeat, lease and epoch behavior are not visible."
+      },
+      {
+        "key": "lld:error:9",
+        "status": "could-not-verify",
+        "evidence": "The parity corpus, digest checks and the Node-side consumers are not supplied. ConnectionsManagerPanelTest loads ConnectionCorpus, but no cross-language drift detection is shown."
+      },
+      {
+        "key": "lld:invariant:3",
+        "status": "could-not-verify",
+        "evidence": "Session state is accessed through project.service<ConnectionsSessionService>() in the supplied entry and tests, which is consistent with project scoping. DaemonGatewayService.kt is not in the changed evidence, so its statelessness is not confirmed."
+      },
+      {
+        "key": "lld:migration:2",
+        "status": "could-not-verify",
+        "evidence": "The persistent transport lanes, fixtures and decoders are outside the supplied changed files."
+      },
+      {
+        "key": "lld:migration:4",
+        "status": "holds",
+        "evidence": "plugin.xml registers an applicationConfigurable 'Connections' (id ai.insors.insrc.connections) under the existing parent, with instance settings.ConnectionsConfigurable. It also registers the ManageConnections action in ToolsMenu, and ShowOrRegisterRepo is retained. ConnectionsConfigurable has isModified=false and no-op apply/reset, and disposeUIResources only disposes the view. ConnectionsEntryTest asserts that apply/reset leave the ticket count unchanged and retain the draft. NestedOpsPagesTest was updated to 4 children. This is source-level only; the test was not run."
+      },
+      {
+        "key": "lld:backward-compat",
+        "status": "could-not-verify",
+        "evidence": "Only additive plugin.xml entries and the Settings/action wiring are visible. Legacy gateway projections and the old-daemon upgrade-required refusal are not in the supplied evidence."
+      },
+      {
+        "key": "lld:scope",
+        "status": "could-not-verify",
+        "evidence": "The supplied changes stay in the JetBrains entry, Settings and action wiring and tests. That is within S005's client-side boundary, and no daemon or other-story re-implementation is visible. Full-scope adherence cannot be judged from this batch alone."
+      },
+      {
+        "key": "plan:t5",
+        "status": "could-not-verify",
+        "evidence": "The Kotlin socket lane and its transport tests are not in the supplied changed files."
+      },
+      {
+        "key": "plan:t8",
+        "status": "could-not-verify",
+        "evidence": "This is the VS Code owner. No VS Code files were supplied in this batch."
+      },
+      {
+        "key": "plan:t11",
+        "status": "could-not-verify",
+        "evidence": "ConnectionDraft and the dirty-guard model are not supplied. Panel tests exercise dirty-cancel with zero ticket calls, '${secret:...}' invalid-input handling, and a label containing HTML kept as literal text. Parity and serializer behavior are not visible."
+      },
+      {
+        "key": "plan:t15",
+        "status": "could-not-verify",
+        "evidence": "The test-cancel/identity implementation is not supplied. testNativeManagerUpdatesInsideSettingsModality drives Test under modal entry and awaits a terminal status, but the stale-tuple and cancel semantics are not visible."
+      },
+      {
+        "key": "plan:t19",
+        "status": "could-not-verify",
+        "evidence": "ConnectionsManagerPanel.kt source is not supplied. ConnectionsManagerPanelTest is added and asserts labelFor associations, html.disable on labels, JBPasswordField use, EDT rendering, queued update rejection after project close, and Add disabled for unavailable list states. It was not executed here."
+      },
+      {
+        "key": "plan:t21",
+        "status": "holds",
+        "evidence": "ConnectionsEntryPanel starts with a project chooser, and the first item is null so there is no implicit selection. With no open project it shows 'No open project… no temporary session has been created'. Open requires a live non-default project that is still in the current projects list. ManageConnectionsAction passes e.project only if it is not disposed or default. The Configurable apply/reset are no-ops and dispose does not end the session. ConnectionsEntryTest covers no-project, cancel, the default project, stale and closed-project buttons, and same-gateway retention. These are source-level observations; the tests were not run."
+      },
+      {
+        "key": "plan:t23",
+        "status": "could-not-verify",
+        "evidence": "No TypeScript/Kotlin transcript parity harness is in the supplied evidence."
+      },
+      {
+        "key": "plan:t25",
+        "status": "could-not-verify",
+        "evidence": "Mixed-version and legacy compatibility tests are not supplied. The panel test only covers rendering the upgrade-required list state."
+      },
+      {
+        "key": "plan:t27",
+        "status": "could-not-verify",
+        "evidence": "JetBrains live sandbox UI acceptance is deferred by user decision. Only headless BasePlatformTestCase tests are present."
+      },
+      {
+        "key": "plan:t30",
+        "status": "could-not-verify",
+        "evidence": "No artifact or inventory files were supplied. plugin.xml and the code supplied do not enable release."
+      },
+      {
+        "key": "plan:t32",
+        "status": "could-not-verify",
+        "evidence": "No sweep manifest or results were supplied. The user states that the sweep has recorded failures and timeouts, and that does not by itself show a defect in the supplied code."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/ManageConnectionsAction.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryPanel.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ConnectionsConfigurable.kt",
+      "jetbrains-plugin/src/main/resources/META-INF/plugin.xml",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsEntryTest.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/ops/NestedOpsPagesTest.kt"
+    ],
+    "limitations": [
+      "Review used the supplied diffs only, with no tool calls. All changed files were read; none went unassessed. ConnectionsManagerPanelTest.kt was read as source only, and nothing was executed.",
+      "ConnectionsManagerPanel, ConnectionsSessionService, ConnectionsManagerGateway, ConnectionDraft, ConnectionProtocol, ConnectionMutationBackend, ConnectionCorpus, AppScopedConsumers, UnixSocketDaemonRpc and DaemonGatewayService were not supplied. Behavior that depends on them is unverified, including the panel onClose/requestClose reentrancy used by ConnectionsEntryPanel.showChooser.",
+      "The plugin.xml context shows only the changed hunk, so I could not check for duplicate ids or ordering elsewhere in the file.",
+      "JetBrains live UI is deferred by user decision. The recorded SQL Server, provider-service and positive worker-affinity coverage is pending. I did not treat any of this as passed or reopen user-authorized decisions.",
+      "I did not check whether other tests besides NestedOpsPagesTest assert the old count of three nested Settings children."
+    ],
+    "evidenceRequests": [
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt, including the onClose callback and the dispose/requestClose path",
+      "ConnectionsSessionService.kt, to check Disposable ownership, view status and whenDisposed",
+      "UnixSocketDaemonRpc.kt and the persistent lane tests, to check plan t5",
+      "ConnectionProtocol.kt, ConnectionsManagerGateway and the fixture corpus digest check, to check lld:error:9 and the parity tests"
+    ]
+  }
+}

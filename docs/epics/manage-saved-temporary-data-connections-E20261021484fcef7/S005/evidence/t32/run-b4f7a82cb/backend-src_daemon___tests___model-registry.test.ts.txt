@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture
+ok 1 - model-registry.test.ts: families/defaultFamily/models/find/tierDefault/summariserModel/toolLoopModel/cliKind against the minimal fixture
+  ---
+  duration_ms: 3.858
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()
+ok 2 - model-registry.test.ts: store fixtures (absent, malformed, wrong shape, one bad entry, shadowed approval, approved-vs-rejected by decidedAt) yield the stated models() and rejected()
+  ---
+  duration_ms: 7.345
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts
+ok 3 - model-registry.test.ts: effortLevels includes an approved-only effort after its family's shipped efforts and excludes rejected or shadowed efforts
+  ---
+  duration_ms: 1.612875
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted
+ok 4 - model-registry.test.ts: resolveTier keeps an accepted effort, drops an unaccepted one, falls back with rejected-model vs unlisted-model, uses the default family for an Ollama tier, and an alias-named default's effort is returned and accepted
+  ---
+  duration_ms: 1.243084
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection
+ok 5 - model-registry.test.ts: ac2 fixture after reset serves the new model, alias and 'turbo' through models(), find(), effortLevels(), resolveTier() and the models.definitions projection
+  ---
+  duration_ms: 1.517833
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk
+ok 6 - model-registry.test.ts: getModelRegistry() returns the same cached registry after the file changes on disk
+  ---
+  duration_ms: 0.998916
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips
+ok 7 - model-registry.test.ts: the exported profileProblem returns undefined for a valid profile and a reason for each invalid shape the reader skips
+  ---
+  duration_ms: 1.01325
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: host() is 'ollama' only for ollama-claude and cliKind() is 'claude' for it
+ok 8 - model-registry.test.ts: host() is 'ollama' only for ollama-claude and cliKind() is 'claude' for it
+  ---
+  duration_ms: 0.569416
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: resolveTier on a host family resolves a declared model and alias
+ok 9 - model-registry.test.ts: resolveTier on a host family resolves a declared model and alias
+  ---
+  duration_ms: 0.667833
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: an effort a host model does not list is dropped
+ok 10 - model-registry.test.ts: an effort a host model does not list is dropped
+  ---
+  duration_ms: 0.810875
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: resolveTier on a host family with an undeclared model returns model undefined and fallback 'model-not-supported' and substitutes nothing
+ok 11 - model-registry.test.ts: resolveTier on a host family with an undeclared model returns model undefined and fallback 'model-not-supported' and substitutes nothing
+  ---
+  duration_ms: 0.918708
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged with a host family present, including the unlisted and rejected fallbacks
+ok 12 - model-registry.test.ts: resolveTier on cli-claude, cli-codex and ollama is unchanged with a host family present, including the unlisted and rejected fallbacks
+  ---
+  duration_ms: 1.14425
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today
+ok 13 - model-registry.test.ts: familyForClient returns cli-claude, cli-codex and cli-vibe as today
+  ---
+  duration_ms: 1.120583
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: effortLevels over five families keeps today's levels and order
+ok 14 - model-registry.test.ts: effortLevels over five families keeps today's levels and order
+  ---
+  duration_ms: 1.3405
+  type: 'test'
+  ...
+# Subtest: model-registry.test.ts: an approved-model store entry naming ollama-claude is skipped
+ok 15 - model-registry.test.ts: an approved-model store entry naming ollama-claude is skipped
+  ---
+  duration_ms: 0.912416
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 415.010583

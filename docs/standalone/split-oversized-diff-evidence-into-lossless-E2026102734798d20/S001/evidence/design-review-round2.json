@@ -1,0 +1,149 @@
+{
+  "artifact": "design.story",
+  "stage": "design.story",
+  "verdict": "block",
+  "findings": [
+    {
+      "claimId": "coverage-of-intent.1",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The design covers the filed correction intent and preserves the S003 operational constraints.",
+      "evidence": "The ISSUE requests bounded attributable evidence without truncation, preserved call limits, independent degraded review, unchanged inventories/release state, and an actual S003 retry. Sections 2, 5\u20137 address each. The original blocker records \"restoredReviewChunkTokens\": 128000, \"independentReviewRecorded\": false and \"releaseEnabled\": false, consistent with the proposed rollout. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E202610265384820a/ISSUE.md, docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S003/evidence/task34-review-blocker.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+      "action": "Retain these constraints during implementation and record any blocked runtime activation or reproduction retry honestly.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "coverage-of-intent.2",
+      "ref": "coverage-of-intent",
+      "item": "coverage-of-intent",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The proposed evidence relationships and interaction companion adequately document the relevant model and flow.",
+      "evidence": "Sections 2.1, 2.2 and 3.4 specify file-to-fragment 1:N ownership, file-to-obligation 1:1 ownership, note attribution, ordering, offsets and legacy compatibility. The stored sequenceDefinition matches the generated HTML's six participants and nine messages. I inspected the saved rendered PNG: all participants and messages are visible and readable. The HTML and PNG SHA256 values match the render record. This verifies the supplied static render; interactive pan/zoom controls were not exercised. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round2.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round2.png]",
+      "action": "Maintain the definitions and regenerate the companion if the corrected execution contracts change this flow. No additional ERD or UX mock is necessary for these documented internal relationships.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.1",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Current diff grounding produces one whole-file row, which material construction treats as one indivisible atom.",
+      "evidence": "buildDiffSymbols maps diff.files to rows with \"entityId: `diff:${f.path}`\" and \"signature: hunks + truncNote\"; caller/callee/test arrays are empty and coverageEligible is false. codeReviewMaterial creates one atom per row using \"text: JSON.stringify(row)\" and rejects repeated entityIds. assembleDiffCodeReviewGrounding derives changedFiles directly from those rows. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts]",
+      "action": "Preserve the original scope and coverage semantics while changing row granularity and deduplicating changedFiles.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "current-behaviour.2",
+      "ref": "current-behaviour",
+      "item": "current-behaviour",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Current size accounting includes serialized messages and call instructions but excludes the separately supplied output schema.",
+      "evidence": "promptChars accepts only messages and counts content, role headings and separators. job.ts measures envelopeMessages but not envelopeSchema; issue separately constructs schema while recording \"chars: promptChars(messages)\". Gather and duplicate planners likewise measure enveloped messages only. limit.ts defines DEFAULT_REVIEW_CHUNK_TOKENS = 128_000 and REVIEW_CHARS_PER_TOKEN = 3. [files: src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts, src/workflow/review-pipeline/limit.ts]",
+      "action": "Apply schema-aware measurement consistently to planning, issued calls, corrections and transport normalization as proposed.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "new-versus-reuse.1",
+      "ref": "new-versus-reuse",
+      "item": "new-versus-reuse",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Keyed notes, bounded reduction and obligation adjudication exist, while quality parent-file adjudication is a genuine extension.",
+      "evidence": "Quality chunkSchema currently requires only \"findings\" and \"descriptions\"; qualitySpec supplies no obligations. chunkNotesFrom already extracts optional keyed notes. codeReviewGather supplies obligationCall and reduceCall, and job.ts records reduced-note atomIds and noteProvenance. relationCall explicitly returns [] unless a directed calls relation exists, confirming that sibling links alone cannot adjudicate correctness. [files: src/workflow/code-review/dimensions/quality.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/job.ts]",
+      "action": "Reuse these mechanisms with the proposed mandatory parent-note validation and coverage checks; do not treat sibling relations as adjudication.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "change-sites.1",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "HIGH",
+      "premise": "The retained runDimensionJob factory signature can pass the authoritative effective limit into adapter creation.",
+      "evidence": "Section 2.6 requires passing an identical provider-adjusted effectiveLimitChars into adapter creation and createJob, but retains \"build: (snapshot: ReviewMaterialSnapshot) => ReviewAdapter<DimensionResult>\". The implementation calls \"build(snapshot)\"; all five model-dimension callers construct modelDimensionAdapter with only spec, subject and snapshot, so its limit defaults independently to reviewLimitChars(). Adapter duplicate planning and gather.noteCapChars capture that separate limit. The proposed callback has no argument through which runDimensionJob can supply its computed provider cap, leaving the required budget propagation contract incomplete. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts]",
+      "action": "Extend the adapter factory to receive effectiveLimitChars and update the adherence, conventions, coverage, quality and functional-coverage callers, or define an equivalent explicit propagation mechanism. Test that adapter reduction/duplicate budgets, createReviewJob and every boundedInput option receive the same value when the provider cap is lower than configuration.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "change-sites.2",
+      "ref": "change-sites",
+      "item": "change-sites",
+      "kind": "semantic",
+      "severity": "MED",
+      "premise": "Adding quality fragment obligations and chunk-note validation is sufficient to run the specified parent adjudication for every fragmented diff parent.",
+      "evidence": "Fragmentation starts above 16Ki characters, so fragmented files can still fit a complete 384000-character call. enterStage chooses stage.singleCalls whenever they fit. modelDimensionAdapter.singleCalls uses spec.prompt/spec.schema, and validateChunk runs only when \"call.role === 'chunk'\". commit starts gather only when \"!next.plan.single\". Consequently the retained single-call path produces neither required fragment notes nor the promised parent adjudication. The design does not specify a change to this selection or an explicit single-call exemption. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts]",
+      "action": "Define whether fragment-parent obligations force the chunk/gather path or whether a full-evidence single call is an explicit equivalent exception. Update the relevant schema, validation and completion contract accordingly, and add a regression for a fragmented file whose complete review fits one call.",
+      "fixability": "manual",
+      "outcome": "does-not-hold"
+    },
+    {
+      "claimId": "data-compatibility.1",
+      "ref": "data-compatibility",
+      "item": "data-compatibility",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "Optional evidence and transport fields can preserve legacy records and unrelated callers without a domain database migration.",
+      "evidence": "ChangedSymbolSummary already supports optional coverage metadata, and grounding is carried in a structuredClone snapshot rather than inserted as new graph entities. StructuredCompletionOpts and ProviderCapabilities are shared typed options; ExecutionMode and jobs are serializable data. The proposed fields are optional with explicit absent-field defaults, and DimensionResult/CodeReviewBody need no new required fields. Restarting old whole-file jobs avoids rewriting their materialHash or frozen evidence. [files: src/workflow/code-review/types.ts, src/shared/types.ts, src/workflow/review-pipeline/types.ts, src/workflow/review-pipeline/code-review.ts, src/workflow/review-pipeline/job.ts]",
+      "action": "Keep absent-field behavior explicit and enforce the stated restart policy for old pending jobs; do not retrofit their snapshots in place.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "boundaries.1",
+      "ref": "boundaries",
+      "item": "boundaries",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The proposed fix can preserve independent reviewer routing, original changed-file scope and degraded verdict semantics.",
+      "evidence": "code-review-rpc checks buildAuthorParty before provider construction and rejects daemon-authored code on the daemon path. Its diff branch rekeys the subject to diff.changedFiles and passes \"groundingMode: 'degraded', capVerdictAtWarn: true\" with reviewedBy daemon. runner.ts serially invokes judges and validates the degraded warn cap. The design retains these entry points and contracts and explicitly excludes inventory/release-gate changes. [files: src/daemon/code-review-rpc.ts, src/workflow/code-review/author.ts, src/workflow/code-review/runner.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+      "action": "Keep transport isolation and evidence fragmentation below these routing and verdict boundaries.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "error-paths.1",
+      "ref": "error-paths",
+      "item": "error-paths",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The design identifies detectable failures and specifies fail-closed handling for incomplete evidence, invalid provenance, oversize calls, unsupported transport and cancellation.",
+      "evidence": "The git reader exposes truncation and rejects incomplete numstat; grounding exposes missing-hunk markers. The pipeline already handles size-refusal through redivision, validates structured answers and fails required stages; runner.ts catches failures before artifact writes. The design adds digest/range validation, mandatory parent coverage, terminal unsupported-bounded-input admission and explicit correction overflow handling. These are necessary changes: current driver.classify treats unknown errors as transient, and current applyFailure can omit an oversized correction. [files: src/daemon/tools/builtins/git/diff.ts, src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/job.ts, src/workflow/code-review/runner.ts, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md]",
+      "action": "Implement the specified terminal admission path and correction overflow behavior explicitly, replacing those current defaults for bounded diff jobs. Preserve cancellation and no-completed-artifact behavior.",
+      "fixability": "manual",
+      "outcome": "holds"
+    },
+    {
+      "claimId": "tests.1",
+      "ref": "tests",
+      "item": "tests",
+      "kind": "semantic",
+      "severity": "LOW",
+      "premise": "The stated acceptance criteria map to concrete proving tests using suitable existing test seams.",
+      "evidence": "The mapping covers ac1 partition/coordinates/integrity/reader behavior, ac2 complete budgeting/repair/transport/admission, ac3 serial coverage/gather/scaling/cross-fragment correctness, ac4 compatibility, and ac5 the actual S003 retry. Existing suites provide injectable DiffGroundingDeps, real pipeline jobs and scripted answers, and fake CLI subprocesses. DIFF-READER explicitly replaces the legacy assertion \"a bounded slice is still reviewable, not an error\". The parent-quality test requires a finding dependent on two fragments rather than accepting empty local findings as proof. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/review-pipeline/__tests__/code-review-gather.test.ts, src/workflow/review-pipeline/__tests__/code-review-chunking.test.ts, src/agent/providers/__tests__/internal-retry.test.ts, src/agent/providers/__tests__/input-budget.test.ts]",
+      "action": "Retain this mapping and add the effective-limit propagation and single-call fragment cases identified under change-sites. These are planned tests; no implementation test execution is claimed.",
+      "fixability": "manual",
+      "outcome": "holds"
+    }
+  ],
+  "counts": {
+    "high": 1,
+    "med": 1,
+    "low": 9,
+    "unverified": 0
+  },
+  "template": "design-spec",
+  "reviewedAt": "2026-10-27T05:24:58.785Z",
+  "model": "cli-codex:gpt-6.1-sol",
+  "reviewedBy": "daemon"
+}

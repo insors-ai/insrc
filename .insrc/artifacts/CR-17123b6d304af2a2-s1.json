@@ -1,0 +1,110 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793567039877-6szhto",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T21:03:54.851Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 210678,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "17123b6d304af2a2",
+      "storyId": "s1",
+      "author": "controller",
+      "sourceDigest": "43ad095c72267398f9204c1a157b0b1feae65ca4b67a11d5c206554e86e9a7c0",
+      "contractDigest": "48835960b6ce54069c92a0c2f16120135503b016262bfb2dacb9eb24401a338d",
+      "buildDigest": "03a266ae39016969e77bcd05da8dd35df1fa2c7cd0bebe30579b2729edf7a629",
+      "testsDigest": "c6e4e0f9896d9a2af7e8db97c34db545dc3e75dd9cc719dae1f87bff22b12716",
+      "digest": "8374e7b0d6a3c4d8659f17cf0ab7c8b10a7697539bb50f1f92508584ca184612"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "package-lock.json",
+        "package.json",
+        "packages/project-memory/.gitignore",
+        "packages/project-memory/LICENSE",
+        "packages/project-memory/README.md",
+        "packages/project-memory/package.json",
+        "packages/project-memory/src/__tests__/contracts.test.ts",
+        "packages/project-memory/src/__tests__/fixtures/public-consumer.mts",
+        "packages/project-memory/src/errors.ts",
+        "packages/project-memory/src/host-node.ts",
+        "packages/project-memory/src/index.ts",
+        "packages/project-memory/src/types.ts",
+        "packages/project-memory/tsconfig.json",
+        "packages/project-memory/src/__tests__/native.test.ts",
+        "packages/project-memory/src/native.ts",
+        "packages/project-memory/src/__tests__/fixtures/node22.ts",
+        "packages/project-memory/src/__tests__/configuration.test.ts",
+        "packages/project-memory/src/__tests__/fixtures/options.ts",
+        "packages/project-memory/src/configuration.ts",
+        "packages/project-memory/src/__tests__/ownership.test.ts",
+        "packages/project-memory/src/ownership.ts",
+        "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+        "packages/project-memory/src/model-dispatcher.ts",
+        "packages/project-memory/src/__tests__/runtime.test.ts",
+        "packages/project-memory/src/runtime.ts",
+        "packages/project-memory/src/__tests__/contention.test.ts",
+        "packages/project-memory/src/__tests__/fixtures/owner-peer.mjs",
+        "packages/project-memory/src/__tests__/packed.test.ts",
+        ".github/workflows/project-memory.yml",
+        "scripts/__tests__/project-memory-qualification.test.ts",
+        "packages/project-memory/src/private-file.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "packages/project-memory/src/runtime.ts:60",
+            "message": "EmbeddedMemoryService#drain and the private #quiesce call each other (drain's callees include #quiesce; #quiesce's callees include drain), forming a recursive cycle instead of a single iterative wait-until-idle loop. Each pass through #quiesce re-enters drain, which re-enters #quiesce again while pending() > 0 — this grows the call stack per iteration instead of looping, and it is unclear whether the deadlineMs budget passed to the outer drain() call is preserved or restarted on the inner recursive call, which could let the effective wait run far longer than the caller's deadline or recurse unbounded if new model calls keep arriving while draining.",
+            "counterpartRef": "drain, #quiesce",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  }
+}

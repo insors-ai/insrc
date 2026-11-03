@@ -1,8 +1,6 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
-import ai.insors.insrc.jetbrains.daemon.RepoFieldDto
-import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import com.intellij.openapi.options.ConfigurationException
 import java.awt.BorderLayout
@@ -16,10 +14,6 @@ import javax.swing.JComboBox
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTextField
-import javax.swing.SwingUtilities
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 /**
  * The per-repo overrides sub-section (Story S005), plugged into the sc3
@@ -27,8 +21,9 @@ import javax.swing.event.DocumentListener
  * Swing shell over the pure [PerRepoOverridesModel]: an add-repo picker of
  * addableRepos() plus one nested panel per overridden repo — a coreFloor chooser,
  * a per-role tier combo grid (mirroring [PerRoleSection], '(use default)' = clear
- * the task), and a per-tier runner+model text-field pair — plus a remove-override
- * control. All load-bearing logic (which repos are overridden, the leaf-granular
+ * the task) — plus a remove-override control. There is no per-tier runner or model
+ * field: tiers are global and set in the Model tiers section (Epic ce99b72065d03b1b
+ * s7). All load-bearing logic (which repos are overridden, the leaf-granular
  * nested-key mapping, dirty) lives in the model; this shell only renders + pushes
  * edits + applies via sc2.
  *
@@ -41,14 +36,7 @@ import javax.swing.event.DocumentListener
 class PerRepoSection(
     private val model: PerRepoOverridesModel,
     private val gateway: DaemonGateway,
-    /** The repo-scoped tracker rows from config.catalog (Story s3); empty hides the Tracker blocks. */
-    repoFields: List<RepoFieldDto> = emptyList(),
-    /** Each registered repo's `repo.settings.get` result, loaded on a pooled thread by the host. */
-    trackerSettings: Map<String, RepoSettingsResult> = emptyMap(),
 ) : SettingsSection {
-
-    /** The Tracker block model: tracker edits go to writeRepoSetting; model-tier edits stay on writeSetting. */
-    private val tracker = RepoTrackerModel(repoFields, trackerSettings)
 
     /** The tier chooser's first item — selecting it clears that leaf's override. */
     private val useDefault = "(use default)"
@@ -68,11 +56,16 @@ class PerRepoSection(
         return panel
     }
 
-    override fun isModified(): Boolean = model.isModified() || tracker.isModified()
+    override fun isModified(): Boolean = model.isModified()
+
+    /** Set when a write of the last apply was saved with the daemon's restartRequired. */
+    @Volatile
+    private var restartRequired = false
+
+    override fun takeRestartRequired(): Boolean = restartRequired.also { restartRequired = false }
 
     override fun reset() {
         model.revert()
-        tracker.revert()
         rebuild()
     }
 
@@ -90,26 +83,14 @@ class PerRepoSection(
                 WriteOp.Clear -> gateway.clearSetting(pw.segments)
             }
             when (result) {
-                SaveResult.Saved -> model.onSaved(pw.segments)
-                is SaveResult.Rejected -> failures.add("$label: ${result.reason}")
+                is SaveResult.Saved -> {
+                    model.onSaved(pw.segments)
+                    if (result.restartRequired) restartRequired = true
+                }
+                is SaveResult.Rejected -> failures.add("$label: ${result.message}")
                 is SaveResult.Unavailable -> failures.add("$label: ${result.reason}")
             }
         }
-        // Tracker rows (Story s3): each pending edit goes through repo.settings.set, not config.write.
-        var trackerSaved = false
-        for (w in tracker.collectWrites()) {
-            when (val result = gateway.writeRepoSetting(w.repoPath, w.key, w.value)) {
-                SaveResult.Saved -> {
-                    tracker.onSaved(w.repoPath, w.key)
-                    // Re-read this repo's settings (this method already runs off the EDT).
-                    tracker.replace(w.repoPath, gateway.readRepoSettings(w.repoPath))
-                    trackerSaved = true
-                }
-                is SaveResult.Rejected -> failures.add("${w.repoPath}/${w.key}: ${result.reason}")
-                is SaveResult.Unavailable -> failures.add("${w.repoPath}/${w.key}: ${result.reason}")
-            }
-        }
-        if (trackerSaved) SwingUtilities.invokeLater { rebuild() }
         if (failures.isNotEmpty()) {
             throw ConfigurationException(
                 "Some per-repo overrides could not be saved:\n" + failures.joinToString("\n"),
@@ -127,7 +108,6 @@ class PerRepoSection(
             panel.removeAll()
             panel.add(addRow())
             for (row in model.rows()) panel.add(repoPanel(row))
-            for (repoPath in tracker.repos()) panel.add(trackerPanel(repoPath))
             panel.revalidate()
             panel.repaint()
         } finally {
@@ -155,7 +135,7 @@ class PerRepoSection(
         return row
     }
 
-    /** One overridden repo's nested editor panel: coreFloor + tasks + tiers + remove. */
+    /** One overridden repo's nested editor panel: coreFloor + tasks + remove. */
     private fun repoPanel(row: PerRepoRow): JComponent {
         val repoPath = row.repoPath
         val panel = JPanel()
@@ -186,69 +166,6 @@ class PerRepoSection(
             })
         }
 
-        // Per-tier runner + model free-text fields (daemon-validated; k5).
-        for (tierName in model.tierNames()) {
-            val spec = row.tiers[tierName]
-            panel.add(tierFieldRow(repoPath, tierName, TierField.Runner, spec?.runner))
-            panel.add(tierFieldRow(repoPath, tierName, TierField.Model, spec?.model))
-        }
-
-        panel.maximumSize = Dimension(Int.MAX_VALUE, panel.preferredSize.height)
-        return panel
-    }
-
-    /**
-     * One registered repo's Tracker block (Story s3): the daemon's tracker rows with
-     * this repo's values. Local rows are text fields (blank clears); sign-in, target
-     * and policy rows are read-only labels. A repo whose settings did not load shows
-     * its reason instead of rows, so one repo's failure never blanks the others.
-     */
-    private fun trackerPanel(repoPath: String): JComponent {
-        val panel = JPanel()
-        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-        panel.border = BorderFactory.createTitledBorder("$repoPath — tracker")
-        panel.alignmentX = Component.LEFT_ALIGNMENT
-        val failure = tracker.failure(repoPath)
-        if (failure != null) {
-            val note = JLabel("Tracker settings unavailable — $failure")
-            note.alignmentX = Component.LEFT_ALIGNMENT
-            panel.add(note)
-        }
-        for (row in tracker.rows(repoPath)) {
-            val rowPanel = JPanel(BorderLayout())
-            rowPanel.alignmentX = Component.LEFT_ALIGNMENT
-            rowPanel.add(JLabel(row.label), BorderLayout.WEST)
-            if (row.editable) {
-                val text = JTextField(row.current, 20)
-                text.toolTipText = row.note
-                text.document.addDocumentListener(object : DocumentListener {
-                    private fun changed() {
-                        if (!suppressEdits) tracker.setEdit(repoPath, row.key, text.text)
-                    }
-                    override fun insertUpdate(e: DocumentEvent) = changed()
-                    override fun removeUpdate(e: DocumentEvent) = changed()
-                    override fun changedUpdate(e: DocumentEvent) = changed()
-                })
-                rowPanel.add(text, BorderLayout.EAST)
-            } else {
-                rowPanel.add(JLabel("${row.value} (read-only)"), BorderLayout.EAST)
-            }
-            // The daemon's note for the row ("saved; not used yet", "set by the team policy"), shown for every
-            // row as in the other clients. Added last so the label and control keep their child positions.
-            row.note?.let { note ->
-                val noteLabel = JLabel(note)
-                noteLabel.foreground = java.awt.Color.GRAY
-                rowPanel.add(noteLabel, BorderLayout.CENTER)
-            }
-            rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
-            panel.add(rowPanel)
-        }
-        tracker.policySource(repoPath)?.let { source ->
-            val label = JLabel("Team policy read from $source")
-            label.foreground = java.awt.Color.GRAY
-            label.alignmentX = Component.LEFT_ALIGNMENT
-            panel.add(label)
-        }
         panel.maximumSize = Dimension(Int.MAX_VALUE, panel.preferredSize.height)
         return panel
     }
@@ -270,25 +187,6 @@ class PerRepoSection(
             onSelect(if (sel == null || sel == useDefault) null else sel)
         }
         rowPanel.add(combo, BorderLayout.EAST)
-        rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
-        return rowPanel
-    }
-
-    /** A labeled free-text field for one tier leaf (runner|model); empty = clear. */
-    private fun tierFieldRow(repoPath: String, tierName: String, field: TierField, current: String?): JComponent {
-        val rowPanel = JPanel(BorderLayout())
-        rowPanel.alignmentX = Component.LEFT_ALIGNMENT
-        rowPanel.add(JLabel("tiers: $tierName.${field.segment}"), BorderLayout.WEST)
-        val text = JTextField(current ?: "", 16)
-        text.document.addDocumentListener(object : DocumentListener {
-            private fun changed() {
-                if (!suppressEdits) model.setTierField(repoPath, tierName, field, text.text)
-            }
-            override fun insertUpdate(e: DocumentEvent) = changed()
-            override fun removeUpdate(e: DocumentEvent) = changed()
-            override fun changedUpdate(e: DocumentEvent) = changed()
-        })
-        rowPanel.add(text, BorderLayout.EAST)
         rowPanel.maximumSize = Dimension(Int.MAX_VALUE, rowPanel.preferredSize.height)
         return rowPanel
     }

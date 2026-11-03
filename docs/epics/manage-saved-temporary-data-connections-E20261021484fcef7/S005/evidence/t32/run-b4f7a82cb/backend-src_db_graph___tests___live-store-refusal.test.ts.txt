@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused
+ok 1 - refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused
+  ---
+  duration_ms: 1022.756208
+  type: 'test'
+  ...
+# Subtest: refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor
+ok 2 - refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor
+  ---
+  duration_ms: 484.132625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1682.969416

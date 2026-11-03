@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: renderDaemonTab renders state + detail (ac1); a missing detail renders just the state
+ok 1 - renderDaemonTab renders state + detail (ac1); a missing detail renders just the state
+  ---
+  duration_ms: 1.736208
+  type: 'test'
+  ...
+# Subtest: renderWorkflowsTab groups rows by slug with stage+status lines (ac2)
+ok 2 - renderWorkflowsTab groups rows by slug with stage+status lines (ac2)
+  ---
+  duration_ms: 0.340917
+  type: 'test'
+  ...
+# Subtest: renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)
+ok 3 - renderWorkflowsTab shows an explicit empty-state when rows=[] (not blank, not error)
+  ---
+  duration_ms: 0.162291
+  type: 'test'
+  ...
+# Subtest: both renderers HTML-escape every daemon-derived value (no <script> break-out)
+ok 4 - both renderers HTML-escape every daemon-derived value (no <script> break-out)
+  ---
+  duration_ms: 0.392125
+  type: 'test'
+  ...
+# Subtest: both renderers include a Refresh control that posts {type:'refresh'}
+ok 5 - both renderers include a Refresh control that posts {type:'refresh'}
+  ---
+  duration_ms: 0.124084
+  type: 'test'
+  ...
+# Subtest: a renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade
+ok 6 - a renderer lets a gateway rejection propagate (does not swallow it) so the host can degrade
+  ---
+  duration_ms: 0.406792
+  type: 'test'
+  ...
+# Subtest: source-scan: detail-renderers.ts imports no vscode and uses no cloud/HTTP (only the injected gateway) — ac4/k2
+ok 7 - source-scan: detail-renderers.ts imports no vscode and uses no cloud/HTTP (only the injected gateway) — ac4/k2
+  ---
+  duration_ms: 0.388583
+  type: 'test'
+  ...
+# Subtest: source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)
+not ok 8 - source-scan: the webview bootstraps post only the sanctioned message shapes (closed set)
+  ---
+  duration_ms: 3.675541
+  type: 'test'
+  location: '/private/tmp/cm-file-feedback-dsxguifq/vscode-plugin/src/panels/__tests__/detail-renderers.test.ts:1:4351'
+  failureType: 'testCodeFailure'
+  error: |-
+    the repo bootstrap posts only selectRepo + repoWrite
+    + actual - expected
+    
+      [
+    +   'repoRegisterProviders',
+        'repoWrite',
+        'selectRepo'
+      ]
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'repoWrite'
+    1: 'selectRepo'
+  actual:
+    0: 'repoRegisterProviders'
+    1: 'repoWrite'
+    2: 'selectRepo'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/cm-file-feedback-dsxguifq/vscode-plugin/src/panels/__tests__/detail-renderers.test.ts:119:10)
+    Test.runInAsyncScope (node:async_hooks:214:14)
+    Test.run (node:internal/test_runner/test:1047:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+    Test.postRun (node:internal/test_runner/test:1173:19)
+    Test.run (node:internal/test_runner/test:1101:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: renderDaemonTab lists each repository with its status and completeness: complete, incomplete with its reasons, and the status alone without the field (Epic c2ba6fa6 s1)
+ok 9 - renderDaemonTab lists each repository with its status and completeness: complete, incomplete with its reasons, and the status alone without the field (Epic c2ba6fa6 s1)
+  ---
+  duration_ms: 0.652917
+  type: 'test'
+  ...
+# Subtest: renderDaemonTab keeps the daemon status when repo.list fails, and says the list is unavailable
+ok 10 - renderDaemonTab keeps the daemon status when repo.list fails, and says the list is unavailable
+  ---
+  duration_ms: 3.041959
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 9
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 300.327084

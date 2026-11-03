@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: d9f85b3c t4 — projectName comes from .insrc/config.json when set
+ok 1 - d9f85b3c t4 — projectName comes from .insrc/config.json when set
+  ---
+  duration_ms: 3.56475
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — projectName falls back to the repo folder name with no config, or no / an empty / a non-string projectName
+ok 2 - d9f85b3c t4 — projectName falls back to the repo folder name with no config, or no / an empty / a non-string projectName
+  ---
+  duration_ms: 2.665625
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — a malformed config is ignored, not thrown
+ok 3 - d9f85b3c t4 — a malformed config is ignored, not thrown
+  ---
+  duration_ms: 0.987667
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — user is git user.name, else the OS login, else unknown
+ok 4 - d9f85b3c t4 — user is git user.name, else the OS login, else unknown
+  ---
+  duration_ms: 1.861791
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — the real lookups do not throw outside a git repo
+ok 5 - d9f85b3c t4 — the real lookups do not throw outside a git repo
+  ---
+  duration_ms: 12.574125
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — the date comes from the injected clock as YYYY-MM-DD HH:mm local time
+ok 6 - d9f85b3c t4 — the date comes from the injected clock as YYYY-MM-DD HH:mm local time
+  ---
+  duration_ms: 0.441959
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — the source doc is the artifact id linked to its markdown beside the companion
+ok 7 - d9f85b3c t4 — the source doc is the artifact id linked to its markdown beside the companion
+  ---
+  duration_ms: 2.53975
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — a well-formed source gets the hierarchical story or epic id
+ok 8 - d9f85b3c t4 — a well-formed source gets the hierarchical story or epic id
+  ---
+  duration_ms: 0.77675
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — a malformed createdAt, epicHash or storyId falls back to the plain id without throwing
+ok 9 - d9f85b3c t4 — a malformed createdAt, epicHash or storyId falls back to the plain id without throwing
+  ---
+  duration_ms: 0.523166
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — an HLD context line is the Epic plus the first sentence of its summary
+ok 10 - d9f85b3c t4 — an HLD context line is the Epic plus the first sentence of its summary
+  ---
+  duration_ms: 0.636084
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — an epic Story's LLD context line is its placement, title and value
+ok 11 - d9f85b3c t4 — an epic Story's LLD context line is its placement, title and value
+  ---
+  duration_ms: 0.332125
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — a standalone LLD's context line is the story title and the LLD summary's first sentence
+ok 12 - d9f85b3c t4 — a standalone LLD's context line is the story title and the LLD summary's first sentence
+  ---
+  duration_ms: 0.212583
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t4 — with nothing to say, the context line is placement only
+ok 13 - d9f85b3c t4 — with nothing to say, the context line is placement only
+  ---
+  duration_ms: 0.25725
+  type: 'test'
+  ...
+# Subtest: reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader's user is unchanged for the same inputs
+ok 14 - reviewer: resolveReviewer gives the trimmed git name with source git, else the OS login with source os, else unknown, and resolveCompanionHeader's user is unchanged for the same inputs
+  ---
+  duration_ms: 13.12
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 323.935584

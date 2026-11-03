@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: gate: a HIGH-invalid definition of EACH kind → a retryable schema failure with details (ac1, lc1)
+ok 1 - gate: a HIGH-invalid definition of EACH kind → a retryable schema failure with details (ac1, lc1)
+  ---
+  duration_ms: 26.668791
+  type: 'test'
+  ...
+# Subtest: gate: a valid / MED-LOW-only / no-companion body → undefined (ac3, no regression)
+ok 2 - gate: a valid / MED-LOW-only / no-companion body → undefined (ac3, no regression)
+  ---
+  duration_ms: 0.362208
+  type: 'test'
+  ...
+# Subtest: gate: the author definition object is not mutated (k2 / ac4)
+ok 3 - gate: the author definition object is not mutated (k2 / ac4)
+  ---
+  duration_ms: 0.089459
+  type: 'test'
+  ...
+# Subtest: finalize[standalone-LLD]: a HIGH-invalid uxDefinition → retryable schema failure + NO artifact written (ac1)
+ok 4 - finalize[standalone-LLD]: a HIGH-invalid uxDefinition → retryable schema failure + NO artifact written (ac1)
+  ---
+  duration_ms: 3.022584
+  type: 'test'
+  ...
+# Subtest: finalize[standalone-LLD]: the corrected (valid) uxDefinition → {ok:true}, companion rendered + linked (ac2, ac4)
+ok 5 - finalize[standalone-LLD]: the corrected (valid) uxDefinition → {ok:true}, companion rendered + linked (ac2, ac4)
+  ---
+  duration_ms: 18.92575
+  type: 'test'
+  ...
+# Subtest: finalize[standalone-LLD]: NO companion definitions → {ok:true}, no companion (byte-identical, ac3)
+ok 6 - finalize[standalone-LLD]: NO companion definitions → {ok:true}, no companion (byte-identical, ac3)
+  ---
+  duration_ms: 8.504875
+  type: 'test'
+  ...
+# Subtest: finalize[design.epic]: a HIGH-invalid sequenceDefinition → retryable schema failure (second finalizer site)
+ok 7 - finalize[design.epic]: a HIGH-invalid sequenceDefinition → retryable schema failure (second finalizer site)
+  ---
+  duration_ms: 3.160042
+  type: 'test'
+  ...
+# Subtest: finalize[design.epic]: a valid erDefinition → {ok:true} with the companion rendered (no regression)
+ok 8 - finalize[design.epic]: a valid erDefinition → {ok:true} with the companion rendered (no regression)
+  ---
+  duration_ms: 27.392666
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 416.624208

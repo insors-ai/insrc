@@ -1,0 +1,118 @@
+TAP version 13
+# Subtest: models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier
+ok 1 - models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier
+  ---
+  duration_ms: 3177.607917
+  type: 'test'
+  ...
+# Subtest: models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel
+ok 2 - models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel
+  ---
+  duration_ms: 1898.817917
+  type: 'test'
+  ...
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 142
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-go3kiO/graph"
+# Subtest: Concurrent updates, exact replay and request conflicts preserve atomic history
+ok 3 - Concurrent updates, exact replay and request conflicts preserve atomic history
+  ---
+  duration_ms: 170.149917
+  type: 'test'
+  ...
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 123
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-8Jg9M3/graph"
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 1
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-8Jg9M3/graph"
+# Subtest: Original and assisted answers survive reopen and resume without granting authorization
+ok 4 - Original and assisted answers survive reopen and resume without granting authorization
+  ---
+  duration_ms: 147.493959
+  type: 'test'
+  ...
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 116
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-z9gjUj/graph"
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 1
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-z9gjUj/graph"
+# Subtest: Recovery interrupts jobs and rejects late completion without losing answers
+ok 5 - Recovery interrupts jobs and rejects late completion without losing answers
+  ---
+  duration_ms: 144.271042
+  type: 'test'
+  ...
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 123
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-MxTSgq/graph"
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 1
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-MxTSgq/graph"
+# Subtest: Deletion isolates owners, rejects retries and late writes, and enforces private paths
+ok 6 - Deletion isolates owners, rejects retries and late writes, and enforces private paths
+  ---
+  duration_ms: 154.912291
+  type: 'test'
+  ...
+# [04:50:36] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 117
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-Uue7SI/graph"
+# Subtest: Assessment lifecycle logs omit private identity and answer content
+ok 7 - Assessment lifecycle logs omit private identity and answer content
+  ---
+  duration_ms: 655.34925
+  type: 'test'
+  ...
+# [04:50:37] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 164
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-qg4yVo/graph"
+# [04:50:37] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 121
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 5
+#     [35mpath[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/understanding-service-qg4yVo/graph.lmdb"
+# Subtest: Privacy covers the active production file layout and its lock file
+ok 8 - Privacy covers the active production file layout and its lock file
+  ---
+  duration_ms: 305.519416
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5523.11325

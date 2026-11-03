@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s2",
+    "createdAt": "2026-11-01T13:16:17.185Z",
+    "updatedAt": "2026-11-01T18:37:30.030Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-01T18:37:30.905Z",
+    "reviewOverride": {
+      "reason": "Manual code review (interim rule 2026-10-29, independent reviewer agent): s2 round 1 block (2 HIGH) fixed in b9c08fdd5; round 2 pass. Approved by the user in chat 2026-11-02.",
+      "at": "2026-11-01T18:37:30.905Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      }
+    ],
+    "summary": "Full sweep once (2 Story-caused failures fixed, the rest pre-existing at the pre-s2 base), installed daemon updated to 8efcb2cb, and the installed-daemon smoke passed: no empty or partial read across 27,781 polls during 15 rewrites, a delete gone in one step, unembedded 0 and complete at start.",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/db/__tests__/relations-in-txn.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/db/relations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit-types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/db/file-commit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit-vectors.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/embedder.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/completeness-all-lookups.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/index-state-rows.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/cross-file-modes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/full-index-rebuild.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/delete-entities-by-id.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/db/index-state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/reconcile.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-code-index-work.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/status-board.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "scripts/measure-entity-vec-write.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/embedder-lazy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/smoke-t12.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T16:45:29.028Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/file-commit.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/lance/entity-vec.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/file-refresh.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/status.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/indexing-port.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/backfill.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/daemon-status-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-port-lanes.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/vector-one-row-per-id.test.ts",
+          "version": "a881ec755"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T18:37:30.030Z"
+      }
+    ],
+    "commit": "a881ec755"
+  }
+}

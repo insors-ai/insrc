@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: renderCatalog: empty catalog renders the no-templates marker
+ok 1 - renderCatalog: empty catalog renders the no-templates marker
+  ---
+  duration_ms: 0.728042
+  type: 'test'
+  ...
+# Subtest: renderCatalog: single template renders id + target + family + description + produces
+ok 2 - renderCatalog: single template renders id + target + family + description + produces
+  ---
+  duration_ms: 0.181834
+  type: 'test'
+  ...
+# Subtest: renderCatalog: aggregator template flags itself with INV-12 hint
+ok 3 - renderCatalog: aggregator template flags itself with INV-12 hint
+  ---
+  duration_ms: 0.118959
+  type: 'test'
+  ...
+# Subtest: renderCatalog: catalog order is preserved
+ok 4 - renderCatalog: catalog order is preserved
+  ---
+  duration_ms: 0.067916
+  type: 'test'
+  ...
+# Subtest: renderDepthPolicy: M scope reports 20-40 band
+ok 5 - renderDepthPolicy: M scope reports 20-40 band
+  ---
+  duration_ms: 0.086708
+  type: 'test'
+  ...
+# Subtest: renderDepthPolicy: focused intent halves the lower bound only
+ok 6 - renderDepthPolicy: focused intent halves the lower bound only
+  ---
+  duration_ms: 0.047333
+  type: 'test'
+  ...
+# Subtest: renderDepthPolicy: XS depth hint mentions detailed per-unit
+ok 7 - renderDepthPolicy: XS depth hint mentions detailed per-unit
+  ---
+  duration_ms: 0.120417
+  type: 'test'
+  ...
+# Subtest: renderDepthPolicy: XL depth hint mentions structural breadth + child plans
+ok 8 - renderDepthPolicy: XL depth hint mentions structural breadth + child plans
+  ---
+  duration_ms: 0.0755
+  type: 'test'
+  ...
+# Subtest: classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError
+ok 9 - classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError
+  ---
+  duration_ms: 0.225542
+  type: 'test'
+  ...
+# Subtest: classifyError("Ollama is not running") -> PlanBuilderLlmUnavailableError
+ok 10 - classifyError("Ollama is not running") -> PlanBuilderLlmUnavailableError
+  ---
+  duration_ms: 0.305084
+  type: 'test'
+  ...
+# Subtest: classifyError("Model not found") -> PlanBuilderLlmUnavailableError
+ok 11 - classifyError("Model not found") -> PlanBuilderLlmUnavailableError
+  ---
+  duration_ms: 0.057
+  type: 'test'
+  ...
+# Subtest: classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable
+ok 12 - classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable
+  ---
+  duration_ms: 0.078459
+  type: 'test'
+  ...
+# Subtest: classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable
+ok 13 - classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable
+  ---
+  duration_ms: 0.030917
+  type: 'test'
+  ...
+# Subtest: PlanBuilderLlmUnavailableError carries cause in message
+ok 14 - PlanBuilderLlmUnavailableError carries cause in message
+  ---
+  duration_ms: 0.070708
+  type: 'test'
+  ...
+# Subtest: PlanBuilderSchemaUnrecoverable carries error list in message
+ok 15 - PlanBuilderSchemaUnrecoverable carries error list in message
+  ---
+  duration_ms: 0.034333
+  type: 'test'
+  ...
+# Subtest: PlanBuilderPromptMissingError carries the absolute path
+ok 16 - PlanBuilderPromptMissingError carries the absolute path
+  ---
+  duration_ms: 0.039166
+  type: 'test'
+  ...
+# Subtest: PlanBuilderExhausted carries attempts + failures + lastFailure
+ok 17 - PlanBuilderExhausted carries attempts + failures + lastFailure
+  ---
+  duration_ms: 0.060625
+  type: 'test'
+  ...
+# Subtest: buildInitialMessages: emits 2 messages (system, user) with all the required sections
+ok 18 - buildInitialMessages: emits 2 messages (system, user) with all the required sections
+  ---
+  duration_ms: 77.995166
+  type: 'test'
+  ...
+# Subtest: buildInitialMessages: child-plan parentTaskPath emits the warning note
+ok 19 - buildInitialMessages: child-plan parentTaskPath emits the warning note
+  ---
+  duration_ms: 16.189583
+  type: 'test'
+  ...
+# Subtest: appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block
+ok 20 - appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block
+  ---
+  duration_ms: 0.179
+  type: 'test'
+  ...
+# Subtest: MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance
+ok 21 - MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance
+  ---
+  duration_ms: 0.072583
+  type: 'test'
+  ...
+# Subtest: runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap
+ok 22 - runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap
+  ---
+  duration_ms: 2.130667
+  type: 'test'
+  ...
+# Subtest: runPlanner: rootScope overrides intent.scope for the depth cap
+ok 23 - runPlanner: rootScope overrides intent.scope for the depth cap
+  ---
+  duration_ms: 0.968459
+  type: 'test'
+  ...
+# Subtest: runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected
+ok 24 - runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected
+  ---
+  duration_ms: 1.104417
+  type: 'test'
+  ...
+# Subtest: runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)
+ok 25 - runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)
+  ---
+  duration_ms: 0.732125
+  type: 'test'
+  ...
+# Subtest: appendCorrectionTurn with failure.target renders the pointer
+ok 26 - appendCorrectionTurn with failure.target renders the pointer
+  ---
+  duration_ms: 0.098875
+  type: 'test'
+  ...
+# Subtest: appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats
+ok 27 - appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats
+  ---
+  duration_ms: 0.077083
+  type: 'test'
+  ...
+# Subtest: appendCorrectionTurn: no escalation banner when previous failure was a different invariant
+ok 28 - appendCorrectionTurn: no escalation banner when previous failure was a different invariant
+  ---
+  duration_ms: 0.041042
+  type: 'test'
+  ...
+# Subtest: appendCorrectionTurn: no escalation banner when same invariant hits a different task
+ok 29 - appendCorrectionTurn: no escalation banner when same invariant hits a different task
+  ---
+  duration_ms: 0.036833
+  type: 'test'
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 29
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 604.692916

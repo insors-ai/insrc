@@ -1,0 +1,408 @@
+{
+  "capturedOn": "2026-11-01",
+  "purpose": "Persist exact bounded analyzer outputs used for HLD context. Proposed APIs and package locations are design, not outputs of these probes.",
+  "limitations": [
+    "Graph coverage not established; importer listing bounded.",
+    "Capability candidate retrieval limited and low confidence; no full absence or complete reuse claim."
+  ],
+  "probes": [
+    {
+      "type": "module.profile",
+      "completeness": {
+        "complete": true,
+        "total": 10,
+        "returned": 10,
+        "basis": "filesystem",
+        "basisNote": "Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only."
+      },
+      "profile": {
+        "path": "src/db/lance",
+        "kind": "dir",
+        "subdirs": [
+          "src/db/lance/__tests__"
+        ],
+        "filesInDir": [
+          {
+            "file": "src/db/lance/artifact-vec.ts",
+            "language": "typescript",
+            "bytes": 12633,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/cleanup.ts",
+            "language": "typescript",
+            "bytes": 7174,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/config-vec.ts",
+            "language": "typescript",
+            "bytes": 5341,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/conn.ts",
+            "language": "typescript",
+            "bytes": 7208,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/entity-vec.ts",
+            "language": "typescript",
+            "bytes": 16026,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/response-segment-vec.ts",
+            "language": "typescript",
+            "bytes": 7772,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/session-vec.ts",
+            "language": "typescript",
+            "bytes": 4731,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/turn-vec.ts",
+            "language": "typescript",
+            "bytes": 7797,
+            "kind": "file"
+          },
+          {
+            "file": "src/db/lance/working-memory-bullets.ts",
+            "language": "typescript",
+            "bytes": 6475,
+            "kind": "file"
+          }
+        ],
+        "exports": [],
+        "entrypoints": [],
+        "entityCount": 127,
+        "totalBytes": 161790
+      }
+    },
+    {
+      "type": "import.graph",
+      "completeness": {
+        "complete": false,
+        "total": 59,
+        "returned": 19,
+        "limited": [
+          {
+            "what": "importing files",
+            "limit": 15,
+            "scope": "per-group",
+            "reason": "55 importing files were found and 15 are kept"
+          }
+        ],
+        "basis": "graph",
+        "basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established"
+      },
+      "summary": {
+        "target": "src/db/lance",
+        "topImporters": [
+          {
+            "file": "src/db/__tests__/compaction-lmdb-lance.test.ts",
+            "edges": 3
+          },
+          {
+            "file": "src/db/__tests__/conversations-lance-integration.test.ts",
+            "edges": 3
+          },
+          {
+            "file": "src/daemon/steps/__tests__/fixtures/task-persistence.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/daemon/threads/__tests__/helpers/store-worker.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/config/__tests__/store-lance-integration.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-area-vector.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/daemon/__tests__/helpers/seeded-daemon.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/db/__tests__/entities-lance-integration.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/db/__tests__/entity-files-for-repo.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/indexer/__tests__/cross-file-resolver-boundary-exclusion.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/indexer/__tests__/cross-file-resolver-lmdb.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/indexer/__tests__/reconcile.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/indexer/__tests__/index-run-record.test.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "edges": 1
+          },
+          {
+            "file": "src/analyze/summariser/__tests__/summarise-doc-current.test.ts",
+            "edges": 1
+          }
+        ],
+        "topImportees": [
+          {
+            "file": "src/config/local.ts",
+            "edges": 16
+          },
+          {
+            "file": "src/shared/connection-persistence.ts",
+            "edges": 9
+          },
+          {
+            "file": "src/shared/logger.ts",
+            "edges": 2
+          },
+          {
+            "file": "src/shared/paths.ts",
+            "edges": 1
+          }
+        ],
+        "totalInDegree": 70,
+        "totalOutDegree": 28
+      }
+    },
+    {
+      "type": "convention.detect",
+      "completeness": {
+        "complete": true,
+        "total": 0,
+        "returned": 0,
+        "basis": "graph",
+        "basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established"
+      },
+      "path": "src/db",
+      "namingSchema": {
+        "functions": "camelCase",
+        "functionsBreakdown": {
+          "snake_case": 78,
+          "camelCase": 569,
+          "PascalCase": 0,
+          "kebab-case": 0,
+          "mixed": 0,
+          "unknown": 1
+        },
+        "classes": "PascalCase",
+        "classesBreakdown": {
+          "snake_case": 0,
+          "camelCase": 0,
+          "PascalCase": 99,
+          "kebab-case": 0,
+          "mixed": 0,
+          "unknown": 0
+        },
+        "files": "kebab-case",
+        "filesBreakdown": {
+          "snake_case": 27,
+          "camelCase": 0,
+          "PascalCase": 0,
+          "kebab-case": 79,
+          "mixed": 0,
+          "unknown": 0
+        },
+        "testFiles": "*.test",
+        "sampleSizes": {
+          "functions": 648,
+          "classes": 99,
+          "files": 106
+        }
+      },
+      "baseClassIdioms": [],
+      "privatePrefixCount": 7,
+      "dunderMethodCount": 0,
+      "totalEntities": 901,
+      "notFoundNote": ""
+    },
+    {
+      "type": "capability.reuse-check",
+      "completeness": {
+        "complete": false,
+        "total": null,
+        "returned": 3,
+        "limited": [
+          {
+            "what": "matches",
+            "limit": 10,
+            "scope": "source",
+            "reason": "672 matches were found and 10 are kept"
+          },
+          {
+            "what": "candidate modules",
+            "limit": 3,
+            "scope": "overall",
+            "reason": "10 candidate modules were found and 3 are kept"
+          }
+        ],
+        "basis": "graph",
+        "basisNote": "this result holds what the stored code graph has; the graph's own coverage of the code is not established"
+      },
+      "capability": "Shared project memory across coding agents, canonical semantic instruction normalization and deduplication, durable asynchronous ingestion, scoped recall, correction and forgetting, independently embedded or standalone IPC hosting",
+      "candidates": [
+        {
+          "path": "src/shared",
+          "moduleName": "shared",
+          "verdict": "partial-match",
+          "rationale": "Shared contracts, access and locks are infrastructure candidates. The module profile does not establish semantic normalization, durable capture, lifecycle or independent hosting.",
+          "evidenceEntities": [],
+          "conceptScore": 0.187
+        },
+        {
+          "path": "src/analyze/runtimes/shared",
+          "moduleName": "shared",
+          "verdict": "unrelated",
+          "rationale": "Profile lists analysis aggregation and task scope components; it does not establish the requested shared-memory capability.",
+          "evidenceEntities": [],
+          "conceptScore": 0.149
+        },
+        {
+          "path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d",
+          "moduleName": "share-project-memory-across-agents-applications-E2026110117123b6d",
+          "verdict": "unrelated",
+          "rationale": "These are this feature's proposed requirements and verification documents, not an existing runtime implementation.",
+          "evidenceEntities": [],
+          "conceptScore": 0.148
+        }
+      ],
+      "notFoundNote": ""
+    },
+    {
+      "type": "module.profile",
+      "completeness": {
+        "complete": true,
+        "total": 1,
+        "returned": 1,
+        "basis": "filesystem",
+        "basisNote": "Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only."
+      },
+      "profile": {
+        "path": "src/daemon/server.ts",
+        "kind": "file",
+        "subdirs": [],
+        "filesInDir": [
+          {
+            "file": "src/daemon/server.ts",
+            "language": "typescript",
+            "bytes": 21122,
+            "kind": "file"
+          }
+        ],
+        "exports": [
+          "DeliverEnvelope",
+          "ForwardRequest",
+          "IpcServer",
+          "RpcHandler",
+          "RpcHandlers",
+          "StreamHandler",
+          "StreamHandlers",
+          "attachedClients",
+          "close",
+          "directDispatch",
+          "disconnectClients",
+          "failureMessage",
+          "flushPendingWrites",
+          "listen",
+          "onConnectionClose",
+          "onRegistryChange"
+        ],
+        "entrypoints": [],
+        "entityCount": 28,
+        "totalBytes": 21122
+      }
+    },
+    {
+      "type": "module.profile",
+      "completeness": {
+        "complete": true,
+        "total": 9,
+        "returned": 9,
+        "basis": "filesystem",
+        "basisNote": "Entry points are recognised by file name, and by a marker in the first 4,096 characters of a file whose content the index stores; the index stores no content for a source file itself, so such a file is recognised by name only."
+      },
+      "profile": {
+        "path": "src/agent/providers",
+        "kind": "dir",
+        "subdirs": [
+          "src/agent/providers/__tests__"
+        ],
+        "filesInDir": [
+          {
+            "file": "src/agent/providers/bounded-input.ts",
+            "language": "typescript",
+            "bytes": 2443,
+            "kind": "file"
+          },
+          {
+            "file": "src/agent/providers/cli-provider.ts",
+            "language": "typescript",
+            "bytes": 58014,
+            "kind": "file"
+          },
+          {
+            "file": "src/agent/providers/model-call-error.ts",
+            "language": "typescript",
+            "bytes": 1460,
+            "kind": "file"
+          },
+          {
+            "file": "src/agent/providers/ollama-target.ts",
+            "language": "typescript",
+            "bytes": 5104,
+            "kind": "file"
+          },
+          {
+            "file": "src/agent/providers/ollama.ts",
+            "language": "typescript",
+            "bytes": 50849,
+            "kind": "file"
+          },
+          {
+            "file": "src/agent/providers/onnx-embedder.ts",
+            "language": "typescript",
+            "bytes": 8597,
+            "kind": "file"
+          },
+          {
+            "file": "src/agent/providers/structured-output.ts",
+            "language": "typescript",
+            "bytes": 13882,
+            "kind": "file"
+          },
+          {
+            "file": "src/agent/providers/structured-schema.ts",
+            "language": "typescript",
+            "bytes": 13971,
+            "kind": "file"
+          }
+        ],
+        "exports": [],
+        "entrypoints": [],
+        "entityCount": 211,
+        "totalBytes": 373557
+      }
+    }
+  ]
+}

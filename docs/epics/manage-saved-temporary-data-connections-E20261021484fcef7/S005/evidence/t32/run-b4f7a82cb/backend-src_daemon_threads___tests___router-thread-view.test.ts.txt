@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle
+ok 1 - router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle
+  ---
+  duration_ms: 6.582166
+  type: 'test'
+  ...
+# Subtest: router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes
+ok 2 - router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes
+  ---
+  duration_ms: 36.995042
+  type: 'test'
+  ...
+# Subtest: router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it
+ok 3 - router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it
+  ---
+  duration_ms: 33.780708
+  type: 'test'
+  ...
+# Subtest: router thread view: a request awaiting its ack stays busy past its reply until its worker's ack (ISSUE-7c39e5cd)
+ok 4 - router thread view: a request awaiting its ack stays busy past its reply until its worker's ack (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 41.424833
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 414.15775

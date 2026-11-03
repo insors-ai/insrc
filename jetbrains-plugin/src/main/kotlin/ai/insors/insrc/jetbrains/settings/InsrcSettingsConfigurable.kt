@@ -1,19 +1,22 @@
 package ai.insors.insrc.jetbrains.settings
 
 import ai.insors.insrc.jetbrains.daemon.ConfigOptionDto
+import ai.insors.insrc.jetbrains.daemon.DaemonGateway
 import ai.insors.insrc.jetbrains.daemon.DaemonGatewayService
+import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.PerRepoOverridesResult
 import ai.insors.insrc.jetbrains.daemon.PerRoleOverridesResult
 import ai.insors.insrc.jetbrains.daemon.RegisteredReposResult
-import ai.insors.insrc.jetbrains.daemon.RepoSettingsResult
 import ai.insors.insrc.jetbrains.daemon.SaveResult
 import ai.insors.insrc.jetbrains.daemon.SettingsCatalogResult
+import ai.insors.insrc.jetbrains.lifecycle.DaemonLifecycleCommandRunner
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
@@ -91,19 +94,13 @@ class InsrcSettingsConfigurable : Configurable {
             val overrides = gateway.perRoleOverrides()
             val perRepo = gateway.perRepoOverrides()
             val registered = gateway.registeredRepos()
-            // S004: pre-fetch each provider's model list off the EDT (a socket round-trip
-            // must never run on the EDT). All three providers are fetched up front so an
-            // in-session runner switch immediately shows the new provider's list; Refresh
-            // re-queries them. The plugin is a dumb consumer of these results (k2).
-            val modelLists = ModelTiersModel.PROVIDERS.associateWith { gateway.listModels(it) }
-            // Story s3: each registered repo's tracker settings (values, sign-in, policy), read here on the
-            // pooled thread so no socket round trip runs on the EDT. A failed repo keeps its own reason.
-            val repoSettings: Map<String, RepoSettingsResult> =
-                if (registered is RegisteredReposResult.Loaded) registered.repos.associateWith { gateway.readRepoSettings(it) } else emptyMap()
+            // Epic ce99b72065d03b1b s7: the daemon's model definitions — the only source of the
+            // tiers' runner, model and effort choices — read off the EDT with the rest.
+            val definitions = gateway.modelDefinitions()
             ApplicationManager.getApplication().invokeLater({
                 // Only render if this component is still the live page.
                 if (root === scroll) {
-                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, modelLists, repoSettings, gateway))
+                    scroll.setViewportView(renderBody(catalog, overrides, perRepo, registered, definitions, gateway))
                     scroll.revalidate()
                     scroll.repaint()
                 }
@@ -138,6 +135,7 @@ class InsrcSettingsConfigurable : Configurable {
         val gateway = service<DaemonGatewayService>()
         val saved = mutableListOf<String>()
         val failures = mutableListOf<String>()
+        var restartRequired = false
         ProgressManager.getInstance().runProcessWithProgressSynchronously({
             for (pw in dirty) {
                 val path = pw.segments.joinToString(".")
@@ -146,8 +144,11 @@ class InsrcSettingsConfigurable : Configurable {
                     WriteOp.Clear -> gateway.clearSetting(pw.segments)
                 }
                 when (result) {
-                    SaveResult.Saved -> saved.add(path)
-                    is SaveResult.Rejected -> failures.add("$path: ${result.reason}")
+                    is SaveResult.Saved -> {
+                        saved.add(path)
+                        if (result.restartRequired) restartRequired = true
+                    }
+                    is SaveResult.Rejected -> failures.add("$path: ${result.message}")
                     is SaveResult.Unavailable -> failures.add("$path: ${result.reason}")
                 }
             }
@@ -159,14 +160,36 @@ class InsrcSettingsConfigurable : Configurable {
                     // deprecated ConfigurationException.getMessage() — same text.
                     e.localizedMessage?.let { failures.add(it) }
                 }
+                if (section.takeRestartRequired()) restartRequired = true
             }
         }, "Saving insrc Settings…", false, null)
 
         for (path in saved) m?.onSaved(path)
         refreshTables()
-        if (failures.isNotEmpty()) {
-            throw ConfigurationException("Some settings could not be saved:\n" + failures.joinToString("\n"))
-        }
+        // Back on the EDT, outside the save loop: one restart offer, then the failures.
+        finishApply(restartRequired, failures) { offerRestart(gateway) }
+    }
+
+    /**
+     * Offer one daemon restart for saved settings that need it (Epic ce99b72065d03b1b s7).
+     * Yes restarts the daemon under a progress indicator and confirms it answers; the
+     * outcome is reported.
+     */
+    private fun offerRestart(gateway: DaemonGateway) {
+        val answer = Messages.showYesNoDialog(
+            "Some saved settings take effect after a daemon restart. Restart the insrc daemon now?",
+            "insrc",
+            "Restart Daemon",
+            "Later",
+            Messages.getQuestionIcon(),
+        )
+        if (answer != Messages.YES) return
+        var failure: String? = null
+        ProgressManager.getInstance().runProcessWithProgressSynchronously({
+            failure = DaemonRestart({ DaemonLifecycleCommandRunner.production().run(it) }, gateway).restart()
+        }, "Restarting the insrc daemon…", false, null)
+        val reason = failure
+        if (reason == null) Messages.showInfoMessage("The insrc daemon restarted.", "insrc") else Messages.showErrorDialog(reason, "insrc")
     }
 
     /** Revert every field + section to its last-saved value and re-seed the tables. */
@@ -196,8 +219,7 @@ class InsrcSettingsConfigurable : Configurable {
         overrides: PerRoleOverridesResult,
         perRepo: PerRepoOverridesResult,
         registered: RegisteredReposResult,
-        modelLists: Map<String, ai.insors.insrc.jetbrains.daemon.ModelListResult>,
-        repoSettings: Map<String, RepoSettingsResult>,
+        definitions: ModelDefinitionsResult,
         gateway: DaemonGatewayService,
     ): JComponent = when (result) {
         is SettingsCatalogResult.Unavailable -> {
@@ -222,9 +244,10 @@ class InsrcSettingsConfigurable : Configurable {
             sections.clear()
             tableModels.clear()
 
-            // S004: the dedicated Model-tiers section over the pure ModelTiersModel + the
-            // pre-fetched per-provider lists. Registered first so it heads the sub-sections.
-            sections.add(ModelTiersSection(ModelTiersModel(fullCatalog, modelLists), gateway))
+            // The dedicated Model-tiers section over the daemon's model definitions (Epic
+            // ce99b72065d03b1b s7); a failed read shows its message in the section, with
+            // Refresh. Registered first so it heads the sub-sections.
+            sections.add(ModelTiersSection(fullCatalog, definitions, gateway))
 
             // Build the override sub-sections (unchanged S004/S005 wiring); a section
             // is registered only when its read is Loaded. Unavailable reads become a
@@ -242,8 +265,6 @@ class InsrcSettingsConfigurable : Configurable {
                     PerRepoSection(
                         PerRepoOverridesModel(registered.repos, catalog.roles, catalog.tierNames, perRepo.overrides),
                         gateway,
-                        fullCatalog.repoFields,
-                        repoSettings,
                     ),
                 )
             } else {

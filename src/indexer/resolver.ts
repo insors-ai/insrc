@@ -1,5 +1,5 @@
-import { existsSync } from 'node:fs';
-import { resolve, dirname, extname } from 'node:path';
+import { existsSync, readdirSync } from 'node:fs';
+import { basename, resolve, dirname, extname, join, relative, sep } from 'node:path';
 import type { Entity, Relation, Language } from '../shared/types.js';
 import { makeEntityId } from './parser/base.js';
 
@@ -87,8 +87,11 @@ export function resolveRelations(
   const language = detectLanguage(filePath, entities);
 
   // Every resolved relation names its repository (Epic c2ba6fa6 s1), so the
-  // store counts one it cannot write against this repository.
-  const withRepo = (rel: Relation): Relation => ({ ...rel, meta: { ...rel.meta, repo } });
+  // store counts one it cannot write against this repository. Everything this
+  // resolver decides is read from the file's own text -- the parser's own
+  // resolutions, a call to a function of the same file, a relative import of a
+  // file on disk -- so it is 'extracted' (s7).
+  const withRepo = (rel: Relation): Relation => ({ ...rel, meta: { ...rel.meta, repo }, evidence: 'extracted' });
 
   return relations.map(rel => {
     if (rel.resolved) return withRepo(rel);
@@ -149,6 +152,11 @@ export function resolveImportPath(
     return resolvePythonRelativeImport(fromDir, clean, repo);
   }
 
+  // Rust module paths (s9): `self::x` (a `mod x;`), `crate::a::B`, `super::c`.
+  if (language === 'rust' && /^(crate|self|super)::/.test(clean)) {
+    return resolveRustModulePath(fromFile, clean, repo);
+  }
+
   const candidates = buildCandidates(resolve(fromDir, clean), language);
 
   for (const candidate of candidates) {
@@ -202,6 +210,88 @@ function resolvePythonRelativeImport(
   return null;
 }
 
+/**
+ * Whether `path` is on disk under exactly this name, every directory below
+ * `root` included: macOS's default file system ignores case, a module path
+ * does not (`Config/mod.rs` is not `config/mod.rs`).
+ */
+function existsExact(path: string, root: string): boolean {
+  if (!existsSync(path)) return false;
+  try {
+    for (let p = path; p.length > root.length && p !== dirname(p); p = dirname(p)) {
+      if (!readdirSync(dirname(p)).includes(basename(p))) return false;
+    }
+    return true;
+  } catch { return false; }
+}
+
+/** Where the files of `fromFile`'s crate hang from, and whether `fromFile` is that crate's root file. */
+function rustCrateOf(fromFile: string, repo: string): { dir: string; isRoot: boolean } | null {
+  let cargo: string | null = null;
+  for (let dir = dirname(fromFile); dir.startsWith(repo); dir = dirname(dir)) {
+    if (existsSync(join(dir, 'Cargo.toml'))) { cargo = dir; break; }
+    if (dir === dirname(dir)) break;
+  }
+  if (cargo === null) return null;
+  const rel = relative(cargo, fromFile).split(sep);
+  // build.rs; a file directly in tests/, examples/, benches/ or src/bin/; or <that>/<name>/main.rs is a crate of its own.
+  if (rel.length === 1) return { dir: cargo, isRoot: rel[0] === 'build.rs' };
+  const top = rel[0] === 'src' && rel[1] === 'bin' ? 2 : (['tests', 'examples', 'benches'].includes(rel[0]!) ? 1 : 0);
+  if (top > 0) {
+    const topDir = join(cargo, ...rel.slice(0, top));
+    if (rel.length === top + 1) return { dir: topDir, isRoot: true };
+    const sub = join(topDir, rel[top]!);
+    if (existsExact(join(sub, 'main.rs'), cargo)) return { dir: sub, isRoot: rel.length === top + 2 && rel[top + 1] === 'main.rs' };
+    return { dir: topDir, isRoot: false };
+  }
+  const src = join(cargo, 'src');
+  return { dir: src, isRoot: dirname(fromFile) === src && ['lib.rs', 'main.rs'].includes(basename(fromFile)) };
+}
+
+/**
+ * The file a Rust module path names (Epic c2ba6fa6 s9). The path is read from
+ * a base directory -- the crate's directory for `crate::` (src/, or its own
+ * for a crate under src/bin/, tests/, examples/ or benches/), the declaring
+ * module's directory for `self::`, one level up per `super::` -- and the
+ * longest prefix of its segments that is a module file wins, `a/b.rs` before
+ * `a/b/mod.rs` (so `mod util;` is util.rs over util/mod.rs). A file counts
+ * only under its exact name. When no segment is a module file the path names
+ * an item of the base module itself: for `crate::` and `super::` that
+ * module's file is returned; for `self::` (or `crate::` from the crate root)
+ * it is the importing file, so there is nothing to link.
+ */
+function resolveRustModulePath(fromFile: string, path: string, repo: string): string | null {
+  const parts = path.split('::');
+  const crate = rustCrateOf(fromFile, repo);
+  const stem = basename(fromFile, '.rs');
+  // A crate root's and a mod.rs's child modules sit beside it; any other module's in a directory named after it.
+  const selfDir = crate?.isRoot === true || ['main', 'lib', 'mod'].includes(stem) ? dirname(fromFile) : join(dirname(fromFile), stem);
+  let base: string;
+  let i = 0;
+  if (parts[0] === 'crate') {
+    if (crate === null) return null;
+    base = crate.dir; i = 1;
+  } else {
+    base = selfDir;
+    for (; parts[i] === 'self' || parts[i] === 'super'; i++) if (parts[i] === 'super') base = dirname(base);
+  }
+  const segs = parts.slice(i);
+  if (!base.startsWith(repo)) return null;
+
+  // The longest module file wins; when that is the importing file, the path
+  // names one of its own items and there is nothing to link.
+  const found = (candidates: string[]): string | undefined => candidates.find(c => c.startsWith(repo) && existsExact(c, repo));
+  for (let k = segs.length; k >= 1; k--) {
+    const mod = join(base, ...segs.slice(0, k));
+    const hit = found([`${mod}.rs`, join(mod, 'mod.rs')]);
+    if (hit !== undefined) return hit === fromFile ? null : hit;
+  }
+  if (base === selfDir && !parts.includes('super') && parts[0] !== 'crate') return null;
+  if (parts[0] === 'crate' && crate?.isRoot === true) return null;
+  const root = found([`${base}.rs`, join(base, 'mod.rs'), join(base, 'lib.rs'), join(base, 'main.rs')]);
+  return root === undefined || root === fromFile ? null : root;
+}
+
 // ---------------------------------------------------------------------------
 // Per-language extension candidate map
 //
@@ -231,6 +321,8 @@ const EXTENSION_MAP: Readonly<Partial<Record<Language, ExtensionCandidates>>> = 
   // python: filled in Phase 1
   // go / java / scala: filled in their respective phases (cross-file pass
   // handles JVM package-style imports rather than relative-path probing).
+  // c / cpp (s9): an #include names its file exactly, extension included, so
+  // the one candidate is the path itself -- the default below.
 };
 
 function buildCandidates(base: string, language: Language): string[] {
@@ -259,6 +351,11 @@ function buildCandidates(base: string, language: Language): string[] {
 // otherwise fall back to extension-based mapping.
 // ---------------------------------------------------------------------------
 
+/** The language an extension names, where the index reads it as code (Epic c2ba6fa6 s9). */
+export function languageOfExtension(ext: string): Language | undefined {
+  return EXT_TO_LANG[ext.toLowerCase()];
+}
+
 function detectLanguage(filePath: string, entities?: Entity[]): Language {
   if (entities) {
     const fileEntity = entities.find(e => e.kind === 'file' && e.file === filePath);
@@ -277,4 +374,9 @@ const EXT_TO_LANG: Readonly<Record<string, Language>> = {
   '.go':    'go',
   '.java':  'java',
   '.scala': 'scala', '.sc': 'scala',
+  // Epic c2ba6fa6 s9 (.h is read by the C++ reader: C and C++ are one family)
+  '.rs':    'rust',
+  '.cs':    'csharp',
+  '.c':     'c',
+  '.h':     'cpp', '.cc': 'cpp', '.cpp': 'cpp', '.cxx': 'cpp', '.hpp': 'cpp', '.hh': 'cpp', '.hxx': 'cpp',
 };

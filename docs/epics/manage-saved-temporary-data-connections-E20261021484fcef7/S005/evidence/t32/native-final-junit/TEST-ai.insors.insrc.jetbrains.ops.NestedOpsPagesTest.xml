@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.ops.NestedOpsPagesTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.002">
+  <properties/>
+  <testcase name="ac2 - the shared page-shell base runs off-EDT with a guarded render and never edits the settings page()" classname="ai.insors.insrc.jetbrains.ops.NestedOpsPagesTest" time="0.001"/>
+  <testcase name="ac1 - plugin_xml nests the three operations pages and Connections under the unchanged parent()" classname="ai.insors.insrc.jetbrains.ops.NestedOpsPagesTest" time="0.0"/>
+  <testcase name="ac2 - each child extends the base and overrides only pageTitle + buildBody()" classname="ai.insors.insrc.jetbrains.ops.NestedOpsPagesTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: loadDocumentFormat: the bundled default resolves for 'define' and equals the in-code default
+ok 1 - loadDocumentFormat: the bundled default resolves for 'define' and equals the in-code default
+  ---
+  duration_ms: 2.157375
+  type: 'test'
+  ...
+# Subtest: loadDocumentFormat: the bundled default resolves for 'hld' and equals the in-code default
+ok 2 - loadDocumentFormat: the bundled default resolves for 'hld' and equals the in-code default
+  ---
+  duration_ms: 0.481583
+  type: 'test'
+  ...
+# Subtest: loadDocumentFormat: the bundled default resolves for 'lld' and equals the in-code default
+ok 3 - loadDocumentFormat: the bundled default resolves for 'lld' and equals the in-code default
+  ---
+  duration_ms: 0.332542
+  type: 'test'
+  ...
+# Subtest: loadDocumentFormat: the bundled default resolves for 'plan' and equals the in-code default
+ok 4 - loadDocumentFormat: the bundled default resolves for 'plan' and equals the in-code default
+  ---
+  duration_ms: 0.516958
+  type: 'test'
+  ...
+# Subtest: loadDocumentFormat: a per-repo override WINS over the bundled default
+ok 5 - loadDocumentFormat: a per-repo override WINS over the bundled default
+  ---
+  duration_ms: 2.285
+  type: 'test'
+  ...
+# Subtest: loadDocumentFormat: a MALFORMED repo override degrades to the bundled default
+ok 6 - loadDocumentFormat: a MALFORMED repo override degrades to the bundled default
+  ---
+  duration_ms: 1.594417
+  type: 'test'
+  ...
+# Subtest: loadDocumentFormat: the mtime cache picks up a hot edit to a repo override
+ok 7 - loadDocumentFormat: the mtime cache picks up a hot edit to a repo override
+  ---
+  duration_ms: 1.528375
+  type: 'test'
+  ...
+# Subtest: resolveDocumentFormat: returns the bundled default DocumentFormat for a repo with no override
+ok 8 - resolveDocumentFormat: returns the bundled default DocumentFormat for a repo with no override
+  ---
+  duration_ms: 0.70875
+  type: 'test'
+  ...
+# Subtest: resolveDocumentFormat: a repo override flows through to the renderer resolution path
+ok 9 - resolveDocumentFormat: a repo override flows through to the renderer resolution path
+  ---
+  duration_ms: 1.531625
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 279.555667

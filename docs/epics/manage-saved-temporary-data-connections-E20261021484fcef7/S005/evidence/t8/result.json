@@ -1,0 +1,44 @@
+{
+  "task": "t8",
+  "focusedTests": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "typechecks": "Node22 backend and extension tsc --noEmit passed",
+  "realAuthority": "Actual IpcServer + ConnectionSessionRpc + TemporaryConnectionOverlay; fixture-only enablement, monotonic clock and registration ports",
+  "heartbeatMs": 30000,
+  "leaseMs": 90000,
+  "disposalDeadlineMs": 1000,
+  "lanes": "Per-workbench private control, per-root delegated data and unclaimed Saved; no fallback replay",
+  "owner": "One lazy instance in activate, disposed via actual ExtensionContext subscriptions; no I/O at construction or view subscription disposal",
+  "initialFailure": "attempt1-failed.tap retained: CSV fixture source was absent; fixture now writes its source before preparation",
+  "laterTasks": [
+    "Temporary draft/attempt controllers subscribe to invalidation in their assigned tasks",
+    "Actual extension UI acceptance, private-store audit and final full sweep remain pending"
+  ],
+  "releaseEnabled": false,
+  "sourceSha256": {
+    "vscode-plugin/src/connections/session-owner.ts": "592b14ce5a88e2d1b83d0197c979f41b65938ad7684aceb1ac23b6a769400010",
+    "vscode-plugin/src/connections/__tests__/session-owner.test.ts": "31ea1a8cff5a1b0a025711836024554985652bb4d0f995391f5df88ac957b7c8",
+    "vscode-plugin/src/extension.ts": "2bb1c60b8c21f3ec446cfb15a652bdf4e3784c345156fd96205d14054a2a1fe2"
+  },
+  "activationEntryChecks": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "selection": "extension package|only extension.ts|extension entry"
+  },
+  "additionalActivationFileRun": {
+    "tests": 15,
+    "pass": 1,
+    "fail": 0,
+    "cancelled": 14,
+    "exitCode": 1,
+    "evidence": "activation.tap",
+    "cause": "Existing hung reachability probe uses an unreferenced timer, so isolated test event loop exits with unresolved promise. activation.ts and its test unchanged: activation-unchanged.diff. This run is not counted as a pass."
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "exitCode": 1,
+  "tests": 2,
+  "pass": 1,
+  "fail": 1,
+  "failure": "Probe fixture did not settle at draft-test.test.ts:106:41",
+  "cause": "Fixture overlay was a plain object; actual session accessFor correctly refuses an object that is not TemporaryConnectionOverlay.",
+  "correction": "Use actual createTemporaryOverlay and runtime.probeContext, preserving real owner admission and drain retention.",
+  "interventions": []
+}

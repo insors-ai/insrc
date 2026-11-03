@@ -1,3 +1,4 @@
+import { ConnectionExecutionError, connectionExecutionErrorCode } from '../../../shared/step-context.js';
 import { assertAnalysisAudience } from '../analysis-admission.js';
 import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
@@ -42,6 +43,7 @@ export function prepareAnswerTurn(args: Parameters<typeof prepareSynthesize>[0] 
 	try {
 		return { ok: true, prepared: prepareSynthesize(prepare) };
 	} catch (err) {
+		if (execution?.mode === 'session-memory') throw new ConnectionExecutionError(connectionExecutionErrorCode(err) ?? 'unsupported-temporary');
 		if (!(err instanceof SynthesizerPromptMissingError)) throw err;
 		const data: StepErrorData = { results: args.executed.results, report: reportFromLookups(args.executed.results, measure) };
 		return {

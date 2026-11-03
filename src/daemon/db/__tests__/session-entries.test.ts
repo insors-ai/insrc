@@ -10,6 +10,9 @@ import { _setKeystoreForTests } from '../secrets.js';
 import { environment } from './fixtures/saved-management-fixture.js';
 import type { TemporaryConnectionOverlay, TemporaryEntryDraft } from '../session-entries.js';
 import type { TrustedRpcContext } from '../../request-context.js';
+import { contextualDriverFactory } from '../driver-log-policy.js';
+import type { TemporaryResourcePorts } from '../session-resources.js';
+import type { Driver } from '../../../shared/db-driver.js';
 import '../drivers/index.js';
 
 const context = (id: string): TrustedRpcContext => ({ connectionIdentity: id, daemonEpoch: 'epoch' });
@@ -25,11 +28,84 @@ async function tree(root: string): Promise<Record<string, string>> {
  }
  await visit(root); return files;
 }
-function owner(roots: readonly string[], now: () => number = () => 0) {
+function owner(roots: readonly string[], now: () => number = () => 0, ports: TemporaryResourcePorts = {}) {
  return new ConnectionSessionOwner<TemporaryConnectionOverlay>({ daemonEpoch: 'epoch', monotonicNow: now, isRegistered: async root => roots.includes(root),
-  createOverlay: createTemporaryOverlay, dropOverlay: overlay => overlay.close(),
+  createOverlay: (root,handle,context)=>createTemporaryOverlay(root,handle,context,ports), dropOverlay: overlay => overlay.close(),
  });
 }
+
+test('CM-S4-TEMP: exact overlay removal publishes revision-only receipt and invalidates private staged edits',async()=>{
+ const env=await environment(),f=await env.rootFixture('remove'),b=await env.rootFixture('other'),service=owner([f.root,b.root]);
+ try{
+  await service.open(context('A'),f.root);await service.open(context('B'),f.root);
+  const owned=await service.management(context('A'),f.root),a=owned.overlay,otherOwner=await service.overlay(context('B'),f.root),otherRoot=await service.overlay(context('A'),b.root);
+  const initial=a.commit(await a.prepare(create(f.root))),isolated=otherOwner.commit(await otherOwner.prepare(create(f.root,'same','private-B')));
+  otherRoot.commit(await otherRoot.prepare(create(b.root,'other-root')));
+  const edit=await a.prepare({key:initial.key,mode:'update',expectedRevision:initial.revision,publicPatch:{label:'staged'},credentials:{'url.password':{action:'replace',value:'private-staged-canary'}}});
+  const before=await tree(env.directory);f.reset();b.reset();
+  const ticket=owned.ledger.issue(initial.key,'remove'),prepared=a.prepareRemoval({id:'same',expectedRevision:initial.revision});
+  assert.throws(()=>otherRoot.commitRemoval(prepared),code('invalid-input'));
+  const result=await owned.ledger.mutate({ticket,operationId:ticket.operationId,key:initial.key,mode:'remove',expectedRevision:initial.revision},async(_request,commit)=>commit(()=>a.commitRemoval(prepared)),()=>owned.binding.assertActive());
+  assert.equal(result.status,'committed');if(result.status!=='committed')throw new Error('Expected removal receipt');
+  assert.equal(result.value.registration,'removed');assert.equal(result.value.activation,'not-applicable');assert.notEqual(result.value.revision,initial.revision);
+  assert.equal(owned.ledger.status(ticket).status,'committed');assert.throws(()=>a.read('same'),code('not-found'));assert.deepEqual(a.list(),[]);
+  assert.throws(()=>a.commit(edit),code('conflict'));assert.throws(()=>a.commitRemoval(prepared),code('conflict'));
+  const fresh=a.commit(await a.prepare(create(f.root,'same','private-new')));await a.retryRemovalCleanup(result.value.revision);assert.equal(a.read('same').revision,fresh.revision);
+  assert.equal(otherOwner.read('same').revision,isolated.revision);assert.equal(otherRoot.list().length,1);
+  await otherOwner.withGeneration('same',isolated.revision,config=>assert.equal(new URL(config.url!).password,'private-B'));
+  assert.deepEqual(await tree(env.directory),before);assert.ok(Object.values(f.counts).every(n=>n===0));assert.ok(Object.values(b.counts).every(n=>n===0));
+  assert.ok(!JSON.stringify([result,JSON.stringify(a)]).includes('private-'));
+ }finally{await service.close();await env.cleanup();}
+});
+
+test('CM-S4-TEMP: pending removal retains shared session slot and ID reservation across roots until exact close',async()=>{
+ const env=await environment(),f=await env.rootFixture('quota'),b=await env.rootFixture('other');let finish!:()=>void,entered!:()=>void,closes=0;
+ const closing=new Promise<void>(resolve=>{finish=resolve;}),started=new Promise<void>(resolve=>{entered=resolve;});
+ const service=owner([f.root,b.root],()=>0,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>{closes++;entered();await closing;}} as Driver))});
+ try{
+  await service.open(context('A'),f.root);const owned=await service.management(context('A'),f.root),a=owned.overlay,other=await service.overlay(context('A'),b.root);
+  for(let i=0;i<64;i++)a.commit(await a.prepare(create(f.root,`a${i}`)));
+  const access=owned.binding.access,resolver=a.resolver(access,{assertActive:()=>owned.binding.assertActive(),signal:owned.binding.signal});
+  await resolver.withConnection(access,'a0',async()=>{});const initial=a.read('a0');
+  const lease=await resolver.lease(access,'a0');assert.throws(()=>a.prepareRemoval({id:'a0',expectedRevision:initial.revision}),code('busy'));await lease.release();
+  const removed=a.commitRemoval(a.prepareRemoval({id:'a0',expectedRevision:initial.revision}));await started;
+  assert.equal(a.list().length,63);assert.equal(a.reserves('a0'),true);assert.equal(a.removalCleanupPending(removed.revision),true);
+  await assert.rejects(resolver.lease(access,'a0'),code('not-found'));await assert.rejects(other.prepare(create(b.root,'overflow')),code('busy'));await assert.rejects(a.prepare(create(f.root,'a0')),code('busy'));
+  finish();await a.retryRemovalCleanup(removed.revision);assert.equal(closes,1);assert.equal(a.reserves('a0'),false);
+  other.commit(await other.prepare(create(b.root,'freed-slot')));assert.equal(other.list().length,1);
+  const unused=a.read('a1');a.commitRemoval(a.prepareRemoval({id:'a1',expectedRevision:unused.revision}));
+  const fresh=a.commit(await a.prepare(create(f.root,'a0','private-new')));await a.retryRemovalCleanup(removed.revision);assert.equal(a.read('a0').revision,fresh.revision);assert.equal(closes,1);
+ }finally{finish();await service.close();await env.cleanup();}
+});
+
+test('CM-S4-TEMP: removed config bytes are released immediately while runtime slot cleanup stays pending',async()=>{
+ const env=await environment(),f=await env.rootFixture('bytes'),b=await env.rootFixture('other');let finish!:()=>void;
+ const closing=new Promise<void>(resolve=>{finish=resolve;});
+ const service=owner([f.root,b.root],()=>0,{factory:()=>contextualDriverFactory(async config=>({id:config.id,kind:config.kind,family:'rdbms',close:async()=>closing} as Driver))});
+ try{
+  await service.open(context('A'),f.root);const owned=await service.management(context('A'),f.root),a=owned.overlay,other=await service.overlay(context('A'),b.root),large='x'.repeat(2*1024*1024);
+  for(let i=0;i<3;i++)a.commit(await a.prepare(create(f.root,`large${i}`,large)));other.commit(await other.prepare(create(b.root,'small')));
+  await assert.rejects(other.prepare(create(b.root,'overflow',large)),code('busy'));
+  const access=owned.binding.access;await a.resolver(access,{assertActive:()=>owned.binding.assertActive(),signal:owned.binding.signal}).withConnection(access,'large0',async()=>{});
+  const removed=a.commitRemoval(a.prepareRemoval({id:'large0',expectedRevision:a.read('large0').revision}));
+  assert.equal(a.removalCleanupPending(removed.revision),true);other.commit(await other.prepare(create(b.root,'now-fits',large)));assert.equal(other.list().length,2);
+  finish();await a.retryRemovalCleanup(removed.revision);
+ }finally{finish();await service.close();await env.cleanup();}
+});
+
+test('CM-S4-TEMP: stale canceled forged and expired removal tokens have no publication effects',async()=>{
+ const env=await environment(),f=await env.rootFixture('cancel');let now=0;const service=owner([f.root],()=>now);
+ try{
+  await service.open(context('A'),f.root);const a=await service.overlay(context('A'),f.root),initial=a.commit(await a.prepare(create(f.root)));
+  assert.throws(()=>a.prepareRemoval({id:'same',expectedRevision:'stale'}),code('conflict'));assert.throws(()=>a.prepareRemoval({id:'missing',expectedRevision:initial.revision}),code('not-found'));
+  assert.throws(()=>a.commitRemoval({}),code('invalid-input'));
+  const controller=new AbortController(),canceled=a.prepareRemoval({id:'same',expectedRevision:initial.revision},controller.signal);controller.abort();assert.throws(()=>a.commitRemoval(canceled),code('session-expired'));
+  assert.equal(a.read('same').revision,initial.revision);
+  const explicit=a.prepareRemoval({id:'same',expectedRevision:initial.revision});a.cancelRemoval(explicit);a.cancelRemoval(explicit);assert.throws(()=>a.commitRemoval(explicit),code('conflict'));
+  const before=await tree(env.directory),pending=a.prepareRemoval({id:'same',expectedRevision:initial.revision});now=90000;
+  assert.throws(()=>a.commitRemoval(pending),code('session-expired'));assert.throws(()=>a.list(),code('session-expired'));assert.deepEqual(await tree(env.directory),before);
+ }finally{await service.close();await env.cleanup();}
+});
 
 test('CM-S3-MEMORY: owner generations keep replace clear safely with exact saved and keychain snapshots', async () => {
  const env = await environment(), f = await env.rootFixture('root'), b = await env.rootFixture('other');

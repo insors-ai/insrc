@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: d9f85b3c t2 — the panzoom asset references nothing outside itself
+ok 1 - d9f85b3c t2 — the panzoom asset references nothing outside itself
+  ---
+  duration_ms: 0.867833
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t2 — the asset exposes window.insrcPanZoom.init, which returns fit() and reset()
+ok 2 - d9f85b3c t2 — the asset exposes window.insrcPanZoom.init, which returns fit() and reset()
+  ---
+  duration_ms: 0.783583
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t2 — fit-on-load centres the stage at the scale that fits the viewport, and labels it
+ok 3 - d9f85b3c t2 — fit-on-load centres the stage at the scale that fits the viewport, and labels it
+  ---
+  duration_ms: 0.34025
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t2 — the toolbar zooms about the centre and 1:1 resets; missing controls are skipped
+ok 4 - d9f85b3c t2 — the toolbar zooms about the centre and 1:1 resets; missing controls are skipped
+  ---
+  duration_ms: 0.508209
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead of throwing
+ok 5 - d9f85b3c t2 — a missing viewport or stage yields a no-op handle instead of throwing
+  ---
+  duration_ms: 0.304083
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t2 — only the primary button drags: a right- or middle-click leaves the view where it is
+ok 6 - d9f85b3c t2 — only the primary button drags: a right- or middle-click leaves the view where it is
+  ---
+  duration_ms: 0.350333
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.777417

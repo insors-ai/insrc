@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: RPC rejects forged authority and returns typed revision conflicts
+ok 1 - RPC rejects forged authority and returns typed revision conflicts
+  ---
+  duration_ms: 292.918417
+  type: 'test'
+  ...
+# Subtest: Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames
+ok 2 - Real watch snapshots handle races, reconnect, deletion and abort with exact terminal frames
+  ---
+  duration_ms: 293.713708
+  type: 'test'
+  ...
+# Subtest: All five understanding roles require critical core descriptors
+ok 3 - All five understanding roles require critical core descriptors
+  ---
+  duration_ms: 270.768583
+  type: 'test'
+  ...
+# Subtest: Healthy shutdown flushes final frames before storage close and stops only once
+ok 4 - Healthy shutdown flushes final frames before storage close and stops only once
+  ---
+  duration_ms: 253.853625
+  type: 'test'
+  ...
+# Subtest: Socket write flushing is bounded and settles disconnected writes
+ok 5 - Socket write flushing is bounded and settles disconnected writes
+  ---
+  duration_ms: 220.240958
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1722.285541

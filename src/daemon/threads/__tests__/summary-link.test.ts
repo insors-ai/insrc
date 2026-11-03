@@ -19,7 +19,8 @@ import { MessageChannel } from 'node:worker_threads';
 
 import type { IndexJob } from '../../../shared/types.js';
 import { IndexingBlock, createIndexingBlock } from '../indexing-block.js';
-import { SummaryRunner, SummaryWorkerLink } from '../summary-link.js';
+import { runIndexJob, SUMMARY_JOB, SUMMARY_TAKE_EDIT, SummaryRunner, SummaryWorkerLink } from '../summary-link.js';
+import type { ChannelEnvelope } from '../channel.js';
 
 const JOB: IndexJob = { kind: 'doc-summarise-repo', repoPath: '/r' } as IndexJob;
 const settled = async (p: Promise<unknown>): Promise<string> => {
@@ -37,7 +38,7 @@ test('the code-indexing end: a job in flight fails when the summary worker goes,
 	const waiting = runner.run(JOB);
 	assert.equal(await settled(waiting), 'pending', 'no summary worker: the job waits');
 	const second = new MessageChannel();
-	second.port2.on('message', (m: { t: string; id: number }) => { if (m.t === 'job') second.port2.postMessage({ t: 'done', id: m.id }); });
+	second.port2.on('message', (m: ChannelEnvelope) => { if (m.kind === 'request' && m.method === SUMMARY_JOB) second.port2.postMessage({ kind: 'reply', requestId: m.requestId }); });
 	runner.rebind(second.port1);
 	assert.equal(await settled(waiting), 'resolved', 'it ran on the replacement');
 
@@ -65,10 +66,142 @@ test('the summary end: the code-indexing worker going stops the job and answers 
 
 	const second = new MessageChannel();
 	link.rebind(second.port1);
-	const done = new Promise(resolve => second.port2.on('message', (m: { t: string }) => { if (m.t === 'done') resolve(m); }));
-	second.port2.postMessage({ t: 'job', id: 1, job: JOB });
-	assert.deepEqual(await done, { t: 'done', id: 1 });
+	const done = new Promise(resolve => second.port2.on('message', (m: ChannelEnvelope) => { if (m.kind === 'reply') resolve(m); }));
+	second.port2.postMessage({ kind: 'request', requestId: 'j1', method: SUMMARY_JOB, params: JOB, stream: true });
+	assert.deepEqual(await done, { kind: 'reply', requestId: 'j1' });
 	assert.deepEqual(ran, [JOB]);
 	assert.equal(link.isStopping, false, 'the new job is not stopped');
 	second.port2.close();
+});
+
+test('both ends speak the shared sc3 envelopes: a job is a streaming request with sweep frames and a reply, an edit is a unary request and its reply', async () => {
+	const { port1, port2 } = new MessageChannel();
+	const toSummary: ChannelEnvelope[] = [];
+	const toCode: ChannelEnvelope[] = [];
+	const block = new IndexingBlock(createIndexingBlock());
+	// Watch every message each side receives.
+	const tap = new MessageChannel();
+	const tapBack = new MessageChannel();
+	const runner = new SummaryRunner(tap.port1, () => ({ kind: 'doc-summarise-entity', entityId: 'e1' }), () => {});
+	const link = new SummaryWorkerLink(tapBack.port1, block);
+	tap.port2.on('message', (m: ChannelEnvelope) => { toSummary.push(m); tapBack.port2.postMessage(m); });
+	tapBack.port2.on('message', (m: ChannelEnvelope) => { toCode.push(m); tap.port2.postMessage(m); });
+	let swept = 0;
+	link.serveJobs(async () => {
+		swept = 1;
+		assert.deepEqual(await link.takeDocSummaryEdit(), { kind: 'doc-summarise-entity', entityId: 'e1' }, 'the edit taken back over a unary request');
+		await new Promise(r => setTimeout(r, 250));
+	}, () => (swept ? { done: 1, total: 2 } as never : undefined));
+	await runner.run(JOB);
+	const job = toSummary.find(m => m.kind === 'request')!;
+	assert.deepEqual(job, { kind: 'request', requestId: job.kind === 'request' ? job.requestId : '', method: SUMMARY_JOB, params: JOB, stream: true });
+	const edit = toCode.find(m => m.kind === 'request')!;
+	assert.equal(edit.kind === 'request' && edit.method, SUMMARY_TAKE_EDIT);
+	assert.ok(toSummary.some(m => m.kind === 'reply' && edit.kind === 'request' && m.requestId === edit.requestId), 'the edit answered by a reply');
+	assert.ok(toCode.some(m => m.kind === 'frame' && job.kind === 'request' && m.requestId === job.requestId), 'sweep progress as frames of the job');
+	assert.equal(toCode.at(-1)!.kind, 'reply', 'the job ends with its reply');
+	for (const m of [...toSummary, ...toCode]) assert.ok(['request', 'reply', 'frame'].includes(m.kind), `only sc3 envelopes: ${JSON.stringify(m)}`);
+	for (const p of [port1, port2, tap.port1, tap.port2, tapBack.port1, tapBack.port2]) p.close();
+});
+
+test("a replacement code-indexing worker's job waits for the job the exited one handed over: never two at once", async () => {
+	const block = new IndexingBlock(createIndexingBlock());
+	const first = new MessageChannel();
+	const link = new SummaryWorkerLink(first.port1, block);
+	const events: string[] = [];
+	let running = 0;
+	let releaseFirst!: () => void;
+	const firstGate = new Promise<void>(r => { releaseFirst = r; });
+	link.serveJobs(async job => {
+		running++;
+		events.push(`start ${(job as { repoPath: string }).repoPath} (running ${running})`);
+		if ((job as { repoPath: string }).repoPath === '/old') await firstGate;
+		events.push(`end ${(job as { repoPath: string }).repoPath}`);
+		running--;
+	}, () => undefined);
+	first.port2.postMessage({ kind: 'request', requestId: 'old', method: SUMMARY_JOB, params: { kind: 'doc-summarise-repo', repoPath: '/old' }, stream: true });
+	for (const deadline = Date.now() + 5_000; events.length === 0;) {
+		assert.ok(Date.now() < deadline, 'the old job to start');
+		await new Promise(r => setTimeout(r, 5));
+	}
+	first.port2.close();   // the code-indexing worker exited; its job (started) is still finishing
+	await new Promise(r => setTimeout(r, 30));   // its port's close arrives before the replacement's port, as in the daemon
+	const second = new MessageChannel();
+	link.rebind(second.port1);
+	const replied = new Promise(resolve => second.port2.on('message', (m: ChannelEnvelope) => { if (m.kind === 'reply') resolve(m); }));
+	second.port2.postMessage({ kind: 'request', requestId: 'new', method: SUMMARY_JOB, params: { kind: 'doc-summarise-repo', repoPath: '/new' }, stream: true });
+	await new Promise(r => setTimeout(r, 100));
+	assert.deepEqual(events, ['start /old (running 1)'], 'the new job waits');
+	assert.equal(link.isStopping, true, 'the abandoned job is told to stop between documents');
+	releaseFirst();
+	await replied;
+	assert.deepEqual(events, ['start /old (running 1)', 'end /old', 'start /new (running 1)', 'end /new']);
+	assert.equal(link.isStopping, false, 'the new job is not stopped');
+	second.port2.close();
+});
+
+test("rebinding before the old port's close is seen settles what waited on it: the code end's job fails, the summary end's edit gets none", async () => {
+	// Code end: a job in flight on the old summary worker, then a new port at once.
+	const first = new MessageChannel();
+	const runner = new SummaryRunner(first.port1, () => undefined, () => {});
+	const inFlight = runner.run(JOB);
+	await new Promise(r => setTimeout(r, 10));
+	const second = new MessageChannel();
+	runner.rebind(second.port1);   // before first.port1's close event
+	assert.equal(await settled(inFlight), 'rejected: summary job abandoned: the document-summary worker is gone');
+	// Summary end: an edit asked of the old code-indexing worker, then a new port at once.
+	const block = new IndexingBlock(createIndexingBlock());
+	const a = new MessageChannel();
+	const link = new SummaryWorkerLink(a.port1, block);
+	const edit = link.takeDocSummaryEdit();
+	const b = new MessageChannel();
+	link.rebind(b.port1);
+	assert.equal(await settled(edit), 'resolved');
+	assert.equal(await edit, undefined);
+	for (const p of [first.port2, second.port2, second.port1, a.port2, b.port1, b.port2]) p.close();
+});
+
+test("a summary job runs under the summary worker's own shared maintenance hold, not only its sender's", async () => {
+	const { enableMaintenanceLock, MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
+	const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
+	enableMaintenanceLock();
+	const block = new IndexingBlock(createIndexingBlock());
+	const { port1, port2 } = new MessageChannel();
+	const link = new SummaryWorkerLink(port1, block);
+	let heldWhileRunning = -1;
+	link.serveJobs(async () => {
+		heldWhileRunning = getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared').length;
+	}, () => undefined);
+	const replied = new Promise(resolve => port2.on('message', (m: ChannelEnvelope) => { if (m.kind === 'reply') resolve(m); }));
+	port2.postMessage({ kind: 'request', requestId: 'held-job', method: SUMMARY_JOB, params: JOB, stream: true });
+	await replied;
+	assert.equal(heldWhileRunning, 1, 'held while the job ran');
+	assert.equal(getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK).length, 0, 'released after');
+	port1.close(); port2.close();
+});
+
+test('a summary job queued on the code-indexing worker while maintenance becomes pending does not stall it: the code end takes no hold of its own, maintenance runs, then the job', { timeout: 30_000 }, async () => {
+	const { enableMaintenanceLock, MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
+	const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
+	enableMaintenanceLock();
+	const block = new IndexingBlock(createIndexingBlock());
+	const { port1, port2 } = new MessageChannel();
+	const runner = new SummaryRunner(port1, () => undefined, () => {});
+	const order: string[] = [];
+	// The code end runs the job; the summary end is not serving yet, so the job's message waits on the port.
+	const job = runIndexJob(JOB, runner, async () => assert.fail('a summary job is not processed on the code-indexing worker')).then(() => order.push('job'));
+	await new Promise(r => setTimeout(r, 50));
+	assert.equal(getLockManager().query().held.filter(l => l.name === MAINTENANCE_LOCK).length, 0, 'the code end holds nothing for a summary job');
+	// Maintenance asks now; with a shared hold on the code end it would wait on the job, and the job's own hold on it.
+	const maintenance = getLockManager().request(MAINTENANCE_LOCK, { mode: 'exclusive', timeoutMs: 5_000 }, async () => {
+		order.push('maintenance');
+		await new Promise(r => setTimeout(r, 100));
+	});
+	const link = new SummaryWorkerLink(port2, block);
+	link.serveJobs(async () => { order.push('summary ran'); }, () => undefined);
+	await maintenance;
+	await job;
+	assert.deepEqual(order, ['maintenance', 'summary ran', 'job']);
+	runner.stop();
+	port1.close(); port2.close();
 });

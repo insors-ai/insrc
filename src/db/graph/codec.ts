@@ -33,6 +33,7 @@ import type {
 	PlanStatus as DomainPlanStatus,
 	PlanStepStatus as DomainPlanStepStatus,
 	PlanStepComplexity as DomainPlanStepComplexity,
+	RelationEvidence,
 	RepoLastRun,
 } from '../../shared/types.js';
 import type {
@@ -85,7 +86,7 @@ export type RepoKind = 'workspace' | 'shared-modules';
  * etc.). Adding a new ecosystem appends here + to
  * `SHARED_MODULES_REPO_ID` + to `SHARED_MODULES_NAMESPACE_BY_LANG`.
  */
-export type SharedModulesNamespace = 'jvm' | 'npm' | 'python' | 'go';
+export type SharedModulesNamespace = 'jvm' | 'npm' | 'python' | 'go' | 'cargo' | 'nuget' | 'native';
 
 export interface RepoRow {
 	id:           number;       // u32, also encoded in the key
@@ -179,13 +180,15 @@ export const encodeEntityRow = (r: EntityRow): Buffer => encode(r);
 export const decodeEntityRow = (b: Buffer): EntityRow => decode(b);
 
 // ---------------------------------------------------------------------------
-// Edge properties -- value of `out_edge` sub-DB (key: (u64 from, u8 kind, u64 to))
+// Edge properties -- DEPRECATED, never written
 // ---------------------------------------------------------------------------
 
 /**
- * Most edges have empty payload. CALLS, READS, WRITES, IMPORTS carry
- * structured props. The encoder is per-kind; callers know which
- * shape to expect for which kind.
+ * @deprecated No edge row holds msgpack props: since Epic c2ba6fa6 s7 the value
+ * of an out_edge / in_edge row is the one-byte relationship evidence (empty =
+ * 'unknown'), read with decodeEvidence below. These props codecs were never
+ * wired to a writer; decoding an edge row with them misreads the evidence byte
+ * (0x01 decodes as the number 1). Kept only for their own codec test.
  */
 
 export interface CallsEdgeProps  { siteCount: number }
@@ -268,6 +271,48 @@ export interface IndexStateRow {
 
 export const encodeIndexStateRow = (r: IndexStateRow): Buffer => encode(r);
 export const decodeIndexStateRow = (b: Buffer): IndexStateRow => decode(b);
+
+// ---------------------------------------------------------------------------
+// Subsystem rows (Epic c2ba6fa6 s8)
+// ---------------------------------------------------------------------------
+
+/** One subsystem's summed relationship weight to another, with counts by kind. */
+export interface SubsystemConnection {
+	readonly to:     string;
+	readonly weight: number;
+	readonly kinds:  Readonly<Partial<Record<RelationKind, number>>>;
+}
+
+/** A row of the subsystem table: one group of a repository's code files. */
+export interface SubsystemRow {
+	readonly id:                   string;
+	readonly name:                 string;
+	readonly files:                readonly string[];   // repo-relative, sorted
+	readonly entityCount:          number;
+	readonly connections:          readonly SubsystemConnection[];
+	readonly summary:              string | null;
+	readonly summaryModel?:        string | undefined;
+	readonly computedAtGeneration: number;
+}
+
+export const encodeSubsystemRow = (r: SubsystemRow): Buffer => encode(r);
+export const decodeSubsystemRow = (b: Buffer): SubsystemRow => decode(b);
+
+/** One file's outgoing edges to another file, as the subsystem pass weighs them (ISSUE-7d42b5dc). */
+export interface FileContributionEdge {
+	readonly to:     string;   // repo-relative file
+	readonly weight: number;
+	readonly kinds:  Readonly<Partial<Record<RelationKind, number>>>;
+}
+
+/** A row of the subsystem_file table: one file's code-entity count and its outgoing file-graph edges. */
+export interface FileContributionRow {
+	readonly entityCount: number;
+	readonly out:         readonly FileContributionEdge[];   // sorted by `to`
+}
+
+export const encodeFileContributionRow = (r: FileContributionRow): Buffer => encode(r);
+export const decodeFileContributionRow = (b: Buffer): FileContributionRow => decode(b);
 
 // ---------------------------------------------------------------------------
 // Plan + plan_step rows
@@ -455,3 +500,36 @@ export interface ConfigEntryRow {
 
 export const encodeConfigEntryRow = (r: ConfigEntryRow): Buffer => encode(r);
 export const decodeConfigEntryRow = (b: Buffer): ConfigEntryRow => decode(b);
+
+// ---------------------------------------------------------------------------
+// Relationship evidence (Epic c2ba6fa6 s7): the value of an out_edge / in_edge row
+// ---------------------------------------------------------------------------
+
+const EVIDENCE_BYTE: Readonly<Record<Exclude<RelationEvidence, 'unknown'>, number>> = {
+	extracted: 0x01,
+	inferred:  0x02,
+	chosen:    0x03,
+	model:     0x04,
+};
+const EVIDENCE_OF_BYTE: ReadonlyMap<number, RelationEvidence> = new Map(
+	Object.entries(EVIDENCE_BYTE).map(([evidence, byte]) => [byte, evidence as RelationEvidence]),
+);
+const EMPTY_EDGE_VALUE = Buffer.alloc(0);
+
+/**
+ * The edge rows' value for an evidence: one byte, or empty for 'unknown' (what
+ * every row written before s7 holds). `valid` is false for a string that is not
+ * one of the five values -- it is stored empty and the caller logs it, since a
+ * relationship is never refused for its evidence.
+ */
+export function encodeEvidence(evidence: string | undefined): { value: Buffer; valid: boolean } {
+	if (evidence === undefined || evidence === 'unknown') return { value: EMPTY_EDGE_VALUE, valid: true };
+	const byte = (EVIDENCE_BYTE as Readonly<Record<string, number>>)[evidence];
+	return byte === undefined ? { value: EMPTY_EDGE_VALUE, valid: false } : { value: Buffer.from([byte]), valid: true };
+}
+
+/** An edge row's evidence: empty, 0x00 and any byte not defined read 'unknown'. */
+export function decodeEvidence(value: Buffer | Uint8Array | undefined | null): RelationEvidence {
+	if (value === undefined || value === null || value.length === 0) return 'unknown';
+	return EVIDENCE_OF_BYTE.get(value[0]!) ?? 'unknown';
+}

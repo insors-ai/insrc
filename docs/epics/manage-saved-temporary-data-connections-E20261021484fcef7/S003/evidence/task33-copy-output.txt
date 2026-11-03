@@ -1,0 +1,2 @@
+[copy-assets] copied prompts/ -> /Users/subhagho/work/projects/insors/insrc/out/prompts
+[copy-assets] copied assets/ -> /Users/subhagho/work/projects/insors/insrc/out/assets

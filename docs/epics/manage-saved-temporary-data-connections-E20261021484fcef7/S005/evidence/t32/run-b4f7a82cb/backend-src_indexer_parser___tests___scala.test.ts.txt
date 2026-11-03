@@ -1,0 +1,165 @@
+TAP version 13
+# Subtest: Scala parser - top-level types
+    # Subtest: extracts a basic class with a method
+    ok 1 - extracts a basic class with a method
+      ---
+      duration_ms: 3.403875
+      type: 'test'
+      ...
+    # Subtest: captures `case class` in the signature
+    ok 2 - captures `case class` in the signature
+      ---
+      duration_ms: 0.325834
+      type: 'test'
+      ...
+    # Subtest: captures `sealed` and `abstract` modifiers
+    ok 3 - captures `sealed` and `abstract` modifiers
+      ---
+      duration_ms: 0.17175
+      type: 'test'
+      ...
+    # Subtest: extracts an object as a class with `object` signature
+    ok 4 - extracts an object as a class with `object` signature
+      ---
+      duration_ms: 0.97675
+      type: 'test'
+      ...
+    # Subtest: marks companion-object signatures with `(companion of <X>)`
+    ok 5 - marks companion-object signatures with `(companion of <X>)`
+      ---
+      duration_ms: 0.278041
+      type: 'test'
+      ...
+    # Subtest: extracts traits as `interface` kind
+    ok 6 - extracts traits as `interface` kind
+      ---
+      duration_ms: 0.215708
+      type: 'test'
+      ...
+    # Subtest: captures `extends` as INHERITS and `with` mixins as IMPLEMENTS
+    ok 7 - captures `extends` as INHERITS and `with` mixins as IMPLEMENTS
+      ---
+      duration_ms: 1.024625
+      type: 'test'
+      ...
+    # Subtest: treats trait `extends` as INHERITS for super-traits
+    ok 8 - treats trait `extends` as INHERITS for super-traits
+      ---
+      duration_ms: 0.268167
+      type: 'test'
+      ...
+    1..8
+ok 1 - Scala parser - top-level types
+  ---
+  duration_ms: 7.374083
+  type: 'suite'
+  ...
+# Subtest: Scala parser - imports
+    # Subtest: records simple imports
+    ok 1 - records simple imports
+      ---
+      duration_ms: 0.406375
+      type: 'test'
+      ...
+    # Subtest: expands grouped imports into one IMPORTS edge per selector
+    ok 2 - expands grouped imports into one IMPORTS edge per selector
+      ---
+      duration_ms: 0.232916
+      type: 'test'
+      ...
+    # Subtest: records renamed imports with alias meta
+    ok 3 - records renamed imports with alias meta
+      ---
+      duration_ms: 0.129667
+      type: 'test'
+      ...
+    # Subtest: records the package as an own-package IMPORTS edge
+    ok 4 - records the package as an own-package IMPORTS edge
+      ---
+      duration_ms: 0.099584
+      type: 'test'
+      ...
+    1..4
+ok 2 - Scala parser - imports
+  ---
+  duration_ms: 0.955917
+  type: 'suite'
+  ...
+# Subtest: Scala parser - members
+    # Subtest: extracts val + var as variable entities
+    ok 1 - extracts val + var as variable entities
+      ---
+      duration_ms: 0.506333
+      type: 'test'
+      ...
+    # Subtest: extracts type aliases
+    ok 2 - extracts type aliases
+      ---
+      duration_ms: 0.583417
+      type: 'test'
+      ...
+    # Subtest: extracts top-level def as function
+    ok 3 - extracts top-level def as function
+      ---
+      duration_ms: 0.360833
+      type: 'test'
+      ...
+    # Subtest: captures abstract def in a trait as method with isAbstract: true
+    ok 4 - captures abstract def in a trait as method with isAbstract: true
+      ---
+      duration_ms: 0.118667
+      type: 'test'
+      ...
+    1..4
+ok 3 - Scala parser - members
+  ---
+  duration_ms: 1.633416
+  type: 'suite'
+  ...
+# Subtest: Scala parser - Scala 3 specifics
+    # Subtest: handles `given` / `using` declarations (best-effort)
+    ok 1 - handles `given` / `using` declarations (best-effort)
+      ---
+      duration_ms: 0.193375
+      type: 'test'
+      ...
+    # Subtest: handles `extension` blocks (best-effort)
+    ok 2 - handles `extension` blocks (best-effort)
+      ---
+      duration_ms: 0.248125
+      type: 'test'
+      ...
+    # Subtest: marks file as parse-error when the grammar trips
+    ok 3 - marks file as parse-error when the grammar trips
+      ---
+      duration_ms: 0.448042
+      type: 'test'
+      ...
+    1..3
+ok 4 - Scala parser - Scala 3 specifics
+  ---
+  duration_ms: 0.933916
+  type: 'suite'
+  ...
+# Subtest: Scala parser - CALLS
+    # Subtest: records call expressions as CALLS edges
+    ok 1 - records call expressions as CALLS edges
+      ---
+      duration_ms: 0.52875
+      type: 'test'
+      ...
+    1..1
+ok 5 - Scala parser - CALLS
+  ---
+  duration_ms: 0.566
+  type: 'suite'
+  ...
+1..5
+# tests 20
+# suites 5
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 217.673916

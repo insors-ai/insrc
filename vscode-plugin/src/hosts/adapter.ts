@@ -10,6 +10,7 @@
  */
 import type { HostFileSystem } from './fs.js';
 import { composeMcpEntry, createMcpConfigWriter } from './mcp-writer.js';
+import { createTomlMcpConfigWriter } from './toml-mcp-writer.js';
 import {
   STEERING_MARKER_START,
   STEERING_MARKER_END,
@@ -43,7 +44,9 @@ function detectSafely(spec: HostSpec, env: HostEnv): boolean {
  * shared writers over deps.fs; detectPresent() runs spec.detect over deps.env.
  */
 export function createHostAdapter(spec: HostSpec, deps: HostAdapterDeps): AiHostAdapter {
-  const mcp = createMcpConfigWriter(deps.fs);
+  // The mcp registry writer follows the host's config format: JSON mcpServers
+  // key-merge by default, TOML [[mcp_servers]] for hosts like vibe.
+  const mcp = spec.mcpFormat === 'toml' ? createTomlMcpConfigWriter(deps.fs) : createMcpConfigWriter(deps.fs);
   const steering = createSteeringWriter(deps.fs);
   const steeringBody = deps.steeringBody ?? defaultSteeringBody;
 

@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793389753301-7s0w92",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T19:53:45.831Z",
+    "epicCreatedAt": "2026-10-29T15:05:47.642Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 272519,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e587866ef17ae15a",
+    "epicSlug": "answer-abort-finished-run-status-board",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793389753301-7s0w92",
+    "hldEffectiveHash": "8a676498eae567b6fc754a411d3fd0bc2ac45e57c1cd370e0e1040175a91a0e5",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Filed bugfix ISSUE, magnitude small.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's broadcast-fallback fix (ask every live session thread when the board names no owner) matches the ISSUE's stated root cause and fix intent, and leaves nothing out of the fix intent (running runs unaffected, unknown-to-all runs still {ok:false}).",
+          "evidence": "ISSUE-e587866ef17ae15a.body.rootCause: 'With no board record there is no owner, so the abort falls through to the asking session's own worker ... That worker never had the run, and abortWorkflowRun answers {ok:false} for a run it does not know. The owner would have found the run and answered {ok:true}.' fixIntent: 'An abort of a finished run gets the same answer with threads on as with threads off for as long as its owner worker still holds the run... An abort of a run that no thread holds still answers {ok:false}. Running runs ... keep today's routing.' The LLD's chosen alternative a1 and its §2.2 postconditions implement exactly this: fan out to every live thread, {ok:true} on first true else {ok:false} once all answer (or immediately with zero targets), scoped to workflow.run.abort only.",
+          "action": "Confirmed against the ISSUE artifact and the LLD's own fix description; no gap found between stated defect and proposed fix.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today, Router.dispatchSession's workflow.run.abort branch, when ownerOf(runId) is undefined, falls through to toSessionWorker/toShared and reaches only the asking session's own worker (not every live worker), exactly as the design's §6 'State before' and ISSUE root cause claim.",
+          "evidence": "router.ts:258-279 read directly: `const ownerOf = request.method === 'workflow.run.abort' ? this.runOwner : ...; if (ownerOf !== undefined) { const owner = ownerOf(...); if (owner === mainThreadId) return this.local(...); if (owner !== undefined && this.ports.has(owner)) { ... return this.send(owner, ...); } } const shared = servedOnSharedState(...); const send = (...) => shared ? this.toShared(...) : this.toSessionWorker(request.session, ...); ...`. When owner is undefined the code falls straight through to toShared/toSessionWorker keyed on `request.session` — i.e. only the asking session's own worker (or the shared worker if the method is shared-state-served), never every live worker.",
+          "action": "Read src/daemon/threads/router.ts lines 250-280 and compared line-for-line against the LLD §6 and the ISSUE rootCause paragraph.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The named change sites exist at (approximately) the cited locations and the list of files needing an update is complete: RouterSessions interface (router.ts:75-88), SessionPool.liveWorkers (session-pool.ts, delegating target), session-routing.ts's direct pass of the SessionPool instance as the RouterSessions arg, and the three test files that construct bare RouterSessions object literals.",
+          "evidence": "router.ts:75-88 is exactly the RouterSessions interface (workerFor, sharedWorker, started, ended, setQueued, startedOn, endedOn — no existing enumeration method, confirming the 'additive' claim). session-pool.ts:121-124 (one line off from the cited 120-123, immaterial): `liveWorkers(): StartedWorker[] { return [...this.entries.values()].map(e => e.started); }` — iterates every entry (per-session, 'session:shared', and 'session:unattributed' keys alike) with no filter, exactly as claimed. session-routing.ts:45: `router.useSessions(pool, runId => ..., runId => ...)` passes the SessionPool instance `pool` directly — confirms no separate adapter object, so SessionPool itself must implement the new method. All three test files have a bare `const sessions: RouterSessions = { ... }` object literal at the exact cited lines: router-session.test.ts:117, analyze-run-owner.test.ts:92, router-thread-view.test.ts:154 — none currently has an enumeration member, so each needs a liveThreadIds() addition to keep typechecking once the interface gains it.",
+          "action": "Read router.ts:75-88/152-170, session-pool.ts:91-230, session-routing.ts:1-48, and all three test files at and around the cited line numbers.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every existing Router dispatch site already guards a send with this.ports.has(id) before sending (the pattern the new fan-out loop is designed to reuse), and the analyze.run.status/analyze.run.purge ownerOf dispatch is a separate branch from workflow.run.abort's, so it is structurally unaffected by a change scoped to the abort method only.",
+          "evidence": "router.ts:246 `if (target !== undefined && this.ports.has(target.threadId)) return this.send(...)`; :263 `if (owner !== undefined && this.ports.has(owner)) { ... }`; :284 `if (target !== undefined && this.ports.has(target.threadId)) return this.send(...)`; :418 `if (target !== undefined && this.ports.has(target.threadId)) this.send(...)`. In dispatchSession, line 258's ternary picks `this.runOwner` only for `request.method === 'workflow.run.abort'` and `this.analyzeRunOwner` only for the other two methods — the two owner lookups are mutually exclusive by method name, so a change gated on `request.method === 'workflow.run.abort'` cannot touch the analyze.run.status/purge path. The Story's migration steps (§6) touch only router.ts's abort branch, RouterSessions, SessionPool, and three test files — status-board.ts and workflow-run-registry.ts (where MAX_RUNS eviction and gc() live) are not in the task list, so those retention policies are left untouched by construction.",
+          "action": "Re-read router.ts for every cited ports.has() guard line and the full dispatchSession method; cross-checked the LLD §6 migration steps against which files they touch.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1's test ('workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread') exercises exactly the reproduction scenario from the ISSUE and would fail under today's code (which only asks the asking session's own worker) but pass once the fan-out is implemented.",
+          "evidence": "The ISSUE's own reproduction ('start a detached workflow run from session A... let the board evict A's finished run while A's worker still keeps it. Send workflow.run.abort ... from session B. Observed: {ok:false}. Expected: {ok:true}') is structurally identical to ac1's scenario, and I confirmed via router.ts:258-279 that today's fallback only reaches the asking session's (here, B's) own worker — which never held the run — so it would answer {ok:false} exactly as the bug reports, making ac1 a true failing-without-the-fix test. ac2/ac3/ac4 are regression/preservation checks (unknown-everywhere run still {ok:false}; known-owner and unrelated-method paths unchanged) that by design test behavior the Story explicitly promises NOT to change, so they are not expected to fail pre-fix — that is consistent with their stated purpose, not a gap.",
+          "action": "Compared the ISSUE's reproduction/fixIntent text against the LLD's acceptanceMapping table and the current dispatchSession code path confirmed above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 5,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-30T19:59:31.558Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-31T03:13:32.628Z",
+    "rangeBase": "91547cf7e2e7292f9dd494f966b9aeb61a135925"
+  },
+  "body": {
+    "summary": {
+      "prose": "Fixes a correctness gap in the multi-threaded daemon: aborting a FINISHED workflow run can answer {ok:false} even though the thread that ran it still remembers it, purely because the cross-thread status board forgot the run earlier than that thread did. This Story makes abort ask every live session thread directly when the board can't name an owner, so the answer matches what a single-thread daemon would have said.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Fix ISSUE-e587866ef17ae15a: abort of a finished run the status board evicted answers {ok:false} instead of {ok:true}, because Router.dispatchSession's runOwner lookup (session-routing.ts:45, board.snapshot().runs.find(...)?.ownerThreadId) returns undefined once StatusBoard's own MAX_RUNS=64 global eviction (status-board.ts:137-142, firing across ALL owner threads combined) has dropped the run's record, even though the owning session worker's OWN WorkflowRunRegistry (workflow-run-registry.ts, its own 64-cap gc()) still holds it. The router then falls through to the asking session's own worker, which never had the run, and answers {ok:false}."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "RouterSessions.liveThreadIds",
+          "signature": "liveThreadIds(): readonly number[]",
+          "parameters": [],
+          "returns": {
+            "type": "readonly number[]",
+            "meaning": "Every currently-live POOL-MANAGED worker thread id, from SessionPool.liveWorkers() (session-pool.ts:120-123), which iterates ALL pool entries with no filter — this includes the shared-state worker and the unattributed worker, NOT per-session entries only. This is correct, not a gap: the existing router-session.test.ts test 'workflow.run.abort reaches a worker-owned run's owner...' already uses the SHARED worker as a legitimate abort owner, confirming a workflow run can be held by any pool worker, not just a per-session one."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called only from Router.dispatchSession's workflow.run.abort branch when ownerOf(runId) returned undefined."
+          ],
+          "postconditions": [
+            "The returned array reflects SessionPool's live entries at call time; a worker that exits between this call and the fan-out is simply absent from this.ports and is skipped (existing this.ports.has() guard)."
+          ]
+        },
+        {
+          "name": "Router.dispatchSession",
+          "signature": "dispatchSession(request: LocalRequestEnvelope, deliver: DeliverEnvelope, dropped: () => void): () => void",
+          "parameters": [],
+          "returns": {
+            "type": "() => void",
+            "meaning": "A cancel function, unchanged in shape from today."
+          },
+          "errors": [],
+          "preconditions": [
+            "request.method === 'workflow.run.abort' and this.runOwner(runId) (board-derived) returned undefined — the new branch; every other method/owner combination is unchanged from today's behavior."
+          ],
+          "postconditions": [
+            "Every live id from this.sessions.liveThreadIds() that still has a port in this.ports receives a synthetic workflow.run.abort with a fresh internal requestId and the SAME params as the original request.",
+            "deliver() is called exactly once with the ORIGINAL request's requestId: {ok:true} as soon as any fan-out target replies {ok:true}; otherwise {ok:false} once every fan-out target has replied (including immediately, with zero targets).",
+            "The analyze.run.status / analyze.run.purge branches of the same ownerOf dispatch are UNCHANGED — this fan-out is scoped to workflow.run.abort only."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "RouterSessions",
+        "change": "field-add",
+        "details": "New method liveThreadIds(): readonly number[], additive to the existing interface (workerFor, sharedWorker, started, ended, setQueued, startedOn, endedOn all unchanged). session-routing.ts wires router.useSessions(pool, ...) passing the SessionPool INSTANCE directly as the RouterSessions argument (no separate adapter object) — so the method must be implemented on the SessionPool class itself (src/daemon/threads/session-pool.ts), delegating to the existing liveWorkers() at line 122. Three test files construct a bare RouterSessions object literal and must each gain a liveThreadIds() member to keep compiling: router-session.test.ts:117, analyze-run-owner.test.ts:92, router-thread-view.test.ts:154.",
+        "callSites": [
+          "src/daemon/threads/router.ts:75-88",
+          "src/daemon/threads/session-pool.ts:120-123",
+          "src/daemon/threads/session-routing.ts:24-48",
+          "src/daemon/threads/__tests__/router-session.test.ts:117",
+          "src/daemon/threads/__tests__/analyze-run-owner.test.ts:92",
+          "src/daemon/threads/__tests__/router-thread-view.test.ts:154"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A fan-out target thread crashes/exits while its synthetic abort is still in flight.",
+          "detection": "The router's existing failWorker(threadId, reason) path (router.ts:191-213) calls detach(threadId), which resolves every pending request on that thread — including the synthetic fan-out sub-request — with an error reply; this is pre-existing machinery, not new in this Story.",
+          "response": "The aggregator's deliver callback receives a reply with `error` set (not `result.ok===true`); it is treated the same as an ok:false reply for aggregation purposes — it does not block the aggregate from resolving once every fan-out target has answered (error or ok:false count the same toward 'this target does not hold the run').",
+          "userImpact": "No impact beyond the pre-existing crash-recovery behavior; the overall abort still resolves once every target has answered or errored.",
+          "recoverable": true
+        },
+        {
+          "scenario": "liveThreadIds() returns an id no longer present in this.ports (a worker exited between the enumeration call and the fan-out send).",
+          "detection": "The fan-out loop checks this.ports.has(id) before sending, mirroring every other existing Router dispatch site's same guard (e.g. router.ts:246, :263, :284, :418).",
+          "response": "That id is simply skipped — not counted as a fan-out target, so it cannot block or delay the aggregate.",
+          "userImpact": "None; matches the existing pattern used everywhere else in the file for a target that may have gone stale between lookup and send.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "liveThreadIds() returns an empty array (no live session workers at all, e.g. right after daemon startup with no sessions yet).",
+          "expected": "Zero fan-out targets — the aggregate resolves immediately to {ok:false}, matching the Fix intent's 'a run that no thread holds still answers {ok:false}'."
+        },
+        {
+          "input": "Two or more fan-out targets reply {ok:true} (should not happen — a given runId is only ever held by one worker's registry — but the aggregator must not assume exactly one true).",
+          "expected": "The FIRST {ok:true} reply resolves the aggregate to {ok:true}; any later replies (true or false) from the remaining targets are received and discarded, not delivered again (deliver() is called exactly once per the s4 postcondition)."
+        },
+        {
+          "input": "A fan-out target thread is alive but never replies (e.g. stuck on a long synchronous task) — no router-level per-request timeout exists anywhere else in this file for an already-dispatched request (confirmed by s1/s4 reading: only hold()'s holdMs applies to a request waiting for a worker to REGISTER, not one already sent).",
+          "expected": "This Story does not add a new timeout; the abort waits exactly as long as any other in-flight request to that worker would, matching the system's existing accepted behavior rather than introducing new timeout machinery out of this bugfix's scope."
+        },
+        {
+          "input": "The original workflow.run.abort request itself is cancelled (socket closed) while the fan-out is still in flight.",
+          "expected": "The returned cancel function (dispatchSession's existing return shape, unchanged per s4) is invoked; it cancels every outstanding fan-out sub-request the same way a single dispatched request is cancelled today (router.ts's existing per-request cancel() mechanism), so no fan-out sub-request outlives the client's interest in the answer."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The analyze.run.status / analyze.run.purge ownerOf-for-abort-style dispatch (router.ts:258-261, sharing the same ownerOf lookup mechanism as workflow.run.abort) is completely unchanged by this Story — the new fan-out branch fires ONLY for request.method === 'workflow.run.abort'.",
+          "source": "c1"
+        },
+        {
+          "text": "Every existing Router dispatch site guards a target with this.ports.has(threadId) before sending (router.ts:246, :263, :284, :418) — the new fan-out loop must follow the same guard, not assume liveThreadIds() and this.ports stay in sync.",
+          "source": "c2"
+        },
+        {
+          "text": "StatusBoard's MAX_RUNS global eviction (status-board.ts:78, :124-142) and WorkflowRunRegistry's own per-worker gc() (workflow-run-registry.ts:224-236) are completely unchanged by this Story — the fix is confined to the router's dispatch, not the board's retention policy.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test), extending the existing src/daemon/threads/__tests__/router-session.test.ts harness() fixture",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify the broadcast-fallback abort dispatch in isolation over the existing router-session.test.ts in-thread fake-worker harness, extended with multiple named session workers whose workflow.run.abort responses are parameterized per runId (unlike today's harness, which has every worker answer {ok:true} unconditionally).",
+          "subjects": [
+            "router.ts Router.dispatchSession (the new owner===undefined fan-out branch for workflow.run.abort)",
+            "router.ts RouterSessions.liveThreadIds (new interface member)",
+            "session-routing.ts startSessionRouting's wiring of liveThreadIds to pool.liveWorkers().map(w => w.threadId)"
+          ],
+          "fixturesNeeded": [
+            "an extended harness() with 2+ named session workers whose workflow.run.abort handler answers {ok:true} only for a specific runId it 'owns' and {ok:false} for any other runId (replacing the current unconditional {ok:true} stub)",
+            "a runOwner callback returning undefined for the test's target runId (simulating board eviction) while a live worker still 'holds' it",
+            "a fake liveThreadIds() returning the harness's current worker thread ids"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "router-session.test.ts: workflow.run.abort with an unknown-to-the-board runId answers {ok:true} when a live session worker still holds that run, broadcasting to every live session thread rather than only the asking session's own worker"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "router-session.test.ts: workflow.run.abort with a runId no live worker holds (board unknown AND every live worker answers {ok:false}) still answers {ok:false}, matching today's behavior for a genuinely unknown run"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "router-session.test.ts: the existing 'workflow.run.abort reaches a worker-owned run's owner as a busy request, and a main-thread run here' test (the mainThreadId / known-owner branches) still passes unmodified — this Story does not change those paths"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "router-session.test.ts: an unrelated workflow.run.poll / analyze.run.status request is routed exactly as before (no new fan-out) — the broadcast is scoped to workflow.run.abort only"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "RouterSessions (router.ts:75-88) has no enumeration method. Router.dispatchSession's ownerOf-undefined case for workflow.run.abort (router.ts:258-276) falls through to toSessionWorker/toShared, reaching only the ASKING session's own worker, which answers {ok:false} if it never held the run — even when a different live session worker still does.",
+      "stateAfter": "RouterSessions gains liveThreadIds(): readonly number[], wired in session-routing.ts to pool.liveWorkers().map(w => w.threadId). Router.dispatchSession's workflow.run.abort branch, when ownerOf(runId) is undefined, fans out a synthetic abort to every live id from liveThreadIds() with a port in this.ports, and answers {ok:true} on the first {ok:true} reply, else {ok:false} once all have replied (or immediately with zero targets). analyze.run.status/purge and every other dispatch path are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add liveThreadIds(): readonly number[] to the RouterSessions interface (router.ts:75-88).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Implement liveThreadIds(): readonly number[] on the SessionPool class itself (session-pool.ts, near the existing liveWorkers() at line 122), delegating to liveWorkers().map(w => w.threadId) — this returns every live pool-managed worker (per-session, shared-state, and unattributed alike), which is the correct broadcast scope since any of them can own a workflow run. session-routing.ts needs NO separate wiring change: it already passes the SessionPool instance (pool) directly as the RouterSessions argument to router.useSessions(), so the new method is picked up automatically once SessionPool implements it.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In Router.dispatchSession's existing ownerOf-for-abort branch, replace the owner===undefined fall-through (for workflow.run.abort only) with a fan-out over liveThreadIds() filtered by this.ports.has(id), aggregating replies to a single {ok:true}-on-first-true / {ok:false}-once-all-replied answer delivered once to the original caller.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Add a liveThreadIds() member to the three test files that construct a bare RouterSessions object literal: router-session.test.ts:117, analyze-run-owner.test.ts:92, router-thread-view.test.ts:154 — required for them to keep typechecking once the interface gains the member.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Purely additive at the type level (one new interface method); the only caller of RouterSessions in production code is session-routing.ts, updated in the same Story. Any OTHER RouterSessions implementation (e.g. a test fake) that omits liveThreadIds would fail to typecheck, which is the correct signal for an interface method with no safe default (there is no meaningful 'no live threads' default distinct from an empty array, and a silently-empty array would quietly restore today's buggy ok:false-always behavior) — every production and test call site is updated in this Story's own task list, not left broken.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Broadcast-fallback abort over enumerated live session threads",
+        "oneLineSummary": "When the board can't name an owner for workflow.run.abort, ask every live session-class worker thread directly and answer ok:true if any of them does.",
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Per-owner-capped board retention",
+        "oneLineSummary": "Replace StatusBoard's single global MAX_RUNS=64 cap with a per-owner-thread cap, so a run stays on the board for at least as long as its owning worker's own registry would keep it.",
+        "costEstimate": "M",
+        "reasonRejected": "Addresses the symptom but, by its own stated gap, is not safe to ship alone — it reopens a memory-leak risk for released/crashed owner threads that would need a second story to close."
+      },
+      {
+        "id": "a3",
+        "name": "Leave the fallback as-is; only correct the ISSUE's documentation",
+        "oneLineSummary": "Treat the gap as accepted behavior and update comments/docs to say so explicitly, rather than changing code.",
+        "costEstimate": "XS",
+        "reasonRejected": "Safe only because it does nothing; leaves the caller-visible correctness gap between threads-on and threads-off that the multi-threading Epic was meant to eliminate."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate+read: Router/RouterSessions/StatusBoard/abortWorkflowRun/startSessionRouting (src/daemon/threads/router.ts:75-88,152-594,258-276; src/daemon/threads/status-board.ts:78,82-179,124-142; src/daemon/workflow-run-registry.ts:216-222,224-236; src/daemon/threads/session-routing.ts:24-48)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate+read: TargetRegistry.targets()/ThreadTarget vs SessionPool.liveWorkers()/StartedWorker (src/daemon/threads/registry.ts:18-26,43-69; src/daemon/threads/workers.ts:35-41; src/daemon/threads/router.ts:75-88)"
+    }
+  ]
+}

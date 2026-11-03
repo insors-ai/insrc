@@ -1,0 +1,69 @@
+{
+  "id": "17-fix-review-privacy-cache",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T05:04:28.529Z",
+  "finished": "2026-11-01T05:05:34.588Z",
+  "inputChars": 77739,
+  "inputSha256": "e7e1269f03c559f5a275ddbe918a40fd81c3b02b38669c6e6ada1e4fbdd6d78d",
+  "missingObligations": [],
+  "result": {
+    "summary": "Three of the four candidates hold. 01-transport-01:1 does not hold because only half of it is fixed. The Kotlin endpoint check now refuses `@` in the textual authority, so the credential-bypass half is fixed and covered by tests. But `URI(child.asString)` still runs after that check. It still throws on endpoints WHATWG `new URL` accepts, such as a space or `{` in the query, and `checked{}` turns that throw into a refusal of the whole list. No Kotlin test covers it. The Ajv leak fix (02), the Kotlin rejection decoding (03) and the lockfile version (04) all check out against the supplied source and diffs. The test results are controller-reported automated runs. JetBrains native/live acceptance is still deferred-user. VS Code user-reported acceptance was on 0.5.23, not the current 0.5.24 build. Neither is a pass here.",
+    "findings": [
+      {
+        "severity": "MED",
+        "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+        "line": 221,
+        "trigger": "A stored or draft `publicConfig.endpoint` that is valid for WHATWG `new URL` but illegal for `java.net.URI`, e.g. `https://host/?q=a b` or a `{`, `|` or `\"` in the query. It arrives in a safe read, list reply or public patch.",
+        "defect": "The credential bypass is fixed by the new textual `@` check. But `val uri = URI(child.asString)` still runs and throws URISyntaxException for these endpoints. `checked{}` converts that into ConnectionReplyException, so one row refuses the entire `list()` result, and `publicPatch` refuses the patch. TS accepts them. This is the second half of original candidate 01-transport-01:1 and it is still open. The `URI` call is now redundant for userinfo detection. It only adds the scheme-null check and this strictness.",
+        "evidence": "Current ConnectionProtocol.kt lines 219-221 add the textual authority check and then still run `URI(child.asString); if (uri.scheme == null || uri.rawUserInfo != null) fail()`. The added Kotlin tests (the underscore-host and multi-host loop, plus `redis://my_host:6379`) never include a space or `{` endpoint. The TS test only asserts the two credential cases. That java.net.URI throws on such characters is my knowledge of the JDK, not supplied evidence.",
+        "remedy": "Remove the `java.net.URI` parse. Check the scheme with a regex such as `^[A-Za-z][A-Za-z0-9+.-]*:` and keep the textual authority `@` rejection. Add Kotlin fixtures for an endpoint with a space and one with `{` in the query. Assert they are accepted exactly as TS accepts them (or refused identically in both languages)."
+      }
+    ],
+    "obligations": [
+      {
+        "key": "01-transport-01:1",
+        "status": "does-not-hold",
+        "evidence": "Fixed part: the Kotlin check now takes the authority textually (substringAfter(\"://\"), cut at `/`, `?`, `#`) and fails on `@`. `redis://:pw@my_host:6379` and `postgresql://u:p@a:1,b:2/db` are refused on the read and public-patch paths. The new Kotlin and TS tests cover these, and `redis://my_host:6379` is still accepted. Not fixed: `URI(child.asString)` is still called, so URI-strict endpoints that TS accepts still turn into a whole-list read error in Kotlin only. No test covers this. See the finding at ConnectionProtocol.kt:221."
+      },
+      {
+        "key": "02-state-draft-02:1",
+        "status": "holds",
+        "evidence": "The module-level Ajv is gone. `validators()` now builds a fresh Ajv per uncached schema and stores the result in a WeakMap keyed by `descriptor.publicInputSchema`. A retired schema and its compiler can therefore be garbage-collected, and no process-wide instance accumulates compiled schemas. The new regression test (100 renders → 2 compiles, 1 compiler; a new descriptor generation → 4 compiles, 2 compilers) matches the controller's before/after numbers (200 compiles, 102 cached schemas before). Minor: `new ConnectionDraft` passes `freeze(data(descriptor))`, a fresh deep copy, so the WeakMap never hits on that path. Each draft still compiles once into its own short-lived Ajv, which is collectable. This is a cost, not a leak, and it is unchanged from before."
+      },
+      {
+        "key": "03-mutations-02:1",
+        "status": "holds",
+        "evidence": "ConnectionDraftTests.kt now decodes rejections via `ConnectionProtocol.mutation(reply)` as MutationReply.Rejected before `testResult`, and uses the same code-to-message table as TS, with the same fallback message. Uncertainty is `hadPrevious || code==\"busy\"`; busy publishes `unavailable`, other codes publish `failed`. A fresh non-busy rejection removes the reservation outside the current-view guard, as TS does. The new test covers fresh invalid-input twice (two sources, cleanupUnverified=false), busy (unavailable, cleanup flagged, source retained), a retry after busy reusing the source (3 sources, failed, cleanup flagged), and confirms the daemon message is not echoed. The reported run is Kotlin draft-test 5/5. This is automated, fake-source evidence only. Native JetBrains UI behavior is deferred-user and not a pass."
+      },
+      {
+        "key": "10-assets-packaging-01:1",
+        "status": "holds",
+        "evidence": "The package-lock.json diff changes both the top-level version and packages[\"\"].version from 0.5.23 to 0.5.24. This matches the 0.5.24 manifest version reported in the original candidate evidence and by the controller. package.json itself was not supplied this round. The user-reported VS Code acceptance was on 0.5.23, so it does not cover the 0.5.24 artifact. That acceptance is separate from this metadata fix."
+      }
+    ],
+    "inspectedFiles": [
+      "src/shared/connection-manager/draft.ts",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocol.kt",
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt (diff)",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionProtocolTest.kt (diff)",
+      "src/shared/__tests__/connection-manager-draft.test.ts (diff)",
+      "src/shared/__tests__/connection-manager-kotlin-test.test.ts (diff)",
+      "src/shared/__tests__/connection-manager-wire.test.ts (diff)",
+      "vscode-plugin/package-lock.json (diff)",
+      "TS test-controller.ts rejection semantics (excerpt)"
+    ],
+    "limitations": [
+      "I ran nothing. The test results (TS 7/7, Kotlin protocol 6, draft-test 5, 42 VS Code tests, noEmit) are controller-reported.",
+      "The java.net.URI strictness and Ajv/WeakMap garbage-collection behavior come from my knowledge of the JDK and Ajv, not from supplied evidence.",
+      "wire.ts, package.json, decodeMutationOutcome and the Kotlin test file imports were not supplied. TS and Kotlin parity rests on the quoted excerpts.",
+      "JetBrains native/live UI acceptance is deferred-user and is not a pass. VS Code live acceptance was user-reported on 0.5.23, not on 0.5.24.",
+      "No external-service evidence was supplied. The Kotlin rejection tests use a fake DraftTestSource, not a real daemon."
+    ],
+    "evidenceRequests": [
+      "Kotlin test results for endpoints with a space or `{` in the query, run on the safeConnection, list and publicPatch paths, after the URI parse is removed.",
+      "Confirmation that the 0.5.24 VS Code build was exercised in the user-reported live acceptance, if that acceptance is meant to cover the packaged artifact."
+    ]
+  }
+}

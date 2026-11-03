@@ -4,7 +4,7 @@
     "epicHash": "86197ac660732ceb",
     "storyId": "s2",
     "createdAt": "2026-10-22T08:05:05.885Z",
-    "updatedAt": "2026-10-22T15:26:51.591Z",
+    "updatedAt": "2026-10-27T09:05:05.147Z",
     "epicCreatedAt": "2026-10-21T10:47:43.545Z",
     "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
   },
@@ -118,8 +118,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "eb38fa92",
-        "ranAt": "2026-10-22T08:21:14.153Z",
+        "commit": "9fc0d016b",
+        "ranAt": "2026-10-27T09:03:02.566Z",
         "testsPassed": true,
         "tests": [
           {
@@ -247,6 +247,41 @@
                 "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
                 "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
                 "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+                "title": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+                "title": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+                "title": "the full locks-lost record reaches the main thread and every other worker through the hub",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/channel.test.ts",
+                "title": "a worker's hub request is answered with its own requestId",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/channel.test.ts",
+                "title": "closing the port rejects every pending hub request with HubUnavailableError",
+                "result": "pass"
               }
             ],
             "files": []
@@ -257,7 +292,7 @@
             "file": "src/cli/services/__tests__/review-source-roots-daemon.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 993,
+            "durationMs": 974,
             "titles": [
               {
                 "title": "CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store",
@@ -270,7 +305,7 @@
             "file": "src/cli/services/__tests__/steering-refresh-through-daemon.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 729,
+            "durationMs": 802,
             "titles": [
               {
                 "title": "the steering refresh of an update gets the repositories from the daemon and opens no store",
@@ -283,7 +318,7 @@
             "file": "src/daemon/__tests__/server-forward.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 569,
+            "durationMs": 618,
             "titles": [
               {
                 "title": "new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback",
@@ -304,7 +339,7 @@
             "file": "src/daemon/__tests__/server-registry.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 537,
+            "durationMs": 20979,
             "titles": [
               {
                 "title": "a new connection registers an entry labelled unknown until a message identifies it",
@@ -337,7 +372,7 @@
             "file": "src/daemon/__tests__/shutdown-store-failure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3784,
+            "durationMs": 21995,
             "titles": [
               {
                 "title": "status after failure: storeFailure names another process and does not contain 'semume'",
@@ -366,7 +401,7 @@
             "file": "src/daemon/__tests__/store-failure-dispatch.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3253,
+            "durationMs": 22440,
             "titles": [
               {
                 "title": "dispatcher: a handler throwing code -30775 records locks-lost and the caller gets the named error, at each of the three server sites and the queue runner",
@@ -387,7 +422,7 @@
             "file": "src/daemon/__tests__/understanding-rpc.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1480,
+            "durationMs": 1402,
             "titles": [
               {
                 "title": "RPC rejects forged authority and returns typed revision conflicts",
@@ -416,7 +451,7 @@
             "file": "src/daemon/__tests__/update-handlers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 548,
+            "durationMs": 21053,
             "titles": [
               {
                 "title": "t3: daemon.update returns { launched:true } and schedules shutdown, without exiting the process",
@@ -437,10 +472,14 @@
             "file": "src/daemon/steps/__tests__/step-host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1192,
+            "durationMs": 1034,
             "titles": [
               {
                 "title": "step host: done frame carries the handler's envelope unchanged; unknown tool gives step-unknown-tool; a throwing handler gives step-failed with its message",
+                "result": "pass"
+              },
+              {
+                "title": "step.call: a step tool's progress calls arrive as 'progress' frames before 'done'; a failing send does not fail the step; progress after 'done' is ignored",
                 "result": "pass"
               },
               {
@@ -456,6 +495,14 @@
                 "result": "pass"
               },
               {
+                "title": "insrc_code_review_step through step.call: the step's progress is threaded into its deps, so each daemon review frame arrives as a 'progress' frame before 'done'",
+                "result": "pass"
+              },
+              {
+                "title": "insrc_review_step through step.call relays every daemon progress frame, heartbeats included, as a 'progress' frame before 'done'",
+                "result": "pass"
+              },
+              {
                 "title": "state store miss: each of the four stores says the daemon was restarted and the run must be started again",
                 "result": "pass"
               },
@@ -467,10 +514,65 @@
             "otherFailures": []
           },
           {
+            "file": "src/daemon/threads/__tests__/channel.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 21331,
+            "titles": [
+              {
+                "title": "a worker's hub request is answered with its own requestId",
+                "result": "pass"
+              },
+              {
+                "title": "closing the port rejects every pending hub request with HubUnavailableError",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/live-store-refusal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1359,
+            "titles": [
+              {
+                "title": "refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused",
+                "result": "pass"
+              },
+              {
+                "title": "refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/graph/__tests__/store-health-threads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 24467,
+            "titles": [
+              {
+                "title": "locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing",
+                "result": "pass"
+              },
+              {
+                "title": "after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log",
+                "result": "pass"
+              },
+              {
+                "title": "the full locks-lost record reaches the main thread and every other worker through the hub",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/mcp/__tests__/forward-step.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 899,
+            "durationMs": 4682,
             "titles": [
               {
                 "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
@@ -478,6 +580,10 @@
               },
               {
                 "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP forwarder: a forwarded insrc_code_review_step with a progressToken emits notifications/progress for each progress frame",
                 "result": "pass"
               },
               {
@@ -499,7 +605,7 @@
             "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4754,
+            "durationMs": 4525,
             "titles": [
               {
                 "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",
@@ -1377,8 +1483,8 @@
       },
       {
         "taskId": "t12",
-        "commit": "3602a797",
-        "ranAt": "2026-10-22T09:01:42.169Z",
+        "commit": "59424d934",
+        "ranAt": "2026-10-27T09:05:05.147Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1389,6 +1495,66 @@
               {
                 "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
                 "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
+                "title": "the main thread's depthForRepo asks the code-indexing worker's queue",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "index.ts registers a 'repo.stats' handler that delegates to collectRepoStats",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared",
                 "result": "pass"
               }
             ],
@@ -1402,6 +1568,16 @@
               {
                 "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
                 "title": "a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
                 "result": "pass"
               }
             ],
@@ -1433,13 +1609,79 @@
         ],
         "files": [
           {
+            "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 384,
+            "titles": [
+              {
+                "title": "index.ts registers a 'repo.stats' handler that delegates to collectRepoStats",
+                "result": "pass"
+              },
+              {
+                "title": "the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted",
+                "result": "pass"
+              },
+              {
+                "title": "the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config)",
+                "result": "pass"
+              },
+              {
+                "title": "collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-stats.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 560,
+            "titles": [
+              {
+                "title": "buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present)",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo",
+                "result": "pass"
+              },
+              {
+                "title": "collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1971,
+            "durationMs": 1621,
             "titles": [
               {
                 "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              },
+              {
+                "title": "the main thread's depthForRepo asks the code-indexing worker's queue",
                 "result": "pass"
               },
               {
@@ -1458,13 +1700,62 @@
             "otherFailures": []
           },
           {
+            "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4325,
+            "titles": [
+              {
+                "title": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
+                "result": "pass"
+              },
+              {
+                "title": "a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock",
+                "result": "pass"
+              },
+              {
+                "title": "an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds",
+                "result": "pass"
+              },
+              {
+                "title": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
+                "result": "pass"
+              },
+              {
+                "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
+              },
+              {
+                "title": "the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it",
+                "result": "pass"
+              },
+              {
+                "title": "a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
+              },
+              {
+                "title": "an edit's settle pass that comes due during maintenance waits for the maintenance lock instead of failing, and runs after it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3070,
+            "durationMs": 15710,
             "titles": [
               {
                 "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
+                "result": "pass"
+              },
+              {
+                "title": "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+                "result": "pass"
+              },
+              {
+                "title": "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
                 "result": "pass"
               }
             ],
@@ -1474,8 +1765,8 @@
       },
       {
         "taskId": "t13",
-        "commit": "96671195",
-        "ranAt": "2026-10-22T09:33:13.695Z",
+        "commit": "e41b83d58",
+        "ranAt": "2026-10-27T08:40:12.521Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1486,6 +1777,21 @@
               {
                 "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
                 "title": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/summary-link.test.ts",
+                "title": "the code-indexing end: a job in flight fails when the summary worker goes, the next waits for the replacement, and stop fails a waiting job",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/summary-link.test.ts",
+                "title": "the summary end: the code-indexing worker going stops the job and answers a pending edit with none; a job from the new one runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/summary-link.test.ts",
+                "title": "both ends speak the shared sc3 envelopes: a job is a streaming request with sweep frames and a reply, an edit is a unary request and its reply",
                 "result": "pass"
               }
             ],
@@ -1507,10 +1813,31 @@
         ],
         "files": [
           {
+            "file": "src/daemon/threads/__tests__/summary-link.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 735,
+            "titles": [
+              {
+                "title": "the code-indexing end: a job in flight fails when the summary worker goes, the next waits for the replacement, and stop fails a waiting job",
+                "result": "pass"
+              },
+              {
+                "title": "the summary end: the code-indexing worker going stops the job and answers a pending edit with none; a job from the new one runs",
+                "result": "pass"
+              },
+              {
+                "title": "both ends speak the shared sc3 envelopes: a job is a streaming request with sweep frames and a reply, an edit is a unary request and its reply",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/threads/__tests__/summary-worker.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3489,
+            "durationMs": 4078,
             "titles": [
               {
                 "title": "with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input",
@@ -1627,8 +1954,8 @@
       },
       {
         "taskId": "t15",
-        "commit": "aef1dc6d",
-        "ranAt": "2026-10-22T11:17:33.745Z",
+        "commit": "bd14e43e6",
+        "ranAt": "2026-10-27T08:35:22.956Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1679,6 +2006,11 @@
                 "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
                 "title": "a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1692,6 +2024,11 @@
                 "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
                 "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
+                "title": "a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1702,7 +2039,7 @@
             "file": "src/daemon/threads/__tests__/maintenance-lock.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2630,
+            "durationMs": 4290,
             "titles": [
               {
                 "title": "maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered",
@@ -1723,6 +2060,18 @@
               {
                 "title": "an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered",
                 "result": "pass"
+              },
+              {
+                "title": "the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it",
+                "result": "pass"
+              },
+              {
+                "title": "a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered",
+                "result": "pass"
+              },
+              {
+                "title": "an edit's settle pass that comes due during maintenance waits for the maintenance lock instead of failing, and runs after it",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1731,8 +2080,8 @@
       },
       {
         "taskId": "t16",
-        "commit": "769f9bf5",
-        "ranAt": "2026-10-22T12:14:53.345Z",
+        "commit": "bd14e43e6",
+        "ranAt": "2026-10-27T08:33:11.261Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1795,6 +2144,11 @@
               {
                 "file": "src/daemon/threads/__tests__/maintenance.test.ts",
                 "title": "a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/maintenance.test.ts",
+                "title": "the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted",
                 "result": "pass"
               }
             ],
@@ -1871,7 +2225,7 @@
             "file": "src/daemon/threads/__tests__/maintenance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3532,
+            "durationMs": 4070,
             "titles": [
               {
                 "title": "maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does",
@@ -1902,6 +2256,10 @@
                 "result": "pass"
               },
               {
+                "title": "the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted",
+                "result": "pass"
+              },
+              {
                 "title": "the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves",
                 "result": "pass"
               },
@@ -1924,7 +2282,7 @@
             "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 15275,
+            "durationMs": 18798,
             "titles": [
               {
                 "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
@@ -1945,8 +2303,8 @@
       },
       {
         "taskId": "t17",
-        "commit": "3d98673a",
-        "ranAt": "2026-10-22T15:26:51.591Z",
+        "commit": "2c3fde281",
+        "ranAt": "2026-10-27T08:43:04.862Z",
         "testsPassed": true,
         "tests": [
           {
@@ -2029,6 +2387,91 @@
                 "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
                 "title": "ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError",
                 "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats.test.ts",
+                "title": "collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "index.ts registers a 'repo.stats' handler that delegates to collectRepoStats",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+                "title": "collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-field.test.ts",
+                "title": "t2: the status object includes installedCommit populated from the reader",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-field.test.ts",
+                "title": "t2: a reader returning '' yields installedCommit:'' with the rest of the status intact (never throws)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-field.test.ts",
+                "title": "t2: sc1 (daemon.update/updateOutcome) surface is untouched by the status change",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/daemon-status-field.test.ts",
+                "title": "t2: end-to-end — readInstalledCommit() with the default git exec returns this repo's real HEAD sha",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/status-store-failure.test.ts",
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/status-store-failure.test.ts",
+                "title": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+                "result": "pass"
               }
             ],
             "files": []
@@ -2041,16 +2484,41 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run with `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME; it passed on 2026-10-22, and the output of the last run is in /tmp/insrc-s2-t17-daemon-ctl-smoke.log."
+              "evidence": "docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S002/evidence/t17-daemon-ctl-smoke.txt (committed d6bd23ab0): npm run build, then INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts against the compiled threaded daemon at 35b2b0afa on 2026-10-27; 1 pass, 0 fail, 0 skipped."
             }
           }
         ],
         "files": [
           {
+            "file": "src/daemon/__tests__/daemon-status-field.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 534,
+            "titles": [
+              {
+                "title": "t2: the status object includes installedCommit populated from the reader",
+                "result": "pass"
+              },
+              {
+                "title": "t2: a reader returning '' yields installedCommit:'' with the rest of the status intact (never throws)",
+                "result": "pass"
+              },
+              {
+                "title": "t2: sc1 (daemon.update/updateOutcome) surface is untouched by the status change",
+                "result": "pass"
+              },
+              {
+                "title": "t2: end-to-end — readInstalledCommit() with the default git exec returns this repo's real HEAD sha",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/__tests__/queue-threads.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 703,
+            "durationMs": 548,
             "titles": [
               {
                 "title": "the code-busy and stopping words track the index lane and stop()",
@@ -2071,7 +2539,7 @@
             "file": "src/daemon/__tests__/repo-completeness.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 18580,
+            "durationMs": 17758,
             "titles": [
               {
                 "title": "repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
@@ -2081,13 +2549,96 @@
             "otherFailures": []
           },
           {
+            "file": "src/daemon/__tests__/repo-stats-handler-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 387,
+            "titles": [
+              {
+                "title": "index.ts registers a 'repo.stats' handler that delegates to collectRepoStats",
+                "result": "pass"
+              },
+              {
+                "title": "the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted",
+                "result": "pass"
+              },
+              {
+                "title": "the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config)",
+                "result": "pass"
+              },
+              {
+                "title": "collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/repo-stats.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 568,
+            "titles": [
+              {
+                "title": "buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present)",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor",
+                "result": "pass"
+              },
+              {
+                "title": "buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo",
+                "result": "pass"
+              },
+              {
+                "title": "collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/status-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 586,
+            "titles": [
+              {
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              },
+              {
+                "title": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/daemon/threads/__tests__/indexing-port.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1665,
+            "durationMs": 1477,
             "titles": [
               {
                 "title": "codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result",
+                "result": "pass"
+              },
+              {
+                "title": "the main thread's depthForRepo asks the code-indexing worker's queue",
                 "result": "pass"
               },
               {
@@ -2109,7 +2660,7 @@
             "file": "src/daemon/threads/__tests__/indexing-worker.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9447,
+            "durationMs": 9656,
             "titles": [
               {
                 "title": "each indexing-class method runs on the code-indexing worker's thread id",
@@ -2134,7 +2685,7 @@
             "file": "src/daemon/threads/__tests__/latency-isolation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 37312,
+            "durationMs": 37444,
             "titles": [
               {
                 "title": "daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open",
@@ -2151,7 +2702,7 @@
             "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 17688,
+            "durationMs": 16452,
             "titles": [
               {
                 "title": "the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down",
@@ -2172,7 +2723,7 @@
             "file": "src/mcp/__tests__/mcp-process-e2e.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4172,
+            "durationMs": 4060,
             "titles": [
               {
                 "title": "no store in the MCP process: lsof of a real MCP server process shows no store file or lance path after each tool",

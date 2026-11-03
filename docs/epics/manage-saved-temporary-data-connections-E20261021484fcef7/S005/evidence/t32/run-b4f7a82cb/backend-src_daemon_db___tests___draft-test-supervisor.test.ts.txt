@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain
+ok 1 - CM-S2-B1: supervisor bounds preparation capacity cancellation and late spawn with true drain
+  ---
+  duration_ms: 4.63575
+  type: 'test'
+  ...
+# Subtest: CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved
+ok 2 - CM-S2-B1: real worker cleanup precedes success and ten second response keeps stalled preparation reserved
+  ---
+  duration_ms: 10417.119792
+  type: 'test'
+  ...
+# Subtest: CM-S2-B1: disconnect cancels a real stalled worker and waits owned child reaping
+ok 3 - CM-S2-B1: disconnect cancels a real stalled worker and waits owned child reaping
+  ---
+  duration_ms: 552.361417
+  type: 'test'
+  ...
+# Subtest: CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains
+ok 4 - CM-S2-C2: shutdown stops admission immediately and retains uncancelable preparation until it drains
+  ---
+  duration_ms: 0.646458
+  type: 'test'
+  ...
+# Subtest: CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace
+ok 5 - CM-S2-B1: actual owned children enforce init and close deadlines and SIGKILL after 250ms grace
+  ---
+  duration_ms: 20530.999375
+  type: 'test'
+  ...
+# Subtest: CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains
+ok 6 - CM-S2-B1: a late actual worker success cannot overwrite cancellation while exit still drains
+  ---
+  duration_ms: 303.825125
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32139.914958

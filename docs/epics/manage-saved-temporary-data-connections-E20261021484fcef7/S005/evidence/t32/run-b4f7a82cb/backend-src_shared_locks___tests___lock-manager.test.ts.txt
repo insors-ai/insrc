@@ -1,0 +1,142 @@
+TAP version 13
+# Subtest: createLockBlock stores capacities in the header and two managers over one block read the same layout
+ok 1 - createLockBlock stores capacities in the header and two managers over one block read the same layout
+  ---
+  duration_ms: 3.276333
+  type: 'test'
+  ...
+# Subtest: invalid arguments are refused with LockArgumentError and nothing is truncated
+ok 2 - invalid arguments are refused with LockArgumentError and nothing is truncated
+  ---
+  duration_ms: 1.060208
+  type: 'test'
+  ...
+# Subtest: a name resolves to one slot and a full name table gives LockCapacityError(names)
+ok 3 - a name resolves to one slot and a full name table gives LockCapacityError(names)
+  ---
+  duration_ms: 21.39775
+  type: 'test'
+  ...
+# Subtest: getLockManager without an install uses a private block
+ok 4 - getLockManager without an install uses a private block
+  ---
+  duration_ms: 0.842833
+  type: 'test'
+  ...
+# Subtest: exclusive excludes exclusive and shared, shared admits shared, mode defaults to exclusive
+ok 5 - exclusive excludes exclusive and shared, shared admits shared, mode defaults to exclusive
+  ---
+  duration_ms: 2.20475
+  type: 'test'
+  ...
+# Subtest: ifAvailable grants when free and otherwise calls back with null and the holders with metadata, never pending
+ok 6 - ifAvailable grants when free and otherwise calls back with null and the holders with metadata, never pending
+  ---
+  duration_ms: 2.432667
+  type: 'test'
+  ...
+# Subtest: the lock is released and its holder slot cleared on resolve, reject and synchronous throw
+ok 7 - the lock is released and its holder slot cleared on resolve, reject and synchronous throw
+  ---
+  duration_ms: 0.77725
+  type: 'test'
+  ...
+# Subtest: same-name nesting and unbounded nested waits fail with LockNestedError; bounded nested requests are allowed
+ok 8 - same-name nesting and unbounded nested waits fail with LockNestedError; bounded nested requests are allowed
+  ---
+  duration_ms: 0.712
+  type: 'test'
+  ...
+# Subtest: a full holder table gives LockCapacityError(holders) and leaves no grant behind
+ok 9 - a full holder table gives LockCapacityError(holders) and leaves no grant behind
+  ---
+  duration_ms: 0.459542
+  type: 'test'
+  ...
+# Subtest: the grant hook fires at its three points in order and is inert when unset
+ok 10 - the grant hook fires at its three points in order and is inert when unset
+  ---
+  duration_ms: 0.68675
+  type: 'test'
+  ...
+# Subtest: writer preference: a waiting exclusive blocks ifAvailable shared and runs before a waiting shared
+ok 11 - writer preference: a waiting exclusive blocks ifAvailable shared and runs before a waiting shared
+  ---
+  duration_ms: 44.589833
+  type: 'test'
+  ...
+# Subtest: timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count
+ok 12 - timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count
+  ---
+  duration_ms: 85.708333
+  type: 'test'
+  ...
+# Subtest: an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up
+ok 13 - an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up
+  ---
+  duration_ms: 45.90325
+  type: 'test'
+  ...
+# Subtest: requests for one name from one thread are served in arrival order
+ok 14 - requests for one name from one thread are served in arrival order
+  ---
+  duration_ms: 45.192583
+  type: 'test'
+  ...
+# Subtest: a full pending table gives LockCapacityError(pending) and queues nothing
+ok 15 - a full pending table gives LockCapacityError(pending) and queues nothing
+  ---
+  duration_ms: 20.478292
+  type: 'test'
+  ...
+# Subtest: a lock wait keeps its thread alive until it completes
+ok 16 - a lock wait keeps its thread alive until it completes
+  ---
+  duration_ms: 311.692208
+  type: 'test'
+  ...
+# Subtest: a waiting exclusive request's metadata is in query().pending and in the blockedBy of a shared request it refuses
+ok 17 - a waiting exclusive request's metadata is in query().pending and in the blockedBy of a shared request it refuses
+  ---
+  duration_ms: 23.2585
+  type: 'test'
+  ...
+# Subtest: query lists held and pending entries with mode, threadId, since and metadata
+ok 18 - query lists held and pending entries with mode, threadId, since and metadata
+  ---
+  duration_ms: 23.185042
+  type: 'test'
+  ...
+# Subtest: query never returns a slot in its being-written state
+ok 19 - query never returns a slot in its being-written state
+  ---
+  duration_ms: 0.445084
+  type: 'test'
+  ...
+# Subtest: reclaim releases a thread's holds and pending requests, recounts and wakes waiters
+ok 20 - reclaim releases a thread's holds and pending requests, recounts and wakes waiters
+  ---
+  duration_ms: 70.193625
+  type: 'test'
+  ...
+# Subtest: reclaim takes over a mutex and resets a name claim left by a foreign threadId
+ok 21 - reclaim takes over a mutex and resets a name claim left by a foreign threadId
+  ---
+  duration_ms: 41.606083
+  type: 'test'
+  ...
+# Subtest: a timer or promise created inside a callback no longer holds the lock once the callback settled: holds() is false and a request of the same name is not refused as nested
+ok 22 - a timer or promise created inside a callback no longer holds the lock once the callback settled: holds() is false and a request of the same name is not refused as nested
+  ---
+  duration_ms: 61.489125
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1051.167458

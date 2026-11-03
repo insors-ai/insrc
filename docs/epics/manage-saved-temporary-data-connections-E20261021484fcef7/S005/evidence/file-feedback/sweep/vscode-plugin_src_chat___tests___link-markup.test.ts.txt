@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: a code reference with a line in running text becomes a link carrying its path and line
+ok 1 - a code reference with a line in running text becomes a link carrying its path and line
+  ---
+  duration_ms: 2.667166
+  type: 'test'
+  ...
+# Subtest: text inside code and pre and existing anchors is not wrapped
+ok 2 - text inside code and pre and existing anchors is not wrapped
+  ---
+  duration_ms: 1.351583
+  type: 'test'
+  ...
+# Subtest: a version number is not treated as a path
+ok 3 - a version number is not treated as a path
+  ---
+  duration_ms: 0.426083
+  type: 'test'
+  ...
+# Subtest: a click on an http link posts open-link and prevents the default
+ok 4 - a click on an http link posts open-link and prevents the default
+  ---
+  duration_ms: 0.53075
+  type: 'test'
+  ...
+# Subtest: a click on a code reference posts open-code-ref with path and line
+ok 5 - a click on a code reference posts open-code-ref with path and line
+  ---
+  duration_ms: 0.376084
+  type: 'test'
+  ...
+# Subtest: guardMd still drops a non-http href
+ok 6 - guardMd still drops a non-http href
+  ---
+  duration_ms: 0.410125
+  type: 'test'
+  ...
+# Subtest: an http link keeps its target in data-url and has no href, so it cannot open by itself
+ok 7 - an http link keeps its target in data-url and has no href, so it cannot open by itself
+  ---
+  duration_ms: 0.315708
+  type: 'test'
+  ...
+# Subtest: inline code whose whole text is a code reference becomes a link
+ok 8 - inline code whose whole text is a code reference becomes a link
+  ---
+  duration_ms: 0.474458
+  type: 'test'
+  ...
+# Subtest: the chat registry hands a clicked link to the open-link sink
+ok 9 - the chat registry hands a clicked link to the open-link sink
+  ---
+  duration_ms: 2.424333
+  type: 'test'
+  ...
+# Subtest: the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click
+ok 10 - the review pane renderer source, run against a stub DOM, links a code reference, strips the href of an http link, and posts open-code-ref and open-link on click
+  ---
+  duration_ms: 19.487958
+  type: 'test'
+  ...
+# Subtest: the chat page and the review pane both include the linkify and click wiring
+ok 11 - the chat page and the review pane both include the linkify and click wiring
+  ---
+  duration_ms: 4.650833
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 232.845583

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: define: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 1 - define: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+  ---
+  duration_ms: 6.083542
+  type: 'test'
+  ...
+# Subtest: define: feedback PRESENT adds a Feedback section with the comment
+ok 2 - define: feedback PRESENT adds a Feedback section with the comment
+  ---
+  duration_ms: 0.448125
+  type: 'test'
+  ...
+# Subtest: hld: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 3 - hld: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+  ---
+  duration_ms: 0.94575
+  type: 'test'
+  ...
+# Subtest: hld: feedback PRESENT adds a Feedback section with the comment
+ok 4 - hld: feedback PRESENT adds a Feedback section with the comment
+  ---
+  duration_ms: 0.687208
+  type: 'test'
+  ...
+# Subtest: lld: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 5 - lld: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+  ---
+  duration_ms: 1.270167
+  type: 'test'
+  ...
+# Subtest: lld: feedback PRESENT adds a Feedback section with the comment
+ok 6 - lld: feedback PRESENT adds a Feedback section with the comment
+  ---
+  duration_ms: 0.294
+  type: 'test'
+  ...
+# Subtest: plan: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+ok 7 - plan: feedback ABSENT renders byte-identically to empty[]; no "\#\# Feedback" leaks
+  ---
+  duration_ms: 0.944917
+  type: 'test'
+  ...
+# Subtest: plan: feedback PRESENT adds a Feedback section with the comment
+ok 8 - plan: feedback PRESENT adds a Feedback section with the comment
+  ---
+  duration_ms: 0.106333
+  type: 'test'
+  ...
+# Subtest: define: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 9 - define: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+  ---
+  duration_ms: 5.658125
+  type: 'test'
+  ...
+# Subtest: hld: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 10 - hld: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+  ---
+  duration_ms: 2.83625
+  type: 'test'
+  ...
+# Subtest: lld: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 11 - lld: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+  ---
+  duration_ms: 1.526625
+  type: 'test'
+  ...
+# Subtest: plan: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+ok 12 - plan: write real {meta,body,citations} JSON → append → re-read shows entry → re-render shows Feedback
+  ---
+  duration_ms: 1.23375
+  type: 'test'
+  ...
+# Subtest: legacy (no feedback field) re-renders unchanged, then accepts a first append
+ok 13 - legacy (no feedback field) re-renders unchanged, then accepts a first append
+  ---
+  duration_ms: 1.247292
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 321.058

@@ -3,6 +3,10 @@ package ai.insors.insrc.jetbrains.onboarding
 import ai.insors.insrc.jetbrains.IdeKind
 import ai.insors.insrc.jetbrains.ProjectContext
 import ai.insors.insrc.jetbrains.daemon.DaemonGateway
+import ai.insors.insrc.jetbrains.daemon.DaemonFailure
+import ai.insors.insrc.jetbrains.daemon.ModelCheckOutcome
+import ai.insors.insrc.jetbrains.daemon.ModelDecisionResult
+import ai.insors.insrc.jetbrains.daemon.ModelDefinitionsResult
 import ai.insors.insrc.jetbrains.daemon.ModelListResult
 import ai.insors.insrc.jetbrains.daemon.SteeringSelection
 import ai.insors.insrc.jetbrains.daemon.RepoStatsResult
@@ -92,6 +96,11 @@ class OnboardingLifecycleTest {
             RegisteredReposResult.Unavailable("not used in this test")
 
         override fun listModels(provider: String): ModelListResult = ModelListResult.Unavailable("not used in this test")
+        override fun modelDefinitions(): ModelDefinitionsResult = ModelDefinitionsResult.Failed(DaemonFailure.Other("not used in this test"))
+        override fun checkModel(family: String, modelId: String, claimedEfforts: List<String>): ModelCheckOutcome =
+            ModelCheckOutcome.Failed(DaemonFailure.Other("not used in this test"))
+        override fun decideModel(checkId: String, approve: Boolean, efforts: List<String>): ModelDecisionResult =
+            ModelDecisionResult.Failed(DaemonFailure.Other("not used in this test"))
         override fun daemonStatus(): DaemonStatusResult = DaemonStatusResult.Unavailable("not used in this test")
         override fun debugStatus(): DebugStatusResult = DebugStatusResult.Unavailable("not used in this test")
         override fun shutdown(): DaemonActionResult = DaemonActionResult.Failed("not used in this test")

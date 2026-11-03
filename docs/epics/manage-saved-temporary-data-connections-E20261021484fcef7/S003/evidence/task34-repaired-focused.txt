@@ -1,0 +1,935 @@
+TAP version 13
+# Subtest: private pipeline refuses missing authority before reading request data
+ok 1 - private pipeline refuses missing authority before reading request data
+  ---
+  duration_ms: 1.410375
+  type: 'test'
+  ...
+# Subtest: focused request on a repo: stand-in arguments and bundle equal the recorded baseline
+ok 2 - focused request on a repo: stand-in arguments and bundle equal the recorded baseline
+  ---
+  duration_ms: 1.223292
+  type: 'test'
+  ...
+# Subtest: pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in
+ok 3 - pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in
+  ---
+  duration_ms: 1.39575
+  type: 'test'
+  ...
+# Subtest: a planning call that fails for another reason is replaced by the free-form lookup, as before
+ok 4 - a planning call that fails for another reason is replaced by the free-form lookup, as before
+  ---
+  duration_ms: 0.338167
+  type: 'test'
+  ...
+# Subtest: a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead
+ok 5 - a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead
+  ---
+  duration_ms: 1.379833
+  type: 'test'
+  ...
+# Subtest: pipeline returns 'not-applicable' for classification and task modes
+ok 6 - pipeline returns 'not-applicable' for classification and task modes
+  ---
+  duration_ms: 0.076166
+  type: 'test'
+  ...
+# Subtest: pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace
+ok 7 - pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace
+  ---
+  duration_ms: 0.360958
+  type: 'test'
+  ...
+# Subtest: an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose
+ok 8 - an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose
+  ---
+  duration_ms: 0.116833
+  type: 'test'
+  ...
+# Subtest: pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path
+ok 9 - pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path
+  ---
+  duration_ms: 0.721291
+  type: 'test'
+  ...
+# Subtest: module scope: lookup path and cache key unchanged
+ok 10 - module scope: lookup path and cache key unchanged
+  ---
+  duration_ms: 0.432583
+  type: 'test'
+  ...
+# Subtest: cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call
+ok 11 - cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call
+  ---
+  duration_ms: 0.22275
+  type: 'test'
+  ...
+# Subtest: error messages state the cause, name the failed call, and never say retries or Ollama for another provider
+ok 12 - error messages state the cause, name the failed call, and never say retries or Ollama for another provider
+  ---
+  duration_ms: 0.244625
+  type: 'test'
+  ...
+# Subtest: CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline
+ok 13 - CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline
+  ---
+  duration_ms: 0.481167
+  type: 'test'
+  ...
+# Subtest: runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle
+ok 14 - runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle
+  ---
+  duration_ms: 15.10275
+  type: 'test'
+  ...
+# Subtest: settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error
+ok 15 - settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error
+  ---
+  duration_ms: 0.11175
+  type: 'test'
+  ...
+# Subtest: the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason
+ok 16 - the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason
+  ---
+  duration_ms: 0.710292
+  type: 'test'
+  ...
+# Subtest: a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none
+ok 17 - a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none
+  ---
+  duration_ms: 0.22
+  type: 'test'
+  ...
+# Subtest: a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+ok 18 - a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way
+  ---
+  duration_ms: 0.26175
+  type: 'test'
+  ...
+# Subtest: a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before
+ok 19 - a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before
+  ---
+  duration_ms: 0.299583
+  type: 'test'
+  ...
+# Subtest: pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member
+ok 20 - pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member
+  ---
+  duration_ms: 0.181375
+  type: 'test'
+  ...
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the planning call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for planning failed: claude exited with 1"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the planning prompt is missing
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "Decomposer prompt file missing: /x/decompose.system.md"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the answer-writing call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for answer writing failed: codex exited with 2"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the answer-writing prompt is missing
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "Synthesizer prompt file missing: /x/synthesize.code.system.md"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] WARN: [analyze:context:driver] exploration pipeline: the answer-writing step failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "Synthesizer structured output unrecoverable: /focus must be string"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] WARN: [analyze:context:driver] exploration pipeline: the answer-writing step failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "boom"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: answer type not covered by any recipe; using freeform.probe fallback
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     shaperId: "code"
+#     answerType: "how-does-it-work"
+#     explorationCount: 0
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: answer type not covered by any recipe; using freeform.probe fallback
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     shaperId: "code"
+#     answerType: "how-does-it-work"
+#     explorationCount: 0
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] WARN: [analyze:context:driver] exploration pipeline: decomposer failed; using freeform.probe fallback
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "Decomposer structured output unrecoverable: bad plan"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [daemon:model-catalog] model definitions validated
+#     module: "daemon:model-catalog"
+#     dir: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
+#     version: 1
+#     models: {
+#       "cli-claude": 4,
+#       "cli-codex": 7,
+#       "ollama": 1
+#     }
+# [17:58:16] WARN: [config:analyze] models.tiers.cheap: model 'qwen3.8:27b' is not listed (unlisted-model); using the tier default claude-haiku-5-5
+#     module: "config:analyze"
+#     tier: "cheap"
+#     requested: "qwen3.8:27b"
+#     reason: "unlisted-model"
+#     model: "claude-haiku-5-5"
+# [17:58:16] WARN: [analyze:context:driver] exploration pipeline: decomposer failed; using freeform.probe fallback
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "Decomposer structured output unrecoverable: exploration 'e1' (module.profile) has param 'query', which module.profile does not take"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: answer type not covered by any recipe; using freeform.probe fallback
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     shaperId: "code"
+#     answerType: "how-does-it-work"
+#     explorationCount: 0
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the planning call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for planning failed: codex emitted error event: {\\"type\\":\\"error\\"}"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the planning call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for planning failed: client declined the sampling request"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the answer-writing call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for answer writing failed: codex emitted error event: {\\"type\\":\\"error\\"}"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the answer-writing call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for answer writing failed: client declined the sampling request"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the answer-writing call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for answer writing failed: codex exited with 2"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] WARN: [analyze:context:driver] exploration pipeline: the answer-writing step failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "errors.join is not a function"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the planning call failed
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "The model call for planning failed: down"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the answer-writing prompt is missing
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "Synthesizer prompt file missing: /x/synth.md"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the planning prompt is missing
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     err: "Decomposer prompt file missing: /x/plan.md"
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the caller's measure of the named area was used
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "XS"
+#     determined: true
+#     files: 1
+#     items: 3
+#     reused: true
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the caller's measure of the named area was used
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "L"
+#     determined: true
+#     files: 0
+#     items: 900
+#     reused: true
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the caller's measure of the named area was used
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "XL"
+#     determined: false
+#     files: 0
+#     items: 0
+#     note: "the listing of 'ledger-db' timed out: the source did not answer within 120 seconds"
+#     reused: true
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r1"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     sizeHint: "S"
+#     reused: false
+# [17:58:16] INFO: [analyze:context:driver] exploration pipeline: the named area was measured
+#     module: "analyze:context:driver"
+#     runId: "r-lookup"
+#     size: "M"
+#     determined: true
+#     files: 100
+#     items: 600
+#     reused: false
+# [17:58:16] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 130
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-KDyIqr/graph.lmdb"
+# Subtest: the count of catch clauses in the runtime files equals the number of classified entries
+ok 21 - the count of catch clauses in the runtime files equals the number of classified entries
+  ---
+  duration_ms: 153.986542
+  type: 'test'
+  ...
+# [17:58:17] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 112
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/graph.lmdb"
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: ".github/workflows/broken.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | name: [unclosed\\n 2 | \\n-----^"
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: "charts/web/values.yaml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | replicas: {[ not yaml\\n 2 | \\n-----^"
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: "docker-compose.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | services: {[ not yaml\\n 2 | \\n-----^"
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-kubernetes] inventory.kubernetes: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     file: "k8s/broken.yaml"
+#     err: "unexpected end of the stream within a flow collection (4:1)\\n\\n 1 | apiVersion: v1\\n 2 | kind: Service\\n 3 | metadata: {[ not yaml\\n 4 | \\n-----^"
+# [17:58:17] INFO: [analyze:runtimes:infra:inventory-kubernetes] infra.inventory.kubernetes: enumerated
+#     module: "analyze:runtimes:infra:inventory-kubernetes"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/repo"
+#     yamlScanned: 6
+#     resourceCount: 1
+#     fileCount: 1
+#     truncated: false
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-ci] inventory.ci: YAML parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-ci"
+#     file: ".github/workflows/broken.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | name: [unclosed\\n 2 | \\n-----^"
+# [17:58:17] INFO: [analyze:runtimes:infra:inventory-ci] infra.inventory.ci: enumerated
+#     module: "analyze:runtimes:infra:inventory-ci"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/repo"
+#     githubWorkflows: 1
+#     gitlabCi: 0
+#     truncated: false
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-docker] inventory.docker: compose parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-docker"
+#     file: "docker-compose.yml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | services: {[ not yaml\\n 2 | \\n-----^"
+# [17:58:17] INFO: [analyze:runtimes:infra:inventory-docker] infra.inventory.docker: enumerated
+#     module: "analyze:runtimes:infra:inventory-docker"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/repo"
+#     dockerfiles: 1
+#     composeFiles: 0
+#     truncated: false
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-helm] inventory.helm: Chart.yaml parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-helm"
+#     file: "charts/bad/Chart.yaml"
+#     err: "unexpected end of the stream within a flow collection (2:1)\\n\\n 1 | name: {[ not yaml\\n 2 | \\n-----^"
+# [17:58:17] INFO: [analyze:runtimes:infra:inventory-helm] infra.inventory.helm: enumerated
+#     module: "analyze:runtimes:infra:inventory-helm"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/repo"
+#     chartCount: 1
+#     truncated: false
+# [17:58:17] DEBUG: [analyze:runtimes:infra:inventory-terraform] inventory.terraform: HCL parse failed -- skipping
+#     module: "analyze:runtimes:infra:inventory-terraform"
+#     file: "infra/broken.tf"
+#     err: "parse config: [infra/broken.tf:2,12-3,1: Invalid expression; Expected the start of an expression, but found an invalid expression token.]"
+# [17:58:17] INFO: [analyze:runtimes:infra:inventory-terraform] infra.inventory.terraform: enumerated
+#     module: "analyze:runtimes:infra:inventory-terraform"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/repo"
+#     tfFiles: 2
+#     resourceCount: 0
+#     providerCount: 0
+#     moduleCount: 0
+#     variableCount: 1
+#     dataCount: 0
+#     outputCount: 0
+#     truncated: false
+# [17:58:17] INFO: [analyze:runtimes:infra:discovery-families] infra.discovery.families: classified
+#     module: "analyze:runtimes:infra:discovery-families"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/repo"
+#     fileCount: 11
+#     familyCount: 6
+#     families: [
+#       "docker-compose",
+#       "dockerfile",
+#       "github-actions",
+#       "helm",
+#       "kubernetes",
+#       "terraform"
+#     ]
+# [17:58:17] INFO: [analyze:runtimes:infra:discovery-families] infra.discovery.families: classified
+#     module: "analyze:runtimes:infra:discovery-families"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/repo"
+#     fileCount: 12
+#     familyCount: 6
+#     families: [
+#       "docker-compose",
+#       "dockerfile",
+#       "github-actions",
+#       "helm",
+#       "kubernetes",
+#       "terraform"
+#     ]
+# Subtest: an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)
+ok 22 - an inventory over a tree with an unreadable directory and a file that does not parse lists both under skipped and is not complete (mutation: restore the silent skip)
+  ---
+  duration_ms: 148.476292
+  type: 'test'
+  ...
+# [17:58:17] INFO: [analyze:runtimes:infra:inventory-docker] infra.inventory.docker: enumerated
+#     module: "analyze:runtimes:infra:inventory-docker"
+#     runId: "r1"
+#     taskId: "t01"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-S2qNr9/clean"
+#     dockerfiles: 1
+#     composeFiles: 0
+#     truncated: false
+# [17:58:17] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 107
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-jKKbW0/graph.lmdb"
+# Subtest: an adherence check whose model call fails is recorded by the walk as a failed task
+ok 23 - an adherence check whose model call fails is recorded by the walk as a failed task
+  ---
+  duration_ms: 118.787459
+  type: 'test'
+  ...
+# [17:58:17] DEBUG: [analyze:context:invariants] ensureNonEmptyClosure: closure non-empty
+#     module: "analyze:context:invariants"
+#     scope: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-jKKbW0/repo"
+#     repo: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-jKKbW0/repo"
+#     entityCount: 1
+# [17:58:17] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: no code excerpts hydrated
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "r1"
+#     taskId: "t01"
+#     subject: "settleRefund"
+# [17:58:17] INFO: [daemon:model-catalog] model definitions validated
+#     module: "daemon:model-catalog"
+#     dir: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
+#     version: 1
+#     models: {
+#       "cli-claude": 4,
+#       "cli-codex": 7,
+#       "ollama": 1
+#     }
+# [17:58:17] WARN: [config:analyze] models.tiers.cheap: model 'qwen3.8:27b' is not listed (unlisted-model); using the tier default claude-haiku-5-5
+#     module: "config:analyze"
+#     tier: "cheap"
+#     requested: "qwen3.8:27b"
+#     reason: "unlisted-model"
+#     model: "claude-haiku-5-5"
+# [17:58:17] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: LLM call failed
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "r1"
+#     taskId: "t01"
+#     err: "model unavailable"
+# [17:58:17] DEBUG: [analyze:executor:registry] template runtime registered
+#     module: "analyze:executor:registry"
+#     templateId: "code.adherence.check"
+# [17:58:17] DEBUG: [analyze:context:invariants] ensureNonEmptyClosure: closure non-empty
+#     module: "analyze:context:invariants"
+#     scope: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-jKKbW0/repo"
+#     repo: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-dropped-or-failed-jKKbW0/repo"
+#     entityCount: 1
+# [17:58:17] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: no code excerpts hydrated
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "dropped-or-failed-1e0103e1"
+#     taskId: "t01"
+#     subject: "settleRefund"
+# [17:58:17] WARN: [analyze:runtimes:shared:adherence] code.adherence.check: LLM call failed
+#     module: "analyze:runtimes:shared:adherence"
+#     runId: "dropped-or-failed-1e0103e1"
+#     taskId: "t01"
+#     err: "model unavailable"
+# [17:58:17] WARN: [analyze:executor:walker] leaf task runtime threw
+#     module: "analyze:executor:walker"
+#     runId: "dropped-or-failed-1e0103e1"
+#     taskId: "t01"
+#     err: "code.adherence.check: the model call that judges adherence failed: model unavailable. 1 constraint(s) and 0 excerpt(s) were gathered and not judged."
+# [17:58:17] DEBUG: [analyze:executor:cache] wrote task output
+#     module: "analyze:executor:cache"
+#     runId: "dropped-or-failed-1e0103e1"
+#     taskId: "t01"
+#     status: "failed"
+#     produces: [
+#       "adherence-report"
+#     ]
+# Subtest: the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path
+ok 24 - the infra and data scope functions are gone and no infra or data runtime uses the scope's value as a repo path
+  ---
+  duration_ms: 2.2425
+  type: 'test'
+  ...
+# Subtest: the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path
+ok 25 - the code family's scope function and its test hook are gone and no code runtime uses the scope's value as a repo path
+  ---
+  duration_ms: 0.938917
+  type: 'test'
+  ...
+# Subtest: the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)
+ok 26 - the source scan asserts one read of the repo's entities kept whole in discovery-modules.ts and today's form in the tree and the entry-points runtimes (mutation: read the repo's entities a second time)
+  ---
+  duration_ms: 0.429417
+  type: 'test'
+  ...
+# Subtest: the source scan asserts the new form for structure-module-tree.ts
+ok 27 - the source scan asserts the new form for structure-module-tree.ts
+  ---
+  duration_ms: 0.255125
+  type: 'test'
+  ...
+# Subtest: the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path
+ok 28 - the source scan asserts that surface-functional.ts resolves the run's scope through the one scope function for a directory path
+  ---
+  duration_ms: 0.349541
+  type: 'test'
+  ...
+# Subtest: no docs runtime uses the scope's value as a repo path
+ok 29 - no docs runtime uses the scope's value as a repo path
+  ---
+  duration_ms: 0.453084
+  type: 'test'
+  ...
+# Subtest: the unrelated resolveRepoPath under src/mcp is untouched
+ok 30 - the unrelated resolveRepoPath under src/mcp is untouched
+  ---
+  duration_ms: 0.087542
+  type: 'test'
+  ...
+# (node:95118) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [17:58:16] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cassandra"
+#     family: "kv"
+# [17:58:16] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "clickhouse"
+#     family: "rdbms"
+# [17:58:16] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "dynamodb"
+#     family: "kv"
+# [17:58:16] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "etcd"
+#     family: "kv"
+# [17:58:16] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mongodb"
+#     family: "kv"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mssql"
+#     family: "rdbms"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mysql"
+#     family: "rdbms"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mariadb"
+#     family: "rdbms"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "nats"
+#     family: "kv"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "oracle"
+#     family: "rdbms"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "postgres"
+#     family: "rdbms"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cockroachdb"
+#     family: "rdbms"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "redis"
+#     family: "kv"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "valkey"
+#     family: "kv"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "keydb"
+#     family: "kv"
+# [17:58:17] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "sqlite"
+#     family: "rdbms"
+# Subtest: the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined
+ok 31 - the table listing of sqlite, pg and mysql applies no clamp in the complete mode, that of oracle and mssql builds its query without the row-limit clause, and the four namespace drivers' listing applies no limit; each behaves exactly as before without the mode; the file listing walks to the end when no limit is given; a ClickHouse source, whose listing throws, is not determined
+  ---
+  duration_ms: 241.582792
+  type: 'test'
+  ...
+# Subtest: maintenance metadata is protected and partial adoption blocks legacy writers
+ok 32 - maintenance metadata is protected and partial adoption blocks legacy writers
+  ---
+  duration_ms: 27.15975
+  type: 'test'
+  ...
+# Subtest: exclusive owner lease rejects live or unknown owners and reclaims only dead or reused identities
+ok 33 - exclusive owner lease rejects live or unknown owners and reclaims only dead or reused identities
+  ---
+  duration_ms: 46.988708
+  type: 'test'
+  ...
+# Subtest: target filesystem denies legacy subprocess writes and isolates detached descriptors
+ok 34 - target filesystem denies legacy subprocess writes and isolates detached descriptors
+  ---
+  duration_ms: 142.946167
+  type: 'test'
+  ...
+# Subtest: release evidence remains disabled until the completed build supplies verified gates
+ok 35 - release evidence remains disabled until the completed build supplies verified gates
+  ---
+  duration_ms: 38.732958
+  type: 'test'
+  ...
+# Subtest: signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys
+ok 36 - signed restart checkpoint accepts only its exact prepared inode and rejects drift or lost signing keys
+  ---
+  duration_ms: 55.171041
+  type: 'test'
+  ...
+# Subtest: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+ok 37 - CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+  ---
+  duration_ms: 3108.601583
+  type: 'test'
+  ...
+# Subtest: CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+ok 38 - CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+  ---
+  duration_ms: 2.91775
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+ok 39 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+  ---
+  duration_ms: 8984.281292
+  type: 'test'
+  ...
+# Subtest: CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+ok 40 - CM-S3-INVENTORY: renamed and destructured provider resolver factory serializer and filesystem APIs are discovered
+  ---
+  duration_ms: 367.90575
+  type: 'test'
+  ...
+# Subtest: CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads
+ok 41 - CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads
+  ---
+  duration_ms: 2018.748208
+  type: 'test'
+  ...
+# Subtest: CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels
+ok 42 - CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels
+  ---
+  duration_ms: 0.122542
+  type: 'test'
+  ...
+# Subtest: CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility
+ok 43 - CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility
+  ---
+  duration_ms: 1056.6595
+  type: 'test'
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10709.216875

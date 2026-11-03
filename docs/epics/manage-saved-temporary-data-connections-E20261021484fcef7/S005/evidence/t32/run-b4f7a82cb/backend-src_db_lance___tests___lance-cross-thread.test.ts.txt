@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a worker adding vectors while another thread searches the same table: both finish and the process lives
+ok 1 - a worker adding vectors while another thread searches the same table: both finish and the process lives
+  ---
+  duration_ms: 11568.924125
+  type: 'test'
+  ...
+# Subtest: several worker threads and this one searching while writer workers write the whole time: all finish and the process lives
+ok 2 - several worker threads and this one searching while writer workers write the whole time: all finish and the process lives
+  ---
+  duration_ms: 20925.384084
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 32921.907459

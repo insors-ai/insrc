@@ -1,0 +1,212 @@
+TAP version 13
+# Subtest: DuckDBFileDriver -- csv
+    # Subtest: describe via DESCRIBE returns column / type
+    ok 1 - describe via DESCRIBE returns column / type
+      ---
+      duration_ms: 597.47525
+      type: 'test'
+      ...
+    # Subtest: sample with where + limit returns matching rows
+    ok 2 - sample with where + limit returns matching rows
+      ---
+      duration_ms: 14.803792
+      type: 'test'
+      ...
+    # Subtest: aggregate count / sum / avg / min / max
+    ok 3 - aggregate count / sum / avg / min / max
+      ---
+      duration_ms: 19.321459
+      type: 'test'
+      ...
+    # Subtest: rejects unknown column in WHERE + invalid aggregate column
+    ok 4 - rejects unknown column in WHERE + invalid aggregate column
+      ---
+      duration_ms: 4.606459
+      type: 'test'
+      ...
+    1..4
+ok 1 - DuckDBFileDriver -- csv
+  ---
+  duration_ms: 637.364875
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- json
+    # Subtest: describe + sample on JSON array
+    ok 1 - describe + sample on JSON array
+      ---
+      duration_ms: 9.592417
+      type: 'test'
+      ...
+    # Subtest: sampleShape on JSON array runs nested-shape inference
+    ok 2 - sampleShape on JSON array runs nested-shape inference
+      ---
+      duration_ms: 8.988167
+      type: 'test'
+      ...
+    # Subtest: aggregate over JSON
+    ok 3 - aggregate over JSON
+      ---
+      duration_ms: 4.113167
+      type: 'test'
+      ...
+    1..3
+ok 2 - DuckDBFileDriver -- json
+  ---
+  duration_ms: 23.285583
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- directory connection (Phase 4)
+    # Subtest: aggregate over a directory of CSVs (recursive)
+    ok 1 - aggregate over a directory of CSVs (recursive)
+      ---
+      duration_ms: 22.7315
+      type: 'test'
+      ...
+    1..1
+ok 3 - DuckDBFileDriver -- directory connection (Phase 4)
+  ---
+  duration_ms: 22.910292
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- distinct (Phase 0.3)
+    # Subtest: returns top-N most-frequent values + distinct cardinality
+    ok 1 - returns top-N most-frequent values + distinct cardinality
+      ---
+      duration_ms: 11.252625
+      type: 'test'
+      ...
+    # Subtest: rejects unknown column
+    ok 2 - rejects unknown column
+      ---
+      duration_ms: 4.394041
+      type: 'test'
+      ...
+    1..2
+ok 4 - DuckDBFileDriver -- distinct (Phase 0.3)
+  ---
+  duration_ms: 16.09725
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- 0.1.x extended aggregates
+    # Subtest: skewness + kurtosis + mad return native DuckDB values
+    ok 1 - skewness + kurtosis + mad return native DuckDB values
+      ---
+      duration_ms: 6.375291
+      type: 'test'
+      ...
+    # Subtest: count_where on a predicate
+    ok 2 - count_where on a predicate
+      ---
+      duration_ms: 9.770583
+      type: 'test'
+      ...
+    # Subtest: count_where with the same predicate alongside global where
+    ok 3 - count_where with the same predicate alongside global where
+      ---
+      duration_ms: 11.76475
+      type: 'test'
+      ...
+    # Subtest: composite_distinct_count counts unique (a, b) tuples
+    ok 4 - composite_distinct_count counts unique (a, b) tuples
+      ---
+      duration_ms: 7.385666
+      type: 'test'
+      ...
+    1..4
+ok 5 - DuckDBFileDriver -- 0.1.x extended aggregates
+  ---
+  duration_ms: 36.10375
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- histogram (Phase 0.2)
+    # Subtest: equal-width returns bucket counts spanning min..max
+    ok 1 - equal-width returns bucket counts spanning min..max
+      ---
+      duration_ms: 20.165958
+      type: 'test'
+      ...
+    # Subtest: equal-frequency uses NTILE
+    ok 2 - equal-frequency uses NTILE
+      ---
+      duration_ms: 16.344708
+      type: 'test'
+      ...
+    1..2
+ok 6 - DuckDBFileDriver -- histogram (Phase 0.2)
+  ---
+  duration_ms: 36.845958
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- correlation matrix (Phase 0.4)
+    # Subtest: pearson native CORR()
+    ok 1 - pearson native CORR()
+      ---
+      duration_ms: 9.46
+      type: 'test'
+      ...
+    # Subtest: spearman ranks then correlates
+    ok 2 - spearman ranks then correlates
+      ---
+      duration_ms: 5.824834
+      type: 'test'
+      ...
+    1..2
+ok 7 - DuckDBFileDriver -- correlation matrix (Phase 0.4)
+  ---
+  duration_ms: 15.517
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- outliers (Phase 0.5)
+    # Subtest: iqr method returns counts + bounds + center + spread
+    ok 1 - iqr method returns counts + bounds + center + spread
+      ---
+      duration_ms: 17.327417
+      type: 'test'
+      ...
+    # Subtest: zscore method returns mean / stddev based bounds
+    ok 2 - zscore method returns mean / stddev based bounds
+      ---
+      duration_ms: 12.767125
+      type: 'test'
+      ...
+    1..2
+ok 8 - DuckDBFileDriver -- outliers (Phase 0.5)
+  ---
+  duration_ms: 30.280583
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- pool path-escape guard
+    # Subtest: rejects file paths that escape the repo root
+    ok 1 - rejects file paths that escape the repo root
+      ---
+      duration_ms: 2.499458
+      type: 'test'
+      ...
+    1..1
+ok 9 - DuckDBFileDriver -- pool path-escape guard
+  ---
+  duration_ms: 2.601667
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- option validation
+    # Subtest: rejects bad CSV delimiter at factory time
+    ok 1 - rejects bad CSV delimiter at factory time
+      ---
+      duration_ms: 3.357583
+      type: 'test'
+      ...
+    1..1
+ok 10 - DuckDBFileDriver -- option validation
+  ---
+  duration_ms: 3.473584
+  type: 'suite'
+  ...
+1..10
+# tests 22
+# suites 10
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1303.444083

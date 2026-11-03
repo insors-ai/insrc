@@ -1,0 +1,11 @@
+[90m[main 2026-10-30T03:59:06.658Z][0m [node-compile-cache] main: packaged cache inactive (status: disabled, configured: /private/tmp/s5-live-j5jogfty/S005 Code.app/Contents/Resources/app/node-compile-cache/main, active: none)
+[90m[main 2026-10-30T03:59:06.714Z][0m StorageMainService: creating application shared storage
+[90m[main 2026-10-30T03:59:07.328Z][0m [shared storage] Creating shared storage database at '/private/tmp/s5-live-j5jogfty/home/.vscode-shared/sharedStorage/state.vscdb' (wasCreated: false)
+[90m[main 2026-10-30T03:59:07.329Z][0m [shared storage] Initializing fallback application storage (path: /private/tmp/s5-live-j5jogfty/profile-copy/User/globalStorage/state.vscdb)
+[90m[main 2026-10-30T03:59:07.374Z][0m [shared storage] Fallback application storage initialized with 3 items
+[90m[main 2026-10-30T03:59:08.109Z][0m update#disable - updates are disabled by user preference
+[90m[main 2026-10-30T03:59:08.109Z][0m update#setState disabled
+[90m[main 2026-10-30T03:59:08.125Z][0m AgentHostProcessManager: agent host started
+[91m[main 2026-10-30T03:59:08.816Z][0m [AgentHost:stderr] (node:50179) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Code Helper --trace-deprecation ...` to show where the warning was created)
+

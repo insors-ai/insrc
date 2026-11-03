@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: src/docgen/extract/__tests__/call-sequence-label.test.ts: a call frame is labelled with its path relative to the repo root and its line
+ok 1 - src/docgen/extract/__tests__/call-sequence-label.test.ts: a call frame is labelled with its path relative to the repo root and its line
+  ---
+  duration_ms: 1.177875
+  type: 'test'
+  ...
+# Subtest: src/docgen/extract/__tests__/call-sequence-label.test.ts: a frame outside the root, or a build with no root, keeps the base-name label
+ok 2 - src/docgen/extract/__tests__/call-sequence-label.test.ts: a frame outside the root, or a build with no root, keeps the base-name label
+  ---
+  duration_ms: 0.176875
+  type: 'test'
+  ...
+# Subtest: src/docgen/extract/__tests__/call-sequence-label.test.ts: node ids, edge ids and citations do not change with the label
+ok 3 - src/docgen/extract/__tests__/call-sequence-label.test.ts: node ids, edge ids and citations do not change with the label
+  ---
+  duration_ms: 0.183416
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 191.606459

@@ -1,0 +1,46 @@
+{
+  "kind": "manual-review-not-canonical-CR",
+  "cycle": 2,
+  "round": 3,
+  "sourceCommit": "7a2e67d4e",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T06:29:54.997Z",
+  "finished": "2026-11-01T06:30:53.268Z",
+  "inputChars": 63235,
+  "inputSha256": "2dd5e62671b9a14a527bf0f5a8169156ab961d27286e58c90b2e2fb3a522782b",
+  "result": {
+    "summary": "I have no unresolved concrete defects at any severity. Findings 2 and 3 are not client bugs under the stated contract, and I checked that contract against the supplied daemon code. Finding 1 is fixed by the shared `isPublicEndpoint` predicate, which projected() now applies. I read the code and ran nothing. The test results and the Kotlin parity are your reports, not something I verified. This is not a story-closure, UI or release certification.",
+    "findings": [],
+    "assessments": [
+      {
+        "id": "special-scheme-credentials",
+        "outcome": "holds",
+        "evidence": "`isPublicEndpoint` in `endpoint.ts` and the Kotlin `safeEndpoint` apply the same grammar. They reject controls, lone surrogates and backslashes, require `scheme://` with a nonempty authority (except `file`), and reject `@`, `/`, `?`, `#`, whitespace and unsafe punctuation in the authority. This holds across up to 8 strict percent-decoding passes. I traced vectors 20-33, 38 and 42-45 by hand and they are refused. The Kotlin regex semantics for surrogates are read, not run."
+      },
+      {
+        "id": "uri-compatibility",
+        "outcome": "holds",
+        "evidence": "Prior finding 1 is closed for the evidenced paths. `projected()` runs `clean(endpoint)` and `isPublicEndpoint(endpoint)` on the `uri()` endpoint, and does the same for a Dynamo-style `options.endpoint` returned by `address()`. A failure sets readonly and omits the endpoint, so a stored backslash, DEL/C1, lone-surrogate or `%ff`/`%E9` path cannot reach the client list decoder. Both `clean()` and the client `walk` use the same strict decode loop, with `%` not followed by two hex digits escaped to `%25` first. A malformed percent sequence anywhere is rejected on both sides. The authority that `uri()` and `address()` emit is limited to userinfo-stripped `host[:port]`. That always passes the client authority screen. The backslash, DEL, C1 and surrogate characters that `uri()` and `address()` still accept are the ones `isPublicEndpoint` now catches. Remaining limit: I did not see profile option definitions. If a non-secret option on some other kind is literally named `endpoint` and holds a non-URL value, the client would reject it. I have no evidence that one exists, so I am not reporting it."
+      },
+      {
+        "id": "opaque-nested-credentials",
+        "outcome": "holds",
+        "evidence": "The client refuses opaque prefixes such as `jdbc:…`, `custom:…` and Oracle `jdbc:oracle:thin:user/pw@host` because the text after `scheme:` must start with `//` (vectors 5, 46, 48, 54, 62-68). Producer projection omits those endpoints and marks the row readonly. Hierarchical nesting such as `jdbc://postgresql://u:p@h/db` and semicolon dialects are outside the client grammar by policy. The daemon refuses them before any mutation, as follows. `materializeDraft` calls `uri(endpoint, kind)`. That throws for an unsupported scheme or for an authority whose host:port fails the `hostPort` regex, which includes any `;`. For `options.servers`, `options.hosts` and `options.endpoint`, it calls `address(...).hasAuth` and throws on userinfo. The supplied regression exercises these four rejections."
+      }
+    ],
+    "advice": [
+      "Consider making `materializeDraft` run `isPublicEndpoint` on the `uri()` endpoint and on address-slot values. This is hardening, not a reported defect. Today `uri()` and `address()` still accept a backslash, DEL, C1 or lone surrogate. A caller that skips the client patch guard could persist such a URL. The stored connection would then project as permanently readonly, and `materializeDraft` refuses updates to readonly connections. No secret leaks. The failure is only a self-inflicted editing lockout. A negative test would pin the behaviour either way.",
+      "Add a producer-to-client round-trip case for a Dynamo `options.endpoint` with a valid URL (not only the unsafe one) so that a regression in the options branch is caught.",
+      "Keep the documented asymmetry: the client accepts multi-host and `;`-dialect authorities structurally, and the daemon alone enforces driver syntax. If a new profile ever puts a URL-shaped value in a non-`endpoint` public option, add a producer test that its output stays list-decodable.",
+      "When the native parity task is rerun, confirm vectors 57-61 (lone and paired surrogates) on the Kotlin side. Java regex handles surrogate ranges by code point, so those vectors cover the one place where the two runtimes could differ.",
+      "If endpoints are ever rendered as links, consider a scheme allowlist, since the client grammar has none."
+    ],
+    "limitations": [
+      "I reviewed only the supplied entities and ran nothing. The 18 passing tests, the root typecheck and the earlier native parity are your reports, not something I verified. Kotlin was not re-compared after the TS helper extraction.",
+      "I did not see the `schemes` table, profile `options` and `secrets` definitions, `publicSchema`, `withAuth`, `merged` or the daemon RPC handler. So I cannot confirm whether the handler runs the client patch guard before `materializeDraft`.",
+      "This review does not establish global Story closure, UI behaviour or release readiness."
+    ],
+    "evidenceRequests": []
+  }
+}

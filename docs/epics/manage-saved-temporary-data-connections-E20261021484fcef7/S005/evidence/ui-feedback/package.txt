@@ -1,0 +1,47 @@
+Executing prepublish script 'npm run vscode:prepublish'...
+
+> insrc-vscode@0.5.16 vscode:prepublish
+> tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json && npm run bundle
+
+[sync-manifest-catalog] manifest is up to date
+
+> insrc-vscode@0.5.16 bundle
+> npm run sync-assets && node esbuild.mjs
+
+
+> insrc-vscode@0.5.16 sync-assets
+> cp ../scripts/insrc-daemon-install.sh assets/insrc-daemon-install.sh && cp ../src/prompts/steering-block.md assets/steering-block.md
+
+bundled -> out/extension.js + out/uninstall.js (CJS)
+ INFO  Files included in the VSIX:
+insrc-vscode-0.5.16.vsix
+├─ [Content_Types].xml 
+├─ extension.vsixmanifest 
+└─ extension/
+   ├─ LICENSE.txt [1.04 KB]
+   ├─ changelog.md [5.49 KB]
+   ├─ gen-webview-libs.mjs [4.27 KB]
+   ├─ icon.png [16.06 KB]
+   ├─ package.json [35.29 KB]
+   ├─ readme.md [5.94 KB]
+   ├─ tsconfig.delivery-contract.json [0.11 KB]
+   ├─ assets/
+   │  ├─ insrc-daemon-install.sh [18.79 KB]
+   │  └─ steering-block.md [29.28 KB]
+   ├─ media/
+   │  ├─ connections-icon-dark.svg [0.27 KB]
+   │  ├─ connections-icon.svg [0.27 KB]
+   │  ├─ insrc-delivery-icon-dark.svg [18.53 KB]
+   │  ├─ insrc-delivery-icon.svg [19.17 KB]
+   │  ├─ insrc-icon-dark.svg [12.44 KB]
+   │  ├─ insrc-icon.svg [13.1 KB]
+   │  ├─ insrc-review-icon-dark.svg [13.1 KB]
+   │  └─ insrc-review-icon.svg [13.74 KB]
+   ├─ out/
+   │  ├─ extension.js [1.17 MB]
+   │  ├─ package.json [0.02 KB]
+   │  └─ uninstall.js [16.73 KB]
+   └─ scripts/
+      └─ sync-manifest-catalog.mjs [4.83 KB]
+
+ DONE  Packaged: /Users/subhagho/work/projects/insors/insrc/vscode-plugin/insrc-vscode-0.5.16-s005-63966e4ad.vsix (23 files, 369.21 KB)

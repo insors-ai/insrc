@@ -18,6 +18,7 @@ import type { MessagePort } from 'node:worker_threads';
 import { ConfigStore } from '../../config/store.js';
 import { getDb } from '../../db/client.js';
 import { listRepos } from '../../db/repos.js';
+import { cheapTierIgnoreModel } from '../../indexer/ignore-proposal-model.js';
 import { IndexerService } from '../../indexer/index.js';
 import { onIndexRunsChanged } from '../../indexer/run-record.js';
 import type { IndexRunView } from '../../indexer/run-record.js';
@@ -35,7 +36,7 @@ import { MAINTENANCE_RUN_OP, SHUTDOWN_OP } from './main-services.js';
 import type { WorkerConnection } from './main-services.js';
 import { methodClasses } from './method-class.js';
 import { StatusBoardClient } from './status-board.js';
-import { SUMMARY_PORT_OP, SummaryRunner } from './summary-link.js';
+import { runIndexJob, SUMMARY_PORT_OP, SummaryRunner } from './summary-link.js';
 import { startDaemonWorker } from './worker-entry.js';
 import { serveRequests } from './worker-requests.js';
 
@@ -63,7 +64,8 @@ hub.onPush(SUMMARY_PORT_OP, port => {
 	if (summaries !== undefined) summaries.rebind(port as MessagePort);
 	else summaries = summaryRunner(port as MessagePort);
 });
-indexer = new IndexerService(db, queue, watcher, configStore);
+// A repository added with no root ignore file gets one from the cheap tier (Epic c2ba6fa6 s6/ac6).
+indexer = new IndexerService(db, queue, watcher, configStore, undefined, undefined, cheapTierIgnoreModel());
 // The running full indexes, for the under-index refusals answered on other threads.
 // A full index's status and completeness change as it starts (status 'indexing',
 // then its state unfinished before it counts its files) and as it ends, so the
@@ -79,7 +81,9 @@ onIndexRunsChanged(runs => {
 	if (now !== running) {
 		running = now;
 		const pending = publishStore().then(() => {
-			if (storeFirst === pending) storeFirst = undefined;
+			// A newer store publication is still pending: it publishes the runs, after its own status.
+			if (storeFirst !== pending) return;
+			storeFirst = undefined;
 			board.publishIndexRuns(latest);
 		});
 		storeFirst = pending;
@@ -94,11 +98,13 @@ let publishing: Promise<void> = Promise.resolve();
 function publishStore(): Promise<void> {
 	publishing = publishing.then(async () => {
 		try {
-			board.publishStore({
+			// Its reads run under a shared maintenance hold of their own: a publication after a job
+			// runs once the job's hold is released, and maintenance must not close the store under it.
+			const slot = await withBackgroundHold(async () => ({
 				repos: await withCompleteness(await listRepos(db), r => r.path),
 				unattributedUnwritable: await unattributedUnwritable(),
-				publishedAt: Date.now(),
-			});
+			}));
+			board.publishStore({ ...slot, publishedAt: Date.now() });
 		} catch (err) {
 			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'indexing worker: the store slot could not be published');
 		}
@@ -152,22 +158,17 @@ serveRequests(init.hubPort, directDispatch(table), { beforeTestExit: () => watch
 // The store slot before the queue starts, so the admin worker's first status has it.
 await publishStore();
 await service.start(await listRepos(db));
-// Summary jobs run on the document-summary worker, handed over by the summary lane.
-const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity';
-// Each job runs under the maintenance lock's shared hold, waiting for maintenance rather than failing.
+// Each job under the maintenance lock's shared hold (runIndexJob); summary jobs run on the document-summary worker.
 const queueDone = queue.start(async job => {
-	try {
-		await withBackgroundHold(async () => {
-			if (summaries !== undefined && isSummaryJob(job)) await summaries.run(job);
-			else await service.processJob(job);
-		});
-	} finally { void publishStore(); }
+	try { await service.runQueuedJob(job, () => runIndexJob(job, summaries, j => service.processJob(j))); }
+	finally { void publishStore(); }
 });
 
 // Shutdown: stop the queue and the watcher, and report once both are done.
 // The watcher's close is awaited: a native watcher call still running when
 // the worker's environment is torn down aborts the whole process.
 hub.onPush(INDEXING_STOP_OP, async () => {
+	service.disposeSubsystemScheduler();
 	queue.stop();
 	summaries?.stop();
 	await watcher.close();

@@ -21,7 +21,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import {
-	SimulatedCrash, closeGraphStore, compactGraphStore, getGraphStore, setCompactionCrashPointForTests, setGraphStorePath, withWriteTxn,
+	SimulatedCrash, closeGraphStore, compactGraphStore, getGraphStore, graphStoreReclaimable, setCompactionCrashPointForTests, setGraphStorePath, withWriteTxn,
 } from '../store.js';
 import type { CompactionCrashPoint } from '../store.js';
 
@@ -141,3 +141,15 @@ test('a completed compaction leaves only the checked copy', async () => {
 	assert.deepEqual(leftovers(), []);
 	assert.deepEqual(await rows(), before);
 });
+
+for (const [point, what] of POINTS) {
+	test(`a swap that fails at ${point} (${what}) leaves the store reopened before compaction returns, with every row and no leftover files`, async () => {
+		await seed();
+		const before = await rows();
+		setCompactionCrashPointForTests(point, { fail: true });
+		await assert.rejects(compactGraphStore(), /compact: the swap failed: simulated failure/);
+		assert.ok(graphStoreReclaimable() !== undefined, 'the store is open again, before any later access');
+		assert.deepEqual(await rows(), before, 'every row is there');
+		assert.deepEqual(leftovers(), [], 'the reopen cleared what the failed swap left');
+	});
+}

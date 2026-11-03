@@ -1,0 +1,348 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s8",
+    "createdAt": "2026-11-02T09:26:38.830Z",
+    "updatedAt": "2026-11-02T11:36:55.095Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "approvedAt": "2026-11-02T11:36:56.166Z",
+    "reviewOverride": {
+      "reason": "manual code review by an independent reviewer agent (code-review framework being rewritten); 3 rounds: block (1d9d9a1df fixes), block (41342067d fixes), final verdict pass",
+      "at": "2026-11-02T11:36:56.166Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "summary": "The full sweep is recorded in S008/full-sweep-t8.txt: run at 1f8351455 (all of t1-t7), 7334 tests, 7164 passed, 32 failed, every failure listed and classified, none caused by s8. Ten are the seeded test daemon that does not start, a pre-existing failure. Two are load flakes that pass alone (threads-boot SIGTERM, tui-models). The rest are the other session's connection-manager and project-memory work. CM-S3-INVENTORY is the other epic's frozen snapshot, which now also lists s8's two new files; that baseline is not edited here. The stub summary worker was fixed (2befc2d83) so stub mode calls no model. Smoke on the installed daemon @ 2befc2d8 is recorded in S008/smoke-t8.txt: 5 subsystems with 5 summaries on the s9 smoke repository, an analyzer context naming the cpp subsystem, and insrc itself reported incomplete (5 relationships point at ignored files) and so not grouped.",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/db/__tests__/search-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migration-v6-to-v7.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/operational.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/codec.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/migrations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-pass.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/boot-validator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/summariser/subsystem-prompt.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/queue-lanes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/summary-link.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/method-class.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystems-request.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/smoke-t8.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S008/full-sweep-t8.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T10:48:02.439Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/subsystem-tables.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/db/subsystems.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-grouping.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/subsystems.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/subsystem-pass.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystem-summaries.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/analyze/subsystem-summariser.system.md",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/subsystems-job.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/subsystem-context.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/subsystem-context.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/summary-worker.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/analyze-step-subsystems.test.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/phases/bundle.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      },
+      {
+        "target": {
+          "file": "src/db/repos.ts",
+          "version": "41342067d"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T11:36:55.095Z"
+      }
+    ],
+    "commit": "41342067d"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "866873cab2dedcc7",
+    "storyId": "S001",
+    "createdAt": "2026-11-01T09:19:56.874Z",
+    "updatedAt": "2026-11-01T09:27:22.357Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-01T07:02:58.354Z",
+    "epicSlug": "write-versioned-marker-delimited-insrc-steering",
+    "approvedAt": "2026-11-01T09:35:45.952Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "t1: steering upsert into ~/.vibe/AGENTS.md on vibe registration; implemented and unit-tested.",
+    "testRecord": {
+      "md": "docs/standalone/write-versioned-marker-delimited-insrc-steering-E20261101866873ca/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/mcp-register.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T09:27:22.357Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/mcp-register.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-01T09:27:22.357Z"
+      }
+    ],
+    "commit": "e726a7f08"
+  }
+}

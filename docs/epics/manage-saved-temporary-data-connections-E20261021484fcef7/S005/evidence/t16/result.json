@@ -1,0 +1,35 @@
+{
+  "task": "t16",
+  "node": "22.23.2",
+  "focused": {
+    "tests": 14,
+    "pass": 14,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "backendTypecheck": "pass",
+  "extensionTypecheck": "pass",
+  "sourceSha256": {
+    "src/shared/connection-manager/controller.ts": "4a8d799fa357183f16865fb52868be8289fc57ba42ad511af2a1e10c331324b1",
+    "src/shared/connection-manager/removal.ts": "e265879e80342c4d89096f010da62b68cc8b2cd1117463abc04842c6eb7cc545",
+    "vscode-plugin/src/extension.ts": "9fc4eb01f9f1c998c643a7e9a39726b0b38f0d0da27f7d46eaa2c94215a52c32",
+    "vscode-plugin/src/connections/__tests__/mutation.test.ts": "957508c9e27fc1a1e10a49efede1f68d1a00c6bc189962b7bfde12bd9d97cb1b",
+    "vscode-plugin/src/connections/__tests__/removal.test.ts": "61d42f64cf718823f665b4950e0692992d022cea1b7737e7c83bc0b7596ca77d",
+    "vscode-plugin/src/connections/__tests__/fixtures/management.ts": "f0e1a15dc980c903ee05d4b70eb561ba2c8a0bd00757fba55ea9c2c03184b32d"
+  },
+  "reuse": "Existing sc6 exact confirmation, decision and fixed-copy phase projections; strict removal decoder; existing signed mutation controller/privileged gateway. Shared test peer extracted without changing original seven mutation scenarios.",
+  "coverage": [
+    "Dirty Discard/Cancel before removal confirmation; no ticket on either Cancel.",
+    "Saved busy/conflict preserves generation and draft; fresh revision requires new confirmation.",
+    "Absent row does not classify unknown removal; explicit same-ticket status recovers.",
+    "Temporary Discard uses claimed owner lane, Saved Delete remains unclaimed.",
+    "Credential/resource phases independently pending on one operation card; ticket-only retry remains safe across same-ID recreation.",
+    "All twenty unchanged S004 snapshots.",
+    "Seeded file bytes unchanged by fixture actions."
+  ],
+  "limits": [
+    "Live client UI and actual SQL/KV/file consumer acceptance remain later tasks; fixture proof does not activate release.",
+    "Full sweep deferred until all implementation tasks, per user instruction."
+  ]
+}

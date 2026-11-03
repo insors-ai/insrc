@@ -1,0 +1,17 @@
+{
+  "installedCommit": "841891ec449d3612c8269b112a9e4d5d3d0b405b",
+  "manifestSha256": "27352a1720b3fa44f81a2cb782eda0dd138f5b0450981da977e2fd931e16d4a9",
+  "reviewSourceMatchesVerifiedSnapshot": {
+    "agent/providers/bounded-input.ts": true,
+    "agent/providers/cli-provider.ts": true,
+    "agent/providers/structured-schema.ts": true,
+    "daemon/code-review-operations.ts": true,
+    "daemon/code-review-rpc.ts": true,
+    "daemon/steps/code-review-step/controller-pipeline.ts": true,
+    "daemon/steps/code-review-step/handler.ts": true,
+    "shared/structured-input.ts": true,
+    "workflow/code-review/input-fingerprint.ts": true,
+    "workflow/review-pipeline/driver.ts": true
+  },
+  "chunkTokens": 128000
+}

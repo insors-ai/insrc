@@ -36,12 +36,14 @@ export function fakeFs(seed: Record<string, string> = {}): FakeFs {
   };
 }
 
-/** A scripted HostEnv: `extensions` is the installed-extension id set. */
-export function fakeEnv(opts: { extensions?: string[]; appName?: string; uriScheme?: string } = {}): HostEnv {
+/** A scripted HostEnv: `extensions` is the installed-extension id set; `homePaths` the present home-relative paths. */
+export function fakeEnv(opts: { extensions?: string[]; appName?: string; uriScheme?: string; homePaths?: string[] } = {}): HostEnv {
   const installed = new Set(opts.extensions ?? []);
+  const homePaths = new Set(opts.homePaths ?? []);
   return {
     getExtension: (id) => installed.has(id),
     appName: opts.appName ?? 'Visual Studio Code',
     uriScheme: opts.uriScheme ?? 'vscode',
+    homePathExists: (relPath) => homePaths.has(relPath),
   };
 }

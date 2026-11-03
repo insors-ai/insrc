@@ -48,7 +48,7 @@ import { TODO_LIMITS, betweenOrderKeys } from '../shared/todos.js';
 import { isAgentFamily } from '../shared/agent-registry.js';
 import * as todos from '../db/todos.js';
 import { getLogger } from '../shared/logger.js';
-import { withBackgroundHold, withRefreshHold } from '../shared/locks/maintenance-lock.js';
+import { withRefreshHold, withTimerHold } from '../shared/locks/maintenance-lock.js';
 
 const log = getLogger('todos-rpc');
 
@@ -1184,14 +1184,15 @@ export function scheduleTodosRetention(
 		? opts.retentionDays
 		: 90;
 
-	// With daemon threads, under the maintenance lock's shared hold: it waits for maintenance (Epic 86197ac6 s2).
+	// With daemon threads, under the maintenance lock's shared hold: it waits for maintenance, at most its bound (Epic 86197ac6 s2).
 	const run = async (): Promise<void> => {
 		try {
-			const result = await withBackgroundHold(() => cleanup(db, {
+			const result = await withTimerHold(() => cleanup(db, {
 				caller: 'system',
 				statuses: ['archived'],
 				olderThanDays: retentionDays,
 			}));
+			if (result === undefined) return; // Skipped at its bound: maintenance outlasted the wait.
 			if ('error' in result) {
 				log.warn({ result }, 'todos retention sweep rejected');
 				return;

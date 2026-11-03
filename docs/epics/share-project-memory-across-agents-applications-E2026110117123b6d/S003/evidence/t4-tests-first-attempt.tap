@@ -1,0 +1,65 @@
+TAP version 13
+# Subtest: store-initialization-fresh-profile-and-read-only-reopen
+ok 1 - store-initialization-fresh-profile-and-read-only-reopen
+  ---
+  duration_ms: 810.387458
+  type: 'test'
+  ...
+# Subtest: store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+not ok 2 - store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+  ---
+  duration_ms: 5.702625
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:890'
+  failureType: 'testCodeFailure'
+  error: 'The queue root must be the canonical owned memory directory.'
+  code: 'INVALID_REQUEST'
+  name: 'MemoryError'
+  stack: |-
+    new QueueIo (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/queue/io.ts:40:62)
+    new FileQueue (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/queue/file-queue.ts:43:15)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/store-initialization.test.ts:54:43)
+    fixture (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/store-initialization.test.ts:25:15)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/store-initialization.test.ts:53:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+ok 3 - store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+  ---
+  duration_ms: 81.754041
+  type: 'test'
+  ...
+# Subtest: store-initialization-resumes-only-recognized-generation-zero
+ok 4 - store-initialization-resumes-only-recognized-generation-zero
+  ---
+  duration_ms: 158.027042
+  type: 'test'
+  ...
+# Subtest: store-initialization-validates-pending-markers-and-native-directory-identity
+ok 5 - store-initialization-validates-pending-markers-and-native-directory-identity
+  ---
+  duration_ms: 49.591292
+  type: 'test'
+  ...
+# Subtest: store-initialization-rolls-back-each-acquired-native-resource
+ok 6 - store-initialization-rolls-back-each-acquired-native-resource
+  ---
+  duration_ms: 212.379292
+  type: 'test'
+  ...
+# Subtest: store-initialization-unverified-close-is-explicit-and-owner-stays-held
+ok 7 - store-initialization-unverified-close-is-explicit-and-owner-stays-held
+  ---
+  duration_ms: 35.871125
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1602.784791

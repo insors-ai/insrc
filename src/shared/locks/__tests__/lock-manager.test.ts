@@ -579,3 +579,27 @@ test('reclaim takes over a mutex and resets a name claim left by a foreign threa
 	assert.equal(bGranted, true);
 	assert.equal(await a.resolveName(enc('y')), 1, 'the freed name slot is claimed for the next name');
 });
+
+test('a timer or promise created inside a callback no longer holds the lock once the callback settled: holds() is false and a request of the same name is not refused as nested', async () => {
+	const m = new LockManager(createLockBlock({ names: 4, holders: 8, pending: 8 }), { threadId: 1 });
+	let later!: Promise<{ holds: boolean; ran: boolean }>;
+	await m.request('maintenance', { mode: 'shared' }, async () => {
+		assert.equal(m.holds('maintenance'), true, 'inside the callback');
+		// Created inside the hold, run after it: it inherits the async context.
+		later = new Promise(resolve => setTimeout(() => {
+			void (async () => {
+				const holds = m.holds('maintenance');
+				const ran = await m.request('maintenance', { mode: 'exclusive', timeoutMs: 1_000 }, async () => true);
+				resolve({ holds, ran });
+			})();
+		}, 50));
+	});
+	assert.equal(m.holds('maintenance'), false, 'outside the callback');
+	assert.deepEqual(await later, { holds: false, ran: true }, 'the timer neither believes it holds the lock nor is refused as a nested request');
+	// While the callback is still running, a continuation inside it still holds it.
+	await m.request('maintenance', { mode: 'shared' }, async () => {
+		await tick(10);
+		assert.equal(m.holds('maintenance'), true, 'an await inside the callback still holds it');
+		await assert.rejects(m.request('maintenance', { mode: 'shared', timeoutMs: 100 }, async () => 1), (e: Error) => e.name === 'LockNestedError');
+	});
+});

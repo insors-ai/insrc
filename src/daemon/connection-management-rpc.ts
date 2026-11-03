@@ -4,11 +4,12 @@ import { connectionLookupRoot as root } from './db/management-root.js';
 import type { RpcHandlers } from './server.js';
 import type { TrustedRpcContext } from './request-context.js';
 import type { ManagementRequestContext, ManagementCapabilities, MutationRequest, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
-import { parseDraftTestRequest, parseConnectionKey, parseMutationRequest, parseOperationTicket, ManagementInputError } from '../shared/connection-management-wire.js';
+import { parseRemovalStateRequest, parseDraftTestRequest, parseConnectionKey, parseMutationRequest, parseOperationTicket, ManagementInputError } from '../shared/connection-management-wire.js';
 import { canonicalRequestJson } from './db/management-tickets.js';
 import { ManagementServiceError, managementRejection, savedManagementFor } from './db/management.js';
 import { connectionTestSupervisor, DraftTestAdmissionError } from './db/draft-test.js';
 import { prepareRuntimeConfig } from './db/runtime-config.js';
+import { ensureDefaultManagedRoot } from './db/management-defaults.js';
 import { connectionManagementEnablement } from './db/management-enablement.js';
 import { lookupRepoId } from '../db/repos.js';
 import { driverDescriptors, materializeDraft } from './db/driver-profiles.js';
@@ -22,7 +23,7 @@ import type { SessionRpcRuntime } from './connection-session-rpc.js';
 export const CONNECTION_V2_METHODS = [
 	...CONNECTION_SESSION_METHODS,
 	'db.connections.v2.capabilities', 'db.connections.v2.drivers', 'db.connections.v2.list', 'db.connections.v2.read',
-	'db.connections.v2.test', 'db.connections.v2.cancelTest', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.activate',
+	'db.connections.v2.test', 'db.connections.v2.cancelTest', 'db.connections.v2.ticket', 'db.connections.v2.mutate', 'db.connections.v2.status', 'db.connections.v2.activate', 'db.connections.v2.removalState', 'db.connections.v2.retryRemovalCleanup',
 ] as const;
 type Method = typeof CONNECTION_V2_METHODS[number];
 function object(value: unknown, required: readonly string[], optional: readonly string[] = []): Record<string, unknown> {
@@ -65,13 +66,16 @@ async function safeList(repoRoot: string, context: TrustedRpcContext) {
 }
 export interface ConnectionTestPorts {
  readonly sessionRuntime?: SessionRpcRuntime | undefined;
+ readonly removalEnabled?: (()=>Promise<boolean>) | undefined;
  readonly enabled?: (()=>Promise<boolean>) | undefined;
- readonly prepareTemporary?: ((request:DraftTestRequest,context:TrustedRpcContext,signal:AbortSignal)=>Promise<EffectiveDraft>) | undefined;
+ readonly prepareTemporary?: ((request:DraftTestRequest,context:TrustedRpcContext,signal:AbortSignal,drained:Promise<void>)=>Promise<EffectiveDraft>) | undefined;
  readonly isRegistered?: ((root:string)=>Promise<boolean>) | undefined;
 }
 export async function connectionManagementRpc(method: Method, value: unknown, transport?: TrustedRpcContext, testPorts:ConnectionTestPorts={}): Promise<unknown> {
 	try {
 		const context = trusted(transport);
+  const removalReady=testPorts.removalEnabled??(async()=> (await connectionManagementEnablement(undefined,['sc5','sc6'])).ready);
+  const requireRemoval=async()=>{if(!await removalReady())throw new ManagementServiceError('upgrade-required');};
 		if (!CONNECTION_V2_METHODS.includes(method)) throw new ManagementInputError();
 		if ((CONNECTION_SESSION_METHODS as readonly string[]).includes(method)) {
 			return (testPorts.sessionRuntime ?? connectionSessionRuntime).call(method as ConnectionSessionMethod, value, context);
@@ -84,14 +88,15 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		if(method==='db.connections.v2.cancelTest')return connectionTestSupervisor.cancel(value,context);
 		if(method==='db.connections.v2.test'){
 			const request=parseDraftTestRequest(value), runtime=testPorts.sessionRuntime??connectionSessionRuntime;
+			if (request.key.scope === 'temporary' && request.expectedRevision !== undefined && !context.connectionSession) throw new ManagementServiceError('upgrade-required');
 			const probeContext=context.connectionSession ? await (runtime.probeContext?.(context,request)??Promise.reject(new ManagementServiceError('upgrade-required'))) : context;
-			return await connectionTestSupervisor.run(request,probeContext,async signal=>{
+			return await connectionTestSupervisor.run(request,probeContext,async (signal,drained)=>{
 				if(!await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())throw new ManagementServiceError('upgrade-required');
 				signal.throwIfAborted();const repoRoot=await root(request.key.repoRoot,true);signal.throwIfAborted();
-				if(request.key.scope==='saved')return (await owner(repoRoot)).prepareDraft(managementContext(repoRoot,context),request,signal);
+				if(request.key.scope==='saved')return (await owner(repoRoot)).prepareDraft(managementContext(repoRoot,context),request,signal,drained);
 				if(request.expectedRevision!==undefined){
 					const prepare=testPorts.prepareTemporary??runtime.prepareTemporary?.bind(runtime); if(!prepare)throw new ManagementServiceError('upgrade-required');
-					const effective=await prepare(request,probeContext,signal);signal.throwIfAborted();return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
+					const effective=await prepare(request,probeContext,signal,drained);signal.throwIfAborted();return {...effective,config:await prepareRuntimeConfig(effective.config,repoRoot,signal)};
 				}
 				if(!await (testPorts.isRegistered??(async root=>await lookupRepoId(root)!==undefined))(repoRoot))throw new ManagementServiceError('invalid-input');
 				signal.throwIfAborted();
@@ -103,14 +108,19 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		if (method === 'db.connections.v2.capabilities') {
 			const params = object(value, [], ['repoRoot']);
 			const features = ['safe-read', 'driver-descriptors'];
-			if (await (testPorts.sessionRuntime ?? connectionSessionRuntime).ready()) features.push('workbench-sessions', 'session-delegation');
+			if(await removalReady()&&await (testPorts.sessionRuntime??connectionSessionRuntime).removalReady?.())features.push('temporary-remove','removal-state','removal-cleanup-retry');
+   if (await (testPorts.sessionRuntime ?? connectionSessionRuntime).ready()) features.push('workbench-sessions', 'session-delegation');
 			if(await (testPorts.enabled??(async()=> (await connectionManagementEnablement()).ready))())features.push('draft-test','test-cancellation');
 			if (params.repoRoot !== undefined) {
-				const repoRoot = await root(params.repoRoot), service = savedManagementFor(repoRoot);
+				const repoRoot = await root(params.repoRoot);
+     // Registered-root initialization is independent of release-audit completion.
+     if(!savedManagementFor(repoRoot)&&!testPorts.sessionRuntime){try{await ensureDefaultManagedRoot(repoRoot);}catch{/* Existing legacy data or damaged metadata still needs recovery. */}}
+     const service = savedManagementFor(repoRoot);
 				if (service) {
 					try {
 						await service.list(managementContext(repoRoot, context));
-						features.push('saved-create', 'saved-update', 'operation-tickets', 'operation-status', 'activation-retry', 'immutable-credentials', 'full-use-leases', 'memory-only-files');
+						if(await removalReady()){features.push('saved-remove');for(const feature of ['removal-state','removal-cleanup-retry'])if(!features.includes(feature))features.push(feature);}
+      features.push('saved-create', 'saved-update', 'operation-tickets', 'operation-status', 'activation-retry', 'immutable-credentials', 'full-use-leases', 'memory-only-files');
 					}
 					catch { /* Failed gates never advertise mutation authority. */
 					}
@@ -137,23 +147,32 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 		}
 		if (method === 'db.connections.v2.ticket') {
 			const params = object(value, ['key', 'mode']), key = parseConnectionKey(params.key);
-			if (key.scope !== 'saved' || (typeof params.mode !== 'string' || !['create', 'update'].includes(params.mode)))
+			if (key.scope !== 'saved' || (typeof params.mode !== 'string' || !['create', 'update', 'remove'].includes(params.mode)))
 				throw new ManagementInputError();
-			const repoRoot = await root(key.repoRoot, true);
-			return await (await owner(repoRoot)).ticket(managementContext(repoRoot, context), key, params.mode as 'create' | 'update');
+			if(params.mode==='remove')await requireRemoval();
+   const repoRoot = await root(key.repoRoot, true);
+			return await (await owner(repoRoot)).ticket(managementContext(repoRoot, context), key, params.mode as 'create' | 'update' | 'remove');
 		}
 		if (method === 'db.connections.v2.mutate') {
 			const request = parseMutationRequest(JSON.parse(canonicalRequestJson(value))) as MutationRequest;
-			if (request.key.scope !== 'saved' || request.mode === 'remove')
+			if (request.key.scope !== 'saved')
 				throw new ManagementInputError();
-			const repoRoot = await root(request.key.repoRoot, true);
+			if(request.mode==='remove')await requireRemoval();
+   const repoRoot = await root(request.key.repoRoot, true);
 			return await (await owner(repoRoot)).mutate(managementContext(repoRoot, context), request);
 		}
-		if (method === 'db.connections.v2.status') {
+		if(method==='db.connections.v2.removalState'||method==='db.connections.v2.retryRemovalCleanup'){
+   const {ticket}=parseRemovalStateRequest(value);
+   if(ticket.scope!=='saved')throw new ManagementServiceError('upgrade-required');
+   await requireRemoval();const repoRoot=await root(ticket.lookupRoot,true),service=await owner(repoRoot);
+   return await service[method==='db.connections.v2.removalState'?'removalState':'retryRemovalCleanup'](managementContext(repoRoot,context),ticket);
+  }
+  if (method === 'db.connections.v2.status') {
 			const params = object(value, ['ticket']), ticket = parseOperationTicket(params.ticket);
 			if (ticket.scope !== 'saved')
 				throw new ManagementServiceError('upgrade-required');
-			const repoRoot = await root(ticket.lookupRoot, true);
+			if(ticket.mode==='remove')await requireRemoval();
+   const repoRoot = await root(ticket.lookupRoot, true);
 			return await (await owner(repoRoot)).status(managementContext(repoRoot, context), ticket);
 		}
 		const params = object(value, ['key', 'committedRevision']), key = parseConnectionKey(params.key);

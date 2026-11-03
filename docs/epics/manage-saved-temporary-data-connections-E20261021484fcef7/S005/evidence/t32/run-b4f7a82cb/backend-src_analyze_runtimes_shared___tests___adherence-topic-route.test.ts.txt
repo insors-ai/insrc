@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path
+ok 1 - a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path
+  ---
+  duration_ms: 390.705959
+  type: 'test'
+  ...
+# Subtest: four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not
+ok 2 - four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not
+  ---
+  duration_ms: 395.191542
+  type: 'test'
+  ...
+# Subtest: the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record
+ok 3 - the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record
+  ---
+  duration_ms: 291.256167
+  type: 'test'
+  ...
+# Subtest: an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic
+ok 4 - an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic
+  ---
+  duration_ms: 247.925833
+  type: 'test'
+  ...
+# Subtest: a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents
+ok 5 - a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents
+  ---
+  duration_ms: 162.670958
+  type: 'test'
+  ...
+# Subtest: when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration
+ok 6 - when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration
+  ---
+  duration_ms: 138.651375
+  type: 'test'
+  ...
+# Subtest: when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays
+ok 7 - when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays
+  ---
+  duration_ms: 131.821417
+  type: 'test'
+  ...
+# Subtest: an override that yields no constraint fails naming the override and does not fall back to the topic
+ok 8 - an override that yields no constraint fails naming the override and does not fall back to the topic
+  ---
+  duration_ms: 128.912333
+  type: 'test'
+  ...
+# Subtest: run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks
+ok 9 - run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks
+  ---
+  duration_ms: 134.11
+  type: 'test'
+  ...
+# Subtest: no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs
+ok 10 - no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs
+  ---
+  duration_ms: 132.311459
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2748.675542

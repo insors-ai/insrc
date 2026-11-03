@@ -53,6 +53,8 @@
  * `db/graph/{entities,edges,traversal,bulk}.ts` (Phase 2.x).
  */
 
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
+import { currentStepContext } from '../../shared/step-context.js';
 import { closeSync, existsSync, fsyncSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
@@ -136,9 +138,8 @@ export const MAX_DBS = 64;
  *         The v4 -> v5 migration writes an IndexStateRow for every
  *         workspace repository with fullIndexFinished false and its
  *         pending counts recounted from the stored rows.
- *   v6 -- transactional entity_by_file and entity_by_repo memberships.
  */
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 9;
 
 const META_SCHEMA_VERSION = 'schema_version';
 
@@ -265,11 +266,10 @@ export interface GraphStore {
 	meta:                AnyDb;
 	repo:                AnyDb;
 	entity:              AnyDb;
-	entityByFile:        AnyDb;
-	entityByRepo:        AnyDb;
 	entityIdByString:    AnyDb;
 	entityStringByU64:   AnyDb;
 	nameIndex:           AnyDb;
+	entityByFile:        AnyDb;
 	outEdge:             AnyDb;
 	inEdge:              AnyDb;
 	unresolved:          AnyDb;
@@ -277,6 +277,14 @@ export interface GraphStore {
 	unresolvedByTarget:  AnyDb;
 	exportNames:         AnyDb;
 	indexState:          AnyDb;
+	/** Epic c2ba6fa6 s8: (repoId, subsystem id) -> SubsystemRow. */
+	subsystem:           AnyDb;
+	/** Epic c2ba6fa6 s8: (repoId, repo-relative code file) -> subsystem id. */
+	subsystemByFile:     AnyDb;
+	/** ISSUE-7d42b5dc: (repoId, repo-relative file) -> change stamp: files whose grouping inputs changed since the subsystem pass read them. */
+	subsystemDirty:      AnyDb;
+	/** ISSUE-7d42b5dc: (repoId, repo-relative file) -> the file's file-graph contribution; (repoId, 0x00) -> the repository's reset counter. */
+	subsystemFile:       AnyDb;
 
 	// Plans
 	plan:                AnyDb;
@@ -340,6 +348,7 @@ let _path: string = PATHS.lmdb;
 export function getGraphStorePath(): string { return _path; }
 
 export function setGraphStorePath(path: string): void {
+	assertNoSessionPersistence();
 	if (_instance !== null || _initPromise !== null) throw new Error('close graph store before changing its path');
 	_path = path;
 }
@@ -566,6 +575,8 @@ export function resetStoreHealthForTests(): void {
  * place the failure is raised: no later call reaches the library.
  */
 export async function getGraphStore(): Promise<GraphStore> {
+	// A Session read may use the initialized structural graph, never initialize or migrate it.
+	if (_instance === null && currentStepContext()?.connectionExecution?.mode === 'session-memory') assertNoSessionPersistence();
 	const health = currentHealth();
 	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`opening the store (failed earlier during: ${health.operation})`);
 	// While daemon maintenance compacts on another thread, this thread neither uses nor reopens the store.
@@ -630,8 +641,6 @@ export async function getGraphStore(): Promise<GraphStore> {
 			meta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),
 			repo:               open_('repo'),
 			entity:             open_('entity'),
-			entityByFile:       open_('entity_by_file', { dupSort: true }),
-			entityByRepo:       open_('entity_by_repo', { dupSort: true }),
 			entityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),
 			entityStringByU64:  root.openDB({
 				name:        'entity_string_by_u64',
@@ -639,6 +648,7 @@ export async function getGraphStore(): Promise<GraphStore> {
 				encoding:    'ordered-binary',  // string values
 			}),
 			nameIndex:          open_('name_index', { dupSort: true }),
+			entityByFile:       open_('entity_by_file', { dupSort: true }),
 			outEdge:            open_('out_edge'),
 			inEdge:             open_('in_edge'),
 			unresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),
@@ -646,6 +656,10 @@ export async function getGraphStore(): Promise<GraphStore> {
 			unresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),
 			exportNames:        open_('export_names', { dupSort: true }),
 			indexState:         open_('index_state'),
+			subsystem:          open_('subsystem'),
+			subsystemByFile:    open_('subsystem_by_file'),
+			subsystemDirty:     open_('subsystem_dirty'),
+			subsystemFile:      open_('subsystem_file'),
 
 			// Plans -- `plan` is utf8 id keyed; planStep keys are pre-
 			// encoded composite Buffers so binary is fine
@@ -760,8 +774,8 @@ export async function getGraphStore(): Promise<GraphStore> {
 			},
 			'lmdb graph store initialised',
 		);
-		_instance = store;
-		return store;
+		_instance = guardGraphHandles(store);
+		return _instance;
 	})();
 
 	try {
@@ -866,6 +880,7 @@ export interface CompactResult {
  * rejects. Without it, behaviour is unchanged.
  */
 export async function compactGraphStore(opts: { readonly beforeRename?: () => Promise<boolean> } = {}): Promise<CompactResult> {
+	assertNoSessionPersistence();
 	const inst = _instance;
 	if (inst === null) {
 		throw new LmdbStoreError('cannot compact: graph store is not open');
@@ -888,10 +903,14 @@ export async function compactGraphStore(opts: { readonly beforeRename?: () => Pr
 	// holds, and the last committed transaction, before and after the copy.
 	// Don't go through `backupGraphStore` because it asserts _instance !=
 	// null -- which we'll need to clear in step 2 before the rename.
+	// Writes queued before this point commit first, so the copy holds them.
+	await inst.root.committed;
 	const txnBefore = lastTxnId(inst);
 	const counts = entryCounts(inst);
 	await inst.root.backup(compactPath, true);
-	// A write committed while the copy was taken is not in it: nothing is swapped.
+	// A write committed while the copy was taken is not in it: nothing is swapped. Queued writes
+	// are drained before the check, so none can commit during the close below, after it passed.
+	await inst.root.committed;
 	if (lastTxnId(inst) !== txnBefore) {
 		rmSync(compactPath, { force: true });
 		throw new LmdbStoreError('compact: a write was committed while the copy was taken; nothing renamed');
@@ -908,11 +927,21 @@ export async function compactGraphStore(opts: { readonly beforeRename?: () => Pr
 		throw new LmdbStoreError(`compact: close failed: ${errMessage(e)}`, e);
 	}
 
-	// Step 2b: the caller's last check before the files change.
-	if (opts.beforeRename !== undefined && !(await opts.beforeRename())) {
-		rmSync(compactPath, { force: true });
-		await getGraphStore();
-		throw new LmdbStoreError('compact: the environment was still open; nothing renamed');
+	// Step 2b: the caller's last check before the files change. Refused, or failing, nothing is
+	// renamed: the copy is removed and the original reopened before the call rejects.
+	if (opts.beforeRename !== undefined) {
+		let proceed: boolean;
+		try { proceed = await opts.beforeRename(); }
+		catch (e) {
+			rmSync(compactPath, { force: true });
+			await getGraphStore();
+			throw new LmdbStoreError(`compact: the check before the rename failed: ${errMessage(e)}; nothing renamed`, e);
+		}
+		if (!proceed) {
+			rmSync(compactPath, { force: true });
+			await getGraphStore();
+			throw new LmdbStoreError('compact: the environment was still open; nothing renamed');
+		}
 	}
 
 	// Step 3: the swap, safe against a crash at any point. The copy is on disk
@@ -938,8 +967,14 @@ export async function compactGraphStore(opts: { readonly beforeRename?: () => Pr
 		if (existsSync(lockPath)) rmSync(lockPath, { force: true });
 	} catch (e) {
 		if (e instanceof SimulatedCrash) throw e;
-		// The store name still holds the original or the copy; the next open sorts out the rest.
-		throw new LmdbStoreError(`compact: the swap failed: ${errMessage(e)}`, e);
+		// The store name still holds the original or the copy: reopen now, which checks it against
+		// the manifest (restoring the original where needed), so the store is open again before
+		// maintenance releases its lock and requests are accepted.
+		const swapError = new LmdbStoreError(`compact: the swap failed: ${errMessage(e)}`, e);
+		try { await getGraphStore(); } catch (reopen) {
+			throw new LmdbStoreError(`${swapError.message}; reopening the store also failed: ${errMessage(reopen)}`, e);
+		}
+		throw swapError;
 	}
 
 	// Step 4: re-open the env at the original path; the open checks the copy
@@ -1022,19 +1057,28 @@ interface CompactionManifest {
 /** Where compaction stops as if the process were killed there (tests only). */
 export type CompactionCrashPoint = 'before-swap' | 'after-manifest' | 'after-link' | 'after-rename';
 let _crashAt: CompactionCrashPoint | undefined;
+/** Tests only: at the crash point, fail with an ordinary error (a failed filesystem call) instead of a simulated crash. */
+let _failInstead = false;
 
 /** Thrown at the simulated crash point: nothing after it runs, so the files are as a kill -9 there leaves them. */
 export class SimulatedCrash extends Error {
 	constructor(readonly point: CompactionCrashPoint) { super(`simulated crash at ${point}`); }
 }
 
-/** Tests only: make the next compaction stop at `point`, leaving the files as a crash there would. */
-export function setCompactionCrashPointForTests(point: CompactionCrashPoint | undefined): void {
+/**
+ * Tests only: make the next compaction stop at `point`, leaving the files as a crash there
+ * would; with `fail`, it fails there with an ordinary error instead (a failed filesystem call).
+ */
+export function setCompactionCrashPointForTests(point: CompactionCrashPoint | undefined, opts: { readonly fail?: boolean } = {}): void {
 	_crashAt = point;
+	_failInstead = opts.fail === true;
 }
 
 function crashPoint(point: CompactionCrashPoint): void {
-	if (_crashAt === point) { _crashAt = undefined; throw new SimulatedCrash(point); }
+	if (_crashAt !== point) return;
+	_crashAt = undefined;
+	if (_failInstead) { _failInstead = false; throw new Error(`simulated failure at ${point}`); }
+	throw new SimulatedCrash(point);
 }
 
 /** The outcome of the last check of a swapped-in copy on open (read by compactGraphStore). */
@@ -1166,6 +1210,7 @@ export async function backupGraphStore(
 	targetPath: string,
 	opts: { compact?: boolean } = {},
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const inst = _instance;
 	if (inst === null) {
 		throw new LmdbStoreError('cannot backup: graph store is not open');
@@ -1178,6 +1223,7 @@ export async function backupGraphStore(
  * Errors are logged but not re-thrown (the daemon is on the way down).
  */
 export async function closeGraphStore(): Promise<void> {
+	assertNoSessionPersistence();
 	const inst = _instance;
 	_instance = null;
 	_initPromise = null;
@@ -1238,6 +1284,7 @@ function isThenable(v: unknown): boolean {
 export async function withWriteTxn<T>(
 	fn: (store: GraphStore) => SyncResult<T>,
 ): Promise<T> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const run = (): T => {
 		const result = fn(store) as T;
@@ -1302,6 +1349,7 @@ export function withWriteTxnSync<T>(
 	store: GraphStore,
 	fn: () => T,
 ): T {
+	assertNoSessionPersistence();
 	const health = currentHealth();
 	if (health.state === 'locks-lost') throw new LmdbStoreLocksLostError(`a synchronous write (failed earlier during: ${health.operation})`);
 	try {
@@ -1373,4 +1421,38 @@ function readSchemaVersion(store: GraphStore): number | undefined {
 
 function writeSchemaVersion(store: GraphStore, version: number): void {
 	void store.meta.put(META_SCHEMA_VERSION, version);
+}
+
+
+const graphMutators = new Set(['put', 'putSync', 'remove', 'removeSync', 'clearAsync', 'clearSync', 'drop', 'dropSync', 'batch', 'transaction', 'transactionAsync', 'transactionSync', 'childTransaction', 'openDB', 'backup', 'close', 'resize', 'resetReadTxn']);
+const structuralTables = new Set(['meta', 'repo', 'entity', 'entityIdByString', 'entityStringByU64', 'nameIndex', 'entityByFile', 'outEdge', 'inEdge', 'unresolved', 'unresolvedByFile', 'unresolvedByTarget', 'exportNames', 'indexState', 'subsystem', 'subsystemByFile']);
+/** Guard the owned handles too: a warm handle must not bypass transaction admission.
+ * Structural read methods keep their native iterator API; history/cache/config/plan
+ * handles deny all Session method calls. Guards consult context only to DENY. */
+function guardGraphHandles(store: GraphStore): GraphStore {
+	for (const key of Object.keys(store) as (keyof GraphStore)[]) {
+		const raw = store[key];
+		const denyReads = !structuralTables.has(key);
+		const methods = new Map<PropertyKey, { original: Function; guarded: (...args: unknown[]) => unknown }>();
+		Reflect.set(store, key, new Proxy(raw, {
+			get(target, property) {
+				if (denyReads || graphMutators.has(String(property))) assertNoSessionPersistence();
+				const value = Reflect.get(target, property, target);
+				if (typeof value !== 'function') return value;
+				if (methods.get(property)?.original !== value) methods.set(property, {
+					original: value, guarded: (...args: unknown[]) => {
+					if (denyReads || graphMutators.has(String(property))) assertNoSessionPersistence();
+					return value.apply(target, args);
+					}
+				});
+				return methods.get(property)!.guarded;
+			},
+			set(target, property, value) { assertNoSessionPersistence(); return Reflect.set(target, property, value, target); },
+		}));
+	}
+	return new Proxy(store, {
+		set(target, property, value) { assertNoSessionPersistence(); return Reflect.set(target, property, value, target); },
+		defineProperty(target, property, descriptor) { assertNoSessionPersistence(); return Reflect.defineProperty(target, property, descriptor); },
+		deleteProperty(target, property) { assertNoSessionPersistence(); return Reflect.deleteProperty(target, property); },
+	});
 }

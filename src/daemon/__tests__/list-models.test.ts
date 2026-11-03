@@ -62,6 +62,8 @@ function fixture(): Record<string, unknown> {
         ],
         toolLoopModel: 'qwen:1b',
       },
+      { id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+      { id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
     ],
   };
 }
@@ -130,7 +132,7 @@ test('list-models.test.ts: CLI families from the projection without calling the 
   for (const bad of [{ provider: 'gpt' }, {}, null, 'ollama', { provider: 42 }]) {
     const probe = fakeDeps();
     const v = await listModels(bad, probe.deps);
-    assert.deepEqual(v, { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false }, JSON.stringify(bad));
+    assert.deepEqual(v, { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex' | 'cli-vibe' | 'ollama-claude'`, recoverable: false }, JSON.stringify(bad));
     assert.equal(probe.ollamaCalls(), 0);
   }
 });
@@ -206,14 +208,14 @@ test("list-models.test.ts: providers.listModels admits exactly the registry's fa
   useFixture();
   const { deps } = fakeDeps(async () => [{ id: 'qwen:1b' }]);
   const ids = getModelRegistry().families().map(f => f.id);
-  assert.deepEqual([...ids].sort(), ['cli-claude', 'cli-codex', 'ollama']);
+  assert.deepEqual([...ids].sort(), ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama', 'ollama-claude']);
   for (const id of ids) {
     const r = await listModels({ provider: id }, deps);
     assert.ok(!('error' in r), id);
     assert.equal((r as ModelListResult).provider, id);
   }
   for (const bad of ['cli-gemini', 'Ollama', 'claude', 'codex', '']) {
-    assert.deepEqual(await listModels({ provider: bad }, deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false }, bad);
+    assert.deepEqual(await listModels({ provider: bad }, deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex' | 'cli-vibe' | 'ollama-claude'`, recoverable: false }, bad);
   }
 
   // The same text when the definitions file lists the families in another order.
@@ -224,6 +226,6 @@ test("list-models.test.ts: providers.listModels admits exactly the registry's fa
   const assets = tmp();
   writeFileSync(join(assets, 'cloud-model-catalog.json'), JSON.stringify(reordered));
   _setModelCatalogDirForTests(assets);
-  assert.deepEqual(getModelRegistry().families().map(f => f.id), ['ollama', 'cli-codex', 'cli-claude']);
-  assert.deepEqual(await listModels({ provider: 'cli-gemini' }, fakeDeps().deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex'`, recoverable: false });
+  assert.deepEqual(getModelRegistry().families().map(f => f.id), ['cli-vibe', 'ollama-claude', 'ollama', 'cli-codex', 'cli-claude']);
+  assert.deepEqual(await listModels({ provider: 'cli-gemini' }, fakeDeps().deps), { error: `invalid-params: provider must be one of 'ollama' | 'cli-claude' | 'cli-codex' | 'cli-vibe' | 'ollama-claude'`, recoverable: false });
 });

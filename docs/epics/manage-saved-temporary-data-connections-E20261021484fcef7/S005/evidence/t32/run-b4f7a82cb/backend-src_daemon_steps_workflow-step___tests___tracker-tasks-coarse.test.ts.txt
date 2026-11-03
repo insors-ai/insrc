@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks
+ok 1 - coarse push with pushTasks: execute prompt carries the TASK TIER block + the approved plan tasks
+  ---
+  duration_ms: 21.673
+  type: 'test'
+  ...
+# Subtest: coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excluded)
+ok 2 - coarse push with pushTasks but an UNAPPROVED plan: no TASK TIER (plan excluded)
+  ---
+  duration_ms: 2.89525
+  type: 'test'
+  ...
+# Subtest: coarse push with pushTasks OFF: execute prompt has no task instructions
+ok 3 - coarse push with pushTasks OFF: execute prompt has no task instructions
+  ---
+  duration_ms: 12.03275
+  type: 'test'
+  ...
+# Subtest: coarse push synthesize persists LLM-returned taskRefs onto the plan meta.tracker
+ok 4 - coarse push synthesize persists LLM-returned taskRefs onto the plan meta.tracker
+  ---
+  duration_ms: 77.790916
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 759.39225

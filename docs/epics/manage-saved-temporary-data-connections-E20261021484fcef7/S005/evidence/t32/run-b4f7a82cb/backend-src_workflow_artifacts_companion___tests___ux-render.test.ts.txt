@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: renderUxCompanion: ok → writes the sibling HTML + returns a ux-mock ref (ac1)
+ok 1 - renderUxCompanion: ok → writes the sibling HTML + returns a ux-mock ref (ac1)
+  ---
+  duration_ms: 5.696875
+  type: 'test'
+  ...
+# Subtest: renderUxCompanion: ofSectionId is carried onto the ref when supplied
+ok 2 - renderUxCompanion: ofSectionId is carried onto the ref when supplied
+  ---
+  duration_ms: 1.337958
+  type: 'test'
+  ...
+# Subtest: renderUxCompanion: needs no diagram runtime — it renders with the docgen (Mermaid) assets absent
+ok 3 - renderUxCompanion: needs no diagram runtime — it renders with the docgen (Mermaid) assets absent
+  ---
+  duration_ms: 5.509125
+  type: 'test'
+  ...
+# Subtest: renderUxCompanion: the page inlines only the pan/zoom runtime and references nothing remote
+ok 4 - renderUxCompanion: the page inlines only the pan/zoom runtime and references nothing remote
+  ---
+  duration_ms: 1.339958
+  type: 'test'
+  ...
+# Subtest: renderUxCompanion: DETERMINISM — rendering the same definition twice produces byte-identical files
+ok 5 - renderUxCompanion: DETERMINISM — rendering the same definition twice produces byte-identical files
+  ---
+  duration_ms: 1.334584
+  type: 'test'
+  ...
+# Subtest: renderUxCompanion: the key-elements table accompanies the mock, below it, numbered like its markers
+ok 6 - renderUxCompanion: the key-elements table accompanies the mock, below it, numbered like its markers
+  ---
+  duration_ms: 0.807875
+  type: 'test'
+  ...
+# Subtest: renderUxCompanion: an EMPTY card body still yields an openable page
+ok 7 - renderUxCompanion: an EMPTY card body still yields an openable page
+  ---
+  duration_ms: 1.221208
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 337.615708

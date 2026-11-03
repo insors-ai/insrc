@@ -1,0 +1,274 @@
+TAP version 13
+# Subtest: writeAtomic creates parent dirs + writes content
+ok 1 - writeAtomic creates parent dirs + writes content
+  ---
+  duration_ms: 7.023542
+  type: 'test'
+  ...
+# Subtest: writeAtomic overwrites existing file
+ok 2 - writeAtomic overwrites existing file
+  ---
+  duration_ms: 6.156333
+  type: 'test'
+  ...
+# Subtest: writeAtomic refuses relative paths
+ok 3 - writeAtomic refuses relative paths
+  ---
+  duration_ms: 0.222292
+  type: 'test'
+  ...
+# Subtest: writeAtomic refuses empty path
+ok 4 - writeAtomic refuses empty path
+  ---
+  duration_ms: 0.04775
+  type: 'test'
+  ...
+# Subtest: stubArtifactPaths returns docs/stub layout
+ok 5 - stubArtifactPaths returns docs/stub layout
+  ---
+  duration_ms: 0.197208
+  type: 'test'
+  ...
+# Subtest: defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+ok 6 - defineArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+  ---
+  duration_ms: 0.191209
+  type: 'test'
+  ...
+# Subtest: hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+ok 7 - hldArtifactPaths — nested md in docs/epics/, json in .insrc/artifacts/
+  ---
+  duration_ms: 0.148666
+  type: 'test'
+  ...
+# Subtest: lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/
+ok 8 - lldArtifactPaths — story-scoped nested md, json in .insrc/artifacts/
+  ---
+  duration_ms: 0.109334
+  type: 'test'
+  ...
+# Subtest: md folder is labelled by slug; json stays named by hash
+ok 9 - md folder is labelled by slug; json stays named by hash
+  ---
+  duration_ms: 0.253584
+  type: 'test'
+  ...
+# Subtest: slug label is sanitised against path separators
+ok 10 - slug label is sanitised against path separators
+  ---
+  duration_ms: 0.311125
+  type: 'test'
+  ...
+# Subtest: amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/
+ok 11 - amendmentArtifactPath uses the AMD- prefix inside .insrc/artifacts/
+  ---
+  duration_ms: 0.052125
+  type: 'test'
+  ...
+# Subtest: amendmentFilenamePrefix is `AMD-<hash>-`
+ok 12 - amendmentFilenamePrefix is `AMD-<hash>-`
+  ---
+  duration_ms: 0.034083
+  type: 'test'
+  ...
+# Subtest: lldFilenamePrefix is `LLD-<hash>-`
+ok 13 - lldFilenamePrefix is `LLD-<hash>-`
+  ---
+  duration_ms: 0.028
+  type: 'test'
+  ...
+# Subtest: amendmentsRootDir points at .insrc/artifacts
+ok 14 - amendmentsRootDir points at .insrc/artifacts
+  ---
+  duration_ms: 0.031583
+  type: 'test'
+  ...
+# Subtest: t1 — a DEF present and readable wins outright; the ISSUE is never consulted
+ok 15 - t1 — a DEF present and readable wins outright; the ISSUE is never consulted
+  ---
+  duration_ms: 6.977291
+  type: 'test'
+  ...
+# Subtest: t1 — a hash carrying BOTH artifacts resolves to the DEF, so the read ORDER is the discriminator
+ok 16 - t1 — a hash carrying BOTH artifacts resolves to the DEF, so the read ORDER is the discriminator
+  ---
+  duration_ms: 3.804042
+  type: 'test'
+  ...
+# Subtest: t1 — a DEF absent with an ISSUE present yields the ISSUE's values
+ok 17 - t1 — a DEF absent with an ISSUE present yields the ISSUE's values
+  ---
+  duration_ms: 3.879875
+  type: 'test'
+  ...
+# Subtest: t1 — a CORRUPT DEF falls through to a valid ISSUE: first-READABLE-wins, not first-PRESENT-wins
+ok 18 - t1 — a CORRUPT DEF falls through to a valid ISSUE: first-READABLE-wins, not first-PRESENT-wins
+  ---
+  duration_ms: 5.133167
+  type: 'test'
+  ...
+# Subtest: t1 — a DEF that PARSES but carries none of the three fields also falls through
+ok 19 - t1 — a DEF that PARSES but carries none of the three fields also falls through
+  ---
+  duration_ms: 5.49175
+  type: 'test'
+  ...
+# Subtest: t1 — neither artifact readable yields an empty result and does NOT throw
+ok 20 - t1 — neither artifact readable yields an empty result and does NOT throw
+  ---
+  duration_ms: 4.757334
+  type: 'test'
+  ...
+# Subtest: t1 — standalone is reported only when genuinely boolean; the other two fields are unaffected
+ok 21 - t1 — standalone is reported only when genuinely boolean; the other two fields are unaffected
+  ---
+  duration_ms: 5.422792
+  type: 'test'
+  ...
+# Subtest: t1 — UNWIRED: the accessor exists but changes no folder path yet
+ok 22 - t1 — UNWIRED: the accessor exists but changes no folder path yet
+  ---
+  duration_ms: 2.711833
+  type: 'test'
+  ...
+# Subtest: t2 — an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined
+ok 23 - t2 — an ISSUE-anchored work item yields the ISSUE's createdAt instead of undefined
+  ---
+  duration_ms: 4.578166
+  type: 'test'
+  ...
+# Subtest: t2 — signature and return meaning unchanged for a DEF-bearing epic
+ok 24 - t2 — signature and return meaning unchanged for a DEF-bearing epic
+  ---
+  duration_ms: 5.167
+  type: 'test'
+  ...
+# Subtest: t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to ONE identity segment
+ok 25 - t2 — CLOCK INDEPENDENCE: two stages straddling midnight UTC resolve to ONE identity segment
+  ---
+  duration_ms: 1.089834
+  type: 'test'
+  ...
+# Subtest: t2 — a SAME-DAY fixture cannot detect the defect, which is why the above is mandatory
+ok 26 - t2 — a SAME-DAY fixture cannot detect the defect, which is why the above is mandatory
+  ---
+  duration_ms: 0.720667
+  type: 'test'
+  ...
+# Subtest: t2 — the anchor read is finalize-time only: path construction performs no read
+ok 27 - t2 — the anchor read is finalize-time only: path construction performs no read
+  ---
+  duration_ms: 0.137417
+  type: 'test'
+  ...
+# Subtest: t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item
+ok 28 - t5 — the non-standalone branch yields a real label for an ISSUE-anchored work item
+  ---
+  duration_ms: 0.8735
+  type: 'test'
+  ...
+# Subtest: t5 — the raw hash appears nowhere in the composed folder name
+ok 29 - t5 — the raw hash appears nowhere in the composed folder name
+  ---
+  duration_ms: 0.775083
+  type: 'test'
+  ...
+# Subtest: t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt
+ok 30 - t5 — an explicit standalone=true still reads the LLD branch and still falls back to ownCreatedAt
+  ---
+  duration_ms: 0.2085
+  type: 'test'
+  ...
+# Subtest: t5 — the hash fallback is still REACHABLE for a work item with no definition artifact
+ok 31 - t5 — the hash fallback is still REACHABLE for a work item with no definition artifact
+  ---
+  duration_ms: 0.2485
+  type: 'test'
+  ...
+# Subtest: 3a98d279 — the STANDALONE route takes the label from the head, not the LLD
+ok 32 - 3a98d279 — the STANDALONE route takes the label from the head, not the LLD
+  ---
+  duration_ms: 1.201125
+  type: 'test'
+  ...
+# Subtest: 3a98d279 — the ANCHOR is untouched: the standalone route still reads the LLD's createdAt
+ok 33 - 3a98d279 — the ANCHOR is untouched: the standalone route still reads the LLD's createdAt
+  ---
+  duration_ms: 1.089959
+  type: 'test'
+  ...
+# Subtest: 3a98d279 — with no definition head the LLD's label is still the fallback, not a raw hash
+ok 34 - 3a98d279 — with no definition head the LLD's label is still the fallback, not a raw hash
+  ---
+  duration_ms: 0.961833
+  type: 'test'
+  ...
+# Subtest: 3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it
+ok 35 - 3a98d279 — the EPIC route is unchanged: head is the only source, so no second read alters it
+  ---
+  duration_ms: 4.496334
+  type: 'test'
+  ...
+# Subtest: 3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`
+ok 36 - 3a98d279 — an EMPTY head label counts as absent, so it cannot name a folder `artifact`
+  ---
+  duration_ms: 1.634458
+  type: 'test'
+  ...
+# Subtest: 0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last
+ok 37 - 0855311b — inheritedStoryStandalone: the head wins, the LLD is the fallback, the caller is last
+  ---
+  duration_ms: 1.3405
+  type: 'test'
+  ...
+# Subtest: 0855311b — the standalone route anchors on the HEAD before the record's own clock when there is no LLD
+ok 38 - 0855311b — the standalone route anchors on the HEAD before the record's own clock when there is no LLD
+  ---
+  duration_ms: 1.656167
+  type: 'test'
+  ...
+# Subtest: 0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD
+ok 39 - 0855311b — storyRecordFolderArgs: an LLD-only Small story is standalone, named and dated by its LLD
+  ---
+  duration_ms: 1.418042
+  type: 'test'
+  ...
+# Subtest: 0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE's folder, caller holding nothing
+ok 40 - 0855311b — storyRecordFolderArgs: an ISSUE-anchored story with no LLD lands in the ISSUE's folder, caller holding nothing
+  ---
+  duration_ms: 1.402625
+  type: 'test'
+  ...
+# Subtest: b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one
+ok 41 - b2e16601 — storyRecordFolderArgs takes the label from the head when the LLD stored a different one
+  ---
+  duration_ms: 1.259167
+  type: 'test'
+  ...
+# Subtest: 0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record
+ok 42 - 0855311b — storyRecordFolderArgs: a Trivial build with no head and no LLD is found by its own BUILD record
+  ---
+  duration_ms: 1.309167
+  type: 'test'
+  ...
+# Subtest: 0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort
+ok 43 - 0855311b — storyRecordFolderArgs: an epic-parented story is unchanged, and the caller is the last resort
+  ---
+  duration_ms: 1.701334
+  type: 'test'
+  ...
+# Subtest: 0855311b — the LLD's stamped epicCreatedAt is its anchor, so records land in the LLD's own folder
+ok 44 - 0855311b — the LLD's stamped epicCreatedAt is its anchor, so records land in the LLD's own folder
+  ---
+  duration_ms: 1.650667
+  type: 'test'
+  ...
+1..44
+# tests 44
+# suites 0
+# pass 44
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 313.966917

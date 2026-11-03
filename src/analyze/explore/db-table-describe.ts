@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -122,16 +123,13 @@ export async function runDbTableDescribe(
 			}
 		}
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 				runId:        ctx.runId,
 				connectionId: params.connectionId,
 				target:       params.target,
 				family,
 				columns:      columns.length,
-			},
-			'db.table.describe: complete',
-		);
+		}, 'db.table.describe: complete']);
 
 		if (family !== 'kv') returned = columns.length;
 		const completeness = buildCompleteness({

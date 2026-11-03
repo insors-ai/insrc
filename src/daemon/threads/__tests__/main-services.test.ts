@@ -48,7 +48,12 @@ async function startWorker(): Promise<{ worker: Worker; port: MessagePort; next:
 	});
 	workers.push(worker);
 	const inbox: unknown[] = [];
-	const waiting: { pred: (m: unknown) => boolean; resolve: (m: unknown) => void }[] = [];
+	const waiting: { pred: (m: unknown) => boolean; resolve: (m: unknown) => void; reject: (e: Error) => void }[] = [];
+	// A worker that errs or exits fails every wait at once, instead of leaving the test hanging.
+	let gone: Error | undefined;
+	const fail = (e: Error): void => { gone ??= e; for (const w of waiting.splice(0)) w.reject(e); };
+	worker.on('error', err => fail(err));
+	worker.on('exit', code => fail(new Error(`the worker exited (code ${code})`)));
 	const take = (m: unknown): void => {
 		const i = waiting.findIndex(w => w.pred(m));
 		if (i >= 0) waiting.splice(i, 1)[0]!.resolve(m); else inbox.push(m);
@@ -58,7 +63,11 @@ async function startWorker(): Promise<{ worker: Worker; port: MessagePort; next:
 	const next = (pred: (m: unknown) => boolean): Promise<unknown> => {
 		const i = inbox.findIndex(pred);
 		if (i >= 0) return Promise.resolve(inbox.splice(i, 1)[0]);
-		return new Promise(resolve => { waiting.push({ pred, resolve }); });
+		if (gone !== undefined) return Promise.reject(gone);
+		return new Promise((resolve, reject) => {
+			const timer = setTimeout(() => reject(new Error('timed out waiting for a worker message')), 30_000);
+			waiting.push({ pred, resolve: m => { clearTimeout(timer); resolve(m); }, reject: e => { clearTimeout(timer); reject(e); } });
+		});
 	};
 	await next(m => m === 'ready');
 	return { worker, port: conn.port, next };

@@ -1,0 +1,155 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t7",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Retained conflicting retry regression remains enforced for pending/terminal states.",
+        "satisfied": true,
+        "evidence": "FileQueue.persist matches authoritative proofs against retained entries. Both named conflict tests exercise changed payload/scope in pending and terminal states, asserting REVISION_CONFLICT and unchanged checkpoints; the daemon reports passes."
+      },
+      {
+        "check": "Unavailable/duplicate/malformed authority is never absent; retirement confirms exact retained digests without content leakage or store-to-queue callback.",
+        "satisfied": false,
+        "evidence": "Malformed lookup metadata can become absent: lance-store.ts:68 filters by identityDigest before decoding, while #authorityRoot only checks receipt count. Changing a receipt's scalar identityDigest while preserving its payload and row count hides it from the original identity lookup; receipts.ts:43 returns absent without detecting the inconsistency. The corruption test changes payload only and misses this case. Retirement digest comparisons, minimal projection, and queue-free store reads are implemented."
+      },
+      {
+        "check": "integration: store-proof-port-retained-and-recycled",
+        "satisfied": true,
+        "evidence": "All five mapped named tests exist and exercise their stated scenarios, including real store commit, explicit ACK, recycling, cold reopening, retained conflicts, scope/epoch restrictions, and corruption handling. The daemon reports all passed."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The receipt implementation and tests are in scope, but malformed lookup metadata can incorrectly produce an absent authority result.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd packages/project-memory && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 8593,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd packages/project-memory && npx tsc --noEmit): clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-x1aeP0/report.tap packages/project-memory/src/__tests__/queue-retirement.test.ts\nnpx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-zDIhh4/report.tap packages/project-memory/src/__tests__/store-receipts.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 8863,
+        "outputTail": "TAP version 13\n# Subtest: store-proof-real-queue-retained-ack-recycle-and-cold-authority\nok 1 - store-proof-real-queue-retained-ack-recycle-and-cold-authority\n  ---\n  duration_ms: 1268.841916\n  type: 'test'\n  ...\n# Subtest: store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts\nok 2 - store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts\n  ---\n  duration_ms: 746.630167\n  type: 'test'\n  ...\n# Subtest: store-proof-scope-epoch-and-projection-do-not-leak-domain-content\nok 3 - store-proof-scope-epoch-and-projection-do-not-leak-domain-content\n  ---\n  duration_ms: 656.514667\n  type: 'test'\n  ...\n# Subtest: store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent\nok 4 - store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent\n  ---\n  duration_ms: 1182.019041\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 3856.667542\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-x1aeP0/report.tap packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4584,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/packages_project-memory_src___tests___queue-retirement.test.ts.1793715966854.82821.tap"
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-zDIhh4/report.tap packages/project-memory/src/__tests__/store-receipts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4279,
+            "titles": [
+              {
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-scope-epoch-and-projection-do-not-leak-domain-content",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/packages_project-memory_src___tests___store-receipts.test.ts.1793715971135.82821.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "store-proof-port-retained-and-recycled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-scope-epoch-and-projection-do-not-leak-domain-content",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/TESTS.md"
+    }
+  },
+  "passed": false
+}

@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: S001: a local constraint with an lc-namespaced id (lc1) validates against storiesComposeSchema
+ok 1 - S001: a local constraint with an lc-namespaced id (lc1) validates against storiesComposeSchema
+  ---
+  duration_ms: 19.070292
+  type: 'test'
+  ...
+# Subtest: S001: a local constraint with a c-namespaced id (c1) is REJECTED (the collision namespace is no longer allowed)
+ok 2 - S001: a local constraint with a c-namespaced id (c1) is REJECTED (the collision namespace is no longer allowed)
+  ---
+  duration_ms: 0.209625
+  type: 'test'
+  ...
+# Subtest: S001: a k-shaped local-constraint id (k1) is REJECTED — only the lc namespace is accepted
+ok 3 - S001: a k-shaped local-constraint id (k1) is REJECTED — only the lc namespace is accepted
+  ---
+  duration_ms: 0.061667
+  type: 'test'
+  ...
+# Subtest: S001: source stays a c-citation reference — lc id + c source validates; a non-c source is rejected
+ok 4 - S001: source stays a c-citation reference — lc id + c source validates; a non-c source is rejected
+  ---
+  duration_ms: 0.61975
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 324.482959

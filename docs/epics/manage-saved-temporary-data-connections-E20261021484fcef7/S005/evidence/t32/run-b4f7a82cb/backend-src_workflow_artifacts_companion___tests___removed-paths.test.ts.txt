@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: d9f85b3c t10 — the dead render paths are removed
+ok 1 - d9f85b3c t10 — the dead render paths are removed
+  ---
+  duration_ms: 0.645459
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t10 — the references the plugin parity tests import are kept
+ok 2 - d9f85b3c t10 — the references the plugin parity tests import are kept
+  ---
+  duration_ms: 0.083167
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 335.003291

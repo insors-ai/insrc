@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793451907715-l95rtm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-31T13:07:47.811Z",
+    "epicCreatedAt": "2026-10-29T15:06:42.265Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 160078,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dc0bd8089ce15fcd",
+    "epicSlug": "keep-idle-sweep-release-from-abandoning",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793451907715-l95rtm",
+    "hldEffectiveHash": "79a7a80314117f70a60de3b8c4cf8ebc8c0a62a3dbbc8d598791a932c845e6f7",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Filed bugfix ISSUE, magnitude small.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The defect is the redundant `this.deps.workers.created() === live.length` term in beforeRename (maintenance.ts:242), which can go false purely from a release/exit-event timing lag and abandon an otherwise-safe compaction; removing only that term fixes it and leaves the identity check (live.every(...)) as the sole gate.",
+          "evidence": "maintenance.ts:242 contains exactly `this.deps.workers.created() === live.length && live.every(w => closed.acknowledged.has(w.threadId))`. supervisor.ts:72-73 and 112-113 show `this.created.delete(worker)` fires only on the worker's 'exit' event. session-pool.ts:275-287 shows release() calls `this.forget(e)` (line 283, which deletes from the live-backing entries map) synchronously BEFORE `await e.started.worker.terminate()` (line 284) and well before any 'exit' event fires. index.ts:325 wires `workers.created` to the supervisor-only createdCount() while `workers.live` merges supervisor + session-pool liveWorkers() (session-pool workers are tracked into the supervisor's created set via onCreated, per the index.ts:323-324 comment and session-pool.ts:54-55 onCreated hook). So live() can shrink (via release()) strictly before created() shrinks (via 'exit'), making the count term go false while every live worker is still genuinely acknowledged — exactly the false-negative race the design describes. The fix (keep only live.every(...)) removes exactly that cause without touching the allClosed short-circuit or any other path. [files: src/daemon/threads/maintenance.ts, src/daemon/threads/supervisor.ts, src/daemon/threads/session-pool.ts, src/daemon/index.ts]",
+          "action": "none — the described mechanism and the proposed one-line fix match the real code exactly",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing identity test ('the pre-rename check is by worker identity...', maintenance.test.ts:165) uses a fake whose `created: () => live.length` makes the count term vacuously true, so that test exercises the identity check alone and does not independently validate the count term's purpose — the design's basis for calling the count term redundant/untested.",
+          "evidence": "maintenance.test.ts:180 — `workers: { live: () => live, created: () => live.length }`. Since `created()` is defined as a function of the current `live.length` rather than an independent counter, `created() === live.length` is true by construction regardless of which workers are live, confirming the design's claim about this fake. [files: src/daemon/threads/__tests__/maintenance.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The only change site is the single boolean expression at maintenance.ts:242 inside compactUnderLock's beforeRename callback; no other caller or writer needs to change.",
+          "evidence": "Read maintenance.ts:207-268 (the whole compactUnderLock body): the beforeRename callback at lines 239-243 is the only place that reads both `workers.created()` and `workers.live()` together in a gating comparison. The `workers.created`/`workers.live` deps themselves (index.ts:325) and closeWorkerHandles' own allClosed computation (described in the design as a separate, race-free synchronous read) are untouched and correctly excluded from the change list — I did not find another beforeRename-equivalent gate elsewhere in the file. [files: src/daemon/threads/maintenance.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "After the fix, a worker that is live at rename time but never acknowledged closing its handle (new/replacement) still makes beforeRename return false, because the identity check alone already rejects it, independent of the count — proven by the existing identity test still exercising that path.",
+          "evidence": "maintenance.test.ts:165-191: worker `replacement` (103) is live but was never sent/acknowledged graph.close; `decisions` ends up `[true, false]` purely from `live.every(w => closed.acknowledged.has(w.threadId))` since the fake's count term is already vacuous — removing the count term changes nothing about this test's outcome, confirming the identity check alone preserves the rejection behavior. [files: src/daemon/threads/__tests__/maintenance.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The allClosed short-circuit (closeWorkerHandles' own race-free created===live.length check) and the deaf-worker integration test that depends on it are unaffected by removing the beforeRename count term.",
+          "evidence": "maintenance.test.ts:489-510: the deaf worker never acknowledges graph.close, so `closed.allClosed` is false and beforeRename's early `if (!closed.allClosed) return false;` (maintenance.ts:240, unchanged) short-circuits before the identity check or the removed count term would ever be reached — the test's rejection assertion (line 499) is driven entirely by that guard, not by the term being removed. [files: src/daemon/threads/__tests__/maintenance.test.ts, src/daemon/threads/maintenance.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac2 and ac3 map to existing tests that pass unmodified after the fix, and ac1 requires a new test (not yet present) with independent live()/created() fakes that would fail today (count-term false negative) and pass after the fix.",
+          "evidence": "ac2's referenced test exists verbatim at maintenance.test.ts:165 and, as shown above, is unaffected by the change (its fake makes the count term vacuous already). ac3's referenced test exists at maintenance.test.ts:489 (title paraphrased slightly in the LLD but substantively the same test) and is gated by the untouched allClosed short-circuit, so it stays passing. ac1 has no corresponding test in the current file — grepping for 'acknowledged'/'allClosed' in maintenance.test.ts turns up only the two existing tests above and the new test is explicitly described in Test strategy as needing an INDEPENDENT live()/created() fake (not `created: () => live.length`), which does not exist yet; building it as described would reproduce the race and fail against today's code (count term true) only if construed oppositely — actually it fails today because created() would NOT match live.length after a release, correctly demonstrating the current bug and would pass once the term is removed. [files: src/daemon/threads/__tests__/maintenance.test.ts]",
+          "action": "the ac3 test title in the LLD's acceptance table ('the existing ...graph.close... integration test') differs cosmetically from the actual title at maintenance.test.ts:489 ('...acknowledged 'graph.close': no rename...'); harmless but worth tightening in the artifact or at build time so the mapping is exact for the test-record gate",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-10-31T13:07:50.078Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-31T13:10:24.377Z",
+    "rangeBase": "3f62d9dfa2e44334f9a7ac8043759f63f8cd22f5"
+  },
+  "body": {
+    "summary": {
+      "prose": "Fixes a false-safe gap in the multi-threaded daemon's idle graph compaction: compaction can be abandoned (and simply retried on the next idle window) when the idle sweep releases a session worker that had already acknowledged closing its graph handle, purely because a redundant worker-count comparison lags behind the identity check that already proves safety on its own. This Story removes only that redundant count comparison.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Fix ISSUE-dc0bd8089ce15fcd: the compaction rename check answers false and abandons a compaction when the idle sweep releases a session worker between the close-handle acknowledgements and the rename."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "MaintenanceController.compactUnderLock",
+          "signature": "compactUnderLock(reason: string): Promise<CompactResult>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<CompactResult>",
+            "meaning": "Resolves with the compaction result once the lock is granted, handles are closed, and the store is compacted (or rejects per the existing error paths, all unchanged by this Story)."
+          },
+          "errors": [],
+          "preconditions": [
+            "Called only from MaintenanceController.run(reason), unchanged."
+          ],
+          "postconditions": [
+            "The beforeRename callback it passes to this.deps.compact(...) now evaluates to live.every(w => closed.acknowledged.has(w.threadId)) only — the this.deps.workers.created() === live.length term is removed.",
+            "A worker that acknowledged closing its graph handle and is later released from the live set before the rename check runs no longer causes beforeRename to answer false by itself.",
+            "A worker that is live at rename time but never acknowledged closing its handle (new, replaced, or otherwise) still makes beforeRename answer false, exactly as today."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "MaintenanceController.compactUnderLock (beforeRename callback)",
+        "change": "invariant-change",
+        "details": "The rename-gating invariant changes from 'every live worker acknowledged AND the live count matches the created count' to 'every live worker acknowledged' alone. The dropped count term is proven redundant by the existing identity test (maintenance.test.ts:165, whose fake already makes the count term vacuously true) and is the sole mechanism by which the idle-sweep release/exit-event timing lag (Supervisor.createdCount decrementing only on 'exit', session-pool release() updating live() earlier) can produce a false negative. [[c1]]",
+        "callSites": [
+          "src/daemon/threads/maintenance.ts:242"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A worker is live at rename time, allClosed is true, but that worker never acknowledged closing its graph handle (a brand-new worker started after closeWorkerHandles ran, or a replacement under a different threadId).",
+          "detection": "live.every(w => closed.acknowledged.has(w.threadId)) returns false for that specific worker's threadId, which never entered the acknowledged set built during closeWorkerHandles.",
+          "response": "beforeRename returns false; the compact() call does not rename, the original store reopens and serves (unchanged existing behavior, matching the existing test 'the pre-rename check returns false when a worker has not acknowledged graph.close...').",
+          "userImpact": "Compaction is skipped this idle window and retried on the next one; no data is at risk, nothing is renamed.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A worker acknowledges closing its graph handle, then the idle sweep releases it (removes it from workers.live()) before the beforeRename check runs, while the Supervisor's createdCount() has not yet decremented (its 'exit' event has not fired).",
+          "expected": "beforeRename now evaluates live.every(...) over the SHRUNK live set, which still only contains workers in the acknowledged set — returns true. Compaction proceeds. This is the Story's own Fix intent: the release no longer aborts the compaction, matching single-thread/no-release behavior."
+        },
+        {
+          "input": "Every live worker is released before the rename check (live() is empty).",
+          "expected": "live.every(...) over an empty array is vacuously true — the rename proceeds, which is correct: no worker remains that could hold a graph handle."
+        },
+        {
+          "input": "closed.allClosed is false (at least one worker failed to acknowledge within the ack timeout, per closeWorkerHandles).",
+          "expected": "beforeRename's existing guard `if (!closed.allClosed) return false;` (unchanged by this Story) short-circuits before the identity check is even reached — this path is untouched."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "beforeRename's identity check (live.every(w => closed.acknowledged.has(w.threadId))) correctly rejects a replacement/new worker not in the acknowledged set, independent of count — demonstrated by the existing test 'the pre-rename check is by worker identity...' (maintenance.test.ts:165-191), whose fake trivially satisfies the count term so the test exercises identity alone.",
+          "source": "c1"
+        },
+        {
+          "text": "Supervisor.createdCount() (supervisor.ts:136-138) decrements ONLY on a worker's 'exit' event, which fires strictly after SessionPool's release() begins terminating it (session-pool.ts:276) — the two counters are updated by independent events and this Story does not change that relationship; it only stops MaintenanceController from depending on their count agreeing.",
+          "source": "c1"
+        },
+        {
+          "text": "closeWorkerHandles' own allClosed flag (created === workers.length, computed from two back-to-back synchronous reads with no await between them) is a DIFFERENT, race-free use of created()/live() and is NOT touched by this Story — only the beforeRename callback's separate, later, racy re-read is changed.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test), extending src/daemon/threads/__tests__/maintenance.test.ts's existing MaintenanceController fake-worker pattern (as used by the identity test at line 165)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify beforeRename's new identity-only semantics directly over a fake workers dependency that lets live() and created() diverge independently — unlike the existing identity test's fake, which deliberately makes them always agree.",
+          "subjects": [
+            "maintenance.ts MaintenanceController.compactUnderLock's beforeRename callback"
+          ],
+          "fixturesNeeded": [
+            "a fake workers dependency with INDEPENDENT live() and created() functions (not created: () => live.length), so a test can shrink live() after acknowledgement while created() stays unchanged, simulating the release/exit-event lag"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "maintenance.test.ts: the pre-rename check no longer abandons the compaction when a worker that already acknowledged graph.close is released (removed from live()) before the rename check runs, even though the supervisor's created count has not yet caught up"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "maintenance.test.ts: the existing 'pre-rename check is by worker identity...' test (a replacement worker that never acknowledged still fails the check) still passes unmodified"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "maintenance.test.ts: the existing 'pre-rename check returns false when a worker has not acknowledged graph.close' integration test still passes unmodified"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "maintenance.ts:242's beforeRename callback checks this.deps.workers.created() === live.length && live.every(w => closed.acknowledged.has(w.threadId)). The count term can go false purely because SessionPool's release() (session-pool.ts:276) removes a worker from live() before Supervisor.createdCount() (supervisor.ts:136-138) decrements on that worker's later 'exit' event, abandoning a compaction that was otherwise safe to rename.",
+      "stateAfter": "beforeRename checks only live.every(w => closed.acknowledged.has(w.threadId)). A worker released after acknowledging no longer affects the outcome; a worker live but never acknowledged (new or replaced) still correctly fails the check.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Remove the this.deps.workers.created() === live.length && clause from the beforeRename callback in MaintenanceController.compactUnderLock (maintenance.ts:242), leaving only the identity-based live.every(...) check.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API or interface change: beforeRename's call signature, return type, and every other behavior (the allClosed short-circuit, closeWorkerHandles, the lock/pause-limit/health machinery) are untouched. This is a behavior-narrowing fix confined to one internal boolean expression.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Drop the redundant count term",
+        "oneLineSummary": "Remove this.deps.workers.created() === live.length && from beforeRename, keeping only the identity-based .every() check.",
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Make Supervisor.createdCount() decrement on release, not only on thread exit",
+        "oneLineSummary": "Add a release-time hook so the Supervisor's created set drops a worker as soon as the session pool begins releasing it, not only when its thread later exits.",
+        "costEstimate": "M",
+        "reasonRejected": "Solves a problem s1's own grounding shows does not need solving, at M cost (touches Supervisor's public contract and SessionPool's call site plus their own tests) and with a new race risk of its own (decrementing created() before the thread's exit is confirmed)."
+      },
+      {
+        "id": "a3",
+        "name": "Reuse the closeWorkerHandles() live() snapshot at rename time instead of re-querying live()",
+        "oneLineSummary": "Capture live() once during closeWorkerHandles and pass that same snapshot into beforeRename, instead of calling workers.live() again at rename time.",
+        "costEstimate": "S",
+        "reasonRejected": "Fails the core safety constraint outright: a worker that starts AFTER the snapshot would not appear in it at all, so .every() over the stale snapshot could pass even though a brand-new, never-asked-to-close worker is now live — silently loses the exact protection a1 keeps intact."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/threads/maintenance.ts:242",
+      "quotedText": "Direct reading confirmed: beforeRename's identity check (live.every(w => closed.acknowledged.has(w.threadId))) at maintenance.ts:242 already correctly rejects a replacement/new worker per the existing test at src/daemon/threads/__tests__/maintenance.test.ts:165-191; Supervisor.createdCount() (src/daemon/threads/supervisor.ts:136-138) decrements only on a worker's 'exit' event, strictly after SessionPool.release() (src/daemon/threads/session-pool.ts:276) begins terminating it; closeWorkerHandles' own allClosed flag uses a separate, race-free back-to-back read of live()/created() and is not touched by this Story."
+    }
+  ]
+}

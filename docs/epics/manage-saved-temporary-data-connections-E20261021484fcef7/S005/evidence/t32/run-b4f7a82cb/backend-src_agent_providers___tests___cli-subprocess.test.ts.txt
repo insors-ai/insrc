@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: a timed-out CLI child is killed with its process group, so a grandchild it started is gone
+ok 1 - a timed-out CLI child is killed with its process group, so a grandchild it started is gone
+  ---
+  duration_ms: 1510.104708
+  type: 'test'
+  ...
+# Subtest: a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone
+ok 2 - a CLI child that exits 0 leaving a background process holding its pipes resolves with exit code 0 and the background process is gone
+  ---
+  duration_ms: 115.430833
+  type: 'test'
+  ...
+# Subtest: completeStructured and complete run the CLI in opts.cwd when it is given
+ok 3 - completeStructured and complete run the CLI in opts.cwd when it is given
+  ---
+  duration_ms: 622.624125
+  type: 'test'
+  ...
+# Subtest: completeStructured without opts.cwd runs the CLI in the inherited working directory
+ok 4 - completeStructured without opts.cwd runs the CLI in the inherited working directory
+  ---
+  duration_ms: 314.766459
+  type: 'test'
+  ...
+# Subtest: a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default
+ok 5 - a structured call honours its own timeoutMs, so a silent CLI is killed at the caller's limit, not the provider default
+  ---
+  duration_ms: 1506.157667
+  type: 'test'
+  ...
+# Subtest: a codex run that narrates before answering yields its last agent message to completeStructured and complete
+ok 6 - a codex run that narrates before answering yields its last agent message to completeStructured and complete
+  ---
+  duration_ms: 470.82025
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4806.644708

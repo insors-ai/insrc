@@ -1,0 +1,1 @@
+[1030/093021.954854:FATAL:electron/shell/app/electron_main_delegate_mac.mm:66] Unable to find helper app

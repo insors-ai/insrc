@@ -1,0 +1,194 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793690404378-vfy50g",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T07:21:06.650Z",
+    "epicCreatedAt": "2026-11-02T11:44:58.712Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 62269,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1ad687e69c9218de",
+    "epicSlug": "typescript-reader-drops-calls-user-functions",
+    "storyId": "S001",
+    "lldRunId": "wf-1793687010733-gsei9y",
+    "lldEffectiveHash": "140afac384d058e032df68cd42d07bdf3156a78ced030df739687535b0f20df7",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-03T08:04:22.108Z",
+    "rangeBase": "1a92c23abc0fdc8145f598ab3d024c56a67fd361"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this fix means changing one decision in the TypeScript reader's call walk so a built-in method name drops a call only when its receiver is not known to be user code: first the shapes that need no types (bare calls, this/super, imports), then receivers proven by a type annotation or a new expression on fields, parameters and locals, and finally proving the restored calls resolve correctly and show up on the installed daemon after a re-index.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Bare, this/super and import-bound calls are kept whatever the name",
+        "summary": "In src/indexer/parser/typescript.ts, collect the file's import-bound local names per parse (default, namespace, named, aliased) and change the walkForCalls filter: BUILTIN_METHODS no longer applies to bare calls or to member calls on this, super or an import-bound identifier; BUILTIN_OBJECTS still applies. The import bindings form the outermost receiver scope so a nearer local or parameter declaration shadows them. Add reader unit tests.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A bare call to parse/find/create records a CALLS row; bare setTimeout/require record none",
+          "this.find() and super.emit() record rows",
+          "Calls on default, namespace, named and aliased import bindings record rows; a local that shadows an import name does not",
+          "Built-in-named member calls on untyped locals and built-in object receivers record no row",
+          "Import bindings of one file do not apply to the next file parsed"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "S001 t1: bare calls to user functions named like built-ins are kept; bare global functions are not"
+          },
+          {
+            "level": "unit",
+            "name": "S001 t1: calls on this, super and import bindings are kept whatever the name; a local shadowing an import is not"
+          },
+          {
+            "level": "unit",
+            "name": "S001 t1: built-in-named member calls on untyped locals and built-in objects record no row, and import bindings do not leak to the next file"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Typed and new-created fields, parameters and locals prove a user receiver",
+        "summary": "In the reader, collect per class the this.<field> names whose field or constructor parameter property is typed with a non-built-in class, initialised with new X() of one, or assigned this.<field> = new X(); and per scope (the existing frame) the parameters and locals declared that way. A fixed built-in class list, unions, arrays, primitives and function types never prove a user object. Member calls on proven receivers are kept whatever the name. Add reader unit tests.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "this.store.find() is kept for a typed field, a constructor parameter property, a new-initialised field and a this.store = new Store() assignment",
+          "repo.find() is kept for a typed parameter and for a new-initialised local",
+          "Receivers typed Promise/Map/EventEmitter/Item[]/Array<Item>/a union, or untyped, record no row for built-in method names",
+          "Class field proofs do not leak to another class or the next file",
+          "In a .js file, a call on a new-initialised local is kept and one on an untyped local is dropped"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "S001 t2: calls on typed, new-initialised and constructor-assigned fields are kept whatever the name"
+          },
+          {
+            "level": "unit",
+            "name": "S001 t2: calls on typed parameters and new-initialised locals are kept; built-in, array, union and untyped receivers are not"
+          },
+          {
+            "level": "unit",
+            "name": "S001 t2: field proofs do not leak across classes or files, and JavaScript follows the same rules"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Resolution integration, installed-daemon smoke and the full sweep",
+        "summary": "Over a temporary store and real files, the restored calls resolve to the user definitions (bare imported parse, this-call, field call, namespace-import call) and items.find() beside a same-file function find creates no edge. After the push, on the installed daemon, a small TypeScript repository shows callers of a built-in-named user function after index and after repo.reindex. Then run the full sweep per directory.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The integration test shows each restored call resolved and no edge from items.find() to the user find",
+          "Smoke evidence file: callers appear after index and after repo.reindex on the installed daemon",
+          "Full sweep recorded with every failure classified"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t3: the restored calls resolve to the user definitions and items.find() links to no user find"
+          },
+          {
+            "level": "smoke",
+            "name": "S001 t3: the installed daemon shows callers of a built-in-named function after index and repo.reindex"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "walkForCalls in src/indexer/parser/typescript.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "resolution of the restored calls through the cross-file resolver",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed daemon search.callers after index and repo.reindex",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api walkForCalls"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges CALLS rows the TypeScript reader emits"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges per-file, per-class and per-scope receiver proofs"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration"
+    }
+  ]
+}

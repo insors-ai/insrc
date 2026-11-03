@@ -1,3 +1,5 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -97,6 +99,7 @@ export const DOC_DECISIONS_SCHEMA: StructuredSchema = {
 // ---------------------------------------------------------------------------
 
 export interface RunDocDecisionTraceArgs {
+	readonly connectionExecution?: import('../../shared/step-context.js').ConnectionExecutionContext | undefined;
 	readonly topic:       string;
 	readonly repoPath:    string;
 	readonly db:          DbClient;
@@ -121,6 +124,7 @@ export interface RunDocDecisionTraceArgs {
 export async function runSharedDocDecisionTrace(
 	args: RunDocDecisionTraceArgs,
 ): Promise<DocDecisionTraceOutput> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	const prepared = await prepareDocDecisionTrace({
 		topic:      args.topic,
 		repoPath:   args.repoPath,
@@ -235,10 +239,7 @@ export async function prepareDocDecisionTrace(
 	});
 
 	if (sections.length === 0) {
-		log.info(
-			{ runId: args.runId, topic, ctx: args.logContext },
-			'doc.decision.trace: no matching sections',
-		);
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, topic, ctx: args.logContext }, 'doc.decision.trace: no matching sections']);
 		return {
 			kind: 'short-circuit',
 			shortCircuit: {
@@ -320,17 +321,14 @@ export function finalizeDocDecisionTrace(
 	const validIds = new Set(prepared.validEntityIds);
 	const filtered = raw.decisions.filter(d => validIds.has(d.sourceEntityId));
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log).emit('info', () => [{
 			runId,
 			ctx:       logContext,
 			topic:     prepared.topic,
 			retrieved: prepared.retrievedSectionCount,
 			extracted: raw.decisions.length,
 			surviving: filtered.length,
-		},
-		'doc.decision.trace: extraction complete',
-	);
+	}, 'doc.decision.trace: extraction complete']);
 
 	return {
 		type:                  'doc.decision.trace',
@@ -370,6 +368,7 @@ export async function runDocDecisionTrace(
 	const params = parseExplorationParams(exp);
 	const db = await getDb();
 	return runSharedDocDecisionTrace({
+		connectionExecution: ctx.connectionExecution,
 		topic:      params.topic,
 		repoPath:   ctx.repoPath,
 		db,

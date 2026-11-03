@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.review.ReviewCommentTest" tests="12" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.006">
+  <properties/>
+  <testcase name="applyCommentOp rejects an unknown or missing op as a no-op()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.002"/>
+  <testcase name="applyCommentOp add rejects an all-null anchor or a blank body()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.001"/>
+  <testcase name="buffer store scopes comments per artifact and creates on first use()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.001"/>
+  <testcase name="applyCommentOp edit and remove reject a missing or unknown id as a no-op()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.0"/>
+  <testcase name="applyCommentOp rejects malformed json as a no-op()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.001"/>
+  <testcase name="buffer remove drops a known id and returns true, unknown id false, clear empties()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.0"/>
+  <testcase name="applyCommentOp add accepts a quote-only or openQuestion-only anchor()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.001"/>
+  <testcase name="applyCommentOp edit and remove target an existing id()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.0"/>
+  <testcase name="buffer edit replaces the body of a known id and returns true, unknown id returns false()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.0"/>
+  <testcase name="applyCommentOp add folds a well-formed comment into the buffer()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.0"/>
+  <testcase name="buffer add mints unique ids, preserves insertion order, and snapshots immutably()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.0"/>
+  <testcase name="anchor is empty only when every target is null-or-blank()" classname="ai.insors.insrc.jetbrains.review.ReviewCommentTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

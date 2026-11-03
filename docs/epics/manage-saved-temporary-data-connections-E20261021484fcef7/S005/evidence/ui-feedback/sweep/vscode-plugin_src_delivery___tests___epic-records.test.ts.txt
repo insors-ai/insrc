@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: board state: an epic's board carries the epic's own records, built as a story's are, whatever the search and the needs-attention filter; a list screen carries none
+ok 1 - board state: an epic's board carries the epic's own records, built as a story's are, whatever the search and the needs-attention filter; a list screen carries none
+  ---
+  duration_ms: 8.841875
+  type: 'test'
+  ...
+# Subtest: board state: the record owner is the item of an item screen and the epic of an epic's board, and nothing on a list screen
+ok 2 - board state: the record owner is the item of an item screen and the epic of an epic's board, and nothing on a list screen
+  ---
+  duration_ms: 0.372167
+  type: 'test'
+  ...
+# Subtest: board state: a story's screen and the list screens are built exactly as before
+ok 3 - board state: a story's screen and the list screens are built exactly as before
+  ---
+  duration_ms: 1.30725
+  type: 'test'
+  ...
+# Subtest: details memory: with an epic selected, one of its records opens in the review pane when it has a path and is read and kept otherwise; a record of another item is refused; no plan is read for an epic
+ok 4 - details memory: with an epic selected, one of its records opens in the review pane when it has a path and is read and kept otherwise; a record of another item is refused; no plan is read for an epic
+  ---
+  duration_ms: 9.14025
+  type: 'test'
+  ...
+# Subtest: board webview: an epic's board shows its records table above the totals, also when no story matches; a row's button sends open-evidence with the epic's id; an opened read-only record is shown under the table; an epic with no records says so; record text is set as text
+ok 5 - board webview: an epic's board shows its records table above the totals, also when no story matches; a row's button sends open-evidence with the epic's id; an opened read-only record is shown under the table; an epic with no records says so; record text is set as text
+  ---
+  duration_ms: 8.429916
+  type: 'test'
+  ...
+# Subtest: board host: on an epic's board open-evidence for the epic's HLD opens the review pane with its path, and for an amendment reads it and re-renders the board with its text; moving to a story or back to a list clears the opened record
+ok 6 - board host: on an epic's board open-evidence for the epic's HLD opens the review pane with its path, and for an amendment reads it and re-renders the board with its text; moving to a story or back to a list clears the opened record
+  ---
+  duration_ms: 4.572833
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 279.735667

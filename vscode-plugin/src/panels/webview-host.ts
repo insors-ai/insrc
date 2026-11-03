@@ -31,6 +31,7 @@
  */
 
 import { escapeHtml, makeNonce } from './html.js';
+import type { ModelTiersWrite } from './model-tiers.js';
 import {
   type DetailTab,
   type MenuItem,
@@ -39,22 +40,31 @@ import {
   type WebviewPanelHostDeps,
 } from './types.js';
 
-/** The panel view-types (the sc9 host owns exactly two panels). */
+/** The panel view-types (the sc9 host owns exactly three panels). */
 const DETAIL_VIEW_TYPE = 'insrc.detailedStatus';
 const REPO_VIEW_TYPE = 'insrc.repoConfiguration';
+const MODEL_TIERS_VIEW_TYPE = 'insrc.modelTiers';
 
 /** The fixed tab order of the Detailed Status panel (daemon first — ac2 default). */
 const DETAIL_TABS: readonly DetailTab[] = ['daemon', 'workflows', 'debug'];
 
-/** The two menu choices, in order (ac1: exactly two). */
+/** The five menu choices, in order. */
 const MENU_ITEMS: readonly MenuItem[] = [
   { label: 'Detailed Status', action: 'detailed' },
   { label: 'Repo Configuration', action: 'repoConfig' },
+  { label: 'Model Tiers', action: 'modelTiers' },
+  { label: 'Manage Connections', action: 'connections' },
+  { label: 'Delivery Board', action: 'deliveryBoard' },
 ];
+
+/** The tier/core-floor value set a Model Tiers write message is validated against. */
+const TIER_VALUES = ['core', 'mid', 'cheap'] as const;
+const TIER_FIELDS = ['runner', 'model', 'effort'] as const;
 
 /** Body fragments for the built-in fallbacks + degraded states. */
 const PLACEHOLDER = `<p class="placeholder">This view is coming soon.</p>`;
 const REPO_PLACEHOLDER = `<p class="placeholder">This editor is coming soon.</p>`;
+const MODEL_TIERS_PLACEHOLDER = `<p class="placeholder">This editor is coming soon.</p>`;
 const DAEMON_ERR = `<p class="error">insrc daemon unreachable</p>`;
 const VIEW_ERR = `<p class="error">insrc: could not load this view.</p>`;
 
@@ -87,22 +97,19 @@ vscode.postMessage({ type: 'ready' });`;
 
 /**
  * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the three
- * sanctioned repo message shapes: selectRepo, repoWrite and repoTrackerWrite). Static — it reads only host-rendered DOM data.
+ * sanctioned repo message shapes). Static — it reads only host-rendered DOM data.
  * The repo <select> change posts {type:'selectRepo',repoPath}; each per-repo form
  * field change posts {type:'repoWrite',repoPath,segments,value} (value '' -> null to
- * clear the override). The form's data-repo carries the selected repoPath and each
- * field's data-segments carries the dot-joined trailing path under models.byRepo.
+ * clear the override); the Providers section's button posts
+ * {type:'repoRegisterProviders',repoPath,clients} with the checked data-provider
+ * values. The form's data-repo carries the selected repoPath and each field's
+ * data-segments carries the dot-joined trailing path under models.byRepo.
  */
 const REPO_BOOTSTRAP = `const vscode = acquireVsCodeApi();
 const sel = document.getElementById('insrc-repo-select');
 if (sel) { sel.addEventListener('change', function () { vscode.postMessage({ type: 'selectRepo', repoPath: sel.value }); }); }
 const form = document.getElementById('insrc-repo-form');
 const repoPath = form ? form.getAttribute('data-repo') : '';
-for (const el of document.querySelectorAll('[data-tracker-key]')) {
-  el.addEventListener('change', function () {
-    vscode.postMessage({ type: 'repoTrackerWrite', repoPath: repoPath, key: el.getAttribute('data-tracker-key'), value: el.value === '' ? null : el.value });
-  });
-}
 for (const el of document.querySelectorAll('[data-segments]')) {
   el.addEventListener('change', function () {
     var segments;
@@ -110,7 +117,31 @@ for (const el of document.querySelectorAll('[data-segments]')) {
     if (!Array.isArray(segments)) return;
     vscode.postMessage({ type: 'repoWrite', repoPath: repoPath, segments: segments, value: el.value === '' ? null : el.value });
   });
-}`;
+}
+const regBtn = document.getElementById('insrc-register-providers');
+if (regBtn) { regBtn.addEventListener('click', function () {
+  var clients = [];
+  for (const el of document.querySelectorAll('input[data-provider]')) {
+    if (el.checked) clients.push(el.getAttribute('data-provider'));
+  }
+  vscode.postMessage({ type: 'repoRegisterProviders', repoPath: repoPath, clients: clients });
+}); }`;
+
+/**
+ * The Model Tiers panel's inline bootstrap (nonce'd; posts ONLY the
+ * {type:'modelTiersWrite',...} shape, Story S001). A per-tier field change
+ * posts {kind:'tierField',tier,field,value} from its data-tier/data-field
+ * attributes; the panel-foot Core-floor select (no data-tier) posts
+ * {kind:'coreFloor',value}.
+ */
+const MODEL_TIERS_BOOTSTRAP = `const vscode = acquireVsCodeApi();
+for (const el of document.querySelectorAll('select[data-tier][data-field]')) {
+  el.addEventListener('change', function () {
+    vscode.postMessage({ type: 'modelTiersWrite', kind: 'tierField', tier: el.getAttribute('data-tier'), field: el.getAttribute('data-field'), value: el.value });
+  });
+}
+const floor = document.querySelector('select[data-field="coreFloor"]');
+if (floor) { floor.addEventListener('change', function () { vscode.postMessage({ type: 'modelTiersWrite', kind: 'coreFloor', value: floor.value }); }); }`;
 
 /** Build the sc9 WebviewPanelHost over its injected boundaries. Never throws. */
 export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanelHost {
@@ -119,6 +150,7 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   // The single-instance panel references (cleared on the user closing a panel).
   let detailPanel: PanelHandle | undefined;
   let repoPanel: PanelHandle | undefined;
+  let modelTiersPanel: PanelHandle | undefined;
   // The Detailed Status panel's currently-active tab (ac3: switch re-renders it).
   let detailActiveTab: DetailTab = 'daemon';
   // The Repo Configuration panel's currently-selected repo (S007; select re-renders).
@@ -309,14 +341,15 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
 
   /**
    * Handle a webview->host message for the Repo Configuration panel (S007). Validates
-   * the shape ({selectRepo,repoPath} / {repoWrite,repoPath,segments,value}), skips a
-   * late message after the panel was disposed/replaced, re-renders on a repo select,
-   * and forwards a validated RepoConfigWrite to the injected sink. Never throws.
+   * the shape ({selectRepo,repoPath} / {repoWrite,repoPath,segments,value} /
+   * {repoRegisterProviders,repoPath,clients}), skips a late message after the panel
+   * was disposed/replaced, re-renders on a repo select, and forwards a validated
+   * RepoConfigWrite / RepoProviderRegistration to the injected sinks. Never throws.
    */
   const handleRepoMessage = (panel: PanelHandle, message: unknown): void => {
     if (repoPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
     if (typeof message !== 'object' || message === null) return;
-    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; key?: unknown };
+    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; clients?: unknown };
     if (msg.type === 'selectRepo' && typeof msg.repoPath === 'string') {
       // The empty option ('') clears the selection back to the picker-only view.
       repoSelectedRepo = msg.repoPath.length > 0 ? msg.repoPath : undefined;
@@ -344,21 +377,91 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       return;
     }
     if (
-      msg.type === 'repoTrackerWrite' &&
+      msg.type === 'repoRegisterProviders' &&
       typeof msg.repoPath === 'string' &&
-      typeof msg.key === 'string' &&
-      msg.key.length > 0 &&
-      (msg.value === null || typeof msg.value === 'string' || typeof msg.value === 'boolean')
+      Array.isArray(msg.clients) &&
+      msg.clients.every((c) => typeof c === 'string')
     ) {
-      // Same discipline as repoWrite: the host forwards, the sink (extension.ts) runs the consent-gated write.
+      // The host owns no registration — it forwards a validated
+      // RepoProviderRegistration to the sink (extension.ts runs the
+      // consent-gated mcp.register IPC, k4). Never-throw.
       try {
-        deps.onRepoConfigWrite?.({ repoPath: msg.repoPath, key: msg.key, value: msg.value });
+        deps.onRepoRegisterProviders?.({
+          repoPath: msg.repoPath,
+          clients: msg.clients as readonly string[],
+        });
       } catch (err) {
-        logger.warn(`insrc: the repo tracker write handler failed — ${errText(err)}`);
+        logger.warn(`insrc: the provider-registration handler failed — ${errText(err)}`);
       }
       return;
     }
     // Anything else is a silent no-op (a malformed/spoofed message can't drive the host).
+  };
+
+  /**
+   * Render the Model Tiers panel body (Story S001). The body comes from the
+   * injected `modelTiersRenderer`; a host without one renders the placeholder
+   * (fallback preserved, mirroring renderRepoPanel). The panel is fully
+   * rendered here (no post-load host->webview push), so no ready-gate is
+   * needed; each field change posts a write and the host re-renders from
+   * fresh config afterward.
+   */
+  const renderModelTiersPanel = async (panel: PanelHandle): Promise<void> => {
+    try {
+      let body: string;
+      let scripted = false;
+      const renderer = deps.modelTiersRenderer;
+      if (renderer !== undefined) {
+        try {
+          body = await renderer();
+          scripted = true; // the rendered body carries the per-tier + core-floor controls.
+        } catch (err) {
+          logger.warn(`insrc: could not render the Model Tiers view — ${errText(err)}`);
+          body = VIEW_ERR;
+        }
+      } else {
+        body = MODEL_TIERS_PLACEHOLDER; // fallback (no modelTiersRenderer wired).
+      }
+      panel.setHtml(shellHtml('Model Tiers', body, makeNonce(), scripted ? MODEL_TIERS_BOOTSTRAP : undefined));
+    } catch (err) {
+      logger.warn(`insrc: could not render the Model Tiers panel — ${errText(err)}`);
+    }
+  };
+
+  /**
+   * Handle a webview->host message for the Model Tiers panel (Story S001).
+   * Validates the shape for both ModelTiersWrite kinds before forwarding —
+   * tierField needs a real tier + field + a string value; coreFloor needs a
+   * real tier value. Skips a late message after the panel was
+   * disposed/replaced. Anything else (malformed/spoofed) is a silent no-op,
+   * exactly as an unrecognized Repo Configuration message already is.
+   */
+  const handleModelTiersMessage = (panel: PanelHandle, message: unknown): void => {
+    if (modelTiersPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
+    if (typeof message !== 'object' || message === null) return;
+    const msg = message as { type?: unknown; kind?: unknown; tier?: unknown; field?: unknown; value?: unknown };
+    if (msg.type !== 'modelTiersWrite') return;
+    let write: ModelTiersWrite | undefined;
+    if (
+      msg.kind === 'tierField' &&
+      typeof msg.tier === 'string' &&
+      (TIER_VALUES as readonly string[]).includes(msg.tier) &&
+      typeof msg.field === 'string' &&
+      (TIER_FIELDS as readonly string[]).includes(msg.field) &&
+      typeof msg.value === 'string'
+    ) {
+      write = { kind: 'tierField', tier: msg.tier, field: msg.field, value: msg.value } as ModelTiersWrite;
+    } else if (msg.kind === 'coreFloor' && typeof msg.value === 'string' && (TIER_VALUES as readonly string[]).includes(msg.value)) {
+      write = { kind: 'coreFloor', value: msg.value } as ModelTiersWrite;
+    }
+    if (write === undefined) return; // malformed — silently dropped, never forwarded.
+    // The host owns no write — it forwards a validated ModelTiersWrite to the sink
+    // (extension.ts runs the global config.write, k6). A sink throw must not surface.
+    try {
+      deps.onModelTiersWrite?.(write);
+    } catch (err) {
+      logger.warn(`insrc: the model-tiers write handler failed — ${errText(err)}`);
+    }
   };
 
   return {
@@ -404,6 +507,58 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       void renderRepoPanel(panel);
     },
 
+    openModelTiers(): void {
+      const panel = openSingleton(
+        modelTiersPanel,
+        MODEL_TIERS_VIEW_TYPE,
+        'insrc — Model Tiers',
+        () => {
+          modelTiersPanel = undefined;
+        },
+        (p) => {
+          p.onMessage((message) => handleModelTiersMessage(p, message)); // Story S001: wire the bridge once.
+        },
+      );
+      if (panel === undefined) return;
+      modelTiersPanel = panel; // cache synchronously so a rapid second call reveals, not duplicates.
+      // Always render (never a no-op); renderModelTiersPanel never throws. A host
+      // without a modelTiersRenderer degrades to the placeholder.
+      void renderModelTiersPanel(panel);
+    },
+
+    openConnections(): void {
+      // The Connections panel is a separate, already-complete webview owned by
+      // extension.ts's own ConnectionsManagerHost — this host renders no body
+      // for it, so there is no placeholder fallback (unlike repoRenderer /
+      // modelTiersRenderer). A sink throw must not surface (never-throw),
+      // matching onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite.
+      if (deps.onOpenConnections === undefined) {
+        logger.warn('insrc: Manage Connections is unavailable — onOpenConnections is not wired');
+        return;
+      }
+      try {
+        deps.onOpenConnections();
+      } catch (err) {
+        logger.warn(`insrc: opening Connections failed — ${errText(err)}`);
+      }
+    },
+
+    openDeliveryBoard(): void {
+      // The Delivery Board is a separate, already-complete webview owned by
+      // extension.ts's own registerDeliveryBoard() host — this host renders no
+      // body for it, so there is no placeholder fallback. A sink throw must not
+      // surface (never-throw), matching openConnections().
+      if (deps.onOpenDeliveryBoard === undefined) {
+        logger.warn('insrc: Delivery Board is unavailable — onOpenDeliveryBoard is not wired');
+        return;
+      }
+      try {
+        deps.onOpenDeliveryBoard();
+      } catch (err) {
+        logger.warn(`insrc: opening the Delivery Board failed — ${errText(err)}`);
+      }
+    },
+
     async showStatusMenu(): Promise<void> {
       let chosen: MenuItem | undefined;
       try {
@@ -415,7 +570,10 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       }
       if (chosen === undefined) return; // dismissed (Esc) — no-op (ac1).
       if (chosen.action === 'detailed') this.openDetailedStatus();
-      else this.openRepoConfiguration();
+      else if (chosen.action === 'repoConfig') this.openRepoConfiguration();
+      else if (chosen.action === 'modelTiers') this.openModelTiers();
+      else if (chosen.action === 'deliveryBoard') this.openDeliveryBoard();
+      else this.openConnections();
     },
   };
 }
@@ -454,6 +612,63 @@ function shellHtml(title: string, content: string, nonce: string, bootstrap?: st
     .completeness.complete { color: var(--vscode-testing-iconPassed, #3a3); }
     .completeness.incomplete { color: var(--vscode-editorWarning-foreground, #c90); border: 1px solid currentColor; }
     .reasons { margin: 2px 0 4px 18px; padding-left: 12px; opacity: 0.85; }
+    /* Form controls follow the theme: without these, <select> renders with the
+       browser's default white ground instead of the dropdown colours. */
+    select, input[type=text], input[type=number], input[type=password] {
+      background: var(--vscode-dropdown-background, #3c3c3c);
+      color: var(--vscode-dropdown-foreground, #f0f0f0);
+      border: 1px solid var(--vscode-dropdown-border, var(--vscode-panel-border, #666));
+      border-radius: 2px; padding: 2px 4px; font: inherit;
+    }
+    select:focus, input:focus { outline: 1px solid var(--vscode-focusBorder, #08f); outline-offset: -1px; }
+    option { background: var(--vscode-dropdown-background, #3c3c3c); color: var(--vscode-dropdown-foreground, #f0f0f0); }
+    input[type=checkbox] { accent-color: var(--vscode-checkbox-foreground, #08f); }
+    button {
+      background: var(--vscode-button-background, #0e639c); color: var(--vscode-button-foreground, #fff);
+      border: none; border-radius: 2px; padding: 4px 10px; cursor: pointer; font: inherit;
+    }
+    button:hover { background: var(--vscode-button-hoverBackground, #1177bb); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    /* Model Tiers panel (Story S001): one card per tier + the core-floor footer. */
+    .panel-head p { opacity: 0.75; margin: 2px 0 10px; }
+    .tier-list { display: flex; flex-direction: column; }
+    .tier { border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c); padding: 10px 0; }
+    .tier:last-child { border-bottom: none; }
+    .tier-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 2px; }
+    .tier-name { display: flex; align-items: baseline; gap: 8px; }
+    .tier-name b { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tier-purpose { font-size: 0.85em; opacity: 0.7; }
+    .floor-badge { font-size: 0.75em; opacity: 0.85; white-space: nowrap; border: 1px solid var(--vscode-panel-border, #666); border-radius: 10px; padding: 1px 8px; }
+    .controls { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+    .field { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 120px; }
+    .field label { font-size: 0.8em; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.04em; }
+    .hosting-chip { display: inline-flex; align-items: center; font-size: 0.7em; border-radius: 9px; padding: 0 6px; margin-left: 4px; font-weight: 600; vertical-align: 1px; }
+    .hosting-chip.cloud { background: var(--vscode-charts-blue, #1b3a52); color: var(--vscode-editor-foreground, #7ec8f5); }
+    .hosting-chip.local { background: var(--vscode-charts-green, #1e3a24); color: var(--vscode-editor-foreground, #81c995); }
+    .note { display: flex; align-items: flex-start; gap: 6px; margin-top: 8px; font-size: 0.9em; border-radius: 4px; padding: 5px 8px; }
+    .note.ok { opacity: 0.8; }
+    .note.err { background: var(--vscode-inputValidation-errorBackground, #5a1d1d); color: var(--vscode-inputValidation-errorForeground, var(--vscode-errorForeground, #f33)); }
+    .note .dot { flex: 0 0 auto; margin-top: 0.1em; }
+    .panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--vscode-panel-border, #3c3c3c); }
+    .foot-field { display: flex; align-items: center; gap: 8px; }
+    .foot-hint { font-size: 0.85em; opacity: 0.7; }
+    /* Repo Configuration panel (Story S001): role tiers grouped by criticality
+       (native <details>/<summary> needs no custom chevron or toggle-class rule)
+       plus status-card Providers. */
+    .section { border-bottom: 1px solid var(--vscode-panel-border, #3c3c3c); padding: 10px 0; }
+    .section:last-child { border-bottom: none; }
+    .section-head { font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: baseline; gap: 8px; }
+    .section-head::marker { color: var(--vscode-icon-foreground, #c5c5c5); }
+    .count { font-size: 11px; opacity: 0.7; border: 1px solid var(--vscode-panel-border, #666); border-radius: 9px; padding: 0 7px; }
+    .rows { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; }
+    .role-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 2px; border-radius: 4px; }
+    .role-row:hover { background: var(--vscode-list-hoverBackground, #2a2d2e); }
+    .floor-row { display: flex; align-items: center; gap: 10px; }
+    .provider-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 8px; border: 1px solid var(--vscode-panel-border, #3c3c3c); border-radius: 6px; margin-bottom: 4px; }
+    .status-chip { font-size: 10.5px; border-radius: 9px; padding: 1px 8px; white-space: nowrap; }
+    .status-chip.ok { background: rgba(35, 134, 54, 0.25); color: #81c995; }
+    .status-chip.warn { background: rgba(187, 128, 9, 0.25); color: #e8b94a; }
+    .status-chip.off { opacity: 0.7; }
   </style></head><body><h2>${escapeHtml(title)}</h2>${content}${script}</body></html>`;
 }
 

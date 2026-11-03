@@ -1,0 +1,189 @@
+{
+  "review": {
+    "artifact": "design.story",
+    "stage": "design.story",
+    "verdict": "pass",
+    "findings": [
+      {
+        "claimId": "coverage-of-intent.1",
+        "ref": "coverage-of-intent",
+        "item": "coverage-of-intent",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design covers the approved oversized-diff correction and documented chunk-derived timing requirement.",
+        "evidence": "The approved ISSUE requires bounded attributable evidence without truncation, preserved limits, independent degraded review, unchanged S003 evidence/release state, and an actual retry. Sections 2\u20137 address these requirements. The timing proposal specifies 600000 milliseconds per initial primary chunk, fixed across retries and gather; \u00a7\u00a73.7\u20133.9 implement that accounting and resumable ownership. [files: .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/time-budget-proposal.json, src/workflow/code-review/grounding.ts, src/workflow/code-review/runner.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "coverage-of-intent.2",
+        "ref": "coverage-of-intent",
+        "item": "coverage-of-intent",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Relationship documentation and the supplied sequence companion adequately explain the proposed evidence model and primary interaction.",
+        "evidence": "The prose specifies file-to-fragment ownership, ordered partitioning, parent-to-obligation cardinality, note ownership and replacement lineage. The stored sequence definition matches the companion\u2019s six participants and nine messages. The HTML SHA256 matches the render evidence, and I inspected its screenshot: the diagram is readable and consistent with the primary flow. Interactive controls were not exercised; operation and publication details are documented in prose. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle3-round2.json, docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle3-round2.png]",
+        "action": "No additional mandatory visual identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "current-behaviour.1",
+        "ref": "current-behaviour",
+        "item": "current-behaviour",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Current diff grounding produces indivisible file rows, and current prompt measurement excludes the supplied schema.",
+        "evidence": "buildDiffSymbols maps each file to entityId `diff:${f.path}` with its hunks in signature and coverageEligible:false. codeReviewMaterial serializes each complete row into one atom. promptChars accepts only messages and counts content, role headings and separators; job sizing does not add schema serialization. These match the stated failure mechanism. [files: src/workflow/code-review/grounding.ts, src/workflow/review-pipeline/adapters/code-review-material.ts, src/workflow/review-pipeline/envelope.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/prepare.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "current-behaviour.2",
+        "ref": "current-behaviour",
+        "item": "current-behaviour",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Completion currently refreshes BUILD metadata and change-log observations, so fingerprint stability requires actual writer changes.",
+        "evidence": "ensureBuildRecordOnCompletion supplies `createdAt: now, updatedAt: now` and collects entries with `timestamp: now`. collectBuildChangeLog constructs fresh entries. mergeWithPrior preserves createdAt but otherwise spreads incoming metadata/body over prior values, and persistBuildRecord writes both files unconditionally. Section 3.16 correctly addresses these mutations rather than excluding them from identity. [files: src/workflow/runners/build/completion-record.ts, src/workflow/runners/build/changed-files.ts, src/workflow/runners/build/standalone-record.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "new-versus-reuse.1",
+        "ref": "new-versus-reuse",
+        "item": "new-versus-reuse",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The existing serial job and keyed-note gather machinery are valid reuse points, but parent quality adjudication and fragment-aware duplication require the additions specified.",
+        "evidence": "runReviewJob dispatches only calls[0] and awaits it. startGather extracts keyed notes and schedules obligation calls with bounded reduction and provenance. Existing quality chunks require findings/descriptions, material returns `obligations: []`, and relationCall returns no checks for non-calls relations. Duplicate comparison forms batch pairs. The design explicitly adds the missing parent/global obligations and excludes fragment rows from symbol-pair comparison. [files: src/workflow/review-pipeline/driver.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-chunk.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/review-pipeline/adapters/code-review-duplicates.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "new-versus-reuse.2",
+        "ref": "new-versus-reuse",
+        "item": "new-versus-reuse",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Verified bounded CLI execution is new functionality, and the design correctly requires enforcement rather than assuming current structured output provides isolation.",
+        "evidence": "ProviderCapabilities and StructuredCompletionOpts currently contain neither boundedStructuredInput nor boundedInput. completeStructuredOnce serializes messages and supplies schema arguments; Codex additionally transforms the schema through codexStrictSchema. These methods do not currently enforce the proposed isolation contract. Sections 3.3 and 3.12 explicitly require normalization, capability verification, enforcement and refusal before dispatch. [files: src/shared/types.ts, src/agent/providers/cli-provider.ts, src/mcp/forward-step.ts]",
+        "action": "Implement and verify the specified boundary before advertising support; existing structuredOutput support alone is insufficient.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "change-sites.1",
+        "ref": "change-sites",
+        "item": "change-sites",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The adapter-budget callback inventory includes all current production dimension callers.",
+        "evidence": "Direct search finds seven production runDimensionJob calls: adherence, conventions, coverage, quality, functional-coverage, UX and diagram. The first five construct modelDimensionAdapter without forwarding a limit; the latter two construct deterministicDimensionAdapter. Current runDimensionJob independently calls reviewLimitChars for createReviewJob. Sections 3.5 and 3.7 identify the required propagation and preparation sites. [files: src/workflow/review-pipeline/code-review.ts, src/workflow/code-review/dimensions/adherence.ts, src/workflow/code-review/dimensions/conventions.ts, src/workflow/code-review/dimensions/coverage.ts, src/workflow/code-review/dimensions/quality.ts, src/workflow/code-review/dimensions/functional-coverage.ts, src/workflow/code-review/dimensions/ux/index.ts, src/workflow/code-review/dimensions/diagram/index.ts]",
+        "action": "No correction identified. The analyzer returned an off-topic, incomplete bundle; caller verification used direct search and source reads.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "change-sites.2",
+        "ref": "change-sites",
+        "item": "change-sites",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design covers both BUILD approval entry points and the control-message serialization boundary.",
+        "evidence": "approveWorkflowTarget performs its code-review preflight and completion hook, while cli/services/workflow.approve directly calls approveArtifactByJsonPath before tracker/commit effects. The low-level function currently checks reviewer identity without source freshness. Separately, codeReviewRequestParams reconstructs legacy fields and CodeReviewStreamResult requires runId/artifact. Sections 3.9 and 3.14 explicitly modify these boundaries and their consumers. [files: src/workflow/gates.ts, src/workflow/code-review/gate.ts, src/cli/services/workflow.ts, src/shared/review-stream.ts, src/daemon/steps/daemon-client.ts, src/mcp/daemon-stream.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "data-compatibility.1",
+        "ref": "data-compatibility",
+        "item": "data-compatibility",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The proposed migration distinguishes legacy records and requests from newly bounded records and incompatible pending states.",
+        "evidence": "Current jobs and code-review continuation payloads are held in memory, and legacy codeReview.run returns the final-only stream shape. The design preserves omitted-operation behavior, restarts old oversized/degraded states, leaves graph identities unchanged, and treats only genuinely absent fingerprint fields as legacy. Partial, malformed and unsupported fingerprint metadata explicitly fail closed. [files: src/workflow/review-pipeline/types.ts, src/daemon/steps/code-review-step/types.ts, src/daemon/steps/code-review-step/state-store.ts, src/shared/review-stream.ts, src/workflow/code-review/gate.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "data-compatibility.2",
+        "ref": "data-compatibility",
+        "item": "data-compatibility",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "TESTS identity must preserve record state, timestamps and array order; the design accounts for those verdict-bearing distinctions.",
+        "evidence": "testRecordState distinguishes absent, record and unreadable; readTestRecord collapses the latter two non-record outcomes to null for the subject. testRecordView selects runs by ranAt, prefers failing/malformed evidence on ties, and otherwise retains order-dependent choices. Builder-reported evidence also affects the view. Section 3.15 hashes complete ordered TESTS content, explicit state and the presented view, including malformed/raw-input handling. [files: src/workflow/runners/build/test-record.ts, src/workflow/code-review/subject.ts, src/workflow/code-review/dimensions/test-record-view.ts, src/workflow/code-review/dimensions/coverage.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "boundaries.1",
+        "ref": "boundaries",
+        "item": "boundaries",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "The design preserves the shared provider, review-pipeline and S003 ownership boundaries while extending the bounded diff route.",
+        "evidence": "The artifact is standalone with no parent-HLD contracts. The shared pipeline documents serial execution and a three-characters-per-token estimate, implemented by reviewLimitChars. The design retains these, CLI-owned OAuth and reviewer routing; unrelated completion options default unchanged and design-review timing is excluded. S003 is used as reproduction evidence and smoke validation, with its inventories and disabled release state explicitly preserved. [files: .insrc/artifacts/LLD-34798d209cf97413-S001.json, .insrc/artifacts/ISSUE-5384820ac9eb0fd3.json, docs/epics/chunked-review-pipeline-every-review-E202610198315a11f/HLD.md, src/workflow/review-pipeline/limit.ts, src/agent/providers/cli-provider.ts, src/daemon/code-review-rpc.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "error-paths.1",
+        "ref": "error-paths",
+        "item": "error-paths",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Incomplete evidence, oversized singleton spans and missing parent notes have explicit detection and non-success outcomes.",
+        "evidence": "The current reader exposes truncation and can emit missing-hunk markers; planChunks rejects an oversized singleton; existing gather permits NO_EVIDENCE. The design explicitly replaces truncated-slice acceptance, fits spans against real complete calls, requires strictly progressing refusal recovery, validates every fragment note and prohibits the ordinary no-evidence success path for parent/global obligations. Irreducible context and unsupported transport terminate without a completed review. [files: src/workflow/code-review/grounding.ts, src/daemon/tools/builtins/git/diff.ts, src/workflow/review-pipeline/prepare.ts, src/workflow/review-pipeline/job.ts, src/workflow/review-pipeline/adapters/code-review-gather.ts, src/workflow/code-review/__tests__/diff-grounding.test.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "error-paths.2",
+        "ref": "error-paths",
+        "item": "error-paths",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Timeout, disconnection, cancellation and stale-input handling cover the current lifecycle gaps without manufacturing completion.",
+        "evidence": "Current job deadlines apply to reviewer-session calls, stream timeout cancels its transport, continuation state has a one-hour TTL/100-entry LRU, and runCodeReview writes after judgment without final identity validation. Sections 3.7\u20133.14 explicitly add structured deadlines, operation-owned cancellation, waiter detachment, pinned active state, replay/lost-operation handling, mandatory publication revalidation and non-overridable stale-review approval refusal. [files: src/workflow/review-pipeline/job.ts, src/shared/review-stream.ts, src/daemon/threads/step-state.ts, src/daemon/steps/code-review-step/handler.ts, src/workflow/code-review/runner.ts, src/workflow/gates.ts]",
+        "action": "No correction identified.",
+        "fixability": "manual",
+        "outcome": "holds"
+      },
+      {
+        "claimId": "tests.1",
+        "ref": "tests",
+        "item": "tests",
+        "kind": "semantic",
+        "severity": "LOW",
+        "premise": "Each stated acceptance criterion has concrete planned tests, including the real integration boundaries affected by the design.",
+        "evidence": "The mapping covers evidence partition/reader integrity (ac1), complete-call transport and lower-cap/refusal behavior (ac2), parent and duplication gather (ac3), compatibility/freshness/TESTS/completion writers and both approval routes (ac4), actual S003 retry (ac5), and fixed timing/resumable transport/controller waits (ac6). Existing suites provide relevant seams. Crucially, the plan replaces truncated-slice acceptance and strengthens completion tests beyond the current assertion that repeated writes merely leave one BUILD file. [files: docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/LLD.md, src/workflow/code-review/__tests__/diff-grounding.test.ts, src/workflow/review-pipeline/__tests__/code-review-divided.test.ts, src/workflow/runners/build/__tests__/completion-record.test.ts, src/workflow/__tests__/other-party-review-gate.test.ts, src/workflow/__tests__/approve-build-record-completion.test.ts, src/daemon/steps/code-review-step/__tests__/long-review.test.ts]",
+        "action": "No test-design correction identified. These are planned tests; this review does not claim they are implemented or passing.",
+        "fixability": "manual",
+        "outcome": "holds"
+      }
+    ],
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 14,
+      "unverified": 0
+    },
+    "template": "design-spec",
+    "reviewedAt": "2026-10-27T07:00:15.769Z",
+    "model": "cli-codex:gpt-6.1-sol",
+    "reviewedBy": "daemon"
+  },
+  "hostResult": "MCP300s timeout; daemon continued and stamped independent PASS.",
+  "cycleRound": 2
+}

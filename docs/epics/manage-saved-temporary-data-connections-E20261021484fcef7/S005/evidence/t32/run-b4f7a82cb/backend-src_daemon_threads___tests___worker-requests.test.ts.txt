@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a nonterminal stream frame that cannot be cloned ends the stream with one named error; the handler is cancelled and its later frames are dropped
+ok 1 - a nonterminal stream frame that cannot be cloned ends the stream with one named error; the handler is cancelled and its later frames are dropped
+  ---
+  duration_ms: 252.732084
+  type: 'test'
+  ...
+# Subtest: the test.servingThread hook acks a request that asks for its completion message, since it answers it itself (ISSUE-7c39e5cd)
+ok 2 - the test.servingThread hook acks a request that asks for its completion message, since it answers it itself (ISSUE-7c39e5cd)
+  ---
+  duration_ms: 51.782625
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 639.939458

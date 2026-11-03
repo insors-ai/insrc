@@ -1,0 +1,14 @@
+[
+  {
+    "artifact": "insrc-jetbrains-0.5.2-s005-b4f7a82cb.zip",
+    "crcVerified": true,
+    "connectionsClassesAndDescriptorPresent": true,
+    "testClassesExcluded": true
+  },
+  {
+    "artifact": "insrc-vscode-0.5.16-s005-b4f7a82cb.vsix",
+    "crcVerified": true,
+    "connectionsCommandsPresent": true,
+    "sourceAndNodeModulesExcluded": true
+  }
+]

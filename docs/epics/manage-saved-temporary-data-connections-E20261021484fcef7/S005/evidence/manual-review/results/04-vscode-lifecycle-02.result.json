@@ -1,0 +1,139 @@
+{
+  "id": "04-vscode-lifecycle-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:42:09.785Z",
+  "finished": "2026-11-01T04:42:47.199Z",
+  "inputChars": 69611,
+  "inputSha256": "56aec4380cf4ffce27597e6745a0e75609c83b9a79f8716274ca56ea70218e6a",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual workaround review of the supplied evidence, which was two new VS Code test files: connections/__tests__/privacy.test.ts and connections/__tests__/compatibility.test.ts. I found no concrete, reachable defect in either file. The assigned obligations are mostly about production source (host, controller, gateway, wire decoders, Kotlin service and panel, plugin.xml, DaemonGatewayService), and none of that source was supplied. Those obligations are therefore could-not-verify, not holds. The tests do exercise several of the VS Code behaviors: no second mutate or ticket for an unknown attempt, lease-expiry recovery, per-action capability gating, and DOM erasure of secrets. They only show intent and assertions, and I could not confirm they pass. Nothing here approves BUILD or any release gate.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:2",
+        "status": "could-not-verify",
+        "evidence": "The model.ts, controller.ts and wire.ts cores, the Kotlin counterpart, the fixture-corpus digest check and the extension.ts and Configurable wiring were not supplied. The tests drive a real host and fake panel through list states (empty-registry, ready, upgrade-required), root choice, and the draft and dirty confirmation. The privacy test's bundle-import check bans fs, vscode, keytar and telemetry imports from host.ts. The Kotlin parity and 'identical reducers' claims have no evidence here."
+      },
+      {
+        "key": "lld:data-model:4",
+        "status": "could-not-verify",
+        "evidence": "The strict decoders, Kotlin DTOs and DaemonGatewayService were not supplied. The compatibility test covers missing, old, future, malformed and base-incomplete capabilities, which show upgrade-required with zero ticket or mutate calls and zero legacy writes. It also covers a read-only pinned-family row where the draft is read-only, Save is disabled and Remove is enabled. The test fixture, not production decoding code, produces these inputs."
+      },
+      {
+        "key": "lld:data-model:6",
+        "status": "could-not-verify",
+        "evidence": "The ticket and attempt implementation was not supplied. The compatibility test injects an 'after' fault and gets phase 'unknown'. After capability loss and recovery, reconcile reaches 'committed' with exactly one 'mutate' and one 'ticket' call, which is consistent with same-ticket reconciliation without a fresh mutation. Pending polling, not-seen replay rules, workbench-loss behavior and the dirty-close/hide behavior of an unknown mutation are not evidenced."
+      },
+      {
+        "key": "lld:data-model:9",
+        "status": "could-not-verify",
+        "evidence": "No Kotlin file or plugin.xml was supplied. Both changed files are VS Code tests, so JetBrains project isolation, background-executor use and disposal are unassessed. The privacy test does check isolation between two forked VS Code owners (otherPanel receives no canaries)."
+      },
+      {
+        "key": "lld:error:3",
+        "status": "could-not-verify",
+        "evidence": "The controller source was not supplied. The compatibility test shows an unknown attempt retaining its record and reconciling via status. It shows no second ticket or mutate call, and a reconcile intent is refused while the operation-status feature is absent. Timeout and malformed-outcome variants were not seen."
+      },
+      {
+        "key": "lld:error:6",
+        "status": "could-not-verify",
+        "evidence": "The session source was not supplied. The privacy test advances the owner clock by 90000 ms, gets an authenticated rejection, and the view status becomes 'expired'. After reselecting the root the status is 'ready', and registry writes, credential sets and deletes are unchanged. It does not directly show cleared temporary inputs, cancelled tests or a daemon-epoch change, and the client has not been shown to avoid silent recreation."
+      },
+      {
+        "key": "lld:error:8",
+        "status": "could-not-verify",
+        "evidence": "The privacy test emits stale and detached private events after a rebuild, and no further posts or draft changes occur. Late test replies and list replies against the (request, root, key, revision, generation, epoch) tuple are not directly exercised in the supplied files."
+      },
+      {
+        "key": "lld:edge:3",
+        "status": "could-not-verify",
+        "evidence": "No supplied test adds a Temporary entry while the Saved filter is selected, so the filter adjustment after refresh and the lifecycle copy before adding are not shown. The tests only show a temporary add and later a switch to filter-all."
+      },
+      {
+        "key": "lld:invariant:3",
+        "status": "could-not-verify",
+        "evidence": "DaemonGatewayService and the Kotlin session service were not supplied. The compatibility test confirms that legacy listing from the VS Code side shows only the Saved entry and that there are no legacy writes. That says nothing about the JetBrains application-wide gateway."
+      },
+      {
+        "key": "lld:shared:6",
+        "status": "could-not-verify",
+        "evidence": "The sc5 workbench owner and transport source was not supplied. The privacy test exercises a manual-clock 90-second lease expiry, resume and owner disposal via f.owner.dispose() and whenDisposed(). The control and delegated data lane mechanics were not seen."
+      },
+      {
+        "key": "lld:migration:5",
+        "status": "could-not-verify",
+        "evidence": "Only two test files were supplied. The task instruction, not this review, records that VS Code 0.5.23 manual testing is user-reported and that JetBrains live UI is deferred. Gradle and full-sweep results were not supplied and are not treated as proof either way."
+      },
+      {
+        "key": "lld:backward-compat",
+        "status": "could-not-verify",
+        "evidence": "The compatibility tests assert that an old, missing, future, malformed or base-incomplete daemon gives an upgrade state, no ticket or mutate calls, zero legacy writes, and unchanged legacy Saved projection. The production code that enforces this and the application-wide Kotlin gateway were not supplied."
+      },
+      {
+        "key": "lld:scope",
+        "status": "could-not-verify",
+        "evidence": "The test files import shared removal, capabilities and the corpus loader without reimplementing them, which is consistent with consuming adjacent contracts. Scope adherence of the production source was not supplied."
+      },
+      {
+        "key": "plan:t2",
+        "status": "could-not-verify",
+        "evidence": "wire.ts and CM-S5-WIRE-TS were not supplied. Only indirect effects via malformed capability fixtures are visible."
+      },
+      {
+        "key": "plan:t6",
+        "status": "could-not-verify",
+        "evidence": "The pure model and CM-S5-STATE-TS were not supplied. The supplied tests touch counts, list states, filter-all and a read-only row only incidentally."
+      },
+      {
+        "key": "plan:t9",
+        "status": "could-not-verify",
+        "evidence": "The JetBrains ConnectionsSessionService and CM-S5-OWNER-KT were not supplied."
+      },
+      {
+        "key": "plan:t14",
+        "status": "could-not-verify",
+        "evidence": "gateway.ts, draft-test.ts and CM-S5-TEST-TS were not supplied. The compatibility test shows that Test is gated independently (Save enabled, Test disabled, Test click gives an Upgrade message and Save still succeeds). The privacy test runs a Test against an unreachable endpoint until the supervisor's activeCount is 0."
+      },
+      {
+        "key": "plan:t19",
+        "status": "could-not-verify",
+        "evidence": "The Swing panel and CM-S5-RENDER-KT were not supplied. VS Code renderer-side behavior in these tests does not stand in for it."
+      },
+      {
+        "key": "plan:t22",
+        "status": "could-not-verify",
+        "evidence": "The privacy test uses two forked VS Code owners with the same root and checks that the second panel never receives the first panel's canaries. The Kotlin owners, overlapping RPC IDs and root A→B→A retention are not evidenced, and the fixture's forkOwner implementation was not supplied."
+      },
+      {
+        "key": "plan:t24",
+        "status": "could-not-verify",
+        "evidence": "The VS Code privacy tests poison fs, fs.promises and console writes, check that registry writes, credential sets and deletes stay unchanged for temporary operations, and inspect the bundle imports. The Kotlin persistence side, telemetry, memento, webview state, artifact and Settings sinks beyond fs and console, and the screenshots are not evidenced. The Kotlin half of the obligation and this client's real adapters are unassessed."
+      },
+      {
+        "key": "plan:t28",
+        "status": "could-not-verify",
+        "evidence": "This is a live both-client acceptance task. The supplied tests are fixture-based unit/integration tests, not live evidence. The task instruction records JetBrains live UI as deferred and VS Code manual testing as user-reported, so it is not asserted as passed."
+      }
+    ],
+    "inspectedFiles": [
+      "vscode-plugin/src/connections/__tests__/privacy.test.ts",
+      "vscode-plugin/src/connections/__tests__/compatibility.test.ts"
+    ],
+    "limitations": [
+      "Only two newly added VS Code test files were supplied; both were assessed and no changed file was left unassessed.",
+      "Production sources were not supplied: host.ts, gateway.ts, controller, wire, removal, capabilities, the draft-test supervisor, the Kotlin files, plugin.xml and extension.ts. Fixtures (management.js, renderer.js, connection-corpus.js) were also not supplied.",
+      "No test was executed and no pass/fail result was available. The test assertions are read statically.",
+      "JetBrains obligations (data-model:9, invariant:3, t9, t19 and Kotlin halves of others) have no supplied evidence.",
+      "The privacy poisoning covers fs and console only, so the sinks it does not cover could not be assessed.",
+      "Known manual-test, external-coverage and full-sweep caveats from the task statement were respected and are not treated as new defects."
+    ],
+    "evidenceRequests": [
+      "vscode-plugin/src/connections/host.ts, gateway.ts, wiring.ts and renderer.ts, plus src/shared/connection-manager/{model,controller,wire,removal,capabilities}.ts, for the unknown-mutation, expiry, stale-reply and dirty-guard obligations.",
+      "Test fixtures vscode-plugin/src/connections/__tests__/fixtures/management.ts and renderer.ts, to confirm that the fake daemon and panel faithfully model real transport behavior.",
+      "JetBrains connections/*.kt (ConnectionsSessionService, ConnectionsManagerGateway/Model/Panel/Configurable, ManageConnectionsAction), plugin.xml registrations and DaemonGatewayService.kt, with the matching Kotlin tests.",
+      "Any recorded run output for CM-S5-PRIVACY-TS and CM-S5-COMPAT-TS, as targeted evidence of pass/fail."
+    ]
+  }
+}

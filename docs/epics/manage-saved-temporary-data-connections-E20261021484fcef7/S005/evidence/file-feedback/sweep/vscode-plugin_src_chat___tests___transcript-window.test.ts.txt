@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: latestWindow: a transcript no longer than one page is returned whole with firstIndex 0
+ok 1 - latestWindow: a transcript no longer than one page is returned whole with firstIndex 0
+  ---
+  duration_ms: 1.422542
+  type: 'test'
+  ...
+# Subtest: latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows
+ok 2 - latestWindow: a long transcript returns its last page, moved back to the start of the turn when a user row is within one more page, and never more than two pages of rows
+  ---
+  duration_ms: 1.038833
+  type: 'test'
+  ...
+# Subtest: latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once
+ok 3 - latestWindow and pageBefore: with no user row within reach the cut is the plain page; consecutive pages cover every row exactly once
+  ---
+  duration_ms: 0.321625
+  type: 'test'
+  ...
+# Subtest: pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0
+ok 4 - pageBefore: before is clamped to 0..length; at 0 it returns no rows and firstIndex 0
+  ---
+  duration_ms: 0.111167
+  type: 'test'
+  ...
+# Subtest: walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated
+ok 5 - walking pageBefore from the latest window down to 0 reproduces the whole transcript in order with no row skipped or repeated
+  ---
+  duration_ms: 2.202375
+  type: 'test'
+  ...
+# Subtest: transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change
+ok 6 - transcript window: a diff row is given with the content of the last later row that replaces its sid, wherever those rows sit; a withdrawn one as withdrawn; a row with replaces as it is; firstIndex and the row count do not change
+  ---
+  duration_ms: 0.3275
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 218.883708

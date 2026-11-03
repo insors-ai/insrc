@@ -1,0 +1,39 @@
+{
+  "status": "failed-no-completed-review",
+  "cycleAttempts": 3,
+  "lastAttempt": {
+    "head": "9da5a38b2",
+    "inputFingerprint": "0779a3b19a4aa091b30914cb9ff70928393431115fc803b14efc402a05fe8ae2",
+    "fingerprintUnchangedAtEnd": true,
+    "initialPrimaryChunks": 11,
+    "totalBudgetMs": 6600000,
+    "adherenceBudgetMs": 1800000,
+    "lastReportedProgress": {
+      "dimension": "adherence",
+      "detail": "obligation #59"
+    },
+    "result": {
+      "next": "error",
+      "error": {
+        "code": "review-failed",
+        "message": "review session passed its time limit of 1800s",
+        "retryable": false
+      }
+    }
+  },
+  "priorAttempts": [
+    {
+      "attempt": 1,
+      "result": "review-input-changed during capture",
+      "completedReview": false
+    },
+    {
+      "attempt": 2,
+      "result": "cancelled after concurrent repository commits invalidated the snapshot",
+      "completedReview": false
+    }
+  ],
+  "jetBrainsManualValidation": "deferred-user",
+  "vsCodeManualValidation": "completed-user-reported",
+  "buildApproved": false
+}

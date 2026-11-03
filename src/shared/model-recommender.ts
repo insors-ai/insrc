@@ -2,7 +2,7 @@
  * Model recommender — suggests optimal local models based on hardware.
  *
  * Analyzes GPU VRAM, RAM, and installed Ollama models to recommend:
- * - Local model (the fixed DEFAULT_LOCAL_MODEL generalist + its install state)
+ * - Local model (the definitions' tool-loop model the caller passes + its install state)
  * - Embedding model (for indexing + search)
  * - Context window size
  * - Budget shape name
@@ -11,33 +11,33 @@
 import type { SystemInfo } from './system-info.js';
 
 /**
- * The default local model (Ollama) — the single generalist that backs the
- * indexer's `coreModel` (and an `ollama` cheap tier, when an operator picks it).
- * The setup flow writes this rather than a hardware-sized `qwen3-coder` pick, so
- * `config list` / `insrc setup` agree with the built-in `models.local.coreModel`
- * catalog default. The built-in cheap tier is no longer local (it is
- * `cli-claude` / `haiku`). Keep in sync with src/config/config-catalog.ts +
- * src/config/local.ts.
+ * The local model to recommend, as the caller learned it from the daemon's model
+ * definitions (the Ollama family's tool-loop model): its id, whether Ollama has
+ * it installed (absent when Ollama did not answer), and its memory estimate.
  */
-export const DEFAULT_LOCAL_MODEL = 'qwen3.6:27b';
+export interface LocalModelChoice {
+  readonly model:     string;
+  readonly installed?: boolean | undefined;
+  /** Approximate memory (MB) at base context, from the definitions; absent = the generic estimate. */
+  readonly memoryMb?:  number | undefined;
+}
 
-/** Approximate VRAM (MB) the default local model needs at base context — a
- *  ~27B Q4 MoE. Used only for tier classification + context-shape sizing; the
- *  model itself is fixed (not hardware-selected). */
-const DEFAULT_LOCAL_MODEL_VRAM_MB = 14000;
+/** The memory (MB) assumed for a local model whose definition gives none —
+ *  used only for tier classification and context-shape sizing. */
+const GENERIC_LOCAL_MODEL_MB = 14000;
 
 // ---------------------------------------------------------------------------
 // Recommendation output
 // ---------------------------------------------------------------------------
 
 export interface ModelRecommendation {
-  // The local generalist model. Fixed to DEFAULT_LOCAL_MODEL (qwen3.6:27b) —
+  // The local model the daemon's definitions name (the Ollama tool-loop model) —
   // NOT a hardware-sized pick. (Field named `coder` for back-compat; holds the
   // local model + its install state.)
   coder: {
     model: string;
     pull: boolean;      // true if not already installed
-    params: string;     // e.g. "27B"
+    params: string;     // e.g. "27B"; '' when unknown
     quantization: string;
     vramNeeded: number; // MB approximate
   };
@@ -105,7 +105,7 @@ const CONTEXT_SHAPES: ContextShape[] = [
 // Recommender logic
 // ---------------------------------------------------------------------------
 
-export function recommendModels(info: SystemInfo): ModelRecommendation {
+export function recommendModels(info: SystemInfo, local: LocalModelChoice): ModelRecommendation {
   const notes: string[] = [];
   const gpu = info.gpu;
   const ramMb = info.ram.totalMb;
@@ -138,7 +138,7 @@ export function recommendModels(info: SystemInfo): ModelRecommendation {
   const embedding = pickEmbedding(usableVram, ramMb, installed, notes);
 
   // 2. Pick coder model against full usable VRAM (not reduced by embedding)
-  const coder = pickCoder(usableVram, ramMb, installed, notes);
+  const coder = pickCoder(local, usableVram, installed, notes);
 
   // 3. Pick context shape based on VRAM remaining after coder (the model in use)
   const vramRemaining = usableVram - coder.vramNeeded;
@@ -182,32 +182,33 @@ function pickEmbedding(
 }
 
 /**
- * The local generalist model. Fixed to `DEFAULT_LOCAL_MODEL` (qwen3.6:27b) — no
- * longer a hardware-sized `qwen3-coder` pick, so `insrc setup` writes/pulls the
- * same model the built-in `models.local.coreModel` catalog default names. Hardware only determines the GPU-vs-CPU note + the
- * context-shape sizing (via `vramNeeded`). (Field stays named `coder` on
- * ModelRecommendation for back-compat; it now holds the local model.)
+ * The local model: the one the caller passes (from the daemon's definitions), so
+ * `insrc setup` writes and pulls the model the daemon's tool loop runs. Hardware
+ * only decides the GPU-vs-CPU note and the context-shape sizing (via
+ * `vramNeeded`, the definition's memoryMb or the generic estimate). Params and
+ * quantization are not known from the definitions and are left empty.
  */
 function pickCoder(
+  local: LocalModelChoice,
   vramMb: number,
-  _ramMb: number,
   installed: Set<string>,
   notes: string[],
 ): ModelRecommendation['coder'] {
-  const vramNeeded = DEFAULT_LOCAL_MODEL_VRAM_MB;
+  const vramNeeded = local.memoryMb ?? GENERIC_LOCAL_MODEL_MB;
+  const estimate = local.memoryMb !== undefined ? '' : ', generic estimate';
   if (vramMb === 0) {
-    notes.push(`Local model ${DEFAULT_LOCAL_MODEL} will run on CPU (no GPU detected — slower inference)`);
+    notes.push(`Local model ${local.model} will run on CPU (no GPU detected — slower inference)`);
   } else if (vramNeeded > vramMb) {
-    notes.push(`Local model ${DEFAULT_LOCAL_MODEL} (~${vramNeeded}MB) exceeds usable VRAM (${vramMb}MB) — Ollama offloads to CPU/RAM`);
+    notes.push(`Local model ${local.model} (~${vramNeeded}MB${estimate}) exceeds usable VRAM (${vramMb}MB) — Ollama offloads to CPU/RAM`);
   } else {
-    notes.push(`Local model: ${DEFAULT_LOCAL_MODEL} (~${vramNeeded}MB, fits VRAM)`);
+    notes.push(`Local model: ${local.model} (~${vramNeeded}MB${estimate}, fits VRAM)`);
   }
 
   return {
-    model: DEFAULT_LOCAL_MODEL,
-    pull: !installed.has(DEFAULT_LOCAL_MODEL),
-    params: '27B',
-    quantization: 'Q4_K_M',
+    model: local.model,
+    pull: local.installed !== undefined ? !local.installed : !installed.has(local.model),
+    params: '',
+    quantization: '',
     vramNeeded,
   };
 }

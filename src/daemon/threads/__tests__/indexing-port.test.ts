@@ -33,12 +33,13 @@ const { buildHandlerRuntime } = await import('../../handler-runtime.js');
 const { createInDaemonClient } = await import('../../steps/daemon-client.js');
 const { queueStatusFromBoard } = await import('../../status.js');
 const { ThreadServices } = await import('../main-services.js');
-const { methodClasses } = await import('../method-class.js');
+const { inDaemonTarget, methodClasses } = await import('../method-class.js');
 const { Router } = await import('../router.js');
 const { startClassWorker } = await import('../workers.js');
 const { IndexingPortClient, INDEXING_DRAINED, INDEXING_PORT, INDEXING_STOP_OP } = await import('../indexing-port.js');
 const { pushToWorker } = await import('../channel.js');
 import type { MethodClass } from '../channel.js';
+import { stopWorker } from './helpers/stop-worker.js';
 import type { DaemonStatus } from '../../../shared/types.js';
 
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-indexing-port-repo-')));
@@ -89,10 +90,8 @@ before(async () => {
 	}
 });
 after(async () => {
-	const drained = new Promise<void>(resolve => worker.on('message', m => { if (m === INDEXING_DRAINED) resolve(); }));
-	pushToWorker(channel, INDEXING_STOP_OP, null);
-	await drained;
-	await worker.terminate();
+	// Stopped as shutdown stops it: an exit first, or no drained report within 30 s, fails the teardown.
+	await stopWorker(worker, () => pushToWorker(channel, INDEXING_STOP_OP, null), INDEXING_DRAINED);
 	await closeLanceConn();
 	await closeGraphStore();
 	for (const d of [HOME, REPO]) rmSync(d, { recursive: true, force: true });
@@ -111,9 +110,22 @@ test("codeReview.freshness on the main thread gets the code-indexing worker's co
 	assert.equal(result.isProcessing, work.inFlight || work.pending > 0);
 });
 
+test("the main thread's depthForRepo asks the code-indexing worker's queue", async () => {
+	portCalls.length = 0;
+	assert.equal(await port.depthForRepo(REPO), 0, 'nothing queued for the indexed fixture');
+	const asked = portCalls.filter(c => c.method === INDEXING_PORT.depthForRepo);
+	assert.equal(asked.length, 1, 'one request to the worker');
+	assert.equal(asked[0]!.result, 0);
+	// repo.stats through the main thread's tables reads the same answer.
+	const stats = await main.rpcHandlers['repo.stats']!({ repoPath: REPO }) as { pendingJobs?: number } | { error: string };
+	assert.equal('error' in stats ? stats.error : undefined, undefined);
+	assert.equal((stats as { pendingJobs: number }).pendingJobs, 0);
+	assert.ok(portCalls.filter(c => c.method === INDEXING_PORT.depthForRepo).length >= 2, 'repo.stats asked the worker too');
+});
+
 test('a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker', async () => {
 	const client = createInDaemonClient(main.rpcHandlers, main.streamHandlers, {
-		route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) },
+		route: { targetOf: method => inDaemonTarget(method, { routed, onSharedWorker: false }), request: (cls, method, params) => router.request(cls, method, params) },
 	});
 	sent.length = 0;
 	assert.deepEqual(await client.request('repo.reindex', { path: REPO }), { ok: true });
@@ -134,7 +146,8 @@ test("daemon.status queue fields reflect the code-indexing worker's real lanes",
 	const status = await main.rpcHandlers['daemon.status']!({}) as DaemonStatus;
 	assert.equal(status.queueDepth, 5);
 	assert.deepEqual(status.queueLanes, queueStatusFromBoard(services.board.snapshot().indexing).queueLanes);
-	assert.deepEqual(status.queueLanes, { index: { depth: 3, running: true }, summary: { depth: 2, running: false, sweep: { repoPath: REPO, done: 1, total: 4 } } });
+	// The worker publishes its idle backfill lane too (Epic c2ba6fa6 s2).
+	assert.deepEqual(status.queueLanes, { index: { depth: 3, running: true }, summary: { depth: 2, running: false, sweep: { repoPath: REPO, done: 1, total: 4 } }, backfill: { depth: 0, running: false } });
 	assert.equal(port.isProcessing, true);
 	// And the worker's own publishes replace them: a real job shows, then the lanes settle idle.
 	services.board.publishLane('index', { depth: 0, processing: false });

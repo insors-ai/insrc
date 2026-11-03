@@ -291,8 +291,12 @@ export class LockManager {
 	private readonly layout: Layout;
 	private readonly threadId: number;
 	private readonly now: () => number;
-	/** Names held by the current async call chain. */
-	private readonly held = new AsyncLocalStorage<ReadonlySet<string>>();
+	/**
+	 * The holds of the current async call chain. A continuation that outlives its
+	 * callback (a timer or promise created inside it) inherits the chain, so each
+	 * hold is marked dead on release and only live holds count.
+	 */
+	private readonly held = new AsyncLocalStorage<readonly { readonly name: string; live: boolean }[]>();
 	/** Arrival-order queue per name for this thread's waiting requests. */
 	private readonly tails = new Map<string, Promise<void>>();
 
@@ -347,7 +351,11 @@ export class LockManager {
 
 	/** Whether this async context runs inside a callback holding `name` (a nested request would be refused). */
 	holds(name: string): boolean {
-		return this.held.getStore()?.has(name) === true;
+		return this.liveHolds().some(h => h.name === name);
+	}
+
+	private liveHolds(): { readonly name: string; live: boolean }[] {
+		return (this.held.getStore() ?? []).filter(h => h.live);
 	}
 
 	/**
@@ -357,10 +365,10 @@ export class LockManager {
 	async request<T>(name: string, options: LockOptions, callback: LockCallback<T>): Promise<T> {
 		const req = validateLockRequest(name, options);
 		options.signal?.throwIfAborted();
-		const outer = this.held.getStore();
-		if (outer !== undefined && outer.size > 0) {
-			if (outer.has(name)) throw new LockNestedError(name, name, 'same-name');
-			if (options.ifAvailable !== true && options.timeoutMs === undefined) throw new LockNestedError(name, [...outer][0]!, 'unbounded-wait');
+		const outer = this.liveHolds();
+		if (outer.length > 0) {
+			if (outer.some(h => h.name === name)) throw new LockNestedError(name, name, 'same-name');
+			if (options.ifAvailable !== true && options.timeoutMs === undefined) throw new LockNestedError(name, outer[0]!.name, 'unbounded-wait');
 		}
 		const index = await this.resolveName(req.nameBytes);
 		let slot: number;
@@ -372,9 +380,11 @@ export class LockManager {
 			slot = await this.acquire(index, name, req, options);
 		}
 		const lock: Lock = { name, mode: req.mode, ...(options.metadata !== undefined ? { metadata: options.metadata } : {}) };
+		const hold = { name, live: true };
 		try {
-			return await this.held.run(new Set([...(outer ?? []), name]), () => callback(lock, []));
+			return await this.held.run([...outer, hold], () => callback(lock, []));
 		} finally {
+			hold.live = false;
 			await this.release(index, slot, req.mode);
 		}
 	}

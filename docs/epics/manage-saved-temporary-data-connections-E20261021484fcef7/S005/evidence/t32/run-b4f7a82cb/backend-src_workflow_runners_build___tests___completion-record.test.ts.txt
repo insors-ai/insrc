@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: create: no prior BUILD json + a changed set writes a plan-driven BUILD record with a 2-entry change-log
+ok 1 - create: no prior BUILD json + a changed set writes a plan-driven BUILD record with a 2-entry change-log
+  ---
+  duration_ms: 48.268125
+  type: 'test'
+  ...
+# Subtest: merge/idempotent: calling twice keeps exactly ONE BUILD json for the id
+ok 2 - merge/idempotent: calling twice keeps exactly ONE BUILD json for the id
+  ---
+  duration_ms: 80.422125
+  type: 'test'
+  ...
+# Subtest: empty: an empty changed set writes a record with an EMPTY changeLog
+ok 3 - empty: an empty changed set writes a record with an EMPTY changeLog
+  ---
+  duration_ms: 36.261708
+  type: 'test'
+  ...
+# Subtest: failure swallow: a throwing listChanged still writes a record (an empty changeLog) and does NOT throw
+ok 4 - failure swallow: a throwing listChanged still writes a record (an empty changeLog) and does NOT throw
+  ---
+  duration_ms: 40.525375
+  type: 'test'
+  ...
+# Subtest: no-op: an empty epicHash returns undefined and writes no file
+ok 5 - no-op: an empty epicHash returns undefined and writes no file
+  ---
+  duration_ms: 0.941625
+  type: 'test'
+  ...
+# Subtest: parse round-trip: buildArtifactId round-trips through parseBuildArtifactRef (incl. a hyphen-bearing storyId)
+ok 6 - parse round-trip: buildArtifactId round-trips through parseBuildArtifactRef (incl. a hyphen-bearing storyId)
+  ---
+  duration_ms: 0.438625
+  type: 'test'
+  ...
+# Subtest: CR-2: completing a STANDALONE Story keeps meta.standalone true and leaves BUILD.md in docs/standalone/ — no second, divergent record
+ok 7 - CR-2: completing a STANDALONE Story keeps meta.standalone true and leaves BUILD.md in docs/standalone/ — no second, divergent record
+  ---
+  duration_ms: 62.254041
+  type: 'test'
+  ...
+# Subtest: t4 — an ISSUE-anchored work item gets standalone true and lands under docs/standalone
+ok 8 - t4 — an ISSUE-anchored work item gets standalone true and lands under docs/standalone
+  ---
+  duration_ms: 36.969
+  type: 'test'
+  ...
+# Subtest: t4 — an epic-parented work item is unaffected: a DEF without the flag stays epic
+ok 9 - t4 — an epic-parented work item is unaffected: a DEF without the flag stays epic
+  ---
+  duration_ms: 41.969958
+  type: 'test'
+  ...
+# Subtest: t4 — an explicit standalone FALSE on the definition artifact is not written through as false
+ok 10 - t4 — an explicit standalone FALSE on the definition artifact is not written through as false
+  ---
+  duration_ms: 37.473375
+  type: 'test'
+  ...
+# Subtest: completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)
+ok 11 - completion of a Story whose only dirty files are its BUILD and TESTS records keeps the change log derived from the committed range, and the validate turn and the completion record leave out the same files (mutation: leave the test record's files out of the completion record's list)
+  ---
+  duration_ms: 224.526834
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 849.249416

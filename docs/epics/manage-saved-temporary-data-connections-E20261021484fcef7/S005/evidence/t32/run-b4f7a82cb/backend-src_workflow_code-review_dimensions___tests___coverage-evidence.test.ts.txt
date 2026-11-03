@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: evidence classes follow testsReaching and the test record
+ok 1 - evidence classes follow testsReaching and the test record
+  ---
+  duration_ms: 1.89625
+  type: 'test'
+  ...
+# Subtest: with no test record, a malformed record, or no passing file, an edge-free symbol is no-edge-no-tests and its HIGH is kept
+ok 2 - with no test record, a malformed record, or no passing file, an edge-free symbol is no-edge-no-tests and its HIGH is kept
+  ---
+  duration_ms: 0.514458
+  type: 'test'
+  ...
+# Subtest: a HIGH with no findingKind, an unknown or ambiguous symbolId, or on a diff review is lowered; a promised-test HIGH and a no-edge-no-tests symbol HIGH are kept
+ok 3 - a HIGH with no findingKind, an unknown or ambiguous symbolId, or on a diff review is lowered; a promised-test HIGH and a no-edge-no-tests symbol HIGH are kept
+  ---
+  duration_ms: 22.353875
+  type: 'test'
+  ...
+# Subtest: a promised-test HIGH is kept only when its expectationRef is a test the approved plan promised; with no plan it is lowered
+ok 4 - a promised-test HIGH is kept only when its expectationRef is a test the approved plan promised; with no plan it is lowered
+  ---
+  duration_ms: 0.314834
+  type: 'test'
+  ...
+# Subtest: the coverage prompt lists only eligible symbols
+ok 5 - the coverage prompt lists only eligible symbols
+  ---
+  duration_ms: 1.360667
+  type: 'test'
+  ...
+# Subtest: a diff review lists no symbols and grades only the promised tests
+ok 6 - a diff review lists no symbols and grades only the promised tests
+  ---
+  duration_ms: 0.717959
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 359.582666

@@ -1,0 +1,20 @@
+s8 t8 smoke on the installed daemon @ 2befc2d8, 2026-11-02
+
+1. insrc itself: index.subsystems -> graphComplete false, note 'the groups rest on an incomplete graph', no groups
+   (repo.stats: 5 relationships point at files an ignore rule excludes -> awaiting-target 5; lc1 holds: no groups on an incomplete graph)
+
+2. /tmp/insrc-s9-smoke after repo.reindex: the 'subsystems' job ran in the summary lane; index.subsystems:
+{"generation":28,"computedAtGeneration":28,"graphComplete":true,"stale":false,"note":null}
+- cs | files cs/App.cs,cs/Lib.cs | entities 5 | conns [] 
+   summary: This subsystem exports the Geo.App.App class with a Run method and the Geo.Util.Calc class with a Go method. It has no connections to other subsystems.
+- cpp | files cpp/shape.cpp,cpp/shape.hpp | entities 4 | conns [] 
+   summary: The cpp subsystem defines a Shape class with an area method, declared in shape.hpp and implemented in shape.cpp. It has no dependencies on other subsystems.
+- db/schema.sql | files db/schema.sql | entities 3 | conns [] 
+   summary: This subsystem defines the database schema using SQL, declaring the core tables orgs, users, and org_users. It serves as the structural foundation for storing organizational data, user profiles, and the relationships between them. As a standalone database definition file, it does not import from or connect to any other subsystems within the repository.
+- rust/src | files rust/src/main.rs,rust/src/util.rs | entities 4 | conns [] 
+   summary: This subsystem provides the entry point for a Rust application via main.rs, which exports a Config entity, and a utility module in util.rs that exports a run function. It is self-contained and does not connect to other subsystems.
+- c | files c/main.c,c/util.h | entities 4 | conns [] 
+   summary: This subsystem contains the entry point for the application via the main function in c/main.c. It defines a utility function, util_add, in c/util.h. The subsystem operates independently with no connections to other subsystems.
+
+3. insrc_analyze 'map the cpp module (cpp/shape.cpp, cpp/shape.hpp)' on /tmp/insrc-s9-smoke: the Structure layer ends with
+   '### Subsystems' / '#### Subsystem cpp' / the stored summary / 'Connections: (no connections to other subsystems)' / 'Files (2): cpp/shape.cpp, cpp/shape.hpp'

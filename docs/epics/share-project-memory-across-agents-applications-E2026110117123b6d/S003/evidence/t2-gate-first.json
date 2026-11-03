@@ -1,0 +1,167 @@
+{
+  "taskId": "t2",
+  "passed": false,
+  "checks": [
+    {
+      "check": "Reject missing/extra/invalid fields and envelope/payload disagreements before mutation.",
+      "satisfied": true,
+      "evidence": "store/codec.ts validates exact row/payload fields, nested lineage/outcomes, canonical envelopes and nullable vectors. snapshotRows validates and freezes complete bounded batches. All five named codec tests exist and exercise these checks; the daemon reports them passing."
+    },
+    {
+      "check": "Golden text/Float32 profile tests distinguish semantic normalizer from embedding preprocessing and reject incompatible plan metadata.",
+      "satisfied": false,
+      "evidence": "The three named profile tests exercise verbatim Unicode/CRLF/whitespace, Float32 conversion without renormalization, and direct profile mismatches. However, they only call profile helpers; no CommitPlan metadata validation or test of a vector-bearing plan exists. requireProfile is currently used by root-row validation, so incompatible plan metadata rejection is not demonstrated."
+    }
+  ],
+  "scopeRespected": true,
+  "reason": "Codec and profile unit coverage is present and passing, but the explicit incompatible-plan-metadata acceptance requirement remains unverified.",
+  "testsPassed": true,
+  "typecheckClean": true,
+  "evidence": {
+    "typecheck": {
+      "ok": true,
+      "command": "npx tsc --noEmit\n(cd packages/project-memory && npx tsc --noEmit)",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 19774,
+      "outputTail": "# npx tsc --noEmit: clean\n\n# (cd packages/project-memory && npx tsc --noEmit): clean\n"
+    },
+    "tests": {
+      "ok": true,
+      "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-WTNYAt/report.tap packages/project-memory/src/__tests__/store-codec.test.ts\nnpx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-UtiD9b/report.tap packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+      "exitCode": 0,
+      "timedOut": false,
+      "durationMs": 1310,
+      "outputTail": "TAP version 13\n# Subtest: store-embedding-profile-preserves-text-and-converts-float32-once\nok 1 - store-embedding-profile-preserves-text-and-converts-float32-once\n  ---\n  duration_ms: 1.902208\n  type: 'test'\n  ...\n# Subtest: store-embedding-profile-rejects-missing-or-mismatched-metadata\nok 2 - store-embedding-profile-rejects-missing-or-mismatched-metadata\n  ---\n  duration_ms: 0.640667\n  type: 'test'\n  ...\n# Subtest: store-embedding-profile-rejects-unsafe-text-and-vectors\nok 3 - store-embedding-profile-rejects-unsafe-text-and-vectors\n  ---\n  duration_ms: 0.237208\n  type: 'test'\n  ...\n1..3\n# tests 3\n# suites 0\n# pass 3\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 5.8395\n",
+      "files": [
+        {
+          "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+          "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-WTNYAt/report.tap packages/project-memory/src/__tests__/store-codec.test.ts",
+          "exitCode": 0,
+          "timedOut": false,
+          "durationMs": 758,
+          "titles": [
+            {
+              "title": "store-codec-canonical-roundtrip-all-row-kinds",
+              "depth": 0,
+              "result": "pass"
+            },
+            {
+              "title": "store-codec-rejects-missing-extra-and-duplicated-envelope-fields",
+              "depth": 0,
+              "result": "pass"
+            },
+            {
+              "title": "store-codec-validates-nested-lineage-outcomes-and-source-shapes",
+              "depth": 0,
+              "result": "pass"
+            },
+            {
+              "title": "store-codec-reserves-bounded-immutable-effect-batches",
+              "depth": 0,
+              "result": "pass"
+            },
+            {
+              "title": "store-codec-qualified-identities-and-explicit-arrow-schema",
+              "depth": 0,
+              "result": "pass"
+            }
+          ],
+          "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/packages_project-memory_src___tests___store-codec.test.ts.1793708852639.11919.tap"
+        },
+        {
+          "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+          "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-UtiD9b/report.tap packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+          "exitCode": 0,
+          "timedOut": false,
+          "durationMs": 552,
+          "titles": [
+            {
+              "title": "store-embedding-profile-preserves-text-and-converts-float32-once",
+              "depth": 0,
+              "result": "pass"
+            },
+            {
+              "title": "store-embedding-profile-rejects-missing-or-mismatched-metadata",
+              "depth": 0,
+              "result": "pass"
+            },
+            {
+              "title": "store-embedding-profile-rejects-unsafe-text-and-vectors",
+              "depth": 0,
+              "result": "pass"
+            }
+          ],
+          "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/packages_project-memory_src___tests___store-embedding-profile.test.ts.1793708853195.11919.tap"
+        }
+      ],
+      "namedTests": [
+        {
+          "name": "store-row-codec-and-effect-reservations",
+          "level": "unit",
+          "source": "mapping",
+          "cases": [
+            {
+              "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+              "title": "store-codec-canonical-roundtrip-all-row-kinds",
+              "result": "pass"
+            },
+            {
+              "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+              "title": "store-codec-reserves-bounded-immutable-effect-batches",
+              "result": "pass"
+            },
+            {
+              "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+              "title": "store-codec-qualified-identities-and-explicit-arrow-schema",
+              "result": "pass"
+            }
+          ],
+          "files": []
+        },
+        {
+          "name": "store-persisted-payload-v1-required-fields",
+          "level": "unit",
+          "source": "mapping",
+          "cases": [
+            {
+              "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+              "title": "store-codec-rejects-missing-extra-and-duplicated-envelope-fields",
+              "result": "pass"
+            },
+            {
+              "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+              "title": "store-codec-validates-nested-lineage-outcomes-and-source-shapes",
+              "result": "pass"
+            }
+          ],
+          "files": []
+        },
+        {
+          "name": "store-embedding-normalization-profile-v1",
+          "level": "unit",
+          "source": "mapping",
+          "cases": [
+            {
+              "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+              "title": "store-embedding-profile-preserves-text-and-converts-float32-once",
+              "result": "pass"
+            },
+            {
+              "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+              "title": "store-embedding-profile-rejects-missing-or-mismatched-metadata",
+              "result": "pass"
+            },
+            {
+              "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+              "title": "store-embedding-profile-rejects-unsafe-text-and-vectors",
+              "result": "pass"
+            }
+          ],
+          "files": []
+        }
+      ]
+    },
+    "testRecord": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/TESTS.md"
+  }
+}

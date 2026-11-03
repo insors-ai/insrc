@@ -201,7 +201,8 @@ test('package.json contributes.commands includes insrc.settings.refresh alongsid
   assert.ok(refresh, 'insrc.settings.refresh not declared');
   assert.equal(refresh.title, 'Refresh insrc settings');
   assert.equal(refresh.category, 'insrc');
-  assert.equal(cmds.length, 14); // 7 shipped + refresh + the 2 S004 panel commands + the S003 model-picker command + the dev-chat insrc.chat.open + the S007 insrc.chat.docsReview command + the E2 insrc.delivery.openBoard command
+  assert.equal(cmds.length, 20); // Existing 14 routes, the five approved S005 Connections routes, plus Story S001's Model Tiers route.
+  for(const command of ['insrc.openDataSources','insrc.connections.add','insrc.connections.edit','insrc.connections.test','insrc.connections.remove'])assert.ok(cmds.some(c=>c.command===command),command);
 });
 
 test('the InsrcCommandId union includes insrc.settings.refresh and extension.ts wires it to pullFromDaemon', () => {

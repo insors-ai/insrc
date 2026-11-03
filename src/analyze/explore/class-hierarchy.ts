@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -24,9 +25,9 @@ import {
 	getEntitiesByIds,
 	getEntity,
 } from '../../db/entities.js';
-import { inNeighbors, outNeighbors } from '../../db/graph/edges.js';
+import { inNeighbors, outNeighbors, type NeighborRelation } from '../../db/graph/edges.js';
 import { getLogger } from '../../shared/logger.js';
-import type { Entity, EntityKind } from '../../shared/types.js';
+import type { Entity, EntityKind, RelationEvidence } from '../../shared/types.js';
 
 import type {
 	ClassHierarchyNode,
@@ -103,10 +104,7 @@ export async function runClassHierarchy(
 	targets = targets.filter(e => ctx.ignoreFilter.isIncluded(e.file));
 
 	if (targets.length === 0) {
-		log.info(
-			{ runId: ctx.runId, subject },
-			'class.hierarchy: no target resolved',
-		);
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, subject }, 'class.hierarchy: no target resolved']);
 		return {
 			type:         'class.hierarchy',
 			// The graph holds no class or interface of this name: empty, and complete.
@@ -124,15 +122,24 @@ export async function runClassHierarchy(
 		const u64 = await entityU64ForId(t.id);
 		if (u64 === undefined) { noGraphNode.push(t); continue; }
 
-		const inheritsOut   = await outNeighbors(u64, { kindFilter: ['INHERITS'] });
-		const implementsOut = await outNeighbors(u64, { kindFilter: ['IMPLEMENTS'] });
-		const inheritsIn    = await inNeighbors(u64,  { kindFilter: ['INHERITS'] });
-		const implementsIn  = await inNeighbors(u64,  { kindFilter: ['IMPLEMENTS'] });
+		// With each relationship's evidence (Epic c2ba6fa6 s7): one kind per
+		// read, so each neighbour has one relationship.
+		const inheritsOut   = await outNeighbors(u64, { kindFilter: ['INHERITS'], withEvidence: true });
+		const implementsOut = await outNeighbors(u64, { kindFilter: ['IMPLEMENTS'], withEvidence: true });
+		const inheritsIn    = await inNeighbors(u64,  { kindFilter: ['INHERITS'], withEvidence: true });
+		const implementsIn  = await inNeighbors(u64,  { kindFilter: ['IMPLEMENTS'], withEvidence: true });
 
-		const extendsIds     = await entityIdsByU64s(inheritsOut);
-		const implementsIds  = await entityIdsByU64s(implementsOut);
-		const subclassIds    = await entityIdsByU64s(inheritsIn);
-		const implementerIds = await entityIdsByU64s(implementsIn);
+		const extendsIds     = await entityIdsByU64s(inheritsOut.map(r => r.u64));
+		const implementsIds  = await entityIdsByU64s(implementsOut.map(r => r.u64));
+		const subclassIds    = await entityIdsByU64s(inheritsIn.map(r => r.u64));
+		const implementerIds = await entityIdsByU64s(implementsIn.map(r => r.u64));
+		/** entity id -> the evidence of its relationship in one of the four lists. */
+		const evidenceById = (rows: readonly NeighborRelation[], ids: ReadonlyMap<bigint, string>): Map<string, RelationEvidence> =>
+			new Map(rows.flatMap(r => { const id = ids.get(r.u64); return id === undefined ? [] : [[id, r.evidence] as const]; }));
+		const extendsEvidence     = evidenceById(inheritsOut, extendsIds);
+		const implementsEvidence  = evidenceById(implementsOut, implementsIds);
+		const subclassEvidence    = evidenceById(inheritsIn, subclassIds);
+		const implementerEvidence = evidenceById(implementsIn, implementerIds);
 
 		// Drop neighbors under gitignored paths so a compiled-JS class
 		// under out/ doesn't show up alongside the authored source
@@ -153,34 +160,35 @@ export async function runClassHierarchy(
 				entityId: e.id,
 				name:     e.name,
 				file:     e.file,
+				evidence: extendsEvidence.get(e.id) ?? 'unknown',
 			})),
 			implementsList: implementsEnts.map(e => ({
 				entityId: e.id,
 				name:     e.name,
 				file:     e.file,
+				evidence: implementsEvidence.get(e.id) ?? 'unknown',
 			})),
 			subclasses:     subclassEnts.map(e => ({
 				entityId: e.id,
 				name:     e.name,
 				file:     e.file,
+				evidence: subclassEvidence.get(e.id) ?? 'unknown',
 			})),
 			implementers:   implementerEnts.map(e => ({
 				entityId: e.id,
 				name:     e.name,
 				file:     e.file,
+				evidence: implementerEvidence.get(e.id) ?? 'unknown',
 			})),
 		});
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:   ctx.runId,
 			subject,
 			targets: targets.length,
 			nodes:   nodes.length,
-		},
-		'class.hierarchy: complete',
-	);
+	}, 'class.hierarchy: complete']);
 
 	return {
 		type:         'class.hierarchy',

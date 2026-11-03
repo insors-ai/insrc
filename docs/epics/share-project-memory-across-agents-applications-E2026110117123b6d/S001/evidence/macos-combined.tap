@@ -1,0 +1,138 @@
+
+> @insrc/project-memory@0.1.0 test
+> node --import tsx --test src/__tests__/*.test.ts
+
+TAP version 13
+# Subtest: options-fail-before-side-effects
+ok 1 - options-fail-before-side-effects
+  ---
+  duration_ms: 22.780042
+  type: 'test'
+  ...
+# Subtest: canonical-root-and-readonly-layout-validation
+ok 2 - canonical-root-and-readonly-layout-validation
+  ---
+  duration_ms: 13.99275
+  type: 'test'
+  ...
+# Subtest: same-process-package-copy-thread-process-contention
+ok 3 - same-process-package-copy-thread-process-contention
+  ---
+  duration_ms: 196.4265
+  type: 'test'
+  ...
+# Subtest: killed-owner-release-stopped-owner-exclusion-and-aliases
+ok 4 - killed-owner-release-stopped-owner-exclusion-and-aliases
+  ---
+  duration_ms: 85.375459
+  type: 'test'
+  ...
+# Subtest: public-v1-types-and-emitted-boundary
+ok 5 - public-v1-types-and-emitted-boundary
+  ---
+  duration_ms: 1065.768667
+  type: 'test'
+  ...
+# Subtest: pure-public-import-without-native-or-daemon
+ok 6 - pure-public-import-without-native-or-daemon
+  ---
+  duration_ms: 51.881709
+  type: 'test'
+  ...
+# Subtest: one-underlying-call-complete-and-embed
+ok 7 - one-underlying-call-complete-and-embed
+  ---
+  duration_ms: 8.836833
+  type: 'test'
+  ...
+# Subtest: cancel-timeout-rejection-and-bounded-backpressure
+ok 8 - cancel-timeout-rejection-and-bounded-backpressure
+  ---
+  duration_ms: 31.151084
+  type: 'test'
+  ...
+# Subtest: queued-cancellation-never-invokes-provider
+ok 9 - queued-cancellation-never-invokes-provider
+  ---
+  duration_ms: 0.192083
+  type: 'test'
+  ...
+# Subtest: node22-fs-ext-abi-and-separate-descriptor-probe
+ok 10 - node22-fs-ext-abi-and-separate-descriptor-probe
+  ---
+  duration_ms: 33.473625
+  type: 'test'
+  ...
+# Subtest: native-load-failure-is-not-ready
+ok 11 - native-load-failure-is-not-ready
+  ---
+  duration_ms: 0.178542
+  type: 'test'
+  ...
+# Subtest: exclusive-descriptor-and-owned-bootstrap
+ok 12 - exclusive-descriptor-and-owned-bootstrap
+  ---
+  duration_ms: 83.652792
+  type: 'test'
+  ...
+# Subtest: native-callback-cleanup-and-inode-faults
+ok 13 - native-callback-cleanup-and-inode-faults
+  ---
+  duration_ms: 11.634083
+  type: 'test'
+  ...
+# Subtest: layout-state-is-decided-under-ownership-after-one-preflight
+ok 14 - layout-state-is-decided-under-ownership-after-one-preflight
+  ---
+  duration_ms: 16.06975
+  type: 'test'
+  ...
+# > @insrc/project-memory@0.1.0 prepack
+# > npm run build
+# > @insrc/project-memory@0.1.0 build
+# > tsc -p tsconfig.json
+# Subtest: packed-isolated-node22-consumer
+ok 15 - packed-isolated-node22-consumer
+  ---
+  duration_ms: 5713.007125
+  type: 'test'
+  ...
+# Subtest: packed-native-missing-import-versus-open
+ok 16 - packed-native-missing-import-versus-open
+  ---
+  duration_ms: 126.249125
+  type: 'test'
+  ...
+# Subtest: tarball-public-dependency-and-asset-allowlist
+ok 17 - tarball-public-dependency-and-asset-allowlist
+  ---
+  duration_ms: 1.355125
+  type: 'test'
+  ...
+# Subtest: idempotent-drain-close-and-provider-ownership
+ok 18 - idempotent-drain-close-and-provider-ownership
+  ---
+  duration_ms: 16.633208
+  type: 'test'
+  ...
+# Subtest: foundation-data-methods-return-not-ready
+ok 19 - foundation-data-methods-return-not-ready
+  ---
+  duration_ms: 75.741625
+  type: 'test'
+  ...
+# Subtest: all-quiescent-participants-close-before-unverified-ownership-is-retained
+ok 20 - all-quiescent-participants-close-before-unverified-ownership-is-retained
+  ---
+  duration_ms: 0.330792
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6371.110625

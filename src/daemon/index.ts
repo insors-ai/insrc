@@ -1,3 +1,4 @@
+import { threadId as mainThreadId } from 'node:worker_threads';
 import { connectionTestSupervisor } from './db/draft-test.js';
 import { connectionSessionRuntime } from './connection-session-rpc.js';
 import { UnderstandingService } from '../understanding/service.js';
@@ -38,16 +39,15 @@ import { closeDuckDB } from './db/duckdb-pool.js';
 import { listRepos } from '../db/repos.js';
 import { Watcher } from '../indexer/watcher.js';
 import { IndexQueue } from './queue.js';
+import { cheapTierIgnoreModel } from '../indexer/ignore-proposal-model.js';
 import { IndexerService } from '../indexer/index.js';
 import { IpcServer, directDispatch } from './server.js';
 import { declareLiveStoreOwner } from '../db/graph/store.js';
 import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js';
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth } from './shutdown.js';
-import { buildHandlerRuntime } from './handler-runtime.js';
-import { openManagedRoot } from './db/management-startup.js';
-import { managementMarkerExists } from './db/managed-store.js';
-import { connectionsPath } from './db/config.js';
+import { buildHandlerRuntime, inDaemonOnlyHandlers } from './handler-runtime.js';
+import { ensureDefaultManagedRoot, closeDefaultManagedRoots } from './db/management-defaults.js';
 import { initChatHandlers, disposeChatHandlers } from './chat-handler.js';
 // Phase 1 cleanup: handoff-stream, meta-task-stream, gate-handlers, orphan-handlers,
 // the chat agent-flow exports (chatReply, chatRedirect, brainstormAddIdea, chatSend,
@@ -61,12 +61,16 @@ import { registerSignoff } from './steps/workflow-step/signoff-registration.js';
 
 import { writePid, isAlreadyRunning, bootstrapEmbeddingModel, getModelState } from './lifecycle.js';
 import { readInstalledCommit } from './installed-commit.js';
-import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, threadsEnabled } from './threads/main-services.js';
+import { ThreadServices, currentLmdbFileSizeMb, maintenanceConfig, sessionIdleMs, threadsEnabled } from './threads/main-services.js';
+import type { SessionPool } from './threads/session-pool.js';
+import { startSessionRouting } from './threads/session-routing.js';
+import { lazyForward } from './threads/lazy-runtime.js';
+import { setRunBoard } from './workflow-run-registry.js';
 import { MaintenanceController } from './threads/maintenance.js';
-import { methodClasses } from './threads/method-class.js';
+import { inDaemonTarget, methodClasses } from './threads/method-class.js';
 import { Router } from './threads/router.js';
 import { IndexingPortClient } from './threads/indexing-port.js';
-import type { RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
+import type { HandlerRuntime, RuntimeIndexer, RuntimeQueue } from './handler-runtime.js';
 import type { ForwardRequest } from './server.js';
 import { Supervisor } from './threads/supervisor.js';
 import { startIndexingWorkers } from './threads/indexing-workers.js';
@@ -253,7 +257,15 @@ async function main(): Promise<void> {
 			maintenance: maintenance?.status(),
 		}))
 		: undefined;
-	if (threadServices !== undefined) log.info('daemon threads enabled');
+	if (threadServices !== undefined) {
+		log.info('daemon threads enabled');
+		// tools.config.set is served here; each change reaches every worker (Story 5d393a4b).
+		const { onToolSettingsChange } = await import('./tools/config.js');
+		onToolSettingsChange(settings => threadServices.setToolSettings(settings));
+		// An analyze run live on this thread is known to the board, like a worker's (Story 5d393a4b).
+		const { setLiveRunPublisher } = await import('../analyze/orchestrator/live-runs.js');
+		setLiveRunPublisher((runId, live) => threadServices.board.markAnalyzeRun(runId, mainThreadId, live));
+	}
 
 	// 3. Open DB
 	const db = await getDb();
@@ -285,7 +297,11 @@ async function main(): Promise<void> {
 	let localForward: ForwardRequest | undefined;
 	const router = threadServices !== undefined
 		? new Router({
-			classOf: methodClasses.classOf, registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver),
+			// Test hooks (INSRC_TEST_HOOKS=1) are session work, served on a session worker.
+			classOf: method => process.env['INSRC_TEST_HOOKS'] === '1' && method.startsWith('test.') ? 'session' : methodClasses.classOf(method),
+			registry: threadServices.registry, routed, local: (request, deliver) => localForward!(request, deliver),
+			// What each worker thread is serving, for daemon.status's threads list (s4).
+			board: threadServices.board,
 			// Every request is activity for idle maintenance (admin polls and subscriptions excepted).
 			onRequest: (method, cls) => maintenance?.requestArrived(method, cls) ?? (() => {}),
 		})
@@ -297,6 +313,7 @@ async function main(): Promise<void> {
 	// The daemon's shutdown, once it is made below; a worker supervisor's fatal before then ends the process.
 	let shutdownDaemon: (reason: string) => void = reason => { exitRespectingStoreHealth(1, reason); };
 	let supervisor: Supervisor | undefined;
+	let sessionPool: SessionPool | undefined;
 	if (threadServices !== undefined && router !== undefined) {
 		const port = new IndexingPortClient((method, params) => router.request('indexing', method, params), threadServices.board);
 		queue = port;
@@ -310,9 +327,12 @@ async function main(): Promise<void> {
 		maintenance = new MaintenanceController({
 			config: maintenanceConfig(),
 			lanesIdle: () => threadServices.board.snapshot().indexing.idle,
+			laneActivityAt: () => threadServices.board.lastLaneActivityAt(),
 			healthy: () => getStoreHealth().state === 'ok',
 			reclaimable: graphStoreReclaimable,
-			workers: { live: () => workers.liveWorkers(), created: () => workers.createdCount() },
+			// The session pool's workers too (s4): each holds its own graph handle, and the supervisor's created
+			// count includes them, so compaction renames only once every one of them has closed it.
+			workers: { live: () => [...workers.liveWorkers(), ...(sessionPool?.liveWorkers() ?? [])], created: () => workers.createdCount() },
 			compact: opts => compactGraphStore(opts),
 			// Test-only (INSRC_TEST_HOOKS=1): hold the lock a while before compacting.
 			...(testHoldMs > 0 ? { onGranted: () => new Promise<void>(r => setTimeout(r, testHoldMs)) } : {}),
@@ -321,7 +341,7 @@ async function main(): Promise<void> {
 		threadServices.onMaintenance(() => controller.runNow());
 		controller.start();
 		// Code indexing and document summaries, each on a worker of its own.
-		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock);
+		const indexingWorkers = startIndexingWorkers(workers, threadServices.indexingBlock, threadServices.board);
 		// The queue lives on the code-indexing worker: "done" is the current one's
 		// report that it drained after the stop (or its exit).
 		let drained: () => void = () => {};
@@ -332,12 +352,12 @@ async function main(): Promise<void> {
 		const repos = await listRepos(db);
 		const watcher = new Watcher();
 		const indexQueue = new IndexQueue();
-		const indexerService = new IndexerService(db, indexQueue, watcher, configStore);
+		const indexerService = new IndexerService(db, indexQueue, watcher, configStore, undefined, undefined, cheapTierIgnoreModel());
 		await indexerService.start(repos);
 		queue = indexQueue;
 		indexer = indexerService;
-		startQueue = () => indexQueue.start(job => indexerService.processJob(job));
-		stopIndexing = () => { indexQueue.stop(); void watcher.close(); };
+		startQueue = () => indexQueue.start(job => indexerService.runQueuedJob(job, () => indexerService.processJob(job)));
+		stopIndexing = () => { indexerService.disposeSubsystemScheduler(); indexQueue.stop(); void watcher.close(); };
 	}
 
 	// 5b. Boot-time steering refresh — re-stamp the insrc:steering skeleton into
@@ -445,32 +465,46 @@ async function main(): Promise<void> {
 	// them over the socket, and the step handlers call the same functions
 	// in-process through the in-daemon client (Epic c2ba6fa6, Story s11).
 	let understandingService: UnderstandingService | undefined;
-	const connectionOwners: { close: () => Promise<void> }[] = [];
+	const connectionOwners: { close: () => Promise<void> }[] = [{close:closeDefaultManagedRoots}];
 	for (const registered of await listRepos(db)) {
-		if (!await managementMarkerExists(connectionsPath(registered.path))) continue;
 		try {
-			connectionOwners.push(await openManagedRoot(registered.path, {
+			await ensureDefaultManagedRoot(registered.path, {
 				isRegistered: async root => (await listRepos(db)).some(repo => repo.path === root),
-			}));
+			});
 		} catch { log.warn({ repo: registered.path }, 'connection management disabled: maintenance or recovery required'); }
 	}
-	const { rpcHandlers, streamHandlers, understandingRoutes } = buildHandlerRuntime({
-		db, configStore, queue, indexer, startedAt,
-		shutdown: reason => shutdown(reason),
-		attachedClients: () => server.attachedClients(),
-		understandingService: () => understandingService,
-	});
-	// A step handler's nested call to an admin or indexing method goes to that
-	// class's worker (daemon threads); session methods run here, as before.
-	installStepDaemonClient(createInDaemonClient(rpcHandlers, streamHandlers, router !== undefined
-		? { route: { classOf: methodClasses.classOf, routed, request: (cls, method, params) => router.request(cls, method, params) } }
-		: {}));
+	// Built at boot without daemon threads; with them, only when the first request that must stay
+	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
+	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
+	const buildRuntime = (): ForwardRequest => {
+		const runtime = buildHandlerRuntime({
+			db, configStore, queue, indexer, startedAt,
+			shutdown: reason => shutdown(reason),
+			attachedClients: () => server.attachedClients(),
+			understandingService: () => understandingService,
+			// With daemon threads the session purge reaches the chat pool and todos bus through a nested call (s3).
+			...(router !== undefined ? { nestedCall: (method: string, params: unknown) => inDaemon.request(method, params) } : {}),
+		});
+		// A step handler's nested call goes to the worker inDaemonTarget names (an admin or indexing
+		// method to its class's worker; a shared-state method to the shared-state worker once session
+		// work is routed); anything else runs here, as before.
+		const inDaemon = createInDaemonClient(runtime.rpcHandlers, runtime.streamHandlers, {
+			inDaemonOnly: inDaemonOnlyHandlers(),
+			...(router !== undefined ? { route: {
+				targetOf: (method: string) => inDaemonTarget(method, { routed, onSharedWorker: false }),
+				request: (cls: MethodClass, method: string, params: unknown, opts?: { readonly shared?: true | undefined }) => router.request(cls, method, params, opts),
+			} } : {}),
+		});
+		installStepDaemonClient(inDaemon);
+		understandingRoutes = runtime.understandingRoutes;
+		return directDispatch(runtime.rpcHandlers, runtime.streamHandlers);
+	};
 	// The team gate offers a refused holder to park their work; the daemon is where the runs and drafts it asks about live.
 	registerParkOffer();
 	registerSignoff();
 	// With daemon threads, the router is the server's forward (Epic 86197ac6
 	// s2): routed classes go to their workers, everything else runs here.
-	const local = directDispatch(rpcHandlers, streamHandlers);
+	const local = router !== undefined ? lazyForward(buildRuntime).forward : buildRuntime();
 	localForward = local;
 	const server = new IpcServer(connectionSessionRuntime.forward(router?.forward ?? local));
 	server.onConnectionClose(context => connectionSessionRuntime.disconnect(context));
@@ -480,29 +514,41 @@ async function main(): Promise<void> {
 		server.onRegistryChange(clients => threadServices.board.publishClients(clients));
 		threadServices.onShutdown(reason => shutdown(reason));
 		// Admin methods go to the admin worker; a request arriving before it is
-		// ready is held for it. If it cannot start, they are served here again.
+		// ready is held for it (at most 30 s). A first start that fails is replaced
+		// like an exit (rate-limited; past the limit the daemon shuts down).
 		routed.add('admin');
-		supervisor!.start({
+		void supervisor!.startOrReplace({
 			name: 'admin', cls: 'admin', script: 'admin-worker',
 			started: w => log.info({ threadId: w.threadId }, 'admin worker ready'),
-		}).catch(
-			(err: unknown) => {
-				routed.delete('admin');
-				router.targetsChanged();
-				log.error({ err: err instanceof Error ? err.message : String(err) }, 'admin worker did not start; admin methods stay on the main thread');
-			},
-		);
+		});
+		// Session work (s3): each client session on a worker of its own, requests with no client
+		// identity on the unattributed worker, chat/todos/understanding on the shared-state worker.
+		routed.add('session');
+		sessionPool = startSessionRouting(threadServices, router, sessionIdleMs(), supervisor);
+		sessionPool.startSweeping();
+		// A detached run started here (a connection-scoped request) is polled from the board like any other.
+		setRunBoard(threadServices.board);
 	}
 
-	// Initialize chat session pool
-	initChatHandlers();
+	// The chat session pool, the understanding service and the todos retention sweep are one
+	// process-wide copy each: hosted here unless session work is routed to workers, when the
+	// shared-state worker hosts them (Epic 86197ac6 s3).
+	const hostsSharedState = !routed.has('session');
+	if (hostsSharedState) initChatHandlers();
 
 	await server.listen();
 	startupRunFiles.release(); startupRunFiles = undefined;
 	startupServer = undefined;
-	try {
-		understandingService = await UnderstandingService.open(PATHS.sockFile);
-	} catch { log.warn('understanding service unavailable: initialization checks failed'); }
+	// The shared-state worker starts now, after the socket listens (its understanding service is a client
+	// of it), so the todos retention sweep runs at boot as it does here without daemon threads.
+	if (sessionPool !== undefined) {
+		void sessionPool.sharedWorker().catch((err: unknown) => log.warn({ err: err instanceof Error ? err.message : String(err) }, 'the shared-state worker did not start; the next chat, todos or understanding request starts it'));
+	}
+	if (hostsSharedState) {
+		try {
+			understandingService = await UnderstandingService.open(PATHS.sockFile);
+		} catch { log.warn('understanding service unavailable: initialization checks failed'); }
+	}
 	log.info('ready');
 
 	// Phase 1 cleanup: orphan-handoff worktree scan stripped along with
@@ -514,7 +560,7 @@ async function main(): Promise<void> {
 	// 8b. Todos retention sweep (plans/todo-framework.md Phase 2).
 	// Fires once at boot and every 24 h; drops archived todo lists
 	// untouched for 90 days.
-	const stopTodosRetention = todosRpc.scheduleTodosRetention(db);
+	const stopTodosRetention = hostsSharedState ? todosRpc.scheduleTodosRetention(db) : () => {};
 
 	// 8c. Periodic LMDB reader-table re-check. Defensive sweep every
 	//     5 minutes for slots left over from a daemon process that
@@ -553,14 +599,15 @@ async function main(): Promise<void> {
 			connectionSessionRuntime.stopAdmission();
 			void connectionTestSupervisor.shutdown();
 			understandingService?.stop();
-			understandingRoutes.stop();
+			understandingRoutes?.stop();
 			clearInterval(pruneTimer);
 			clearInterval(readerCheckTimer);
 			stopTodosRetention();
+			sessionPool?.stopSweeping();
 			// No new maintenance; one still waiting for its lock gives up (one compacting is waited for below).
 			void maintenance?.stop();
 			stopIndexing();
-			void disposeChatHandlers();
+			if (hostsSharedState) void disposeChatHandlers();
 			serverClosing = server.close();
 			void serverClosing.catch(endForRunFileConflict);
 		},
@@ -582,10 +629,12 @@ async function main(): Promise<void> {
 			if (supervisor !== undefined) {
 				// A compaction under way finishes first (or the hard-exit backstop ends the process; the next open recovers).
 				await maintenance?.stop();
+				await sessionPool?.close();
 				await supervisor.terminateAll();
 				log.info('shutdown: the daemon\'s workers exited');
 			}
-			for (const owner of connectionOwners) await owner.close();
+			const closedOwners = await Promise.allSettled(connectionOwners.map(owner => Promise.resolve().then(() => owner.close())));
+			if (closedOwners.some(result => result.status === 'rejected')) throw new Error('Connection cleanup is pending.');
 			await closeDb();
 			await closeDuckDB();
 			await closeGraphStore();

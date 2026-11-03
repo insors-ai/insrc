@@ -88,6 +88,7 @@ test('assembleFallbackShell: empty sections + no sourceLink → no band (byte-id
 	const ir = irWith([]);
 	const shell = assembleFallbackShell(ir, SVG, '/* svgPanZoom */', '1.0.0');
 	assert.doesNotMatch(shell.html, /docgen-narrative/);
-	// the diagram div keeps its full-height default (no inline height style).
-	assert.match(shell.html, /<div id="docgen-diagram">/);
+	// the diagram div keeps its full-height default (no inline height style) and
+	// carries the shared diagram class so the branded overrides match this DOM too.
+	assert.match(shell.html, /<div id="docgen-diagram" class="insrc-viewer-diagram">/);
 });

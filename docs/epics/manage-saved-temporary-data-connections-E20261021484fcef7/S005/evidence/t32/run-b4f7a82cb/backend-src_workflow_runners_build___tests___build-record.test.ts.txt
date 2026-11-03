@@ -1,0 +1,268 @@
+TAP version 13
+# Subtest: persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists
+ok 1 - persistBuildRecord writes a fresh standalone:false record at buildArtifactPaths when none exists
+  ---
+  duration_ms: 31.876667
+  type: 'test'
+  ...
+# Subtest: a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)
+ok 2 - a second validate UNIONS tasks by id, preserves createdAt, refreshes updatedAt (one record, not N)
+  ---
+  duration_ms: 58.803167
+  type: 'test'
+  ...
+# Subtest: re-validating the same task refreshes its passed without duplicating the row
+ok 3 - re-validating the same task refreshes its passed without duplicating the row
+  ---
+  duration_ms: 55.710208
+  type: 'test'
+  ...
+# Subtest: an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)
+ok 4 - an existing meta.approvedAt (+ reviewOverride) is PRESERVED across an upsert (never un-complete a story)
+  ---
+  duration_ms: 53.587709
+  type: 'test'
+  ...
+# Subtest: a malformed prior record is treated as absent (fail-open fresh write), not a throw
+ok 5 - a malformed prior record is treated as absent (fail-open fresh write), not a throw
+  ---
+  duration_ms: 29.364125
+  type: 'test'
+  ...
+# Subtest: persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)
+ok 6 - persistStandaloneBuildRecord writes standalone:true json + the SAME md via the thin wrapper (byte-identical)
+  ---
+  duration_ms: 31.221167
+  type: 'test'
+  ...
+# Subtest: approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)
+ok 7 - approveWorkflowTarget completes the persisted plan-driven BUILD record (keys on the BUILD- prefix)
+  ---
+  duration_ms: 68.08825
+  type: 'test'
+  ...
+# Subtest: S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)
+ok 8 - S002 regression: a Trivial-standalone re-run with a fresh createdAt keeps the SAME md folder (folder anchored on the PRESERVED createdAt, so BUILD + CR never split)
+  ---
+  duration_ms: 55.785458
+  type: 'test'
+  ...
+# Subtest: a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)
+ok 9 - a prior-only meta field SURVIVES a later write that omits it (sizeClass + triageRationale were silently deleted)
+  ---
+  duration_ms: 51.651792
+  type: 'test'
+  ...
+# Subtest: the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)
+ok 10 - the new write still WINS on a meta field it DOES supply (preservation must not become prior-always-wins)
+  ---
+  duration_ms: 48.300541
+  type: 'test'
+  ...
+# Subtest: t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)
+ok 11 - t9: a write that OMITS standalone keeps the prior true (the carry-forward the shared validate persist now relies on)
+  ---
+  duration_ms: 48.481917
+  type: 'test'
+  ...
+# Subtest: the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write
+ok 12 - the PRIOR-wins exceptions are untouched: createdAt and all four completion/rejection stamps still beat the new write
+  ---
+  duration_ms: 54.149083
+  type: 'test'
+  ...
+# Subtest: BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write
+ok 13 - BYTE-IDENTITY: a new write that supplies every field the record already carried produces the SAME json and md as a fresh write
+  ---
+  duration_ms: 45.59525
+  type: 'test'
+  ...
+# Subtest: a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise
+ok 14 - a meta field can no longer be cleared by OMITTING it — the documented trade-off, pinned so it is a decision and not a surprise
+  ---
+  duration_ms: 46.96875
+  type: 'test'
+  ...
+# Subtest: BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown
+ok 15 - BYTE-IDENTITY golden 1: a real pre-fix well-formed standalone record renders exactly its captured markdown
+  ---
+  duration_ms: 0.159291
+  type: 'test'
+  ...
+# Subtest: BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown
+ok 16 - BYTE-IDENTITY golden 2: a real pre-fix plan-driven record renders exactly its captured markdown
+  ---
+  duration_ms: 0.095583
+  type: 'test'
+  ...
+# Subtest: BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved
+ok 17 - BYTE-IDENTITY golden 3 (PATHOLOGICAL): REPAIRED at t8 — every defect t2 catalogued is gone, and nothing else moved
+  ---
+  duration_ms: 0.159917
+  type: 'test'
+  ...
+# Subtest: FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error
+ok 18 - FORWARD COMPAT: a record written entirely before this Story still parses, merges via mergeWithPrior and renders without error
+  ---
+  duration_ms: 24.960916
+  type: 'test'
+  ...
+# Subtest: t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically
+ok 19 - t7 WRITE SIDE: body.commit is populated from HEAD on BOTH routes, identically
+  ---
+  duration_ms: 188.047833
+  type: 'test'
+  ...
+# Subtest: t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read
+ok 20 - t7 WRITE SIDE: body.commit is OMITTED — not empty-stringed — when HEAD cannot be read
+  ---
+  duration_ms: 26.138625
+  type: 'test'
+  ...
+# Subtest: t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist whose prior commit does not resolve records HEAD (ISSUE-b97752e9: one that resolves is kept)
+ok 21 - t7 WRITE SIDE: an explicitly SUPPLIED commit wins for that write; a later persist whose prior commit does not resolve records HEAD (ISSUE-b97752e9: one that resolves is kept)
+  ---
+  duration_ms: 103.487083
+  type: 'test'
+  ...
+# Subtest: t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `\#\# Summary`
+ok 22 - t7 RENDER (PLAN-DRIVEN only): body.commit renders as `**Commit:**` and body.summary as `\#\# Summary`
+  ---
+  duration_ms: 0.178541
+  type: 'test'
+  ...
+# Subtest: t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)
+ok 23 - t7 RENDER: an absent commit/summary renders NEITHER section (omit-slots intact)
+  ---
+  duration_ms: 0.049916
+  type: 'test'
+  ...
+# Subtest: t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically
+ok 24 - t7: the three hand-filled records prove the gap was real — and are now what the producer writes automatically
+  ---
+  duration_ms: 87.844167
+  type: 'test'
+  ...
+# Subtest: t8: the TWO unconditional parts always render, even on a record carrying nothing else
+ok 25 - t8: the TWO unconditional parts always render, even on a record carrying nothing else
+  ---
+  duration_ms: 0.197625
+  type: 'test'
+  ...
+# Subtest: t8: each of the SEVEN omit-slots renders when populated — one assertion per section
+ok 26 - t8: each of the SEVEN omit-slots renders when populated — one assertion per section
+  ---
+  duration_ms: 0.147125
+  type: 'test'
+  ...
+# Subtest: t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section
+ok 27 - t8: each of the SEVEN omit-slots is ABSENT when its content is — one assertion per section
+  ---
+  duration_ms: 0.168667
+  type: 'test'
+  ...
+# Subtest: t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title
+ok 28 - t8: the title derives from meta.sizeClass, NOT meta.standalone — the FLIPPED state still renders a standalone title
+  ---
+  duration_ms: 0.144667
+  type: 'test'
+  ...
+# Subtest: t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost
+ok 29 - t8: a record carrying BOTH focus and tasks renders BOTH sections — neither route's content is lost
+  ---
+  duration_ms: 0.055792
+  type: 'test'
+  ...
+# Subtest: t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7
+ok 30 - t8: STANDALONE-route rendering of body.summary and body.commit now works — the half deferred from t7
+  ---
+  duration_ms: 0.05275
+  type: 'test'
+  ...
+# Subtest: t8: an empty or absent changeLog still renders NO `\#\# Changes` section
+ok 31 - t8: an empty or absent changeLog still renders NO `\#\# Changes` section
+  ---
+  duration_ms: 0.051375
+  type: 'test'
+  ...
+# Subtest: t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation
+ok 32 - t8: renderStandaloneBuildRecordMd still exports and DELEGATES — identical output, not a second implementation
+  ---
+  duration_ms: 0.035834
+  type: 'test'
+  ...
+# Subtest: t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest "Standalone:" bit
+ok 33 - t8: NO code path selects a renderer on meta.standalone — the same record renders the same regardless of the flag, except for its honest "Standalone:" bit
+  ---
+  duration_ms: 0.058958
+  type: 'test'
+  ...
+# Subtest: t4 — a record carrying standalone true is placed under docs/standalone
+ok 34 - t4 — a record carrying standalone true is placed under docs/standalone
+  ---
+  duration_ms: 22.700875
+  type: 'test'
+  ...
+# Subtest: t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move
+ok 35 - t4 — CARRY-FORWARD: a prior true survives a later write that OMITS the flag, and the markdown does not move
+  ---
+  duration_ms: 45.425334
+  type: 'test'
+  ...
+# Subtest: t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured
+ok 36 - t4 — an omitted flag on a FIRST write still reads as epic, so nothing is manufactured
+  ---
+  duration_ms: 22.31875
+  type: 'test'
+  ...
+# Subtest: t5 — a standalone record renders the standalone heading and "Standalone: yes", not the plan-driven title
+ok 37 - t5 — a standalone record renders the standalone heading and "Standalone: yes", not the plan-driven title
+  ---
+  duration_ms: 0.177792
+  type: 'test'
+  ...
+# Subtest: t5 — the render keys on sizeClass, so it survives a record whose flag is absent
+ok 38 - t5 — the render keys on sizeClass, so it survives a record whose flag is absent
+  ---
+  duration_ms: 0.053875
+  type: 'test'
+  ...
+# Subtest: 43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/
+ok 39 - 43d72766 — persistBuildRecord files an UNFLAGGED record beside its standalone story, not under docs/epics/
+  ---
+  duration_ms: 22.251042
+  type: 'test'
+  ...
+# Subtest: 43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)
+ok 40 - 43d72766 — an epic-parented record is still filed under docs/epics/ (the story says nothing, so nothing widens)
+  ---
+  duration_ms: 22.007333
+  type: 'test'
+  ...
+# Subtest: a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before
+ok 41 - a build record with testRecord renders a line that links to TESTS.md, carries it forward when a later write omits it, and without it renders byte for byte as before
+  ---
+  duration_ms: 72.274875
+  type: 'test'
+  ...
+# Subtest: with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder
+ok 42 - with a test record on disk and no build record, a first build record written by each of its three writers takes the test record's createdAt and lands in its folder
+  ---
+  duration_ms: 157.739042
+  type: 'test'
+  ...
+# Subtest: a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it
+ok 43 - a pre-trailer Story's BUILD record keeps its recorded commit through validate reruns and the completion rewrite after later untrailered commits, and a review after them stays bounded; a trailered commit advances it
+  ---
+  duration_ms: 408.452291
+  type: 'test'
+  ...
+1..43
+# tests 43
+# suites 0
+# pass 43
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2142.895292

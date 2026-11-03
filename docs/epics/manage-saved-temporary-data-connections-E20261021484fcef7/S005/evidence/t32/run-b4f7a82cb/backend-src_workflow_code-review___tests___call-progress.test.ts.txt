@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: runCodeReview emits a 'call' progress per pipeline call of a dimension, with stage, role and count in detail, between its dimension-start and dimension-done
+ok 1 - runCodeReview emits a 'call' progress per pipeline call of a dimension, with stage, role and count in detail, between its dimension-start and dimension-done
+  ---
+  duration_ms: 27.936208
+  type: 'test'
+  ...
+# Subtest: runDimensionJob forwards JudgeContext.onCall to runReviewJob's onCall; without it the job runs as today
+ok 2 - runDimensionJob forwards JudgeContext.onCall to runReviewJob's onCall; without it the job runs as today
+  ---
+  duration_ms: 1.21025
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 375.991375

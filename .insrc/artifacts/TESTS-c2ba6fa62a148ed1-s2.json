@@ -1,0 +1,935 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s2",
+    "createdAt": "2026-11-01T13:16:17.185Z",
+    "updatedAt": "2026-11-01T16:45:29.028Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b264851a5",
+        "ranAt": "2026-11-01T13:16:17.185Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-in-txn.test.ts",
+                "title": "both in-transaction bodies write inside the caller's transaction and report what they did, by the same rule as the async writers",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-in-txn.test.ts",
+                "title": "a caller's transaction that throws after both bodies ran keeps none of their writes (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+                "title": "each input of a resolved write ends as an edge, one pending row awaiting the target, or a counted unwritable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/relations-awaiting-target.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1437,
+            "titles": [
+              {
+                "title": "each input of a resolved write ends as an edge, one pending row awaiting the target, or a counted unwritable",
+                "result": "pass"
+              },
+              {
+                "title": "writing the same relationship twice while its target is absent leaves one row and an awaiting count of 1",
+                "result": "pass"
+              },
+              {
+                "title": "a boundary relation with an absent target is kept as external-endpoint and does not count against graphComplete",
+                "result": "pass"
+              },
+              {
+                "title": "promotions: an edge removes the row and advances the generation; an absent target re-keys the row to await it; a missing source removes and counts it; the batch reports each",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/relations-in-txn.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 752,
+            "titles": [
+              {
+                "title": "both in-transaction bodies write inside the caller's transaction and report what they did, by the same rule as the async writers",
+                "result": "pass"
+              },
+              {
+                "title": "a caller's transaction that throws after both bodies ran keeps none of their writes (read after a reopen)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "2d50d4479",
+        "ranAt": "2026-11-01T13:19:10.308Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-types.test.ts",
+                "title": "a RelationWrite with a stored target maps to a resolved Relation, and one with a pending target to an unresolved Relation with the same meta",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit-types.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 579,
+            "titles": [
+              {
+                "title": "a RelationWrite with a stored target maps to a resolved Relation, and one with a pending target to an unresolved Relation with the same meta",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5135e9d55",
+        "ranAt": "2026-11-01T13:27:03.535Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: a refresh replaces the file's entities in one commit, found through entity_by_file and not a scan of the entity table, and leaves other files alone",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: a commit that throws part-way leaves every row of the file as before (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: contentHash null removes every entity of the file in one commit; the generation advances and the file leaves uncommittedFiles",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t3: an unregistered repository is refused and nothing is written",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "reindexFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile: removing an entity tombstones it + keeps the rest",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile preserves module stubs that already exist",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile: contentHash unchanged + body unchanged -> no row mutation",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+                "title": "reindexFile only touches entities of the specified file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1541,
+            "titles": [
+              {
+                "title": "t3: a refresh replaces the file's entities in one commit, found through entity_by_file and not a scan of the entity table, and leaves other files alone",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a commit that throws part-way leaves every row of the file as before (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: contentHash null removes every entity of the file in one commit; the generation advances and the file leaves uncommittedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an unregistered repository is refused and nothing is written",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/db/__tests__/reindex-file-lmdb.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2565,
+            "titles": [
+              {
+                "title": "reindexFile on empty store creates entity rows",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile on empty parsed list with no existing is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: identical re-parse is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: adding an entity inserts the new + preserves existing",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: removing an entity tombstones it + keeps the rest",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: replacing all entities tombstones the original set",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: changed body updates the row",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: tombstoning a referenced entity clears incident edges",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile preserves module stubs that already exist",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile is idempotent: same parse twice produces the same row set",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile: contentHash unchanged + body unchanged -> no row mutation",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile auto-allocates a repoId on first sighting",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile only touches entities of the specified file",
+                "result": "pass"
+              },
+              {
+                "title": "reindexFile result survives close + reopen",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "c7a2d5762",
+        "ranAt": "2026-11-01T13:32:16.352Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t4: a refresh replaces the file's outgoing relationships and pending rows in the same commit as its entities, and a relationship to an entity not stored becomes a pending row awaiting it",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t4: relationships other files hold into surviving entities are left in place by a refresh",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit.test.ts",
+                "title": "t4 (ac4): contentHash null removes the file's entities, relationships and pending rows together, and returns relationships other files hold into it to pending",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1708,
+            "titles": [
+              {
+                "title": "t3: a refresh replaces the file's entities in one commit, found through entity_by_file and not a scan of the entity table, and leaves other files alone",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a commit that throws part-way leaves every row of the file as before (read after a reopen)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: contentHash null removes every entity of the file in one commit; the generation advances and the file leaves uncommittedFiles",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an unregistered repository is refused and nothing is written",
+                "result": "pass"
+              },
+              {
+                "title": "t4: a refresh replaces the file's outgoing relationships and pending rows in the same commit as its entities, and a relationship to an entity not stored becomes a pending row awaiting it",
+                "result": "pass"
+              },
+              {
+                "title": "t4: relationships other files hold into surviving entities are left in place by a refresh",
+                "result": "pass"
+              },
+              {
+                "title": "t4 (ac4): contentHash null removes the file's entities, relationships and pending rows together, and returns relationships other files hold into it to pending",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "931502767",
+        "ranAt": "2026-11-01T14:50:54.848Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t5: a successful vector write sets each changed entity's marker to the active embedding model; nothing is outstanding",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t5: a failed vector write leaves the changed entities' markers empty and reports them as outstanding, and the graph rows are still committed",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t5: a first-allocated entity is added and a changed one upserted: one vector row per id after both",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "updateEmbedding",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit-vectors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1257,
+            "titles": [
+              {
+                "title": "t5: a successful vector write sets each changed entity's marker to the active embedding model; nothing is outstanding",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a failed vector write leaves the changed entities' markers empty and reports them as outstanding, and the graph rows are still committed",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a first-allocated entity is added and a changed one upserted: one vector row per id after both",
+                "result": "pass"
+              },
+              {
+                "title": "t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "9ee41aac7",
+        "ranAt": "2026-11-01T14:59:32.825Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "commitFile",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t6: the recount when the store opens corrects a wrong stored count",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit-vectors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2026,
+            "titles": [
+              {
+                "title": "t5: a successful vector write sets each changed entity's marker to the active embedding model; nothing is outstanding",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a failed vector write leaves the changed entities' markers empty and reports them as outstanding, and the graph rows are still committed",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a first-allocated entity is added and a changed one upserted: one vector row per id after both",
+                "result": "pass"
+              },
+              {
+                "title": "t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it",
+                "result": "pass"
+              },
+              {
+                "title": "t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero",
+                "result": "pass"
+              },
+              {
+                "title": "t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the recount when the store opens corrects a wrong stored count",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7c3e1dd09",
+        "ranAt": "2026-11-01T15:04:42.397Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "listUnembeddedEntities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t7: an entity whose marker says embedded but whose vector is missing has its marker cleared and is counted unembedded",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "IndexerService.reembed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t7: a vector whose entity is not stored is deleted, so a later first commit of that id leaves exactly one vector row",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/file-commit-vectors.test.ts",
+                "title": "t7: the indexer reconciles the graph and the vector table when it starts, before any job",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/file-commit-vectors.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2334,
+            "titles": [
+              {
+                "title": "t5: a successful vector write sets each changed entity's marker to the active embedding model; nothing is outstanding",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a failed vector write leaves the changed entities' markers empty and reports them as outstanding, and the graph rows are still committed",
+                "result": "pass"
+              },
+              {
+                "title": "t5: a first-allocated entity is added and a changed one upserted: one vector row per id after both",
+                "result": "pass"
+              },
+              {
+                "title": "t5: updateEmbedding writes the vector before the marker: a refused vector leaves the marker empty, a stored one sets it",
+                "result": "pass"
+              },
+              {
+                "title": "t6: after a commit whose vector write failed, unembedded counts the entities without a vector and the repository is not complete; the backfill-style write brings it back to zero",
+                "result": "pass"
+              },
+              {
+                "title": "t6: entities the embed step never selects (an empty body: endpoints, module stubs) are never counted",
+                "result": "pass"
+              },
+              {
+                "title": "t6: the recount when the store opens corrects a wrong stored count",
+                "result": "pass"
+              },
+              {
+                "title": "t7: a vector whose entity is not stored is deleted, so a later first commit of that id leaves exactly one vector row",
+                "result": "pass"
+              },
+              {
+                "title": "t7: an entity whose marker says embedded but whose vector is missing has its marker cleared and is counted unembedded",
+                "result": "pass"
+              },
+              {
+                "title": "t7: the indexer reconciles the graph and the vector table when it starts, before any job",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "d9fe9ff86",
+        "ranAt": "2026-11-01T15:13:36.050Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "IndexerService.indexFile",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/file-refresh.test.ts",
+                "title": "t8 (ac1): a refresh whose embed step fails after the parse leaves the file's previous entities and pending rows as they were, and records the file as uncommitted",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-refresh.test.ts",
+                "title": "t8 (ac2): a read while a refresh is held in its embed step sees the complete old set, and after the commit the complete new set",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/file-refresh.test.ts",
+                "title": "t8 (ac4): a delete event removes the file's entities and pending rows together",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/reconcile.test.ts",
+                "title": "a kept file's link into a removed entity is removed with it and returns to pending awaiting it, and the kept file's other links and entities stay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/file-refresh.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1119,
+            "titles": [
+              {
+                "title": "t8 (ac1): a refresh whose embed step fails after the parse leaves the file's previous entities and pending rows as they were, and records the file as uncommitted",
+                "result": "pass"
+              },
+              {
+                "title": "t8 (ac2): a read while a refresh is held in its embed step sees the complete old set, and after the commit the complete new set",
+                "result": "pass"
+              },
+              {
+                "title": "t8 (ac4): a delete event removes the file's entities and pending rows together",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/reconcile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4088,
+            "titles": [
+              {
+                "title": "a clean-up job for a registered repository with nothing stored is processed without error",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up removes a file that is gone and a file under an ignored directory, with their relations and unresolved relations, and leaves every other file of the repository and every file of another repository as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file that exists and is not ignored is kept although the file listing leaves it out, an entity with no file path is kept, and a file whose name only contains an ignored name is kept",
+                "result": "pass"
+              },
+              {
+                "title": "a repository whose directory is missing loses nothing, and a file whose presence cannot be told is kept",
+                "result": "pass"
+              },
+              {
+                "title": "running the clean-up a second time removes nothing, and a repository with nothing stale is left as it was",
+                "result": "pass"
+              },
+              {
+                "title": "a file whose parent directory became a file is removed as absent",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up of a repository that ignores a directory leaves the entities a nested registered repository holds for the files under it",
+                "result": "pass"
+              },
+              {
+                "title": "the vector rows of a removed file are gone after the clean-up and those of a kept file remain",
+                "result": "pass"
+              },
+              {
+                "title": "a kept file's link into a removed entity is removed with it and returns to pending awaiting it, and the kept file's other links and entities stay",
+                "result": "pass"
+              },
+              {
+                "title": "a clean-up that removed files runs the resolver once inside the job, leaves no settle timer armed and removes the repository's cached exploration results, and one that removed nothing leaves them",
+                "result": "pass"
+              },
+              {
+                "title": "the clean-up method called directly removes the stale files, runs no resolver and removes no cached result",
+                "result": "pass"
+              },
+              {
+                "title": "a store failure part-way through a clean-up job still drops the cached results and runs the resolver for the files already removed, and the job fails",
+                "result": "pass"
+              },
+              {
+                "title": "a resolver failure after a clean-up fails the job with the cached results already dropped",
+                "result": "pass"
+              },
+              {
+                "title": "a failure on the only stale file still drops the cached results and runs the resolver, because part of the file may be gone",
+                "result": "pass"
+              },
+              {
+                "title": "a repository whose directory is there but holds none of the stored files loses nothing, and one where only ignored files are left on disk is still cleaned",
+                "result": "pass"
+              },
+              {
+                "title": "an ignored file is removed whatever the check of its presence says, also when it is the only thing stored",
+                "result": "pass"
+              },
+              {
+                "title": "a clean-up failure inside a full index fails the full index and marks the repository error",
+                "result": "pass"
+              },
+              {
+                "title": "a create or update file job for a file under an ignored directory indexes nothing, and one for a file elsewhere is indexed",
+                "result": "pass"
+              },
+              {
+                "title": "ac6: adding a repo with no root ignore file results in one existing before the first index runs",
+                "result": "pass"
+              },
+              {
+                "title": "a ready repository gets a clean-up job at daemon start, one that gets a full index at start gets no separate one, and a full index runs the clean-up before it marks the repository ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "4741a5bb6",
+        "ranAt": "2026-11-01T15:20:26.985Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "IndexerService.reembed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and never delays a file job queued after it; its lane is published",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-lanes.test.ts",
+                "title": "each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/queue-code-index-work.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 599,
+            "titles": [
+              {
+                "title": "codeIndexWorkFor counts full, reconcile and file jobs for the repository (in flight and pending) and ignores other repositories, a prefix-sharing repository, config, reembed and document-summary jobs; the in-flight job clears after a throwing processor",
+                "result": "pass"
+              },
+              {
+                "title": "codeIndexWorkFor clears the in-flight job when the processor throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/queue-lanes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 491,
+            "titles": [
+              {
+                "title": "an index job enqueued while a summary job is running completes before that summary job finishes",
+                "result": "pass"
+              },
+              {
+                "title": "each lane runs its jobs one at a time in order, every kind goes to its lane, and summaries queued with code work start only after it",
+                "result": "pass"
+              },
+              {
+                "title": "a single-document job goes ahead of a queued sweep, after earlier single-document jobs, and takeDocSummaryEdit removes and returns it",
+                "result": "pass"
+              },
+              {
+                "title": "depth, isProcessing and depthForRepo span both lanes, codeIndexWorkFor reads the index lane only, and laneStatus reports each lane",
+                "result": "pass"
+              },
+              {
+                "title": "stop ends both lanes after their current jobs, and start resolves only then",
+                "result": "pass"
+              },
+              {
+                "title": "waitForIndexIdle resolves at once when the index lane is idle, after its code work otherwise, and on stop(); a summary lane waiting for code work ends on stop()",
+                "result": "pass"
+              },
+              {
+                "title": "a summary never starts after a code job was queued: with the index lane idle at start it starts at once, and a code job queued just after runs beside that one summary only",
+                "result": "pass"
+              },
+              {
+                "title": "Epic c2ba6fa6 s2: a reembed (the vector backfill) runs in its own lane and never delays a file job queued after it; its lane is published",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "6c2a9620d",
+        "ranAt": "2026-11-01T15:27:13.358Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "IndexerService.reembed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10 (ac3): after a commit whose vector write failed, the backfill queued at start writes the vectors, sets the markers and the repository reads complete",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10: a backend that returns no vectors records embeddingAvailable false and the job does not fail",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10: the backfill is queued after a full index and after a clean-up",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "listUnembeddedEntities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/backfill.test.ts",
+                "title": "t10: listUnembeddedEntities selects the repository's entities with a body and no marker -- never an empty body, an embedded entity or another repository's",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/backfill.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1344,
+            "titles": [
+              {
+                "title": "t10 (ac3): after a commit whose vector write failed, the backfill queued at start writes the vectors, sets the markers and the repository reads complete",
+                "result": "pass"
+              },
+              {
+                "title": "t10: a backend that returns no vectors records embeddingAvailable false and the job does not fail",
+                "result": "pass"
+              },
+              {
+                "title": "t10: the backfill is queued after a full index and after a clean-up",
+                "result": "pass"
+              },
+              {
+                "title": "t10: listUnembeddedEntities selects the repository's entities with a body and no marker -- never an empty body, an embedded entity or another repository's",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "bdb97bc03",
+        "ranAt": "2026-11-01T15:31:58.489Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "upsert vs add on this repository's vector table (two-point)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "scripts/measure-entity-vec-write.ts run 2026-11-01 15:29Z on a copy of ~/.insrc/lance/entity_vec.lance (80,043 rows, 79,920 distinct ids, 1024 dims), medians of 5: refresh-sized batch (16) upsert 29 ms / add 11 ms; backfill-sized batch (256) upsert 49 ms / add 31 ms; one-row upsert 25 ms. Batch size set from it: BACKFILL_BATCH = 256 with one upsert per round (src/indexer/index.ts BACKFILL_BATCH comment; commit bdb97bc03); per-round single upsert pinned by src/indexer/__tests__/backfill.test.ts 't11: the backfill writes each round's vectors with one upsert, never one write per entity (a Lance write is ~25 ms whatever its size)'."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      },
+      {
+        "taskId": "t12",
+        "commit": "dcd91a244",
+        "ranAt": "2026-11-01T16:45:29.028Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: refresh under polling, delete, backfill at start",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/smoke-t12.jsonl (2026-11-01 16:44Z, installed daemon at 8efcb2cb, pid 94063, driven by /tmp/s2-smoke.mjs over the daemon socket). Refresh under polling: src/s2-smoke-probe.ts (6 functions per version) rewritten 15 times 400 ms apart while search.by_file was polled back-to-back: 27,781 polls, 0 empty, 0 mixed/partial sets, 6 distinct versions seen, last version seen. Delete: file removed; 1,071 polls showed the complete last set, then empty within 206 ms; 0 partial. Backfill at start: repo.stats right after boot read unembedded 0, complete true, reasons []; the daemon log shows the start-time backfill queued for all 6 registered repositories and finding no entity without a vector. LIMITATION: nothing was outstanding at start (every entity already had its vector), so the start-time backfill did no writes on the installed daemon; the non-empty path (failed vector write -> backfill at start writes vectors, sets markers, repository reads complete) is covered by src/indexer/__tests__/backfill.test.ts against a real temporary vector table. Full sweep (once): 7202 tests, 7033 pass, 31 fail; the 2 Story-caused failures were fixed in 8efcb2cb; every other failing file also fails at the pre-s2 base e49726260 (rerun per file, /tmp/s2-rerun.txt)."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

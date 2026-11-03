@@ -1,0 +1,58 @@
+{
+  "id": "11-coverage-contracts-01",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:55:41.293Z",
+  "finished": "2026-11-01T04:56:02.921Z",
+  "inputChars": 47001,
+  "inputSha256": "d15c3aa3ba9279f78eec36317a7efc8365a3520343ce89adebd13437f0dd51d7",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the assigned obligations, lld:invariant:2 and lld:invariant:5. It uses only the supplied diffs and is not a canonical CR. I found no concrete, reachable defect in the supplied files. The IPC transport sources (shared TypeScript IPC, Kotlin UnixSocketDaemonRpc and DaemonGatewayService) and the daemon gate source (management-enablement.ts) were not supplied. Invariant 2 therefore cannot be verified directly. Invariant 5 holds on the test evidence, under the user's authorized correction that runtime management is enabled by default while releaseEnabled stays false.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:invariant:2",
+        "status": "could-not-verify",
+        "evidence": "The supplied tests point toward compatibility but cannot show it. connection-manager-compatibility.test.ts runs the legacy-facing JUnit classes Sc2DaemonGatewayTest (3 tests) and UnixSocketDaemonRpcParseTest (13 tests) plus the TypeScript compatibility cases. connection-project-server.ts uses the existing IpcServer and directDispatch, with no new storage path. The sources for the one-shot IPC API and the Kotlin transport were not supplied, so I cannot confirm that the public signatures are unchanged or that the persistent lane sits on the same boundary. The JUnit tests were not run, and I did not read their pass results."
+      },
+      {
+        "key": "lld:invariant:5",
+        "status": "holds",
+        "evidence": "connection-manager-release.test.ts (CM-S5-GATE) asserts inventory and acceptance matrix releaseEnabled=false. It also asserts runtimeEnabled=true, matching the authorized correction. External prerequisites other than the two live-UI items must match /^pending/. VSCodeLiveUI is 'completed-user-reported' (0.5.23) and JetBrainsLiveUI is 'deferred-user'. A forged gates.json claiming ready=true with all scopes is rejected by verifyConnectionManagementRelease, so consumer coverage cannot stand in for the producer proofs. The parity test asserts corpus.releaseEnabled=false and corpus.fixturesAreAcceptance=false. Limitation: management-enablement.ts was not supplied, so the gate logic itself was not inspected. The test-run results were not seen."
+      }
+    ],
+    "inspectedFiles": [
+      "test-fixtures/connection-management/.gitattributes",
+      "test-fixtures/connection-management/v1/manifest.json",
+      "src/shared/__tests__/fixtures/connection-junit.ts",
+      "src/shared/__tests__/connection-manager-kotlin-owner.test.ts",
+      "src/shared/__tests__/fixtures/connection-project-server.ts",
+      "src/shared/__tests__/connection-manager-kotlin-render.test.ts",
+      "src/shared/__tests__/connection-manager-kotlin-entry.test.ts",
+      "src/shared/__tests__/connection-manager-isolation.test.ts",
+      "src/shared/__tests__/connection-manager-parity.test.ts",
+      "src/shared/__tests__/connection-manager-privacy.test.ts",
+      "src/shared/__tests__/connection-manager-compatibility.test.ts",
+      "src/shared/connection-manager/capabilities.ts",
+      "scripts/render-connection-manager-implementation.ts",
+      "src/shared/__tests__/connection-manager-release.test.ts",
+      "src/shared/__tests__/connection-manager-packaging.test.ts",
+      "src/shared/__tests__/connection-management.test.ts"
+    ],
+    "limitations": [
+      "test-fixtures/connection-management/v1/manual-orders.parquet is binary and only its size and hash were supplied, so its content was not assessed. The corpus.json that the manifest hash refers to was not supplied.",
+      "The IPC transport sources, daemon management-enablement.ts, the Kotlin and TypeScript production code behind the tests, and the S005 JSON and HTML artifacts were not supplied.",
+      "No test results were supplied, so none of the tests were verified as passing.",
+      "VS Code 0.5.23 manual testing is user-reported and JetBrains live UI is deferred; I did not treat either as passed.",
+      "SQL Server, provider-service and positive worker-affinity coverage remain pending.",
+      "The full-sweep failures and timeouts were not treated as evidence of a defect.",
+      "This review is not a canonical CR and does not approve BUILD."
+    ],
+    "evidenceRequests": [
+      "Diff or source of the shared TypeScript IPC client (one-shot API plus persistent lane) and the Kotlin UnixSocketDaemonRpc and DaemonGatewayService, to verify that one-shot signatures are unchanged for lld:invariant:2.",
+      "src/daemon/db/management-enablement.ts, to confirm the default runtime policy and that verifyConnectionManagementRelease keeps releaseEnabled false for lld:invariant:5.",
+      "JUnit XML or tap output for the Sc2DaemonGatewayTest and UnixSocketDaemonRpcParseTest runs."
+    ]
+  }
+}

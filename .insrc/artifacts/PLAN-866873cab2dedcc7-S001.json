@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793522486129-kk1q6w",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T09:05:12.948Z",
+    "epicCreatedAt": "2026-11-01T07:02:58.354Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1426814,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "866873cab2dedcc7",
+    "epicSlug": "write-versioned-marker-delimited-insrc-steering",
+    "storyId": "S001",
+    "lldRunId": "wf-1793514227546-4iy7v6",
+    "lldEffectiveHash": "866873cab2dedcc72545f64c97958101db8ab87151855f1f9afb2a763e949600",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-01T09:13:06.137Z",
+    "rangeBase": "45a5eb6c9d045f48d55671582274ed5cf422e8cf"
+  },
+  "body": {
+    "summary": {
+      "prose": "Two tasks: t1 implements upsertVibeAgentsSteering in mcp-register.ts (reusing steering-inject.ts's upsertMarkedSection + readSteeringBlock, guarded wiring on the vibe path); t2 adds the unit tests. Both map to src/daemon/__tests__/mcp-register.test.ts.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Implement upsertVibeAgentsSteering and wire it into the vibe registration path",
+        "summary": "mcp-register.ts: upsertVibeAgentsSteering(deps) reusing upsertMarkedSection + readSteeringBlock; deps seams; registerOne vibe path calls it guarded.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "AGENTS.md created with marked block when absent",
+          "marked span replaced in place on re-registration",
+          "malformed markers -> guarded no-op",
+          "steering write failure never fails registration"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/mcp-register.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Unit tests for the steering upsert and registration wiring",
+        "summary": "mcp-register.test.ts: in-memory AGENTS.md seams in stub(); create/idempotent/replace/preserve/malformed + registerMcpClients vibe path.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "mcp-register.test.ts 27/27 green",
+          "tests never touch real ~/.vibe"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/mcp-register.test.ts"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/daemon/__tests__/mcp-register.test.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-866873cab2dedcc7-S001"
+    }
+  ]
+}

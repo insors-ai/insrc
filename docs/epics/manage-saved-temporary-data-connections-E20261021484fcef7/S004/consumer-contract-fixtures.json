@@ -1,0 +1,371 @@
+{
+  "version": 1,
+  "protocolVersion": 2,
+  "purpose": "S005 response/copy fixtures; no live tickets, credentials, endpoints or session capabilities.",
+  "releaseEnabled": false,
+  "clients": {
+    "vscode": {
+      "rendering": "pending",
+      "keyboard": "pending"
+    },
+    "jetbrains": {
+      "rendering": "pending",
+      "keyboard": "pending"
+    }
+  },
+  "requests": {
+    "ticket": {
+      "fields": [
+        "key",
+        "mode"
+      ],
+      "mode": "remove"
+    },
+    "mutate": {
+      "requiredFields": [
+        "ticket",
+        "operationId",
+        "key",
+        "mode",
+        "expectedRevision"
+      ],
+      "mode": "remove",
+      "forbiddenFields": [
+        "publicPatch",
+        "credentials"
+      ]
+    },
+    "removalState": {
+      "method": "db.connections.v2.removalState",
+      "fields": [
+        "ticket"
+      ]
+    },
+    "retryRemovalCleanup": {
+      "method": "db.connections.v2.retryRemovalCleanup",
+      "fields": [
+        "ticket"
+      ]
+    }
+  },
+  "cases": [
+    {
+      "scope": "saved",
+      "phase": "confirming",
+      "confirmation": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333",
+        "action": "Delete",
+        "message": "Delete this saved registration and its obsolete application-owned credentials. Source files, databases, tables and remote data will be preserved."
+      },
+      "operationIssuedBeforeConfirmation": false,
+      "cancelCommand": null,
+      "confirmedSelection": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removing",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removing",
+        "safeMessage": "Removing the connection registration."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "busy",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "busy",
+        "safeMessage": "The connection is currently in use. Retry after the current work finishes."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "conflict",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "conflict",
+        "safeMessage": "The connection revision changed. Refresh before confirming removal again."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "not-seen",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "unknown",
+      "genericStatus": "reconciliation-required",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "pending",
+        "resourceCleanup": "complete"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "pending",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "saved",
+      "phase": "removed",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "saved",
+          "id": "example"
+        },
+        "operationId": "11111111-1111-4111-8111-111111111111",
+        "state": "removed",
+        "safeMessage": "The registration was removed. Source data was preserved.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "complete"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "confirming",
+      "confirmation": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333",
+        "action": "Discard",
+        "message": "Discard this temporary registration and release its application-owned resources. Source files, databases, tables and remote data will be preserved."
+      },
+      "operationIssuedBeforeConfirmation": false,
+      "cancelCommand": null,
+      "confirmedSelection": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "expectedRevision": "33333333-3333-4333-8333-333333333333"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removing",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removing",
+        "safeMessage": "Removing the connection registration."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "busy",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "busy",
+        "safeMessage": "The connection is currently in use. Retry after the current work finishes."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "conflict",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "conflict",
+        "safeMessage": "The connection revision changed. Refresh before confirming removal again."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "not-seen",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "unknown",
+      "genericStatus": "reconciliation-required",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "unknown",
+        "safeMessage": "The removal outcome is unknown. Reconcile using the same operation."
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removed-cleanup-pending",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed-cleanup-pending",
+        "safeMessage": "The registration was removed. Application-owned cleanup is pending.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "pending"
+      }
+    },
+    {
+      "scope": "temporary",
+      "phase": "removed",
+      "state": {
+        "key": {
+          "repoRoot": "/example/repo",
+          "scope": "temporary",
+          "id": "example"
+        },
+        "operationId": "22222222-2222-4222-8222-222222222222",
+        "state": "removed",
+        "safeMessage": "The registration was removed. Source data was preserved.",
+        "credentialCleanup": "complete",
+        "resourceCleanup": "complete"
+      }
+    }
+  ]
+}

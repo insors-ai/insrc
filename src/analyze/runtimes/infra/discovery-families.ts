@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -73,10 +74,7 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 		const { files, truncated, unreadable } = await walkFiles(repoPath);
 		const skipped: SkippedItem[] = [...unreadable];
 		if (truncated) {
-			log.warn(
-				{ runId: args.runId, taskId: args.task.taskId, repoPath },
-				'discovery.families: file walk truncated -- inventory may be partial',
-			);
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{ runId: args.runId, taskId: args.task.taskId, repoPath }, 'discovery.families: file walk truncated -- inventory may be partial']);
 		}
 
 		const buckets = new Map<string, string[]>();
@@ -102,17 +100,14 @@ export const infraDiscoveryFamiliesRuntime: TemplateRuntime = {
 			}))
 			.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:           args.runId,
 				taskId:          args.task.taskId,
 				repoPath,
 				fileCount:       files.length,
 				familyCount:     families.length,
 				families:        families.map(f => f.name),
-			},
-			'infra.discovery.families: classified',
-		);
+		}, 'infra.discovery.families: classified']);
 
 		return {
 			outputs: new Map<string, unknown>([['families', families]]),

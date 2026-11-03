@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: handleArtifactContent: happy path — renderedMarkdown byte-equal to the .md; kind/artifactId; openQuestions; approvable
+ok 1 - handleArtifactContent: happy path — renderedMarkdown byte-equal to the .md; kind/artifactId; openQuestions; approvable
+  ---
+  duration_ms: 12.94575
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: a standing review block-verdict -> approvable=false + blockReason
+ok 2 - handleArtifactContent: a standing review block-verdict -> approvable=false + blockReason
+  ---
+  duration_ms: 9.206583
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: openQuestions absent -> empty list (not an error)
+ok 3 - handleArtifactContent: openQuestions absent -> empty list (not an error)
+  ---
+  duration_ms: 8.316125
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: mdPath escaping docs/ -> { error }, and no read outside docs/
+ok 4 - handleArtifactContent: mdPath escaping docs/ -> { error }, and no read outside docs/
+  ---
+  duration_ms: 1.615167
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: missing/unreadable .md -> { error }
+ok 5 - handleArtifactContent: missing/unreadable .md -> { error }
+  ---
+  duration_ms: 1.742375
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: missing sibling .json -> { error }
+ok 6 - handleArtifactContent: missing sibling .json -> { error }
+  ---
+  duration_ms: 1.081667
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: malformed sibling .json -> { error }
+ok 7 - handleArtifactContent: malformed sibling .json -> { error }
+  ---
+  duration_ms: 1.52
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: repo unresolved / empty mdPath -> { error } (never a partial view)
+ok 8 - handleArtifactContent: repo unresolved / empty mdPath -> { error } (never a partial view)
+  ---
+  duration_ms: 9.093541
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: a symlink under docs/ escaping the tree -> { error }, target not read
+ok 9 - handleArtifactContent: a symlink under docs/ escaping the tree -> { error }, target not read
+  ---
+  duration_ms: 2.313667
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent: read-only — no file created or mutated over the fixture
+ok 10 - handleArtifactContent: read-only — no file created or mutated over the fixture
+  ---
+  duration_ms: 9.363666
+  type: 'test'
+  ...
+# Subtest: t1: handleArtifactContent projects all four structured records verbatim from an HLD body carrying them
+ok 11 - t1: handleArtifactContent projects all four structured records verbatim from an HLD body carrying them
+  ---
+  duration_ms: 8.794
+  type: 'test'
+  ...
+# Subtest: t1: an absent body field projects as ABSENT — not null, not an empty object
+ok 12 - t1: an absent body field projects as ABSENT — not null, not an empty object
+  ---
+  duration_ms: 8.024125
+  type: 'test'
+  ...
+# Subtest: t1: a DEF body projects functionalDefinition only and never companions
+ok 13 - t1: a DEF body projects functionalDefinition only and never companions
+  ---
+  duration_ms: 8.284917
+  type: 'test'
+  ...
+# Subtest: t1: a PLAN body's functionalDefinition projects too — the field is not gated on kind
+ok 14 - t1: a PLAN body's functionalDefinition projects too — the field is not gated on kind
+  ---
+  duration_ms: 9.451
+  type: 'test'
+  ...
+# Subtest: t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings
+ok 15 - t1: the six pre-existing ArtifactReviewView members keep their names, types and meanings
+  ---
+  duration_ms: 7.501833
+  type: 'test'
+  ...
+# Subtest: t1: source-scan — the daemon handler map registers no new method; workflow.artifactContent is the single read path
+ok 16 - t1: source-scan — the daemon handler map registers no new method; workflow.artifactContent is the single read path
+  ---
+  duration_ms: 0.884166
+  type: 'test'
+  ...
+# Subtest: t1: a malformed structured record travels through rather than failing the read
+ok 17 - t1: a malformed structured record travels through rather than failing the read
+  ---
+  duration_ms: 8.970375
+  type: 'test'
+  ...
+# Subtest: t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S002 ledger body
+ok 18 - t1: structuredRecords projects sequenceDefinition VERBATIM from the REAL S002 ledger body
+  ---
+  duration_ms: 10.003166
+  type: 'test'
+  ...
+# Subtest: t1: a body WITHOUT sequenceDefinition yields no such key — never null, never {}
+ok 19 - t1: a body WITHOUT sequenceDefinition yields no such key — never null, never {}
+  ---
+  duration_ms: 8.78725
+  type: 'test'
+  ...
+# Subtest: t1: adding sequenceDefinition left every pre-existing projected record unchanged
+ok 20 - t1: adding sequenceDefinition left every pre-existing projected record unchanged
+  ---
+  duration_ms: 9.494666
+  type: 'test'
+  ...
+# Subtest: t1: a malformed sequenceDefinition travels through as written — the read path validates nothing
+ok 21 - t1: a malformed sequenceDefinition travels through as written — the read path validates nothing
+  ---
+  duration_ms: 9.027625
+  type: 'test'
+  ...
+# Subtest: review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion
+ok 22 - review view: docPath, contentVersion, feedback, reviewer and state are returned, the existing fields are unchanged, and a changed markdown gives a different contentVersion
+  ---
+  duration_ms: 15.569166
+  type: 'test'
+  ...
+# Subtest: handleArtifactContent serves a BUILD record's markdown by the path the pending list gives, with kind BUILD
+ok 23 - handleArtifactContent serves a BUILD record's markdown by the path the pending list gives, with kind BUILD
+  ---
+  duration_ms: 10.90475
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 596.72325

@@ -83,13 +83,14 @@ async function seedV4(): Promise<{ a: number; b: number }> {
 	return { a, b };
 }
 
-test('a v4 store opened by this code is at the current version with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows', async () => {
+test('a v4 store opened by this code is at version 5 with one IndexStateRow per workspace repository, not complete, its pending counts recounted from the stored rows', async () => {
 	const { a, b } = await seedV4();
 	await closeGraphStore();
 
 	const store = await getGraphStore();
-	assert.equal(SCHEMA_VERSION, 6);
-	assert.equal(store.meta.get('schema_version'), 6);
+	// Opening runs every pending migration, not only v4->v5, so the
+	// store lands at the current overall SCHEMA_VERSION.
+	assert.equal(store.meta.get('schema_version'), SCHEMA_VERSION);
 
 	const rows = stateRows(store);
 	// Workspace repositories only: the reserved shared-modules rows get none.
@@ -124,7 +125,7 @@ test('a v4 -> v5 step that throws leaves the stored version at 4 and writes no I
 });
 
 test('the registry keeps V1->V2, V2->V3 and V3->V4 in order and appends V4->V5', () => {
-	assert.deepEqual(MIGRATIONS.map(m => `${m.from}->${m.to}`), ['1->2', '2->3', '3->4', '4->5', '5->6']);
+	assert.deepEqual(MIGRATIONS.map(m => `${m.from}->${m.to}`), ['1->2', '2->3', '3->4', '4->5', '5->6', '6->7', '7->8']);
 	assert.equal(MIGRATIONS[3], MIGRATION_V4_TO_V5);
 });
 

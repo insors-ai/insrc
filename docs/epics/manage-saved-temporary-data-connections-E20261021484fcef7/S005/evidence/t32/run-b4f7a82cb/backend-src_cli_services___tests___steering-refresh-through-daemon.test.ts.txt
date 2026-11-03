@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: the steering refresh of an update gets the repositories from the daemon and opens no store
+ok 1 - the steering refresh of an update gets the repositories from the daemon and opens no store
+  ---
+  duration_ms: 505.489291
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 770.470792

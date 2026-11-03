@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionsCompatibilityTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:20" hostname="subho-office-mac" time="5.834">
+  <properties/>
+  <testcase name="testCommonCapabilityPolicyPinnedReadOnlyRowsAndActualLegacySavedProjection" classname="ai.insors.insrc.jetbrains.connections.ConnectionsCompatibilityTest" time="1.601"/>
+  <testcase name="testOptionalTestAndPartialSavedFeaturesDisableOnlyAffectedNativeActions" classname="ai.insors.insrc.jetbrains.connections.ConnectionsCompatibilityTest" time="1.788"/>
+  <testcase name="testUnknownOperationSurvivesMissingStatusAndUsesOriginalTicketAfterCapabilityReturns" classname="ai.insors.insrc.jetbrains.connections.ConnectionsCompatibilityTest" time="1.178"/>
+  <testcase name="testOldMissingMalformedAndBaseIncompleteRepliesRefuseWithoutLegacyMutation" classname="ai.insors.insrc.jetbrains.connections.ConnectionsCompatibilityTest" time="1.266"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

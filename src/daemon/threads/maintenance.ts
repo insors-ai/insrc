@@ -62,6 +62,8 @@ export interface MaintenanceDeps {
 	readonly now?: (() => number) | undefined;
 	/** Both indexing lanes idle (the status board). */
 	readonly lanesIdle: () => boolean;
+	/** When a lane was last seen with work (the status board), on the `now` clock: lane work is activity. */
+	readonly laneActivityAt?: (() => number | undefined) | undefined;
 	/** The graph store's health is ok. */
 	readonly healthy: () => boolean;
 	readonly reclaimable: () => Reclaimable | undefined;
@@ -71,7 +73,12 @@ export interface MaintenanceDeps {
 	readonly ackMs?: number | undefined;
 	/** Tests only: runs once the lock is granted, before the workers are asked to close. */
 	readonly onGranted?: (() => Promise<void>) | undefined;
+	/** How often a maintenance waiting for the lock re-checks store health (default HEALTH_POLL_MS). */
+	readonly healthPollMs?: number | undefined;
 }
+
+/** A maintenance waiting for the lock re-checks store health this often. */
+export const HEALTH_POLL_MS = 250;
 
 export class MaintenanceNotRunError extends Error {
 	override readonly name = 'MaintenanceNotRunError';
@@ -112,14 +119,29 @@ export class MaintenanceController {
 
 	/** How long the daemon has been idle (0 while a non-admin request runs or a lane is busy). */
 	idleForMs(): number {
-		if (this.inFlight > 0 || !this.deps.lanesIdle()) return 0;
+		if (this.busy()) return 0;
 		return this.now() - this.lastActivity;
+	}
+
+	/**
+	 * A non-admin request runs or a lane is busy (so not idle, whatever idleMs is configured).
+	 * Busy lane work is activity: the idle window starts again when it is seen.
+	 */
+	private busy(): boolean {
+		// Lane work that started and ended between two ticks is activity too.
+		const lane = this.deps.laneActivityAt?.();
+		if (lane !== undefined && lane > this.lastActivity) this.lastActivity = lane;
+		if (this.inFlight > 0) return true;
+		if (this.deps.lanesIdle()) return false;
+		this.lastActivity = this.now();
+		return true;
 	}
 
 	/** Check now whether to run idle maintenance, and run it if so. */
 	async tick(): Promise<TickOutcome> {
 		if (this.stopped) return 'not-idle';
 		if (this.running !== undefined) return 'running';
+		if (this.busy()) return 'not-idle';
 		const idleMs = this.idleForMs();
 		if (idleMs < this.deps.config.idleMs) return 'not-idle';
 		if (!this.deps.healthy()) {
@@ -187,26 +209,54 @@ export class MaintenanceController {
 		const pending = new AbortController();
 		this.pending = pending;
 		const { pauseLimitMs } = this.deps.config;
+		// The store losing its locks is terminal: a maintenance still waiting stops waiting and
+		// takes the same path as every other store user (it never closes or compacts).
+		const health = setInterval(() => {
+			if (!this.deps.healthy()) pending.abort(new MaintenanceNotRunError('maintenance: the graph store is not healthy'));
+		}, this.deps.healthPollMs ?? HEALTH_POLL_MS);
+		health.unref();
+		const stopIfUnhealthy = (step: string): void => {
+			if (this.deps.healthy()) return;
+			log.warn({ reason, step }, 'maintenance: the graph store is not healthy; stopped before it changed anything');
+			throw new MaintenanceNotRunError('maintenance: the graph store is not healthy');
+		};
 		try {
 			return await getLockManager().request(MAINTENANCE_LOCK, {
 				mode: 'exclusive', timeoutMs: pauseLimitMs, signal: pending.signal,
 				metadata: { activity: COMPACTION_ACTIVITY, reason },
 			}, async () => {
 				this.pending = undefined;
+				clearInterval(health);
+				stopIfUnhealthy('lock granted');
 				log.info({ pauseAckMs: this.now() - asked, reason }, 'maintenance: every request has finished; closing the graph handles');
 				await this.deps.onGranted?.();
+				stopIfUnhealthy('before closing the graph handles');
 				const closed = await this.closeWorkerHandles();
+				stopIfUnhealthy('before compacting');
 				const result = await this.deps.compact({
-					// Every worker closed its handle and none was started since: the environment is really closed.
-					beforeRename: async () => closed.allClosed && this.deps.workers.created() === closed.workers,
+					// Every live worker closed its handle: the environment is really closed. By
+					// identity, not count (ISSUE-dc0bd808): a worker released after acknowledging
+					// (the idle sweep can do this mid-compaction) simply drops out of live() and
+					// does not abandon the rename; a replacement/new worker not in the acknowledged
+					// set still fails this check regardless of count.
+					beforeRename: async () => {
+						if (!closed.allClosed) return false;
+						const live = this.deps.workers.live();
+						return live.every(w => closed.acknowledged.has(w.threadId));
+					},
 				});
 				log.info({ ...result, reason }, 'maintenance: compaction done');
 				return result;
 			});
 		} catch (err) {
 			if (err instanceof LockTimeoutError) {
-				log.warn({ pauseLimitMs, reason }, 'maintenance: a request ran past the pause limit; abandoned, nothing closed');
-				throw new MaintenanceNotRunError(`maintenance: the daemon was not idle in time (requests still running after ${pauseLimitMs} ms); retry later`);
+				log.warn({ pauseLimitMs, reason, holders: err.holders }, 'maintenance: a request ran past the pause limit; abandoned, nothing closed');
+				throw new MaintenanceNotRunError(`daemon.compact: the daemon did not become idle within ${pauseLimitMs} ms; try again later`);
+			}
+			if (err instanceof MaintenanceNotRunError) throw err;
+			if (pending.signal.aborted && pending.signal.reason instanceof MaintenanceNotRunError && !this.stopped) {
+				log.warn({ reason }, 'maintenance: the graph store is not healthy; stopped waiting for the lock');
+				throw pending.signal.reason;
 			}
 			if (pending.signal.aborted) {
 				log.info({ reason }, 'maintenance: abandoned before it started (the daemon is shutting down)');
@@ -215,29 +265,36 @@ export class MaintenanceController {
 			log.error({ err: err instanceof Error ? err.message : String(err), reason }, 'maintenance: compaction failed');
 			throw err;
 		} finally {
+			clearInterval(health);
 			if (this.pending === pending) this.pending = undefined;
 		}
 	}
 
-	/** Ask every ready worker to close its graph handle; wait for each answer (bounded). */
-	private async closeWorkerHandles(): Promise<{ readonly allClosed: boolean; readonly workers: number }> {
+	/**
+	 * Ask every ready worker to close its graph handle, all at once, and wait for the
+	 * answers (each bounded): the wait is one ack timeout, not one per worker.
+	 */
+	private async closeWorkerHandles(): Promise<{ readonly allClosed: boolean; readonly acknowledged: ReadonlySet<number> }> {
 		const workers = this.deps.workers.live();
 		const created = this.deps.workers.created();
-		let allClosed = created === workers.length;
-		for (const w of workers) {
+		const asked = workers.map(w => {
 			const { port1, port2 } = new MessageChannel();
 			const closed = new Promise<boolean>(resolve => {
 				const timer = setTimeout(() => resolve(false), this.deps.ackMs ?? GRAPH_CLOSE_ACK_MS);
 				port1.once('message', m => { clearTimeout(timer); resolve(m === 'closed'); });
-			});
+			}).finally(() => port1.close());
 			pushToWorker(w.port, GRAPH_CLOSE_OP, port2, [port2]);
-			const ok = await closed;
-			port1.close();
-			if (!ok) {
+			return { w, closed };
+		});
+		let allClosed = created === workers.length;
+		const acknowledged = new Set<number>();
+		for (const { w, closed } of asked) {
+			if (await closed) acknowledged.add(w.threadId);
+			else {
 				allClosed = false;
 				log.warn({ threadId: w.threadId }, 'maintenance: a worker did not acknowledge graph.close');
 			}
 		}
-		return { allClosed, workers: created };
+		return { allClosed, acknowledged };
 	}
 }

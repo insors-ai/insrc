@@ -26,6 +26,13 @@
  *             {type:'rate_limit_event'|...}             — ignored noise
  *   codex:  `codex exec --json <prompt>` (+ `codex exec resume <id> --json`).
  *           Emits JSONL events; mapped best-effort (validated by the opt-in live test).
+ *   vibe:   `vibe -p --output streaming -- <prompt>` (+ `--resume <session_id>`).
+ *           Emits one JSON session-entry object per line (the same entries the
+ *           `--output json` array holds at the end): {type:'message', role,
+ *           sessionId, content:[{type:'text'|'tool_call', ...}]}, plus
+ *           {type:'reasoning'|'effect'} noise. tool_call blocks carry their
+ *           arguments as a JSON STRING in `arguments_json`. There is no terminal
+ *           event line — the adapter synthesizes `done` when the process exits 0.
  */
 import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
@@ -36,7 +43,7 @@ import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
-export type ProviderId = 'claude' | 'codex';
+export type ProviderId = 'claude' | 'codex' | 'vibe';
 
 export interface SessionHandle {
   readonly provider: ProviderId;
@@ -69,6 +76,14 @@ export interface TurnRequest {
    * attached paths named in the prompt.
    */
   readonly readDirs?: readonly string[];
+  /**
+   * Run config from the chat panel's bottom-right controls: `model` is an id/alias of
+   * the provider's family (absent = the CLI's own default), `effort` a level the
+   * model accepts (absent = the CLI's default). Mapped per CLI in buildArgs; vibe
+   * pins the model via VIBE_ACTIVE_MODEL (see envFor) and cannot take an effort.
+   */
+  readonly model?: string | undefined;
+  readonly effort?: string | undefined;
 }
 
 /** The started CLI process of a turn, handed to the caller so it can tie a session lease to it. */
@@ -204,6 +219,8 @@ export type SpawnFn = (
      * prompt text until it ends, an open pipe means it never starts the turn.
      */
     readonly closeInput?: boolean | undefined;
+    /** Full child environment (merged over nothing — pass a complete env). Absent -> inherit. */
+    readonly env?: NodeJS.ProcessEnv | undefined;
   },
 ) => SpawnedProcess;
 
@@ -304,6 +321,11 @@ interface ProviderMapper {
    * reported as undeliverable. Absent -> the input stays open for the decision relay.
    */
   readonly inputIsPrompt?: boolean | undefined;
+  /**
+   * Per-turn environment for the spawn (e.g. vibe pins its model with VIBE_ACTIVE_MODEL,
+   * which has no --model flag). Absent -> the child inherits the extension host's env.
+   */
+  envFor?(req: TurnRequest): NodeJS.ProcessEnv | undefined;
 }
 
 // ---- S004: permission-request normalizing adapter (over field aliases) -------
@@ -538,6 +560,9 @@ const claudeMapper: ProviderMapper = {
     if (req.permissionMode === 'manual') args.push('--permission-prompts', 'host');
     else if (req.permissionMode === 'edit-auto') args.push('--permission-mode', 'acceptEdits', '--permission-prompts', 'host');
     else if (req.permissionMode === 'auto') args.push('--permission-mode', 'bypassPermissions');
+    // Run config (chat panel): --model / --effort when set; absent = the CLI's own defaults.
+    if (req.model !== undefined && req.model !== '') args.push('--model', req.model);
+    if (req.effort !== undefined && req.effort !== '') args.push('--effort', req.effort);
     // S001 (bugfix): the manual/edit-auto grant re-run pre-allows the approved tool so the resumed
     // action proceeds instead of denying again. Space-separated names after --allowedTools.
     if (req.allowedTools && req.allowedTools.length > 0) args.push('--allowedTools', ...req.allowedTools);
@@ -748,8 +773,13 @@ const codexMapper: ProviderMapper = {
     // byte-identical argv to today (k2). The flag goes before the prompt (positional).
     // ISSUE-65cb63f7: `--` ends the options, so a prompt starting with '-' stays the prompt.
     const auto = req.permissionMode === 'auto' ? ['--dangerously-bypass-approvals-and-sandbox'] : [];
-    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', ...auto, '--', req.prompt];
-    return ['exec', '--json', ...auto, '--', req.prompt];
+    // Run config (chat panel): -m / -c model_reasoning_effort= when set; absent = CLI defaults.
+    const runCfg = [
+      ...(req.model !== undefined && req.model !== '' ? ['-m', req.model] : []),
+      ...(req.effort !== undefined && req.effort !== '' ? ['-c', `model_reasoning_effort=${req.effort}`] : []),
+    ];
+    if (req.resume) return ['exec', 'resume', req.resume.nativeSessionId, '--json', ...auto, ...runCfg, '--', req.prompt];
+    return ['exec', '--json', ...auto, ...runCfg, '--', req.prompt];
   },
   mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
     const trimmed = line.trim();
@@ -875,7 +905,145 @@ const codexMapper: ProviderMapper = {
   },
 };
 
-const MAPPERS: Record<ProviderId, ProviderMapper> = { claude: claudeMapper, codex: codexMapper };
+/** vibe MCP tool-use names look like `mcp_<server>_<tool>` (single underscores,
+ *  non-alphanumerics folded to `_` — e.g. `mcp_insrc_insrc_analyze_step`). */
+function parseVibeMcpTool(tool: string): { server: string; name: string } | undefined {
+  if (!tool.startsWith('mcp_')) return undefined;
+  const rest = tool.slice('mcp_'.length);
+  const sep = rest.indexOf('_');
+  if (sep <= 0 || sep === rest.length - 1) return undefined;
+  return { server: rest.slice(0, sep), name: rest.slice(sep + 1) };
+}
+
+const vibeMapper: ProviderMapper = {
+  id: 'vibe',
+  // `vibe -p --resume <session_id>` continues a saved session in headless mode.
+  resume: true,
+  // Like codex, vibe reads stdin as prompt text until EOF, so the turn starts with
+  // its input closed and the prompt passed as the positional after `--` (which
+  // also keeps a prompt starting with '-' out of the option parser). Consequence:
+  // no stdin decision relay — headless vibe denies any approval nobody answers.
+  inputIsPrompt: true,
+  buildArgs(req: TurnRequest): string[] {
+    const args = ['-p', '--output', 'streaming'];
+    if (req.resume) args.push('--resume', req.resume.nativeSessionId);
+    // Attachments: vibe takes extra readable dirs as repeatable `--add-dir`.
+    if (req.readDirs && req.readDirs.length > 0) for (const d of req.readDirs) args.push('--add-dir', d);
+    // Permission modes (k3): auto => approve everything; manual => ask (denied
+    // unanswered in headless); edit-auto => accept-edits agent. Undefined => no
+    // flag, byte-identical argv to the default (k2). vibe has no pre-allow list
+    // equivalent to claude --allowedTools (--enabled-tools DISABLES the rest in
+    // headless), so req.allowedTools is not expressible and is ignored here.
+    if (req.permissionMode === 'auto') args.push('--auto-approve');
+    else if (req.permissionMode === 'manual') args.push('--agent', 'ask');
+    else if (req.permissionMode === 'edit-auto') args.push('--agent', 'accept-edits');
+    // Run config: vibe has no --model/--effort flags — the model is pinned via
+    // VIBE_ACTIVE_MODEL in envFor(); effort is not forwardable (the model's own
+    // `thinking` setting in the user's vibe config applies).
+    args.push('--', req.prompt);
+    return args;
+  },
+  envFor(req: TurnRequest): NodeJS.ProcessEnv | undefined {
+    if (req.model === undefined || req.model === '') return undefined;
+    return { ...process.env, VIBE_ACTIVE_MODEL: req.model };
+  },
+  mapLine(line: string, turnId: string, state: TurnState): TurnEvent[] {
+    const trimmed = line.trim();
+    if (trimmed === '') return [];
+    const obj = JSON.parse(trimmed) as Record<string, unknown>; // throws -> caller skips+logs
+    if (typeof obj['sessionId'] === 'string' && state.sessionId === undefined) {
+      state.sessionId = obj['sessionId'] as string;
+    }
+    const type = typeof obj['type'] === 'string' ? (obj['type'] as string) : '';
+    // An approval-shaped entry (if a future vibe emits one): normalize; idless -> [].
+    if (type.includes('approval')) {
+      const ev = normalizeApprovalEvent(turnId, obj);
+      return ev ? [ev] : [];
+    }
+    if (type === 'error') {
+      const message = typeof obj['message'] === 'string' ? (obj['message'] as string) : 'vibe turn failed';
+      return [{ kind: 'error', turnId, message }];
+    }
+    if (type !== 'message') return []; // reasoning / effect / anything else: noise
+    const role = obj['role'];
+    const content = Array.isArray(obj['content']) ? (obj['content'] as Array<Record<string, unknown>>) : [];
+    if (role === 'assistant') {
+      const out: TurnEvent[] = [];
+      for (const block of content) {
+        const btype = block['type'];
+        if (btype === 'text' && typeof block['text'] === 'string') {
+          out.push(...emitAssistantText(turnId, block['text'] as string, state));
+        } else if (btype === 'tool_call') {
+          const toolName = typeof block['name'] === 'string' ? (block['name'] as string) : 'tool';
+          // vibe carries the arguments as a JSON string in `arguments_json`.
+          let input: Record<string, unknown> = {};
+          if (typeof block['arguments_json'] === 'string') {
+            try {
+              const parsed: unknown = JSON.parse(block['arguments_json'] as string);
+              if (isRecord(parsed)) input = parsed;
+            } catch { /* malformed arguments_json: the call still surfaces, command-less */ }
+          } else if (isRecord(block['arguments'])) {
+            input = block['arguments'] as Record<string, unknown>;
+          }
+          const command = typeof input['command'] === 'string' ? (input['command'] as string) : undefined;
+          if (command !== undefined && typeof block['id'] === 'string' && block['id'] !== '') {
+            (state.toolCommands ??= {})[block['id'] as string] = command;
+          }
+          const mcp = parseVibeMcpTool(toolName);
+          // vibe MCP names fold separators to `_`, so the present tool matches on its suffix.
+          const present = mcp !== undefined && /(?:^|_)insrc_present$/.test(mcp.name)
+            ? declaredDocuments(input['documents'])
+            : undefined;
+          out.push({
+            kind: 'tool-call',
+            turnId,
+            tool: toolName,
+            ...(mcp ? { mcp } : {}),
+            ...(present !== undefined ? { present } : {}),
+            ...(command !== undefined ? { command } : {}),
+            ...(typeof block['id'] === 'string' && block['id'] !== '' ? { callId: block['id'] as string } : {}),
+          });
+        }
+      }
+      return out;
+    }
+    if (role === 'user') {
+      // Tool output rides back as a user message carrying tool_result blocks
+      // (ACP shape: tool_call_id + content, is_error).
+      const out: TurnEvent[] = [];
+      for (const block of content) {
+        if (block['type'] !== 'tool_result') continue;
+        const output = coerceToolResultOutput(block['content']);
+        const tid = typeof block['tool_call_id'] === 'string' ? (block['tool_call_id'] as string)
+          : typeof block['tool_use_id'] === 'string' ? (block['tool_use_id'] as string)
+          : undefined;
+        const command = tid !== undefined ? state.toolCommands?.[tid] : undefined;
+        const editPath = tid !== undefined ? state.editPaths?.[tid] : undefined;
+        out.push({
+          kind: 'tool-result',
+          turnId,
+          output,
+          ...(command !== undefined ? { command } : {}),
+          ...(tid !== undefined && tid !== '' ? { callId: tid } : {}),
+          ...(editPath !== undefined ? { editPath } : {}),
+          ...(block['is_error'] === true ? { isError: true } : {}),
+        });
+      }
+      return out;
+    }
+    return [];
+    // No terminal event line exists in vibe's stream: the adapter synthesizes
+    // `done` when the process exits (see run()).
+  },
+  formatDecision(requestId: string, decision: 'approve' | 'deny'): string {
+    // Headless vibe has no stdin control channel (inputIsPrompt), so decide()
+    // never writes this; kept for interface completeness as a JSON-RPC-style
+    // response envelope, should a future vibe accept one.
+    return JSON.stringify({ jsonrpc: '2.0', id: requestId, result: { decision } }) + '\n';
+  },
+};
+
+const MAPPERS: Record<ProviderId, ProviderMapper> = { claude: claudeMapper, codex: codexMapper, vibe: vibeMapper };
 
 /** Heuristic: does a native line/stderr indicate an auth failure the user must fix by re-logging-in? */
 function looksLikeAuthError(text: string): boolean {
@@ -884,7 +1052,7 @@ function looksLikeAuthError(text: string): boolean {
 
 // ---- adapter ----------------------------------------------------------------
 
-const BINARY: Record<ProviderId, string> = { claude: 'claude', codex: 'codex' };
+const BINARY: Record<ProviderId, string> = { claude: 'claude', codex: 'codex', vibe: 'vibe' };
 
 /** Reads and discards the rest of a stream (stdout after the terminal event). Never throws. */
 async function drain(it: AsyncIterator<string>): Promise<void> {
@@ -943,6 +1111,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         cwd: effectiveReq.cwd,
         ...(output !== undefined ? { output } : {}),
         ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
+        ...(mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
       });
     } catch (err) {
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
@@ -1226,7 +1395,7 @@ function failureMessage(provider: ProviderId, reason: unknown): string {
 export function createProviderRegistry(deps: AdapterDeps): ProviderRegistry {
   const adapters = new Map<ProviderId, StreamAdapter>();
   const available: ProviderId[] = [];
-  for (const id of ['claude', 'codex'] as const) {
+  for (const id of ['claude', 'codex', 'vibe'] as const) {
     if (deps.isInstalled(id)) {
       adapters.set(id, makeStreamAdapter(MAPPERS[id], deps));
       available.push(id);
@@ -1251,7 +1420,7 @@ export function createProviderRegistry(deps: AdapterDeps): ProviderRegistry {
  */
 export async function deriveChatTitle(
   providers: ProviderRegistry,
-  input: { readonly provider: ProviderId; readonly prompt: string; readonly cwd: string },
+  input: { readonly provider: ProviderId; readonly prompt: string; readonly cwd: string; readonly model?: string | undefined; readonly effort?: string | undefined },
   opts?: { readonly timeoutMs?: number | undefined },
 ): Promise<string | undefined> {
   let adapter: StreamAdapter;
@@ -1263,7 +1432,7 @@ export async function deriveChatTitle(
   const instruction =
     `Reply with ONLY a concise 3-6 word title (no quotes, no punctuation, no preamble) ` +
     `for a developer chat that begins with this message:\n\n${input.prompt}`;
-  const req: TurnRequest = { provider: input.provider, prompt: instruction, cwd: input.cwd };
+  const req: TurnRequest = { provider: input.provider, prompt: instruction, cwd: input.cwd, ...(input.model !== undefined ? { model: input.model } : {}), ...(input.effort !== undefined ? { effort: input.effort } : {}) };
   const it = adapter.run(req)[Symbol.asyncIterator]();
   const deadline = Date.now() + (opts?.timeoutMs ?? 8000);
   let turnId: string | undefined;
@@ -1336,6 +1505,7 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       cwd: opts.cwd,
       stdio: fds !== undefined ? [stdin, fds[0]!, fds[1]!] : [stdin, 'pipe', 'pipe'],
       detached: ownGroup,
+      ...(opts.env !== undefined ? { env: opts.env } : {}),
     });
   } finally {
     // The child holds its own copies of the descriptors; ours are not needed after spawn.

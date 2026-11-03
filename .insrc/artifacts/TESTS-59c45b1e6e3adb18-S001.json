@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "59c45b1e6e3adb18",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T19:07:41.273Z",
+    "updatedAt": "2026-10-30T19:07:41.273Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T19:03:58.570Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "66b504e49",
+        "ranAt": "2026-10-30T19:07:41.273Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/connections/__tests__/host.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/connections/__tests__/host.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11120,
+            "titles": [
+              {
+                "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: schema-source Path uses a functional icon picker and initializes its fixed format",
+                "result": "pass"
+              },
+              {
+                "title": "Connections repository default matches the deepest registered containing path with directory boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "Connections defaults to opened context and preserves manual selection and dirty drafts across reopen",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

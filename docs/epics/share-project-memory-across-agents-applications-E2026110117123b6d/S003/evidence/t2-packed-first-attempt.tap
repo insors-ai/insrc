@@ -1,0 +1,56 @@
+TAP version 13
+# > @insrc/project-memory@0.1.0 prepack
+# > npm run build
+# > @insrc/project-memory@0.1.0 build
+# > tsc -p tsconfig.json
+# npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+# Subtest: packed-isolated-node22-consumer
+not ok 1 - packed-isolated-node22-consumer
+  ---
+  duration_ms: 144803.341292
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:871'
+  failureType: 'testCodeFailure'
+  error: 'spawnSync /opt/homebrew/Cellar/node@22/22.23.2/bin/node ETIMEDOUT'
+  code: 'ETIMEDOUT'
+  stack: |-
+    Object.spawnSync (node:internal/child_process:1120:20)
+    spawnSync (node:child_process:902:24)
+    execFileSync (node:child_process:945:15)
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:65:3)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: packed-native-missing-import-versus-open
+ok 2 - packed-native-missing-import-versus-open
+  ---
+  duration_ms: 4237.757417
+  type: 'test'
+  ...
+# Subtest: tarball-public-dependency-and-asset-allowlist
+ok 3 - tarball-public-dependency-and-asset-allowlist
+  ---
+  duration_ms: 13.241083
+  type: 'test'
+  ...
+# Subtest: packed-lance-dependency-stays-lazy-on-import
+ok 4 - packed-lance-dependency-stays-lazy-on-import
+  ---
+  duration_ms: 1386.763375
+  type: 'test'
+  ...
+# Subtest: packed-external-submit-crash-reopen-and-operation
+ok 5 - packed-external-submit-crash-reopen-and-operation
+  ---
+  duration_ms: 12952.435875
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 4
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 169024.043084

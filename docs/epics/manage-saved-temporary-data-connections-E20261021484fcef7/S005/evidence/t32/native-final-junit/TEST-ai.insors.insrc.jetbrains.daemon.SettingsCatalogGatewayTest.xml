@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.SettingsCatalogGatewayTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="over the real parse, a numeric default arrives as a Double (the shape displayValue must render)()" classname="ai.insors.insrc.jetbrains.daemon.SettingsCatalogGatewayTest" time="0.001"/>
+  <testcase name="not-ok, error, DaemonUnavailable, and malformed(options not a list) all map to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.SettingsCatalogGatewayTest" time="0.0"/>
+  <testcase name="ok+data maps to Loaded with options, roles, tierNames parsed and values folded into currentValue-isSet()" classname="ai.insors.insrc.jetbrains.daemon.SettingsCatalogGatewayTest" time="0.0"/>
+  <testcase name="an empty options list is a valid Loaded, not Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.SettingsCatalogGatewayTest" time="0.0"/>
+  <testcase name="over the real parse, a payload maps to Loaded and an error to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.SettingsCatalogGatewayTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

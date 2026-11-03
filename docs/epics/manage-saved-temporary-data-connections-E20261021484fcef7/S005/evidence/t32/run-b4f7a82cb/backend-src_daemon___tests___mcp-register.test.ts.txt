@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: unselected clients are always emitted as skipped, never omitted
+ok 1 - unselected clients are always emitted as skipped, never omitted
+  ---
+  duration_ms: 2.935083
+  type: 'test'
+  ...
+# Subtest: {claude:true} registers claude (mcp add --scope user); codex is skipped
+ok 2 - {claude:true} registers claude (mcp add --scope user); codex is skipped
+  ---
+  duration_ms: 0.964709
+  type: 'test'
+  ...
+# Subtest: {agents:true} maps to the codex client (agents flag → codex, --scope omitted)
+ok 3 - {agents:true} maps to the codex client (agents flag → codex, --scope omitted)
+  ---
+  duration_ms: 0.483041
+  type: 'test'
+  ...
+# Subtest: {vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned
+ok 4 - {vibe:true} registers vibe via `vibe mcp add insrc --transport stdio`; no `mcp list` is spawned
+  ---
+  duration_ms: 0.107791
+  type: 'test'
+  ...
+# Subtest: vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned
+ok 5 - vibe already present in config.toml [[mcp_servers]] → unchanged, no add spawned
+  ---
+  duration_ms: 0.245417
+  type: 'test'
+  ...
+# Subtest: vibe add failure → failed carrying the CLI stderr; other clients unaffected
+ok 6 - vibe add failure → failed carrying the CLI stderr; other clients unaffected
+  ---
+  duration_ms: 0.143667
+  type: 'test'
+  ...
+# Subtest: vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values
+ok 7 - vibeConfigHasServer: matches an [[mcp_servers]] name line only, not other tables or values
+  ---
+  duration_ms: 0.157208
+  type: 'test'
+  ...
+# Subtest: an existing `insrc` entry in `mcp list` → unchanged, no add spawned
+ok 8 - an existing `insrc` entry in `mcp list` → unchanged, no add spawned
+  ---
+  duration_ms: 0.090834
+  type: 'test'
+  ...
+# Subtest: an `insrc` substring only inside a path (not a line-start name) does NOT count as registered
+ok 9 - an `insrc` substring only inside a path (not a line-start name) does NOT count as registered
+  ---
+  duration_ms: 0.242833
+  type: 'test'
+  ...
+# Subtest: an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add
+ok 10 - an indeterminate `mcp list` (non-zero exit) → failed, and deliberately does NOT add
+  ---
+  duration_ms: 0.354709
+  type: 'test'
+  ...
+# Subtest: a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw
+ok 11 - a missing CLI binary (ENOENT spawn) → failed with a not-found note, no throw
+  ---
+  duration_ms: 0.091167
+  type: 'test'
+  ...
+# Subtest: a non-zero `mcp add` exit → failed carrying the CLI stderr
+ok 12 - a non-zero `mcp add` exit → failed carrying the CLI stderr
+  ---
+  duration_ms: 0.077042
+  type: 'test'
+  ...
+# Subtest: per-client isolation: claude add fails, codex still registers independently
+ok 13 - per-client isolation: claude add fails, codex still registers independently
+  ---
+  duration_ms: 0.127416
+  type: 'test'
+  ...
+# Subtest: mixed idempotency: claude already present, codex absent → unchanged + registered
+ok 14 - mixed idempotency: claude already present, codex absent → unchanged + registered
+  ---
+  duration_ms: 0.058291
+  type: 'test'
+  ...
+# Subtest: a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess
+ok 15 - a missing out/bin/insrc-mcp.js → failed for each selected client, no subprocess
+  ---
+  duration_ms: 0.120917
+  type: 'test'
+  ...
+# Subtest: registerMcpClients never rejects even if the injected run throws
+ok 16 - registerMcpClients never rejects even if the injected run throws
+  ---
+  duration_ms: 0.172917
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 379.881166

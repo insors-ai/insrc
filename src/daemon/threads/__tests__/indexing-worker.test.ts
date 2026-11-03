@@ -39,7 +39,10 @@ const { Router } = await import('../router.js');
 const { startClassWorker } = await import('../workers.js');
 const { INDEXING_DRAINED, INDEXING_PORT, INDEXING_STOP_OP } = await import('../indexing-port.js');
 const { pushToWorker } = await import('../channel.js');
+const { getLockManager } = await import('../../../shared/locks/lock-manager.js');
+const { MAINTENANCE_LOCK } = await import('../../../shared/locks/maintenance-lock.js');
 import type { ReplyEnvelope, RequestEnvelope } from '../channel.js';
+import { stopWorker } from './helpers/stop-worker.js';
 
 // Real paths: the watcher reports events under the real path (/private/var on macOS).
 const REPO = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-indexing-worker-repo-')));
@@ -66,6 +69,41 @@ async function until(cond: () => Promise<boolean> | boolean, what: string, ms = 
 		if (Date.now() > deadline) assert.fail(`timed out waiting for: ${what}`);
 		await new Promise(r => setTimeout(r, 50));
 	}
+}
+
+/** Post a request straight to the worker's port; resolves with its reply. */
+function askPort(method: string, params: unknown, underHold?: boolean): Promise<ReplyEnvelope> {
+	const requestId = `p${++seq}`;
+	return new Promise(resolve => {
+		const onMessage = (m: ReplyEnvelope): void => { if (m.requestId === requestId) { indexingPort.off('message', onMessage); resolve(m); } };
+		indexingPort.on('message', onMessage);
+		indexingPort.postMessage({ kind: 'request', requestId, method, params, stream: false, ...(underHold === true ? { underHold } : {}) } satisfies RequestEnvelope);
+	});
+}
+/**
+ * A job held on the worker's queue: the test holds the maintenance lock exclusively and
+ * enqueues a job (as a nested call under its hold), which then waits for the lock with
+ * the queue busy. Resolves once the job is waiting; the returned call lets it run.
+ */
+async function holdAJob(): Promise<() => Promise<void>> {
+	let release!: () => void;
+	const gate = new Promise<void>(r => { release = r; });
+	let grant!: () => void;
+	const granted = new Promise<void>(r => { grant = r; });
+	const done = getLockManager().request(MAINTENANCE_LOCK, { mode: 'exclusive', timeoutMs: 60_000 }, async () => { grant(); await gate; });
+	await granted;
+	const letRun = async (): Promise<void> => { release(); await done; };
+	try {
+		const enqueued = await askPort(INDEXING_PORT.enqueue, { kind: 'full', repoPath: REPO }, true);
+		assert.equal(enqueued.error, undefined);
+		const waiting = (): boolean => getLockManager().query().pending.some(l => l.name === MAINTENANCE_LOCK && l.mode === 'shared');
+		await until(waiting, 'the job to wait for the maintenance lock');
+	} catch (err) {
+		// A failed setup still gives the lock back, so later jobs and the teardown are not blocked.
+		await letRun();
+		throw err;
+	}
+	return letRun;
 }
 
 before(async () => {
@@ -97,12 +135,8 @@ before(async () => {
 });
 after(async () => {
 	// Stop the worker's queue and watcher (its native subscription) before it ends, as shutdown does.
-	for (const w of workers) {
-		const drained = new Promise<void>(resolve => w.on('message', m => { if (m === INDEXING_DRAINED) resolve(); }));
-		pushToWorker(indexingPort, INDEXING_STOP_OP, null);
-		await drained;
-		await w.terminate();
-	}
+	// Stopped as shutdown stops it: an exit first, or no drained report within 30 s, fails the teardown.
+	for (const w of workers) await stopWorker(w, () => pushToWorker(indexingPort, INDEXING_STOP_OP, null), INDEXING_DRAINED);
 	await closeLanceConn();
 	await closeGraphStore();
 	for (const d of [HOME, REPO, SECOND]) rmSync(d, { recursive: true, force: true });
@@ -113,22 +147,47 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 	try {
 		const calls: [string, unknown][] = [
 			['repo.stats', {}],
+			// Before any work is queued: a backup copies the live LanceDB directory, which a running index pass writes to.
+			['daemon.backup', { path: join(backupDir, 'b') }],
 			['repo.reindex', { path: REPO }],
 			['index.file', { filePath: join(REPO, 'src', 'a.ts'), event: 'update' }],
+			['index.languages', {}],
+			['index.subsystems', { repoPath: REPO }],
 			['config.enqueue', { filePath: join(HOME, 'none.md'), scope: { kind: 'global' }, event: 'update' }],
 			['config.reindex', { scope: { kind: 'global' } }],
-			['daemon.backup', { path: join(backupDir, 'b') }],
 			['docSummary.restoreFromBackup', { backupPath: 42 }],
 			['daemon.compact', undefined],
 			['repo.add', { path: SECOND }],
 			['repo.remove', { path: SECOND }],
+			['mcp.register', { path: 42 }],
 		];
+		// What each call must answer: its handler really ran (not just "not an unknown method").
+		const ok = (r: ReplyEnvelope): void => { assert.equal(r.error, undefined); assert.deepEqual(r.result, { ok: true }); };
+		const expect: Record<string, (r: ReplyEnvelope) => void> = {
+			'repo.stats': r => { assert.equal(r.error, undefined); assert.ok(Array.isArray(r.result) && (r.result as { repoPath: string }[]).some(x => x.repoPath === REPO)); },
+			// The worker's own registry (Epic c2ba6fa6 s9): its readers are loaded there.
+			'index.languages': r => { assert.equal(r.error, undefined); assert.ok((r.result as { languages: { language: string; available: boolean }[] }).languages.some(l => l.language === 'typescript' && l.available)); },
+			// The worker's own store (Epic c2ba6fa6 s8): the repository's subsystems with what they rest on.
+			'index.subsystems': r => { assert.equal(r.error, undefined); assert.equal((r.result as { repoPath: string }).repoPath, REPO); },
+			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
+			'mcp.register': r => assert.equal(r.error, 'Cannot register providers: repo path must be a string (got number)', 'its own validation ran'),
+			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },
+			'docSummary.restoreFromBackup': r => assert.equal(r.error, 'docSummary.restoreFromBackup: backupPath must be a string', 'its own validation ran'),
+			// A job held running: today's busy refusal, from the worker's real queue.
+			'daemon.compact': r => assert.match(r.error ?? '', /^daemon\.compact: indexer is busy \(queue=\d+, processing=(true|false)\)\./),
+		};
 		sent.length = 0;
 		for (const [method, params] of calls) {
-			const reply = await ask(method, params);
-			assert.notEqual(reply.error, `unknown method: ${method}`, `${method} did not run on the main thread`);
+			// daemon.compact is asked while a job is held running, so the queue is busy for certain.
+			let reply: ReplyEnvelope;
+			if (method === 'daemon.compact') {
+				const letRun = await holdAJob();
+				try { reply = await ask(method, params); } finally { await letRun(); }
+			} else reply = await ask(method, params);
+			assert.ok(expect[method] !== undefined, `an expected outcome for ${method}`);
+			expect[method]!(reply);
 		}
-		assert.deepEqual(sent, calls.map(([m]) => m), 'every indexing method went to the code-indexing worker');
+		assert.deepEqual(sent.filter(m => !m.startsWith('indexing.port.')), calls.map(([m]) => m), 'every indexing method went to the code-indexing worker');
 		const indexingMethods = methodClasses.entries().filter(e => e.cls === 'indexing').map(e => e.method).sort();
 		assert.deepEqual(indexingMethods, calls.map(([m]) => m).sort(), 'and these are all of them');
 	} finally {
@@ -181,14 +240,9 @@ test("recorded responses of repo.stats and daemon.compact equal the single-threa
 		shutdown: () => {}, attachedClients: () => [], understandingService: () => undefined,
 	});
 	const todayRefusal = await singleBusy.rpcHandlers['daemon.compact']!(undefined).then(() => '', (e: Error) => e.message);
-	const enqueued = await new Promise<ReplyEnvelope>(resolve => {
-		const requestId = 'enq';
-		const onMessage = (m: ReplyEnvelope): void => { if (m.requestId === requestId) { indexingPort.off('message', onMessage); resolve(m); } };
-		indexingPort.on('message', onMessage);
-		indexingPort.postMessage({ kind: 'request', requestId, method: INDEXING_PORT.enqueue, params: { kind: 'full', repoPath: REPO }, stream: false });
-	});
-	assert.equal(enqueued.error, undefined);
-	const threadedRefusal = (await ask('daemon.compact')).error ?? '';
+	const letRun = await holdAJob();
+	let threadedRefusal: string;
+	try { threadedRefusal = (await ask('daemon.compact')).error ?? ''; } finally { await letRun(); }
 	const shape = /^daemon\.compact: indexer is busy \(queue=\d+, processing=(true|false)\)\. Wait for indexing to drain before compacting\.$/;
 	assert.match(todayRefusal, shape);
 	assert.match(threadedRefusal, shape);

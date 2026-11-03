@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure
+ok 1 - module-state inventory: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure
+  ---
+  duration_ms: 492.476292
+  type: 'test'
+  ...
+# Subtest: module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic
+ok 2 - module-state inventory: the scanner throws on an unreadable tsconfig and is deterministic
+  ---
+  duration_ms: 508.415208
+  type: 'test'
+  ...
+# Subtest: module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input
+ok 3 - module-state inventory: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input
+  ---
+  duration_ms: 0.387208
+  type: 'test'
+  ...
+# Subtest: module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store
+ok 4 - module-state inventory: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store
+  ---
+  duration_ms: 2305.467375
+  type: 'test'
+  ...
+# Subtest: module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)
+ok 5 - module-state inventory: every module-scope mutable value the session worker can load is classified (full guard over the repo)
+  ---
+  duration_ms: 0.64275
+  type: 'test'
+  ...
+# Subtest: module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism
+ok 6 - module-state inventory: every move candidate carries a recorded decision, and every one-owner or shared-store entry names its mechanism
+  ---
+  duration_ms: 0.803084
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4090.837875

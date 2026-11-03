@@ -1,0 +1,428 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793378277755-da5451",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T16:42:09.809Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 252035,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2ab0484d51a0556c",
+    "epicSlug": "add-manage-connections-entry-insrc-status",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793378277755-da5451",
+    "hldEffectiveHash": "2ab0484d51a0556c45d161201fb45f6145b5d215ca86a67ac859ba163a6c5b53",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Reuses an already-fully-built feature (vscode-plugin/src/connections/* + command insrc.openDataSources) with zero new backend/data model work. The change is mechanical and has one obvious approach (add a MenuItem row + a switch branch + a PanelHost method that delegates to the existing command), but it touches 3 files across what are effectively 2 concerns (the panels module's menu/host surface, and extension.ts's wiring of panelHost to the connections host), which is more than a single-file trivial guard/rename/constant.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design's five acceptance criteria (ac1–ac5: MENU_ITEMS gains a 4th row, showStatusMenu routes the new choice, openConnections() invokes/omits the sink correctly, the existing 3-item test is renamed/extended, and the sink-throw is caught) fully cover the Summary's stated intent (one more menu doorway to the already-shipped Connections panel) and the design explicitly disclaims any new panel/UI/backend capability, matching the non-goal.",
+          "evidence": "Section 5's acceptance mapping table lists ac1–ac5 each tied to a concrete webview-host.test.ts test, and the Summary states 'No new panel, UI, or backend capability is introduced'; cross-checked against the real MENU_ITEMS (webview-host.ts:52-56, 3 entries today) and showStatusMenu (webview-host.ts:527-541) which is exactly where a 4th branch would be added. [files: vscode-plugin/src/panels/webview-host.ts]",
+          "action": "Read vscode-plugin/src/panels/webview-host.ts to confirm the current 3-entry menu and dispatch shape the new criteria extend.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "MENU_ITEMS today carries exactly 3 entries (Detailed Status/Repo Configuration/Model Tiers) and showStatusMenu dispatches via if/else-if/else over 'detailed'/'repoConfig', with the final else implicitly catching 'modelTiers' — as the design states in its Migration 'State before' and its invariants.",
+          "evidence": "webview-host.ts:52-56 defines MENU_ITEMS with exactly 3 objects; webview-host.ts:527-540 shows `if (chosen.action === 'detailed') ... else if (chosen.action === 'repoConfig') ... else this.openModelTiers();` — an implicit-else dispatch, matching the design's claim. [files: vscode-plugin/src/panels/webview-host.ts]",
+          "action": "Read webview-host.ts lines 44-60 and 527-541 directly.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three existing open* methods (openDetailedStatus/openRepoConfiguration/openModelTiers) take no deps-callback and invoke none directly, so they set no precedent for how openConnections() should invoke a deps sink — the design instead points to onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite as the real precedent.",
+          "evidence": "webview-host.ts:466-525 shows openDetailedStatus/openRepoConfiguration/openModelTiers bodies calling only renderDetail/renderRepoPanel/renderModelTiersPanel and internal state — no deps.* callback appears in any open* method body; the deps-callback sinks with try/catch+logger.warn appear only in the message handlers (lines 295-304, 357-394, 437-462). [files: vscode-plugin/src/panels/webview-host.ts]",
+          "action": "Read webview-host.ts lines 270-463 and 465-541 to compare open* bodies against the message-handler sink pattern.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ConnectionsManagerHost.open() already exists with create-or-reveal single-instance semantics the design says it reuses unchanged, and its body has synchronous calls (createPanel, panel.setHtml, panel.reveal, this.#bindTest) that run before its one internal try/catch — so a throw from those would reject the async method's promise rather than throw synchronously, exactly as the design's error-paths section claims.",
+          "evidence": "connections/host.ts:93-113: `async open(){ if(this.#disposed)return; if(this.#panel){this.#panel.reveal();return;} const panel=this.#ports.createPanel(); ... panel.setHtml(...); panel.reveal(); this.#bindTest(); try{ const roots=await this.#ports.registeredRoots(); ... }catch{...} }` — createPanel/setHtml/reveal/bindTest all precede the sole try/catch, confirming the design's claim about open()'s reject-not-throw behavior. [files: vscode-plugin/src/connections/host.ts]",
+          "action": "Read connections/host.ts lines 93-113.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today, extension.ts wires the Connections panel independently via registerConnectionCommands directly to connectionManager.open(), with no path through WebviewPanelHost — exactly as the design's Migration 'State before' states, and the panelHost construction currently carries no onOpenConnections-equivalent field.",
+          "evidence": "extension.ts:322-341 constructs `connectionManager = new ConnectionsManagerHost(...)` then `registerConnectionCommands((id,run)=>vscode.commands.registerCommand(id,run), connectionManager)`; the separate `panelHost = createWebviewPanelHost({...})` block starting at extension.ts:393 wires panels/pickMenu/gateway/logger/detailRenderers/tabControllers/onDetailAction/repoRenderer and more — none of it references connectionManager or a connections open callback. [files: vscode-plugin/src/extension.ts]",
+          "action": "Read extension.ts lines 322-341 and 393-452.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The cited call sites for MenuItem (types.ts:224-228) and WebviewPanelHostDeps (types.ts:249-310) are the real declarations at those line ranges, so the inventory of files/lines the design says must change is accurate.",
+          "evidence": "types.ts:224-228 is exactly `export interface MenuItem { readonly label: string; readonly action: 'detailed' | 'repoConfig' | 'modelTiers'; }`; types.ts:249-310 is exactly the `WebviewPanelHostDeps` interface spanning panels/pickMenu/gateway/logger through modelTiersRenderer/onModelTiersWrite. [files: vscode-plugin/src/panels/types.ts]",
+          "action": "Read types.ts lines 200-320.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The panels module (vscode-plugin/src/panels) imports nothing from connections/* today, so the design's invariant that this Story must not introduce such an import is consistent with the current state it is preserving.",
+          "evidence": "A grep for `from '../connections` / `from './connections'` under vscode-plugin/src/panels returned no matches. [files: vscode-plugin/src/panels/webview-host.ts, vscode-plugin/src/panels/types.ts]",
+          "action": "Grep vscode-plugin/src/panels for imports from the connections module.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every existing optional deps-callback sink in webview-host.ts (onDetailAction, onRepoConfigWrite, onRepoRegisterProviders, onModelTiersWrite) wraps its invocation in try/catch with logger.warn on catch — the precedent the design says onOpenConnections must follow (and explicitly corrects an earlier, wrong citation to the open*-method style).",
+          "evidence": "webview-host.ts:299-303 (`try{ deps.onDetailAction?.(msg.action); }catch(err){ logger.warn(...) }`), :366-374 (onRepoConfigWrite), :386-393 (onRepoRegisterProviders), :458-462 (onModelTiersWrite) — all four sinks share the identical try/catch+logger.warn shape. [files: vscode-plugin/src/panels/webview-host.ts]",
+          "action": "Read webview-host.ts lines 295-463 covering all four sink call sites.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "connectionManager.open()'s synchronous-call-then-single-try/catch shape means a throw from its pre-try-block statements surfaces as a REJECTED promise, not a synchronous exception — so openConnections()'s own try/catch (which only catches a synchronous throw from the deps callback invocation) cannot by itself catch that rejection, justifying the design's extra .catch wiring in extension.ts step 3.",
+          "evidence": "connections/host.ts:93-105 shows createPanel()/panel.setHtml()/panel.reveal()/this.#bindTest() execute before the function's sole try block at line 106; since `open` is declared `async`, any throw among those statements rejects the returned promise rather than throwing synchronously into a caller's try/catch around a fire-and-forget invocation. [files: vscode-plugin/src/connections/host.ts]",
+          "action": "Re-read connections/host.ts open() body for statement ordering relative to its try block.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test the design says must be 'RENAMED and extended' — 'showStatusMenu offers EXACTLY three items...' — exists verbatim today in webview-host.test.ts, so the design's ac4 test-amendment plan targets a real, correctly-identified test.",
+          "evidence": "vscode-plugin/src/panels/__tests__/webview-host.test.ts:120 reads `test('showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel', async () => {...` with assertions at line 126 checking `['Detailed Status', 'Repo Configuration', 'Model Tiers']` — exactly the test and 3-item list the design says ac4 renames/extends to 4. [files: vscode-plugin/src/panels/__tests__/webview-host.test.ts]",
+          "action": "Grep and read webview-host.test.ts around the cited test.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each acceptance criterion (ac1–ac5) maps to a stated test in the existing node:test (tsx --test) framework and follows the established makeHost/fake-deps pattern already used for the detailed/repoConfig/modelTiers entries, so the mapping is executable in the real suite rather than aspirational.",
+          "evidence": "The cited test file already uses a `makeHost({ pick: ... })` fixture pattern (webview-host.test.ts:120-142) that the design's new tests for openConnections()/ac3/ac5 (wired vs. omitted onOpenConnections, synchronous-throw fake) directly extend using the same fixture shape. [files: vscode-plugin/src/panels/__tests__/webview-host.test.ts]",
+          "action": "Read webview-host.test.ts's makeHost helper and surrounding tests to confirm the fixture pattern the new tests would reuse.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 11,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-30T16:50:15.658Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-30T16:55:03.271Z",
+    "rangeBase": "640f070ef5f86d344ee8e0b2d3121ca4e428c6eb"
+  },
+  "body": {
+    "summary": {
+      "prose": "Adds a fourth entry, \"Manage Connections\", to the insrc status-bar click menu, alongside Detailed Status / Repo Configuration / Model Tiers. Choosing it opens the extension's existing, already-shipped Connections panel — the same panel the Command Palette's \"Manage Connections\" command and the Repo Configuration settings link already open. No new panel, UI, or backend capability is introduced; this Story only adds one more doorway into what already exists.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Add a Manage Connections entry to the insrc status-bar menu"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "WebviewPanelHost.openConnections",
+          "signature": "openConnections(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "No return value; this is a fire-and-forget dispatch, matching openDetailedStatus/openRepoConfiguration/openModelTiers."
+          },
+          "errors": [],
+          "preconditions": [
+            "The host has been constructed via createWebviewPanelHost (vscode-plugin/src/panels/webview-host.ts), the same lifecycle every other open* method assumes."
+          ],
+          "postconditions": [
+            "If WebviewPanelHostDeps.onOpenConnections is wired, it is invoked inside a try/catch, matching the module's established 'a sink throw must not surface (never-throw)' precedent already used by onDetailAction (webview-host.ts:298-303), onRepoConfigWrite, onRepoRegisterProviders and onModelTiersWrite — NOT the open* methods, which take no deps-callback and so set no precedent for this call.",
+            "A synchronous throw from deps.onOpenConnections is caught and logged via deps.logger.warn; it never propagates out of openConnections() or showStatusMenu()'s dispatch.",
+            "If it is NOT wired, deps.logger.warn is called once and nothing else happens — there is no placeholder body to render for an externally-owned panel, unlike repoRenderer/modelTiersRenderer which fall back to an in-host placeholder."
+          ]
+        },
+        {
+          "name": "WebviewPanelHost.showStatusMenu",
+          "signature": "showStatusMenu(): Promise<void>",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Resolves once the user's QuickPick choice has been routed to the matching open method, or settles immediately on dismiss (Esc)."
+          },
+          "errors": [],
+          "preconditions": [
+            "deps.pickMenu is wired (unconditional dependency, unchanged from today)."
+          ],
+          "postconditions": [
+            "MENU_ITEMS now carries 4 entries; a chosen.action === 'connections' routes to this.openConnections().",
+            "The existing three branches (detailed/repoConfig/modelTiers, vscode-plugin/src/panels/webview-host.ts:527-541) are unchanged in behavior and order."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "MenuItem",
+        "change": "field-modify",
+        "details": "The action union gains a 4th literal member 'connections', alongside the existing 'detailed' | 'repoConfig' | 'modelTiers'. No other field of MenuItem (label) changes.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:224-228",
+          "vscode-plugin/src/panels/webview-host.ts:52-56",
+          "vscode-plugin/src/panels/webview-host.ts:527-541"
+        ]
+      },
+      {
+        "entity": "WebviewPanelHostDeps",
+        "change": "field-add",
+        "details": "New OPTIONAL onOpenConnections?: () => void field. Its INVOCATION in openConnections() follows the module's 'a sink throw must not surface (never-throw)' precedent (try/catch + logger.warn, matching onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite), not the open*-method fallback-to-placeholder style: there is no placeholder body for an externally-owned panel, so an unwired dep logs a warning and opens nothing.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:249-310",
+          "vscode-plugin/src/extension.ts:104-927"
+        ]
+      },
+      {
+        "entity": "MENU_ITEMS",
+        "change": "field-add",
+        "details": "The module-level MENU_ITEMS array gains a 4th row { label: 'Manage Connections', action: 'connections' }, appended after the existing Model Tiers row.",
+        "callSites": [
+          "vscode-plugin/src/panels/webview-host.ts:52-56"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The host is constructed without WebviewPanelHostDeps.onOpenConnections wired (e.g. an older extension.ts build, or a test fake that omits it) and the user picks 'Manage Connections' from the menu.",
+          "detection": "openConnections() checks deps.onOpenConnections via optional chaining (deps.onOpenConnections?.()); the call resolves to undefined when unwired.",
+          "response": "deps.logger.warn(...) is called once with a message naming the missing wiring; no panel opens and no exception is thrown.",
+          "userImpact": "The menu item is selectable but silently does nothing beyond the warning (visible only in the extension's own output channel, not a user-facing toast) — identical degrade style to how repoRenderer/modelTiersRenderer being unwired falls back to a placeholder instead of crashing.",
+          "recoverable": true
+        },
+        {
+          "scenario": "deps.onOpenConnections, when wired, throws synchronously (a host-level contract case, provable with a throwing test fake) — OR, separately, its real production binding (connectionManager.open(), an async method) returns a promise that rejects. host.ts:93-113 shows open()'s body has synchronous calls (createPanel(), panel.setHtml(...), panel.reveal(), this.#bindTest()) that run BEFORE its one internal try/catch; because open() is declared async, a throw from any of them is converted into a REJECTED promise, not a synchronous exception — so open() is not proven never to reject.",
+          "detection": "openConnections() wraps deps.onOpenConnections?.() in try/catch (matching the sink precedent) and catches a SYNCHRONOUS throw there. That try/catch cannot catch an asynchronous rejection from a promise the callback fires-and-forgets (JS try/catch does not catch rejections of an unawaited promise) — so the real production wiring additionally attaches its own .catch to connectionManager.open()'s returned promise in extension.ts, independent of openConnections()'s try/catch.",
+          "response": "A synchronous throw is caught by openConnections()'s try/catch and logged via deps.logger.warn, exactly like the other deps-callback sinks. A rejected connectionManager.open() promise is caught by extension.ts's own .catch on the wiring and logged there — neither path leaves an unhandled exception or an unhandled promise rejection.",
+          "userImpact": "No surfaced error in either case: the panel simply fails to open, with a warning logged (host-side logger.warn for a sync throw, or the extension.ts wiring's own warn for an async rejection).",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The user opens the status-bar menu and picks 'Manage Connections' while the Connections panel is already open.",
+          "expected": "connectionManager.open() is the SAME existing method the Command Palette command already calls today, so this Story inherits its existing create-or-reveal semantics unchanged — this Story adds no new logic to decide that behavior."
+        },
+        {
+          "input": "The user dismisses the QuickPick (Esc) without choosing any of the 4 items, including the new one.",
+          "expected": "showStatusMenu() returns immediately (chosen === undefined check at vscode-plugin/src/panels/webview-host.ts, unchanged) — no open* method, including openConnections(), is called."
+        },
+        {
+          "input": "A test constructs createWebviewPanelHost with a fakes object that has every OTHER optional dep (repoRenderer, modelTiersRenderer, etc.) wired but omits onOpenConnections specifically.",
+          "expected": "Only the Connections menu item degrades (warn + no-op); Detailed Status / Repo Configuration / Model Tiers continue to open normally — the four open* methods are independent, matching the existing pattern where modelTiersRenderer being unwired does not affect repoRenderer."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "MenuItem.action is a closed union with no default/fallthrough case in showStatusMenu's dispatch (today: if/else-if/else over 'detailed'/'repoConfig'/'modelTiers', the final else implicitly catching 'modelTiers') — adding 'connections' must keep every branch an explicit check, not silently fall into an existing branch's final else.",
+          "source": "c1"
+        },
+        {
+          "text": "Every optional WebviewPanelHostDeps field added after the S004 shell (repoRenderer, onRepoConfigWrite, onRepoRegisterProviders, modelTiersRenderer, onModelTiersWrite) degrades gracefully when unwired rather than throwing — onOpenConnections must follow the same contract.",
+          "source": "c1"
+        },
+        {
+          "text": "The panels module (vscode-plugin/src/panels) imports nothing from connections/* today — this Story must not introduce that import (a1's design already avoids it).",
+          "source": "c1"
+        },
+        {
+          "text": "Every existing optional deps-callback SINK in webview-host.ts (onDetailAction, onRepoConfigWrite, onRepoRegisterProviders, onModelTiersWrite) wraps its invocation in try/catch with the documented rule 'a sink throw must not surface (never-throw)' (webview-host.ts:298-303 et al.) — onOpenConnections must follow this SAME precedent, not the unguarded open*-method dispatch style this LLD originally (incorrectly) cited.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify MENU_ITEMS/showStatusMenu dispatch and openConnections() in isolation over fakes, matching the existing webview-host.test.ts pattern used for the detailed/repoConfig/modelTiers entries.",
+          "subjects": [
+            "webview-host.ts MENU_ITEMS",
+            "webview-host.ts showStatusMenu",
+            "webview-host.ts openConnections"
+          ],
+          "fixturesNeeded": [
+            "a fake WebviewPanelHostDeps with onOpenConnections wired",
+            "a fake WebviewPanelHostDeps with onOpenConnections omitted",
+            "a fake pickMenu resolving to each of the 4 MenuItem choices in turn"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "webview-host.test.ts: MENU_ITEMS carries a 4th 'Manage Connections' entry with action 'connections', after the existing 3"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "webview-host.test.ts: showStatusMenu routes a chosen.action === 'connections' pick to openConnections(), leaving the other 3 branches unchanged"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "webview-host.test.ts: openConnections() invokes deps.onOpenConnections exactly once when wired; when unwired it calls deps.logger.warn once and opens nothing (no throw)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "webview-host.test.ts: the existing 'showStatusMenu offers EXACTLY three items...' test is RENAMED and extended to expect the 4-item list ['Detailed Status','Repo Configuration','Model Tiers','Manage Connections'], and still verifies routing for all 4 choices (this test is AMENDED, not left unmodified)"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "webview-host.test.ts: openConnections() catches a synchronous throw from a wired onOpenConnections fake and logs it via deps.logger.warn, matching the onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite sink precedent — the throw never propagates out of openConnections() or showStatusMenu()"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "MENU_ITEMS (vscode-plugin/src/panels/webview-host.ts:52-56) carries 3 entries; MenuItem.action (vscode-plugin/src/panels/types.ts:224-228) is 'detailed' | 'repoConfig' | 'modelTiers'; showStatusMenu (webview-host.ts:527-541) dispatches via if/else-if/else over those 3; WebviewPanelHostDeps (types.ts:249-310) has no connections-related field; extension.ts wires the Connections panel independently via registerConnectionCommands (connections/wiring.ts:12-20) directly to connectionManager.open(), with no path through WebviewPanelHost.",
+      "stateAfter": "MENU_ITEMS carries 4 entries; MenuItem.action is 'detailed' | 'repoConfig' | 'modelTiers' | 'connections'; showStatusMenu dispatches to a new openConnections() on a 4th explicit branch; WebviewPanelHostDeps carries an optional onOpenConnections?: () => void field; extension.ts additionally wires onOpenConnections: () => void connectionManager.open() when constructing the panel host, alongside its existing registerConnectionCommands wiring (which is left untouched).",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the 'connections' literal to MenuItem.action's union (types.ts) and add onOpenConnections?: () => void to WebviewPanelHostDeps (types.ts), plus an openConnections(): void member on WebviewPanelHost (types.ts).",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add a 4th MENU_ITEMS row ({ label: 'Manage Connections', action: 'connections' }), an openConnections() implementation that invokes deps.onOpenConnections?.() inside a try/catch + logger.warn (matching the onDetailAction/onRepoConfigWrite/onRepoRegisterProviders/onModelTiersWrite sink precedent), and a 4th showStatusMenu dispatch branch to webview-host.ts. Also rename and extend the existing 'showStatusMenu offers EXACTLY three items...' test to the 4-item list.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "In extension.ts, pass onOpenConnections: () => { connectionManager.open().catch((err) => logger.warn(...)); } into the panelHost construction — attaching its own .catch to the promise connectionManager.open() returns (defense-in-depth against a rejection; host.ts's open() is not proven never to reject, see errorPaths) — reusing the connectionManager instance already constructed for registerConnectionCommands.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Purely additive: a 4th union member and a new optional dependency field are both additive TypeScript changes with no removed/renamed members, so any existing caller or test fake that omits onOpenConnections keeps compiling and behaves exactly as it does today (openConnections() degrades to a warn, not a throw). No existing command id, panel, or IPC shape changes.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Plain injected open callback",
+        "oneLineSummary": "Add a bare onOpenConnections?: () => void dependency; a new openConnections() method calls it.",
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Typed Pick<ConnectionsManagerHost,'open'> dependency",
+        "oneLineSummary": "Inject the connections host's own open()-only slice, typed via Pick<ConnectionsManagerHost,'open'>, exactly mirroring registerConnectionCommands' own parameter type.",
+        "costEstimate": "S",
+        "reasonRejected": "Functionally equivalent to a1 but trades a clean module boundary for type precision the Story does not need — requires types.ts's first import from connections/host.ts, coupling two module families s1 found wired independently today."
+      },
+      {
+        "id": "a3",
+        "name": "Generic command-execute passthrough",
+        "oneLineSummary": "Inject a generic executeCommand(id: string): void dependency; openConnections() calls it with the literal 'insrc.openDataSources' command id.",
+        "costEstimate": "S",
+        "reasonRejected": "Introduces a stringly-typed, broader-than-needed capability and breaks the module's established narrow-callback idiom — no other WebviewPanelHostDeps field is a generic command-id executor."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate+module.profile: WebviewPanelHost/MenuItem/WebviewPanelHostDeps/MENU_ITEMS/showStatusMenu (vscode-plugin/src/panels/types.ts:35-44,224-228,249-310; vscode-plugin/src/panels/webview-host.ts:52-56,466,489,508,527-541) and ConnectionsManagerHost/registerConnectionCommands (vscode-plugin/src/connections/host.ts:31-260; vscode-plugin/src/connections/wiring.ts:12-20; vscode-plugin/src/extension.ts:104-927)"
+    }
+  ]
+}

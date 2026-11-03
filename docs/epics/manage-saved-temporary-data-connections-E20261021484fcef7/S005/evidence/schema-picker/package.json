@@ -1,0 +1,10 @@
+{
+  "sourceCommit": "f5f0eafd0",
+  "version": "0.5.18",
+  "archive": "vscode-plugin/insrc-vscode-0.5.18-s005-f5f0eafd0.vsix",
+  "sha256": "de82939a9876048e8f745a0410117681376a85af589510815cb38f073763428a",
+  "CRC": "pass",
+  "iconPickerAndNestedTarget": "pass",
+  "installed": false,
+  "liveVisualVerification": "pending user"
+}

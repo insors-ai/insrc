@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: enforce on + verdict block + no override => { status:blocked } with the reason + counts (ac1)
+ok 1 - enforce on + verdict block + no override => { status:blocked } with the reason + counts (ac1)
+  ---
+  duration_ms: 2.672875
+  type: 'test'
+  ...
+# Subtest: enforce on + verdict block + overrideReview => { status:overridden } recording the reason + at (ac2)
+ok 2 - enforce on + verdict block + overrideReview => { status:overridden } recording the reason + at (ac2)
+  ---
+  duration_ms: 1.75275
+  type: 'test'
+  ...
+# Subtest: verdict warn => { status:warn } (allowed, warnings surfaced) under enforce on AND off (ac3)
+ok 3 - verdict warn => { status:warn } (allowed, warnings surfaced) under enforce on AND off (ac3)
+  ---
+  duration_ms: 1.806958
+  type: 'test'
+  ...
+# Subtest: verdict pass => { status:pass }; the gate never approves and writes nothing (ac4/read-only)
+ok 4 - verdict pass => { status:pass }; the gate never approves and writes nothing (ac4/read-only)
+  ---
+  duration_ms: 1.058709
+  type: 'test'
+  ...
+# Subtest: enforce OFF + verdict block => a non-blocking advisory warn (advisory:true + demoted-block message), distinct from a genuine warn (critique 1)
+ok 5 - enforce OFF + verdict block => a non-blocking advisory warn (advisory:true + demoted-block message), distinct from a genuine warn (critique 1)
+  ---
+  duration_ms: 0.853208
+  type: 'test'
+  ...
+# Subtest: absent CR record => { status:no-review } (strictly additive; completion unchanged) (ac4)
+ok 6 - absent CR record => { status:no-review } (strictly additive; completion unchanged) (ac4)
+  ---
+  duration_ms: 0.196958
+  type: 'test'
+  ...
+# Subtest: malformed CR JSON cannot establish legacy identity and returns stale-review
+ok 7 - malformed CR JSON cannot establish legacy identity and returns stale-review
+  ---
+  duration_ms: 1.063791
+  type: 'test'
+  ...
+# Subtest: a CR record whose verdict is outside the ReviewVerdict union => { status:no-review } (fail-open)
+ok 8 - a CR record whose verdict is outside the ReviewVerdict union => { status:no-review } (fail-open)
+  ---
+  duration_ms: 1.178542
+  type: 'test'
+  ...
+# Subtest: an overrideReview reason on a non-block verdict (pass/warn) is a no-op (no overridden status)
+ok 9 - an overrideReview reason on a non-block verdict (pass/warn) is a no-op (no overridden status)
+  ---
+  duration_ms: 2.064333
+  type: 'test'
+  ...
+# Subtest: readEnforceFlag fail-safe: opts.enforce omitted on a block record NEVER throws and yields a valid outcome (default false path)
+ok 10 - readEnforceFlag fail-safe: opts.enforce omitted on a block record NEVER throws and yields a valid outcome (default false path)
+  ---
+  duration_ms: 1.150041
+  type: 'test'
+  ...
+# Subtest: CONFIG_CATALOG declares codeReview.enforce with type boolean + default false
+ok 11 - CONFIG_CATALOG declares codeReview.enforce with type boolean + default false
+  ---
+  duration_ms: 0.062125
+  type: 'test'
+  ...
+# Subtest: s10: the enforce gate over a degraded warn record => status:warn (a non-pass advisory), never pass
+ok 12 - s10: the enforce gate over a degraded warn record => status:warn (a non-pass advisory), never pass
+  ---
+  duration_ms: 1.0725
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 320.275416

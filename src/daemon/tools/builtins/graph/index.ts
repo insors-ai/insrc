@@ -1,3 +1,4 @@
+import { assertNoSessionEmbedding } from '../../../../shared/connection-provider.js';
 /**
  * Graph tools -- entity / search / callers / callees / query.
  *
@@ -17,7 +18,7 @@ import { embedQuery } from '../../../../indexer/embedder.js';
 import { registerTool } from '../../registry.js';
 import { guardSearchRequest, SearchRefusedError, underIndexFilter } from '../../../search-guard.js';
 import type { SearchRequestNames } from '../../../search-guard.js';
-import type { Entity, EntityKind } from '../../../../shared/types.js';
+import type { Entity, EntityKind, RelationEvidence } from '../../../../shared/types.js';
 import type { RelationKind } from '../../../../db/graph/keys.js';
 import type { TraversalOpts } from '../../../../db/graph/traversal.js';
 import type { Tool, ToolDeps, ToolInput, ToolResult } from '../../types.js';
@@ -66,12 +67,18 @@ function shortEntity(e: Entity): Record<string, unknown> {
     endLine: e.endLine,
     repo: e.repo,
     signature: e.signature,
+    // How the relationship that reached it was established (Epic c2ba6fa6 s7):
+    // present on every result read through one relationship (callers, callees,
+    // defined_in, imports); absent on entity lookups and searches.
+    ...('evidence' in e && { evidence: (e as Entity & { evidence: RelationEvidence }).evidence }),
   };
 }
 
 function renderEntity(e: Entity, includeBody: boolean): string {
   const loc = `${e.file}:${e.startLine}${e.endLine > e.startLine ? '-' + e.endLine : ''}`;
-  const header = `**${e.kind}** \`${e.name}\`  (${loc})`;
+  // A result reached through a relationship says how it was established (s7).
+  const evidence = 'evidence' in e ? `  — ${(e as Entity & { evidence: RelationEvidence }).evidence}` : '';
+  const header = `**${e.kind}** \`${e.name}\`  (${loc})${evidence}`;
   if (!includeBody) { return header + (e.signature ? `\n  \`${e.signature}\`` : ''); }
   return [
     header,
@@ -143,6 +150,7 @@ export const graphSearchTool: Tool = {
   },
 
   async execute(input: ToolInput, deps: ToolDeps): Promise<ToolResult> {
+		assertNoSessionEmbedding(deps.connectionExecution);
     const query = str(input, 'query');
     if (!query) { return fail('graph_search', 'query required'); }
     const limit = num(input, 'limit') ?? 10;
@@ -151,7 +159,7 @@ export const graphSearchTool: Tool = {
       return fail('graph_search', 'session has no closure repos initialized');
     }
     const db = await getDb();
-    const vec = await embedQuery(query);
+		const vec = await embedQuery(query, deps.connectionExecution);
     if (vec.length === 0) {
       return fail('graph_search', 'failed to embed query (Ollama unavailable?)');
     }

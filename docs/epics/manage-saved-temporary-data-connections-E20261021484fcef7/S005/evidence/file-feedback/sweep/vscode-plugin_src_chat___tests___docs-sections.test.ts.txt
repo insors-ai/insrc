@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: t3: deriveSectionIndex returns anchors in DOCUMENT ORDER with level set to the ATX depth
+ok 1 - t3: deriveSectionIndex returns anchors in DOCUMENT ORDER with level set to the ATX depth
+  ---
+  duration_ms: 2.361
+  type: 'test'
+  ...
+# Subtest: t3: two identically-titled headings get DISTINCT slugs via an appended ordinal and NEITHER is dropped
+ok 2 - t3: two identically-titled headings get DISTINCT slugs via an appended ordinal and NEITHER is dropped
+  ---
+  duration_ms: 0.250375
+  type: 'test'
+  ...
+# Subtest: t3: a `\#` line inside a FENCED CODE BLOCK is not a heading — the phantom-section guard
+ok 3 - t3: a `\#` line inside a FENCED CODE BLOCK is not a heading — the phantom-section guard
+  ---
+  duration_ms: 0.117708
+  type: 'test'
+  ...
+# Subtest: t3: a fence is not closed by a DIFFERENT delimiter or a shorter run
+ok 4 - t3: a fence is not closed by a DIFFERENT delimiter or a shorter run
+  ---
+  duration_ms: 0.062125
+  type: 'test'
+  ...
+# Subtest: t3: markdown with NO headings yields an empty anchors array
+ok 5 - t3: markdown with NO headings yields an empty anchors array
+  ---
+  duration_ms: 0.049875
+  type: 'test'
+  ...
+# Subtest: t3: an EMPTY-STRING body yields an empty anchors array
+ok 6 - t3: an EMPTY-STRING body yields an empty anchors array
+  ---
+  duration_ms: 0.038833
+  type: 'test'
+  ...
+# Subtest: t3: a PUNCTUATION-ONLY heading still yields a stable NON-EMPTY slug
+ok 7 - t3: a PUNCTUATION-ONLY heading still yields a stable NON-EMPTY slug
+  ---
+  duration_ms: 0.179375
+  type: 'test'
+  ...
+# Subtest: t3: deriveSectionIndex is DETERMINISTIC across repeated calls on the same markdown
+ok 8 - t3: deriveSectionIndex is DETERMINISTIC across repeated calls on the same markdown
+  ---
+  duration_ms: 0.217
+  type: 'test'
+  ...
+# Subtest: t3: a SectionResolver resolves a known ofSectionId to that section's slug
+ok 9 - t3: a SectionResolver resolves a known ofSectionId to that section's slug
+  ---
+  duration_ms: 0.265375
+  type: 'test'
+  ...
+# Subtest: t3: a SectionResolver returns undefined rather than THROWING for an unknown ofSectionId
+ok 10 - t3: a SectionResolver returns undefined rather than THROWING for an unknown ofSectionId
+  ---
+  duration_ms: 0.344334
+  type: 'test'
+  ...
+# Subtest: t3: ONE IDENTITY — the slug deriveSectionIndex emits EQUALS the string the resolver returns for the same section
+ok 11 - t3: ONE IDENTITY — the slug deriveSectionIndex emits EQUALS the string the resolver returns for the same section
+  ---
+  duration_ms: 0.067125
+  type: 'test'
+  ...
+# Subtest: t3: module purity — the sc3 module is vscode-free and imports no DOM type
+ok 12 - t3: module purity — the sc3 module is vscode-free and imports no DOM type
+  ---
+  duration_ms: 0.431833
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 208.481083

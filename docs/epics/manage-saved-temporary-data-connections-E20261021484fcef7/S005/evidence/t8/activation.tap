@@ -1,0 +1,184 @@
+TAP version 13
+# Subtest: runReachabilityProbe pushes the derived running/stopped/errored state into the status surface
+ok 1 - runReachabilityProbe pushes the derived running/stopped/errored state into the status surface
+  ---
+  duration_ms: 0.93925
+  type: 'test'
+  ...
+# Subtest: runReachabilityProbe degrades a hung probe to errored within the bounded deadline
+not ok 2 - runReachabilityProbe degrades a hung probe to errored within the bounded deadline
+  ---
+  duration_ms: 8.123375
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:1292'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: runReachabilityProbe never throws even if reachability() rejects
+not ok 3 - runReachabilityProbe never throws even if reachability() rejects
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:1587'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves
+not ok 4 - activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:1890'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)
+not ok 5 - the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:2326'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)
+not ok 6 - only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:2915'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running
+not ok 7 - a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:4422'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given
+not ok 8 - no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:4871'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: a start is skipped when the fresh reachability check just before it finds the daemon running
+not ok 9 - a start is skipped when the fresh reachability check just before it finds the daemon running
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:6028'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation
+not ok 10 - a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:6386'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'
+not ok 11 - a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:7569'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: runReachabilityProbe answers the state it pushed into the status surface
+not ok 12 - runReachabilityProbe answers the state it pushed into the status surface
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:8126'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: the extension entry passes the daemon lifecycle controller into the activation
+not ok 13 - the extension entry passes the daemon lifecycle controller into the activation
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:8630'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws
+not ok 14 - activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:9024'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+# Subtest: the extension entry runs the settings pull, the update check and onboarding only after activation has settled
+not ok 15 - the extension entry runs the settings pull, the update check and onboarding only after activation has settled
+  ---
+  duration_ms: 0
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/vscode-plugin/src/__tests__/activation.test.ts:1:10850'
+  failureType: 'cancelledByParent'
+  error: 'Promise resolution is still pending but the event loop has already resolved'
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    process.emit (node:events:519:28)
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 1
+# fail 0
+# cancelled 14
+# skipped 0
+# todo 0
+# duration_ms 230.036791

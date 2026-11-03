@@ -1,0 +1,374 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793511256678-06e477",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T05:38:35.683Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 258961,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s3",
+    "lldRunId": "wf-1793509679068-pst4li",
+    "lldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-01T05:42:44.765Z",
+    "rangeBase": "244aec78e190cb260f73b3551ef586db194f88e1"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story means adding one new LMDB table and one new write-path function, then routing today's scattered writers and readers through them. The write side comes first: a new entityByFile table, then a put/remove wrapper that keeps it (and the existing nameIndex) consistent, then all 7 existing raw write sites are rerouted through it, with a guard test locking that in place. The read side follows: a small repo-resolution helper, then both existing reads rewritten onto the new table, then the cheap existence check wired into the analyzer's scope check as an optional fast path that changes no other caller. A migration step closes the loop for stores that already exist on disk.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add the entityByFile LMDB table and its key encode/decode functions",
+        "summary": "Declare a new dupSort table entityByFile in the graph store (store.ts), opened the same way unresolvedByFile is (store.ts:645), and add encodeEntityByFileKey(repoId, filePath) / its decode counterpart in keys.ts, mirroring encodeUnresolvedByFileKey's shape (repoId u32 BE + utf8 filePath). No reads or writes wired yet -- this task only adds the table and key functions.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "entityByFile is declared as a dupSort table alongside unresolvedByFile in store.ts",
+          "encodeEntityByFileKey/decodeEntityByFileKey round-trip (repoId, filePath) correctly, including an empty filePath"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "encodeEntityByFileKey/decodeEntityByFileKey round-trip a (repoId, filePath) pair, including an empty filePath, byte-identical to the input"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the put/remove wrapper for entity rows",
+        "summary": "Add one new function that writes/removes the entity row, keeps nameIndex upkeep (reusing/calling the existing rewireNameIndexInTxn pattern), and now also writes/removes the matching entityByFile entry -- all inside the same LMDB transaction. This is the single new entry point every entity-row mutation will go through, and the ONLY place nameIndex upkeep happens from this point on.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the wrapper's put path writes the entity row, the nameIndex entry, and the entityByFile entry atomically in one transaction",
+          "the wrapper's remove path removes all three atomically",
+          "a unit test writes then replaces then deletes an entity through the wrapper and confirms all three tables stay consistent at each step",
+          "the wrapper is the only place nameIndex.put/nameIndex.remove is called for an entity-row change -- no remaining call site writes nameIndex inline outside the wrapper, closing the gap the LLD's invariantsToPreserve[0] names (today's create/delete sites write nameIndex inline rather than through rewireNameIndexInTxn)"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the wrapper's put path writes the entity row, nameIndex entry, and entityByFile entry atomically in one transaction; create/replace/delete through the wrapper keeps all three tables consistent at every step"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Route all 7 existing raw entity.put/entity.remove sites through the new wrapper",
+        "summary": "Rewrite entities.ts:272,289,466,974,1180 and migrations.ts:267,346 to call the new put/remove wrapper from t2 instead of writing store.entity and nameIndex directly (including the sites that today write nameIndex inline rather than through rewireNameIndexInTxn). No other behavior at these sites changes.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "none of the 7 original raw entity.put/entity.remove call sites remain",
+          "no entity-row change anywhere in entities.ts or migrations.ts writes nameIndex inline outside the wrapper",
+          "every existing test touching these 7 call sites still passes unmodified"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "every one of the 7 pre-existing call-site behaviors (create, replace, delete, migration rewrite, migration delete) is unchanged after routing through the wrapper -- existing entities.ts/migrations.ts test suites pass unmodified"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the guard test for a raw entity.put/entity.remove or nameIndex.put/nameIndex.remove call outside the wrapper",
+        "summary": "Add a source-scanning test over src/db/entities.ts and src/db/graph/migrations.ts that fails the build if an entity.put, entity.remove, nameIndex.put, or nameIndex.remove call tied to an entity-row change appears anywhere outside the new wrapper's own implementation -- mechanically closing the historical inline-nameIndex-write gap the LLD names, not only the entity.put/remove gap.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "the guard test passes against the post-t3 source (all 7 sites now route through the wrapper, including their nameIndex upkeep)",
+          "introducing a raw entity.put call outside the wrapper (in a throwaway local check) makes the guard test fail",
+          "introducing a raw nameIndex.put call outside the wrapper (in a throwaway local check) also makes the guard test fail, confirming it catches the historical inline-nameIndex gap too"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "a source-scanning guard test over entities.ts and migrations.ts passes against the real post-t3 source and fails when a raw entity.put/entity.remove/nameIndex.put/nameIndex.remove is introduced outside the wrapper's own file"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Add the repo-for-absolute-file resolution helper",
+        "summary": "Add a small helper in src/db that scans the registered-repo table and picks the longest (most specific) matching root for a given absolute file path, using a path-segment-boundary comparison (not a plain string prefix), independently re-implementing the same boundary-safe logic longestPrefixRepo (scope.ts:168-179) uses one layer up -- src/db cannot import src/analyze/context/scope.ts.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "a file under one repo root nested inside another repo root resolves to the more specific (nested) root, not the outer one",
+          "an absolute path matching no registered repo root resolves to no repo (undefined/null), not a false match"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "the repo-for-absolute-file resolution helper picks the longest matching root for nested repo roots, and resolves to no repo for an unmatched path, using a path-segment-boundary comparison"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Rewrite findEntitiesByFile and listEntitiesForRepo to read entityByFile instead of scanning store.entity",
+        "summary": "findEntitiesByFile (entities.ts:864) resolves its owning repoId via the t5 helper, then reads entityByFile by exact (repoId, relativeFilePath) key instead of scanning store.entity.getRange(). listEntitiesForRepo (entities.ts:819) reads entityByFile by a repoId-prefix range instead of the same full scan. Both keep their existing signatures and return the identical entity sets as today for every caller.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "ac1: findEntitiesByFile on one file of the smaller of two indexed repos returns the same entities as a full-scan baseline, touching only that file's rows",
+          "ac3: write, replace, then delete a file's entities in sequence; findEntitiesByFile after each step matches the full-scan-equivalent baseline every time",
+          "an entity with an empty filePath (external endpoint) is excluded from findEntitiesByFile but still included in listEntitiesForRepo",
+          "two repos sharing the same relative file path never cross-contaminate a file-scoped read",
+          "every existing caller of either function is unaffected"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "findEntitiesByFile on one file of the smaller of two indexed repos returns the same entities as a full-scan baseline, touching only that file's rows (ac1)"
+          },
+          {
+            "level": "unit",
+            "name": "write, replace, then delete a file's entities in sequence; findEntitiesByFile after each step matches a full-scan-equivalent baseline every time (ac3)"
+          },
+          {
+            "level": "unit",
+            "name": "an entity with an empty filePath is excluded from findEntitiesByFile but included in listEntitiesForRepo"
+          },
+          {
+            "level": "unit",
+            "name": "two repos sharing the same relative file path never cross-contaminate a file-scoped read"
+          },
+          {
+            "level": "unit",
+            "name": "listEntitiesForRepo returns [] for a repo with zero stored entities, identical to today's full-scan behavior"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Add repoHasAnyEntity and wire it into ScopeDeps / ensureNonEmptyClosure as an optional fast path",
+        "summary": "Add repoHasAnyEntity(_db, repo): Promise<boolean> as a limit-1 range over entityByFile by repoId-prefix (never builds the entity list). Add it as an OPTIONAL field on the ScopeDeps interface (scope.ts:77-89) and implement it on REAL_DEPS. Widen ensureNonEmptyClosure's deps parameter type (invariants.ts:237) to also Pick 'repoHasAnyEntity', and change its body to prefer deps.repoHasAnyEntity(best.path) when supplied, falling back to today's deps.listEntitiesForRepo(best.path).length === 0 check otherwise. No existing ScopeDeps fixture needs to change, since the field is optional.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "ac4: repoHasAnyEntity answers yes for a repo with stored entities and no for one with none, without calling listEntitiesForRepo or any function that builds the full entity list",
+          "a deps fixture supplying both repoHasAnyEntity and listEntitiesForRepo fakes proves ensureNonEmptyClosure calls repoHasAnyEntity and never calls listEntitiesForRepo when the former is present",
+          "ScopeNotIndexedError / pass-through outcome is driven entirely by repoHasAnyEntity's answer when it is supplied",
+          "every one of the ~30 existing files constructing ScopeDeps-shaped object literals compiles and behaves unchanged without adding the new field"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "repoHasAnyEntity answers yes for a repo with stored entities and no for one with none, without calling listEntitiesForRepo or building the full entity list (ac4)"
+          },
+          {
+            "level": "unit",
+            "name": "a deps fixture supplying both repoHasAnyEntity and listEntitiesForRepo fakes proves ensureNonEmptyClosure prefers repoHasAnyEntity and never calls listEntitiesForRepo when it is present, with ScopeNotIndexedError driven by repoHasAnyEntity's answer"
+          },
+          {
+            "level": "unit",
+            "name": "ensureNonEmptyClosure falls back to the existing listEntitiesForRepo-based check unchanged when deps.repoHasAnyEntity is absent, proving the ~30 existing ScopeDeps fixtures keep compiling and behaving unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Add the migration step that backfills entityByFile for an existing on-disk store",
+        "summary": "Add a step on the existing migration chain that walks the entity table once per store and populates entityByFile for every row, guarded by a completion marker (following the existing migration chain's convention) so it does not re-run on a later open. Safe to re-run if interrupted, since a dupSort put of an already-present (key, value) pair is a no-op in LMDB.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "ac2: a store built via the pre-Story raw-write path, opened twice, migrates entityByFile on the first open only; reads work correctly after migration without a re-index",
+          "a daemon crash simulated mid-migration, followed by a fresh open, safely re-runs the migration without duplicate entries"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "a store built via the pre-Story raw-write path (entity rows with no entityByFile), opened twice, migrates entityByFile on the first open only; reads work correctly after migration without a re-index (ac2)"
+          },
+          {
+            "level": "integration",
+            "name": "a store with entityByFile only partially populated (simulating a crash mid-migration), reopened, safely re-runs the migration to completion with no duplicate entries"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the new entityByFile LMDB table and its encode/decode key functions",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the new put/remove wrapper for entity rows",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "listEntitiesForRepo (src/db/entities.ts:819)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "findEntitiesByFile (src/db/entities.ts:864)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the new repo-for-absolute-file resolution helper",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "a source-scanning guard test over src/db/entities.ts and src/db/graph/migrations.ts",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the migration step that populates entityByFile for a pre-existing store",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges: entityByFile (new LMDB table)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges: entity row write/remove sites (invariant-change)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths.invariantsToPreserve[0]"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths.errorCases[1]"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy level 2 (guard test)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths.edgeCases[2] (nested repo roots)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api[0] listEntitiesForRepo"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api[1] findEntitiesByFile"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails.api[2] repoHasAnyEntity"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 dataModelChanges: ScopeDeps (field-add)"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 migration.migrationSteps[8] (order 9)"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 errorPaths.errorCases[2] (crash mid-migration)"
+    }
+  ]
+}

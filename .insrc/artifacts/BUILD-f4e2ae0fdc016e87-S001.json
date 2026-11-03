@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "f4e2ae0fdc016e87",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T15:20:17.001Z",
+    "updatedAt": "2026-10-30T15:42:39.438Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T14:48:35.288Z",
+    "epicSlug": "group-repo-configuration-panel-s-role",
+    "approvedAt": "2026-10-30T16:25:55.765Z",
+    "reviewOverride": {
+      "reason": "insrc_code_review_step is not used while the code-review framework is being rewritten (standing project rule). A manual code review was run instead via a general-purpose subagent over commits 3e3c9a77f/f8d03eb4e/4b123fbd6, which found one real HIGH finding (non-exhaustive criticality partition) that was fixed in de04c0dab and re-verified (tsc clean, all 21 repo-config tests pass, full suite re-validated with no new regressions). User explicitly approved: \"approve, commit/push ALL pending changes, build/install VS Code plugin\".",
+      "at": "2026-10-30T16:25:55.765Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/group-repo-configuration-panel-s-role-E20261030f4e2ae0f/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/webview-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:42:39.438Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/webview-host.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:42:39.438Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:42:39.438Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/repo-config.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-30T15:42:39.438Z"
+      }
+    ],
+    "commit": "de04c0dab"
+  }
+}

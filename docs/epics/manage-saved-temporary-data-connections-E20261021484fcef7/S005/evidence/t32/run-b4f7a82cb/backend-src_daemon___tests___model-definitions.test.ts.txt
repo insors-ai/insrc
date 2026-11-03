@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: model-definitions.test.ts: every sc3 field of a fixture file, aliases always a list, optional fields omitted
+ok 1 - model-definitions.test.ts: every sc3 field of a fixture file, aliases always a list, optional fields omitted
+  ---
+  duration_ms: 5.325208
+  type: 'test'
+  ...
+# Subtest: model-definitions.test.ts: user-approved after shipped; unlisted rejected id only in rejectedModels; a rejected id the file lists is served as shipped and left out of rejectedModels
+ok 2 - model-definitions.test.ts: user-approved after shipped; unlisted rejected id only in rejectedModels; a rejected id the file lists is served as shipped and left out of rejectedModels
+  ---
+  duration_ms: 3.586542
+  type: 'test'
+  ...
+# Subtest: model-definitions.test.ts: installed exact-match true/false, absent when the lister rejects, unlisted installed models absent
+ok 3 - model-definitions.test.ts: installed exact-match true/false, absent when the lister rejects, unlisted installed models absent
+  ---
+  duration_ms: 3.201125
+  type: 'test'
+  ...
+# Subtest: model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it
+ok 4 - model-definitions.test.ts: models.definitions carries memoryMb for an Ollama model that has it
+  ---
+  duration_ms: 1.078875
+  type: 'test'
+  ...
+# Subtest: model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting
+ok 5 - model-definitions.test.ts: projectDefinitions lists ollama-claude with host and every model's hosting
+  ---
+  duration_ms: 1.977125
+  type: 'test'
+  ...
+# Subtest: model-definitions.test.ts: a host-family model with efforts lists them and one without lists []
+ok 6 - model-definitions.test.ts: a host-family model with efforts lists them and one without lists []
+  ---
+  duration_ms: 2.081375
+  type: 'test'
+  ...
+# Subtest: model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed
+ok 7 - model-definitions.test.ts: the existing families' answer entries equal today's, and the host family carries neither rejectedModels nor installed
+  ---
+  duration_ms: 2.094542
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 684.934584

@@ -267,3 +267,58 @@ test('CM-S1-E: first-use recovery directory parent sync precedes staging and com
 		await f.cleanup();
 	}
 });
+
+test('CM-S4-CREDENTIALS: removal prepares an empty journal and precommit recovery without reading plaintext',async()=>{
+	const f=await fixture();let gets=0,sets=0,deletes=0;
+	const owner=new CredentialGenerations(f.journal,'a'.repeat(32),{current:()=>f.store.inspect(),keystore:{
+		getKey:async()=>{gets++;throw new Error('plaintext-read-forbidden');},setKey:async()=>{sets++;throw new Error('new-generation-forbidden');},deleteKey:async()=>{deletes++;}}});
+	try {
+		const bytes=await readFile(f.path,'utf8');const operationId=randomUUID();
+		const prepared=await owner.prepareRemoval({operationId,connectionId:'fixture',expectedRevision:f.file._management!.revisions['fixture']!});
+		assert.deepEqual(prepared.cleanupRefs,[f.oldRef]);assert.deepEqual(prepared.preparation.ownedStagedRefs,[]);
+		assert.equal(prepared.preparation.expectedGeneration,f.file._management!.generation);
+		assert.deepEqual(await f.journal.pending(),[prepared.preparation]);assert.equal(await readFile(f.path,'utf8'),bytes);
+		assert.deepEqual(await owner.recover(),[{operationId,committed:false,cleanup:'complete'}]);
+		assert.deepEqual([gets,sets,deletes],[0,0,0]);assert.ok(f.data.has(f.oldRef));
+	} finally {await f.cleanup();}
+});
+
+test('CM-S4-CREDENTIALS: removal preserves foreign and shared live refs through restart and cleanup finalization failures',async()=>{
+	const f=await fixture();let gets=0,sets=0,failDelete=true,failSync=true;const deleted:string[]=[];
+	const shared=f.oldRef.replace(/:0$/,':1');f.data.set(shared,'shared-live-secret-canary');
+	const keystore={getKey:async()=>{gets++;throw new Error('plaintext-read-forbidden');},setKey:async()=>{sets++;throw new Error('new-generation-forbidden');},deleteKey:async(ref:string)=>{deleted.push(ref);if(failDelete)throw new Error('private-delete-canary');f.data.delete(ref);}};
+	try {
+		const original=f.store.snapshot.file;
+		await f.store.commit(f.store.snapshot,{...original,connections:[{...original.connections[0]!,options:{shared:'${secret:'+shared+'}',foreign:'${secret:'+f.foreign+'}'}},
+			{id:'kept',kind:'postgres',url:'postgres://user:${secret:'+shared+'}@host/db'}],_management:{...original._management!,generation:randomUUID(),revisions:{...original._management!.revisions,kept:randomUUID()}}});
+		const owner=new CredentialGenerations(f.journal,'a'.repeat(32),{current:()=>f.store.inspect(),keystore});
+		const operationId=randomUUID(),current=f.store.snapshot.file;
+		const prepared=await owner.prepareRemoval({operationId,connectionId:'fixture',expectedRevision:current._management!.revisions['fixture']!});
+		assert.deepEqual(prepared.cleanupRefs,[f.oldRef]);assert.deepEqual(prepared.preparation.ownedStagedRefs,[]);
+		const ticket={operationId,lookupRoot:f.root,scope:'saved' as const,connectionId:'fixture',mode:'remove' as const,issuedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+86400000).toISOString(),signature:'fixture'};
+		const outcome={operationId,revision:randomUUID(),registration:'removed' as const,activation:'not-applicable' as const,credentialCleanup:'pending' as const};
+		await f.store.commit(f.store.snapshot,{...current,connections:current.connections.filter(c=>c.id!=='fixture'),_management:{...current._management!,generation:randomUUID(),revisions:{kept:current._management!.revisions['kept']!},receipts:{[operationId]:{ticket,requestMac:'fixture-keyed-mac',outcome,cleanupRefs:prepared.cleanupRefs}}}});
+		const committed=await readFile(f.path,'utf8');
+		assert.deepEqual(await owner.recover(),[{operationId,committed:true,cleanup:'pending'}]);assert.ok(f.data.has(f.oldRef));
+		const journal=await PreparationJournal.open(f.path,f.journal.registryId,async stage=>{if(stage==='before-completion-sync'&&failSync)throw new Error('private-sync-canary');});
+		const restarted=new CredentialGenerations(journal,'a'.repeat(32),{current:()=>f.store.inspect(),keystore});
+		failDelete=false;
+		assert.deepEqual(await restarted.recover(),[{operationId,committed:true,cleanup:'pending'}]);assert.equal(f.data.has(f.oldRef),false);assert.equal((await journal.pending()).length,1);
+		failSync=false;assert.deepEqual(await restarted.recover(),[{operationId,committed:true,cleanup:'complete'}]);assert.deepEqual(await journal.pending(),[]);
+		assert.ok(deleted.every(ref=>ref===f.oldRef));assert.equal(f.data.get(shared),'shared-live-secret-canary');assert.equal(f.data.get(f.foreign),'foreign-secret-canary');
+		assert.deepEqual([gets,sets],[0,0]);assert.equal(await readFile(f.path,'utf8'),committed);
+	} finally {await f.cleanup();}
+});
+
+test('CM-S4-CREDENTIALS: stale removal and journal preparation failure preserve registry and credentials',async()=>{
+	const f=await fixture();let gets=0,sets=0,deletes=0;
+	try {
+		const journal=await PreparationJournal.open(f.path,f.journal.registryId,async stage=>{if(stage==='before-preparation-sync')throw new Error('private-journal-canary');});
+		const owner=new CredentialGenerations(journal,'a'.repeat(32),{current:()=>f.store.inspect(),keystore:{getKey:async()=>{gets++;throw new Error('forbidden');},setKey:async()=>{sets++;},deleteKey:async()=>{deletes++;}}});
+		const before=await readFile(f.path,'utf8'),vault=[...f.data];
+		await assert.rejects(owner.prepareRemoval({operationId:randomUUID(),connectionId:'fixture',expectedRevision:'stale'}),{code:'recovery-required'});
+		assert.deepEqual(await journal.pending(),[]);
+		await assert.rejects(owner.prepareRemoval({operationId:randomUUID(),connectionId:'fixture',expectedRevision:f.file._management!.revisions['fixture']!}),error=>error instanceof Error&&'code' in error&&error.code==='recovery-required'&&!error.message.includes('canary'));
+		assert.equal(await readFile(f.path,'utf8'),before);assert.deepEqual([...f.data],vault);assert.deepEqual([gets,sets,deletes],[0,0,0]);
+	} finally {await f.cleanup();}
+});

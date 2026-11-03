@@ -1,0 +1,423 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793078852349-v63jv8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-27T05:29:17.043Z",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 104685,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "epicSlug": "per-family-model-definitions-served-daemon",
+    "storyId": "s7",
+    "lldRunId": "wf-1793076391056-43ghuj",
+    "lldEffectiveHash": "c324f041e3e7d9911b7ed92c89521618c13ba6120e17c705f45d984470ceb86a",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-27T05:35:20.907Z",
+    "rangeBase": "69383c3cf8ddbd01b1323443346b719b0096efcb"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The work is in the JetBrains plugin only. First the daemon gateway learns to carry config.write's full answer and to call models.definitions, models.check and models.approve/reject. Then the Model tiers model and section are rebuilt on those definitions with daemon-identical tier resolution and whole-tier saves, a Check model… dialog and a single restart offer are added, and the per-repo settings lose their tier fields. A sandbox-IDE walk against the live daemon closes it."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Carry config.write's restartRequired, reason and detail through SaveResult",
+        "summary": "SaveResult.Saved gains restartRequired, Rejected gains detail; configWrite reads data.reason/detail/restartRequired; the four matchers use `is SaveResult.Saved` and show the detail.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "config.write {ok:true, restartRequired:true} gives Saved(restartRequired=true); {ok:false, reason:'rejected-model', detail} gives Rejected with both",
+          "ModelTiersSection, PerRoleSection, PerRepoSection and InsrcSettingsConfigurable compile and show the detail in their failure lines"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/SettingsWriteGatewayTest.kt: Saved(restartRequired) and Rejected(reason, detail) from config.write"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Let a caller keep result.error in the reply",
+        "summary": "A default DaemonRpc.call(method, params, resultErrorIsFailure) overload; UnixSocketDaemonRpc overrides it and parse takes the flag.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "parse(reply, resultErrorIsFailure=false) of a reply whose result has error, checkId, runs=false and efforts returns ok=true with all of them in data",
+          "The two-argument call and default parse behave exactly as before (existing UnixSocketDaemonRpcParseTest cases pass)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpcParseTest.kt: parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts; default parse unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Gateway calls for the model definitions, check and decision",
+        "summary": "Kotlin DTOs for models.definitions, ModelCheckOutcome, ModelDecisionResult and DaemonFailure; DaemonGateway.modelDefinitions/checkModel/decideModel with failure classification; DaemonGatewayService forwarding; stubs in the four test fakes.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A fake answer parses into families/models/efforts/aliases/installed/tierDefaults/toolLoopModel/defaultFamily; malformed entries are skipped; no families is Failed(Other)",
+          "DaemonUnavailableException is NotRunning ('not running or the connection was lost'); 'unknown method: ' is OlderDaemon saying to update; other errors are Other with the text",
+          "checkModel reads through the result-error-preserving call: a not-run check keeps checkId, efforts and error; an invalid-params reply (no checkId) is Failed(Other)",
+          "decideModel maps ok / reason+detail / failure; DaemonGatewayService forwards all three"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt: modelDefinitions/checkModel/decideModel parsing and failure classification over a fake DaemonRpc"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "ModelTiersModel choices and current tier from the definitions",
+        "summary": "ModelTiersModel takes the definitions instead of per-provider lists: runner, model (alias / not installed labels) and effort choices come only from them; the current tier is resolved as the daemon does (tierSetting + parseTiering + dropped effort); PROVIDERS removed.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Offers exactly a fake answer's families, models (alias / not installed labels) and efforts; no PROVIDERS constant and no runner/model literal",
+          "Parity: runner+model without effort shows none; unset tier shows the default family's default and its effort; effort leaf alone applies to the default; runner alone is ignored; model '' is unset; an unaccepted stored effort shows '' with the note and is not dirty"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: choices exactly from a fake definitions answer; current-tier parity with the daemon's resolution; unaccepted stored effort shown as '' and not dirty"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "ModelTiersModel edits and whole-tier writes",
+        "summary": "Runner switch takes the family default (tierDefaults, else toolLoopModel, else first model); a model change clears an effort the new model does not take; collectWrites emits one whole-tier write per dirty tier and refuses a dirty tier whose model is not listed.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Switching to a local family without tierDefaults takes toolLoopModel and ''",
+          "A model change to one that does not accept the current effort clears it to ''",
+          "One {runner, model, effort} write at ['models','tiers',tier] per dirty tier; an effort-only edit of a not-listed model is refused"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: runner switch defaults incl. a local family without tierDefaults; effort cleared on model change; whole-tier writes; not-listed model refused"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Wire the Model tiers section and settings page to the definitions",
+        "summary": "InsrcSettingsConfigurable and ModelTiersSection read modelDefinitions() instead of listModels per provider; a failure shows the classified message with no editable rows; Refresh re-reads; apply() sends the whole-tier writes; the source scan is updated.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "No settings source calls listModels or names a provider list",
+          "A Failed definitions answer shows its message and Refresh retries",
+          "Apply writes whole tiers and keeps a failed tier's pending edit with the reason and detail"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersWiringSourceScanTest.kt: no PROVIDERS, no listModels use, no family or model literal in settings sources; definitions read on open and Refresh"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Check model dialog with approve, reject and restart",
+        "summary": "A Check model… action opens a DialogWrapper over a headless check controller: CLI family and model id, the check off the EDT with progress, runs / input limit / per-effort verdict and evidence, Approve with ticked non-rejected efforts or Reject, then a Restart daemon offer (DaemonLifecycleCommandRunner.run(RESTART) confirmed by daemonStatus) that re-reads the definitions.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Approve is disabled when the model did not run; Reject still works with that check's id",
+          "Approve sends only ticked, non-rejected efforts; unknown-check offers Check again; Refused/Failed show the daemon's reason and detail",
+          "After a confirmed restart the definitions are re-read and the model is offered; the flow never writes a tier"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt: approve disabled when not run; reject with the check's id; only ticked non-rejected efforts sent; unknown-check offers check again; no tier write; restart confirmed then definitions re-read"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "One restart offer after an Apply that needs it",
+        "summary": "SettingsSection.takeRestartRequired() (default false); the writing sections set it from Saved(restartRequired); InsrcSettingsConfigurable.apply() collects it with the generic writes' results and, after the background loop, offers one Restart daemon prompt (also when other writes failed), reusing t6's restart helper.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t1",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Exactly one prompt when any section or generic write returned restartRequired, none otherwise",
+          "With a failure and a restartRequired success, the prompt comes first, then the ConfigurationException listing the failure",
+          "Prompt and restart run outside the background save loop"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableRestartTest.kt: one prompt when any write needed a restart, also with a failure; none otherwise"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Per-repo settings without tier fields",
+        "summary": "Remove per-tier state, fields and writes from PerRepoOverridesModel and PerRepoSection, and the tiers parse from the gateway's per-repo read; update InsrcSettingsConfigurableTest, PerRepoOverridesModelTest and PerRepoOverridesGatewayTest.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Per-repo settings show and write only coreFloor and role tiers",
+          "No setTierField, TierField or per-tier runner/model field remains in the per-repo code",
+          "A tiers leaf in models.byRepo is ignored"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoOverridesModelTest.kt: only coreFloor and tasks state and writes"
+          },
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt: per-repo editor has no tier runner/model field"
+          },
+          {
+            "level": "unit",
+            "name": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PerRepoOverridesGatewayTest.kt: a tiers leaf is ignored"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Live check in a sandbox IDE",
+        "summary": "Run the plugin (runIde) against the live daemon and walk the LLD's UX: definitions-driven section, Check model… on an unlisted model, approve + restart, Apply with restartRequired, per-repo section; record screenshots as evidence.",
+        "size": "S",
+        "order": 10,
+        "dependsOn": [
+          "t6",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Each walked state matches the LLD UX mock; screenshots recorded under the Story's evidence folder"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "runIde against the live daemon: walk the LLD UX states and record screenshots"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: choices exactly from a fake definitions answer (names matching nothing shipped); runner switch takes family default; effort cleared when not accepted; current tier overlay and default effort; one whole-tier write per dirty tier; not-listed current model",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt: modelDefinitions/checkModel/decideModel parse and failure classification over a fake DaemonRpc (not running, 'unknown method: ', other, malformed)",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/SettingsWriteGatewayTest.kt: Saved(restartRequired) and Rejected(reason, detail) from config.write",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoOverridesModelTest.kt: only coreFloor and tasks state and writes; tiers leaf ignored",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt: the headless check controller — approve disabled when the model did not run; approve sends only ticked non-rejected efforts; unknown-check offers check again; no tier write from the flow",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpcParseTest.kt: parse(reply, resultErrorIsFailure = false) of a models.check reply with runs=false, error, checkId and efforts keeps all of them; the default parse is unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt parity cases: the daemon's tierSetting rules (runner+model without effort shows no effort; unset tier the default's effort; effort leaf alone; runner alone ignored; model '' unset; '' explicit)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableRestartTest.kt (headless over a fake gateway and sections): one prompt when any section or generic write returned restartRequired, also with a failure; none otherwise",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt: a failed check (runs=false, error) still offers Reject with its checkId",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt: switch to a local family with no tierDefaults takes toolLoopModel and ''; an effort-only edit of a not-listed model is refused by collectWrites",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt: a DaemonUnavailableException maps to NotRunning with the 'connection was lost' wording; an empty reply to Other",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt parity: a stored unsupported effort on a CLI model and on a local model shows '' with the note and is not dirty (as src/config/__tests__/tier-resolution.test.ts asserts for the daemon)",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt: the per-repo editor source keeps coreFloor and role-tier controls and contains no setTierField / per-tier runner-model field (replacing the assertions at :126-127)",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersWiringSourceScanTest.kt: no PROVIDERS, no listModels use, no 'cli-claude'/'cli-codex'/'ollama' or model literal in settings/ main sources; PerRepoSection has no tier runner/model field",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "runIde: the Model tiers section shows the daemon's families/models; Check model… on an unlisted model shows verdicts; approve + restart then the model is selectable; Apply on a restartRequired save offers one restart; per-repo shows only coreFloor and role tiers",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 contractDetails"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 dataModelChanges"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 errorPaths"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 testStrategy"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 migration"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s7 uxDefinition and sequenceDefinition"
+    }
+  ]
+}

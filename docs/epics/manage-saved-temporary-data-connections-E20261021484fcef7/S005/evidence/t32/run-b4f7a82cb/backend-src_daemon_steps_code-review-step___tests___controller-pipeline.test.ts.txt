@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: DIFF-CONTROLLER-LARGE: oversized daemon-authored diff emits one complete bounded task per turn, covers every original span and folds only controller results
+ok 1 - DIFF-CONTROLLER-LARGE: oversized daemon-authored diff emits one complete bounded task per turn, covers every original span and folds only controller results
+  ---
+  duration_ms: 25132.33975
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-VALIDATE: aggregate, mixed, foreign and conflicting replay results cannot advance; accepted replay is atomic and cached
+ok 2 - DIFF-CONTROLLER-VALIDATE: aggregate, mixed, foreign and conflicting replay results cannot advance; accepted replay is atomic and cached
+  ---
+  duration_ms: 5464.419792
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-TIME: status and delayed answers cannot renew per-call/root deadlines; cancellation revokes calls
+ok 3 - DIFF-CONTROLLER-TIME: status and delayed answers cannot renew per-call/root deadlines; cancellation revokes calls
+  ---
+  duration_ms: 2475.476458
+  type: 'test'
+  ...
+# Subtest: DIFF-IDENTITY-TESTS: TESTS-only/source/author changes at controller continuation invalidate the exact admitted snapshot
+ok 4 - DIFF-IDENTITY-TESTS: TESTS-only/source/author changes at controller continuation invalidate the exact admitted snapshot
+  ---
+  duration_ms: 4245.704416
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-VALIDATE: unverified flags fail before diff evidence and legacy degraded states require restart
+ok 5 - DIFF-CONTROLLER-VALIDATE: unverified flags fail before diff evidence and legacy degraded states require restart
+  ---
+  duration_ms: 346.529375
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-TIME: serial child clocks and final fold preserve a total budget beyond ten minutes
+ok 6 - DIFF-CONTROLLER-TIME: serial child clocks and final fold preserve a total budget beyond ten minutes
+  ---
+  duration_ms: 4231.762042
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-VALIDATE: invalid envelopes use the real correction limit and cannot be retried indefinitely
+ok 7 - DIFF-CONTROLLER-VALIDATE: invalid envelopes use the real correction limit and cannot be retried indefinitely
+  ---
+  duration_ms: 2220.93575
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-VALIDATE: singleton size refusal rebuilds descendant material while original primary count and deadline stay fixed
+ok 8 - DIFF-CONTROLLER-VALIDATE: singleton size refusal rebuilds descendant material while original primary count and deadline stay fixed
+  ---
+  duration_ms: 1320.023958
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-LARGE: admitted freshness-timeout and hollow-graph routes persist exact fallback evidence; unreadable diff fails before any task
+ok 9 - DIFF-CONTROLLER-LARGE: admitted freshness-timeout and hollow-graph routes persist exact fallback evidence; unreadable diff fails before any task
+  ---
+  duration_ms: 11984.744042
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-VALIDATE: two real workers submitting the same final answer publish once and both receive the cached continuation
+ok 10 - DIFF-CONTROLLER-VALIDATE: two real workers submitting the same final answer publish once and both receive the cached continuation
+  ---
+  duration_ms: 4250.215125
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 62086.459167

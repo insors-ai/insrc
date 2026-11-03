@@ -1,0 +1,56 @@
+TAP version 13
+# [04:44:31] [31mERROR[39m: [36m[indexer] full index failed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-worker-second-T8HOc6"
+#     err: "repo path '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-worker-second-T8HOc6' is not registered (call addRepo() first)"
+# [04:44:31] [31mERROR[39m: [36m[queue] job failed[39m
+#     [35mmodule[39m: "queue"
+#     err: {
+#       "type": "UnregisteredRepoError",
+#       "message": "repo path '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-worker-second-T8HOc6' is not registered (call addRepo() first)",
+#       "stack":
+#           UnregisteredRepoError: repo path '/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-worker-second-T8HOc6' is not registered (call addRepo() first)
+#               at IndexerService.storeRepoEntity (/private/tmp/s5-frozen-qldpq8za/repo/src/indexer/index.ts:1124:37)
+#               at async IndexerService.fullIndex (/private/tmp/s5-frozen-qldpq8za/repo/src/indexer/index.ts:705:7)
+#               at async IndexerService.processJob (/private/tmp/s5-frozen-qldpq8za/repo/src/indexer/index.ts:388:30)
+#               at async LockManager.request (/private/tmp/s5-frozen-qldpq8za/repo/src/shared/locks/lock-manager.ts:385:11)
+#               at async withBackgroundHold (/private/tmp/s5-frozen-qldpq8za/repo/src/shared/locks/maintenance-lock.ts:84:11)
+#               at async <anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/indexing-worker.ts:161:8)
+#               at async IndexQueue.drain (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:338:9)
+#               at async IndexQueue.start (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/queue.ts:306:5)
+#       "repo": "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-indexing-worker-second-T8HOc6",
+#       "name": "UnregisteredRepoError"
+#     }
+# Subtest: each indexing-class method runs on the code-indexing worker's thread id
+ok 1 - each indexing-class method runs on the code-indexing worker's thread id
+  ---
+  duration_ms: 993.431708
+  type: 'test'
+  ...
+# Subtest: a file change is indexed while a session request spins the main thread
+ok 2 - a file change is indexed while a session request spins the main thread
+  ---
+  duration_ms: 8006.1485
+  type: 'test'
+  ...
+# Subtest: the store slot is published before the queue starts and after every registry change
+ok 3 - the store slot is published before the queue starts and after every registry change
+  ---
+  duration_ms: 137.230167
+  type: 'test'
+  ...
+# Subtest: recorded responses of repo.stats and daemon.compact equal the single-thread daemon's
+ok 4 - recorded responses of repo.stats and daemon.compact equal the single-thread daemon's
+  ---
+  duration_ms: 110.970167
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10138.344917

@@ -154,7 +154,7 @@ test('collectRepoStats: per-repo counts + cross-repo edge attributed to its sour
 	});
 
 	const store = await getGraphStore();
-	const stats = collectRepoStats(store, [repo(ra), repo(rb)], new IndexQueue());
+	const stats = await collectRepoStats(store, [repo(ra), repo(rb)], new IndexQueue());
 	const byPath = new Map(stats.map(s => [s.repoPath, s]));
 
 	const a = byPath.get(ra)!;

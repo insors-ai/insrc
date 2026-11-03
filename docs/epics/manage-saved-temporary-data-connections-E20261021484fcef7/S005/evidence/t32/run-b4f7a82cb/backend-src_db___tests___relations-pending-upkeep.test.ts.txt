@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: each of the three delete functions removes its rows, their by-target entries and their counts
+ok 1 - each of the three delete functions removes its rows, their by-target entries and their counts
+  ---
+  duration_ms: 303.897042
+  type: 'test'
+  ...
+# Subtest: a reclass merges meta: awaitsId and specifier survive, a stale candidates list is cleared, and the counts move
+ok 2 - a reclass merges meta: awaitsId and specifier survive, a stale candidates list is cleared, and the counts move
+  ---
+  duration_ms: 250.638084
+  type: 'test'
+  ...
+# Subtest: listUnresolvedRelations with opts.awaiting returns the rows awaiting an id from every repository, without scanning the pending table
+ok 3 - listUnresolvedRelations with opts.awaiting returns the rows awaiting an id from every repository, without scanning the pending table
+  ---
+  duration_ms: 234.919208
+  type: 'test'
+  ...
+# Subtest: promotions count each removal once: an edge lowers the class count by exactly one; a re-key leaves the awaiting count unchanged
+ok 4 - promotions count each removal once: an edge lowers the class count by exactly one; a re-key leaves the awaiting count unchanged
+  ---
+  duration_ms: 237.412542
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1344.964875

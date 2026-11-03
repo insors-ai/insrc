@@ -320,11 +320,21 @@ sealed interface ModelListResult {
  * false success (k3, ac4, the S001 result.error framing).
  */
 sealed interface SaveResult {
-    /** config.write persisted the change and reloaded active sessions. */
-    data object Saved : SaveResult
+    /**
+     * config.write persisted the change and reloaded active sessions;
+     * [restartRequired] when the daemon says the change applies only after a restart.
+     */
+    data class Saved(val restartRequired: Boolean = false) : SaveResult
 
-    /** The daemon refused the write (ok=false — e.g. an invalid/empty path). */
-    data class Rejected(val reason: String) : SaveResult
+    /**
+     * The daemon refused the write (ok=false — e.g. an invalid/empty path, a rejected
+     * model, a per-repo tier). [reason] is the daemon's reason code (or error text);
+     * [detail] its explanation, when it sent one.
+     */
+    data class Rejected(val reason: String, val detail: String? = null) : SaveResult {
+        /** The reason with the detail, for a failure line. */
+        val message: String get() = if (detail.isNullOrEmpty()) reason else "$reason — $detail"
+    }
 
     /** The daemon was unreachable / errored / a transport fault; [reason] explains. */
     data class Unavailable(val reason: String) : SaveResult
@@ -347,28 +357,16 @@ sealed interface PerRoleOverridesResult {
 }
 
 /**
- * One per-repo tier spec (Story S005): the two leaves under
- * models.byRepo.<repoPath>.tiers.<tierName> — a `runner` and a `model`. Both are
- * free-string daemon values (no sc1 enum domain), and either may be absent
- * (null) when the config only stores one leaf; the plugin invents no default for
- * an unset sibling (k5).
- */
-data class TierSpecDto(
-    val runner: String?,
-    val model: String?,
-)
-
-/**
  * The plugin mirror of ONE models.byRepo.<repoPath> entry (Story S005): the full
- * per-repo TieringOverride — a scalar [coreFloor] tier, a per-role [tasks]
- * (roleId -> tier) map, and a per-tier [tiers] (tierName -> {runner,model}) map.
- * Parsed verbatim from config.show; the shape the per-repo editor consumes as its
- * current state. Absent nested pieces degrade to null/empty, never a throw.
+ * per-repo TieringOverride — a scalar [coreFloor] tier and a per-role [tasks]
+ * (roleId -> tier) map. Parsed from config.show; the shape the per-repo editor
+ * consumes as its current state. Absent nested pieces degrade to null/empty, never a
+ * throw. A repo never sets the model behind a tier (Epic ce99b72065d03b1b s7), so a
+ * `tiers` leaf is ignored.
  */
 data class RepoOverrideDto(
     val coreFloor: String?,
     val tasks: Map<String, String>,
-    val tiers: Map<String, TierSpecDto>,
 )
 
 /**
@@ -762,7 +760,7 @@ interface DaemonGateway {
 
     /**
      * Read the current per-repo overrides (Story S005) — the daemon's
-     * `models.byRepo` { repoPath -> {coreFloor, tasks, tiers} } map — over the
+     * `models.byRepo` { repoPath -> {coreFloor, tasks} } map — over the
      * EXISTING `config.show` IPC. These dynamic keys are not in the sc1 catalog
      * `values`, so this is a separate read (mirrors [perRoleOverrides]). Returns
      * [PerRepoOverridesResult.Loaded] (empty when none configured; a malformed
@@ -859,6 +857,28 @@ interface DaemonGateway {
      * unreachable / the reply is malformed. Never throws.
      */
     fun updateOutcome(): DaemonUpdateOutcomeResult
+
+    /**
+     * Read the daemon's model definitions (Epic ce99b72065d03b1b, s7; sc3
+     * `models.definitions`) — the only source of the runners, models and efforts the
+     * model-tier settings offer. Never throws.
+     */
+    fun modelDefinitions(): ModelDefinitionsResult
+
+    /**
+     * Check a model a CLI family does not list (sc4 `models.check`), trying
+     * [claimedEfforts]. Slow (it runs the CLI): call it off the EDT. Writes nothing.
+     * A check whose model did not run is still [ModelCheckOutcome.Checked], with its
+     * error. Never throws.
+     */
+    fun checkModel(family: String, modelId: String, claimedEfforts: List<String>): ModelCheckOutcome
+
+    /**
+     * Record the user's decision on a check (sc4 `models.approve` with the allowed
+     * [efforts] when [approve], else `models.reject`). Applies after a daemon restart.
+     * Never throws.
+     */
+    fun decideModel(checkId: String, approve: Boolean, efforts: List<String>): ModelDecisionResult
 }
 
 /**
@@ -870,6 +890,14 @@ interface DaemonGateway {
  */
 interface DaemonRpc {
     fun call(method: String, params: Map<String, Any?>): DaemonResult
+
+    /**
+     * As [call], but with [resultErrorIsFailure] false a non-empty `result.error` stays
+     * in [DaemonResult.data] instead of making the reply `ok=false` — for a request whose
+     * answer carries its own `error` field (models.check's ModelCheckResult). A top-level
+     * error still fails. The default ignores the flag, so a fake keeps working.
+     */
+    fun call(method: String, params: Map<String, Any?>, resultErrorIsFailure: Boolean): DaemonResult = call(method, params)
 }
 
 /**
@@ -1158,13 +1186,17 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                 !r.ok || r.error != null ->
                     // An unexpected handler throw framed as an error reply.
                     SaveResult.Rejected(r.error ?: "the daemon rejected the write")
-                r.data["ok"] == true -> SaveResult.Saved
+                r.data["ok"] == true -> SaveResult.Saved(restartRequired = r.data["restartRequired"] == true)
                 else ->
-                    // config.write returned a bare {ok:false} (refused path/value);
-                    // it carries no error string, so fall back to a generic reason —
-                    // never a silent/false success.
-                    SaveResult.Rejected((r.data["error"] as? String)?.takeIf { it.isNotEmpty() }
-                        ?: "the daemon rejected the write")
+                    // config.write returned {ok:false, reason?, detail?}; with no reason
+                    // (a bare {ok:false}) fall back to a generic one — never a
+                    // silent/false success.
+                    SaveResult.Rejected(
+                        reason = (r.data["reason"] as? String)?.takeIf { it.isNotEmpty() }
+                            ?: (r.data["error"] as? String)?.takeIf { it.isNotEmpty() }
+                            ?: "the daemon rejected the write",
+                        detail = (r.data["detail"] as? String)?.takeIf { it.isNotEmpty() },
+                    )
             }
         } catch (e: DaemonUnavailableException) {
             SaveResult.Unavailable(e.message ?: "daemon unavailable")
@@ -1206,7 +1238,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         try {
             // config.show returns the RAW config object directly (no {ok} envelope),
             // so DaemonResult.data IS the config; models.byRepo is the
-            // { repoPath -> {coreFloor, tasks, tiers} } override map. Each level
+            // { repoPath -> {coreFloor, tasks} } override map. Each level
             // degrades independently: a missing/non-map models|byRepo -> empty Loaded;
             // a non-map repo entry is skipped; a non-string leaf -> null/omitted.
             // Never Unavailable for a shape mismatch (that is reserved for an
@@ -1386,7 +1418,70 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             DaemonActionResult.Failed(e.message ?: "unexpected daemon fault")
         }
 
+    override fun modelDefinitions(): ModelDefinitionsResult =
+        try {
+            val r = rpc.call(METHOD_MODEL_DEFINITIONS, emptyMap())
+            if (!r.ok || r.error != null) {
+                ModelDefinitionsResult.Failed(DaemonFailure.ofError(r.error ?: "models.definitions returned an error"))
+            } else {
+                parseModelDefinitions(r.data)?.let { ModelDefinitionsResult.Loaded(it) }
+                    ?: ModelDefinitionsResult.Failed(DaemonFailure.Other("the daemon's model definitions list no model family"))
+            }
+        } catch (e: DaemonUnavailableException) {
+            ModelDefinitionsResult.Failed(DaemonFailure.NotRunning)
+        } catch (e: RuntimeException) {
+            ModelDefinitionsResult.Failed(DaemonFailure.Other(e.message ?: "unexpected daemon fault"))
+        }
+
+    override fun checkModel(family: String, modelId: String, claimedEfforts: List<String>): ModelCheckOutcome =
+        try {
+            // A check that did not run carries its own `error` beside checkId and the
+            // evidence, so the reply is read whole (resultErrorIsFailure = false).
+            val r = rpc.call(
+                METHOD_MODELS_CHECK,
+                mapOf("family" to family, "modelId" to modelId, "claimedEfforts" to claimedEfforts),
+                resultErrorIsFailure = false,
+            )
+            if (!r.ok || r.error != null) {
+                ModelCheckOutcome.Failed(DaemonFailure.ofError(r.error ?: "models.check returned an error"))
+            } else {
+                parseModelCheck(r.data)?.let { ModelCheckOutcome.Checked(it) }
+                    // No checkId: the daemon refused the request ({error, recoverable:false}).
+                    ?: ModelCheckOutcome.Failed(DaemonFailure.Other((r.data["error"] as? String) ?: "models.check returned no check"))
+            }
+        } catch (e: DaemonUnavailableException) {
+            ModelCheckOutcome.Failed(DaemonFailure.NotRunning)
+        } catch (e: RuntimeException) {
+            ModelCheckOutcome.Failed(DaemonFailure.Other(e.message ?: "unexpected daemon fault"))
+        }
+
+    override fun decideModel(checkId: String, approve: Boolean, efforts: List<String>): ModelDecisionResult =
+        try {
+            val r = if (approve) {
+                rpc.call(METHOD_MODELS_APPROVE, mapOf("checkId" to checkId, "efforts" to efforts))
+            } else {
+                rpc.call(METHOD_MODELS_REJECT, mapOf("checkId" to checkId))
+            }
+            when {
+                !r.ok || r.error != null ->
+                    ModelDecisionResult.Failed(DaemonFailure.ofError(r.error ?: "the daemon returned an error"))
+                r.data["ok"] == true -> ModelDecisionResult.Recorded
+                else -> ModelDecisionResult.Refused(
+                    reason = (r.data["reason"] as? String) ?: "refused",
+                    detail = (r.data["detail"] as? String) ?: "",
+                )
+            }
+        } catch (e: DaemonUnavailableException) {
+            ModelDecisionResult.Failed(DaemonFailure.NotRunning)
+        } catch (e: RuntimeException) {
+            ModelDecisionResult.Failed(DaemonFailure.Other(e.message ?: "unexpected daemon fault"))
+        }
+
     companion object {
+        const val METHOD_MODEL_DEFINITIONS = "models.definitions"
+        const val METHOD_MODELS_CHECK = "models.check"
+        const val METHOD_MODELS_APPROVE = "models.approve"
+        const val METHOD_MODELS_REJECT = "models.reject"
         const val METHOD_STATUS = "daemon.status"
         const val METHOD_DEBUG_STATUS = "daemon.debug-status"
         const val METHOD_SHUTDOWN = "daemon.shutdown"
@@ -1497,10 +1592,8 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
         /**
          * Parse ONE models.byRepo.<repoPath> entry into a [RepoOverrideDto] (Story
          * S005), verbatim (k1). coreFloor is a scalar tier (non-string -> null);
-         * tasks is a { roleId -> tier } map (string tiers only, others skipped);
-         * tiers is a { tierName -> {runner, model} } map where each spec's runner
-         * and model are pulled as String? (non-string/absent -> null), and a
-         * non-map tier spec is skipped. Never throws on a shape mismatch.
+         * tasks is a { roleId -> tier } map (string tiers only, others skipped); a
+         * `tiers` leaf is ignored (tiers are global). Never throws on a shape mismatch.
          */
         private fun parseRepoOverride(entry: Map<*, *>): RepoOverrideDto {
             val coreFloor = entry["coreFloor"] as? String
@@ -1512,15 +1605,7 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
                     put(roleId, tier)
                 }
             }
-            val tiers = buildMap<String, TierSpecDto> {
-                val raw = entry["tiers"] as? Map<*, *> ?: emptyMap<Any?, Any?>()
-                for ((k, v) in raw) {
-                    val tierName = k as? String ?: continue
-                    val spec = v as? Map<*, *> ?: continue // skip a non-map tier spec
-                    put(tierName, TierSpecDto(runner = spec["runner"] as? String, model = spec["model"] as? String))
-                }
-            }
-            return RepoOverrideDto(coreFloor = coreFloor, tasks = tasks, tiers = tiers)
+            return RepoOverrideDto(coreFloor = coreFloor, tasks = tasks)
         }
 
         /**

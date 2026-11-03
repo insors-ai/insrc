@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence
+ok 1 - CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence
+  ---
+  duration_ms: 9079.162
+  type: 'test'
+  ...
+# Subtest: CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients
+ok 2 - CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients
+  ---
+  duration_ms: 2.853125
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9269.196

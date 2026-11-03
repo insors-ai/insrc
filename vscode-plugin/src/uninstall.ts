@@ -21,7 +21,7 @@ import { defaultHostFileSystem, type HostFileSystem } from './hosts/fs.js';
 import type { HostEnv, HostSpec } from './hosts/types.js';
 
 /** unwire ignores env/launchTarget entirely, so a no-op env + absent launch target are safe. */
-const NOOP_ENV: HostEnv = { getExtension: () => false, appName: '', uriScheme: '' };
+const NOOP_ENV: HostEnv = { getExtension: () => false, appName: '', uriScheme: '', homePathExists: () => false };
 
 export interface UnwireSweepDeps {
   specs: readonly HostSpec[];

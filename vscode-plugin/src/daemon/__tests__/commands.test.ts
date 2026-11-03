@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { registerDaemonCommands } from '../commands.js';
+import { registerDaemonCommands, restartDaemonAndReport } from '../commands.js';
 import type { CommandRegistry, CommandDescriptor, InsrcCommandId } from '../../surfaces/command-registry.js';
 import type { ConsentGate, ConsentOutcome, ConsentRequest } from '../../surfaces/consent-gate.js';
 import type { StatusSurface, StatusSnapshot } from '../../surfaces/status-surface.js';
@@ -92,4 +92,30 @@ test('a failing action pushes errored + the mapped message into the status surfa
   await commands.runs.get('insrc.daemon.update')!();
   assert.equal(status.current().state, 'errored');
   assert.match(status.current().detail ?? '', /diverged/);
+});
+
+test('commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command', async () => {
+  const cases: Array<[LifecycleResult | Error, boolean]> = [
+    [{ ok: true, state: 'running' }, true],
+    [{ ok: false, state: 'running', message: 'ctl exited 1' }, false],
+    [{ ok: true, state: 'stopped' }, false],
+    [{ ok: false, state: 'errored', message: 'boom' }, false],
+    [new Error('spawn failed'), false],
+  ];
+  for (const [outcome, expected] of cases) {
+    // The adapter.
+    const status = new FakeStatus();
+    const controller = fakeController({ run: async () => { if (outcome instanceof Error) throw outcome; return outcome; } });
+    assert.equal(await restartDaemonAndReport({ status, controller }), expected, JSON.stringify(outcome instanceof Error ? outcome.message : outcome));
+    // The restart command, for a non-throwing controller, reflects the same snapshot.
+    if (!(outcome instanceof Error)) {
+      const viaCommand = new FakeStatus();
+      const commands = new FakeCommands();
+      registerDaemonCommands({ commands, consent: fakeConsent('accepted'), status: viaCommand, controller: fakeController({ run: async () => outcome }) });
+      await commands.runs.get('insrc.daemon.restart')!();
+      assert.deepEqual(status.snapshots, viaCommand.snapshots, 'the same status as the restart command');
+    } else {
+      assert.deepEqual(status.snapshots, [{ state: 'errored', detail: 'spawn failed' }]);
+    }
+  }
 });

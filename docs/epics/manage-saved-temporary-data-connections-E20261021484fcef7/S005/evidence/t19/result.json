@@ -1,0 +1,49 @@
+{
+  "task": "t19",
+  "node": "22.23.2",
+  "jdk": "21",
+  "focusedNode": {
+    "tests": 7,
+    "pass": 7,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "focusedJUnit": {
+    "ConnectionsManagerPanelTest": 6,
+    "ConnectionsManagerModelTest": 2,
+    "ConnectionsSessionServiceTest": 4,
+    "ConnectionCorpusTest": 2,
+    "failures": 0
+  },
+  "backendTypecheck": "pass",
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerGateway.kt": "5ff532cdceb25cfd7ce424c5efa1e5d3e1305822c61052c032c1be8fd3522e12",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanel.kt": "967d1cb0b639f52636802283c1af4f24d02a22236bd86b89851a9559c5e11c4c",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionFieldsPanel.kt": "440fa71510824c6d188a885fb9b0ae1f0c7c27e20eb0a82b562ff8f8c8a3cb3d",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt": "4de8c785c3258ebf48e5890a05f6065af2068e6ee4aa757203cd806b4f6a870d",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModel.kt": "14dabae4ae7560687d529deb0aacead2c56d3a5ff84df2c18597c451f8a66209",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerPanelTest.kt": "4364110d4e201f7b374ba45783b826cdd6c4fdfc85ae6c58b34cd955e99304b7",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsManagerModelTest.kt": "618bc1de380f29c74e8bc633dc819479f49141ef0b976baf2052053752e8c04e",
+    "src/shared/__tests__/connection-manager-kotlin-render.test.ts": "06ad3bb41156c338fd66b6b0e0332af35fbe6646e683e79d2d992ba48620a095",
+    "test-fixtures/connection-management/v1/corpus.json": "9ed1741f606e91d5a930c1ccf128acd8b42ed6f124df818ac89f6357f27c3db5",
+    "test-fixtures/connection-management/v1/manifest.json": "a785cdc53f25b22491252a0a49a860505fef164b78d0ca7c0616a5069fcd78fd"
+  },
+  "reuse": "Fresh t18 analyzer found native domain cores as partial reuse; compose them with existing native JBUI/Project/disposal/background-EDT patterns. No JBCef or JavaScript client implementation.",
+  "coverage": [
+    "Project-owned memory gateway; explicit registered root, native scope/filter/count states and source-copy/confirmation.",
+    "All 29 advertised schema forms including typed quote union/arrays; blank JBPasswordField replacements and associated labels.",
+    "Immediate explicit Save reaches actual signed management before any Settings Apply; panel is not a Configurable.",
+    "No raw HTML rendering: user labels remain plain Swing text with html.disable.",
+    "Project/view generation and disposal guards; view close retains draft/owner, Project close erases fields and source state.",
+    "Real platform modality test proves updates inside Settings; real Temporary loopback probe works after suspend/resume.",
+    "Authenticated owner expiry clears temporary rows/input while preserving Saved state.",
+    "Sixteen shared reducer scenarios, including the newly mirrored temporary-ended event; original wire/transcript/removal/coverage counts unchanged."
+  ],
+  "testOrchestration": "Serialize Gradle-backed Node bridge files when compiler inputs change; invocation-owned reports alone do not isolate compiler outputs.",
+  "limits": [
+    "Settings/action registration is task21. Live IDE theme/keyboard acceptance is task27, not claimed by headless platform tests.",
+    "Saved probe fixture prerequisite absent; no producer gate or production release evidence was changed.",
+    "Full sweeps deferred until all implementation tasks, per user instruction."
+  ]
+}

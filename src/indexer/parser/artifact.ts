@@ -37,7 +37,7 @@ const EXT_LANGUAGE: Record<string, Language> = {
   '.jsonc':    'json',
   '.json5':    'json',
   '.toml':     'toml',
-  '.sql':      'sql',
+  '.sql':      'sql',      // not in this reader's extensions since s9; kept so its document rule for .sql stays defined
   '.proto':    'proto',
   '.graphql':  'graphql',
   '.gql':      'graphql',
@@ -101,7 +101,7 @@ class ArtifactParser implements CodeParser {
     '.yaml', '.yml',
     '.json', '.jsonc', '.json5',
     '.toml',
-    '.sql',
+    // '.sql' is read by the SQL reader (Epic c2ba6fa6 s9), which keeps this reader's document entity.
     '.proto', '.graphql', '.gql',
     '.sh', '.bash', '.zsh',
     '.html', '.htm', '.css', '.svg',

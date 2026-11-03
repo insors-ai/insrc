@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+ok 1 - CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+  ---
+  duration_ms: 31269.310459
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 31450.692958

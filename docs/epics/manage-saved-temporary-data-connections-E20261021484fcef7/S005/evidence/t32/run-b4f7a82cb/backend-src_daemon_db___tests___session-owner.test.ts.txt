@@ -1,0 +1,90 @@
+TAP version 13
+# (node:8452) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-NO-PERSIST: temporary state and retry use only exact owner receipts without registry keychain or file ports
+ok 1 - CM-S4-NO-PERSIST: temporary state and retry use only exact owner receipts without registry keychain or file ports
+  ---
+  duration_ms: 28.099792
+  type: 'test'
+  ...
+# Subtest: CM-S4-STATE: resume preserves temporary receipt truth but expiry end and a new epoch revoke it
+ok 2 - CM-S4-STATE: resume preserves temporary receipt truth but expiry end and a new epoch revoke it
+  ---
+  duration_ms: 2.637208
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays
+ok 3 - CM-S3-AUTH: monotonic exact deadline and control generation preserve root overlays
+  ---
+  duration_ms: 1.897708
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes
+ok 4 - CM-S3-AUTH: quota refuses before overlay allocation and restart has no recovered state or writes
+  ---
+  duration_ms: 7.754083
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit
+ok 5 - CM-S3-AUTH: heartbeat and resume cannot cross the deadline between validation and commit
+  ---
+  duration_ms: 1.412292
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control
+ok 6 - CM-S3-AUTH: late root eligibility cannot publish an overlay under a superseded control
+  ---
+  duration_ms: 1.121958
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication
+ok 7 - CM-S3-AUTH: canonical registered eligibility and cancellation prevent late session publication
+  ---
+  duration_ms: 1.527125
+  type: 'test'
+  ...
+# Subtest: CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease
+ok 8 - CM-S3-RECONNECT: real sockets preserve overlay data across roots and control rollover without renewing the lease
+  ---
+  duration_ms: 5.263375
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences
+ok 9 - CM-S3-AUTH: control and data capabilities cannot exchange roles roots or stored audiences
+  ---
+  duration_ms: 1.972833
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal
+ok 10 - CM-S3-AUTH: delegation quota multi-socket reuse and resume revoke every old data signal
+  ---
+  duration_ms: 4.357125
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers
+ok 11 - CM-S3-AUTH: resume and expiry invalidate all authority before synchronous abort observers
+  ---
+  duration_ms: 1.443917
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change
+ok 12 - CM-S3-AUTH: data attachment awaiting eligibility cannot survive a control-generation change
+  ---
+  duration_ms: 0.976
+  type: 'test'
+  ...
+# Subtest: CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience
+ok 13 - CM-S3-AUTH: real data sockets cannot call control RPCs or promote restricted audience
+  ---
+  duration_ms: 5.207917
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 974.425584

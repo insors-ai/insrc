@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -71,45 +72,48 @@ export function writeTaskOutput(runId: string, record: TaskExecutionRecord, pare
 	assertSessionContinuationNow(record, execution);
 	const path = taskOutputPathFor(runId, record.taskId, parentTaskPath, execution);
 	atomicWriteJson(path, record);
-	log.debug(
-		{ runId, taskId: record.taskId, status: record.status, produces: record.produces },
-		'wrote task output',
-	);
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ runId, taskId: record.taskId, status: record.status, produces: record.produces }, 'wrote task output']);
 	return path;
 }
 
-export function readTaskOutput(runId: string, taskId: string, parentTaskPath?: string | undefined): TaskExecutionRecord | null {
-	const path = taskOutputPathFor(runId, taskId, parentTaskPath);
+export function readTaskOutput(runId: string, taskId: string, parentTaskPath?: string | undefined, execution?: ConnectionExecutionContext): TaskExecutionRecord | null {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return null;
+	const path = taskOutputPathFor(runId, taskId, parentTaskPath, execution);
 	if (!existsSync(path)) return null;
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as TaskExecutionRecord;
 	} catch (err) {
-		log.warn({ path, err: (err as Error).message }, 'task output unreadable; treating as miss');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ path, err: (err as Error).message }, 'task output unreadable; treating as miss']);
 		return null;
 	}
 }
 
 /** Best-effort cleanup of one task slot -- used by tests. */
-export function purgeTaskOutput(runId: string, taskId: string): void {
-	const path = taskOutputPathFor(runId, taskId);
+export function purgeTaskOutput(runId: string, taskId: string, execution?: ConnectionExecutionContext): void {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return;
+	const path = taskOutputPathFor(runId, taskId, undefined, execution);
 	try { unlinkSync(path); }
 	catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.debug({ path, err: (err as Error).message }, 'purgeTaskOutput: non-ENOENT');
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ path, err: (err as Error).message }, 'purgeTaskOutput: non-ENOENT']);
 		}
 	}
 }
 
 /** Best-effort cleanup of every task slot in a run. */
-export function purgeAllTaskOutputs(runId: string): void {
+export function purgeAllTaskOutputs(runId: string, execution?: ConnectionExecutionContext): void {
+	assertAnalysisConnectionExecution(execution);
+	if (execution?.mode === 'session-memory') return;
 	// Just nuke the per-run tasks/ directory; the planner's child-plan
 	// artifacts live in subdirs under it too, so this is destructive --
 	// only use during teardown.
-	const dir = dirname(taskOutputPathFor(runId, 'unused'));
+	const dir = dirname(taskOutputPathFor(runId, 'unused', undefined, execution));
 	try { rmSync(dir, { recursive: true }); }
 	catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.debug({ dir, err: (err as Error).message }, 'purgeAllTaskOutputs: non-ENOENT');
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ dir, err: (err as Error).message }, 'purgeAllTaskOutputs: non-ENOENT']);
 		}
 	}
 }

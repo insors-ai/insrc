@@ -15,8 +15,10 @@ import { readFileSync } from 'node:fs';
 import { buildSettingsCatalog } from '../config/settings-catalog.js';
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
-import type { AttachedClient, DaemonStatus } from '../shared/types.js';
+import type { AttachedClient, DaemonStatus, ThreadView } from '../shared/types.js';
 import { guideGetResult, guideListResult } from './guide-sections.js';
+import { probeMcpClients } from './mcp-register.js';
+import { validateRepoPath } from '../db/repos.js';
 import type { RpcHandlers } from './server.js';
 import { readSteeringBlock } from './steering-inject.js';
 import { launchUpdate, makeUpdateHandlers, readUpdateOutcome } from './update-runner.js';
@@ -72,6 +74,24 @@ export function sharedAdminHandlers(shutdown: (reason: string) => void): RpcHand
 			return guideListResult(readSteeringBlock) as unknown as Record<string, unknown>;
 		},
 
+		// Read-only probe: is the insrc MCP server already registered for each
+		// known client (claude/codex via `mcp list`, vibe via its config.toml)?
+		// Never throws. In sharedAdminHandlers (not only the main thread's table)
+		// because the method-class table routes 'mcp.status' to the ADMIN WORKER —
+		// a worker-side omission here answers 'unknown method: mcp.status' over the
+		// socket even though the main table has it.
+		'mcp.status': async (params) => {
+			// Optional repo path: vibe's registration may live in the repo's own
+			// project-layer .vibe/config.toml, so the probe checks both it and the
+			// user-global config when a path is given.
+			const rawPath = (params as { path?: unknown } | undefined)?.path;
+			let repoPath: string | undefined;
+			if (typeof rawPath === 'string' && rawPath.length > 0) {
+				try { repoPath = validateRepoPath(rawPath); } catch { repoPath = undefined; }
+			}
+			return probeMcpClients({}, repoPath);
+		},
+
 		'daemon.shutdown': async () => {
 			log.info('shutdown requested');
 			shutdown('daemon.shutdown RPC');
@@ -100,6 +120,8 @@ export interface AdminWorkerDeps {
 	readonly status: () => Promise<DaemonStatus>;
 	readonly clients: () => Promise<readonly AttachedClient[]>;
 	readonly repoList: () => Promise<unknown>;
+	/** The worker threads from the status board (s4). */
+	readonly threads: () => Promise<readonly ThreadView[]>;
 }
 
 /** The admin worker's table: the ten admin methods. */
@@ -108,7 +130,12 @@ export function adminWorkerHandlers(deps: AdminWorkerDeps): RpcHandlers {
 		...sharedAdminHandlers(deps.shutdown),
 		'daemon.status': async () => deps.status(),
 		// Read-only: the clients the router published on the status board (k5).
-		'daemon.debug-status': async (): Promise<{ clients: AttachedClient[] }> => ({ clients: [...await deps.clients()] }),
+		// With the worker threads beside them once any is published (s4); clients unchanged.
+		'daemon.debug-status': async (): Promise<{ clients: AttachedClient[]; threads?: ThreadView[] }> => {
+			const clients = [...await deps.clients()];
+			const threads = [...await deps.threads()];
+			return threads.length > 0 ? { clients, threads } : { clients };
+		},
 		'repo.list': async () => deps.repoList(),
 	};
 }

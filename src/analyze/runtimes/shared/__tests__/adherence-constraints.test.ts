@@ -1,3 +1,4 @@
+import '../../../orchestrator/__tests__/private-paths.js';
 /**
  * docs/plans/docs-module.md Phase 7. Tests for how the adherence check
  * resolves its constraints from the two overrides, through the seam:

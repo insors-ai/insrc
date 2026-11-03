@@ -28,7 +28,7 @@ import { userInfo } from 'node:os';
 import { basename } from 'node:path';
 
 import { configGet, GitCallFailed } from '../../git-calls.js';
-import { repoConfigPath } from '../../../indexer/repo-ignore-config.js';
+import { repoConfigPath } from '../../../config/paths.js';
 import { ArtifactIds } from '../../artifact-ids.js';
 import type { CompanionHeader } from './types.js';
 

@@ -45,6 +45,8 @@ function fixture(): Record<string, unknown> {
 				summariserModel: 'gpt-y',
 			},
 			{ id: 'ollama', displayName: 'Ollama', models: [{ id: 'llama:1b', efforts: [], inputLimit: { unit: 'tokens', max: 4096 } }], toolLoopModel: 'llama:1b' },
+			{ id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'Claude on Ollama', models: [{ id: 'glm:cloud', efforts: ['low'], hosting: 'cloud' }] },
+			{ id: 'cli-vibe', cliKind: 'vibe', displayName: 'Vibe', models: [{ id: 'vibe-a', aliases: ['va'], efforts: ['low', 'max'] }], tierDefaults: { core: { model: 'va' }, mid: { model: 'vibe-a' }, cheap: { model: 'vibe-a' } }, summariserModel: 'vibe-a' }
 		],
 	};
 }
@@ -179,4 +181,26 @@ test('tier-resolution.test.ts: a tier\'s own effort applies when no separate eff
 	assert.ok(logged.some(([f]) => f['effort'] === 'turbo'));
 	// The efforts entry wins, '' asking for the CLI default.
 	assert.deepEqual(resolveTier({ tiers: { core: { runner: 'cli-codex', model: 'gpt-x', effort: 'turbo' } }, efforts: { core: '' } }, 'core', registry), { runner: 'cli-codex', model: 'gpt-x' });
+});
+
+test('tier-resolution.test.ts: resolveTierWith logs and tierModelOf reports the refusal without reading a missing model', () => {
+	useFixture();
+	const registry = getModelRegistry();
+	let cfg: ReturnType<typeof assembleConfig> | undefined;
+	const logged = warnings(() => {
+		cfg = assembleConfig(parseTiering({ tiers: {
+			mid:   { runner: 'ollama-claude', model: 'kimi:cloud', effort: 'low' },
+			cheap: { runner: 'ollama-claude', model: 'glm:cloud', effort: 'turbo' },
+		} }), SHAPER, DEPTH, registry);
+	});
+	const r = cfg!.tierResolutions;
+	assert.deepEqual(r.mid, { family: 'ollama-claude', model: undefined, fallback: { reason: 'model-not-supported', requested: 'kimi:cloud' } });
+	assert.deepEqual(cfg!.tiering.tiers.mid, { runner: 'ollama-claude', model: 'kimi:cloud' }, 'the tier reports what was set; the fallback says why it does not run');
+	// A declared host model still resolves, dropping an effort it does not list.
+	assert.deepEqual([r.cheap.family, r.cheap.model?.id, r.cheap.droppedEffort], ['ollama-claude', 'glm:cloud', 'turbo']);
+
+	const refused = logged.filter(([f]) => f['reason'] === 'model-not-supported');
+	assert.deepEqual(refused.map(([f]) => f), [{ tier: 'mid', runner: 'ollama-claude', requested: 'kimi:cloud', reason: 'model-not-supported' }]);
+	assert.match(refused[0]![1], /models\.tiers\.mid: model 'kimi:cloud' is not supported by ollama-claude \(model-not-supported\)/);
+	assert.equal(resolveTier(parseTiering({ tiers: { mid: { runner: 'ollama-claude', model: 'kimi:cloud' } } }), 'mid', registry).model, 'kimi:cloud');
 });

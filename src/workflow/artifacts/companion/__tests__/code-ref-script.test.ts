@@ -244,5 +244,5 @@ test('src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts: the do
   assert.equal(bodies.filter(b => b === CODE_REF_SCRIPT).length, 1, 'carries the script once');
   assert.match(shell.html, CLICKABLE);
   assert.match(CODE_REF_SCRIPT, /markCodeRefs\(\);\s*\}\)\(\);\s*$/, 'the script marks once on load');
-  assert.match(shell.html, /<div id="docgen-diagram">/, 'the diagram is still shown');
+  assert.match(shell.html, /<div id="docgen-diagram" class="insrc-viewer-diagram">/, 'the diagram is still shown (with the shared diagram class)');
 });

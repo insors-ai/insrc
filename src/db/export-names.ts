@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -25,6 +26,7 @@ export function exportNameKey(fileU64: bigint, name: string): Buffer {
 
 /** Write one entry inside a write transaction. */
 export function putExportNameInTxn(s: GraphStore, fileU64: bigint, name: string, targetId: string): void {
+	assertNoSessionPersistence();
 	s.exportNames.put(exportNameKey(fileU64, name), Buffer.from(targetId, 'utf8'));
 }
 

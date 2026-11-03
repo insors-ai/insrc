@@ -1,0 +1,29 @@
+TAP version 13
+# Subtest: a worker thread and the daemon's lock on the store
+    # Subtest: a worker thread's open, write, close and exit keep the daemon's lock, and the daemon writes after another process opens and closes the store
+    ok 1 - a worker thread's open, write, close and exit keep the daemon's lock, and the daemon writes after another process opens and closes the store
+      ---
+      duration_ms: 391.697083
+      type: 'test'
+      ...
+    # Subtest: control: the lock check reports a dropped lock after a stray descriptor on the lock file is closed
+    ok 2 - control: the lock check reports a dropped lock after a stray descriptor on the lock file is closed
+      ---
+      duration_ms: 74.515
+      type: 'test'
+      ...
+    1..2
+ok 1 - a worker thread and the daemon's lock on the store
+  ---
+  duration_ms: 466.753458
+  type: 'suite'
+  ...
+1..1
+# tests 2
+# suites 1
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 709.87275

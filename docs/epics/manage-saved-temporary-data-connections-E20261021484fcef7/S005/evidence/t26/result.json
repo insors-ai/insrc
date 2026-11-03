@@ -1,0 +1,49 @@
+{
+  "task": "s5/t26",
+  "status": "pending-live-ui-access",
+  "passed": false,
+  "sourceCommit": "a4f470c5bd2fa2deb838dbbb580fcb837c63dd43",
+  "version": "VS Code 1.143.1 arm64",
+  "sourceHashes": {
+    "vscode-plugin/out/extension.js": "754caccb533c16382370565d00cfc88f517f191a7df1099a919d6402131090cd",
+    "vscode-plugin/package.json": "8ab7fac8b6a5ccc8e45a6166f1952b82a5ae638ac25b57ab894fc85818a19bd7",
+    "src/shared/__tests__/fixtures/connection-mutation-server.ts": "298cd488f7d53178d21d5b11ff85ff08dac93f3feade678675296909ebbfcc58",
+    "vscode-plugin/src/connections/host.ts": "2aa0cc11fc9e10df0cc0b7ceb14c68e29909611b4ec1a95220a9e1890900459d",
+    "vscode-plugin/src/connections/renderer.ts": "21905e6dfcf45bc6e435c62f94275ab7372e4f17fe173dbd976e2b6ea3537fde"
+  },
+  "isolation": {
+    "roots": [
+      "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-DUJBvq/managed",
+      "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-DUJBvq/other"
+    ],
+    "socket": "/private/tmp/s5-live-j5jogfty/home/.insrc/daemon.sock",
+    "sourcePath": "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-DUJBvq/managed/source.csv",
+    "testOnlyPrerequisites": true,
+    "productionGatesChanged": false,
+    "unexpectedIsolatedDaemonPid": 49678,
+    "installedUserDaemonTouched": false
+  },
+  "observed": [
+    "Official installed VS Code launched with dedicated HOME, profile and extensions dir; extension activation logged.",
+    "Unmodified APFS app copy launched and extension activation logged.",
+    "CUA binding by original app path or bundle selected the existing user workspace; no manager UI action was sent there.",
+    "CUA binding by copied app path timed out with timeoutReached.",
+    "Unique disposable app identity was listed by macOS inventory but CUA rejected its bundle ID and display name; path binding timed out.",
+    "Isolated socket was rebound by an additional production daemon process under the same disposable HOME. Captured peer-control requests returned unknown-method and capabilities safe-read/driver-descriptors only. This invalidates positive-peer UI acceptance; no positive flow is claimed."
+  ],
+  "attemptLimits": [
+    "First launch used nonexistent Electron executable name; corrected to Code.",
+    "Changing copied CFBundleName broke Electron helper lookup; restored CFBundleName Code.",
+    "Only copied app Info.plist identity/local signature changed; installed app untouched."
+  ],
+  "notVerified": [
+    "Light/dark/highcontrast",
+    "Keyboard add/edit/Test/Delete/Discard",
+    "Settings and command route equality",
+    "Focus, masked fields, status, dirty/empty/offline/read-error/upgrade states",
+    "Unknown and cleanup cards"
+  ],
+  "release": "No production gates enabled. Test peers do not establish release acceptance. SQL Server remains pending.",
+  "fixtureDefaultRegression": "fixture-default-regression.tap: native mutation bridge passed (6 JUnit cases)",
+  "typecheck": "backend-tsc.txt: exit0"
+}

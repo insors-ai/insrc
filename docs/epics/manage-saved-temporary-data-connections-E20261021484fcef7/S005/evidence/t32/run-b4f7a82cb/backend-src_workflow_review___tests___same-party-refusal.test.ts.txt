@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: T15 a DEF authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written
+ok 1 - T15 a DEF authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written
+  ---
+  duration_ms: 4.149417
+  type: 'test'
+  ...
+# Subtest: T15 a DEF authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written
+ok 2 - T15 a DEF authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written
+  ---
+  duration_ms: 2.353833
+  type: 'test'
+  ...
+# Subtest: T15 a DEF authored by the controller is reviewed by the daemon
+ok 3 - T15 a DEF authored by the controller is reviewed by the daemon
+  ---
+  duration_ms: 151.7855
+  type: 'test'
+  ...
+# Subtest: T15 a DEF authored by an unknown author is reviewed by the daemon
+ok 4 - T15 a DEF authored by an unknown author is reviewed by the daemon
+  ---
+  duration_ms: 4.362375
+  type: 'test'
+  ...
+# Subtest: T15 a LLD authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written
+ok 5 - T15 a LLD authored by the daemon (by its explicit field) is refused before any provider call, and nothing is written
+  ---
+  duration_ms: 2.3455
+  type: 'test'
+  ...
+# Subtest: T15 a LLD authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written
+ok 6 - T15 a LLD authored by the daemon (by its attribution labels (an older artifact)) is refused before any provider call, and nothing is written
+  ---
+  duration_ms: 2.266542
+  type: 'test'
+  ...
+# Subtest: T15 a LLD authored by the controller is reviewed by the daemon
+ok 7 - T15 a LLD authored by the controller is reviewed by the daemon
+  ---
+  duration_ms: 7.385916
+  type: 'test'
+  ...
+# Subtest: T15 a LLD authored by an unknown author is reviewed by the daemon
+ok 8 - T15 a LLD authored by an unknown author is reviewed by the daemon
+  ---
+  duration_ms: 3.2945
+  type: 'test'
+  ...
+# Subtest: T15 the TUI review service surfaces the refusal, naming a controller review or an override
+ok 9 - T15 the TUI review service surfaces the refusal, naming a controller review or an override
+  ---
+  duration_ms: 5.883375
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 577.672208

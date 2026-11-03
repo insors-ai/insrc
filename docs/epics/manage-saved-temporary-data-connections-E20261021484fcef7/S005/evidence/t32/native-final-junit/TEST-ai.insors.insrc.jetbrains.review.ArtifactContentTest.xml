@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.review.ArtifactContentTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="over the real parse, a daemon structured error maps to Unavailable, not a blank Loaded()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <testcase name="ArtifactContentViews maps Loaded to Rendered and Unavailable to Unavailable()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.001"/>
+  <testcase name="jsStringLiteral escapes quote, backslash, newline, tab, control and line-separator chars()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <testcase name="over the real parse, a view payload maps to Loaded with the fields()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <testcase name="artifactReviewView degrades a malformed payload safely (not a throw)()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.001"/>
+  <testcase name="jsStringLiteral neutralizes a script-close breakout and never emits a raw closing tag()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <testcase name="artifactReviewView maps ok=false to Unavailable, never a blank Loaded()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <testcase name="artifactReviewView maps DaemonUnavailableException to Unavailable()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <testcase name="renderModeFor selects JCEF when supported and the native fallback otherwise()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.001"/>
+  <testcase name="jsStringLiteral wraps the value in double quotes and passes plain text through()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <testcase name="artifactReviewView maps ok(view) to Loaded, forwarding the view verbatim()" classname="ai.insors.insrc.jetbrains.review.ArtifactContentTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

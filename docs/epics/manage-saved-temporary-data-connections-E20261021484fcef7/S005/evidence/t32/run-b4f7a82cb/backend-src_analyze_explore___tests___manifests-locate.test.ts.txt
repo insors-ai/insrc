@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: k8s body kind wins over a misleading filename
+ok 1 - k8s body kind wins over a misleading filename
+  ---
+  duration_ms: 2.903375
+  type: 'test'
+  ...
+# Subtest: multi-doc manifest returns the FIRST doc kind
+ok 2 - multi-doc manifest returns the FIRST doc kind
+  ---
+  duration_ms: 0.392584
+  type: 'test'
+  ...
+# Subtest: helm Chart.yaml returns the chart name; other helm files return undefined
+ok 3 - helm Chart.yaml returns the chart name; other helm files return undefined
+  ---
+  duration_ms: 0.143083
+  type: 'test'
+  ...
+# Subtest: empty and unparseable bodies return undefined (caller falls back)
+ok 4 - empty and unparseable bodies return undefined (caller falls back)
+  ---
+  duration_ms: 0.540834
+  type: 'test'
+  ...
+# Subtest: non-k8s/helm families return undefined (family gate)
+ok 5 - non-k8s/helm families return undefined (family gate)
+  ---
+  duration_ms: 0.070417
+  type: 'test'
+  ...
+# Subtest: a doc with a non-string / missing kind yields undefined
+ok 6 - a doc with a non-string / missing kind yields undefined
+  ---
+  duration_ms: 0.243042
+  type: 'test'
+  ...
+# Subtest: inferResourceKind (fallback) still guesses from the filename
+ok 7 - inferResourceKind (fallback) still guesses from the filename
+  ---
+  duration_ms: 0.056459
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 405.983458

@@ -1,0 +1,736 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793361848441-7grzfp",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T12:10:13.232Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 364774,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c5c764585f6714f7",
+    "epicSlug": "group-vs-code-model-tiers-settings",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793361848441-7grzfp",
+    "hldEffectiveHash": "f9af731959056513d119399c6f6014f2251e044e23ebe7128b068ad5c732f302",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The mock's panel-foot 'Check an unlisted model…' link is explicitly scoped out as a non-goal, so not designing/building it satisfies 'no non-goal is built' rather than being a gap.",
+          "evidence": "mocks/model-tiers-grouped.html:160-166 renders the panel-foot with the Core-floor <select> AND the 'Check an unlisted model…' <a> at line 165. The LLD's Summary states verbatim: \"Non-goal: the mock's 'Check an unlisted model…' link is NOT implemented by this Story — that capability continues to be reached only through the existing 'insrc: Set model tier' QuickPick wizard's checkUnlisted flow (model-tier-picker.ts:360-449)\", and §2.3 renderModelTiers postconditions repeat \"does NOT render the mock's panel-foot 'Check an unlisted model…' link — out of scope for this Story (non-goal; see Summary)\". checkUnlisted is a real, untouched function spanning exactly model-tier-picker.ts:360-449 as cited. This is a documented scope exclusion with a stated fallback path, not an undesigned control.",
+          "action": "None — the exclusion is explicit and consistent across Summary/§2.3/Migration. (Note: a stale review already embedded at the end of this LLD.md flags this as a blocking gap; that finding does not hold against the current document text, which already carries the non-goal language.)",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "ac1/ac2 in the Acceptance mapping table represent the complete, upstream-approved set of acceptance criteria for this Story (nothing else is missing from the mock/scope).",
+          "evidence": "§1 states \"Standalone feature — no parent HLD... There are no HLD shared contracts to honour,\" and a glob of docs/standalone/group-vs-code-model-tiers-settings-E20261030c5c76458/** returns only this one LLD.md — no SPEC/brainstorm/ISSUE artifact exists that enumerates a numbered criteria list to check ac1+ac2 completeness against. The two listed criteria (grouped per-tier cards with status, and the Core-floor control) do match the mock's two headline features in mocks/model-tiers-grouped.html, but there is no authoritative source confirming no third criterion exists.",
+          "action": "Ask the author/user to confirm ac1+ac2 is the full intended scope, or point to an upstream spec/brainstorm artifact if one exists outside the standalone docs folder.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "currentTier is currently a private (non-exported) function at vscode-plugin/src/models/model-tier-picker.ts:149, so this Story's only change to it is visibility.",
+          "evidence": "Read model-tier-picker.ts: line 149 is `function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier): TierValue | undefined {` with no `export` keyword — confirms it is currently module-private, exactly as the design states.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "pickModel's existing inline marker already applies the two-way split the design describes: family.host set → 'not supported', family.host undefined → 'not listed'.",
+          "evidence": "model-tier-picker.ts:335-339: `items.push(family.host !== undefined ? { label: '(current, not supported — the tier will not run): ...', ... } : { label: '(current, not listed — runs the default): ...', ... })`. definitions.ts:32-33 confirms `host?: 'ollama'` is documented as \"Present when the family runs its CLI on a host (Ollama): its models are a closed list.\" This matches the design's tierStatus classification rule exactly.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "model-tiers.ts, TierStatus, ModelTiersRendererDeps, ModelTiersWrite, ModelTiersWriteHandlerDeps, openModelTiers and any 'ModelTiers'-named symbol do not already exist anywhere in the plugin source.",
+          "evidence": "Glob for vscode-plugin/src/panels/model-tiers* returned no files; Grep for `openModelTiers|ModelTiers|modelTiers` across vscode-plugin/src returned no matches. Confirms all items in §3 marked 'new' are genuinely new.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The reused template (RepoConfigRenderer / RepoConfigWrite / createRepoConfigWriteHandler / renderRepoConfig) exists with the shape the design says it mirrors.",
+          "evidence": "vscode-plugin/src/panels/types.ts:183 `export type RepoConfigRenderer = (selected: string | undefined) => Promise<string>;`, :202-206 `export interface RepoConfigWrite { repoPath; segments; value }`; repo-config.ts:82 `export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer`, :178 `export function createRepoConfigWriteHandler(deps: RepoConfigWriteDeps): (write: RepoConfigWrite) => void`. All match the structural template the new model-tiers.ts functions are designed to mirror.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Cited types.ts line numbers (34 WebviewPanelHost, 186-193 RepoConfigRendererDeps, 202-206 RepoConfigWrite, 221 MenuItem, 246 WebviewPanelHostDeps) are accurate.",
+          "evidence": "Read types.ts: line 34 is `export interface WebviewPanelHost {`; lines 186-193 are the RepoConfigRendererDeps interface; lines 202-206 are the RepoConfigWrite interface; line 221 is `export interface MenuItem {`; line 246 is `export interface WebviewPanelHostDeps {`. All five citations are exact.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Cited webview-host.ts line numbers (398-415 openRepoConfiguration, 293-313 renderRepoPanel/REPO_PLACEHOLDER context, 371 silent-no-op comment) are accurate.",
+          "evidence": "Read webview-host.ts: lines 398-415 are exactly the `openRepoConfiguration(): void { ... }` method body; lines 293-313 are exactly the `renderRepoPanel` function (which uses REPO_PLACEHOLDER at line 307 when no renderer is wired); line 371 is exactly `// Anything else is a silent no-op (a malformed/spoofed message can't drive the host).` inside handleRepoMessage. All three citations are exact matches against current file content.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Cited repo-config.ts line numbers (40 RepoConfigWriteDeps, 82 renderRepoConfig, 174 createRepoConfigWriteHandler, 219/220-222 refresh/catch behavior) are accurate.",
+          "evidence": "Read repo-config.ts: line 40 is `export interface RepoConfigWriteDeps {`, line 82 is `export function renderRepoConfig(...)`, lines 219-222 are exactly the cited refresh()/catch block. `createRepoConfigWriteHandler` itself starts at line 178, a 4-line drift from the cited 174 (174 is inside its doc-comment, 2 lines before the signature) — a minor, non-material citation imprecision that does not change the function's identity or behavior.",
+          "action": "No correction required for implementation; optionally tighten the citation from 174 to 178 for precision.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "insrc.models.tiers.{core,mid,cheap}.{runner,model,effort} and insrc.models.coreFloor already exist as package.json configuration keys, so no new config keys are introduced.",
+          "evidence": "Read vscode-plugin/package.json lines 355-434: all 9 insrc.models.tiers.<tier>.<field> string settings and insrc.models.coreFloor (enum core/mid/cheap, default 'mid') are present exactly as the design claims (design cites lines 360-432; actual span is ~372-434, a minor range drift but the keys themselves are verified present and unchanged).",
+          "action": "None — optionally tighten the cited line range.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No stored-data migration or schema change is needed since the Story only adds a read/write UI layer over existing keys.",
+          "evidence": "Migration §6 states 'Zero downtime: yes — Data rewrite: no' and the four migration steps (export currentTier, add model-tiers.ts, widen types.ts/webview-host.ts, wire extension.ts) touch no persisted config schema — confirmed no new config.json keys are written by createModelTiersWriteHandler per its own preconditions (writes only existing tierField/coreFloor paths).",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This Story's contract additions (MenuItem widen, WebviewPanelHostDeps field-add, model-tier-picker.ts export) do not collide with another in-flight Story/Epic's ownership of the same files.",
+          "evidence": "git status shows vscode-plugin/src/panels/webview-host.ts and repo-config.ts currently modified by an in-progress, unrelated epic (commit 562ec4720 'provider, model and effort selection in the dev chat (in progress)', tracked in design/chat-panel-provider-model-effort.md). Grep of that design doc for MenuItem|WebviewPanelHostDeps|coreFloor|ModelTiers|model-tiers returned no matches, so the two Stories touch disjoint symbols in the same files — no contract or boundary collision found.",
+          "action": "None for design correctness; flag to the build step that webview-host.ts/types.ts are being concurrently edited by another in-flight story, so expect a merge/rebase at build time.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "createModelTiersWriteHandler's reject-vs-resolve(refused) handling exactly mirrors createRepoConfigWriteHandler's catch-no-refresh vs refresh-unconditional-on-resolve behavior.",
+          "evidence": "repo-config.ts:219 `deps.refresh();` runs unconditionally after the write resolves (comment: 'truthful re-render from fresh config (accepted-ok OR refused)'); the catch block at lines 220-222 only logs via `deps.logger.warn(...)` with no refresh call. This exactly matches the design's stated error-path behavior for config.write reject vs resolve-but-refused.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The malformed-ModelTiersWrite error path's citation 'webview-host.ts:371, \"Anything else is a silent no-op\"' correctly points at the fallback it claims to mirror.",
+          "evidence": "Current webview-host.ts line 371 is exactly `// Anything else is a silent no-op (a malformed/spoofed message can't drive the host).` inside handleRepoMessage — the citation in the current LLD.md text matches. (The review block appended inside the same LLD.md file claims this citation reads '361' and is wrong; checking the actual document body above that review block shows it already reads '371', so that embedded finding does not hold against current content — either it was already corrected or the embedded review is stale.)",
+          "action": "None — re-verify if a reviewer disagrees, but current text and current file agree.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing test files this Story's test strategy says it mirrors (repo-config.test.ts, webview-host.test.ts, model-tier-picker.test.ts) exist and establish the fixture/fake-deps pattern described.",
+          "evidence": "Glob confirmed vscode-plugin/src/panels/__tests__/repo-config.test.ts, webview-host.test.ts and vscode-plugin/src/models/__tests__/model-tier-picker.test.ts all exist. Reading model-tier-picker.test.ts shows exactly the fake-ModelDefinitions / fake-SetModelTierDeps / scripted-picks fixture pattern the new LLD's test strategy says it will reuse for tierStatus/currentTier unit tests.",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every acceptance criterion has a mapped proving test, and the mapped test files/subjects are consistent with where the new code is designed to live.",
+          "evidence": "ac1 and ac2 each map to named tests in model-tiers.test.ts / model-tier-picker.test.ts, consistent with §2's subjects (model-tiers.ts, model-tier-picker.ts). However, as in the coverage-of-intent item, there is no upstream artifact enumerating a complete criteria set beyond ac1/ac2, so completeness of criterion-to-test coverage can only be confirmed for the two criteria actually stated, not against an independent upstream list.",
+          "action": "Same as coverage-of-intent: confirm with the author/user whether ac1+ac2 is the complete criteria set before treating test coverage as exhaustive.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16,
+        "unverified": 2
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-10-30T12:31:28.948Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-10-30T13:01:17.873Z",
+    "rangeBase": "c0b38243dcb9d89b5deb3ebd02307a49e888772e"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story adds a dedicated 'Model Tiers' webview panel to the VS Code extension, replacing the hard-to-read flat settings list with one card per tier (core/mid/cheap) showing runner, model and effort dropdowns, cloud/local hosting badges, and an inline 'not supported'/'not listed'/'floor-raised' status, plus an editable Core-floor control — matching the user-approved mock at mocks/model-tiers-grouped.html. It reads and writes the same insrc.models.* configuration keys the native settings page already uses; no new config keys are introduced. Non-goal: the mock's 'Check an unlisted model…' link is NOT implemented by this Story — that capability continues to be reached only through the existing 'insrc: Set model tier' QuickPick wizard's checkUnlisted flow (model-tier-picker.ts:360-449), which this Story leaves untouched.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Group the VS Code Model Tiers settings by tier instead of 9 flat fields"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "currentTier",
+          "signature": "export function currentTier(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier): TierValue | undefined",
+          "parameters": [
+            {
+              "name": "defs",
+              "type": "ModelDefinitions",
+              "purpose": "the daemon's model catalog, used to resolve the stored runner/model strings into a typed value",
+              "optional": false
+            },
+            {
+              "name": "raw",
+              "type": "Record<string, unknown>",
+              "purpose": "the plugin's current insrc.models.* configuration snapshot",
+              "optional": false
+            },
+            {
+              "name": "tier",
+              "type": "Tier",
+              "purpose": "which of core/mid/cheap to resolve",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TierValue | undefined",
+            "meaning": "the tier's current runner/model/effort as configured, or undefined if unset"
+          },
+          "errors": [],
+          "preconditions": [
+            "raw is the plugin's own machine-scope insrc.models.* configuration snapshot, not arbitrary JSON",
+            "tier is one of 'core' | 'mid' | 'cheap'"
+          ],
+          "postconditions": [
+            "does not mutate defs or raw",
+            "visibility changes from private (vscode-plugin/src/models/model-tier-picker.ts:149) to exported; no signature or behavior change"
+          ]
+        },
+        {
+          "name": "tierStatus",
+          "signature": "export function tierStatus(defs: ModelDefinitions, raw: Record<string, unknown>, tier: Tier, coreFloor: Tier): TierStatus",
+          "parameters": [
+            {
+              "name": "defs",
+              "type": "ModelDefinitions",
+              "purpose": "the daemon's model catalog, used to classify whether the configured model is still listed/supported",
+              "optional": false
+            },
+            {
+              "name": "raw",
+              "type": "Record<string, unknown>",
+              "purpose": "the plugin's current insrc.models.* configuration snapshot",
+              "optional": false
+            },
+            {
+              "name": "tier",
+              "type": "Tier",
+              "purpose": "which of core/mid/cheap to classify",
+              "optional": false
+            },
+            {
+              "name": "coreFloor",
+              "type": "Tier",
+              "purpose": "the resolved insrc.models.coreFloor setting, used to detect when this tier is raised",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TierStatus",
+            "meaning": "one of ok | not-supported | not-listed | floor-raised for this tier"
+          },
+          "errors": [],
+          "preconditions": [
+            "same raw/tier contract as currentTier",
+            "coreFloor is one of 'core' | 'mid' | 'cheap'"
+          ],
+          "postconditions": [
+            "pure — no I/O, no mutation",
+            "returns 'floor-raised' only when tier ranks below coreFloor among core > mid > cheap",
+            "classifies a configured-but-unresolved model: family.host is set only for the family whose CLI runs on a host such as Ollama with a closed model list (vscode-plugin/src/models/definitions.ts:32-33); when familyOf(defs, configured runner) resolves to such a family, returns 'not-supported' (a closed list can't fall back); when it resolves to an open vendor family (host undefined, e.g. claude/codex), returns 'not-listed' (runs the default) — the same two-way split pickModel's inline marker already applies at vscode-plugin/src/models/model-tier-picker.ts:335-339",
+            "additionally classifies the case pickModel's marker does not cover: when the configured runner itself does not resolve to any family in defs (an unknown/stale runner), tierStatus reports 'not-listed' directly from that unresolved lookup, rather than through currentTier's fallback (vscode-plugin/src/models/model-tier-picker.ts:149-165), which silently substitutes the default family's value for that case and would otherwise lose the distinction"
+          ]
+        },
+        {
+          "name": "renderModelTiers",
+          "signature": "export function renderModelTiers(deps: ModelTiersRendererDeps): ModelTiersRenderer",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ModelTiersRendererDeps",
+              "purpose": "injected modelDefinitions + rawConfig the renderer reads from",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ModelTiersRenderer",
+            "meaning": "a () => Promise<string> thunk the panel host calls to (re)render the webview body, mirroring RepoConfigRenderer's shape (vscode-plugin/src/panels/repo-config.ts:82)"
+          },
+          "errors": [],
+          "preconditions": [
+            "deps.modelDefinitions and deps.rawConfig reflect the current model catalog and insrc.models.* settings at render time"
+          ],
+          "postconditions": [
+            "returned HTML embeds one card per tier built from currentTier + tierStatus, plus the mock's panel-foot Core-floor <select> bound to the current insrc.models.coreFloor value, matching mocks/model-tiers-grouped.html",
+            "does NOT render the mock's panel-foot 'Check an unlisted model…' link — out of scope for this Story (non-goal; see Summary); that affordance remains reachable only via the existing 'insrc: Set model tier' QuickPick wizard's checkUnlisted flow",
+            "performs no writes"
+          ]
+        },
+        {
+          "name": "createModelTiersWriteHandler",
+          "signature": "export function createModelTiersWriteHandler(deps: ModelTiersWriteHandlerDeps): (write: ModelTiersWrite) => void",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ModelTiersWriteHandlerDeps",
+              "purpose": "injected config-write + refresh callback, mirroring RepoConfigWriteDeps (vscode-plugin/src/panels/repo-config.ts:40)",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "(write: ModelTiersWrite) => void",
+            "meaning": "a handler the panel host forwards every incoming ModelTiersWrite message to, mirroring createRepoConfigWriteHandler's shape (vscode-plugin/src/panels/repo-config.ts:174)"
+          },
+          "errors": [
+            {
+              "type": "none (logged, not thrown)",
+              "condition": "the daemon's config.write call rejects (a thrown/caught error, e.g. daemon unreachable); handled the same way createRepoConfigWriteHandler's catch block already handles it (repo-config.ts:220-222) — logs via deps.logger and does NOT call deps.refresh()"
+            }
+          ],
+          "preconditions": [
+            "write.kind === 'tierField' addresses an existing insrc.models.tiers.<tier>.<field> key (vscode-plugin/package.json:360-432); write.kind === 'coreFloor' addresses the existing insrc.models.coreFloor key — no new keys are introduced"
+          ],
+          "postconditions": [
+            "when config.write RESOLVES (whether the daemon accepts or refuses the write), calls deps.refresh() unconditionally, exactly as createRepoConfigWriteHandler's deps.refresh() call (repo-config.ts:219) runs on both an accepted and a refused resolution",
+            "when config.write instead REJECTS (throws), logs the failure and does NOT call deps.refresh() — the panel keeps showing its last-rendered (pre-write) state until the next natural re-render, exactly as createRepoConfigWriteHandler's catch branch (repo-config.ts:220-222) behaves on a rejection"
+          ]
+        },
+        {
+          "name": "openModelTiers",
+          "signature": "openModelTiers(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "opens/reveals the singleton Model Tiers panel; if deps.modelTiersRenderer is unset, renders a placeholder body instead of the real cards"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "always opens/reveals the panel, exactly as openRepoConfiguration unconditionally does (vscode-plugin/src/panels/webview-host.ts:398-415) — it is never a no-op",
+            "when deps.modelTiersRenderer is unset, shows a static placeholder body (mirroring REPO_PLACEHOLDER, webview-host.ts:293-313) instead of the rendered cards",
+            "panel content reflects the latest rawConfig/modelDefinitions at the moment it's called, when a renderer is present",
+            "new method on WebviewPanelHost (vscode-plugin/src/panels/types.ts:34), implemented in webview-host.ts alongside the existing openRepoConfiguration"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "TierStatus",
+        "change": "new",
+        "details": "type TierStatus = { kind: 'ok' } | { kind: 'floor-raised'; to: Tier } | { kind: 'not-supported'; model: string } | { kind: 'not-listed'; model: string }. Generalizes pickModel's existing inline marker text into a reusable value.",
+        "callSites": [
+          "vscode-plugin/src/models/model-tier-picker.ts:327-338",
+          "vscode-plugin/src/panels/model-tiers.ts"
+        ]
+      },
+      {
+        "entity": "ModelTiersRendererDeps",
+        "change": "new",
+        "details": "interface ModelTiersRendererDeps { modelDefinitions: ModelDefinitions; rawConfig: Record<string, unknown>; }. Narrower analog of RepoConfigRendererDeps (vscode-plugin/src/panels/types.ts:186-193).",
+        "callSites": [
+          "vscode-plugin/src/panels/model-tiers.ts",
+          "vscode-plugin/src/extension.ts:391-434"
+        ]
+      },
+      {
+        "entity": "ModelTiersWrite",
+        "change": "new",
+        "details": "type ModelTiersWrite = { kind: 'tierField'; tier: Tier; field: 'runner' | 'model' | 'effort'; value: string } | { kind: 'coreFloor'; value: Tier }. Covers both editable controls in the approved mock (mocks/model-tiers-grouped.html:96-157 per-tier dropdowns, :160-166 the panel-foot Core-floor <select>); structurally a discriminated-union widening of the single-shape RepoConfigWrite (vscode-plugin/src/panels/types.ts:202-206), needed because this panel writes two distinct config paths (insrc.models.tiers.<tier>.<field> and insrc.models.coreFloor) where Repo Configuration only ever writes one shape.",
+        "callSites": [
+          "vscode-plugin/src/panels/model-tiers.ts",
+          "vscode-plugin/src/panels/webview-host.ts:44-70"
+        ]
+      },
+      {
+        "entity": "ModelTiersWriteHandlerDeps",
+        "change": "new",
+        "details": "interface mirroring RepoConfigWriteDeps (vscode-plugin/src/panels/repo-config.ts:40): carries the daemon config.write call and a refresh(): void callback.",
+        "callSites": [
+          "vscode-plugin/src/panels/model-tiers.ts",
+          "vscode-plugin/src/extension.ts:452-458"
+        ]
+      },
+      {
+        "entity": "WebviewPanelHostDeps",
+        "change": "field-add",
+        "details": "adds modelTiersRenderer?: ModelTiersRenderer | undefined and onModelTiersWrite?: ((write: ModelTiersWrite) => void) | undefined.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:246",
+          "vscode-plugin/src/extension.ts:391-434"
+        ]
+      },
+      {
+        "entity": "WebviewPanelHost",
+        "change": "field-add",
+        "details": "adds method openModelTiers(): void alongside the existing openRepoConfiguration(): void.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:34",
+          "vscode-plugin/src/panels/webview-host.ts:398"
+        ]
+      },
+      {
+        "entity": "MenuItem",
+        "change": "field-modify",
+        "details": "widens action: 'detailed' | 'repoConfig' to 'detailed' | 'repoConfig' | 'modelTiers', and the status-bar menu array gains a { label: 'Model Tiers', action: 'modelTiers' } entry.",
+        "callSites": [
+          "vscode-plugin/src/panels/types.ts:221",
+          "vscode-plugin/src/panels/webview-host.ts:44-70"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The daemon's config.write call rejects (throws) — daemon unreachable / IPC error — while saving a tier field or coreFloor change from the panel.",
+          "detection": "createModelTiersWriteHandler's call to config.write throws, caught in the handler's own try/catch, mirroring createRepoConfigWriteHandler's catch block (repo-config.ts:220-222).",
+          "response": "The handler logs the failure via its injected deps.logger and does NOT call deps.refresh() — the same as the cited catch block, which only logs.",
+          "userImpact": "The panel keeps showing its last-rendered (pre-write) state; the control the user just changed may visually disagree with the unwritten config until the panel is next reopened or manually refreshed. No silent data loss, but no inline error toast (consistent with the existing Repo Configuration write path).",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon's config.write call resolves but REFUSES the write (e.g. a consent/validation refusal inside the daemon, result.ok === false) while saving a tier field or coreFloor change.",
+          "detection": "createModelTiersWriteHandler's call to config.write resolves with { ok: false, reason }.",
+          "response": "The handler calls deps.refresh() unconditionally on this resolution, exactly as createRepoConfigWriteHandler's deps.refresh() call (repo-config.ts:219) runs on both an accepted and a refused resolution.",
+          "userImpact": "The panel immediately re-renders from the daemon's current (still unwritten) config, so the control reverts to its last-known-good value.",
+          "recoverable": true
+        },
+        {
+          "scenario": "modelDefinitions is stale or empty (daemon model catalog not yet loaded) when the panel renders, so the configured runner does not resolve to any family.",
+          "detection": "tierStatus's own familyOf(defs, configured runner) lookup returns undefined, independent of currentTier's fallback (which would otherwise silently substitute the default family).",
+          "response": "tierStatus reports 'not-listed' directly from the unresolved lookup.",
+          "userImpact": "User sees an accurate 'not served by X' warning instead of a blank panel.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A webview postMessage arrives with a malformed ModelTiersWrite, e.g. from a stale webview script version.",
+          "detection": "The host's onMessage handler validates the message shape before forwarding: for a tier-field write, type === 'modelTiersWrite', kind === 'tierField', tier one of 'core'|'mid'|'cheap', field one of 'runner'|'model'|'effort', value a string; for a core-floor write, kind === 'coreFloor' and value one of 'core'|'mid'|'cheap' — mirroring handleRepoMessage's existing repoWrite shape validation (webview-host.ts:322-333).",
+          "response": "A message that fails this check is silently dropped (no-op) and never reaches onModelTiersWrite, exactly as an unrecognized message is today (webview-host.ts:371, 'Anything else is a silent no-op').",
+          "userImpact": "No write occurs for a malformed message; the panel's displayed state is unaffected.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "All three tiers configured identically (same runner/model/effort).",
+          "expected": "Three distinct cards are still rendered, each independently editable; no dedup logic is applied."
+        },
+        {
+          "input": "A tier's configured model has been removed from the catalog entirely.",
+          "expected": "tierStatus returns not-supported; the dropdown shows the removed model styled distinctly with effort disabled, matching mocks/model-tiers-grouped.html."
+        },
+        {
+          "input": "insrc.models.coreFloor is set to 'cheap' (the lowest tier).",
+          "expected": "tierStatus never returns floor-raised for any tier; the floor-badge is omitted from all three cards."
+        },
+        {
+          "input": "User changes the panel-foot Core-floor dropdown to a different tier.",
+          "expected": "A { kind: 'coreFloor', value } ModelTiersWrite is posted; createModelTiersWriteHandler writes insrc.models.coreFloor and the panel re-renders with the new floor-raised badges applied to the appropriate tier(s)."
+        },
+        {
+          "input": "User changes the same dropdown twice in quick succession before the first config.write resolves.",
+          "expected": "Each ModelTiersWrite is forwarded and handled independently in arrival order; this Story adds no debouncing."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The Model Tiers panel reads and writes only the existing insrc.models.tiers.<tier>.<field> and insrc.models.coreFloor keys; no new configuration keys are introduced.",
+          "source": "c1"
+        },
+        {
+          "text": "The write path forwards a DTO from webview to host to an injected sink which then calls config.write + refresh(), exactly as the existing RepoConfigWrite path already does.",
+          "source": "c2"
+        },
+        {
+          "text": "currentTier's resolution behavior is unchanged by exporting it; the existing 'insrc: Set model tier' QuickPick wizard (runSetModelTier) continues to work identically.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (via npx tsx --test), matching repo-config.test.ts / webview-host.test.ts / model-tier-picker.test.ts",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify the new pure data layer (tierStatus, exported currentTier) classifies every status branch correctly with fake ModelDefinitions/raw config, no VS Code APIs involved, including the floor-raised branch at every coreFloor value.",
+          "subjects": [
+            "vscode-plugin/src/models/model-tier-picker.ts (currentTier, tierStatus)"
+          ],
+          "fixturesNeeded": [
+            "a fake ModelDefinitions with a closed-list (host-set) family, an open vendor family, and an unresolvable runner case",
+            "fake insrc.models.* raw config objects for all three tiers",
+            "coreFloor fixtures at 'core', 'mid', and 'cheap' to exercise floor-raised for zero, some, and no tiers"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify renderModelTiers produces one card per tier plus the Core-floor footer control with the correct dropdown options, hosting badge, and inline status text, and that createModelTiersWriteHandler maps both ModelTiersWrite kinds (tierField and coreFloor) to the right config.write key, calling refresh() only when the write call resolves (not when it rejects).",
+          "subjects": [
+            "vscode-plugin/src/panels/model-tiers.ts (renderModelTiers, createModelTiersWriteHandler)"
+          ],
+          "fixturesNeeded": [
+            "fake ModelTiersRendererDeps (modelDefinitions, rawConfig)",
+            "fake ModelTiersWriteHandlerDeps with a spy config.write (resolving ok, resolving refused, and rejecting) + refresh"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Verify WebviewPanelHost.openModelTiers opens/reveals a singleton panel via the injected modelTiersRenderer, and that the status-bar MenuItem list carries the new 'Model Tiers' entry.",
+          "subjects": [
+            "vscode-plugin/src/panels/webview-host.ts (openModelTiers, status-bar menu array)"
+          ],
+          "fixturesNeeded": [
+            "fake PanelHandle (as already used in webview-host.test.ts)",
+            "WebviewPanelHostDeps with modelTiersRenderer/onModelTiersWrite set"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "model-tiers.test.ts: renderModelTiers renders one labelled card per tier (core/mid/cheap), not a flat field list",
+            "model-tiers.test.ts: a tier card shows a cloud/local hosting badge matching its resolved family's hosting",
+            "model-tiers.test.ts: a tier whose configured model is not in the catalog renders the not-supported note inline, matching mocks/model-tiers-grouped.html"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "model-tiers.test.ts: renderModelTiers renders the panel-foot Core-floor <select> bound to the current insrc.models.coreFloor value, matching mocks/model-tiers-grouped.html",
+            "model-tier-picker.test.ts: tierStatus returns floor-raised for every tier ranked below coreFloor, and omits it when coreFloor is 'cheap'",
+            "model-tiers.test.ts: createModelTiersWriteHandler maps a { kind: 'coreFloor', value } write to the insrc.models.coreFloor key"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The only way to view or edit model-tier settings is the native VS Code Settings UI's 9 flat insrc.models.tiers.{core,mid,cheap}.{runner,model,effort} string fields plus insrc.models.coreFloor (vscode-plugin/package.json:360-432), or the one-tier-at-a-time 'insrc: Set model tier' QuickPick wizard (vscode-plugin/src/models/model-tier-picker.ts:118).",
+      "stateAfter": "A new 'Model Tiers' webview panel (vscode-plugin/src/panels/model-tiers.ts), opened via a new status-bar menu entry and command, renders the same three tiers as grouped cards with live status; the native Settings fields and the existing QuickPick wizard remain fully functional and unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Export currentTier from model-tier-picker.ts (visibility-only change) and add the new pure tierStatus helper alongside it.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the new model-tiers.ts module (renderModelTiers, ModelTiersWrite, createModelTiersWriteHandler) with no changes to any existing file.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Widen WebviewPanelHostDeps / WebviewPanelHost / MenuItem in types.ts and implement openModelTiers + the new menu entry in webview-host.ts.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Wire the renderer, write-handler, and a new 'insrc.status.modelTiers' command into extension.ts's existing panelHost construction.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Purely additive: no existing settings keys, commands, or exported function signatures are removed or changed in behavior. currentTier's only change is export visibility (was private).",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Grouped QuickPick rework",
+        "oneLineSummary": "Replace the one-tier-at-a-time QuickPick with a single list showing all three tiers at once.",
+        "approach": "Extend runSetModelTier's entry point to render a top-level QuickPickItem per tier; picking a tier drops into the existing wizard unchanged.",
+        "pros": [
+          "Smallest possible change",
+          "No new webview CSP/HTML surface",
+          "No new WebviewPanelHostDeps/MenuItem/command wiring needed"
+        ],
+        "cons": [
+          "Cannot deliver the visual grouping/hosting badges/inline warning the approved mock requires",
+          "Still one field edited at a time per invocation",
+          "Does not address cloud/local hosting visibility well"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates the core visual-grouping requirement (c1) and only partially addresses hosting visibility and in-place status (c2/c3) — does not meet what the user explicitly approved in the mock."
+      },
+      {
+        "id": "a2",
+        "name": "Dedicated Model Tiers webview panel (Repo Configuration template)",
+        "oneLineSummary": "A new webview panel, structurally identical to the existing Repo Configuration panel, with one card per tier matching the approved mock.",
+        "approach": "New model-tiers.ts exports renderModelTiers mirroring renderRepoConfig, plus ModelTiersWrite/createModelTiersWriteHandler mirroring RepoConfigWrite/createRepoConfigWriteHandler. WebviewPanelHost gains openModelTiers mirroring openRepoConfiguration; extension.ts wires renderer + write-handler + a new command, copying the existing three-point wiring. A new pure tierStatus helper generalizes pickModel's inline marker logic.",
+        "pros": [
+          "Delivers the exact grouped-card layout, hosting badges, and inline status states approved in the mock",
+          "Every new piece is a named structural analog of an existing, tested piece",
+          "Keeps DaemonDataGateway untouched"
+        ],
+        "cons": [
+          "More surface area than a1",
+          "Introduces a second place that can set the same config keys alongside the QuickPick wizard"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Widen the Detailed-Status tabbed panel with a 4th 'Models' tab",
+        "oneLineSummary": "Add a 'models' DetailTab to the existing tabbed Detailed-Status panel instead of a standalone panel.",
+        "approach": "Add 'models' to the DetailTab union, write a TabRenderer for it, and wire a config-write path into the shared DaemonDataGateway all three existing tabs depend on.",
+        "pros": [
+          "Reuses the existing tab-switch UI chrome"
+        ],
+        "cons": [
+          "Pollutes a read-only facade shared by 3 unrelated tabs with a write concern",
+          "Buries a focused settings-editing surface inside a diagnostics-viewing surface",
+          "Costs more to build than a2 for a worse architectural fit"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Fails reuse/low-risk and no-facade-pollution constraints (c4/c5) by forcing a write concern into a facade/host built and shared as read-only, for a worse architectural fit and higher cost (L vs M) than a2."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/package.json:360-432",
+      "quotedText": "9 flat string settings insrc.models.tiers.{core,mid,cheap}.{runner,model,effort} plus insrc.models.coreFloor"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/repo-config.ts:40,82,174",
+      "quotedText": "renderRepoConfig / RepoConfigWrite / createRepoConfigWriteHandler — the write-path template"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/types.ts:34,186-193,202-206,221,246; vscode-plugin/src/panels/webview-host.ts:44-70,322-351,398-415",
+      "quotedText": "WebviewPanelHost / WebviewPanelHostDeps / MenuItem / openRepoConfiguration"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/extension.ts:391-434,444,452-458,480-482",
+      "quotedText": "extension.ts's three-point wiring of the Repo Configuration panel"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/models/model-tier-picker.ts:149,252,327-338",
+      "quotedText": "currentTier / saveTier / pickModel's inline not-supported marker"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/models/definitions.ts:54,60,83",
+      "quotedText": "ModelDefinitions / familyDefault / classifyDaemonFailure"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "vscode-plugin/src/panels/__tests__/repo-config.test.ts; vscode-plugin/src/panels/__tests__/webview-host.test.ts; vscode-plugin/src/models/__tests__/model-tier-picker.test.ts",
+      "quotedText": "existing test templates for the new panel/model-tier tests"
+    }
+  ]
+}

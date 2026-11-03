@@ -1,0 +1,19 @@
+Picked up JAVA_TOOL_OPTIONS: -Duser.home=/private/tmp/s5-frozen-qldpq8za/home
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Calculating task graph as no cached configuration is available for tasks: verifyPlugin
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Configuration cache state could not be cached: field `element` of `java.util.Collections$SingletonList` bean found in field `elements` of `org.gradle.internal.serialize.codecs.core.ResolutionBackedFileCollectionSpec` bean found in field `provider` of `org.gradle.internal.serialize.codecs.core.ProviderBackedFileCollectionSpec` bean found in field `__ides__` of task `:verifyPlugin` of type `org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask`: error writing value of type 'org.gradle.api.internal.artifacts.transform.TransformedExternalArtifactSet'
+> Could not download ideaIC-2024.3.7-aarch64.dmg (idea:ideaIC:2024.3.7): No cached version available for offline mode
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 9s
+Configuration cache entry discarded due to serialization error.

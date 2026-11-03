@@ -1,3 +1,6 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -34,12 +37,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
 import type { AnalyzeConfig, AnalyzeShaperProviderKind, TierEffort } from '../../config/analyze.js';
-import { getModelRegistry, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
+import { getModelRegistry, ModelNotSupportedError, type ModelRegistry, type ResolvedModel } from '../../daemon/model-registry.js';
 import type { CliFamilyId, EffortLevel, FamilyId } from '../../daemon/model-catalog.js';
 import type { RoleId } from '../../config/role-taxonomy.js';
 import type { RoleRouter } from './role-router.js';
 import { loadLocalProviderConfig } from '../../config/local.js';
-import { CliProvider } from '../../agent/providers/cli-provider.js';
+import { CliProvider, type OllamaTarget } from '../../agent/providers/cli-provider.js';
 import { OllamaProvider } from '../../agent/providers/ollama.js';
 import { getLogger } from '../../shared/logger.js';
 import type { LLMProvider } from '../../shared/types.js';
@@ -152,7 +155,9 @@ export function resolveRoleProvider(
 	role:            RoleId,
 	cfg:             AnalyzeConfig,
 	legacyFallback?: () => LLMProvider,
+	execution?: ConnectionExecutionContext,
 ): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	const ctx = routingContextStorage.getStore();
 	if (ctx !== undefined) {
 		if (ctx.router === undefined || ctx.router === null) {
@@ -217,17 +222,27 @@ export function familyProvider(
 	family:   FamilyId,
 	model:    ResolvedModel | undefined,
 	opts:     { readonly effort?: EffortLevel | undefined; readonly cliTimeoutMs?: number | undefined } = {},
+	execution?: ConnectionExecutionContext,
 ): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	const kind = registry.cliKind(family);
 	if (kind !== undefined) {
 		const effort = opts.effort !== undefined && model?.efforts.includes(opts.effort) === true ? opts.effort : undefined;
 		if (opts.effort !== undefined && effort === undefined) {
-			log.warn({ family, model: model?.id ?? '(cli default)', effort: opts.effort }, 'provider: the model does not accept this effort; running at the CLI default effort');
+			captureAnalysisDiagnostics(log).emit('warn', () => [{ family, model: model?.id ?? '(cli default)', effort: opts.effort }, 'provider: the model does not accept this effort; running at the CLI default effort']);
 		}
 		const inputBudgetChars = model?.inputLimit?.unit === 'chars' ? model.inputLimit.max : undefined;
+		// An Ollama-hosted family runs its CLI against Ollama, only on a declared model.
+		let ollama: OllamaTarget | undefined;
+		if (registry.host(family) !== undefined) {
+			if (model === undefined) throw new ModelNotSupportedError(family, '(none)', 'provider');
+			ollama = { host: loadLocalProviderConfig().host, hosting: model.hosting ?? 'cloud' };
+			captureAnalysisDiagnostics(log).emit('info', () => [{ family, model: model.id, hosting: ollama!.hosting, host: ollama!.host }, 'provider: the CLI runs against Ollama']);
+		}
 		return new CliProvider({
 			kind,
 			...(model !== undefined ? { model: model.id } : {}),
+			...(ollama !== undefined ? { ollama } : {}),
 			...(effort !== undefined ? { effort } : {}),
 			...(inputBudgetChars !== undefined ? { inputBudgetChars } : {}),
 			...(opts.cliTimeoutMs !== undefined ? { timeoutMs: opts.cliTimeoutMs } : {}),
@@ -266,7 +281,7 @@ export function shaperSelection(cfg: AnalyzeConfig, overrides?: ShaperProviderOv
 	let model = registry.find(family, requested);
 	if (model === undefined && registry.cliKind(family) === undefined) {
 		model = registry.toolLoopModel();
-		if (requested !== '') log.warn({ family, requested, model: model.id }, 'shaper provider: the model is not a listed local model; running the tool-loop model');
+		if (requested !== '') captureAnalysisDiagnostics(log).emit('warn', () => [{ family, requested, model: model!.id }, 'shaper provider: the model is not a listed local model; running the tool-loop model']);
 	}
 	const effort = overrides?.roleEffort === undefined ? cfg.shaperEffort : overrides.roleEffort ?? undefined;
 	const source = roleRunner !== undefined ? 'role' : globalExplicit !== undefined ? 'config' : 'client';
@@ -279,6 +294,8 @@ export function shaperModelLabel(cfg: AnalyzeConfig, overrides?: ShaperProviderO
 	const s = shaperSelection(cfg, overrides);
 	const cli = s.registry.cliKind(s.family);
 	if (cli === undefined) return `${s.family}:${s.model!.id}`;
+	// An Ollama-hosted family is named by its own id, so attribution keeps it apart from the vendor family.
+	if (s.registry.host(s.family) !== undefined) return s.model !== undefined ? `${s.family}:${s.model.id}` : s.family;
 	return s.model !== undefined ? `${cli}:${s.model.id}` : cli;
 }
 
@@ -296,15 +313,19 @@ export function shaperModelLabel(cfg: AnalyzeConfig, overrides?: ShaperProviderO
 export function buildShaperProvider(
 	cfg:       AnalyzeConfig,
 	overrides?: ShaperProviderOverrides,
+	execution?: ConnectionExecutionContext,
 ): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	// Effective provider: tier runner (router) > explicit global config >
 	// per-run caller (arg or ambient client-provider context) > the default family.
 	// See resolveShaperKind and shaperSelection.
 	const { registry, family, model, effort, source } = shaperSelection(cfg, overrides);
-	log.info(
-		{ family, model: model?.id ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs },
-		'shaper provider: built from the model definitions',
-	);
+	// A refused tier on an Ollama-hosted family names the model it asked for.
+	if (model === undefined && registry.host(family) !== undefined) {
+		const requested = overrides?.roleModel !== undefined && overrides.roleModel !== '' ? overrides.roleModel : cfg.shaperModel;
+		throw new ModelNotSupportedError(family, requested, 'shaper provider');
+	}
+	captureAnalysisDiagnostics(log).emit('info', () => [{ family, model: model?.id ?? '(cli default)', effort: effort ?? '(cli default)', source, timeoutMs: overrides?.cliTimeoutMs }, 'shaper provider: built from the model definitions']);
 	return familyProvider(registry, family, model, { effort, cliTimeoutMs: overrides?.cliTimeoutMs });
 }
 
@@ -330,18 +351,21 @@ export function summariserSelection(cfg: AnalyzeConfig, overrides?: Pick<ShaperP
 	const family = cfg.summariserProvider;
 	let model = registry.find(family, cfg.summariserModel);
 	if (model === undefined) {
+		// An Ollama-hosted family runs only what it declares: refuse, substitute nothing.
+		if (registry.host(family) !== undefined) throw new ModelNotSupportedError(family, cfg.summariserModel, 'summariser provider');
 		const cli = registry.cliKind(family) !== undefined;
 		model = cli ? registry.summariserModel(family as CliFamilyId) : registry.toolLoopModel();
-		log.warn({ family, configured: cfg.summariserModel, model: model.id }, cli
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ family, configured: cfg.summariserModel, model: model!.id }, cli
 			? "summariser provider: the cheap tier model is not a model of its family; using the family's summariser model"
-			: 'summariser provider: the cheap tier model is not a listed local model; running the tool-loop model');
+			: 'summariser provider: the cheap tier model is not a listed local model; running the tool-loop model']);
 	}
 	const effort = cfg.summariserEffort !== undefined && model.efforts.includes(cfg.summariserEffort) ? cfg.summariserEffort : undefined;
 	return { registry, family, model, effort };
 }
 
-export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>): LLMProvider {
+export function buildSummariserProvider(cfg: AnalyzeConfig, overrides?: Pick<ShaperProviderOverrides, 'registry'>, execution?: ConnectionExecutionContext): LLMProvider {
+	assertConnectionProviderAdmission(execution);
 	const { registry, family, model, effort } = summariserSelection(cfg, overrides);
-	log.info({ family, model: model.id, effort: effort ?? '(cli default)' }, 'summariser provider: built from the model definitions');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ family, model: model.id, effort: effort ?? '(cli default)' }, 'summariser provider: built from the model definitions']);
 	return familyProvider(registry, family, model, { effort });
 }

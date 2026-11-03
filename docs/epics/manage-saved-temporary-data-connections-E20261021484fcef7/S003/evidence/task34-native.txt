@@ -1,0 +1,295 @@
+TAP version 13
+# (node:93789) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# [17:55:59] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "postgres"
+#     family: "rdbms"
+# [17:55:59] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cockroachdb"
+#     family: "rdbms"
+# [17:55:59] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mysql"
+#     family: "rdbms"
+# [17:55:59] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mariadb"
+#     family: "rdbms"
+# [17:55:59] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "sqlite"
+#     family: "rdbms"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mssql"
+#     family: "rdbms"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "oracle"
+#     family: "rdbms"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "clickhouse"
+#     family: "rdbms"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "redis"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "valkey"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "keydb"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "mongodb"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "cassandra"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "nats"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "dynamodb"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "etcd"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "memcached"
+#     family: "kv"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "csv"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "tsv"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "jsonl"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "ndjson"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "json"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "parquet"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "arrow"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "feather"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "avro"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "bson"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "fixed-width"
+#     family: "file"
+# [17:56:00] DEBUG: [db-registry] driver registered
+#     module: "db-registry"
+#     kind: "xlsx"
+#     family: "file"
+# [17:56:01] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-pool] pool reloaded
+#     module: "db-pool"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] INFO: [ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/test.sock
+#     module: "ipc"
+# [17:56:01] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-pool] pool reloaded
+#     module: "db-pool"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-config] loaded db-connections
+#     module: "db-config"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-pool] pool reloaded
+#     module: "db-pool"
+#     repoPath: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-actual-probe-A3gXyd/repo"
+#     count: 5
+# [17:56:01] DEBUG: [db-pool] building driver
+#     module: "db-pool"
+#     id: "sql"
+#     kind: "postgres"
+# Subtest: CM-S2-A9: adopted saved SQL and converted file probes cross real IPC child metadata and maintenance boundaries without persistence
+ok 1 - CM-S2-A9: adopted saved SQL and converted file probes cross real IPC child metadata and maintenance boundaries without persistence
+  ---
+  duration_ms: 2617.478875
+  type: 'test'
+  ...
+# Subtest: CM-S2-A9: composed daemon and child logs contain no source credential or data canaries
+ok 2 - CM-S2-A9: composed daemon and child logs contain no source credential or data canaries
+  ---
+  duration_ms: 3522.6505
+  type: 'test'
+  ...
+# Subtest: CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads
+ok 3 - CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads
+  ---
+  duration_ms: 2183.678167
+  type: 'test'
+  ...
+# Subtest: CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels
+ok 4 - CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels
+  ---
+  duration_ms: 0.131125
+  type: 'test'
+  ...
+# Subtest: detection through the real wrappers: asynchronous write by probe, synchronous write at once
+ok 5 - detection through the real wrappers: asynchronous write by probe, synchronous write at once
+  ---
+  duration_ms: 1456.801291
+  type: 'test'
+  ...
+# Subtest: control: the same wrappers on a store that was not broken write and record nothing
+ok 6 - control: the same wrappers on a store that was not broken write and record nothing
+  ---
+  duration_ms: 505.997458
+  type: 'test'
+  ...
+# Subtest: recordStoreFailureIfLockError: records both read failures once, and nothing else
+ok 7 - recordStoreFailureIfLockError: records both read failures once, and nothing else
+  ---
+  duration_ms: 2.583584
+  type: 'test'
+  ...
+# Subtest: the named error's message names another process and does not repeat the library's advice
+ok 8 - the named error's message names another process and does not repeat the library's advice
+  ---
+  duration_ms: 0.236
+  type: 'test'
+  ...
+# [17:55:59] ERROR: [graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted
+#     module: "graph-store"
+#     operation: "request repo.list"
+#     detectedBy: "read"
+#     libraryMessage: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot: The reader lock pid 0, txn -1, doesn't match env pid 1"
+# [17:55:59] ERROR: [graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted
+#     module: "graph-store"
+#     operation: "first read"
+#     detectedBy: "read"
+#     libraryMessage: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# Subtest: health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close
+ok 9 - health record: after locks-lost a further store call throws the named error and closeGraphStore skips the library's close
+  ---
+  duration_ms: 130.355541
+  type: 'test'
+  ...
+# [17:55:59] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 128
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-store-health-Nkqx5t/s3.lmdb"
+# [17:55:59] ERROR: [graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted
+#     module: "graph-store"
+#     operation: "a read"
+#     detectedBy: "read"
+#     libraryMessage: "Invalid argument: MDB_BAD_RSLOT: Invalid reuse of reader locktable slot: The reader lock pid 0, txn -1, doesn't match env pid 1"
+# [17:55:59] WARN: [graph-store] lmdb graph store close skipped: the store lost its locks
+#     module: "graph-store"
+#     operation: "a read"
+#     at: "2026-10-26T17:55:59.819Z"
+# Subtest: health record: after locks-lost getGraphStore itself rejects with the named error
+ok 10 - health record: after locks-lost getGraphStore itself rejects with the named error
+  ---
+  duration_ms: 194.468625
+  type: 'test'
+  ...
+# [17:56:00] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 194
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-store-health-Nkqx5t/s4.lmdb"
+# [17:56:00] ERROR: [graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted
+#     module: "graph-store"
+#     operation: "request search"
+#     detectedBy: "read"
+#     libraryMessage: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [17:56:00] ERROR: [graph-store] lmdb graph store lost its locks: another process opened and closed the store; this process must be restarted
+#     module: "graph-store"
+#     operation: "x"
+#     detectedBy: "read"
+#     libraryMessage: "MDB_LOCK_FAILURE: Failed to get robust semaphore, increase max semaphores (kern.sysv.semume)"
+# [17:56:00] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 109
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-store-health-Nkqx5t/s5.lmdb"
+# Subtest: sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok
+ok 11 - sync wrapper: code 22 with a succeeding probe read is rethrown and leaves the record ok
+  ---
+  duration_ms: 114.571417
+  type: 'test'
+  ...
+# [17:56:00] INFO: [graph-store] lmdb graph store initialised
+#     module: "graph-store"
+#     initMs: 116
+#     mapsizeGiB: 1024
+#     schemaVersion: 5
+#     path: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-store-health-Nkqx5t/s6.lmdb"
+# Subtest: slow healthy write: the probe runs and returns, nothing is recorded, the write completes
+ok 12 - slow healthy write: the probe runs and returns, nothing is recorded, the write completes
+  ---
+  duration_ms: 574.093125
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3683.620042

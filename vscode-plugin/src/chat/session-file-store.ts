@@ -34,6 +34,7 @@ import {
   type ChatSessionStore,
   type ChatSummary,
   type MementoLike,
+  type RunConfig,
   type TranscriptEntry,
 } from './session-store.js';
 
@@ -358,16 +359,21 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
     }
   };
 
-  const draft = (provider: ProviderId): ChatSession => {
-    const session: ChatSession = { id: genId(), provider, createdAt: now(), title: 'new chat', editMode: 'auto', mode: 'manual', transcript: [] };
+  const draft = (provider: ProviderId, run?: RunConfig): ChatSession => {
+    const session: ChatSession = {
+      id: genId(), provider, createdAt: now(), title: 'new chat', editMode: 'auto', mode: 'manual',
+      ...(run?.model !== undefined ? { model: run.model } : {}),
+      ...(run?.effort !== undefined ? { effort: run.effort } : {}),
+      transcript: [],
+    };
     tracked.set(session, { count: 0 });
     return session;
   };
 
   return {
     draft,
-    create(provider: ProviderId): ChatSession {
-      const session = draft(provider);
+    create(provider: ProviderId, run?: RunConfig): ChatSession {
+      const session = draft(provider, run);
       save(session);
       return session;
     },

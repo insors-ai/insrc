@@ -1,0 +1,10 @@
+{
+  "html": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html",
+  "htmlSha256": "34ea11104d93ed5ff663ce4e1b4bb44a78b7428cb2f2354384c8bb5ee478011a",
+  "screenshot": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-timing-cycle2-round2.png",
+  "verification": "Headless Chrome render inspected: six participants/nine messages visible, controller alternative and isolation requirement stated in narrative. Static render checked; pan/zoom controls not exercised.",
+  "viewport": {
+    "width": 1440,
+    "height": 1800
+  }
+}

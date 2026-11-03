@@ -1,0 +1,103 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t30",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Definitions and regenerated companions match final ownership/state/UI; inspect source/rendering and report limits honestly.",
+        "satisfied": true,
+        "evidence": "implementation-definitions.json's uxDefinition.narrative contains both required phrases ('independent advertised-capability' admission and daemon authorization; 'Live UI validation is assigned to the user after plugin installation; this schematic is not execution evidence'). componentDependencyDefinition.components list real paths — vscode-plugin/src/extension.ts, jetbrains-plugin/.../ConnectionsManagerPanel.kt, vscode-plugin/src/connections/session-owner.ts, jetbrains-plugin/.../ConnectionsSessionService.kt, src/daemon/connection-session-rpc.ts — all confirmed to exist via Glob. implementation-companions.json lists exactly 3 regenerated HTML companions; read implementation-ux.html directly and confirmed it links back to implementation-definitions.json, contains 'Live acceptance pending user manual testing', and is well over 1000 bytes. MANUAL-ACCEPTANCE.md honestly states tasks 26-29 remain pending manual acceptance and that headless/diagram/build evidence must not be inferred as live acceptance."
+      },
+      {
+        "check": "Record genuine VSCode/JetBrains evidence without deprecated-fork work or fake positive prerequisite statuses.",
+        "satisfied": true,
+        "evidence": "consumer-inventory.json's externalPrerequisites are all 'pending' or 'pending-user-manual' (S001, providerService, positiveSavedWorkerAffinity, SQLServer, VSCodeLiveUI, JetBrainsLiveUI) — no fabricated passed/verified status. All 29 tracked files are live vscode-plugin/jetbrains-plugin/src/shared paths; none reference the deprecated insrc-ide fork."
+      },
+      {
+        "check": "Shipped production admission stays fail-closed while S001/provider/positive Saved worker affinity/SQLServer or genuine client acceptance remains pending; historical S003/S004 failures preserved.",
+        "satisfied": true,
+        "evidence": "CM-S5-GATE test imports the real, unmodified src/daemon/db/management-enablement.ts and asserts ready===false with and without session scopes, and that a forged gates.json claiming ready:true with full scopes still yields ready:false — this is the fail-closed admission guarantee exercised against live code, not a mock. consumer-inventory.json carries historicalFailures.S003 (8 failed) and S004 (21 failed) unchanged."
+      },
+      {
+        "check": "Only S005 consumer inventory/evidence and artifact alignment are in scope. Existing producer prerequisites and backend gate policy are consumed unchanged; no forced positive status, new enablement switch or clearing pending S001/provider/worker/SQLServer findings.",
+        "satisfied": true,
+        "evidence": "consumer-inventory.json sets producerPolicyModified:false and releaseEnabled:false. src/daemon/db/management-enablement.ts (the gate policy) is untouched. All edits for this Task are confined to docs/epics/.../S005/*.json, *.html, MANUAL-ACCEPTANCE.md and the new src/shared/__tests__/connection-manager-release.test.ts; the unrelated uncommitted files in the working tree (LLD-f4e2ae0fdc016e87-S001.json, docs/standalone/group-repo-configuration-panel.../, mocks/repo-config-grouped.html) belong to a different, concurrently-worked epic/story (f4e2ae0fdc016e87) and are untouched by this Task's commit."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "Both named tests genuinely exercise fail-closed production gate negative controls and definitions/companions/MANUAL-ACCEPTANCE.md cross-consistency, and pass against real repo state (daemon-run, exit 0); all four acceptance checks hold on direct inspection of the actual JSON/HTML artifacts and the unmodified production gate code; the change-set stays within the S005 artifact-alignment surface, with unrelated uncommitted files in the tree belonging to a separate concurrent story.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd vscode-plugin && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 14234,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd vscode-plugin && npx tsc --noEmit): clean\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-ofwVhD/report.tap src/shared/__tests__/connection-manager-release.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 435,
+        "outputTail": "TAP version 13\n# Subtest: CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission\nok 1 - CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission\n  ---\n  duration_ms: 11.254042\n  type: 'test'\n  ...\n# Subtest: CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits\nok 2 - CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits\n  ---\n  duration_ms: 8.357791\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 22.126083\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-release.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-ofwVhD/report.tap src/shared/__tests__/connection-manager-release.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 435,
+            "titles": [
+              {
+                "title": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_shared___tests___connection-manager-release.test.ts.1793372403870.82686.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/TESTS.md"
+    }
+  },
+  "passed": true
+}

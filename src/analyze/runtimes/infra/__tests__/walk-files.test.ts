@@ -21,10 +21,12 @@ test('the file walk goes to the end with a null cap and stops at its cap, as bef
 		for (const sub of ['a', 'a/deep', 'b', 'node_modules/pkg']) mkdirSync(join(dir, sub), { recursive: true });
 		for (let i = 0; i < 12; i++) writeFileSync(join(dir, ['a', 'a/deep', 'b'][i % 3]!, `f${String(i).padStart(2, '0')}.yaml`), 'k: v\n');
 		writeFileSync(join(dir, 'node_modules/pkg/skipped.yaml'), 'k: v\n');
+		// The repository's ignore rules decide what the walk leaves out (Epic c2ba6fa6 s6).
+		writeFileSync(join(dir, '.gitignore'), 'node_modules/\n');
 
 		// No cap: every file the walk visits, with its exclusions still applied, and nothing cut.
 		const whole = await walkFiles(dir, null);
-		assert.deepEqual([whole.files.length, whole.truncated, whole.unreadable.length], [12, false, 0]);
+		assert.deepEqual([whole.files.length, whole.truncated, whole.unreadable.length], [13, false, 0]);
 		assert.ok(whole.files.every(f => !f.relPath.startsWith('node_modules/')));
 
 		// A cap: as before.
@@ -32,9 +34,9 @@ test('the file walk goes to the end with a null cap and stops at its cap, as bef
 		assert.deepEqual([cut.files.length, cut.truncated], [5, true]);
 		assert.deepEqual(cut.files, whole.files.slice(0, 5), 'the same files in the same order');
 		// A cap the tree does not reach, and the default: nothing cut.
-		assert.deepEqual([(await walkFiles(dir, 12)).files.length, (await walkFiles(dir, 13)).truncated], [12, false]);
+		assert.deepEqual([(await walkFiles(dir, 13)).files.length, (await walkFiles(dir, 14)).truncated], [13, false]);
 		const byDefault = await walkFiles(dir);
-		assert.deepEqual([byDefault.files.length, byDefault.truncated], [12, false]);
+		assert.deepEqual([byDefault.files.length, byDefault.truncated], [13, false]);
 		assert.equal(DEFAULT_FILE_CAP, 5000, 'the cap every existing caller walks with');
 
 		// A root that cannot be read still throws, with or without a cap.

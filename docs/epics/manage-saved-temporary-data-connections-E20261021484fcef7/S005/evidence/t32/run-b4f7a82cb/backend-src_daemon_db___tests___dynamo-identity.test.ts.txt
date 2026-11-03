@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: CM-S2-E2: Dynamo activation and private auth IPC preserve environment token and profile identity without fallback
+ok 1 - CM-S2-E2: Dynamo activation and private auth IPC preserve environment token and profile identity without fallback
+  ---
+  duration_ms: 40.504167
+  type: 'test'
+  ...
+# Subtest: CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback
+ok 2 - CM-S2-A9: parent AWS identity reaches actual isolated workers for environment and profile sources without fallback
+  ---
+  duration_ms: 1289.343
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1747.446875

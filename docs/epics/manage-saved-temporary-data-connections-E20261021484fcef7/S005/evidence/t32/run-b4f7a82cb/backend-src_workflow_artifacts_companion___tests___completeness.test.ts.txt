@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: d9f85b3c t9 — an absent narrative is one LOW, and missing descriptions one LOW naming them
+ok 1 - d9f85b3c t9 — an absent narrative is one LOW, and missing descriptions one LOW naming them
+  ---
+  duration_ms: 1.805625
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t9 — a fully described definition of each kind has no completeness findings
+ok 2 - d9f85b3c t9 — a fully described definition of each kind has no completeness findings
+  ---
+  duration_ms: 0.17175
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t9 — a narrative alone, or descriptions alone, leaves exactly the other LOW
+ok 3 - d9f85b3c t9 — a narrative alone, or descriptions alone, leaves exactly the other LOW
+  ---
+  duration_ms: 0.211875
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t9 — a long list is summarised after eight names
+ok 4 - d9f85b3c t9 — a long list is summarised after eight names
+  ---
+  duration_ms: 0.104625
+  type: 'test'
+  ...
+# Subtest: d9f85b3c t9 — the validators are unchanged: a sound undescribed definition still validates to []
+ok 5 - d9f85b3c t9 — the validators are unchanged: a sound undescribed definition still validates to []
+  ---
+  duration_ms: 24.911667
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 322.188667

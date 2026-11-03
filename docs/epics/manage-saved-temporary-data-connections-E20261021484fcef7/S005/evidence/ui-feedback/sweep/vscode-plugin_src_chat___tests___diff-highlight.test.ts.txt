@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the extension is matched without regard to case and a Dockerfile has a language
+ok 1 - the extension is matched without regard to case and a Dockerfile has a language
+  ---
+  duration_ms: 1.149209
+  type: 'test'
+  ...
+# Subtest: nested spans and a span that crosses a newline are flattened per line with the innermost class
+ok 2 - nested spans and a span that crosses a newline are flattened per line with the innermost class
+  ---
+  duration_ms: 1.172
+  type: 'test'
+  ...
+# Subtest: the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class
+ok 3 - the scanner accepts a multi-class span such as hljs-title function_ and uses its first hljs class
+  ---
+  duration_ms: 0.430625
+  type: 'test'
+  ...
+# Subtest: a span with no hljs- class is read as classless text and does not reject the section
+ok 4 - a span with no hljs- class is read as classless text and does not reject the section
+  ---
+  duration_ms: 0.470458
+  type: 'test'
+  ...
+# Subtest: highlighter output that is not plain spans and text falls back to plain text
+ok 5 - highlighter output that is not plain spans and text falls back to plain text
+  ---
+  duration_ms: 0.353667
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 142.436334

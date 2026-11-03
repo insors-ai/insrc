@@ -32,6 +32,8 @@ import { draftParkOffer } from '../../workflow/team/handoff.js';
 import * as debug from './debug.js';
 import { createApprovalWatcher, type ApprovalWatcher } from './approval.js';
 import { createIpcClient } from '../../shared/ipc-client.js';
+import { modelsService, type ModelsService } from './models.js';
+import type { ConfigWriteResult } from './config.js';
 import { isRunning } from './lifecycle.js';
 import type { EpicSummary, ApproveOutcome } from './workflow.js';
 import type { PullTick, PullResult } from './setup.js';
@@ -76,14 +78,14 @@ export interface Services {
 	};
 	readonly setup: {
 		detect(): SystemInfo;
-		recommend(info: SystemInfo): ModelRecommendation;
+		recommend(info: SystemInfo, local: import('../../shared/model-recommender.js').LocalModelChoice): ModelRecommendation;
 		apply(rec: ModelRecommendation): string;
 		modelsToPull(rec: ModelRecommendation): string[];
 		pullModels(models: readonly string[], onProgress: (tick: PullTick) => void): Promise<PullResult[]>;
 	};
 	readonly config: {
 		show(): Promise<Record<string, unknown>>;
-		write(path: string | string[], value: unknown): Promise<{ ok: boolean }>;
+		write(path: string | string[], value: unknown): Promise<ConfigWriteResult>;
 		reload(): Promise<{ ok: boolean; reloaded?: unknown }>;
 		catalog(): Promise<import('../../config/settings-catalog.js').SettingsCatalogPayload>;
 		repoSettings(repo: string): Promise<import('../../daemon/repo-settings.js').SettingsResult>;
@@ -101,6 +103,8 @@ export interface Services {
 	readonly debug: DebugService;
 	/** Approval requests waiting for this terminal's answer. Absent in a test double. */
 	readonly approvals?: ApprovalWatcher | undefined;
+	/** The daemon's model definitions, unknown-model check / decisions and role resolution (Story s5). */
+	readonly models: ModelsService;
 }
 
 export function makeServices(): Services {
@@ -153,6 +157,7 @@ export function makeServices(): Services {
 			modelsToPull: setup.modelsToPull,
 			pullModels:   setup.pullModels,
 		},
+		models: modelsService(),
 		config: {
 			show:   config.showConfig,
 			write:  config.writeConfig,

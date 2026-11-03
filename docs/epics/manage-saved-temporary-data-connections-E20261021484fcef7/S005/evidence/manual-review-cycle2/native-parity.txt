@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index
+ok 1 - CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index
+  ---
+  duration_ms: 5.540333
+  type: 'test'
+  ...
+# Subtest: CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift
+ok 2 - CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift
+  ---
+  duration_ms: 33020.548167
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types
+ok 3 - CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types
+  ---
+  duration_ms: 11035.384666
+  type: 'test'
+  ...
+# Subtest: CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail
+ok 4 - CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail
+  ---
+  duration_ms: 18728.516291
+  type: 'test'
+  ...
+# Subtest: CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations
+ok 5 - CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations
+  ---
+  duration_ms: 48.05025
+  type: 'test'
+  ...
+# Subtest: CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets
+ok 6 - CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets
+  ---
+  duration_ms: 37063.912166
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 100436.310791

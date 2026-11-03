@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: planning user turn: 'Repo path' from lookupPath, and the line naming a file, entity or connection
+ok 1 - planning user turn: 'Repo path' from lookupPath, and the line naming a file, entity or connection
+  ---
+  duration_ms: 2.31325
+  type: 'test'
+  ...
+# Subtest: the scope line sits directly under the repo path line
+ok 2 - the scope line sits directly under the repo path line
+  ---
+  duration_ms: 0.174334
+  type: 'test'
+  ...
+# Subtest: prepareDecompose and decompose build the same user turn for a resolved scope
+ok 3 - prepareDecompose and decompose build the same user turn for a resolved scope
+  ---
+  duration_ms: 2.290458
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 438.866417

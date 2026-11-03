@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included
+ok 1 - an under-limit code review makes today's calls per dimension, with the repo as cwd, and gives today's findings and verdict, diagram and ux included
+  ---
+  duration_ms: 45.478542
+  type: 'test'
+  ...
+# Subtest: adherence makes no call without an approved LLD or plan
+ok 2 - adherence makes no call without an approved LLD or plan
+  ---
+  duration_ms: 2.382583
+  type: 'test'
+  ...
+# Subtest: a mock added or removed after prepare does not change the ux result
+ok 3 - a mock added or removed after prepare does not change the ux result
+  ---
+  duration_ms: 7.51025
+  type: 'test'
+  ...
+# Subtest: an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged
+ok 4 - an under-limit DEF review makes one extract call, a probe and one verify call per premise with the design-verify limits; extraction failing fails the review, a verify call failing twice records the premise as not judged
+  ---
+  duration_ms: 54.343084
+  type: 'test'
+  ...
+# Subtest: an under-limit HLD review makes one reviewer-session call and gives today's report
+ok 5 - an under-limit HLD review makes one reviewer-session call and gives today's report
+  ---
+  duration_ms: 3.718125
+  type: 'test'
+  ...
+# Subtest: the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema
+ok 6 - the controller premise stage plan under the limit offers one batched verify call holding every premise, with today's buildBatchedVerifyPrompt prompt and schema
+  ---
+  duration_ms: 34.522875
+  type: 'test'
+  ...
+# Subtest: an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks
+ok 7 - an HLD answer that breaks the checklist is re-issued once by the pipeline with today's correction text under a new callId; a second break fails the review; the stage never re-asks
+  ---
+  duration_ms: 1.160708
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 471.022333

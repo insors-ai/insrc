@@ -31,8 +31,9 @@ test('Complete namespace inventory opens fresh and existing stores without data 
     if (fresh) { await closeGraphStore(); setGraphStorePath(join(dir, 'fresh')); }
     const store = await getGraphStore();
     assert.equal(MAX_DBS, 64);
-    // 36 since doc_summary_carry (ISSUE-dced4385).
-    assert.equal(Object.keys(store).filter(key => key !== 'root').length, 38);
+    // 36 since doc_summary_carry (ISSUE-dced4385); 37 since entity_by_file (Epic c2ba6fa6 s3); 39 since subsystem and subsystem_by_file (s8);
+    // 41 since subsystem_dirty and subsystem_file (ISSUE-7d42b5dc).
+    assert.equal(Object.keys(store).filter(key => key !== 'root').length, 41);
     for (const name of assessmentNamespaces) assert.ok(store[name]);
     if (!fresh) assert.deepEqual(store.plan.get('existing-plan'), { title: 'retained' });
     await initializeAssessmentStorage();

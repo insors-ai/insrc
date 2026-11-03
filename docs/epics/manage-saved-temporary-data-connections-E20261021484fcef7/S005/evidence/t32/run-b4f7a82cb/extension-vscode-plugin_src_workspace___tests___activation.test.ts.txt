@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: extension.ts constructs the WorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and wires registerWorkspaceCommands with the s1 surfaces
+ok 1 - extension.ts constructs the WorkspaceRegistrar over the shared client + real WorkspaceFolders/PromptStore and wires registerWorkspaceCommands with the s1 surfaces
+  ---
+  duration_ms: 0.821167
+  type: 'test'
+  ...
+# Subtest: the activation-time workspace register runs through the guarded runOnboarding sequence (S005 coalescing; S001 never-throws)
+ok 2 - the activation-time workspace register runs through the guarded runOnboarding sequence (S005 coalescing; S001 never-throws)
+  ---
+  duration_ms: 0.300292
+  type: 'test'
+  ...
+# Subtest: contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)
+ok 3 - contributes.commands includes insrc.workspace.register alongside the S002 daemon + S003 hosts entries (k6)
+  ---
+  duration_ms: 0.39025
+  type: 'test'
+  ...
+# Subtest: S004 sc9: extension.ts wires the status-bar click + both panels as first-class commands (ac1/ac3)
+ok 4 - S004 sc9: extension.ts wires the status-bar click + both panels as first-class commands (ac1/ac3)
+  ---
+  duration_ms: 0.299209
+  type: 'test'
+  ...
+# Subtest: S004 sc9: both panel commands are palette-reachable (k6) and the menu command is not
+ok 5 - S004 sc9: both panel commands are palette-reachable (k6) and the menu command is not
+  ---
+  duration_ms: 0.191333
+  type: 'test'
+  ...
+# Subtest: S005 sc9: extension.ts wires detailRenderers + enableScripts:true + the onMessage/postMessage bridge
+ok 6 - S005 sc9: extension.ts wires detailRenderers + enableScripts:true + the onMessage/postMessage bridge
+  ---
+  duration_ms: 0.306041
+  type: 'test'
+  ...
+# Subtest: S006 sc9: extension.ts wires the debug renderer + tabController + onDetailAction over ONE shared managedPid (PATHS.pidFile)
+ok 7 - S006 sc9: extension.ts wires the debug renderer + tabController + onDetailAction over ONE shared managedPid (PATHS.pidFile)
+  ---
+  duration_ms: 0.492416
+  type: 'test'
+  ...
+# Subtest: S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway
+ok 8 - S007 sc9: extension.ts wires the repo renderer + the consent-gated per-repo write over the shared sc8 gateway
+  ---
+  duration_ms: 0.421583
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 179.722958

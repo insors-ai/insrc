@@ -1,0 +1,214 @@
+TAP version 13
+# Subtest: showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel
+ok 1 - showStatusMenu offers EXACTLY three items, including Model Tiers, and routes each choice to the matching panel
+  ---
+  duration_ms: 7.2415
+  type: 'test'
+  ...
+# Subtest: Cancel path: a dismissed menu (undefined) opens no panel (ac1)
+ok 2 - Cancel path: a dismissed menu (undefined) opens no panel (ac1)
+  ---
+  duration_ms: 1.469542
+  type: 'test'
+  ...
+# Subtest: openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs, defaults to daemon, renders gateway.status() (ac2)
+ok 3 - openDetailedStatus creates ONE panel with the daemon/workflows/debug tabs, defaults to daemon, renders gateway.status() (ac2)
+  ---
+  duration_ms: 1.649833
+  type: 'test'
+  ...
+# Subtest: the shared shell styles form controls with theme variables — selects/dropdowns do not fall back to the browser white ground
+ok 4 - the shared shell styles form controls with theme variables — selects/dropdowns do not fall back to the browser white ground
+  ---
+  duration_ms: 2.280083
+  type: 'test'
+  ...
+# Subtest: Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws
+ok 5 - Degraded render: a rejected gateway.status() still opens the panel + tabs with an error body and never throws
+  ---
+  duration_ms: 0.705583
+  type: 'test'
+  ...
+# Subtest: a setHtml throw (e.g. panel disposed mid-render) degrades to a logged no-op — never an unhandled rejection or a sync throw
+ok 6 - a setHtml throw (e.g. panel disposed mid-render) degrades to a logged no-op — never an unhandled rejection or a sync throw
+  ---
+  duration_ms: 1.598875
+  type: 'test'
+  ...
+# Subtest: single-instance: a second open reveals the same panel + switches tab, and after user-close a later open creates fresh
+ok 7 - single-instance: a second open reveals the same panel + switches tab, and after user-close a later open creates fresh
+  ---
+  duration_ms: 4.103708
+  type: 'test'
+  ...
+# Subtest: openRepoConfiguration creates/reveals the separate Repo Configuration shell (single-instance)
+ok 8 - openRepoConfiguration creates/reveals the separate Repo Configuration shell (single-instance)
+  ---
+  duration_ms: 0.193375
+  type: 'test'
+  ...
+# Subtest: S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)
+ok 9 - S005: openDetailedStatus renders the daemon tab from detailRenderers.daemon (ac1)
+  ---
+  duration_ms: 1.686042
+  type: 'test'
+  ...
+# Subtest: S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)
+ok 10 - S005: a {switchTab:'workflows'} message re-invokes the workflows renderer exactly once and re-sets the html (ac2/ac3)
+  ---
+  duration_ms: 2.867833
+  type: 'test'
+  ...
+# Subtest: S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)
+ok 11 - S005: a {refresh} message re-invokes the ACTIVE tab renderer exactly once (ac3)
+  ---
+  duration_ms: 2.829833
+  type: 'test'
+  ...
+# Subtest: S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)
+ok 12 - S005: NO timer/interval is armed — with no message the renderer call-count stays flat (no background poll, ac3)
+  ---
+  duration_ms: 32.5355
+  type: 'test'
+  ...
+# Subtest: S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op
+ok 13 - S005: an unknown message type, or switchTab with an invalid tab, is a silent no-op
+  ---
+  duration_ms: 2.726458
+  type: 'test'
+  ...
+# Subtest: S005: a late switchTab/refresh after the panel was disposed is skipped
+ok 14 - S005: a late switchTab/refresh after the panel was disposed is skipped
+  ---
+  duration_ms: 2.844833
+  type: 'test'
+  ...
+# Subtest: S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script
+ok 15 - S005: the rendered Detailed Status shell carries a strict CSP + a per-render nonce on the only inline script
+  ---
+  duration_ms: 3.022125
+  type: 'test'
+  ...
+# Subtest: S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)
+ok 16 - S006: the controller is armed ONLY after the webview {ready} handshake — never before (MED-1 fix: the initial batch is not posted into a not-yet-loaded document)
+  ---
+  duration_ms: 2.749584
+  type: 'test'
+  ...
+# Subtest: S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)
+ok 17 - S006: activating the debug tab calls onActivate; switch-away / re-activate / panel-close dispose it EXACTLY once (one live)
+  ---
+  duration_ms: 7.470708
+  type: 'test'
+  ...
+# Subtest: S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)
+ok 18 - S006: refresh stops then re-arms the ticker on the fresh document (re-seeds the log; LOW-1 fix)
+  ---
+  duration_ms: 4.931
+  type: 'test'
+  ...
+# Subtest: S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent
+ok 19 - S006: a controller ctx.postMessage lands on the panel, and the shell wires the appendLog listener via textContent
+  ---
+  duration_ms: 2.659792
+  type: 'test'
+  ...
+# Subtest: S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op
+ok 20 - S006: a {type:'action',action} message is forwarded to onDetailAction; a malformed action is a silent no-op
+  ---
+  duration_ms: 1.495417
+  type: 'test'
+  ...
+# Subtest: S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)
+ok 21 - S006: a host built with no tabControllers/onDetailAction behaves exactly as the S005 shell (no throw, no ticker)
+  ---
+  duration_ms: 1.498583
+  type: 'test'
+  ...
+# Subtest: S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged
+ok 22 - S006: never-throw — an onActivate throw, a dispose throw, and an onDetailAction throw are all caught + logged
+  ---
+  duration_ms: 6.191042
+  type: 'test'
+  ...
+# Subtest: S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged
+ok 23 - S007: openRepoConfiguration renders the wired repoRenderer body; with no repoRenderer it renders the S004 placeholder unchanged
+  ---
+  duration_ms: 1.533084
+  type: 'test'
+  ...
+# Subtest: S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite
+ok 24 - S007: a {selectRepo} message re-renders via repoRenderer(selectedRepo); a {repoWrite} forwards a validated RepoConfigWrite
+  ---
+  duration_ms: 3.316458
+  type: 'test'
+  ...
+# Subtest: S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)
+ok 25 - S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no forward, no throw)
+  ---
+  duration_ms: 2.652083
+  type: 'test'
+  ...
+# Subtest: S007: the empty selectRepo option clears the selection back to picker-only
+ok 26 - S007: the empty selectRepo option clears the selection back to picker-only
+  ---
+  duration_ms: 3.784084
+  type: 'test'
+  ...
+# Subtest: S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught
+ok 27 - S007: a repoRenderer throw (config read reject) degrades to an error body; an onRepoConfigWrite throw is caught
+  ---
+  duration_ms: 2.656958
+  type: 'test'
+  ...
+# Subtest: source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)
+ok 28 - source-scan: webview-host.ts imports no vscode module (extension.ts stays the sole vscode importer)
+  ---
+  duration_ms: 0.220459
+  type: 'test'
+  ...
+# Subtest: a {repoRegisterProviders} message forwards a validated RepoProviderRegistration to onRepoRegisterProviders; malformed ones are silent no-ops
+ok 29 - a {repoRegisterProviders} message forwards a validated RepoProviderRegistration to onRepoRegisterProviders; malformed ones are silent no-ops
+  ---
+  duration_ms: 0.398625
+  type: 'test'
+  ...
+# Subtest: the repo bootstrap script posts repoRegisterProviders with the checked data-provider values
+ok 30 - the repo bootstrap script posts repoRegisterProviders with the checked data-provider values
+  ---
+  duration_ms: 0.146708
+  type: 'test'
+  ...
+# Subtest: S001: openModelTiers always opens/reveals the panel (never a no-op); with no modelTiersRenderer it renders the placeholder
+ok 31 - S001: openModelTiers always opens/reveals the panel (never a no-op); with no modelTiersRenderer it renders the placeholder
+  ---
+  duration_ms: 3.809625
+  type: 'test'
+  ...
+# Subtest: S001: a {kind:'tierField'} modelTiersWrite forwards a validated ModelTiersWrite; a {kind:'coreFloor'} one too; malformed ones are silent no-ops
+ok 32 - S001: a {kind:'tierField'} modelTiersWrite forwards a validated ModelTiersWrite; a {kind:'coreFloor'} one too; malformed ones are silent no-ops
+  ---
+  duration_ms: 1.571375
+  type: 'test'
+  ...
+# Subtest: S001: a modelTiersRenderer throw degrades to an error body; an onModelTiersWrite throw is caught
+ok 33 - S001: a modelTiersRenderer throw degrades to an error body; an onModelTiersWrite throw is caught
+  ---
+  duration_ms: 1.378167
+  type: 'test'
+  ...
+# Subtest: the model-tiers bootstrap script posts modelTiersWrite for both a tier field change and the core-floor change
+ok 34 - the model-tiers bootstrap script posts modelTiersWrite for both a tier field change and the core-floor change
+  ---
+  duration_ms: 0.229667
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 336.785875

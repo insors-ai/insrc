@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: approved, rejected and unstamped artifacts read approved, rejected and pending
+ok 1 - approved, rejected and unstamped artifacts read approved, rejected and pending
+  ---
+  duration_ms: 12.126542
+  type: 'test'
+  ...
+# Subtest: an approved historical block and an overridden block do not block and still show the verdict and the override
+ok 2 - an approved historical block and an overridden block do not block and still show the verdict and the override
+  ---
+  duration_ms: 0.712
+  type: 'test'
+  ...
+# Subtest: a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block
+ok 3 - a block whose blocking findings are all resolved has effective verdict pass, and a warn with an unresolved MED is effectively a block
+  ---
+  duration_ms: 0.783334
+  type: 'test'
+  ...
+# Subtest: a code review blocks only while its story has no approved build
+ok 4 - a code review blocks only while its story has no approved build
+  ---
+  duration_ms: 0.705667
+  type: 'test'
+  ...
+# Subtest: the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block
+ok 5 - the reviewer party is read through reviewerPartyOf, and a code review's own approval stamp is reported but does not lift its block
+  ---
+  duration_ms: 0.309042
+  type: 'test'
+  ...
+# Subtest: a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented
+ok 6 - a malformed review, finding, code-review body, task entry or unparseable task id never throws and reports nothing invented
+  ---
+  duration_ms: 0.377917
+  type: 'test'
+  ...
+# Subtest: an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review
+ok 7 - an unapproved block with no override is blocking and puts the item in Needs attention, and deriveStages over the same fixture gives the same stage as without the review
+  ---
+  duration_ms: 0.500125
+  type: 'test'
+  ...
+# Subtest: an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete
+ok 8 - an approved build with a failed task is a validation conflict and keeps both facts, and deriveStages over the same fixture still reads complete
+  ---
+  duration_ms: 0.31125
+  type: 'test'
+  ...
+# Subtest: a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)
+ok 9 - a failed story-level result on an approved build raises the conflict (BUILD-0855311b6b32eb72-S001 shape)
+  ---
+  duration_ms: 0.305458
+  type: 'test'
+  ...
+# Subtest: a planned task with no recorded result is unrecorded and counted as neither passed nor failed
+ok 10 - a planned task with no recorded result is unrecorded and counted as neither passed nor failed
+  ---
+  duration_ms: 0.385125
+  type: 'test'
+  ...
+# Subtest: a build task with no planned task keeps its result and is marked unplanned
+ok 11 - a build task with no planned task keeps its result and is marked unplanned
+  ---
+  duration_ms: 0.124625
+  type: 'test'
+  ...
+# Subtest: a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated
+ok 12 - a pending artifact superseded by an approved later gate on the same item stops counting, even with a blocked review or as a SPEC on a story, and the rule is stated
+  ---
+  duration_ms: 0.429209
+  type: 'test'
+  ...
+# Subtest: every epic, story and issue in the real-shape fixtures gets item gates, deterministically
+ok 13 - every epic, story and issue in the real-shape fixtures gets item gates, deterministically
+  ---
+  duration_ms: 1.056542
+  type: 'test'
+  ...
+# Subtest: a story built without a plan marks its tasks unplanned, and the notice says the story has no plan
+ok 14 - a story built without a plan marks its tasks unplanned, and the notice says the story has no plan
+  ---
+  duration_ms: 0.1795
+  type: 'test'
+  ...
+# Subtest: a recorded block with no unresolved HIGH/MED finding is effectively pass, as the approval gate reads it, and still reports the block
+ok 15 - a recorded block with no unresolved HIGH/MED finding is effectively pass, as the approval gate reads it, and still reports the block
+  ---
+  duration_ms: 0.121709
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 353.115708

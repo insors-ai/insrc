@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: ac2: a cross-file edge deleted by hand from a store whose file hashes are unchanged is restored by repo.reindex
+ok 1 - ac2: a cross-file edge deleted by hand from a store whose file hashes are unchanged is restored by repo.reindex
+  ---
+  duration_ms: 490.78275
+  type: 'test'
+  ...
+# Subtest: a file whose read fails during a full index is an uncommitted file and the repository reads not complete
+ok 2 - a file whose read fails during a full index is an uncommitted file and the repository reads not complete
+  ---
+  duration_ms: 345.375583
+  type: 'test'
+  ...
+# Subtest: the repository entity is stored before the manifest step, so the manifest's DEPENDS_ON edges are stored
+ok 3 - the repository entity is stored before the manifest step, so the manifest's DEPENDS_ON edges are stored
+  ---
+  duration_ms: 923.527625
+  type: 'test'
+  ...
+# [04:47:33] [31mERROR[39m: [36m[indexer] full index failed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-s1t11-repo-zoWvYk"
+#     err: "interrupted"
+# Subtest: a full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository for a full index
+ok 4 - a full index made to throw part-way leaves fullIndexFinished false, and start-up queues that repository for a full index
+  ---
+  duration_ms: 1185.407667
+  type: 'test'
+  ...
+# Subtest: repository B's reindex restores repository A's hand-written edge into B through Pass 0, without reindexing A
+ok 5 - repository B's reindex restores repository A's hand-written edge into B through Pass 0, without reindexing A
+  ---
+  duration_ms: 386.647125
+  type: 'test'
+  ...
+# Subtest: after a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve
+ok 6 - after a reindex of the ac3 fixture no export_names entry remains under an old u64 and calls through the barrel still resolve
+  ---
+  duration_ms: 490.821958
+  type: 'test'
+  ...
+# Subtest: a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document
+ok 7 - a reindex keeps the summary of an unchanged document under its new entity number and drops the summaries of a changed and a deleted document
+  ---
+  duration_ms: 633.298791
+  type: 'test'
+  ...
+# Subtest: after a reindex no doc_summary row is keyed by an entity number that is not stored
+ok 8 - after a reindex no doc_summary row is keyed by an entity number that is not stored
+  ---
+  duration_ms: 277.202291
+  type: 'test'
+  ...
+# [04:47:35] [31mERROR[39m: [36m[indexer] full index failed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-s1t11-repo-eE3axD"
+#     err: "crash after the delete"
+# Subtest: a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back
+ok 9 - a full index of a previously complete repository interrupted immediately after the delete leaves it unfinished, start-up queues a full index, and that index writes the carried summaries back
+  ---
+  duration_ms: 463.447125
+  type: 'test'
+  ...
+# [04:47:36] [31mERROR[39m: [36m[indexer] full index failed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-s1t11-repo-JIfI1E"
+#     err: "interrupted"
+# Subtest: a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back
+ok 10 - a full index made to throw after the delete keeps the summaries carried, and the next full index writes them back
+  ---
+  duration_ms: 679.726583
+  type: 'test'
+  ...
+# Subtest: after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current
+ok 11 - after a reindex the doc-summarise-repo sweep makes no model call for a document whose kept summary is current
+  ---
+  duration_ms: 600.555292
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7042.955167

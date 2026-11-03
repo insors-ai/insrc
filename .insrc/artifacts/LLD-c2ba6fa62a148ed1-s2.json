@@ -1,0 +1,1192 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793536984297-fx4r7l",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T12:49:26.291Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 381978,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "hldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "hldAmendmentsApplied": [
+      "AMD-c2ba6fa62a148ed1-1",
+      "AMD-c2ba6fa62a148ed1-2",
+      "AMD-c2ba6fa62a148ed1-7",
+      "AMD-c2ba6fa62a148ed1-8",
+      "AMD-c2ba6fa62a148ed1-9",
+      "AMD-c2ba6fa62a148ed1-10"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The LLD's commitFile/FileCommit/FileCommitResult contract faithfully implements the HLD's sc2 FileCommit sketch (§5.2) that this Story (s2) owns, with no field added that contradicts the sketch and no scope silently dropped.",
+          "evidence": "HLD.md §5.2 defines interface RelationWrite/FileCommit/FileCommitResult with fields repoPath, filePath, contentHash, entities, relations and a result carrying generation, entitiesWritten/Removed, relationsStored/Pending/Unwritable/ReturnedToPending. The LLD §2.1 commitFile(commit: FileCommit): Promise<FileCommitResult> reproduces exactly these fields and only adds vectorsOutstanding, which is additive and consistent with the HLD's own note that vectors are written after the commit.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Acceptance criteria ac1-ac4 given to this Story are each covered by a design postcondition/error path and a named proving test, and adjacent-scope items owned by other stories (s1's pending/unwritable classification, s3's by-file index, s7's evidence byte, etc.) are consumed/deferred rather than re-implemented here.",
+          "evidence": "§6 Error paths and §7 Test strategy map ac1 (rollback leaves prior rows), ac2 (atomic read), ac3 (vector-failure/backfill), ac4 (contentHash-null removal) each to at least one named test; §3.1 explicitly defers evidence to Story s7 ('accepted and ignored until Story s7 stores it') and §2.6 explicitly defers the by-repo index to Story s3.",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "reindexFile exists today, is unused (no non-test caller), and writes entities only (no relationship or IndexState handling), matching §8 'State before'.",
+          "evidence": "Read src/db/entities.ts:362-519: reindexFile does entity snapshot/upsert/tombstone and Lance vector dispatch only, no relation or IndexState writes. A repo-wide grep for `reindexFile(` found callers only in test files (src/db/__tests__/reindex-file-lmdb.test.ts etc.) and in docs, none in production indexer code. [files: src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The indexer's current refresh path does three separate deletes before parsing, then embeds, then upserts entities and relationships in further separate transactions; and updateEmbedding sets the LMDB embedding marker before the Lance vector write (the order the design says it reverses).",
+          "evidence": "src/indexer/index.ts:1113-1150 indexFile: cleanFirst branch calls deleteRelationsForFile/deleteEntitiesForFile/deleteUnresolvedForFile (lines 1120-1122), then embedEntities (1146), then separate upsertEntities/upsertRelations (1149-1150). src/db/entities.ts:962-1016 updateEmbedding: putEntityRowInTxn sets embeddingModel inside withWriteTxn (LMDB) before the later Lance writer call -- marker precedes vector, as the LLD's §3.2 'Today' description states. [files: src/indexer/index.ts, src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "commitFile is genuinely new (no such function/type exists in the store layer today) and is built by growing reindexFile, which exists with exactly the entity-replacement shape the design describes as its starting point.",
+          "evidence": "No `commitFile` or `FileCommit` symbol found outside this epic's artifacts/docs and the LLD itself; reindexFile's real body (src/db/entities.ts:362-519) matches the design's description of its current behaviour (snapshot existing entities by file, upsert with module-stub and unchanged-row short circuits, tombstone the rest), confirming it is a true reuse base, not a mischaracterized existing function. [files: src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "upsertResolvedRelations and upsertUnresolvedRelations exist today and already run their own self-contained withWriteTxn, confirming the design's claim that they can be 'split into transaction-taking bodies called by the existing functions unchanged' without redesigning s1's owned classification rule.",
+          "evidence": "src/db/relations.ts:107-176: upsertRelations (116-127) dispatches to upsertResolvedRelations, which wraps its whole write (stored edge / pending-row-awaiting-id / counted-unwritable logic) inside one `await withWriteTxn(s => {...})` block -- exactly the shape that can be extracted into an InTxn body callable from a larger transaction without changing the classification logic itself. [files: src/db/relations.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The cited call site src/indexer/index.ts:1146-1150, used to justify 'exactly one commitFile call; no deleteEntitiesForFile / upsertEntities / upsertRelations calls remain on this path', correctly identifies the two separate persistence calls (embed, then upsertEntities+upsertRelations) that must collapse into one commitFile call.",
+          "evidence": "Read src/indexer/index.ts:1093-1157: embedEntities is called at line 1146, upsertEntities at 1149, upsertRelations at 1150 -- line numbers in the LLD are accurate to within the function's real layout and correctly bracket the exact two calls the design says become one. [files: src/indexer/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The §3.2 embedding-marker call sites (src/indexer/embedder.ts:187,216 and src/db/entities.ts:304-330,962-1010) all currently set/persist the marker ahead of the vector write, as the invariant-change claims.",
+          "evidence": "embedder.ts:187 and :216 set entity.embeddingModel in memory before any store write; entities.ts:962-1016 (updateEmbedding) persists the marker via putEntityRowInTxn inside withWriteTxn before calling the Lance writer; entities.ts:260-332 (upsertEntities' Lance-write tail, overlapping the cited 304-330 range) contains the comment 'Lance failure is non-fatal: the LMDB row's embeddingModel already reflects the intent' confirming the row (with marker set) is committed before the Lance call at line 307 onward. [files: src/indexer/embedder.ts, src/db/entities.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'No stored key, value form or kind byte changes' is consistent with the real schema: EntityRow's embeddingModel field and IndexState's unembedded/embeddingAvailable fields already exist in the codec, so the described changes are invariant-only, not schema additions.",
+          "evidence": "src/db/graph/codec.ts:262-264 already defines unembedded: number and embeddingAvailable: boolean on the IndexState row shape; no new field is introduced by this design for those two. The embeddingModel marker field is likewise already part of EntityRow (used throughout entities.ts/embedder.ts) with no new byte added. [files: src/db/graph/codec.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RelationWrite.target mapping onto existing Relation.resolved/meta fields (so 'no stored form changes') is plausible because Relation already carries resolved and meta.",
+          "evidence": "src/shared/types.ts:672,679-687 defines Relation with resolved?: boolean and meta?: Record<string, unknown>, the two fields the LLD says RelationWrite.target ({stored:id} / {pending:UnresolvedRef}) maps onto unchanged. [files: src/shared/types.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This Story does not redesign Story s1's owned relationship-classification rule (sc1-adjacent): it only extracts a transaction-taking body from the existing resolved/unresolved writers and reuses the rule's outcome unchanged, which is what s1's own boundary note anticipates ('Until Story s2 lands, s1 applies its rule inside the existing separate writes').",
+          "evidence": "§5 interaction table states relationship writes 'reuse s1's in-transaction pending/unwritable counting unchanged'; the real upsertResolvedRelations body (src/db/relations.ts:136-176) that must be split already contains that exact classification logic self-contained in one withWriteTxn, so extraction does not require altering the rule itself. [files: src/db/relations.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.2",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This Story does not implement Story s7's owned evidence byte-encoding (sc3) or Story s3's owned by-file/by-repository index (sc4-adjacent): both are explicitly deferred/consumed rather than redesigned.",
+          "evidence": "§3.1 states 'RelationWrite.evidence is accepted and ignored (\"unknown\") until Story s7 stores it'; §2.6 listUnembeddedEntities postcondition says it 'reads the repository's entities through Story s3's by-repository index instead of the whole entity table' -- both correctly phrased as depending on, not redesigning, the other Stories' owned contracts. Cross-checked against HLD.md §5.2 'Consumed by: s7, s9, s10' for sc2, confirming the direction of dependency. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/HLD.md]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'withWriteTxn's childTransaction rejects; lmdb-js aborts a child transaction whose callback throws' is true of the real code, and is pinned by the named test.",
+          "evidence": "src/db/graph/store.ts:1272-1297 withWriteTxn runs its callback via `store.root.childTransaction(run)`. A prior verified investigation (recorded in project memory, PROVEN 2026-10-16) found lmdb-js root.transaction commits a throwing callback's writes but childTransaction aborts on throw, fixed under ISSUE-5437d6e5 and pinned by src/db/graph/__tests__/lmdb-txn-semantics.test.ts, which exists in the repo. [files: src/db/graph/store.ts, src/db/graph/__tests__/lmdb-txn-semantics.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "'The commit itself makes no model call; model calls (embedding) stay serial' matches the real indexer sequencing, where embedding happens before the persistence calls that commitFile will replace.",
+          "evidence": "src/indexer/index.ts:1093-1157 indexFile calls `await embedEntities(result.entities)` at line 1146 strictly before `await upsertEntities(...)` / `await upsertRelations(...)` at 1149-1150 -- the two calls commitFile subsumes -- so no embedding call occurs inside the persistence step, consistent with the project rule (CLAUDE.md) that LLM/embedding calls are always awaited serially, never inside a store transaction. [files: src/indexer/index.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The invariant 'reindexFile's entity-replacement behaviour ... stays as its tests pin it' names a real, substantial existing test file that actually exercises that behaviour.",
+          "evidence": "src/db/__tests__/reindex-file-lmdb.test.ts exists and contains dozens of reindexFile(...) calls exercising dedupe/last-wins, module-stub ensure-exists, unchanged-row short-circuit, and repoPath-shape rejection -- matching the specific behaviours §6's invariants list says must be preserved. [files: src/db/__tests__/reindex-file-lmdb.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test-strategy fixtures named (setGraphStorePath on a temp LMDB, useTemporaryLance, and the ProbeService pattern of src/indexer/__tests__/reconcile.test.ts) are real, existing helpers the new tests can actually use.",
+          "evidence": "src/db/graph/store.ts:342 exports setGraphStorePath; src/db/lance/__tests__/helpers/temp-lance.ts:21 exports useTemporaryLance; src/indexer/__tests__/reconcile.test.ts:99 defines `class ProbeService extends IndexerService` used by its own tests -- all three fixtures cited in §7 exist as named. [files: src/db/graph/store.ts, src/db/lance/__tests__/helpers/temp-lance.ts, src/indexer/__tests__/reconcile.test.ts]",
+          "action": "none",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 16,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T12:49:54.553Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "questionResolutions": {
+      "q199561da": {
+        "question": "OPEN (s8 sbdry3, s2's own HLD boundary item not yet in the contract): the queue rule 'index jobs go ahead of other jobs and a long job yields between its units, so that a commit is not held behind a model pass'. Proposed: the backfill (reembed) embeds and writes in batches (the embedder's batch size) and, between batches, returns control to the index lane so queued file / full / reconcile jobs run first, then continues. Confirm or choose another rule before the plan.",
+        "status": "resolved",
+        "choice": "(c) The backfill (reembed) moves to its own queue lane, like the document-summary lane: it runs beside the index lane, so file / full / reconcile jobs are never queued behind it and need no yield points in the backfill.",
+        "rationale": "User decision 2026-11-01: per-batch yielding inside the index lane (option a) complicates job sequencing; a separate lane keeps the index lane's order simple. Accepted cost: the backfill's embedding calls may run while the index lane embeds a refreshed file, i.e. some contention on the local embedding model.",
+        "resolvedAt": "2026-11-01T13:05:16.641Z"
+      },
+      "q957956d1": {
+        "question": "OPEN (s8 sbdry3, HLD performance note): 'Story s2's design measures [the vector upsert] on this repository'. Proposed: record, as a smoke result in the Story's test record, the time of writeEntityEmbeddings (upsert) vs addEntityEmbeddings for this repository's vector table at a refresh-sized batch and at a backfill-sized batch, before choosing the backfill's batch size.",
+        "status": "resolved",
+        "choice": "Two-point smoke (as proposed)",
+        "rationale": "User decision 2026-11-01: time writeEntityEmbeddings (upsert) vs addEntityEmbeddings on this repository's vector table at a refresh-sized and a backfill-sized batch, record both as a smoke result in the Story's test record, and choose the backfill batch size from them.",
+        "resolvedAt": "2026-11-01T13:08:10.475Z"
+      },
+      "qcde04c7f": {
+        "question": "NOTE (s8 alt2 partial): alternatives a3 and a4 were not scored against Epic constraints k2 and k4; both lose on acceptance criteria already, so the choice of a1 does not depend on it.",
+        "status": "resolved",
+        "choice": "Accept gap, proceed with a1",
+        "rationale": "Default stated to the user 2026-11-01 (no objection): a3 and a4 already lose on acceptance criteria, so their k2/k4 scores cannot change the choice; the note stays in the LLD.",
+        "resolvedAt": "2026-11-01T13:08:34.333Z"
+      }
+    },
+    "approvedAt": "2026-11-01T13:09:14.570Z"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "This Story turns the store's unused whole-file replacement (reindexFile) into commitFile, the one write for a file's rows: a file's entities, its outgoing relationships, its pending relationships and the repository's index state change together in one LMDB transaction, or not at all. The indexer parses and embeds first and commits once, so a reader always sees the file's complete old set or its complete new set; a delete and the clean-up pass's removal use the same commit. Vectors are written after the commit and an entity is marked as embedded only once its vector is stored; the unembedded count, an open-time check of the vector table, and the reembed job (now run on start and after every index) find and fill any gap, and the repository is not complete until they have."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. It grows out of the existing whole-file replacement (reindexFile), which already replaces a file's entities in one transaction but removes relationships only for entities that disappeared from the file; the commit goes further and replaces the outgoing relationships of every entity of the file. The indexer's refresh, the delete event and the repair all call it; a file is selected for it by one filter built from the repository's ignore files. A relationship is never dropped in the commit: when its target is not stored it becomes a pending row, and pending rows are completed only by the passes that own them: the cross-file pass for code symbols, and the two endpoint passes of the external-services Epic for theirs. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete (relationships awaiting a target that is in an indexed repository, relationships that could not be written, entities without vectors). The four repository status values keep their meaning; completeness is a separate field read from this row and shown wherever status is shown, so a repository with anything outstanding does not read as fully ready. Layer 3, derived data: evidence is a one-byte value on the relationship row, written in the commit, by the cross-file pass and by every other writer of a stored relationship; subsystem grouping, subsystem summaries and model-proposed document relationships are queued passes that start only from a repository whose state is complete, write their own tables, and stamp what they wrote with the generation it was computed from. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
+      "ownedContracts": [
+        {
+          "id": "sc2",
+          "name": "FileCommit",
+          "purpose": "The one write operation for a file's rows. Everything that adds, replaces or removes a file's entities and relationships hands the store one of these and gets one transaction. The commit removes the outgoing relationships of every entity of the file before writing the new set, leaves the incoming relationships of surviving entities in place, and returns to pending any incoming relationship whose target entity it removes. Entities that are not of the file (shared module stubs) are ensured to exist under the shared-modules rows and are otherwise untouched.",
+          "interfaceSketch": "interface RelationWrite {\n  from: string;                        // entity id in this file\n  kind: RelationKind;\n  target:\n    | { stored: string }               // id of an entity expected to be stored\n    | { pending: UnresolvedRef };      // name/path reference for the cross-file pass\n  evidence: RelationEvidence;          // see sc3; 'unknown' until Story s7 supplies it\n}\n\ninterface FileCommit {\n  repoPath: string;\n  filePath: string;\n  contentHash: string | null;          // null = the file is removed\n  entities: Entity[];                  // empty when removed; module stubs (no repo, no file) are routed to the shared-modules rows\n  relations: RelationWrite[];\n}\n\ninterface FileCommitResult {\n  generation: number;\n  entitiesWritten: number;\n  entitiesRemoved: number;\n  relationsStored: number;\n  relationsPending: number;            // includes { stored } targets found absent\n  relationsUnwritable: number;\n  relationsReturnedToPending: number;  // incoming relationships whose target entity was removed\n  vectorsOutstanding: number;\n}",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s7",
+            "s9",
+            "s10",
+            "s13"
+          ],
+          "assumptions": [
+            "c3"
+          ]
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "IndexState",
+          "purpose": "The recorded per-repository state: the generation of the graph and what is known to be incomplete. Written in the same transaction as every file commit and by the cross-file pass; read by repository status, by the commit's callers, and by every derived pass to decide whether it may run and whether what it wrote is stale.",
+          "interfaceSketch": "type PendingClass = 'awaiting-target' | 'ambiguous' | 'no-candidate' | 'external-endpoint';\n\ninterface IndexState {\n  repoPath: string;\n  generation: number;                 // advanced by every file commit and every completion\n  pending: Record<PendingClass, number>;\n  unwritable: number;                 // relationships refused by the store, with a stated reason\n  unembedded: number;                 // entities the embed step selects (non-empty body) whose vector is not written\n  embeddingAvailable: boolean;        // false when the embedding backend is disabled or cannot be reached\n  uncommittedFiles: string[];         // paths of files whose parse or commit failed; persisted; a path leaves when its file next commits or is removed\n  fullIndexFinished: boolean;         // the full pass, the cross-file pass and both endpoint passes have ended\n  endpointPassFailed: boolean;\n  graphComplete: boolean;             // derived: fullIndexFinished && !endpointPassFailed && uncommittedFiles.length == 0 && awaiting-target == 0 && unwritable == 0\n  complete: boolean;                  // derived: graphComplete && (unembedded == 0 || !embeddingAvailable)\n}\n\ninterface RepoCompleteness {          // returned beside RepoStatus, which keeps its four values\n  complete: boolean;\n  reasons: string[];                  // one line per non-zero cause\n  counts: Pick<IndexState, 'pending' | 'unwritable' | 'unembedded'> & { uncommittedFiles: number };\n  uncommittedFiles: string[];         // the paths that could not be committed\n  generation: number;\n}\n\ninterface DerivedStamp { computedAtGeneration: number; }   // carried by every row a derived pass writes\n  // + reasonCounts: { unwritable: Record<string, number>; awaiting: Record<string, number> };  // counts of unwritable relationships and of awaiting-target rows by reason, so completeness can say why a repository is incomplete (e.g. targets excluded by an ignore rule vs. not stored yet) (amend:AMD-c2ba6fa62a148ed1-2)",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s7",
+            "s8",
+            "s10",
+            "s13"
+          ],
+          "assumptions": [
+            "c4"
+          ]
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc2"
+        ],
+        "depends": [
+          "sc1"
+        ],
+        "internal": "The extension of the existing whole-file replacement into the file commit (relationships and pending rows in the same transaction as entities; outgoing relationships of surviving entities replaced, not only those of entities that disappeared; incoming relationships of a removed entity returned to pending), the move of the indexer's refresh and delete paths and of the clean-up pass's removal of a stored file onto it, and the retirement of the separate delete-then-upsert sequence in the indexer. The handling of vectors after the commit: writing the entity row with its embedding marker empty and setting it in a second transaction only after the vector write succeeds, counting an entity with an empty marker in IndexState, comparing entity ids with the vector table on open in both directions, so that a vector left behind by a failed removal is deleted before a plain insert can meet it, and the extension of the existing reembed job to run on daemon start and after an index, with a vector write for an entity whose marker is empty made an upsert, except for an entity first allocated in the same commit, which keeps the plain insert. Three things in that job change with it: it applies the embed step's own selection instead of forcing every entity, so empty-body entities (external endpoints, module stubs) stay unselected and uncounted; its update of an embedding writes the vector first and sets the marker in a second transaction, where today it sets the marker first; and the marker carries the model of the backend that is active, not one fixed name. Which entities count as unembedded (those the embed step selects) and the separate recorded reason when the embedding backend is unavailable. The count of a file whose commit fails on a file event. The queue rule that index jobs go ahead of other jobs and that a long job yields between its units, so that a commit is not held behind a model pass. How a reader sees the old or the new set during a commit is the store's ordinary transaction isolation and needs no new mechanism."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "The rule that a relationship with an absent target becomes pending instead of being skipped, at each of the six places in src/db/relations.ts where one is lost today (the resolved write's skip on a missing endpoint and its skip on a kind with no byte, promoteToResolved, promoteResolvedBatch, and the pending write's discard of a row without its file or repository and of a row whose repository is not registered), each either kept as pending or counted as unwritable with a reason; the set of files whose parse or commit failed in a full index, persisted with their paths until they next commit; which fields of the state are recounted on open and which are persisted and carried over; the classification of a pending relationship as awaiting-target, ambiguous or no-candidate, with the external-service rows classed apart and the two endpoint passes counted in when a full index is finished; the class is stored on the pending row itself, in its existing free-form record, so no stored form changes, a row the cross-file pass has not yet attempted counts as awaiting-target, and the recount on open reads the stored class and does not run resolution again; the extension of the cross-file pass to complete relationships awaiting a target by id, for imports and the other code-symbol kinds as well as calls and inheritance, and to follow a re-exporting file to the function it re-exports; the lookup of pending rows by the id they await, with its migration step, and the pass after a file event visiting the rows that await an entity of the files just committed; the change of the reindex request so that it deletes the repository's rows in the graph store and the vector store and builds them again from every file, in place of today's skip of unchanged files, with no separate repair request, returning to pending the relationships that other repositories hold into the deleted entities, and its queuing by the migration for every repository indexed before this change, which starts as not complete; the storing of the repository entity so that the manifest step's dependency relationships are written; the measurement on this repository, before and after a repair, of the awaiting-target, ambiguous, no-candidate and unwritable counts, with unwritable expected to be zero; the IndexState row, its migration step, its recount on open, and the derivation of repository status from it, as a completeness field returned beside the unchanged status by the daemon's status and stats requests and shown in the CLI's repository pane and in both editor plugins; and the analyzer's read of it: an analyzer lookup that reads relationships of a repository that is not complete says so in its result, with the counts, so that an answer over an incomplete graph is not returned as a plain fact. The choice, in this Story's design, of the function reached only through a re-exporting file that the repair is measured on, since the issue's own example (pickScope) has been removed from the source. Raising the log level of a refused relationship from debug is internal. Until Story s2 lands, s1 applies its rule inside the existing separate writes."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [],
+          "internal": "The by-file and by-repository index of entity rows, its migration step that builds it for an existing store, and its upkeep. No single entity-row write exists today: there are seven raw put and remove sites across src/db/entities.ts and src/db/graph/migrations.ts, and the existing name index is kept in step by a helper each site must remember to call. This Story introduces one put and one remove function for entity rows that maintain the name index and the new index together, routes every raw site through them, and adds a test that fails when a raw put or remove appears outside them. Upkeep therefore sits beneath every caller, so that neither today's writers nor the file commit need to know of it and this Story does not depend on s2. The two reads (findEntitiesByFile, listEntitiesForRepo) keep their results and their callers; a new existence check answers whether a repository holds any entity, and the analyzer's scope check uses it."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [],
+          "internal": "The cause, which ISSUE-0d577569 records as not known, was reproduced on 2026-10-11 and is not the system's semaphore limit, which the library's message names, but the loss of the daemon's own file lock on the store's lock file, after which another process that opens and closes the store removes the store's semaphores; the daemon's next write then fails with the library's message about the limit, and its exit hangs in the library's close. What in the daemon closes a second descriptor on the lock file is not yet identified. First, therefore, the remedy that does not depend on finding it: the live store is opened by the daemon alone, and any other process is refused it. Second, a bound on the whole shutdown including the store's close, so that a close that hangs ends in an exit. Third, recording a store failure of this kind and stating it in the daemon's status. None of this is consumed by another Story."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [],
+          "internal": "The refusal, with a named error and its own code, of a search or analyze request about a repository whose status is indexing, at the analyzer's scope check and at the daemon's search requests, carrying the status and how far the run has got (files done of files selected, and when it began), read from the indexer's running job; the tools that rest on the analyzer (the workflow steps, triage, code review) pass that error on as it is. The order of the analyzer's run: the refusal of a scope the index does not hold comes before a size is announced, or the announcement says the size could not be counted. The named cause and error code for a failed read of the last-indexed time and for a failed lookup, and the three other defects of ISSUE-e2bcadd9 (the wrong provider named, the scope resolved before the cache, and failure text matched inside echoed output). This Story does not read IndexState: it works with the checks the analyzer has today, so that it stays independent of s1."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [],
+          "internal": "The in-process matcher of the gitignore grammar over nested ignore files and its conformance test against git; the move onto the one filter of every site that reads the list today in src/indexer/index.ts (the full walk, the start-up scan for changed files, the file event, the clean-up pass, and the two places that seed the list when a repository is registered), of the watcher, and of the analyzer's reader, its two exploration walkers and its infra walker (src/analyze/runtimes/infra/_shared.ts), each of which has its own list of names today, and of the indexer's source-root detection (src/indexer/source-roots.ts), whose own list would otherwise hide a package in a directory the filter includes; a search of the source for such lists found five more, in the daemon's four file-search tools (glob, grep, list-dir, recent under src/daemon/tools/builtins/search) and in the review probe (src/workflow/review/probe.ts), which search the working tree as text, do not decide what the index holds, and are deliberately left as they are; the filter keeps answering for a directory that holds an included file, as the analyzer's reader does now; the retirement of the bare-name list and of the ignore entry in the repository's .insrc config; the two built-in exclusions (generated or minified files, the .insrc directory) applied inside the filter so that the full walk and the file event no longer differ on them; the handling of a change to an ignore file as an event that removes and adds files, and the comparison by content hash of the clone's exclude file and the global ignore file, which the watcher cannot see, whenever the filter is used; the queued step that proposes a root ignore file with the cheap-tier model when a repository is added without one, its fallback, and the rule that an existing file is never written. Two points were decided by the stakeholder: the filter honours all three of git's ignore sources (the .gitignore files, the clone's exclude file, the user's global ignore file), and a file git tracks is indexed even when a rule matches it, so the filter takes git's list of tracked files as an input and a plain folder is filtered by the rules alone."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "The one-byte encoding of evidence as the value of a relationship row; the points in the per-file resolver and the cross-file pass that decide 'extracted' or 'inferred' ('chosen' is reserved and not written, since an ambiguous relationship stays pending with its candidates); the passing of evidence as an argument to the store's resolved write and promote operations, so that the two endpoint passes write 'inferred' and the manifest step writes 'extracted' and no relationship written after this change reads 'unknown'; the carrying of evidence through the store's traversal reads and the daemon's caller and callee requests; the marking of inferred and chosen relationships in the analyzer's lookups and answers. No migration rewrites existing rows, since an empty value reads as 'unknown'."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "The grouping of a complete repository's code entities into subsystems, its determinism, the tables for membership, connections and summaries and their migration step; the queued pass and its trigger on a new generation; the cheap-tier summary of a subsystem whose membership changed; the daemon request that returns subsystems; the addition of subsystem context to the analyzer's context builder; the statement that groups rest on an incomplete or older graph. Which relationships count toward grouping, and with what weight by evidence, is decided here."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "One reader per added language (Rust, C#, C, C++) in the existing parser registry with a guarded load, as the Kotlin reader has; the structured reading of SQL in place of the whole-file document, keeping the document entity for retrieval; any entity kinds this needs, appended to the fixed byte table without renumbering; the additions to the Language union; the daemon request that lists the languages read and why any was skipped. Each language can be delivered on its own."
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "The reading of links and references between documents, and from a document to code, as relationships of the existing REFERENCES kind written in the file commit with evidence 'extracted'; the queued mid-tier pass over new or changed documents and its own table of model-proposed relationships; the hand-checked set, the measurement, and the recorded figures that switch the capability on or leave it off; the merging of model-proposed relationships into reads with evidence 'model'; the status line when no CLI provider is available."
+        },
+        {
+          "storyId": "s11",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+        },
+        {
+          "storyId": "s12",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+        },
+        {
+          "storyId": "s13",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private implementation of s13: Settling file changes does work proportional to the changed files, never a scan of the repository or the store"
+        }
+      ],
+      "rolloutPhase": "Phase C — the file commit",
+      "nonFunctional": {
+        "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows. A file commit is one write transaction whose size is bounded by one file. A first full index holds more pending rows than today until the cross-file pass runs, and that pass does more work; this is accepted under the accuracy rule. Index jobs take precedence in the queue and a derived pass yields between its units of work, so a commit waits for at most one unit of a pass. Model calls are serial; the mid-tier pass sends only new or changed documents. Vector writes keep the plain insert for entities first stored in the same commit, so a first full index writes vectors at today's cost; the upsert, which costs more against a large vector table, is used only for changed entities and for the backfill, and Story s2's design measures it on this repository.",
+        "security": "No store is opened outside the daemon and no model is reached except through the local provider or the CLI providers. The ignore-file proposal sends the model file names and manifest names, not file contents, and writes into the user's repository only when no root ignore file exists. Document text sent to the mid-tier model goes through the user's own CLI session, as other mid-tier calls do.",
+        "observability": "Repository status carries the completeness counts and the reason a repository is incomplete. A relationship the store refuses is logged at warn with its reason and counted, not logged at debug. A fallback ignore file, a skipped language reader, a store failure after its locks were taken away, and a model-proposed capability that is off each state their cause where status is read. Each derived row carries the generation it was computed from.",
+        "durability": "The file commit is atomic in LMDB: after a crash a file holds its old rows or its new rows. Vectors are written after the commit and may be missing after a crash; the gap is recorded by an empty embedding marker, checked against the vector table on open, and backfilled, and the repository reads as incomplete until it is, unless the embedding backend is unavailable, which is reported as its own reason. The IndexState fields that the tables can answer are recounted when the store is opened; the rest, including the paths of files that could not be committed, are persisted in the state row and survive a restart. Every new table and value arrives by a migration step applied on open; no existing key or kind byte changes, so an older store is brought forward without a re-index. Derived tables can be dropped and recomputed without loss."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "commitFile",
+          "signature": "function commitFile(commit: FileCommit): Promise<FileCommitResult>",
+          "parameters": [
+            {
+              "name": "commit",
+              "type": "FileCommit",
+              "purpose": "The file's full new state (sc2): its repository, path, content hash (null when the file is removed), parsed entities and relationship writes",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FileCommitResult",
+            "meaning": "What the one transaction did (sc2): the repository's new generation, entities written and removed, relationships stored, kept pending, unwritable and returned to pending, and the vectors still outstanding after the post-commit vector write"
+          },
+          "errors": [
+            {
+              "type": "UnregisteredRepoError",
+              "condition": "commit.repoPath is not a registered repository; nothing is written"
+            },
+            {
+              "type": "Error (store write)",
+              "condition": "the LMDB transaction fails; withWriteTxn aborts it (childTransaction) and the file's previous rows stay as they were"
+            }
+          ],
+          "preconditions": [
+            "commit.repoPath passes validateRepoPathShape; an invalid path is refused and logged as reindexFile does today",
+            "every entity of the file carries repo == commit.repoPath and file == commit.filePath, except module stubs (kind 'module', repo '') which go to the shared-modules rows",
+            "parsing, relation resolution and embedding have finished; nothing about the file is written before commitFile"
+          ],
+          "postconditions": [
+            "In ONE write transaction: the file's previous entities that are not in commit.entities are removed (with their name_index, entity_by_file, doc summary and export_names rows), every surviving or new entity row is written with its embedding marker empty unless its stored vector is unchanged, the outgoing relationships of EVERY previous entity of the file and the file's pending rows are removed and commit.relations written by the same rules as upsertRelations (stored edge / pending row awaiting the id / counted unwritable), each incoming relationship of a removed entity whose holder survives is returned to pending awaiting the removed id, the generation is advanced, IndexState.unembedded is adjusted, and the file leaves IndexState.uncommittedFiles",
+            "contentHash null: the same transaction with no new entities or relationships, so the file's entities, relationships and pending rows are removed together (ac4)",
+            "a reader inside another transaction sees either all of the previous rows or all of the new rows (ac2)",
+            "after the transaction: vectors of removed entities are deleted; vectors of entities whose marker was emptied are written (plain add for an entity first allocated in this commit, upsert otherwise), and a second transaction sets each written entity's marker to the active backend's model and lowers unembedded; a vector write failure is logged and leaves those markers empty and counted (ac3)"
+          ]
+        },
+        {
+          "name": "reindexFile",
+          "signature": "function reindexFile(_db: DbClient, repoPath: string, filePath: string, parsed: Entity[]): Promise<void>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "unused, kept for the existing call shape",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "registered repository root",
+              "optional": false
+            },
+            {
+              "name": "filePath",
+              "type": "string",
+              "purpose": "absolute path of the file",
+              "optional": false
+            },
+            {
+              "name": "parsed",
+              "type": "Entity[]",
+              "purpose": "the file's parsed entities",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "resolves when commitFile has finished"
+          },
+          "errors": [
+            {
+              "type": "UnregisteredRepoError",
+              "condition": "as commitFile"
+            }
+          ],
+          "preconditions": [
+            "as commitFile"
+          ],
+          "postconditions": [
+            "equivalent to commitFile({ repoPath, filePath, contentHash: <the file entity's hash or ''>, entities: parsed, relations: [] }) -- kept as a thin wrapper so its existing tests keep pinning the entity-replacement behaviour; it is the body commitFile grows from (lc1)"
+          ]
+        },
+        {
+          "name": "IndexerService.indexFile",
+          "signature": "protected indexFile(filePath: string, repoPath: string, cleanFirst: boolean, opts?: { readonly fresh?: boolean | undefined }): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "filePath",
+              "type": "string",
+              "purpose": "the file",
+              "optional": false
+            },
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "its repository",
+              "optional": false
+            },
+            {
+              "name": "cleanFirst",
+              "type": "boolean",
+              "purpose": "true for a file event: refresh even when the stored hash matches; no longer deletes first",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "{ fresh?: boolean }",
+              "purpose": "full index: nothing stored to compare with",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<boolean>",
+            "meaning": "true when the file was committed, false when skipped (no parser, unreadable, or unchanged)"
+          },
+          "errors": [
+            {
+              "type": "UnregisteredRepoError",
+              "condition": "the repository is not registered"
+            },
+            {
+              "type": "Error",
+              "condition": "parse, embed or commit failed; the file's previous rows are unchanged and the caller records the file as uncommitted"
+            }
+          ],
+          "preconditions": [
+            "the repository's FileFilter includes the file (checked by the caller)"
+          ],
+          "postconditions": [
+            "read, parse, resolve and embed run first; then exactly one commitFile call; no deleteEntitiesForFile / deleteUnresolvedForFile / upsertEntities / upsertRelations calls remain on this path"
+          ]
+        },
+        {
+          "name": "updateEmbedding",
+          "signature": "function updateEmbedding(_db: DbClient, id: string, embedding: number[], embeddingModel: string): Promise<void>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "unused",
+              "optional": false
+            },
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "entity id",
+              "optional": false
+            },
+            {
+              "name": "embedding",
+              "type": "number[]",
+              "purpose": "the vector",
+              "optional": false
+            },
+            {
+              "name": "embeddingModel",
+              "type": "string",
+              "purpose": "the active backend's model name",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "resolves when both writes are done"
+          },
+          "errors": [
+            {
+              "type": "Error (vector store)",
+              "condition": "the vector write failed; the marker stays empty and the entity stays counted as unembedded"
+            }
+          ],
+          "preconditions": [
+            "embedding is non-empty"
+          ],
+          "postconditions": [
+            "ORDER REVERSED from today: the vector is written first (upsert when the marker was empty and the entity was not first allocated in the same commit; the backfill always upserts), then one transaction sets the marker and lowers IndexState.unembedded"
+          ]
+        },
+        {
+          "name": "IndexerService.reembed",
+          "signature": "private reembed(repoPath: string): Promise<void>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "the repository to backfill",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "resolves when every selected entity with an empty marker has been tried"
+          },
+          "errors": [
+            {
+              "type": "none thrown for an embedding outage",
+              "condition": "an unreachable backend sets IndexState.embeddingAvailable false and returns; the next run sets it true again on success"
+            }
+          ],
+          "preconditions": [
+            "queued on daemon start for every registered repository and after every full index and clean-up"
+          ],
+          "postconditions": [
+            "selects entities with an empty marker using the embed step's own selection (non-empty body), not force:true, so endpoints and module stubs are never selected or counted",
+            "writes each vector before its marker (updateEmbedding)",
+            "markers carry the active backend's model name (embeddingModel()), not a fixed name"
+          ]
+        },
+        {
+          "name": "listUnembeddedEntities",
+          "signature": "function listUnembeddedEntities(_db: DbClient, repo: string): Promise<Entity[]>",
+          "parameters": [
+            {
+              "name": "_db",
+              "type": "DbClient",
+              "purpose": "unused",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "repository root",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Entity[]",
+            "meaning": "the repository's entities with an empty marker that the embed step would select"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "reads the repository's entities through Story s3's by-repository index instead of the whole entity table",
+            "excludes entities the embed step does not select (empty body)"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "FileCommit / FileCommitResult / RelationWrite (sc2)",
+        "change": "new",
+        "details": "Exported types of the store layer as sketched in the HLD. RelationWrite.target is { stored: id } for a relationship the per-file resolver resolved or { pending: UnresolvedRef } for a name/path reference; it maps onto the existing Relation.resolved / meta fields that upsertResolvedRelations and upsertUnresolvedRelations already take, so no stored form changes. RelationWrite.evidence is accepted and ignored ('unknown') until Story s7 stores it.",
+        "callSites": [
+          "src/db/entities.ts:362-519",
+          "src/db/relations.ts:116-128",
+          "src/indexer/index.ts:1146-1150"
+        ]
+      },
+      {
+        "entity": "EntityRow.embeddingModel (the embedding marker)",
+        "change": "invariant-change",
+        "details": "Invariant becomes: non-empty ONLY if the entity's vector is stored in the vector table for that model. Today embedEntities sets it before the vector write (src/indexer/embedder.ts:187, :216) and upsertEntities / reindexFile / updateEmbedding persist it before the vector exists. After: every writer stores the row with the marker empty and sets it in a second transaction after the vector write succeeds. The stored form is unchanged.",
+        "callSites": [
+          "src/db/graph/codec.ts:164",
+          "src/indexer/embedder.ts:187",
+          "src/indexer/embedder.ts:216",
+          "src/db/entities.ts:304-330",
+          "src/db/entities.ts:962-1010"
+        ]
+      },
+      {
+        "entity": "IndexStateRow.unembedded / embeddingAvailable (sc1, consumed)",
+        "change": "invariant-change",
+        "details": "unembedded becomes a live count, kept in step by every commit and every marker transaction, of the repository's entities the embed step selects whose marker is empty; recounted on open by reconcileIndexStateInTxn from the entity table. embeddingAvailable is set false by the backfill when the backend cannot be reached and true when an embed succeeds. Both fields exist (src/db/graph/codec.ts:262-263); no migration step.",
+        "callSites": [
+          "src/db/graph/codec.ts:262-263",
+          "src/db/graph/index-state-rows.ts:29-117",
+          "src/db/index-state.ts:33-39"
+        ]
+      },
+      {
+        "entity": "Graph-vs-vector consistency on open",
+        "change": "new",
+        "details": "When the store is opened, entity ids are compared with the vector table in both directions: a vector whose entity is not stored is deleted (so a later plain add for a re-allocated id cannot meet it), and an entity whose marker is set but has no vector gets its marker cleared and is counted unembedded. Run once per open on the indexing worker, before the backfill job is queued.",
+        "callSites": [
+          "src/db/lance/entity-vec.ts:119-149",
+          "src/db/lance/entity-vec.ts:373-388",
+          "src/db/entities.ts:903-918"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "commitFile is the FileCommit operation: one LMDB transaction per file for entities, outgoing relationships, pending rows and IndexState; contentHash null removes the file. FileCommitResult is returned as sketched. The indexer's refresh, the delete event and the clean-up pass's removeStoredFile call it; s7, s9, s10 and s13 consume it."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Inside the commit transaction: advanceGenerationInTxn, the unembedded adjustment and the removal of the file from uncommittedFiles through updateIndexStateRowInTxn; the relationship writes reuse s1's in-transaction pending/unwritable counting unchanged. The marker transaction lowers unembedded; the backfill sets embeddingAvailable. s1's derivation of complete (unembedded == 0 || !embeddingAvailable) is unchanged."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The refresh fails after the file is parsed: the embed step throws, the parser throws, or the relation resolver throws (ac1)",
+          "detection": "The exception propagates out of indexFile before commitFile is called; nothing was written because the indexer no longer deletes first",
+          "response": "fileEvent / the full index catch it as today, log at warn, and record the file in IndexState.uncommittedFiles (the full index via setUncommittedFiles; the file event by adding the path in its own small IndexState transaction)",
+          "userImpact": "Answers keep using the file's previous entities and relationships; the repository reads as not complete with 'N files could not be indexed' until the file next commits",
+          "recoverable": true
+        },
+        {
+          "scenario": "The commit transaction itself throws part-way (a store write error, an UnregisteredRepoError found inside the transaction, a lock loss)",
+          "detection": "withWriteTxn's childTransaction rejects; lmdb-js aborts a child transaction whose callback throws (pinned by src/db/graph/__tests__/lmdb-txn-semantics.test.ts)",
+          "response": "No row of the transaction is kept; commitFile rethrows; no vector work runs; the caller records the file as uncommitted as above",
+          "userImpact": "The file's previous rows stay readable (ac1); the repository is reported incomplete with the file named",
+          "recoverable": true
+        },
+        {
+          "scenario": "The vector write after a successful commit fails (vector store unavailable, disk full) (ac3)",
+          "detection": "addEntityEmbeddings / writeEntityEmbeddings reject inside commitFile's post-commit step",
+          "response": "Logged at warn; the markers of those entities stay empty (they were written empty in the commit), so they remain counted in IndexState.unembedded; FileCommitResult.vectorsOutstanding reports them; the backfill fills them on its next run (daemon start, after an index)",
+          "userImpact": "Semantic search lacks those entities until the backfill; the repository reads 'N entities have no vector' and is not complete",
+          "recoverable": true
+        },
+        {
+          "scenario": "The marker transaction after a successful vector write fails",
+          "detection": "the second withWriteTxn rejects",
+          "response": "Logged; the entity keeps an empty marker and stays counted; the backfill's upsert replaces the existing vector without duplicating it",
+          "userImpact": "Same as a vector failure; no wrong data, one redundant vector write later",
+          "recoverable": true
+        },
+        {
+          "scenario": "The daemon crashes between the commit and the vector write, or between the vector write and the marker transaction (ac3)",
+          "detection": "On the next open the graph-vs-vector comparison finds entities with an empty marker (counted unembedded by the recount on open) and, for a crash after the vector write, a vector whose entity's marker is empty",
+          "response": "The recount sets unembedded; the backfill job queued at start upserts the vectors and sets the markers",
+          "userImpact": "The repository is not reported complete until the vectors are written",
+          "recoverable": true
+        },
+        {
+          "scenario": "A removed entity's vector delete fails after the commit, leaving an orphan vector",
+          "detection": "deleteEntityVecsByIds rejects (logged); on the next open the comparison finds a vector whose id has no entity",
+          "response": "The open-time comparison deletes it before any job runs, so a later plain add for the same id (re-allocated in a first commit) cannot meet a duplicate",
+          "userImpact": "A search may briefly return a hit for a removed entity until the next open; the hit resolves to no entity and is dropped by the search's entity lookup",
+          "recoverable": true
+        },
+        {
+          "scenario": "The embedding backend cannot be reached during the backfill",
+          "detection": "embedEntities returns entities with empty embeddings / the provider call throws a ModelCallFailedError",
+          "response": "The backfill sets IndexState.embeddingAvailable false and stops for that repository; the next successful embed sets it true",
+          "userImpact": "The repository reads complete-with-reason ('embeddings unavailable') per s1's derivation instead of blocking indexing",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A refresh whose parsed entities are identical to the stored ones (save without change but cleanFirst true)",
+          "expected": "Entity rows are left as they are by the existing short-circuit, markers stay set, no vector is written; the outgoing relationships and pending rows of the file are still replaced (same set), and the generation advances"
+        },
+        {
+          "input": "An entity whose body changed but whose id is the same",
+          "expected": "Its row is rewritten with an empty marker, its vector is upserted (not added), then the marker is set"
+        },
+        {
+          "input": "An entity first allocated in this commit",
+          "expected": "Plain vector add (today's cost for a first full index), then the marker"
+        },
+        {
+          "input": "A file whose new parse drops an entity that other files' relationships point at",
+          "expected": "The entity is removed and each of those incoming relationships becomes a pending row awaiting the removed id, in the same transaction; the cross-file pass (s1) completes it if the entity reappears"
+        },
+        {
+          "input": "A relationship from this file to an entity of another file that is not stored yet",
+          "expected": "Kept as a pending row awaiting the id (s1's rule) inside the commit"
+        },
+        {
+          "input": "Module stubs in commit.entities (kind 'module', repo '')",
+          "expected": "Ensured to exist under the shared-modules rows, never removed by a file's commit, never counted as the file's entities"
+        },
+        {
+          "input": "contentHash null for a file with no stored rows",
+          "expected": "A no-op transaction apart from the generation advance and removing the path from uncommittedFiles; no error"
+        },
+        {
+          "input": "An entity with an empty body (an endpoint, a module stub)",
+          "expected": "Not selected by the embed step, never counted in unembedded, never queued for the backfill"
+        },
+        {
+          "input": "Two file events for the same file queued back to back",
+          "expected": "Two commits in order; the second replaces the first; readers see one complete set at any time"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "reindexFile's entity-replacement behaviour (ensure-exists module stubs, last-wins dedupe with a warn, the unchanged-row short-circuit, the repoPath shape guard) stays as its tests pin it",
+          "source": "c1"
+        },
+        {
+          "text": "s1's relationship rule: every relationship ends as a stored edge, one pending row awaiting the target id, or a counted unwritable with a reason logged at warn -- nothing is dropped silently",
+          "source": "c3"
+        },
+        {
+          "text": "A removed entity takes its derived rows with it (name_index, entity_by_file, doc summary, export_names, id maps) through detachDeleteEntitiesInTxn",
+          "source": "c4"
+        },
+        {
+          "text": "Vectors are written after the LMDB commit and a vector failure never fails the graph write",
+          "source": "c5"
+        },
+        {
+          "text": "IndexState completeness is derived as today: complete = graphComplete && (unembedded == 0 || !embeddingAvailable)",
+          "source": "c6"
+        },
+        {
+          "text": "Model calls (embedding) stay serial; the commit itself makes no model call",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test); store tests use setGraphStorePath on a temp LMDB and useTemporaryLance for vectors",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "commitFile's transaction semantics on a temp store: entity replacement, outgoing-relationship replacement, pending rows, incoming relationships returned to pending, IndexState updates, removal by contentHash null, and rollback on a throw",
+          "subjects": [
+            "commitFile",
+            "reindexFile"
+          ],
+          "fixturesNeeded": [
+            "a temp LMDB store with a registered repository and two files whose entities reference each other",
+            "a store write that throws part-way inside the commit transaction (a test seam on the in-txn writer) to prove rollback after a reopen"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "the post-commit vector step, the marker ordering and the backfill against a real temp Lance table: markers stay empty when the vector write fails, the backfill fills them, the open-time comparison removes orphan vectors and clears markers without vectors, the unembedded count follows",
+          "subjects": [
+            "commitFile",
+            "updateEmbedding",
+            "IndexerService.reembed",
+            "listUnembeddedEntities"
+          ],
+          "fixturesNeeded": [
+            "useTemporaryLance with a failing vector writer injected for one call",
+            "a stand-in embedder returning fixed vectors and one that throws a ModelCallFailedError"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "the indexer paths on a temp repository: a file event refreshes through one commit with no delete first; a failing parse/embed leaves the previous rows; a reader during the refresh sees the complete old or new set; the delete event and the clean-up pass remove a file in one commit",
+          "subjects": [
+            "IndexerService.indexFile",
+            "IndexerService.reembed"
+          ],
+          "fixturesNeeded": [
+            "the ProbeService pattern of src/indexer/__tests__/reconcile.test.ts (temp store, temp repo, stand-in watcher)",
+            "an embed step held on a promise so a concurrent read runs while the refresh is in progress"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: a file event whose embed step throws after the parse leaves the file's previous entities, relationships and pending rows exactly as they were, and the file is recorded as uncommitted",
+            "unit: a commitFile whose transaction throws after its first writes leaves every row of the file as before (read after a reopen)"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: a read of the file's entities and outgoing relationships while its refresh is held in the embed step returns the complete old set, and after the commit the complete new set -- never empty or mixed"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a commit whose vector write fails leaves the changed entities' markers empty and counted in unembedded, the repository not complete; the backfill run on start writes the vectors, sets the markers and the repository reads complete",
+            "integration: on open, a vector with no entity is deleted and an entity whose marker is set without a vector has its marker cleared and is counted",
+            "unit: updateEmbedding writes the vector before the marker; a failed vector write leaves the marker empty"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: commitFile with contentHash null removes the file's entities, outgoing relationships and pending rows in one transaction and returns incoming relationships of other files to pending",
+            "integration: the delete event and the clean-up pass's removal of a stale file go through one commit (no separate delete calls remain)"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The indexer refreshes a file by three separate deletes (relationships -- a no-op -- entities, pending rows) before parsing, then embeds, then upserts entities and relationships in further separate transactions (src/indexer/index.ts:1120-1150); the delete event and the clean-up pass remove a file in two or three transactions (src/indexer/index.ts:845-849, :576-581). The whole-file replacement reindexFile exists unused and writes entities only (src/db/entities.ts:362-519). The embedding marker is stored before the vector exists (src/indexer/embedder.ts:187, src/db/entities.ts:304-330, :962-1010), IndexState.unembedded is never counted, and reembed runs only when a job is queued by hand (src/indexer/index.ts:413, :1058-1086).",
+      "stateAfter": "commitFile (grown from reindexFile) writes a file's entities, outgoing relationships, pending rows and IndexState in one LMDB transaction; the indexer parses and embeds first and commits once; the delete event and the clean-up pass call commitFile with contentHash null. Every entity row is written with an empty marker and the marker is set in a second transaction after its vector is stored; IndexState.unembedded counts selected entities with an empty marker; the store compares entity ids with the vector table on open; the backfill (reembed) runs on daemon start and after every full index and clean-up. No stored key, value form or kind byte changes.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Split upsertResolvedRelations and upsertUnresolvedRelations into transaction-taking bodies called by the existing functions unchanged (s1's tests pin the behaviour)",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Grow reindexFile into commitFile: by-file lookup through entity_by_file, outgoing-edge and pending-row replacement, incoming relationships of removed entities returned to pending, generation advance, unembedded adjustment, removal from uncommittedFiles, contentHash-null removal; keep reindexFile as a thin wrapper",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Reverse the marker order in every vector writer (commitFile's post-commit step, upsertEntities, updateEmbedding): row written with an empty marker, vector written, marker set in a second transaction; embedEntities stops setting the marker on the entity it returns",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Make the recount on open count unembedded from the entity table (selected entities with an empty marker) and add the open-time graph-vs-vector comparison: delete vectors whose entity is not stored; clear the marker of an entity whose vector is missing. On an existing store this repairs rows written under the old order without a re-index",
+          "rollbackable": false
+        },
+        {
+          "order": 5,
+          "action": "Move IndexerService.indexFile, the delete event and removeStoredFile onto commitFile; record a file event's failed commit in uncommittedFiles; remove the delete-then-upsert sequence",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Extend reembed into the backfill (embed-step selection instead of force, vector before marker, the active backend's model name, embeddingAvailable on outage) and queue it on daemon start for every registered repository and after every full index and clean-up",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored form changes, so no SCHEMA_VERSION step and no re-index. upsertEntities, upsertRelations, deleteEntitiesForFile, deleteUnresolvedForFile and reindexFile keep their signatures for their other callers. Rows written under the old marker order are repaired by step 4 on the first open: a marker set without a vector is cleared and the entity is backfilled. On that first open after the update, repositories with vectors lost earlier read as not complete ('N entities have no vector') until the backfill finishes -- the intended, more accurate state.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Grow reindexFile into commitFile (sc2) with the vector marker set after the vector write",
+        "oneLineSummary": "One store operation commitFile(FileCommit) built from reindexFile: entities, outgoing relationships, pending rows and IndexState in one LMDB transaction; vectors after it with the marker set only once they are written; reembed extended into the backfill.",
+        "approach": "reindexFile (src/db/entities.ts:362) becomes commitFile(commit: FileCommit): Promise<FileCommitResult>, the sc2 operation, kept in the store layer. In one withWriteTxn it (1) reads the file's existing entities through Story s3's entityByFile index instead of scanning the entity table, (2) upserts the parsed entities as today (module stubs ensure-exists under the shared-modules rows), writing every entity row with its embedding marker EMPTY, (3) removes the outgoing edges of every existing entity of the file (sweepOutgoingEdges) and the file's pending rows, (4) writes the new relationships through in-transaction forms of the existing resolved and pending writers (upsertResolvedRelations / upsertUnresolvedRelations split into *InTxn bodies, so s1's keep-pending / count-unwritable rule is applied unchanged), (5) detaches the entities no longer parsed, returning each incoming relationship whose holder survives to pending awaiting the removed id (returnEdgeToPendingInTxn, as the repository delete does), (6) advances the generation and adjusts IndexState.unembedded by the number of selected entities (non-empty body) whose marker is now empty, and clears the file from uncommittedFiles. contentHash null removes the file (ac4) through the same transaction. After the commit the vectors are written (plain add for an entity first allocated in this commit, upsert otherwise; deletes for removed entities), and a second small transaction sets each written entity's marker to the active backend's model and decrements unembedded. The indexer parses, resolves and embeds BEFORE the commit and no longer deletes first; the delete event and the clean-up pass's removeStoredFile call commitFile with contentHash null. The reembed job is extended into the backfill (queued on daemon start and after an index; embed-step selection, vector first then marker, upsert), and the store compares entity ids with the vector table on open in both directions, deleting orphan vectors and clearing markers of entities without a vector.",
+        "pros": [
+          "Builds on the existing whole-file replacement as lc1 requires; no second replacement is added",
+          "ac1/ac2 come from LMDB transaction isolation alone: a reader sees the old or the new set, a failure before the commit changes nothing",
+          "Reuses s1's relationship writers and IndexState helpers in-transaction, so s1's rule cannot drift between two copies",
+          "Delete, refresh and clean-up removal become one code path (ac4)",
+          "Matches the sc2 shape s7, s9, s10 and s13 consume"
+        ],
+        "cons": [
+          "Splitting the two relation writers into transaction-taking bodies touches s1's code (behaviour unchanged, but its tests must still pass)",
+          "The marker ordering changes for every writer of vectors (upsertEntities, updateEmbedding), not only the refresh",
+          "The open-time comparison of entity ids with the vector table reads both stores in full once per open"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "One outer transaction around today's separate writers",
+        "oneLineSummary": "Give upsertEntities, upsertRelations and the delete functions an optional transaction argument and have the indexer call them all inside one withWriteTxn; no FileCommit operation.",
+        "approach": "Each existing writer gains a `txn?` parameter; the indexer opens one write transaction per file and calls deleteEntitiesForFile, deleteUnresolvedForFile, upsertEntities and upsertRelations inside it, after parsing and embedding. Vectors are handled as each writer handles them today. The clean-up pass and the delete event do the same with the delete functions only.",
+        "pros": [
+          "Smallest code movement in the store layer",
+          "Each writer keeps its present signature for other callers"
+        ],
+        "cons": [
+          "There is no sc2 operation for s7, s9, s10 and s13 to consume; each caller must remember the order of the calls",
+          "Ignores lc1: reindexFile stays unused and a second replacement sequence lives in the indexer",
+          "Delete-then-upsert removes and re-allocates every entity of the file on each refresh, losing the incoming relationships of surviving entities",
+          "Leaves the marker set before the vector is written, so ac3's gap stays undetected"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Cheaper, but it fails ac3, the owned contract sc2 and lc1."
+      },
+      {
+        "id": "a3",
+        "name": "Staged generation with a pointer flip",
+        "oneLineSummary": "Write the refreshed file's rows under a new staging key space and switch a per-file pointer to it in a final transaction.",
+        "approach": "Rows for a refresh are written keyed by (file, generation); readers resolve a file's current generation through a pointer row; the commit flips the pointer and a background sweep deletes the old generation's rows.",
+        "pros": [
+          "Old rows stay readable even across several transactions",
+          "Could allow very large files to be written in parts"
+        ],
+        "cons": [
+          "Changes the stored form of entity and edge keys, which the HLD forbids (no existing key changes)",
+          "Every reader must learn the pointer indirection",
+          "LMDB's own transaction isolation already gives the old-or-new guarantee the Story needs"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Buys nothing LMDB isolation does not already give and breaks the HLD's no-key-change rule."
+      },
+      {
+        "id": "a4",
+        "name": "commitFile with vectors written before the graph commit",
+        "oneLineSummary": "As a1, but write the new vectors to the vector store first and commit the graph only after they succeed.",
+        "approach": "The indexer embeds, writes the vectors (upsert) and only then calls a commitFile that sets the markers in the same transaction as the rows. A vector failure aborts the refresh, leaving the old rows.",
+        "pros": [
+          "No row ever carries a marker without its vector",
+          "No second marker transaction"
+        ],
+        "cons": [
+          "A graph commit that then fails leaves new vectors for entities that are not stored, and old vectors replaced for entities that still are, so the vector store no longer matches the graph",
+          "Every refresh pays the upsert even for entities first allocated, so a first full index loses today's plain-insert cost, against the HLD's performance note",
+          "An embedding backend that is down blocks every refresh, where the HLD reports it as its own reason and still indexes"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Removes the marker gap but makes the vector store disagree with the graph on failure and blocks indexing when embeddings are down, against the HLD's durability and performance notes."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "OPEN (s8 sbdry3, s2's own HLD boundary item not yet in the contract): the queue rule 'index jobs go ahead of other jobs and a long job yields between its units, so that a commit is not held behind a model pass'. Proposed: the backfill (reembed) embeds and writes in batches (the embedder's batch size) and, between batches, returns control to the index lane so queued file / full / reconcile jobs run first, then continues. Confirm or choose another rule before the plan.",
+      "OPEN (s8 sbdry3, HLD performance note): 'Story s2's design measures [the vector upsert] on this repository'. Proposed: record, as a smoke result in the Story's test record, the time of writeEntityEmbeddings (upsert) vs addEntityEmbeddings for this repository's vector table at a refresh-sized batch and at a backfill-sized batch, before choosing the backfill's batch size.",
+      "NOTE (s8 alt2 partial): alternatives a3 and a4 were not scored against Epic constraints k2 and k4; both lose on acceptance criteria already, so the choice of a1 does not depend on it."
+    ],
+    "sequenceDefinition": {
+      "id": "s2-file-refresh",
+      "narrative": "The order of one file refresh after this Story: everything that can fail slowly (read, parse, resolve, embed) runs before the single commit transaction; vectors and markers follow it, and the backfill fills any gap later.",
+      "participants": [
+        {
+          "id": "watcher",
+          "label": "Watcher / file job",
+          "description": "a file event or the full index's per-file step"
+        },
+        {
+          "id": "indexer",
+          "label": "IndexerService.indexFile",
+          "description": "src/indexer/index.ts; no delete before parsing any more"
+        },
+        {
+          "id": "embedder",
+          "label": "embedEntities",
+          "description": "the local embedding model; serial calls"
+        },
+        {
+          "id": "store",
+          "label": "commitFile (LMDB)",
+          "description": "one write transaction for entities, outgoing relationships, pending rows and IndexState"
+        },
+        {
+          "id": "lance",
+          "label": "entity vectors (Lance)",
+          "description": "written after the commit"
+        },
+        {
+          "id": "backfill",
+          "label": "reembed backfill",
+          "description": "queued on daemon start and after an index"
+        }
+      ],
+      "messages": [
+        {
+          "from": "watcher",
+          "to": "indexer",
+          "label": "index file",
+          "kind": "call",
+          "description": "cleanFirst true for a file event"
+        },
+        {
+          "from": "indexer",
+          "to": "indexer",
+          "label": "read, parse, resolve relations",
+          "kind": "recurse",
+          "description": "a throw here writes nothing: the previous rows stay (ac1)"
+        },
+        {
+          "from": "indexer",
+          "to": "embedder",
+          "label": "embed selected entities",
+          "kind": "call",
+          "description": "a throw here writes nothing (ac1)"
+        },
+        {
+          "from": "indexer",
+          "to": "store",
+          "label": "commitFile(FileCommit)",
+          "kind": "call",
+          "description": "one transaction; readers see old or new (ac2); contentHash null removes the file (ac4); markers written empty, unembedded counted"
+        },
+        {
+          "from": "store",
+          "to": "lance",
+          "label": "delete removed vectors; add/upsert new vectors",
+          "kind": "call",
+          "description": "a failure leaves markers empty and counted (ac3)"
+        },
+        {
+          "from": "store",
+          "to": "store",
+          "label": "set markers for written vectors, lower unembedded",
+          "kind": "recurse",
+          "description": "second small transaction"
+        },
+        {
+          "from": "store",
+          "to": "indexer",
+          "label": "FileCommitResult",
+          "kind": "return",
+          "description": "vectorsOutstanding > 0 when vectors are still missing"
+        },
+        {
+          "from": "backfill",
+          "to": "lance",
+          "label": "upsert missing vectors, then set markers",
+          "kind": "call",
+          "description": "on start and after an index; open-time comparison runs first (ac3)"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[0]: the existing whole-file replacement (src/db/entities.ts:362-519)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[1]: the indexer's refresh and delete paths (src/indexer/index.ts:1093-1156)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[2]: relationship and pending-row writers (src/db/relations.ts:116-180)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[3]: entity cascade delete (src/db/entities.ts:1255-1295)"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[4]: vectors and the embedding marker (src/db/entities.ts:962-1010)"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[5]: IndexState fields (src/db/graph/codec.ts:262-263)"
+    },
+    {
+      "id": "c7",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[6]: queue lanes (src/daemon/queue.ts)"
+    },
+    {
+      "id": "c8",
+      "kind": "analyze-bundle",
+      "ref": "s1.analyzeBundles[7]: tests to extend"
+    },
+    {
+      "id": "c9",
+      "kind": "step-output",
+      "ref": "s3.winnerRationale"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/db/graph/store.ts:1272-1297",
+      "quotedText": "withWriteTxn runs the callback in store.root.childTransaction(run), which aborts on a throw"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "HLD-c2ba6fa62a148ed1 sc2 FileCommit and s2 boundary.internal"
+    }
+  ]
+}

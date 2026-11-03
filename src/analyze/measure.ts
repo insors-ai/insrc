@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from './connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -28,6 +29,7 @@
  */
 
 import { resolve } from 'node:path';
+import { withRunFileFilters } from './context/run-file-filter.js';
 import { createConnectionResolver } from '../daemon/db/pool-cache.js';
 import { analysisConnectionContext, savedAnalysisExecution, assertAnalysisConnectionExecution } from './connection-access.js';
 import { dataSourceListingTimeoutMs } from '../config/analyze.js';
@@ -332,6 +334,16 @@ function sourceFor(kind: AnalyzeScopeRef['kind'], target: AnalyzeTarget): Reques
  * reads can fail.
  */
 export async function measureRequestScope(
+	scopeRef:  AnalyzeScopeRef,
+	target:    AnalyzeTarget,
+	sizeHint?: AnalyzeScope,
+	options?:  MeasureOptions,
+): Promise<RequestMeasure> {
+	// Its file walk shares the run's FileFilter (run-file-filter.ts).
+	return withRunFileFilters(() => measureRequestScopeInRun(scopeRef, target, sizeHint, options));
+}
+
+async function measureRequestScopeInRun(
 	scopeRef:  AnalyzeScopeRef,
 	target:    AnalyzeTarget,
 	sizeHint?: AnalyzeScope,
@@ -652,7 +664,7 @@ async function measureConnection(
 	const limitMs = sourceLimitMs(options);
 	const late = (what: string, err: unknown): void => {
 		if (session) return; // The owner-local quiet policy outlives the bounded waiter and authority.
-		log.debug({ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`);
+		captureAnalysisDiagnostics(log, options?.connectionExecution).emit('debug', () => [{ connectionId: id, err: reasonOf(err) }, `the measure of a data source was abandoned; its ${what} failed afterwards`]);
 	};
 	let pending: PendingListing;
 	if (session) {

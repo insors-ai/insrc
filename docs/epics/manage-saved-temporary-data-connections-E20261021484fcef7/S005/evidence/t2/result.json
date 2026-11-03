@@ -1,0 +1,36 @@
+{
+  "task": "s5/t2",
+  "result": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "typecheck": "Node22 tsc --noEmit passed",
+  "source": "src/shared/connection-manager/wire.ts",
+  "currentDriverDescriptors": 29,
+  "allCurrentDescriptorsEditable": true,
+  "unknownSchema": "Descriptor retained disabled with safe compatibility guidance; no arbitrary form materialization",
+  "checks": [
+    "all common valid/malformed wire cases",
+    "data-only descriptor copy before existing validators; getters/toJSON not called",
+    "prototype/symbol/hidden/sparse/cyclic/depth/string/key/item/byte bounds",
+    "key/root/operation/mode/epoch/test tuple correlation",
+    "secret-reference/userinfo/private-field refusal and fixed error/warning presentation"
+  ],
+  "noDaemonStorageProviderRuntimeImports": true,
+  "fullSweepRun": false,
+  "limits": {
+    "bytes": 16777216,
+    "depth": 32,
+    "nodes": 131072,
+    "string": 16384,
+    "items": 16384
+  },
+  "hashes": {
+    "src/shared/connection-manager/wire.ts": "eb7adc831ceb591a817d93ec8c3ecc450ce5aa827e2bb9a9d5c52be57f829d31",
+    "src/shared/__tests__/connection-manager-wire.test.ts": "ec1512ec45eb0b19f094e4c4735a3912c94af95ff0ac34388614dab240c69eb1"
+  }
+}

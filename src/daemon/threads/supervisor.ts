@@ -84,9 +84,52 @@ export class Supervisor {
 		return started;
 	}
 
+	/**
+	 * Start a worker of `spec`; if its first start fails (it exits or errors before it
+	 * is ready), replace it as after any exit: rate-limited, and past the limit the
+	 * daemon shuts down. Resolves once a worker of `spec` is ready, or the replacing ends.
+	 */
+	async startOrReplace(spec: WorkerSpec): Promise<void> {
+		try {
+			await this.start(spec);
+		} catch (err) {
+			if (this.stopping) return;
+			log.error({ worker: spec.name, err: err instanceof Error ? err.message : String(err) }, 'supervisor: a worker did not start; replacing it');
+			await this.replace(spec);
+		}
+	}
+
 	/** Every ready worker now. */
 	liveWorkers(): StartedWorker[] {
 		return [...this.live.values()];
+	}
+
+	/**
+	 * A worker started outside start() (the session pool's, s4): supervised for errors and
+	 * shutdown (terminateAll ends it); its exit and replacement stay its starter's.
+	 */
+	track(worker: Worker, name: string): void {
+		this.created.add(worker);
+		worker.once('exit', () => this.created.delete(worker));
+		worker.on('error', err => log.error({ worker: name, threadId: worker.threadId, err: err.message }, 'supervisor: a worker failed'));
+	}
+
+	/**
+	 * Count one restart of `name` against the limit (maxRestarts within windowMs, shared by every
+	 * worker). Past it the daemon shuts down and the answer is false: the restart must not happen.
+	 */
+	allowRestart(name: string): boolean {
+		const now = (this.opts.now ?? Date.now)();
+		const windowMs = this.opts.windowMs ?? DEFAULT_RESTART_WINDOW_MS;
+		while (this.restarts.length > 0 && now - this.restarts[0]! >= windowMs) this.restarts.shift();
+		if (this.restarts.length >= (this.opts.maxRestarts ?? DEFAULT_MAX_RESTARTS)) {
+			log.fatal({ worker: name, restarts: this.restarts.length, windowMs }, 'supervisor: workers keep exiting; shutting the daemon down');
+			this.stopping = true;
+			this.opts.shutdown(`the ${name} worker exceeded the restart limit`);
+			return false;
+		}
+		this.restarts.push(now);
+		return true;
 	}
 
 	/** Workers created and not yet exited, ready or not. */
@@ -121,9 +164,11 @@ export class Supervisor {
 		const thread = spec.cls ?? spec.name;
 		for (const r of router.detach(worker.threadId)) {
 			const error = `the daemon's ${thread} thread stopped while serving ${r.method}; retry`;
-			r.deliver(r.stream
-				? { kind: 'frame', requestId: r.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } } satisfies FrameEnvelope
-				: { kind: 'reply', requestId: r.requestId, error } satisfies ReplyEnvelope);
+			try {
+				r.deliver(r.stream
+					? { kind: 'frame', requestId: r.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } } satisfies FrameEnvelope
+					: { kind: 'reply', requestId: r.requestId, error } satisfies ReplyEnvelope);
+			} finally { r.ack(); }
 		}
 		const reclaimed = await worker.reclaimed;
 		worker.disconnect();
@@ -134,16 +179,7 @@ export class Supervisor {
 	}
 
 	private async replace(spec: WorkerSpec): Promise<void> {
-		const now = (this.opts.now ?? Date.now)();
-		const windowMs = this.opts.windowMs ?? DEFAULT_RESTART_WINDOW_MS;
-		while (this.restarts.length > 0 && now - this.restarts[0]! >= windowMs) this.restarts.shift();
-		if (this.restarts.length >= (this.opts.maxRestarts ?? DEFAULT_MAX_RESTARTS)) {
-			log.fatal({ worker: spec.name, restarts: this.restarts.length, windowMs }, 'supervisor: workers keep exiting; shutting the daemon down');
-			this.stopping = true;
-			this.opts.shutdown(`the ${spec.name} worker exceeded the restart limit`);
-			return;
-		}
-		this.restarts.push(now);
+		if (!this.allowRestart(spec.name)) return;
 		try {
 			const started = await this.start(spec);
 			log.info({ worker: spec.name, threadId: started.threadId }, 'supervisor: replacement worker ready');

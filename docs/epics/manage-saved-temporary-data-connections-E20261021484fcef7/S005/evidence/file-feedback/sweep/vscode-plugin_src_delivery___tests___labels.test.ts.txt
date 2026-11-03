@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: every stage, attention reason, notice code, task result, approval state and review verdict has a display label
+ok 1 - every stage, attention reason, notice code, task result, approval state and review verdict has a display label
+  ---
+  duration_ms: 5.283125
+  type: 'test'
+  ...
+# Subtest: the six stage labels read in workflow order
+ok 2 - the six stage labels read in workflow order
+  ---
+  duration_ms: 0.280041
+  type: 'test'
+  ...
+# Subtest: DISPLAY_LABELS carries chain.notRecorded, conflictHeadline and noMatchesTitle
+ok 3 - DISPLAY_LABELS carries chain.notRecorded, conflictHeadline and noMatchesTitle
+  ---
+  duration_ms: 0.077792
+  type: 'test'
+  ...
+# Subtest: DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels
+ok 4 - DISPLAY_LABELS carries the view, item-tab, attention and stage-section labels
+  ---
+  duration_ms: 0.173958
+  type: 'test'
+  ...
+# Subtest: readableTime shows an ISO time as YYYY-MM-DD HH:MM UTC and anything else as recorded
+ok 5 - readableTime shows an ISO time as YYYY-MM-DD HH:MM UTC and anything else as recorded
+  ---
+  duration_ms: 0.206083
+  type: 'test'
+  ...
+# Subtest: msBetween measures from one ISO time to a later one, counts a future time as now, and gives null for an unreadable one
+ok 6 - msBetween measures from one ISO time to a later one, counts a future time as now, and gives null for an unreadable one
+  ---
+  duration_ms: 0.116958
+  type: 'test'
+  ...
+# Subtest: plural writes a count with the noun that fits it
+ok 7 - plural writes a count with the noun that fits it
+  ---
+  duration_ms: 0.124291
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 237.800084

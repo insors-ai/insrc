@@ -94,6 +94,9 @@ export const ENTITY_KIND_BYTE = {
 	// External-service dependency node (sc1 — E20260806914cbf5e:S001).
 	// Append-only: never reorder or reuse a slot. Bump SCHEMA_VERSION when adding.
 	externalEndpoint: 13,
+	// SQL objects (Epic c2ba6fa6 s9). Append-only; SCHEMA_VERSION 7.
+	table:            14,
+	view:             15,
 } as const;
 
 export type EntityKind = keyof typeof ENTITY_KIND_BYTE;
@@ -274,6 +277,23 @@ export function encodeNameIndexPrefix(repoId: number, kindByte?: number): Buffer
 // unresolved_by_file: (u32 repo, utf8 from_file) -- dupsort u64 unresolved_id
 export function encodeUnresolvedByFileKey(repoId: number, fromFile: string): Buffer {
 	return Buffer.concat([encodeRepoKey(repoId), utf8(fromFile)]);
+}
+
+// entity_by_file: (u32 repo BE, utf8 filePath) -> dupsort u64 entity_id.
+// A getRange keyed to (repoId, filePath) answers findEntitiesByFile directly;
+// a getRange prefixed by repoId alone (encodeEntityByFilePrefix) answers
+// listEntitiesForRepo and, with a 1-item iteration limit, the existence
+// check -- the same prefix-scan idiom encodeNameIndexPrefix already uses.
+export function encodeEntityByFileKey(repoId: number, filePath: string): Buffer {
+	return Buffer.concat([encodeRepoKey(repoId), utf8(filePath)]);
+}
+
+export function encodeEntityByFilePrefix(repoId: number): Buffer {
+	return encodeRepoKey(repoId);
+}
+
+export function decodeEntityByFileKey(buf: Buffer): { repoId: number; filePath: string } {
+	return { repoId: buf.readUInt32BE(0), filePath: buf.subarray(4).toString('utf8') };
 }
 
 // plan_step: (utf8 plan_id, \0, u32 idx BE)

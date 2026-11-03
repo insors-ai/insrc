@@ -1,0 +1,101 @@
+TAP version 13
+# Subtest: runCrossFileResolver (LMDB) -- INHERITS in same package
+    # Subtest: resolves INHERITS Bar->Foo via same-package visibility
+    ok 1 - resolves INHERITS Bar->Foo via same-package visibility
+      ---
+      duration_ms: 7.299
+      type: 'test'
+      ...
+    1..1
+ok 1 - runCrossFileResolver (LMDB) -- INHERITS in same package
+  ---
+  duration_ms: 275.733958
+  type: 'suite'
+  ...
+# Subtest: runCrossFileResolver (LMDB) -- module-stub IMPORTS rewiring
+    # Subtest: rewires IMPORTS to point at the in-tree file entity
+    ok 1 - rewires IMPORTS to point at the in-tree file entity
+      ---
+      duration_ms: 12.823166
+      type: 'test'
+      ...
+    1..1
+ok 2 - runCrossFileResolver (LMDB) -- module-stub IMPORTS rewiring
+  ---
+  duration_ms: 45.84175
+  type: 'suite'
+  ...
+# Subtest: runCrossFileResolver (LMDB) -- external-dep stays as module stub
+    # Subtest: leaves the module-stub edge alone for external deps
+    ok 1 - leaves the module-stub edge alone for external deps
+      ---
+      duration_ms: 1.684584
+      type: 'test'
+      ...
+    1..1
+ok 3 - runCrossFileResolver (LMDB) -- external-dep stays as module stub
+  ---
+  duration_ms: 28.299666
+  type: 'suite'
+  ...
+# Subtest: runCrossFileResolver (LMDB) -- CALLS resolves to exported function in imported file
+    # Subtest: promotes the CALLS edge to the validate function
+    ok 1 - promotes the CALLS edge to the validate function
+      ---
+      duration_ms: 8.869625
+      type: 'test'
+      ...
+    1..1
+ok 4 - runCrossFileResolver (LMDB) -- CALLS resolves to exported function in imported file
+  ---
+  duration_ms: 56.693291
+  type: 'suite'
+  ...
+# Subtest: runCrossFileResolver (LMDB) -- CALLS to non-exported target stays unresolved
+    # Subtest: does not resolve the CALLS edge
+    ok 1 - does not resolve the CALLS edge
+      ---
+      duration_ms: 6.746042
+      type: 'test'
+      ...
+    1..1
+ok 5 - runCrossFileResolver (LMDB) -- CALLS to non-exported target stays unresolved
+  ---
+  duration_ms: 32.691125
+  type: 'suite'
+  ...
+# Subtest: runCrossFileResolver (LMDB) -- CALLS marks ambiguous when two imported files export same name
+    # Subtest: records candidates in meta and stays unresolved
+    ok 1 - records candidates in meta and stays unresolved
+      ---
+      duration_ms: 6.376042
+      type: 'test'
+      ...
+    1..1
+ok 6 - runCrossFileResolver (LMDB) -- CALLS marks ambiguous when two imported files export same name
+  ---
+  duration_ms: 35.398291
+  type: 'suite'
+  ...
+# Subtest: runCrossFileResolver (LMDB) -- idempotency
+    # Subtest: second run resolves nothing new and the typed REL count is unchanged
+    ok 1 - second run resolves nothing new and the typed REL count is unchanged
+      ---
+      duration_ms: 7.502209
+      type: 'test'
+      ...
+    1..1
+ok 7 - runCrossFileResolver (LMDB) -- idempotency
+  ---
+  duration_ms: 32.986458
+  type: 'suite'
+  ...
+1..7
+# tests 7
+# suites 7
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 915.208917

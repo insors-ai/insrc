@@ -1,354 +1,405 @@
 /**
- * Story E20260923ba132c18:S003 / t4 — runSetModelTier picker-flow tests.
- *
- * Every k7 branch of the VS-Code-free picker is exercised over injected fakes (a
- * fake listModels + a stub catalog + a scripted pick + a recording writeKeyPath +
- * a notify spy) so no live vscode/daemon is needed — the S007 inject-the-dependency
- * idiom. Plus a source-scan guarding the module is VS-Code-free.
+ * The 'insrc: Set model tier' picker on the daemon's model definitions (Epic
+ * ce99b72065d03b1b, Story s6). Fake seams; the fake definitions answer names
+ * nothing in the shipped file, so every option the picker shows comes from it.
  *
  * Run: npx tsx --test vscode-plugin/src/models/__tests__/model-tier-picker.test.ts
  */
-
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import {
-  runSetModelTier,
-  type ModelInfo,
-  type ModelListResult,
-  type ModelProvider,
-  type QuickPickItemLike,
-  type SetModelTierDeps,
-} from '../model-tier-picker.js';
+import { runSetModelTier, currentTier, tierStatus, type QuickPickItemLike, type SetModelTierDeps, type Tier } from '../model-tier-picker.js';
+import type { ModelDefinitions } from '../definitions.js';
 import type { ConfigWriteResult } from '../../config/types.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
-/** A pick responder: given the presented items, return the chosen one (or undefined = cancel). */
-type Responder = (items: readonly ItemLike[]) => ItemLike | undefined;
-/** The concrete item shape the flow builds (QuickPickItemLike + our private kind/value). */
-interface ItemLike extends QuickPickItemLike {
-  readonly kind?: string;
-  readonly value?: string;
-}
+export const DEFS: ModelDefinitions = {
+  version: 1,
+  defaultFamily: 'cli-codex',
+  families: [
+    { id: 'cli-claude', cliKind: 'claude', displayName: 'FakeC', tierDefaults: { core: { model: 'c-big' }, mid: { model: 'c-big' }, cheap: { model: 'c-big' } },
+      models: [{ id: 'c-big', aliases: ['cb'], efforts: ['deep', 'deeper'], source: 'shipped' }, { id: 'c-new', aliases: [], efforts: [], source: 'user-approved' }] },
+    { id: 'cli-codex', cliKind: 'codex', displayName: 'FakeX', tierDefaults: { core: { model: 'x-a', effort: 'lo' }, mid: { model: 'x-a' }, cheap: { model: 'x-b' } },
+      models: [{ id: 'x-a', aliases: [], efforts: ['lo', 'turbo'], source: 'shipped' }, { id: 'x-b', aliases: ['xb'], efforts: ['lo'], source: 'shipped' }] },
+    { id: 'ollama', displayName: 'FakeLocal', toolLoopModel: 'loc:1',
+      models: [{ id: 'loc:1', aliases: [], efforts: [], source: 'shipped', installed: true }, { id: 'loc:2', aliases: [], efforts: [], source: 'shipped', installed: false }] },
+  ],
+};
 
-interface HarnessOpts {
-  values?: Map<string, unknown>;
-  catalogThrows?: boolean;
-  /** Per-call list result (1-based callNo), or 'throw' to reject. */
-  listModels?: (provider: ModelProvider, callNo: number) => ModelListResult | 'throw';
-  write?: (segments: readonly string[], value: unknown) => ConfigWriteResult;
-  picks: Responder[];
-}
+interface Item extends QuickPickItemLike { readonly kind?: string; readonly value?: string }
 
-function harness(opts: HarnessOpts) {
-  const listCalls: ModelProvider[] = [];
-  const writes: { segments: string[]; value: unknown }[] = [];
-  const notifications: string[] = [];
-  const pickItemsSeen: ItemLike[][] = [];
-  let pickIdx = 0;
-
+/**
+ * A scripted run: each pick is a value (or a label for value-less rows) chosen in order;
+ * returns the writes, every list shown, the messages and the restarts.
+ */
+export async function run(opts: {
+  picks: readonly string[];
+  raw?: Record<string, unknown>;
+  defs?: () => Promise<ModelDefinitions>;
+  write?: (segments: readonly string[], value: unknown) => Promise<ConfigWriteResult>;
+  restart?: () => Promise<boolean>;
+  actions?: readonly (string | undefined)[];
+  extra?: Partial<SetModelTierDeps>;
+}) {
+  const writes: Array<{ segments: string[]; value: unknown }> = [];
+  const shown: Item[][] = [];
+  const messages: string[] = [];
+  let restarts = 0;
+  let i = 0;
+  const actions = [...(opts.actions ?? [])];
   const deps: SetModelTierDeps = {
-    listModels: async (provider) => {
-      listCalls.push(provider);
-      const r = opts.listModels ? opts.listModels(provider, listCalls.length) : { provider, available: true, models: [] };
-      if (r === 'throw') throw new Error('socket refused');
-      return r;
-    },
-    catalog: async () => {
-      if (opts.catalogThrows) throw new Error('daemon unreachable');
-      return { values: opts.values ?? new Map<string, unknown>(), repoFields: [] };
-    },
+    definitions: opts.defs ?? (async () => DEFS),
+    rawConfig: async () => opts.raw ?? {},
     writeKeyPath: async (segments, value) => {
       writes.push({ segments: [...segments], value });
       return opts.write ? opts.write(segments, value) : { ok: true };
     },
-    pick: async (items, _o) => {
-      pickItemsSeen.push(items as ItemLike[]);
-      const responder = opts.picks[pickIdx++];
-      return (responder ? responder(items as ItemLike[]) : undefined) as never;
+    restartDaemon: async () => { restarts++; return opts.restart ? opts.restart() : true; },
+    pick: async (items) => {
+      shown.push(items as Item[]);
+      const want = opts.picks[i++];
+      return (want === undefined ? undefined : (items as Item[]).find((x) => x.value === want || (x.value === undefined && x.label === want))) as never;
     },
-    notify: (m) => notifications.push(m),
+    notify: async (message) => { messages.push(message); return actions.shift(); },
+    check: async () => { throw new Error('check not scripted'); },
+    approve: async () => { throw new Error('approve not scripted'); },
+    reject: async () => { throw new Error('reject not scripted'); },
+    input: async () => undefined,
+    pickMany: async () => undefined,
+    ...opts.extra,
   };
-  return { deps, listCalls, writes, notifications, pickItemsSeen };
+  await runSetModelTier(deps);
+  return { writes, shown, messages, restarts: () => restarts };
 }
 
-// Responder helpers ---------------------------------------------------------
-const byValue = (v: string): Responder => (items) => items.find((i) => i.value === v);
-const byKind = (k: string): Responder => (items) => items.find((i) => i.kind === k);
-const cancel: Responder = () => undefined;
+const TIER = (runner: string, model: string, effort = '') => ({ models: { tiers: { core: { runner, model, effort } } } });
 
-const OPUS: ModelInfo = { id: 'claude-opus-5-5', displayName: 'Claude Opus 5.5' };
-const SONNET: ModelInfo = { id: 'claude-sonnet-5' };
+test("model-tier-picker.test.ts: the family, model and effort steps offer exactly the fake answer's options and a pick writes the whole tier once; request failures are classified", async () => {
+  // Family step: exactly the answer's families, the current one marked.
+  let r = await run({ picks: ['core', 'cli-claude', 'c-big', 'deeper'], raw: TIER('cli-codex', 'x-a', 'lo') });
+  assert.deepEqual(r.shown[1]!.map((x) => [x.label, x.description]), [['FakeC', 'cli-claude'], ['FakeX', 'cli-codex (current)'], ['FakeLocal', 'ollama']]);
+  // Model step: the family's models with aliases and the user-approved mark, then a typed id (CLI family) and Refresh.
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['c-big', 'alias cb'], ['c-new', '(user-approved)'], ['Enter another model id…', 'checked by the daemon before it can be used'], ['$(refresh) Refresh', undefined]]);
+  // Effort step: the CLI default then the model's own levels.
+  assert.deepEqual(r.shown[3]!.map((x) => x.label), ['CLI default', 'deep', 'deeper']);
+  // ONE whole-tier write.
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-claude', model: 'c-big', effort: 'deeper' } }]);
+  assert.match(r.messages.at(-1)!, /core tier set to c-big \(cli-claude, effort deeper\)/);
 
-// ── happy path (ac1) ───────────────────────────────────────────────
+  // The current model and effort are marked; a model with no efforts skips the effort step.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: TIER('cli-codex', 'x-a', 'lo') });
+  assert.equal(r.shown[2]!.find((x) => x.value === 'x-a')?.description, '(current)');
+  assert.equal(r.shown[3]!.find((x) => x.value === 'lo')?.description, '(current)');
+  r = await run({ picks: ['core', 'ollama', 'loc:2'], raw: TIER('cli-codex', 'x-a', 'lo') });
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['loc:1', undefined], ['loc:2', '(not installed)'], ['$(refresh) Refresh', undefined]], 'Ollama: no typed-id entry');
+  assert.equal(r.shown.length, 3, 'tier, family, model — no effort step');
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'ollama', model: 'loc:2', effort: '' } }]);
 
-test('happy path: default core provider -> lists cli-claude models, picking one writes models.tiers.core.model once', async () => {
-  const h = harness({
-    // core.runner defaults to cli-claude (no override); core.model default '' (unset).
-    values: new Map(),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS, SONNET] }),
-    picks: [byValue('core'), byValue('cli-claude'), byValue('claude-opus-5-5')],
-  });
-  await runSetModelTier(h.deps);
-  assert.deepEqual(h.listCalls, ['cli-claude'], 'listed exactly the tier provider');
-  assert.equal(h.writes.length, 1, 'exactly one write (the model; runner unchanged)');
-  assert.deepEqual(h.writes[0], { segments: ['models', 'tiers', 'core', 'model'], value: 'claude-opus-5-5' });
+  // An unset tier shows the definitions' default (default family, its tierDefault) as current.
+  r = await run({ picks: ['core', 'cli-codex', 'x-b'] });
+  assert.equal(r.shown[1]!.find((x) => x.value === 'cli-codex')?.description, 'cli-codex (current)');
+  assert.equal(r.shown[2]!.find((x) => x.value === 'x-a')?.description, '(current)');
+
+  // The current tier is the one the daemon resolves (ISSUE-07dfdf71974a7c45; src/config/analyze.ts tierSetting
+  // + parseTiering, then the registry's dropped effort).
+  const cur = (shown: Array<{ value?: string | undefined; description?: string | undefined }> | undefined) => shown?.find((x) => x.description?.endsWith('(current)'))?.value;
+  // Effort leaf alone: the default tier at that effort.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { effort: 'turbo' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'turbo'], 'the configured effort, not the default lo');
+  // Model alone: the daemon ignores the tier, so the default family's default with its effort.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: { models: { tiers: { core: { model: 'x-b' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'lo'], 'a model alone is ignored');
+  // Runner alone: ignored too.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: { models: { tiers: { core: { runner: 'cli-claude' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'lo'], 'a runner alone is ignored');
+  // Model '' leaves the tier unset (its effort leaf still applies to the default).
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { runner: 'cli-claude', model: '', effort: 'turbo' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'turbo'], "model '' is the default tier at the effort leaf");
+  // An unknown runner is ignored the same way.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'turbo'], raw: { models: { tiers: { core: { runner: 'cli-nope', model: 'c-big', effort: 'turbo' } } } } });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'turbo'], 'an unknown runner is the default tier at the effort leaf');
+  // Runner + model with no effort: that tier with NO effort, never the default's.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', ''], raw: { models: { tiers: { core: { runner: 'cli-codex', model: 'x-a' } } } } });
+  assert.deepEqual([cur(r.shown[2]), cur(r.shown[3])], ['x-a', ''], 'no effort, not the default lo');
+  assert.deepEqual(r.writes, [], 'the CLI default re-picked is unchanged');
+  // An explicit '' is kept.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', ''], raw: TIER('cli-codex', 'x-a', '') });
+  assert.equal(cur(r.shown[3]), '');
+  // An alias is the canonical model.
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], raw: TIER('cli-codex', 'xb', 'lo') });
+  assert.equal(r.shown[2]!.find((x) => x.value === 'x-b')?.description, 'alias xb (current)');
+  // A stored effort the model does not accept is dropped by the daemon: shown as the CLI default.
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', ''], raw: TIER('cli-codex', 'x-b', 'turbo') });
+  assert.deepEqual([cur(r.shown[2]), cur(r.shown[3])], ['x-b', ''], 'the unaccepted turbo is shown as none');
+  // An unset tier: the default family's tier default and its effort.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: {} });
+  assert.deepEqual([cur(r.shown[1]), cur(r.shown[2]), cur(r.shown[3])], ['cli-codex', 'x-a', 'lo']);
+
+  // A configured model the family no longer lists is marked and not selectable.
+  r = await run({ picks: ['core', 'cli-codex', '(current, not listed — runs the default): x-gone'], raw: TIER('cli-codex', 'x-gone') });
+  assert.equal(r.shown[2]![0]!.kind, 'current-not-listed');
+  assert.deepEqual(r.writes, [], 'choosing the notice writes nothing');
+
+  // An unchanged choice writes nothing.
+  r = await run({ picks: ['core', 'cli-codex', 'x-a', 'lo'], raw: TIER('cli-codex', 'x-a', 'lo') });
+  assert.deepEqual(r.writes, []);
+  assert.match(r.messages.at(-1)!, /unchanged/);
+
+  // A refusal shows reason and detail; restartRequired offers a restart, run on the action.
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: false, reason: 'rejected-model', detail: "model 'x-b' is rejected in cli-codex" }) });
+  assert.match(r.messages.at(-1)!, /the core tier was not saved: rejected-model — model 'x-b' is rejected in cli-codex/);
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: true, restartRequired: true }), actions: ['Restart daemon'] });
+  assert.match(r.messages[0]!, /restart the daemon to apply/);
+  assert.equal(r.restarts(), 1);
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => ({ ok: true, restartRequired: true }), actions: ['Restart daemon'], restart: async () => false });
+  assert.match(r.messages.at(-1)!, /the daemon did not restart/);
+
+  // Request failures: four distinct messages, nothing written.
+  const failures: Array<[Error, RegExp]> = [
+    [new Error('daemon is not running — start it with: insrc daemon start'), /the daemon is not running — start it to set model tiers/],
+    [Object.assign(new Error('closed'), { code: 'disconnected' }), /the daemon closed the connection before answering — try again/],
+    [new Error('unknown method: models.definitions'), /does not know this request \(unknown method: models\.definitions\) — update the daemon/],
+    [new Error('invalid response from daemon'), /could not read the model definitions: invalid response from daemon/],
+  ];
+  for (const [err, message] of failures) {
+    r = await run({ picks: ['core'], defs: async () => { throw err; } });
+    assert.deepEqual(r.writes, []);
+    assert.equal(r.messages.length, 1);
+    assert.match(r.messages[0]!, message);
+    if (!/unknown method/.test(err.message)) assert.doesNotMatch(r.messages[0]!, /update the daemon/);
+  }
+  // A dropped connection on the write: the outcome is unknown, not "not saved".
+  r = await run({ picks: ['core', 'cli-codex', 'x-b', 'lo'], write: async () => { throw Object.assign(new Error('closed'), { code: 'disconnected' }); } });
+  assert.match(r.messages.at(-1)!, /the outcome is unknown/);
+
+  // Cancel at any step writes nothing.
+  for (const picks of [[], ['core'], ['core', 'cli-codex'], ['core', 'cli-codex', 'x-a']]) {
+    assert.deepEqual((await run({ picks })).writes, [], JSON.stringify(picks));
+  }
 });
 
-test('dropdown-only (k4): the model items are exactly the daemon list (+ Refresh), no free-text entry', async () => {
-  const h = harness({
-    values: new Map(),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS, SONNET] }),
-    picks: [byValue('core'), byValue('cli-claude'), byValue('claude-sonnet-5')],
-  });
-  await runSetModelTier(h.deps);
-  const modelStep = h.pickItemsSeen[2]!;
-  const modelItems = modelStep.filter((i) => i.kind === 'model');
-  assert.deepEqual(modelItems.map((i) => i.value), ['claude-opus-5-5', 'claude-sonnet-5']);
-  assert.ok(modelStep.some((i) => i.kind === 'refresh'), 'a Refresh item is present');
-  assert.ok(!modelStep.some((i) => i.kind === undefined), 'every item is a typed kind (no free-text)');
-});
-
-// ── empty / unavailable (ac2/k7) ───────────────────────────────────
-
-test('available:false -> no-models + Refresh, NO write (saved model untouched)', async () => {
-  const h = harness({
-    values: new Map([['models.tiers.core.model', 'claude-sonnet-5']]),
-    listModels: (p) => ({ provider: p, available: false, models: [] }),
-    picks: [byValue('core'), byValue('cli-claude'), byKind('no-models')],
-  });
-  await runSetModelTier(h.deps);
-  const emptyStep = h.pickItemsSeen[2]!;
-  assert.ok(emptyStep.some((i) => i.kind === 'no-models'), 'a no-models notice');
-  assert.ok(emptyStep.some((i) => i.kind === 'refresh'), 'a Refresh item');
-  assert.equal(h.writes.length, 0, 'nothing written — the saved model is untouched');
-});
-
-test('Refresh re-invokes listModels then a model can be picked + written', async () => {
-  let call = 0;
-  const h = harness({
-    values: new Map(),
-    listModels: (p) => {
-      call += 1;
-      return call === 1 ? { provider: p, available: false, models: [] } : { provider: p, available: true, models: [OPUS] };
-    },
-    picks: [byValue('core'), byValue('cli-claude'), byKind('refresh'), byValue('claude-opus-5-5')],
-  });
-  await runSetModelTier(h.deps);
-  assert.equal(h.listCalls.length, 2, 'Refresh triggered a second listModels');
-  assert.deepEqual(h.writes[0], { segments: ['models', 'tiers', 'core', 'model'], value: 'claude-opus-5-5' });
-});
-
-test('available:true + models:[] -> same no-models + Refresh, no write', async () => {
-  const h = harness({
-    values: new Map(),
-    listModels: (p) => ({ provider: p, available: true, models: [] }),
-    picks: [byValue('core'), byValue('cli-claude'), byKind('no-models')],
-  });
-  await runSetModelTier(h.deps);
-  assert.ok(h.pickItemsSeen[2]!.some((i) => i.kind === 'no-models'), 'empty list presents as no-models');
-  assert.equal(h.writes.length, 0);
-});
-
-// ── current model presentation (ac3/k7) ────────────────────────────
-
-test('saved model PRESENT in the list -> marked (current), not duplicated; re-picking it is an idempotent no-op', async () => {
-  const h = harness({
-    values: new Map([['models.tiers.core.model', 'claude-sonnet-5']]),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS, SONNET] }),
-    picks: [byValue('core'), byValue('cli-claude'), byValue('claude-sonnet-5')],
-  });
-  await runSetModelTier(h.deps);
-  const modelStep = h.pickItemsSeen[2]!;
-  assert.ok(!modelStep.some((i) => i.kind === 'current-not-in-catalog'), 'no not-in-catalog entry when the model is listed');
-  const current = modelStep.find((i) => i.value === 'claude-sonnet-5')!;
-  assert.equal(current.description, '(current)', 'the saved model is marked current');
-  assert.equal(h.writes.length, 0, 're-picking the saved model writes nothing (idempotent)');
-});
-
-test('saved model ABSENT from the list -> a non-selectable (current, not in catalog) entry; picking a real model writes the new id', async () => {
-  const h = harness({
-    values: new Map([['models.tiers.core.model', 'ghost-model-9']]),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS] }),
-    picks: [byValue('core'), byValue('cli-claude'), byValue('claude-opus-5-5')],
-  });
-  await runSetModelTier(h.deps);
-  const modelStep = h.pickItemsSeen[2]!;
-  const notInCatalog = modelStep.find((i) => i.kind === 'current-not-in-catalog')!;
-  assert.ok(notInCatalog !== undefined, 'a current-not-in-catalog entry is shown');
-  assert.match(notInCatalog.label, /ghost-model-9/, 'it shows the saved id');
-  assert.deepEqual(h.writes[0], { segments: ['models', 'tiers', 'core', 'model'], value: 'claude-opus-5-5' });
-});
-
-test('picking the (current, not in catalog) entry is a no-op (non-selectable), no write', async () => {
-  const h = harness({
-    values: new Map([['models.tiers.core.model', 'ghost-model-9']]),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS] }),
-    picks: [byValue('core'), byValue('cli-claude'), byKind('current-not-in-catalog')],
-  });
-  await runSetModelTier(h.deps);
-  assert.equal(h.writes.length, 0, 'the non-selectable current entry writes nothing');
-});
-
-// ── provider switch (ac4) ──────────────────────────────────────────
-
-test('provider changed mid-flow -> model cleared, listModels re-queried for the NEW provider, runner + model both written', async () => {
-  const h = harness({
-    // core.runner defaults to cli-claude; saved model claude-sonnet-5.
-    values: new Map([['models.tiers.core.model', 'claude-sonnet-5']]),
-    listModels: (p) => ({ provider: p, available: true, models: [{ id: 'llama3' }] }),
-    picks: [byValue('core'), byValue('ollama'), byValue('llama3')],
-  });
-  await runSetModelTier(h.deps);
-  assert.deepEqual(h.listCalls, ['ollama'], 'listed the NEW provider, not the old runner');
-  // The old saved model must NOT be a current marker under the new provider.
-  const modelStep = h.pickItemsSeen[2]!;
-  assert.ok(!modelStep.some((i) => i.kind === 'current-not-in-catalog'), 'the cleared model is not carried into the new provider');
-  assert.equal(h.writes.length, 2, 'both the runner and the model are written on a switch');
-  assert.deepEqual(h.writes[0], { segments: ['models', 'tiers', 'core', 'runner'], value: 'ollama' }, 'runner first');
-  assert.deepEqual(h.writes[1], { segments: ['models', 'tiers', 'core', 'model'], value: 'llama3' }, 'then model');
-});
-
-test('a tier runner outside the enum -> unrecognised notify + provider-selection offered; the bad value never reaches listModels', async () => {
-  const h = harness({
-    values: new Map([['models.tiers.core.runner', 'gpt-4-legacy']]),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS] }),
-    picks: [byValue('core'), byValue('cli-claude'), byValue('claude-opus-5-5')],
-  });
-  await runSetModelTier(h.deps);
-  assert.ok(h.notifications.some((m) => /unrecognised/i.test(m)), 'the unrecognised provider is surfaced');
-  assert.deepEqual(h.listCalls, ['cli-claude'], 'the out-of-enum value was never passed to sc2');
-  // Because currentProvider was undefined, the chosen provider is a "change" -> runner is written too.
-  assert.ok(h.writes.some((w) => w.segments.join('.') === 'models.tiers.core.runner' && w.value === 'cli-claude'));
-});
-
-// ── error paths (never-throw) ──────────────────────────────────────
-
-test('listModels rejection (daemon unreachable) -> notify, treated as empty, no write, no throw', async () => {
-  const h = harness({
-    values: new Map(),
-    listModels: () => 'throw',
-    picks: [byValue('core'), byValue('cli-claude'), byKind('no-models')],
-  });
-  await assert.doesNotReject(() => runSetModelTier(h.deps));
-  assert.ok(h.notifications.some((m) => /couldn't reach the daemon/i.test(m)), 'the socket failure is surfaced');
-  assert.equal(h.writes.length, 0, 'nothing written on a list failure');
-});
-
-test('catalog() rejection -> notify + clean abort (no list, no write, no throw)', async () => {
-  const h = harness({ catalogThrows: true, picks: [byValue('core')] });
-  await assert.doesNotReject(() => runSetModelTier(h.deps));
-  assert.ok(h.notifications.some((m) => /couldn't read the current configuration/i.test(m)));
-  assert.equal(h.listCalls.length, 0, 'no list attempted');
-  assert.equal(h.writes.length, 0, 'no write attempted');
-});
-
-test('writeKeyPath refusal ({ok:false, reason}) -> the reason is surfaced, no throw', async () => {
-  const h = harness({
-    values: new Map(),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS] }),
-    write: () => ({ ok: false, reason: 'invalid path' }),
-    picks: [byValue('core'), byValue('cli-claude'), byValue('claude-opus-5-5')],
-  });
-  await assert.doesNotReject(() => runSetModelTier(h.deps));
-  assert.ok(h.notifications.some((m) => /invalid path/.test(m)), 'the refusal reason is surfaced');
-});
-
-test('writeKeyPath REJECTION (daemon down at write time) -> notify, no throw (never-throw guard, HIGH)', async () => {
-  const h = harness({
-    values: new Map(),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS] }),
-    write: () => {
-      throw new Error('socket refused mid-write');
-    },
-    picks: [byValue('core'), byValue('cli-claude'), byValue('claude-opus-5-5')],
-  });
-  await assert.doesNotReject(() => runSetModelTier(h.deps), 'a rejecting write must not escape the command');
-  assert.ok(h.notifications.some((m) => /couldn't save the core tier/i.test(m)), 'the write failure is surfaced');
-});
-
-test('provider switch: runner write OK then model write REFUSES -> the partial state is surfaced (MED)', async () => {
-  const h = harness({
-    // The cheap tier is explicitly on ollama (its shipped default is now cli-claude), so picking cli-claude is a switch.
-    values: new Map([['models.tiers.cheap.runner', 'ollama']]),
-    listModels: (p) => ({ provider: p, available: true, models: [{ id: 'llama3' }] }),
-    // Runner ok, model refuses.
-    write: (segments) => (segments.includes('model') ? { ok: false, reason: 'bad model' } : { ok: true }),
-    picks: [byValue('cheap'), byValue('cli-claude'), byValue('llama3')],
-  });
-  await runSetModelTier(h.deps);
-  assert.equal(h.writes.length, 2, 'runner then model both attempted');
-  assert.ok(
-    h.notifications.some((m) => /provider was changed/i.test(m) && /not set/i.test(m)),
-    'the half-applied tier is made visible',
-  );
-});
-
-test('an unconfigured default model (no override) that is not in the list is NOT flagged current-not-in-catalog (LOW)', async () => {
-  const h = harness({
-    // mid.model default is 'sonnet' (a built-in alias), NOT an override; the daemon
-    // returns full ids that do not include it.
-    values: new Map(),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS, SONNET] }),
-    picks: [byValue('mid'), byValue('cli-claude'), byValue('claude-opus-5-5')],
-  });
-  await runSetModelTier(h.deps);
-  const modelStep = h.pickItemsSeen[2]!;
-  assert.ok(!modelStep.some((i) => i.kind === 'current-not-in-catalog'), 'a built-in default is not shown as a stale/foreign value');
-});
-
-test('a runner-write refusal on a provider switch aborts before the model write', async () => {
-  const h = harness({
-    values: new Map([['models.tiers.cheap.runner', 'ollama']]),   // explicit: the shipped cheap default is now cli-claude
-    listModels: (p) => ({ provider: p, available: true, models: [{ id: 'llama3' }] }),
-    write: (segments) => (segments.includes('runner') ? { ok: false, reason: 'nope' } : { ok: true }),
-    picks: [byValue('cheap'), byValue('cli-claude'), byValue('llama3')], // cheap default runner is ollama -> cli-claude is a switch
-  });
-  await runSetModelTier(h.deps);
-  assert.equal(h.writes.length, 1, 'only the runner write was attempted; the model write did not run');
-  assert.equal(h.writes[0]!.segments.includes('runner'), true);
-  assert.ok(h.notifications.some((m) => /nope/.test(m)));
-});
-
-// ── cancel (clean no-op) ───────────────────────────────────────────
-
-test('cancel at the tier step -> clean no-op (no catalog read, no list, no write)', async () => {
-  const h = harness({ picks: [cancel] });
-  await runSetModelTier(h.deps);
-  assert.equal(h.listCalls.length, 0);
-  assert.equal(h.writes.length, 0);
-});
-
-test('cancel at the provider step -> no list, no write', async () => {
-  const h = harness({ values: new Map(), picks: [byValue('core'), cancel] });
-  await runSetModelTier(h.deps);
-  assert.equal(h.listCalls.length, 0);
-  assert.equal(h.writes.length, 0);
-});
-
-test('cancel at the model step -> no write', async () => {
-  const h = harness({
-    values: new Map(),
-    listModels: (p) => ({ provider: p, available: true, models: [OPUS] }),
-    picks: [byValue('core'), byValue('cli-claude'), cancel],
-  });
-  await runSetModelTier(h.deps);
-  assert.equal(h.writes.length, 0);
-});
-
-// ── source guard (k5) ──────────────────────────────────────────────
-
-test('source-scan: model-tier-picker.ts imports no vscode and no cloud/HTTP client', () => {
+test('model-tier-picker.test.ts: model-tier-picker.ts names no runner or model literal and imports nothing from src/config', () => {
   const src = readFileSync(join(HERE, '..', 'model-tier-picker.ts'), 'utf8');
-  const imports = [...src.matchAll(/^\s*import\s[\s\S]*?from\s+['"]([^'"]+)['"]/gm)].map((m) => m[1]!);
-  assert.ok(!imports.some((s) => s === 'vscode'), 'the picker module must not import vscode');
-  assert.ok(!imports.some((s) => /undici|^https?:/.test(s)), 'no cloud/HTTP client import (k1)');
-  // The daemon is reached ONLY through injected seams — the module imports nothing
-  // from the daemon layer (src/daemon/*) or the shared ipc-client; its only
-  // cross-boundary import is the pure CONFIG_CATALOG data + the plugin config types.
-  assert.ok(!imports.some((s) => /daemon|ipc-client/.test(s)), 'no daemon/ipc-client import — sc2 is injected in extension.ts');
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+  const shipped = JSON.parse(readFileSync(join(HERE, '..', '..', '..', '..', 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ id: string; models: Array<{ id: string; aliases?: string[] }> }> };
+  // Every shipped family id, including the Ollama-hosted one (Epic b220bb61, Story s4).
+  assert.ok(shipped.families.length >= 5, 'the shipped families are read');
+  for (const f of shipped.families) assert.doesNotMatch(code, new RegExp(`['"\`]${f.id}['"\`]`), `no runner literal '${f.id}'`);
+  for (const f of shipped.families) for (const m of f.models) for (const name of [m.id, ...(m.aliases ?? [])]) {
+    assert.ok(!code.includes(`'${name}'`) && !code.includes(`"${name}"`), `no model literal '${name}'`);
+  }
+  assert.doesNotMatch(src, /from\s+'[^']*src\/config\//, 'imports nothing from src/config');
+  assert.doesNotMatch(src, /CONFIG_CATALOG|PROVIDERS|providers\.listModels/);
+});
+
+test('model-tier-picker.test.ts: unknown model — check results shown; approve writes nothing; the tier is written only after a successful restart; reject writes nothing; runs:false offers no approve', async () => {
+  const checks: unknown[] = [];
+  const approves: unknown[] = [];
+  const rejects: unknown[] = [];
+  const result = { checkId: 'c1', runs: true, inputLimit: { unit: 'tokens', max: 64000 },
+    efforts: [{ effort: 'lo', verdict: 'accepted' as const, evidence: 'lo listed' }, { effort: 'turbo', verdict: 'rejected' as const, evidence: 'turbo not listed' }, { effort: 'max', verdict: 'recognised-unconfirmed' as const, evidence: 'max is a name the CLI knows' }] };
+  let inputs: string[] = [];
+  const seams = (overrides: Partial<SetModelTierDeps> = {}): Partial<SetModelTierDeps> => ({
+    input: async (o) => { const next = inputs.shift(); return next === '<default>' ? o.value : next; },
+    check: async (p) => { checks.push(p); return result; },
+    approve: async (p) => { approves.push(p); return { ok: true, restartRequired: true }; },
+    reject: async (p) => { rejects.push(p); return { ok: true, restartRequired: true }; },
+    pickMany: async (items) => items.filter((x) => (x as Item).value === 'lo' || (x as Item).value === 'max'),
+    ...overrides,
+  });
+  const reset = () => { checks.length = 0; approves.length = 0; rejects.length = 0; };
+
+  // Check: the family's effort names are claimed; each level's verdict and evidence is shown, then the decision.
+  inputs = ['x-new', '<default>'];
+  const restartResults = [false, true];
+  let r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams(), actions: ['Restart daemon and save', 'Restart daemon and save'], restart: async () => restartResults.shift()! });
+  assert.deepEqual(checks, [{ family: 'cli-codex', modelId: 'x-new', claimedEfforts: ['lo', 'turbo'] }]);
+  const verdicts = r.shown[3]!;
+  assert.deepEqual(verdicts.filter((x) => x.kind === 'verdict').map((x) => [x.label, x.detail]), [['lo — accepted', 'lo listed'], ['turbo — rejected', 'turbo not listed'], ['max — recognised — unconfirmed', 'max is a name the CLI knows']]);
+  assert.deepEqual(verdicts.filter((x) => x.kind !== 'verdict').map((x) => x.label), ['Approve x-new…', 'Reject x-new']);
+  // Approve: the chosen non-rejected levels; nothing saved; a failed restart saves nothing and never re-approves; the next restart saves.
+  assert.deepEqual(approves, [{ checkId: 'c1', efforts: ['lo', 'max'] }]);
+  assert.equal(r.restarts(), 2);
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-new', effort: 'lo' } }]);
+  assert.match(r.messages.join('\n'), /approval of x-new is recorded, but the daemon did not restart — the core tier was not saved/);
+  assert.equal(approves.length, 1, 'never approved twice');
+
+  // Only the non-rejected levels are offered for approval.
+  reset(); inputs = ['x-new', '<default>'];
+  let offered: string[] = [];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams({ pickMany: async (items) => { offered = items.map((x) => (x as Item).value ?? ''); return undefined; } }) });
+  assert.deepEqual(offered, ['lo', 'max']);
+  assert.deepEqual(approves, [], 'cancelling the level choice approves nothing');
+
+  // Approved but the user does not restart now: nothing saved.
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams(), actions: [undefined] });
+  assert.equal(approves.length, 1);
+  assert.deepEqual(r.writes, []);
+  assert.equal(r.restarts(), 0);
+
+  // Reject: recorded, nothing saved.
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Reject x-new'], extra: seams() });
+  assert.deepEqual(rejects, [{ checkId: 'c1' }]);
+  assert.deepEqual(r.writes, []);
+
+  // runs:false offers no approve; { error } shows the refusal, and an id now served is offered as a pick.
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async () => ({ ...result, runs: false, error: 'the codex CLI refused the model' }) }) });
+  assert.deepEqual(r.shown[3]!.filter((x) => x.kind !== 'verdict').map((x) => x.label), ['Reject x-new']);
+  assert.deepEqual(approves, [], 'nothing approvable');
+  reset(); inputs = ['x-new', '<default>'];
+  const served: ModelDefinitions = { ...DEFS, families: DEFS.families.map((f) => f.id !== 'cli-codex' ? f : { ...f, models: [...f.models, { id: 'x-new', aliases: [], efforts: ['lo'], source: 'user-approved' as const }] }) };
+  let defsCalls = 0;
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], defs: async () => (defsCalls++ === 0 ? DEFS : served), extra: seams({ check: async () => ({ error: 'x-new is already a model or alias of cli-codex' }) }), actions: ['Save x-new'] });
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-new', effort: '' } }]);
+
+  // A typed alias of a listed model saves as a normal pick, without a check.
+  reset(); inputs = ['xb'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'lo'], extra: seams() });
+  assert.deepEqual(checks, []);
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'cli-codex', model: 'x-b', effort: 'lo' } }]);
+
+  // unknown-check offers a fresh check; a disconnected check offers to check again; a disconnected approve reports an unknown outcome.
+  reset(); inputs = ['x-new', '<default>'];
+  const approveAnswers: Array<() => Promise<DecisionResultLike>> = [async () => ({ ok: false, reason: 'unknown-check', detail: 'no pending check c1' })];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…', 'Reject x-new'], extra: seams({ approve: async (p) => { approves.push(p); return approveAnswers.shift()!(); } }), actions: ['Check again'] });
+  assert.equal(checks.length, 2, 'checked again after unknown-check');
+  assert.deepEqual(rejects, [{ checkId: 'c1' }]);
+  reset(); inputs = ['x-new', '<default>'];
+  const checkAnswers: Array<() => Promise<typeof result>> = [async () => { throw Object.assign(new Error('closed'), { code: 'disconnected' }); }, async () => result];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…'], extra: seams({ check: async (p) => { checks.push(p); return checkAnswers.shift()!(); } }), actions: ['Check again'] });
+  assert.equal(checks.length, 2);
+  assert.match(r.messages[0]!, /the check of x-new was interrupted/);
+  reset(); inputs = ['x-new', '<default>'];
+  r = await run({ picks: ['core', 'cli-codex', 'Enter another model id…', 'Approve x-new…'], extra: seams({ approve: async () => { throw Object.assign(new Error('closed'), { code: 'disconnected' }); } }) });
+  assert.match(r.messages.at(-1)!, /the outcome is unknown/);
+  assert.deepEqual(r.writes, []);
+});
+
+type DecisionResultLike = { ok: true; restartRequired?: boolean } | { ok: false; reason: string; detail: string };
+
+/** DEFS plus a family that runs its CLI on Ollama (Epic b220bb61, Story s4): no tierDefaults,
+ *  a cloud model with efforts and an alias, a local one without. */
+const HOSTED: ModelDefinitions = {
+  ...DEFS,
+  families: [...DEFS.families, {
+    id: 'ollama-claude', cliKind: 'claude', host: 'ollama', displayName: 'FakeH',
+    models: [
+      { id: 'hc:cloud', aliases: ['hc'], efforts: ['low', 'max'], source: 'shipped', hosting: 'cloud' },
+      { id: 'hl:7b', aliases: [], efforts: [], source: 'shipped', hosting: 'local' },
+    ],
+  }],
+};
+const hosted = async () => HOSTED;
+
+test("model-tier-picker.test.ts: the host family is offered next to today's; its models carry cloud/local marks, no 'Enter another model id', efforts only where the model has them, one whole-tier write", async () => {
+  let r = await run({ picks: ['core', 'ollama-claude', 'hc:cloud', 'max'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.deepEqual(r.shown[1]!.map((x) => [x.label, x.description]), [['FakeC', 'cli-claude'], ['FakeX', 'cli-codex (current)'], ['FakeLocal', 'ollama'], ['FakeH', 'ollama-claude']]);
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [['hc:cloud', 'alias hc cloud'], ['hl:7b', 'local'], ['$(refresh) Refresh', undefined]], 'only declared models, marked; no typed-id entry');
+  assert.deepEqual(r.shown[3]!.map((x) => x.label), ['CLI default', 'low', 'max']);
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'ollama-claude', model: 'hc:cloud', effort: 'max' } }]);
+
+  // A model with no efforts skips the effort step and writes the CLI default.
+  r = await run({ picks: ['core', 'ollama-claude', 'hl:7b'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.equal(r.shown.length, 3, 'tier, family, model — no effort step');
+  assert.deepEqual(r.writes, [{ segments: ['models', 'tiers', 'core'], value: { runner: 'ollama-claude', model: 'hl:7b', effort: '' } }]);
+  // Vendor and plain Ollama models carry no hosting mark.
+  r = await run({ picks: ['core', 'cli-claude'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.deepEqual(r.shown[2]!.map((x) => x.description), ['alias cb', '(user-approved)', 'checked by the daemon before it can be used', undefined]);
+  r = await run({ picks: ['core', 'ollama'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  assert.deepEqual(r.shown[2]!.map((x) => x.description), [undefined, '(not installed)', undefined]);
+});
+
+test("model-tier-picker.test.ts: an undeclared current model on the host family is 'not supported — the tier will not run'; a vendor family and a host-less answer keep today's items", async () => {
+  let r = await run({ picks: ['core', 'ollama-claude'], raw: TIER('ollama-claude', 'gone:cloud'), defs: hosted });
+  assert.deepEqual([r.shown[2]![0]!.label, r.shown[2]![0]!.description], ['(current, not supported — the tier will not run): gone:cloud', 'not supported by FakeH']);
+  assert.ok(!r.shown[2]!.some((x) => x.kind === 'enter-id'), 'no typed-id entry');
+  assert.deepEqual(r.writes, []);
+
+  // A vendor CLI family keeps the 'runs the default' notice and the typed-id entry.
+  r = await run({ picks: ['core', 'cli-claude'], raw: TIER('cli-claude', 'c-gone'), defs: hosted });
+  assert.deepEqual([r.shown[2]![0]!.label, r.shown[2]![0]!.description], ['(current, not listed — runs the default): c-gone', 'not served by FakeC']);
+  assert.ok(r.shown[2]!.some((x) => x.label === 'Enter another model id…'));
+
+  // An older daemon answers without host or hosting: the family is a vendor CLI family again.
+  const old: ModelDefinitions = { ...HOSTED, families: HOSTED.families.map((f) => {
+    if (f.host === undefined) return f;
+    const { host: _host, ...rest } = f;
+    return { ...rest, models: rest.models.map(({ hosting: _hosting, ...m }) => m) };
+  }) };
+  r = await run({ picks: ['core', 'ollama-claude'], raw: TIER('ollama-claude', 'gone:cloud'), defs: async () => old });
+  assert.deepEqual(r.shown[2]!.map((x) => [x.label, x.description]), [
+    ['(current, not listed — runs the default): gone:cloud', 'not served by FakeH'],
+    ['hc:cloud', 'alias hc'], ['hl:7b', undefined],
+    ['Enter another model id…', 'checked by the daemon before it can be used'], ['$(refresh) Refresh', undefined],
+  ]);
+});
+
+test('model-tier-picker.test.ts: reopening the picker after a save on the host family marks the saved family, model and effort as current', async () => {
+  const saved = await run({ picks: ['core', 'ollama-claude', 'hc:cloud', 'max'], raw: TIER('cli-codex', 'x-a', 'lo'), defs: hosted });
+  const written = saved.writes[0]!.value as { runner: string; model: string; effort: string };
+  // Reopen over the saved tier: family, model (with its mark) and effort are current; re-picking them writes nothing.
+  let r = await run({ picks: ['core', 'ollama-claude', 'hc:cloud', 'max'], raw: TIER(written.runner, written.model, written.effort), defs: hosted });
+  assert.equal(r.shown[1]!.find((x) => x.value === 'ollama-claude')?.description, 'ollama-claude (current)');
+  assert.equal(r.shown[2]!.find((x) => x.value === 'hc:cloud')?.description, 'alias hc cloud (current)');
+  assert.equal(r.shown[3]!.find((x) => x.value === 'max')?.description, '(current)');
+  assert.deepEqual(r.writes, []);
+  assert.match(r.messages.at(-1)!, /core tier is unchanged \(hc:cloud \(ollama-claude, effort max\)\)/);
+
+  // An effort the model does not take is shown as the CLI default the daemon uses.
+  r = await run({ picks: ['core', 'ollama-claude', 'hl:7b'], raw: TIER('ollama-claude', 'hl:7b', 'max'), defs: hosted });
+  assert.equal(r.shown[2]!.find((x) => x.value === 'hl:7b')?.description, 'local (current)');
+  assert.deepEqual(r.writes, [], 'the CLI default the daemon already uses');
+  assert.match(r.messages.at(-1)!, /core tier is unchanged \(hl:7b \(ollama-claude\)\)/);
+});
+
+/** A config.json raw-config snapshot naming one tier's runner/model/effort (any tier, not just core). */
+const rawTier = (tier: Tier, runner: string, model: string, effort = '') => ({ models: { tiers: { [tier]: { runner, model, effort } } } });
+
+test('model-tier-picker.test.ts: currentTier remains exported with unchanged resolution behavior', () => {
+  // Unset -> the default family's default for the tier, unchanged from the picker's own resolution.
+  assert.deepEqual(currentTier(DEFS, {}, 'core'), { runner: 'cli-codex', model: 'x-a', effort: 'lo' });
+  // A configured, resolvable runner+model is returned as configured.
+  assert.deepEqual(currentTier(DEFS, rawTier('core', 'cli-claude', 'c-big', 'deep'), 'core'), { runner: 'cli-claude', model: 'c-big', effort: 'deep' });
+  // An unknown runner falls back to the default family's default, exactly as an unset tier does.
+  assert.deepEqual(currentTier(DEFS, { models: { tiers: { core: { runner: 'no-such-runner', model: 'x' } } } }, 'core'), { runner: 'cli-codex', model: 'x-a', effort: 'lo' });
+});
+
+test("model-tier-picker.test.ts: tierStatus classifies ok/not-supported/not-listed/floor-raised across a host-set family, an open vendor family, an unresolvable runner, and all three coreFloor values", () => {
+  // A resolvable model on an open vendor family, at the floor: ok.
+  assert.deepEqual(tierStatus(DEFS, rawTier('core', 'cli-claude', 'c-big'), 'core', 'core'), { kind: 'ok' });
+  // Below coreFloor with an otherwise-fine model: floor-raised.
+  assert.deepEqual(tierStatus(DEFS, rawTier('cheap', 'cli-claude', 'c-big'), 'cheap', 'mid'), { kind: 'floor-raised', to: 'mid' });
+  // coreFloor at the lowest tier never raises anything.
+  assert.deepEqual(tierStatus(DEFS, rawTier('cheap', 'cli-claude', 'c-big'), 'cheap', 'cheap'), { kind: 'ok' });
+  // An open vendor family (host undefined) with a model it no longer lists: not-listed, independent of the floor.
+  assert.deepEqual(tierStatus(DEFS, rawTier('core', 'cli-claude', 'c-gone'), 'core', 'core'), { kind: 'not-listed', model: 'c-gone' });
+  // An unresolvable runner (unknown/stale) is also not-listed, reported directly rather than through currentTier's default-family fallback.
+  assert.deepEqual(tierStatus(DEFS, rawTier('core', 'no-such-runner', 'x'), 'core', 'core'), { kind: 'not-listed', model: 'x' });
+  // A host-set (closed-list) family with a model it no longer lists: not-supported.
+  assert.deepEqual(tierStatus(HOSTED, rawTier('core', 'ollama-claude', 'gone:cloud'), 'core', 'core'), { kind: 'not-supported', model: 'gone:cloud' });
+});
+
+test("model-tier-picker.test.ts: tierStatus returns floor-raised for every tier ranked below coreFloor, and omits it when coreFloor is 'cheap'", () => {
+  const ranks: Record<Tier, number> = { core: 0, mid: 1, cheap: 2 };
+  for (const coreFloor of ['core', 'mid', 'cheap'] as const) {
+    for (const tier of ['core', 'mid', 'cheap'] as const) {
+      const status = tierStatus(DEFS, rawTier(tier, 'cli-claude', 'c-big'), tier, coreFloor);
+      if (ranks[tier] > ranks[coreFloor]) {
+        assert.deepEqual(status, { kind: 'floor-raised', to: coreFloor }, `${tier} below coreFloor=${coreFloor} is floor-raised`);
+      } else {
+        assert.deepEqual(status, { kind: 'ok' }, `${tier} at or above coreFloor=${coreFloor} is ok`);
+      }
+    }
+  }
+  // coreFloor='cheap' (the lowest tier) never raises anything, for any tier.
+  for (const tier of ['core', 'mid', 'cheap'] as const) {
+    assert.deepEqual(tierStatus(DEFS, rawTier(tier, 'cli-claude', 'c-big'), tier, 'cheap'), { kind: 'ok' });
+  }
 });

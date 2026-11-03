@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.lifecycle.S003TypesTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.001">
+  <properties/>
+  <testcase name="ProvisionOutcome carries ok, optional exitCode and reason()" classname="ai.insors.insrc.jetbrains.lifecycle.S003TypesTest" time="0.001"/>
+  <testcase name="NodeProvisioningException is a RuntimeException carrying its message()" classname="ai.insors.insrc.jetbrains.lifecycle.S003TypesTest" time="0.0"/>
+  <testcase name="DaemonSetupAction is the closed set NoOp, OfferSetup(kind), RunSilently(kind)()" classname="ai.insors.insrc.jetbrains.lifecycle.S003TypesTest" time="0.0"/>
+  <testcase name="NodeSource is the closed union of exactly SYSTEM and PROVISIONED()" classname="ai.insors.insrc.jetbrains.lifecycle.S003TypesTest" time="0.0"/>
+  <testcase name="ProvisionKind is the closed union of exactly INSTALL and UPDATE()" classname="ai.insors.insrc.jetbrains.lifecycle.S003TypesTest" time="0.0"/>
+  <testcase name="NodeRuntime carries executablePath and source()" classname="ai.insors.insrc.jetbrains.lifecycle.S003TypesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

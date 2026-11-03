@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story
+ok 1 - model-literal-scan.test.ts: the scan passes on the tree and fails on an injected literal; exclusions name their owning Story
+  ---
+  duration_ms: 2089.610125
+  type: 'test'
+  ...
+# Subtest: model-literal-scan.test.ts: the scan covers src/cli and the recommender
+ok 2 - model-literal-scan.test.ts: the scan covers src/cli and the recommender
+  ---
+  duration_ms: 16.463792
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2320.977583

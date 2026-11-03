@@ -1,0 +1,153 @@
+TAP version 13
+# Subtest: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+ok 1 - CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+  ---
+  duration_ms: 15969.041541
+  type: 'test'
+  ...
+# Subtest: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+ok 2 - CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+  ---
+  duration_ms: 0.214458
+  type: 'test'
+  ...
+# Subtest: CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases
+ok 3 - CM-S3-FILES: isolated production file matrix verifies owner identity budget no-write refusal and cancellation without skipped cases
+  ---
+  duration_ms: 6430.264416
+  type: 'test'
+  ...
+# Subtest: CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+ok 4 - CM-S3-COMPAT: actual source and compiled temporary edit and new draft workers validate owner revision cancel and drain without commits
+  ---
+  duration_ms: 4066.299834
+  type: 'test'
+  ...
+# Subtest: CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+ok 5 - CM-S3-EXPIRY: actual active probe deadline and replacement drain every worker and socket
+  ---
+  duration_ms: 6151.064833
+  type: 'test'
+  ...
+# Subtest: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+not ok 6 - CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+  ---
+  duration_ms: 49.356625
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-release-gate.test.ts:1:798'
+  failureType: 'testCodeFailure'
+  error: |-
+    a complete current build must be a positive verification control
+    
+    false !== true
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-release-gate.test.ts:32:11)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+ok 7 - CM-S5-LIFETIME-COPY: external S005 both-client pre-add copy evidence recorded pending only; this task does not implement or claim client acceptance
+  ---
+  duration_ms: 6.1655
+  type: 'test'
+  ...
+# Subtest: CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads
+ok 8 - CM-S3-CLIENT-EGRESS: direct one-shot all phases answer-turn and host refuse before input state prompt provider trace or error-evidence reads
+  ---
+  duration_ms: 2723.849
+  type: 'test'
+  ...
+# Subtest: CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels
+ok 9 - CM-S3-CLIENT-EGRESS: actual private forwardStep and host deny every unverified analysis phase and one-shot without runner or data-bearing channels
+  ---
+  duration_ms: 0.110583
+  type: 'test'
+  ...
+# Subtest: CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success
+ok 10 - CM-S3-EMBED-DENY: docs/vector/hybrid/lineage/graph routes zero Ollama/ONNX/injected/SDK query calls and no fallback success
+  ---
+  duration_ms: 1277.556375
+  type: 'test'
+  ...
+# Subtest: CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards
+ok 11 - CM-S3-PROVIDER: actual factory/direct/injected/cache/loop/aggregate pre-send denial and expiry guards
+  ---
+  duration_ms: 38.104333
+  type: 'test'
+  ...
+# Subtest: CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence
+ok 12 - CM-S3-PROVIDER: unconfigured production admission stays pending despite asserted service evidence
+  ---
+  duration_ms: 0.38425
+  type: 'test'
+  ...
+# [06:35:04] [32mINFO[39m: [36m[core-floor-guard] critical role below coreFloor — clamping up to the floor[39m
+#     [35mmodule[39m: "core-floor-guard"
+#     [35mroleId[39m: "design.contract.detail"
+#     [35mresolvedTier[39m: "cheap"
+#     [35mfloor[39m: "core"
+# [06:35:04] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/Users/subhagho/work/projects/insors/insrc/src/assets/models"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 4,
+#       "cli-codex": 7,
+#       "ollama": 2
+#     }
+# [06:35:04] [32mINFO[39m: [36m[core-floor-guard] critical role below coreFloor — clamping up to the floor[39m
+#     [35mmodule[39m: "core-floor-guard"
+#     [35mroleId[39m: "design.contract.detail"
+#     [35mresolvedTier[39m: "cheap"
+#     [35mfloor[39m: "core"
+# [06:35:04] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-claude"
+#     [35mmodel[39m: "claude-opus-5-5"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "config"
+# Subtest: CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal
+ok 13 - CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal
+  ---
+  duration_ms: 1328.924958
+  type: 'test'
+  ...
+# Subtest: CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control
+ok 14 - CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control
+  ---
+  duration_ms: 0.114625
+  type: 'test'
+  ...
+# Subtest: CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility
+ok 15 - CM-S3-SCOPE: production scope paths bind to the authenticated root and preserve saved compatibility
+  ---
+  duration_ms: 1773.384125
+  type: 'test'
+  ...
+# Subtest: CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence
+ok 16 - CM-S3-CACHE: task/report/checkpoint/history/trace/Lance canaries, error repair, saved positive persistence
+  ---
+  duration_ms: 2281.198166
+  type: 'test'
+  ...
+# Subtest: CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority
+ok 17 - CM-S3-CONTEXT: actual tools runtimes and exploration retain exact owner authority
+  ---
+  duration_ms: 1830.88425
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 16
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16184.35225

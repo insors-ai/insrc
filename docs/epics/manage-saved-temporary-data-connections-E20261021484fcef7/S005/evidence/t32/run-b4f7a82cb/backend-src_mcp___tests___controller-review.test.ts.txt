@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: DIFF-CONTROLLER-LARGE: actual helper dispatches complete explicit task metadata/schema through fresh isolated CLI/OAuth boundary
+ok 1 - DIFF-CONTROLLER-LARGE: actual helper dispatches complete explicit task metadata/schema through fresh isolated CLI/OAuth boundary
+  ---
+  duration_ms: 695.31175
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-ADMISSION: self-declared flags, forged descriptors, missing CLI isolation and unsupported Codex fail before evidence or model dispatch
+ok 2 - DIFF-CONTROLLER-ADMISSION: self-declared flags, forged descriptors, missing CLI isolation and unsupported Codex fail before evidence or model dispatch
+  ---
+  duration_ms: 433.086708
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-TIME: pending helper turns rejoin one actual subprocess and explicit cancellation waits for its shutdown
+ok 3 - DIFF-CONTROLLER-TIME: pending helper turns rejoin one actual subprocess and explicit cancellation waits for its shutdown
+  ---
+  duration_ms: 1110.78275
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-TIME: expiry kills owned CLI work and refuses late structured output
+ok 4 - DIFF-CONTROLLER-TIME: expiry kills owned CLI work and refuses late structured output
+  ---
+  duration_ms: 1515.400292
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-LARGE: duplicated normalized schema and task framing are measured before actual CLI dispatch and reported as a lower size refusal
+ok 5 - DIFF-CONTROLLER-LARGE: duplicated normalized schema and task framing are measured before actual CLI dispatch and reported as a lower size refusal
+  ---
+  duration_ms: 540.280083
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-ADMISSION: actual socket forwarder separates verified helper capability from arguments and host rechecks the installed CLI
+ok 6 - DIFF-CONTROLLER-ADMISSION: actual socket forwarder separates verified helper capability from arguments and host rechecks the installed CLI
+  ---
+  duration_ms: 715.616
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-TIME: serial helper handoff starts the next identified call once without returning evidence into chat
+ok 7 - DIFF-CONTROLLER-TIME: serial helper handoff starts the next identified call once without returning evidence into chat
+  ---
+  duration_ms: 863.12375
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess
+ok 8 - DIFF-CONTROLLER-TIME: queued calls remain serial and cancellation does not wait for an unrelated subprocess
+  ---
+  duration_ms: 731.602709
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon-authored git Story through isolated CLI calls only
+ok 9 - DIFF-CONTROLLER-LARGE: actual helper and daemon pipeline complete a daemon-authored git Story through isolated CLI calls only
+  ---
+  duration_ms: 5848.367333
+  type: 'test'
+  ...
+# Subtest: DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice
+ok 10 - DIFF-CONTROLLER-TIME: overlapping result handoffs join one next-call owner and never dispatch its cached continuation twice
+  ---
+  duration_ms: 839.315917
+  type: 'test'
+  ...
+# Subtest: DIFF-COMPAT: rejected continuation requests preserve the active isolated call and exact result retry without a second subprocess
+ok 11 - DIFF-COMPAT: rejected continuation requests preserve the active isolated call and exact result retry without a second subprocess
+  ---
+  duration_ms: 700.090666
+  type: 'test'
+  ...
+# Subtest: DIFF-COMPAT: controller execution resolves the critical review role over daemon IPC and refuses mismatched or malformed policy
+ok 12 - DIFF-COMPAT: controller execution resolves the critical review role over daemon IPC and refuses mismatched or malformed policy
+  ---
+  duration_ms: 2.183833
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 14824.850625

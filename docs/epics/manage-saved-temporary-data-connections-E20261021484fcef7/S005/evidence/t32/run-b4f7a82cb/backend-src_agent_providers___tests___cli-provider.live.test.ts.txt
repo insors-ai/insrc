@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: CliProvider claude path: completeStructured returns typed payload
+ok 1 - CliProvider claude path: completeStructured returns typed payload # SKIP
+  ---
+  duration_ms: 0.447708
+  type: 'test'
+  ...
+# Subtest: CliProvider claude path: capabilities reflect contract
+ok 2 - CliProvider claude path: capabilities reflect contract
+  ---
+  duration_ms: 0.136209
+  type: 'test'
+  ...
+# Subtest: CliProvider embed throws cleanly when no delegate wired
+ok 3 - CliProvider embed throws cleanly when no delegate wired
+  ---
+  duration_ms: 0.263167
+  type: 'test'
+  ...
+# Subtest: CliProvider codex path: completeStructured returns typed payload
+ok 4 - CliProvider codex path: completeStructured returns typed payload # SKIP
+  ---
+  duration_ms: 0.075125
+  type: 'test'
+  ...
+# Subtest: INSRC_LIVE_TESTS gate respected
+ok 5 - INSRC_LIVE_TESTS gate respected
+  ---
+  duration_ms: 0.070167
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 2
+# todo 0
+# duration_ms 305.959625

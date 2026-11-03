@@ -15,6 +15,10 @@ import type { ConfigOption } from '../../../src/config/config-catalog.js';
 import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
 import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 
+/** A settings row's shape (type, default, enum, group), as the sync engine validates against it. */
+export type { ConfigOption };
+import type { ModelDefinitions } from '../models/definitions.js';
+
 /** One native settings key that changed since the last daemon sync. */
 export interface ChangedKey {
   /** The native settings id, e.g. `insrc.logLevel`. */
@@ -43,8 +47,12 @@ export interface Notifier {
   error(message: string): void;
 }
 
-/** The outcome of a daemon config write, widened from the daemon's bare `{ok}` with a client-authored reason. */
-export type ConfigWriteResult = { ok: true } | { ok: false; reason: string };
+/** The outcome of a daemon config write, as the daemon answers it: restartRequired when the
+ *  change applies after a daemon restart; on refusal the daemon's reason (e.g. 'rejected-model',
+ *  'per-repo-tier', 'invalid-path') and detail, or 'refused' when an older daemon gives none. */
+export type ConfigWriteResult =
+  | { ok: true; restartRequired?: boolean | undefined }
+  | { ok: false; reason: string; detail?: string | undefined };
 
 /**
  * The daemon snapshot the pull reads: the current value of each catalog path
@@ -140,4 +148,12 @@ export interface ConfigSyncDeps {
   readonly settings: SettingsStore;
   readonly notifier: Notifier;
   readonly keyMap: ConfigKeyMap;
+  /**
+   * The daemon's model definitions (models.definitions), against which a native tier
+   * edit is checked (Epic ce99b72065d03b1b, Story s6). Absent: a tier edit cannot be
+   * checked and is reverted.
+   */
+  readonly definitions?: (() => Promise<ModelDefinitions>) | undefined;
+  /** Called once after a batch whose accepted writes need a daemon restart to apply, with their native keys. */
+  readonly onRestartRequired?: ((nativeKeys: readonly string[]) => void) | undefined;
 }

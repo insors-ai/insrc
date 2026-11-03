@@ -1,0 +1,166 @@
+TAP version 13
+# Subtest: jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker
+ok 1 - jsonPathForMd resolves a nested epic DEF md → its hash-named json via the marker
+  ---
+  duration_ms: 2.407375
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker
+ok 2 - jsonPathForMd resolves a nested epic HLD md → its hash-named json via the marker
+  ---
+  duration_ms: 1.265833
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker
+ok 3 - jsonPathForMd resolves a nested story-scoped LLD md → its hash-named json via the marker
+  ---
+  duration_ms: 1.172333
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd leaves docs/stub layout untouched
+ok 4 - jsonPathForMd leaves docs/stub layout untouched
+  ---
+  duration_ms: 0.107667
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd returns json paths unchanged
+ok 5 - jsonPathForMd returns json paths unchanged
+  ---
+  duration_ms: 0.097333
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker
+ok 6 - jsonPathForMd resolves a nested standalone SPEC md → its hash-named json via the marker
+  ---
+  duration_ms: 1.0775
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker
+ok 7 - jsonPathForMd resolves a nested story-scoped CR md → its hash-named json via the marker
+  ---
+  duration_ms: 1.388667
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception
+ok 8 - jsonPathForMd recognises both docs/epics and docs/standalone top-levels, stub stays the side-by-side exception
+  ---
+  duration_ms: 2.2185
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd rejects unknown extensions
+ok 9 - jsonPathForMd rejects unknown extensions
+  ---
+  duration_ms: 0.3235
+  type: 'test'
+  ...
+# Subtest: jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)
+ok 10 - jsonPathForMd throws for a nested md with no insrc:artifact marker (path no longer encodes the id)
+  ---
+  duration_ms: 0.379416
+  type: 'test'
+  ...
+# Subtest: approveArtifactByJsonPath sets meta.approvedAt
+ok 11 - approveArtifactByJsonPath sets meta.approvedAt
+  ---
+  duration_ms: 5.149042
+  type: 'test'
+  ...
+# Subtest: rejectArtifactByJsonPath sets meta.rejectedAt + reason
+ok 12 - rejectArtifactByJsonPath sets meta.rejectedAt + reason
+  ---
+  duration_ms: 1.826125
+  type: 'test'
+  ...
+# Subtest: rejectArtifactByJsonPath refuses empty reason
+ok 13 - rejectArtifactByJsonPath refuses empty reason
+  ---
+  duration_ms: 1.037416
+  type: 'test'
+  ...
+# Subtest: reject then approve clears the rejection
+ok 14 - reject then approve clears the rejection
+  ---
+  duration_ms: 2.218917
+  type: 'test'
+  ...
+# Subtest: requireApprovedEpic throws ArtifactMissingError when no Define exists
+ok 15 - requireApprovedEpic throws ArtifactMissingError when no Define exists
+  ---
+  duration_ms: 0.379625
+  type: 'test'
+  ...
+# Subtest: requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved
+ok 16 - requireApprovedEpic throws ArtifactNotApprovedError when Define is not approved
+  ---
+  duration_ms: 0.963666
+  type: 'test'
+  ...
+# Subtest: requireApprovedEpic returns the Define artifact after approval
+ok 17 - requireApprovedEpic returns the Define artifact after approval
+  ---
+  duration_ms: 1.356791
+  type: 'test'
+  ...
+# Subtest: t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt
+ok 18 - t5: approving a PLAN stamps meta.rangeBase as a FULL 40-hex sha alongside meta.approvedAt
+  ---
+  duration_ms: 95.6505
+  type: 'test'
+  ...
+# Subtest: t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase
+ok 19 - t5: the GENERIC stamp site is GATED — DEF, HLD, AMD and BUILD each stamp NO rangeBase
+  ---
+  duration_ms: 292.826333
+  type: 'test'
+  ...
+# Subtest: t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT
+ok 20 - t5: a STANDALONE design.story LLD IS stamped (the only upstream the no-plan route has), an EPIC-route LLD is NOT
+  ---
+  duration_ms: 150.868833
+  type: 'test'
+  ...
+# Subtest: t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string
+ok 21 - t5: an UNREADABLE HEAD leaves rangeBase ABSENT and still completes the approval — never throws, never an empty string
+  ---
+  duration_ms: 8.76975
+  type: 'test'
+  ...
+# Subtest: t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)
+ok 22 - t5: a git repo with NO COMMITS leaves rangeBase ABSENT (HEAD does not resolve yet)
+  ---
+  duration_ms: 22.81175
+  type: 'test'
+  ...
+# Subtest: CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins
+ok 23 - CR-3: re-approving after the work has landed does NOT move rangeBase forward — the FIRST stamp wins
+  ---
+  duration_ms: 112.197625
+  type: 'test'
+  ...
+# Subtest: CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once
+ok 24 - CR-3: a PRE-EXISTING rangeBase on an unapproved artifact is also preserved, so the stamp is write-once rather than approve-once
+  ---
+  duration_ms: 70.827
+  type: 'test'
+  ...
+# Subtest: CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever
+ok 25 - CR-3: an EMPTY-STRING rangeBase is treated as unstamped and gets a real base — write-once must not preserve a useless value forever
+  ---
+  duration_ms: 75.805792
+  type: 'test'
+  ...
+# Subtest: t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them
+ok 26 - t5: rangeBase SURVIVES a write-read-write round trip, and the two deliberate key deletions do not take it with them
+  ---
+  duration_ms: 75.402625
+  type: 'test'
+  ...
+1..26
+# tests 26
+# suites 0
+# pass 26
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1192.254917

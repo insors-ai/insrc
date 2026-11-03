@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Detailed requirements for durable, compressed project memory shared by Claude, Codex, Vibe and Ollama through insrc.">
+  <title>insrc · Shared project memory requirements</title>
+  <style>
+    :root{color-scheme:light;--bg:#f5f6f3;--paper:#fff;--ink:#17251e;--muted:#56665c;--line:#d9e2da;--accent:#26583e;--soft:#edf5ec;--amber:#805512;--amber-bg:#fff7e8;--blue:#245775;--blue-bg:#eef5fa;--radius:12px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:24px}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--accent);text-underline-offset:3px}a:hover{text-decoration-thickness:2px}a:focus-visible{outline:3px solid #8db5d1;outline-offset:4px}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.87em}code{overflow-wrap:anywhere}pre{padding:20px;background:#15261e;color:#e5f2e8;border-radius:9px;overflow:auto;line-height:1.65}pre code{font-size:inherit;overflow-wrap:normal}h1,h2,h3{line-height:1.22;letter-spacing:-.025em}h1{font-size:clamp(32px,4vw,48px);max-width:850px;margin:20px 0 16px}h2{font-size:27px;margin:0 0 20px}h3{font-size:18px;margin:25px 0 10px}p{margin:0 0 15px}li{margin:5px 0}ul,ol{padding-left:22px}.shell{display:grid;grid-template-columns:250px minmax(0,1000px);gap:40px;max-width:1370px;margin:auto;padding:38px 30px 80px}.sidebar{position:sticky;top:25px;align-self:start;max-height:calc(100vh - 50px);overflow:auto;padding:4px 15px 15px 0}.brand{font-weight:750;font-size:23px;letter-spacing:-1px}.brand span{color:var(--accent)}.sidebar p{font-size:12px;color:var(--muted);margin:4px 0 20px}.sidebar nav a{display:block;text-decoration:none;font-size:13px;padding:6px 10px;border-left:2px solid var(--line);color:var(--muted)}.sidebar nav a:hover{border-color:var(--accent);background:var(--soft);color:var(--ink)}main{min-width:0}.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:11px;font-weight:750;color:var(--accent)}header{padding:20px 0 30px;border-bottom:1px solid var(--line);margin-bottom:28px}.lead{font-size:19px;color:var(--muted);max-width:820px}.tags{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}.tag{border:1px solid var(--line);padding:4px 11px;border-radius:30px;font-size:12px;background:var(--paper)}.tag.draft{color:var(--amber);background:var(--amber-bg);border-color:#e8d4ae}.meta{font-size:12px;color:var(--muted)}section{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:30px;margin:0 0 22px;min-width:0}section>h2 .num{color:#7f9585;margin-right:10px;font-size:18px}.callout{padding:16px 19px;border-left:4px solid var(--accent);background:var(--soft);margin:18px 0;border-radius:0 7px 7px 0}.callout p:last-child{margin-bottom:0}.callout.warning{border-color:var(--amber);background:var(--amber-bg)}.callout.info{border-color:var(--blue);background:var(--blue-bg)}.table-wrap{overflow-x:auto;margin:16px 0 22px}table{border-collapse:collapse;width:100%;font-size:13px;line-height:1.55}caption{text-align:left;font-weight:650;margin-bottom:10px;color:var(--muted)}th,td{border-bottom:1px solid var(--line);padding:12px 11px;text-align:left;vertical-align:top}th{background:#f5f8f4;font-size:11px;letter-spacing:.6px;text-transform:uppercase}th:first-child,td:first-child{padding-left:8px}td:first-child{font-weight:550}tbody tr:last-child td{border-bottom:0}.requirement{border-top:1px solid var(--line);padding:15px 0 0;margin-top:15px}.rid{display:inline-block;font:700 11px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--accent);padding:3px 7px;border:1px solid #cbdccf;border-radius:5px;vertical-align:middle;margin-right:7px;white-space:nowrap}.req-title{font-weight:650}.small{font-size:13px;color:var(--muted)}.sequence{list-style:none;counter-reset:step;padding:0;margin:20px 0}.sequence li{counter-increment:step;position:relative;padding:12px 15px 12px 52px;border:1px solid var(--line);border-radius:8px;background:#f9fbf8;margin:8px 0}.sequence li:before{content:counter(step);position:absolute;left:14px;top:13px;width:24px;height:24px;background:var(--accent);color:#fff;text-align:center;border-radius:50%;font-size:12px;line-height:24px}.sequence strong{display:block}.columns{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{padding:18px;background:#f7faf6;border:1px solid var(--line);border-radius:8px}.card h3{margin-top:0}.decision{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-weight:750}.footer{padding:20px 2px;font-size:12px;color:var(--muted)}.source-list{font-size:13px}.source-list li{margin:12px 0}strong{font-weight:650}.nowrap{white-space:nowrap}
+    @media(max-width:1050px){.shell{grid-template-columns:205px minmax(0,1fr);gap:24px;padding:24px 20px 60px}.sidebar nav a{font-size:12px}section{padding:24px}}
+    @media(max-width:760px){html{scroll-padding-top:14px}.shell{display:block;padding:18px 14px 40px}.sidebar{position:static;max-height:none;padding:0;margin-bottom:20px}.sidebar p{margin-bottom:12px}.sidebar nav{display:flex;overflow-x:auto;gap:4px;padding-bottom:8px}.sidebar nav a{white-space:nowrap;border-left:0;border-bottom:2px solid var(--line);padding:8px}.columns{grid-template-columns:1fr}header{padding-top:12px}section{padding:21px 17px}h2{font-size:23px}table{min-width:590px}pre{padding:15px;font-size:11px}.lead{font-size:17px}}
+    @media print{html{scroll-behavior:auto}body{background:#fff;font-size:10pt;line-height:1.45}.shell{display:block;max-width:none;padding:0}.sidebar{display:none}header{margin:0 0 20px;padding:0 0 16px}h1{font-size:28pt}h2{font-size:18pt;break-after:avoid}h3{break-after:avoid}section{border:0;border-radius:0;padding:0;margin:24px 0;break-inside:auto}.table-wrap{overflow:visible}table{font-size:8pt;min-width:0}tr,.requirement,.card,.callout{break-inside:avoid}thead{display:table-header-group}pre{white-space:pre-wrap;background:#f2f5f1;color:#17251e;overflow:visible;border:1px solid #d9e2da}.columns{display:block}.card{margin:10px 0}a{color:inherit}.tags{margin:12px 0}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar" aria-label="Document navigation">
+    <div class="brand">insrc<span>.</span></div>
+    <p>Requirements · shared project memory<br>Draft 0.1 · 1 November 2026</p>
+    <nav aria-label="Contents">
+      <a href="#summary">01 · Purpose and decisions</a>
+      <a href="#scope">02 · Scope and user outcomes</a>
+      <a href="#ownership">03 · Ownership and boundaries</a>
+      <a href="#flow">04 · Processing flow</a>
+      <a href="#capture">05 · Capture and source context</a>
+      <a href="#queue">06 · Durable file queue</a>
+      <a href="#contracts">07 · Data contracts</a>
+      <a href="#normalization">08 · Normalization and dedupe</a>
+      <a href="#compression">09 · Compression and budgets</a>
+      <a href="#store">10 · LanceDB store</a>
+      <a href="#lifecycle">11 · Updates, expiry and forgetting</a>
+      <a href="#reads">12 · Retrieval and caching</a>
+      <a href="#agents">13 · Agent integrations</a>
+      <a href="#api">14 · IPC and MCP contracts</a>
+      <a href="#recovery">15 · Failure and recovery</a>
+      <a href="#privacy">16 · Privacy and authority</a>
+      <a href="#operations">17 · Operations and inspection</a>
+      <a href="#acceptance">18 · Acceptance criteria</a>
+      <a href="#delivery">19 · Delivery sequence</a>
+      <a href="#decisions">20 · Open decisions</a>
+      <a href="#research">21 · Research and references</a>
+    </nav>
+  </aside>
+  <main>
+    <header>
+      <div class="eyebrow">Product and engineering requirements</div>
+      <h1>Shared project memory across coding agents</h1>
+      <p class="lead">A durable, compact and correct memory of project conversations, runtime instructions, decisions and work state—available when switching between Claude, Codex, Vibe and Ollama.</p>
+      <div class="tags"><span class="tag draft">Draft for review</span><span class="tag">One store writer</span><span class="tag">Rotating durable queue</span><span class="tag">LanceDB-only memory storage</span><span class="tag">Local-first</span></div>
+      <p class="meta">Version 0.2 · Updated with reusable embedded and standalone IPC hosting on 1 November 2026 · No implementation or runtime qualification is asserted.</p>
+    </header>
+
+    <section id="summary">
+      <h2><span class="num">01</span>Purpose and recorded direction</h2>
+      <p>Agent-native sessions and private memory systems do not establish a common project memory. An instruction issued during a Claude conversation must remain available when the next task starts in Codex; a correction made in Vibe must become the current instruction for Ollama as well. Historical context must remain inspectable without repeatedly injecting verbose conversation transcripts.</p>
+      <p>This document specifies a self-contained, reusable memory module, delivered as a standalone feature. The same core MUST run embedded in a host process or in an independent process accessed through IPC. The insrc daemon is one integration host, not a prerequisite for the module. Its core is semantic normalization, scoped deduplication, faithful compression and explicit lifecycle management. Static instruction-file generation remains with insrc setup/update; adding another generator is not the objective.</p>
+      <div class="callout"><p><strong>Recorded architecture:</strong> sessions submit events to a separate persisted file queue. One context-builder worker normalizes, reconciles, compresses and embeds those events, then writes the memory store. LanceDB is the sole authoritative store for this new subsystem. Sessions and hooks never mutate it directly.</p></div>
+      <div class="table-wrap"><table>
+        <caption>Direction established in the discussion</caption>
+        <thead><tr><th scope="col">Decision</th><th scope="col">Requirement</th></tr></thead>
+        <tbody>
+          <tr><td>Reusable module, two hosting modes</td><td>Provide a public embedded API and a standalone IPC service over the same memory core. External applications can use either without starting the insrc daemon or loading its registry, indexer or workflow runtime.</td></tr>
+          <tr><td>Ongoing shared memory</td><td>Capture conversation context and project-level runtime instructions, rather than duplicating static agent setup files.</td></tr>
+          <tr><td>Compression and deduplication first</td><td>Equivalent instructions occupy one canonical record. Additional evidence does not grow the briefing by repeating the instruction.</td></tr>
+          <tr><td>Durable asynchronous ingestion</td><td>A submission is accepted only after its queue event is durably recorded. Semantic processing occurs in the worker.</td></tr>
+          <tr><td>Separate rotating queue</td><td>Size triggers segment rotation. Completed processing permits segment recycling; unprocessed events are never discarded merely to enforce a size limit.</td></tr>
+          <tr><td>One store writer</td><td>The context-builder worker is the only writer, including updates, deletions, receipts, indexing and store maintenance.</td></tr>
+          <tr><td>LanceDB-only memory store</td><td>Canonical content, vectors and lifecycle records live in a dedicated LanceDB database directory, physically separate from the existing index store. A semantic read can return the authoritative content directly, without LMDB hydration.</td></tr>
+          <tr><td>Mutable context</td><td>Memories may be expanded, overridden, superseded, expired and deleted. Queue replay cannot resurrect a forgotten memory.</td></tr>
+          <tr><td>Shared integration contract</td><td>Use host-controlled turn adapters where possible, native hooks where supported, and common MCP tools for explicit operations and deeper recall.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small"><strong>Document precedence:</strong> the earlier <a href="../cross-session-agent-memory-spec.md">cross-session memory specification</a> proposed LMDB authority plus LanceDB indexing. This document records the later LanceDB-only direction for the new memory subsystem. Its capture, provenance and forgetting principles remain useful inputs; conflicting storage recommendations are superseded here. Existing code-graph and conversation storage are not migrated by this requirements document.</p>
+      <p class="small"><strong>Reading convention:</strong> MUST identifies a required behavior; SHOULD identifies a default that needs a documented reason to vary; MAY identifies optional scope. Examples, logical schemas and API names are proposals, not existing implementation contracts. Recorded user direction is distinguished from an approved LLD or completed build.</p>
+    </section>
+
+    <section id="scope">
+      <h2><span class="num">02</span>Scope and user outcomes</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Memory class</th><th scope="col">Example</th><th scope="col">Delivery behavior</th></tr></thead>
+        <tbody>
+          <tr><td>Project directive</td><td>“Use manual review while the review service is broken.”</td><td>Load deterministically when applicable; preserve the condition and stop applying the directive when it is explicitly superseded or its condition is established as ended.</td></tr>
+          <tr><td>Conversation evidence</td><td>The user explains why a validation is deferred.</td><td>Retain admitted source context and references; retrieve relevant excerpts rather than replaying every message.</td></tr>
+          <tr><td>Decision / environment fact</td><td>“SQL Server is unavailable on this machine.”</td><td>Keep scope, time and source distinct from an instruction to change product support.</td></tr>
+          <tr><td>Verified lesson</td><td>A particular test failure was caused by concurrent native instrumentation.</td><td>Link the supporting execution evidence; distinguish an observed result from an assistant hypothesis.</td></tr>
+          <tr><td>Work handoff</td><td>Completed tasks, current blocker and next action.</td><td>Maintain a compact current view linked to canonical workflow artifacts and supporting conversations.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="S-01"><p><span class="rid">S-01</span><span class="req-title">Cross-agent continuity.</span> A project-scoped instruction recorded from one supported agent MUST be available to other supported agents through the common service. Provider identity is provenance and MUST NOT partition shared project memory by default.</p></div>
+      <div class="requirement" id="S-02"><p><span class="rid">S-02</span><span class="req-title">Local single-user first delivery.</span> The first release MUST support explicitly bound projects on the local machine; insrc uses its repository registry, while independent hosts supply validated identities. Personal/global sharing, multiple users and cross-project transfer require separate explicit scope and authorization designs.</p></div>
+      <div class="requirement" id="S-03"><p><span class="rid">S-03</span><span class="req-title">Current clients.</span> Applicable UI integration covers VS Code and JetBrains plus standalone CLI/MCP clients. The deprecated insrc-ide fork is excluded. Ollama participates through insrc's provider boundary.</p></div>
+      <div class="requirement" id="S-04"><p><span class="rid">S-04</span><span class="req-title">Source-of-truth boundaries.</span> Approved workflow artifacts continue to own scope and sign-off. The code graph owns structural knowledge. Memory MUST link to those sources and MUST NOT approve artifacts, create standing authorization from “go ahead,” or present recalled work status as current execution proof.</p></div>
+      <h3>Required user journeys</h3>
+      <ol>
+        <li>Give Claude a project instruction, then start Codex and receive the same applicable instruction without copying text.</li>
+        <li>Repeat the instruction with different wording; inspect one canonical record with additional supporting evidence.</li>
+        <li>Expand or correct it in Vibe; a subsequent Ollama invocation receives the current revision and its conditions.</li>
+        <li>Switch agents during a story and retrieve a concise handoff with links to original decisions and pending work.</li>
+        <li>Inspect why a memory was included, correct its scope, or forget it; see the operation's actual processing state.</li>
+        <li>Restart after acceptance, normalization or store commit and recover without lost submissions or duplicate memory effects.</li>
+      </ol>
+      <p class="small">Initial exclusions: importing all private agent memory automatically; storing hidden reasoning; general personal profiling; automatic cross-user synchronization; automatic skill generation; multimodal extraction; rebuilding workflow or code-graph systems; and replacing native provider authentication or execution loops.</p>
+    </section>
+
+    <section id="ownership">
+      <h2><span class="num">03</span>Ownership and interaction boundaries</h2>
+      <p>Ownership belongs to the memory module instance hosting a configured data directory. Embedded mode runs that instance inside an application; standalone mode runs it behind a local IPC server. Both use the same durable queue, context-builder pipeline, storage and lifecycle semantics. An application may instead connect to an existing standalone instance; it must not open a competing embedded instance over that directory.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Boundary</th><th scope="col">Direction and cardinality</th><th scope="col">Ownership / compatibility</th></tr></thead>
+        <tbody>
+          <tr><td>Sessions → queue ingress</td><td>Many sessions submit to one serialized local ingress.</td><td>Adapters own source event identity; ingress owns framing, append ordering and durable acceptance. Multiple producers do not append unsynchronized fragments to a shared file.</td></tr>
+          <tr><td>Queue → context-builder worker</td><td>Many accepted events are consumed by one worker.</td><td>The worker owns processing order, retries and terminal outcomes. A process-ownership guard prevents accidental second writers after a restart.</td></tr>
+          <tr><td>Worker → LanceDB</td><td>One authorized writer owns all mutations for memory tables.</td><td>Model work occurs before the short commit operation. Administrative corrections, receipts, statistics persistence and maintenance also pass through this writer.</td></tr>
+          <tr><td>Readers → memory service</td><td>Many readers use the public embedded API or standalone IPC client; insrc adds daemon IPC and MCP adapters.</td><td>Reads do not synchronously mutate LanceDB. Only the hosting memory instance opens its memory storage. Existing backend storage ownership remains intact.</td></tr>
+          <tr><td>Memory → provider dispatch</td><td>One resolved context bundle may be delivered to a particular session/turn.</td><td>The host owns scope, budget and the delivery receipt. Native session state is retained independently.</td></tr>
+          <tr><td>Memory → source evidence</td><td>A memory has one or more source spans; a span may support several memories.</td><td>Evidence is referenced and deduplicated. Memory corrections preserve lineage; forgetting can invalidate all dependants.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="O-01"><p><span class="rid">O-01</span>The sole-writer constraint MUST apply to the complete new memory subsystem, not just canonical text. Hook processes, MCP handlers, sessions and maintenance timers MUST submit commands rather than write storage themselves. It does not serialize unrelated existing LanceDB tables used by other insrc subsystems.</p></div>
+      <div class="requirement" id="O-02"><p><span class="rid">O-02</span>Store reads MUST be side-effect-free. Delivery receipts or usage measurements that require persistence MUST be queued as typed control events. They MUST NOT enter the semantic-extraction pipeline recursively.</p></div>
+      <div class="requirement" id="O-03"><p><span class="rid">O-03</span>Inference and embeddings MUST use injected provider interfaces. The insrc adapter MUST use insrc's provider abstraction and model-role policy. Cloud access remains through installed CLI providers; embeddings remain local. Model and embedding calls MUST follow the sequential-execution rule, including calls made by memory extraction, reranking and maintenance. The reusable core MUST NOT import the daemon's provider factory or access cloud REST APIs directly.</p></div>
+      <div class="requirement" id="O-04"><p><span class="rid">O-04</span><span class="req-title">Independent package boundary.</span> The module MUST expose versioned public types and entry points and be buildable, testable and consumable outside the daemon. It MUST NOT depend on daemon startup, IPC handlers, index storage, workflow runtime, global insrc configuration or the insrc repository registry. Hosts supply validated project identity, storage paths, providers, policy and logging through explicit interfaces. The insrc adapter binds project identity to its registered repositories; external hosts supply their own explicit project binding.</p></div>
+      <div class="requirement" id="O-05"><p><span class="rid">O-05</span><span class="req-title">Embedded and standalone parity.</span> Both hosting modes MUST provide capture, recall/context, inspection, correction, forgetting, operation status and lifecycle management through the same application-service contract. The standalone executable and IPC client MUST work with the insrc daemon stopped. IPC MUST version its contract, validate requests, restrict local endpoint access and preserve event identity, error semantics and commit barriers across reconnects. Transport handlers MUST delegate to the same core rather than duplicate memory logic.</p></div>
+      <div class="requirement" id="O-06"><p><span class="rid">O-06</span><span class="req-title">Explicit lifecycle and ownership.</span> Provide explicit start/open, readiness, drain and stop/close behavior. An ownership guard MUST reject a second writer for the same resolved memory directory across embedded and standalone processes. Independent directories MUST remain isolated. Shutdown MUST stop admission, preserve accepted work for completion or recovery, release resources and avoid closing host-owned providers. Importing the package MUST NOT start workers, create files or install global process handlers.</p></div>
+    </section>
+
+    <section id="flow">
+      <h2><span class="num">04</span>End-to-end processing flow</h2>
+      <ol class="sequence" aria-label="Memory processing sequence">
+        <li><strong>Capture an attributed delta</strong>Admit a new source message, selected outcome or explicit memory operation. Attach project/session identity, event time, source references and execution origin.</li>
+        <li><strong>Persist the submission</strong>Ingress validates the envelope and writes a complete queue frame. Acknowledge acceptance after the required durability boundary.</li>
+        <li><strong>Resolve bounded context</strong>The worker reads enough preceding conversation and current scoped memory to interpret references. Missing context becomes an explicit incomplete/conflicted outcome.</li>
+        <li><strong>Extract and normalize</strong>Produce atomic, typed candidates while preserving polarity, conditions, scope, identifiers and source authority.</li>
+        <li><strong>Find and reconcile existing memory</strong>Combine exact identity/hash lookup with scoped lexical and semantic candidates. Classify equivalence, expansion, correction, conflict, related evidence or new information.</li>
+        <li><strong>Compress and validate</strong>Prepare the canonical concise text and structured fields. Validate preserved meaning, evidence and complete candidate accounting.</li>
+        <li><strong>Embed changed content and commit</strong>Prepare vectors where content changed. Apply the event's memory effects, revisions, source references, generation change and processing receipt as a qualified atomic table mutation.</li>
+        <li><strong>Acknowledge and publish</strong>Persist queue completion, invalidate affected context caches and expose committed operation status. Eligible sealed queue segments can then be recycled.</li>
+      </ol>
+      <div class="callout info"><p><strong>Acceptance is not activation.</strong> Submission returns an operation receipt in a pending state. An instruction becomes active only after its canonical mutation is committed. Callers may wait for an operation to commit when correctness depends on that update.</p></div>
+    </section>
+
+    <section id="capture">
+      <h2><span class="num">05</span>Capture, context and source retention</h2>
+      <div class="requirement" id="C-01"><p><span class="rid">C-01</span>Capture MUST submit newly admitted material, not the full accumulated transcript on every turn. Every source event MUST have a stable replay identity based on adapter, native session, turn/event or durable transcript cursor. Wall-clock timestamps alone are insufficient.</p></div>
+      <div class="requirement" id="C-02"><p><span class="rid">C-02</span>The envelope MUST distinguish <code>occurredAt</code>, <code>capturedAt</code> and, after processing, <code>processedAt</code>. Preserve timezone or an explicitly known offset where needed. Resolve “today,” “next week” and other relative references against source event time, not delayed worker time.</p></div>
+      <div class="requirement" id="C-03"><p><span class="rid">C-03</span>The worker MUST have a bounded source-context window for references such as “override that” and “same for JetBrains.” Context may be carried as admitted text or resolved from durable references. References required for processing MUST remain available until the event has a terminal outcome.</p></div>
+      <div class="requirement" id="C-04"><p><span class="rid">C-04</span>Context used to interpret an event MUST NOT become an independent new source merely because it is replayed into the normalizer. Assistant echoes, injected briefings, resumed output, permission continuations and hook-generated control messages MUST be distinguished from original user statements.</p></div>
+      <div class="requirement" id="C-05"><p><span class="rid">C-05</span>Capture eligibility MUST use a project-memory policy with positive and negative examples. Initial eligible types are explicit scoped directives, decisions, qualified environment facts, verified lessons and useful handoff facts. Greetings, routine narration and unsupported speculation are not active memory by default.</p></div>
+      <div class="requirement" id="C-06"><p><span class="rid">C-06</span>Original visible messages MUST remain separate from injected memory in transcript storage. Preserve required supporting source spans once, either in durable source records or through pinned existing transcript references. A source-retention policy MUST specify what happens when the original provider transcript is rotated or removed.</p></div>
+      <div class="requirement" id="C-07"><p><span class="rid">C-07</span>Capture MUST account for a detached UI, reconnect, permission retry, interrupted turn and an unavailable memory host. No hook or session may report durable acceptance before the queue is durable. If ingress is unavailable, use a qualified local durable spool or return a visible not-captured result; an in-memory buffer alone is insufficient.</p></div>
+      <div class="requirement" id="C-08"><p><span class="rid">C-08</span>Choose one authoritative capture owner per execution: insrc turn adapter for managed sessions, or the native adapter for independent sessions. Hooks observing an insrc-managed run MUST avoid duplicate submission. Historical import MUST be explicit, scoped, resumable and deduplicated.</p></div>
+      <p class="small">A provider-native transcript is evidence, not the memory database. The system must remain understandable when that provider's private memory implementation changes. Hidden reasoning and unrelated private agent files are excluded.</p>
+    </section>
+
+    <section id="queue">
+      <h2><span class="num">06</span>Separate, durable file queue</h2>
+      <p>The insrc host's proposed layout is <code>~/.insrc/memory/queue/</code> containing numbered active/sealed segments and a recovery manifest. Independent hosts supply their own data directory. No queue file is stored inside a Lance table. The selected build direction is a narrow segmented JSONL journal using Node filesystem primitives, with a runtime-compatible atomic-file replacement helper for checkpoints where useful; that helper does not provide queue acknowledgement, rotation or replay semantics. Exact framing and durability behavior require qualification.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Property</th><th scope="col">Required behavior</th></tr></thead>
+        <tbody>
+          <tr><td>Physical separation</td><td>Queue files and the memory store have separate paths, retention and recovery procedures.</td></tr>
+          <tr><td>Append format</td><td>Use a versioned, framed append-only journal with length, sequence and checksum. Plain line breaks alone do not establish a complete durable record.</td></tr>
+          <tr><td>Acceptance</td><td>Return <code>accepted</code> after the complete frame meets the configured crash-durability boundary. Creation/rename durability includes directory synchronization where required by the filesystem.</td></tr>
+          <tr><td>Rotation</td><td>Seal the active segment at the configured byte threshold and open a new segment. Define maximum event/frame size and bounded decoding limits.</td></tr>
+          <tr><td>Recycling</td><td>Delete a sealed segment only when every event has a durable terminal disposition, including explicitly quarantined/resolved failures or a durably verified transfer.</td></tr>
+          <tr><td>Backpressure</td><td>When unprocessed data exhausts the queue budget, reject/defer new submissions visibly. Never drop old pending events to stay below a size cap.</td></tr>
+          <tr><td>Retries</td><td>Persist attempt state and next retry time. Transient failures are retryable; poison events require inspection/quarantine rather than silent success.</td></tr>
+          <tr><td>Ordering</td><td>Assign a durable ingress sequence. Preserve causal ordering of directives, corrections and deletion commands. Any later scheduling optimization must retain explicit dependency/order guarantees.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="Q-01"><p><span class="rid">Q-01</span>Ingress MUST serialize writes from multiple producers. A read-only queue status request must not open a competing append writer or memory-store writer.</p></div>
+      <div class="requirement" id="Q-02"><p><span class="rid">Q-02</span>Startup MUST recover complete accepted frames. An incomplete final frame may be isolated using the qualified recovery procedure. Mid-segment corruption MUST be reported and quarantined; recovery must not skip unknown accepted content silently.</p></div>
+      <div class="requirement" id="Q-03"><p><span class="rid">Q-03</span>Processing is at least once. Exactly-once store effects MUST be implemented through stable event identity and durable processing receipts, not claimed from the file queue itself. A reused event ID with a different payload hash MUST be rejected or quarantined.</p></div>
+      <div class="requirement" id="Q-04"><p><span class="rid">Q-04</span>Queue acknowledgement MUST follow the store commit. If the process crashes between those operations, replay checks the store receipt and repairs acknowledgement without repeating the memory mutation.</p></div>
+      <div class="requirement" id="Q-05"><p><span class="rid">Q-05</span>Journal rotation, acknowledgement checkpointing and manifest replacement MUST have documented crash points and recovery behavior. Retain the prior valid checkpoint until its replacement is durable.</p></div>
+      <div class="requirement" id="Q-06"><p><span class="rid">Q-06</span>Queued payloads remain input evidence and cannot be used as active memory merely because normalization is pending. Status must distinguish queue acceptance, processing and canonical activation.</p></div>
+      <p class="small">No segment-size, disk-capacity or retry-count value is approved by this document. These are configurable operational settings to select using payload measurements and recovery tests. Failed-event handling must avoid indefinitely blocking all unrelated project work while preserving same-subject ordering.</p>
+    </section>
+
+    <section id="contracts">
+      <h2><span class="num">07</span>Logical data contracts</h2>
+      <p>The logical records below describe required information. Arrow schemas, exact key encodings and API field names belong in the implementation design.</p>
+      <div class="table-wrap"><table>
+        <caption>Submission envelope</caption>
+        <thead><tr><th scope="col">Field group</th><th scope="col">Required information</th></tr></thead>
+        <tbody>
+          <tr><td>Identity</td><td><code>schemaVersion</code>, <code>eventId</code>, durable ingress sequence, payload hash and source adapter version.</td></tr>
+          <tr><td>Scope</td><td>Daemon-validated project identity and canonical repository root; optional worktree, branch, path, language, task and session applicability.</td></tr>
+          <tr><td>Source</td><td>Provider/native session identity, turn/event ID or cursor, speaker role, original source references and relevant bounded text spans.</td></tr>
+          <tr><td>Time</td><td>Occurrence and capture timestamps, known timezone, plus source revision/hash for imported material.</td></tr>
+          <tr><td>Intent</td><td><code>capture</code>, <code>submit-canonical</code>, <code>correct</code>, <code>forget</code>, <code>delivery-receipt</code> or a qualified maintenance/control command.</td></tr>
+          <tr><td>Execution origin</td><td>Trusted distinction between external conversation, insrc-managed session, internal memory worker, replay and injected context.</td></tr>
+          <tr><td>Mutation guard</td><td>Target memory ID and expected revision when a caller explicitly corrects or deletes an existing record.</td></tr>
+        </tbody>
+      </table></div>
+      <pre><code>{
+  "eventId": "stable-adapter-session-turn-event",
+  "intent": "capture",
+  "projectId": "registered-project",
+  "source": {
+    "provider": "claude",
+    "sessionId": "native-session",
+    "role": "user",
+    "messageRef": "durable-source-reference"
+  },
+  "occurredAt": "2026-11-01T09:30:00+05:30",
+  "payload": {
+    "text": "Use manual code review while the review service is broken."
+  },
+  "payloadHash": "sha256-of-the-versioned-canonical-envelope"
+}</code></pre>
+      <div class="table-wrap"><table>
+        <caption>Canonical memory and supporting records</caption>
+        <thead><tr><th scope="col">Record</th><th scope="col">Required information</th></tr></thead>
+        <tbody>
+          <tr><td>Memory</td><td>Stable memory ID; kind; canonical subject/category; structured assertion; concise text; scope; conditions; authority; status; revision; created/updated time; optional validity interval; source references; related/superseded IDs.</td></tr>
+          <tr><td>Revision</td><td>Immutable revision ID, predecessor, mutation reason, source event and normalizer/prompt/schema versions. Historical content follows retention and forgetting rules.</td></tr>
+          <tr><td>Source evidence</td><td>Stable source identity, attributed span, content hash and retrieval location or retained admitted excerpt. One span can support multiple memories.</td></tr>
+          <tr><td>Processing receipt</td><td>Event ID/hash, operation outcome, affected memory revisions, committed generation and processing version. It must be sufficient to identify replay without rerunning inference.</td></tr>
+          <tr><td>Tombstone</td><td>Deleted memory/fact/source identity, invalidation boundary and minimal replay-prevention metadata. Avoid retaining forgotten content in the marker.</td></tr>
+          <tr><td>Delivery receipt</td><td>Session, turn, retrieval ID, memory revisions/generation, context digest and dispatch outcome. Prepared context is not proof of provider delivery.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="D-01"><p><span class="rid">D-01</span>Lifecycle status MUST distinguish <code>candidate</code>, <code>active</code>, <code>conflicted</code>, <code>superseded</code>, <code>expired</code> and <code>deleted</code>. Only currently eligible active records enter the prescriptive briefing.</p></div>
+      <div class="requirement" id="D-02"><p><span class="rid">D-02</span>Project ownership MUST be a validated envelope field. Caller metadata cannot overwrite project identity, source authority or internal execution origin. Provider name is not a substitute for project scope.</p></div>
+      <div class="requirement" id="D-03"><p><span class="rid">D-03</span>Semantic duplicates may share a canonical memory while preserving distinct source references. Repeated copies of the same source event MUST NOT increase evidence counts or authority.</p></div>
+    </section>
+
+    <section id="normalization">
+      <h2><span class="num">08</span>Semantic normalization and deduplication</h2>
+      <p>Deduplication is a meaning-preservation operation. Relatedness alone is insufficient. The worker must preserve conditions, polarity, source authority and the difference between a current directive and a historical event.</p>
+      <div class="columns">
+        <div class="card"><h3>Equivalent instructions</h3><p>“Run the full sweep after all tasks are built.”<br>“Finish every implementation task before the complete test sweep.”</p><p class="small">One canonical directive; two evidence references if independently stated.</p></div>
+        <div class="card"><h3>Different meanings</h3><p>“SQL Server is unavailable here.”<br>“Defer SQL Server validation.”<br>“Do not support SQL Server.”</p><p class="small">Environment fact, scoped instruction and product decision. Do not merge.</p></div>
+      </div>
+      <div class="requirement" id="N-01"><p><span class="rid">N-01</span>Normalize into atomic assertions with explicit subject, action/value, scope, polarity and conditions. Preserve dependencies between split assertions. A compound instruction may yield several linked records, but splitting must not discard their ordering or exception relationships.</p></div>
+      <div class="requirement" id="N-02"><p><span class="rid">N-02</span>Use stable identity dimensions such as subject, rule category and scope to locate competing assertions. Assertion values and conditions are compared separately so an override can find its predecessor. A fingerprint for exact equivalence MUST include meaning-bearing qualifiers.</p></div>
+      <div class="requirement" id="N-03"><p><span class="rid">N-03</span>Exact identity/hash lookup MUST cover the relevant store scope independently of nearest-neighbor limits. Scoped semantic and lexical candidates extend recall; similarity scores nominate candidates and never authorize a merge by themselves.</p></div>
+      <div class="requirement" id="N-04"><p><span class="rid">N-04</span>Canonicalization MUST preserve case-sensitive paths, identifiers, quoted strings, units, negation and limits. Whitespace or Unicode normalization must not change technical meaning. A changed condition is not an exact duplicate.</p></div>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Relationship</th><th scope="col">Required outcome</th></tr></thead>
+        <tbody>
+          <tr><td>Equivalent</td><td>Retain one canonical record; attach new independent evidence. Context occupies one instruction.</td></tr>
+          <tr><td>Expansion / refinement</td><td>Preserve the additional qualifier through a revision or linked exception; explain why the canonical meaning changed.</td></tr>
+          <tr><td>Explicit correction</td><td>Commit a replacement revision and supersession transition together. Do not leave contradictory active versions.</td></tr>
+          <tr><td>Ambiguous contradiction</td><td>Record the conflict and withhold prescriptive use until resolved. Do not select by timestamp alone.</td></tr>
+          <tr><td>Related, distinct event or fact</td><td>Keep separate records with an optional meaningful link.</td></tr>
+          <tr><td>Unsupported / non-durable content</td><td>Record a justified no-memory disposition or an inspectable candidate. Do not invent applicability.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="N-05"><p><span class="rid">N-05</span>Output MUST validate against a bounded typed schema. An empty valid extraction, failed parsing, incomplete extraction and partial persistence are distinct outcomes. Every candidate must be accounted for before an event is acknowledged as processed.</p></div>
+      <div class="requirement" id="N-06"><p><span class="rid">N-06</span>The worker MUST produce an inspectable reconciliation reason. Confidence cannot upgrade source authority. An inferred assistant preference cannot override an explicit user instruction or an approved artifact.</p></div>
+      <div class="requirement" id="N-07"><p><span class="rid">N-07</span>Support pre-normalized structured submissions from qualified sources, such as explicit corrections or canonical workflow references. They may skip LLM extraction, but MUST still pass scope, replay, schema and reconciliation checks.</p></div>
+      <p class="small">Periodic scoped duplicate audits MAY identify paraphrases missed by initial candidate retrieval. They must use the same evidence and mutation rules; perfect global semantic deduplication is not asserted from an ANN top-k search.</p>
+    </section>
+
+    <section id="compression">
+      <h2><span class="num">09</span>Compression, growth and context budgets</h2>
+      <p>There are three separate representations: source evidence, canonical memory and compiled context. Their sizes and retention policies must be measured independently. An expanding audit history does not justify an expanding prompt.</p>
+      <div class="requirement" id="B-01"><p><span class="rid">B-01</span>Apply structural compression first: remove duplicate assertions, select current state, reference canonical artifacts and retain only applicable records in the briefing. Do not repeatedly summarize an already shortened summary as the sole source of truth.</p></div>
+      <div class="requirement" id="B-02"><p><span class="rid">B-02</span>Semantic compression MUST preserve assertion, negation, scope, conditions, exceptions and time applicability. Check structured-slot coverage and source support. Ambiguous compression stays unresolved rather than becoming a broader active rule.</p></div>
+      <div class="requirement" id="B-03"><p><span class="rid">B-03</span>Twenty paraphrases of one instruction SHOULD leave its canonical record count and normal briefing footprint unchanged. Additional evidence is linked and deduplicated outside the briefing. Evidence lists and source excerpts require their own retention limits.</p></div>
+      <div class="requirement" id="B-04"><p><span class="rid">B-04</span>Set separate configurable budgets for queue frames, source-context windows, extraction input/output, candidate pools, stored canonical text and final provider context. Count supplied memory, history, schemas, tools and framing within the actual invocation budget.</p></div>
+      <div class="requirement" id="B-05"><p><span class="rid">B-05</span>Mandatory applicable directives MUST NOT disappear solely because they rank poorly semantically or a briefing budget is exhausted. Expose an overflow/narrowing outcome and use an explicit handling policy; do not silently truncate obligations.</p></div>
+      <div class="requirement" id="B-06"><p><span class="rid">B-06</span>Bound the compiled context by selecting relevant current memories and a small handoff. Detailed evidence, reconciliation diagnostics, duplicate references and historical revisions stay outside the normal prompt and remain available through inspection/search.</p></div>
+      <div class="requirement" id="B-07"><p><span class="rid">B-07</span>Measure source-to-canonical and canonical-to-delivered compression separately, together with qualifier preservation and omission rates. No target compression ratio or latency figure is established without representative evaluation data.</p></div>
+      <div class="callout warning"><p><strong>Accuracy governs compression.</strong> Reducing tokens is useful only while preserving correctness. Low access frequency does not make a still-active directive false or obsolete. Automatic decay must not silently revoke project instructions.</p></div>
+    </section>
+
+    <section id="store">
+      <h2><span class="num">10</span>LanceDB as the sole memory store</h2>
+      <p>Canonical text and its vector are stored together. A semantic query returns the authoritative row, avoiding a second store lookup. Direct instructions and handoffs use scalar lookup or cached snapshots, rather than vector search on every turn.</p>
+      <div class="callout"><p><strong>Physical store separation is required.</strong> Memory uses its own LanceDB connection and database directory, not another table in the existing index database. This separates stored tables, indexes and lifecycle operations; both stores may still share host CPU, memory and disk resources.</p></div>
+      <pre><code>~/.insrc/
+  lance/                 existing index database
+  memory/
+    lance/               proposed dedicated memory database
+    queue/               separate rotating ingestion journal</code></pre>
+      <p class="small">The existing index path is shown for context. The new memory paths are proposed locations, not an implemented configuration. Their resolved directories must be distinct from the index database, and neither database cleanup path may encompass the other or the queue.</p>
+      <div class="requirement" id="L-01"><p><span class="rid">L-01</span>The new subsystem MUST use a dedicated memory-instance-owned LanceDB database directory and separately managed connection/table handles. It MUST NOT place memory tables in the existing index store or reuse its connection singleton. No LMDB shadow authority or separate SQLite history database is required by this design. Existing insrc storage outside the subsystem remains unchanged.</p></div>
+      <div class="requirement" id="L-02"><p><span class="rid">L-02</span>Qualify an atomic commit representation for an event's complete effects. A proposed single typed table holds current-memory, revision, source, receipt, tombstone, delivery and control rows, using stable row IDs and nullable vector fields where appropriate. A context query filters to active current-memory rows.</p></div>
+      <div class="requirement" id="L-03"><p><span class="rid">L-03</span>A qualified single-table batch mutation MUST commit memory transitions and the processing receipt together. Lance table operations are not assumed to provide a general multi-table transaction. If implementation splits the commit unit, it requires a documented, tested recovery protocol before acceptance.</p></div>
+      <div class="requirement" id="L-04"><p><span class="rid">L-04</span>Single-writer ownership does not create uniqueness constraints automatically. The worker MUST validate IDs, expected revisions and duplicate batch keys. Canonical text/vector updates, logical deletion and generation publication must not expose an intermediate inconsistent state.</p></div>
+      <div class="requirement" id="L-05"><p><span class="rid">L-05</span>Persist embedding model identity, dimension and normalization version. Embed changed canonical content; do not recompute embeddings merely because another evidence reference was attached. Model/dimension migration must have an explicit compatibility and rebuild plan.</p></div>
+      <div class="requirement" id="L-06"><p><span class="rid">L-06</span>Readers MUST observe the qualified current committed table state. Verify table-handle consistency across updates, deletes and maintenance. Avoid long-lived stale checkouts in session context reads.</p></div>
+      <div class="requirement" id="L-07"><p><span class="rid">L-07</span>Small-update performance, scalar indexes, FTS/vector visibility, nullable-vector behavior, compaction and old-version cleanup MUST be verified against the installed LanceDB version before choosing the physical schema. Batch writes through the sole worker where useful without violating operation latency or ordering requirements.</p></div>
+      <div class="requirement" id="L-08"><p><span class="rid">L-08</span>Store configuration, ownership checks, migrations, maintenance, reset, backup and cleanup MUST distinguish the memory database from the index database. Index rebuild/reset must preserve memory; memory cleanup/reset must preserve index data and pending queue events. Validate resolved paths and cleanup boundaries to prevent accidental cross-store deletion. Memory-store ownership and its sole-writer guard apply to the new connection as well.</p></div>
+      <div class="table-wrap"><table>
+        <caption>Proposed logical row identities, not a final Arrow schema</caption>
+        <thead><tr><th scope="col">Row kind</th><th scope="col">Identity example</th><th scope="col">Normal context eligibility</th></tr></thead>
+        <tbody>
+          <tr><td>Current memory</td><td><code>memory:&lt;memoryId&gt;</code></td><td>Only when active and applicable to the validated scope.</td></tr>
+          <tr><td>Historical revision</td><td><code>revision:&lt;memoryId&gt;:&lt;revision&gt;</code></td><td>No; available for authorized inspection subject to forgetting.</td></tr>
+          <tr><td>Source span</td><td><code>source:&lt;sourceId&gt;:&lt;spanId&gt;</code></td><td>No; retrieved as supporting evidence.</td></tr>
+          <tr><td>Processing receipt</td><td><code>receipt:&lt;eventId&gt;</code></td><td>No; recovery and operation status only.</td></tr>
+          <tr><td>Tombstone / project control</td><td><code>tombstone:&lt;targetId&gt;</code>, <code>control:&lt;projectId&gt;</code></td><td>No; controls replay eligibility and context generation.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">Logical deletions can be represented by status/tombstone upserts within the same commit operation; physical erasure is a separately qualified maintenance action. Stable logical IDs, not physical row offsets, are used for references. Maintenance remains on the context-builder writer.</p>
+    </section>
+
+    <section id="lifecycle">
+      <h2><span class="num">11</span>Updates, overrides, expiry and forgetting</h2>
+      <div class="requirement" id="U-01"><p><span class="rid">U-01</span>Explicit corrections MUST name the target or resolve it unambiguously and include an expected revision when supplied by an inspector/API client. A stale correction returns a conflict; it must not silently overwrite newer context.</p></div>
+      <div class="requirement" id="U-02"><p><span class="rid">U-02</span>Expansion preserves additional conditions and evidence. Supersession creates a replacement revision and deactivates the prior meaning atomically. Distinct conditional assertions may coexist; unrelated records are not merged merely to reduce count.</p></div>
+      <div class="requirement" id="U-03"><p><span class="rid">U-03</span>Validity supports explicit time intervals and named conditions. Establishing that a condition ended requires trusted evidence or explicit user action. Merely mentioning “the service is fixed” in quoted or hypothetical text is insufficient.</p></div>
+      <div class="requirement" id="U-04"><p><span class="rid">U-04</span>Expired, conflicted, superseded and deleted records MUST be excluded from ordinary context reads. Inspection may request historical states explicitly and must label them clearly.</p></div>
+      <div class="requirement" id="U-05"><p><span class="rid">U-05</span>All forget operations are queued commands. Acceptance remains pending until the writer commits. After commit, subsequent context acquisition and dispatch validation MUST exclude the target and affected derived records, and invalidate relevant prepared/cached bundles.</p></div>
+      <div class="requirement" id="U-06"><p><span class="rid">U-06</span>Forget targets MUST distinguish one assertion, a source conversation with its derived memories, a session or all project memory. Supporting evidence and derived handoffs must be included in the deletion plan, not left as an accidental route to re-extraction.</p></div>
+      <div class="requirement" id="U-07"><p><span class="rid">U-07</span>Replay, pending extraction and index rebuilding MUST honor tombstones and source invalidation. An event queued before deletion must not recreate the deleted assertion after a restart. Retain minimal replay-prevention metadata without retaining forgotten content.</p></div>
+      <div class="requirement" id="U-08"><p><span class="rid">U-08</span>Differentiate logical exclusion from physical purge. Lance table versions, historical revisions, source excerpts, caches, queue payloads, logs and backups need explicit cleanup/retention policies. Report physical cleanup as pending until its guarantee is met.</p></div>
+      <div class="requirement" id="U-09"><p><span class="rid">U-09</span>Memory already delivered into a provider-native session cannot be retroactively erased by a local store deletion. Provide a clear correction notice where supported and a fresh-session path; provider-side history removal is a separate capability.</p></div>
+      <div class="requirement" id="U-10"><p><span class="rid">U-10</span>Processing receipts and tombstones may be compacted only after a proven replay boundary—for example, acknowledged producer cursors plus rejection of older submissions. Queue segment deletion alone does not prove an external producer will never retry an old event.</p></div>
+    </section>
+
+    <section id="reads">
+      <h2><span class="num">12</span>Retrieval, briefing assembly and caching</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Read lane</th><th scope="col">Selection</th><th scope="col">Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Applicable directives</td><td>Exact validated scope, active status, conditions and current revision.</td><td>Mandatory project context; not gated by semantic similarity.</td></tr>
+          <tr><td>Current handoff</td><td>Direct task/session identity and canonical artifact references.</td><td>Continue work across agents without importing every prior turn.</td></tr>
+          <tr><td>Historical experience</td><td>Scoped union of semantic, lexical and exact-identifier candidates.</td><td>Recall relevant decisions, source conversations and verified lessons.</td></tr>
+          <tr><td>Inspection</td><td>Explicit memory/source/revision identity.</td><td>Explain, correct, resolve or forget memory.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="R-01"><p><span class="rid">R-01</span>Retrieval MUST filter by trusted project and applicability before exposing content. Agent/provider identity is optional provenance filtering, not the default partition for shared memory. Caller SQL or unvalidated metadata filters MUST NOT bypass scope.</p></div>
+      <div class="requirement" id="R-02"><p><span class="rid">R-02</span>Historical retrieval SHOULD combine vector similarity with keyword/exact matches for paths, symbols, issue IDs, configuration names and quoted terms. Lexical candidates must not be discarded solely because they were absent from the ANN top-k pool. Configure candidate limits, relevance thresholds and final context budgets separately.</p></div>
+      <div class="requirement" id="R-03"><p><span class="rid">R-03</span>A read MUST distinguish <code>ready</code>, <code>empty</code>, <code>partial</code>, <code>unavailable</code> and relevant stale/overflow conditions. A failed read is not an empty project history. Reranking failure may use an explicitly reported fallback if underlying results remain valid.</p></div>
+      <div class="requirement" id="R-04"><p><span class="rid">R-04</span>Return the current canonical memory with its revision, scope, source references and generation. Explanations can include match type and scoring components, but normal briefings exclude verbose diagnostics and raw evidence lists.</p></div>
+      <div class="requirement" id="R-05"><p><span class="rid">R-05</span>Cache compact project snapshots and query-specific bundles. Keys MUST include memory generation, applicability, query/task context and relevant model/schema versions. A correction, deletion or expiry invalidates affected entries; time-based expiry cannot rely only on a write-driven generation change.</p></div>
+      <div class="requirement" id="R-06"><p><span class="rid">R-06</span>Before dispatch, validate that a prepared bundle remains eligible. A cached generation alone is insufficient if scope, time or execution privacy changed. Resumed sessions receive concise revision deltas; rehydrate current context after compaction through supported integration mechanisms.</p></div>
+      <div class="requirement" id="R-07"><p><span class="rid">R-07</span>Do not claim synchronous visibility of a queued correction. A caller needing the new state may request context after an operation receipt, waiting within a bounded deadline or receiving a pending/degraded result.</p></div>
+      <div class="requirement" id="R-08"><p><span class="rid">R-08</span>Measure cache hits, scalar reads, vector/lexical search, assembly time and provider delivery separately. Optional rerankers must use existing provider policy and serial calls. Benchmarks must report cold/warm state and actual memory corpus size.</p></div>
+    </section>
+
+    <section id="agents">
+      <h2><span class="num">13</span>Claude, Codex, Vibe and Ollama integration</h2>
+      <p>Use automatic adapters for predictable capture/context delivery, plus common MCP tools for explicit operations and deeper retrieval. insrc-managed sessions provide the strongest common boundary because the host controls turn dispatch and normalized output events.</p>
+      <div class="table-wrap"><table>
+        <caption>Integration design; platform capabilities observed during research on 1 November 2026</caption>
+        <thead><tr><th scope="col">Surface</th><th scope="col">Reads</th><th scope="col">Writes / capture</th><th scope="col">Limit</th></tr></thead>
+        <tbody>
+          <tr><td>insrc-managed Claude / Codex / Vibe</td><td>Acquire a compact scoped bundle before dispatch; deliver through the turn-composition boundary; track revisions.</td><td>Capture original input and normalized output deltas around the shared adapter. Queue explicit operations.</td><td>Keep original transcript content separate. Native hooks must not capture the same run twice.</td></tr>
+          <tr><td>Independent Claude Code</td><td><code>SessionStart</code> and <code>UserPromptSubmit</code> hooks can inject context; MCP supports deeper retrieval.</td><td>Use prompt/completion lifecycle events and durable event identity. Prefer final-response fields when available; handle interruptions and failures separately.</td><td>Hook installation/trust and installed-version behavior require qualification. Stop is not a universal terminal event.</td></tr>
+          <tr><td>Independent Codex</td><td>Current hooks support startup/prompt context. MCP tools expose common reads.</td><td>Prompt and completion events support source capture; transcript fallback uses a versioned parser/cursor.</td><td>The official documentation states hook transcript format is not stable. Hook context may be delivered at a higher instruction level, so memory must carry its subordinate evidence boundary.</td></tr>
+          <tr><td>Independent Vibe</td><td>MCP retrieval guided by existing steering; supported post-tool context for refresh opportunities.</td><td><code>post_agent</code> supplies a completion trigger and transcript context for incremental capture.</td><td>Documented hooks cover pre-tool, post-tool and post-agent, not a matching pre-prompt/startup event. Guaranteed per-turn reads require the managed adapter; a launch wrapper alone does not guarantee every later prompt.</td></tr>
+          <tr><td>Ollama through insrc</td><td>Supply the same scoped briefing through the provider message assembly.</td><td>Capture through the insrc execution boundary.</td><td>Do not assume a model server automatically reads agent instruction files or native memories.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="I-01"><p><span class="rid">I-01</span>Before a managed turn, resolve project/task scope, acquire eligible context, deliver within the full input budget and record the dispatch outcome. MCP availability alone is not proof that an agent fetched or received mandatory context.</p></div>
+      <div class="requirement" id="I-02"><p><span class="rid">I-02</span>Native hooks MUST remain lightweight: accept/capture or return a bounded ready briefing. They MUST NOT run normalization synchronously. Respect platform timeout/output limits; do not depend on an oversized-context preview being read automatically.</p></div>
+      <div class="requirement" id="I-03"><p><span class="rid">I-03</span>Expose per-provider capabilities, installed version, capture owner and delivery mode. Report automatic, hook-assisted, MCP-guided or unsupported behavior accurately. Preserve existing user hooks and MCP registrations during setup/update.</p></div>
+      <div class="requirement" id="I-04"><p><span class="rid">I-04</span>Mark internal normalizer, summarizer, title-generation and reranker calls so their prompts/results cannot recursively become project memory. Enforce this origin at trusted host boundaries rather than trusting a flag in user text.</p></div>
+      <div class="requirement" id="I-05"><p><span class="rid">I-05</span>Native compaction, resume, interrupted output and model/provider changes MUST have explicit adapter tests. Track delivered revisions and re-send only required current context or correction deltas. Native session migration is not required; a new provider session can start from portable memory.</p></div>
+      <div class="requirement" id="I-06"><p><span class="rid">I-06</span>A capture-only completion hook MUST not block/restart an agent merely to force memory processing. Do not misuse stop/retry controls as a background ingestion mechanism. Hook failures must leave an honest capture/delivery status.</p></div>
+      <p class="small">Locally observed binaries during research: Codex 0.165.0, Claude Code 2.1.310 and Vibe 3.0.3. These observations are not a supported-version matrix or successful hook validation. See <a href="#research">references</a> for the platform contracts.</p>
+    </section>
+
+    <section id="api">
+      <h2><span class="num">14</span>Proposed IPC and MCP contracts</h2>
+      <p>These are required capabilities and candidate names. Exact public embedded types and versioned IPC schemas must be designed before implementation. Standalone IPC is owned by the memory service and works independently of the insrc daemon. The insrc daemon and MCP expose adapters to the same service contract rather than creating another storage owner.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">IPC capability</th><th scope="col">Candidate MCP tool</th><th scope="col">Behavior</th></tr></thead>
+        <tbody>
+          <tr><td><code>memory.capture</code></td><td>Host/hook integration</td><td>Admit attributed source deltas, persist to queue and return accepted event IDs or explicit capture failures.</td></tr>
+          <tr><td><code>memory.context</code></td><td><code>insrc_memory_context</code></td><td>Return compact instructions/handoff/history for a validated scope and budget; optional after-operation barrier.</td></tr>
+          <tr><td><code>memory.search</code></td><td><code>insrc_memory_search</code></td><td>Retrieve related canonical memories and source evidence with explicit eligibility and explanation options.</td></tr>
+          <tr><td><code>memory.submit</code></td><td><code>insrc_memory_submit</code></td><td>Queue a candidate or qualified structured record. Return pending operation identity, never an invented active record.</td></tr>
+          <tr><td><code>memory.correct</code></td><td><code>insrc_memory_correct</code></td><td>Queue a revision-guarded correction or scope change with source and reason.</td></tr>
+          <tr><td><code>memory.forget</code></td><td><code>insrc_memory_forget</code></td><td>Queue a scoped deletion/invalidation plan; expose logical completion and physical cleanup separately.</td></tr>
+          <tr><td><code>memory.inspect</code></td><td><code>insrc_memory_inspect</code></td><td>Show current meaning, evidence, revisions, conflicts, eligibility and delivery information subject to forgetting.</td></tr>
+          <tr><td><code>memory.operation</code></td><td><code>insrc_memory_status</code></td><td>Return pending, processing, applied, no-memory, conflicted, retrying, quarantined or failed disposition.</td></tr>
+          <tr><td><code>memory.recordDelivery</code></td><td>Host integration</td><td>Queue a typed receipt of prepared/delivered/failed context without semantic extraction.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="A-01"><p><span class="rid">A-01</span>All mutation APIs MUST enqueue in both embedded and IPC modes. Operation IDs must survive restart. Reads/status are served through the hosting memory instance without opening a new writer. Maintain compatible payload semantics for VS Code, JetBrains and MCP clients through their insrc adapters.</p></div>
+      <div class="requirement" id="A-02"><p><span class="rid">A-02</span>Context and operation results MUST expose structured state plus fixed safe error codes. Include source/normalizer versions for diagnostics without dumping private prompts or unrestricted payloads into logs.</p></div>
+      <div class="requirement" id="A-03"><p><span class="rid">A-03</span>Human-facing controls SHOULD support inspect, correct, resolve conflict, forget, disable capture and view pending work. Capture opt-out stops new ingestion; it does not silently delete existing memories.</p></div>
+    </section>
+
+    <section id="recovery">
+      <h2><span class="num">15</span>Failure and crash-recovery contract</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Crash / failure point</th><th scope="col">Required recovery</th></tr></thead>
+        <tbody>
+          <tr><td>Before complete durable queue append</td><td>No accepted acknowledgement. Caller retries using the same source/event identity.</td></tr>
+          <tr><td>After append, before worker starts</td><td>Recover pending entry and process it after restart.</td></tr>
+          <tr><td>During model normalization or embedding</td><td>Leave event unacknowledged; persist retry disposition. No partially active canonical result.</td></tr>
+          <tr><td>Valid extraction contains no eligible memory</td><td>Commit an explicit no-memory processing receipt, then acknowledge. Do not confuse this with a parser/model failure.</td></tr>
+          <tr><td>One candidate in a batch fails</td><td>Do not silently acknowledge the parent event as completely applied. Retry the atomic unit or use a qualified per-candidate accounting/recovery protocol.</td></tr>
+          <tr><td>During atomic store mutation</td><td>Recover either the prior committed state or the complete new event effect. Reject a design that exposes partial receipt/memory state without recovery evidence.</td></tr>
+          <tr><td>After store commit, before queue acknowledgement</td><td>Read the committed processing receipt, skip duplicate inference/mutation and repair the queue acknowledgement.</td></tr>
+          <tr><td>After commit, before cache publication</td><td>Readers/dispatch validation detect the committed generation; restart discards volatile caches. No stale bundle may bypass revision/expiry checks.</td></tr>
+          <tr><td>During segment rotation/checkpoint replacement</td><td>Recover from complete frames and the last durable manifest/checkpoint without losing accepted entries.</td></tr>
+          <tr><td>After deletion, before an old event is replayed</td><td>Apply receipt/tombstone/source-invalidation checks; old evidence cannot revive the forgotten assertion.</td></tr>
+          <tr><td>Retrieval/index unavailable</td><td>Return unavailable/partial state. Apply the documented degraded-memory policy; do not substitute unchecked stale memory or report a valid empty result.</td></tr>
+          <tr><td>Worker model call fails repeatedly</td><td>Show retry or quarantine state and retain recoverable input. An operator can inspect/retry/resolve it without silently dropping ordered dependent work.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="F-01"><p><span class="rid">F-01</span>Recovery MUST be driven by durable identity and receipts. A “processing” marker, queue cursor or in-memory lease alone cannot prove a memory mutation committed.</p></div>
+      <div class="requirement" id="F-02"><p><span class="rid">F-02</span>Define retry ownership and deadlines across the memory worker and CLI-provider retry layers. Avoid uncontrolled retry multiplication, and preserve cancellation and model-role admission on every attempt.</p></div>
+      <div class="requirement" id="F-03"><p><span class="rid">F-03</span>Backup restore and index rebuild MUST preserve deletion and replay boundaries. Retained queue backups cannot override newer tombstones. Physical backup deletion limitations must be documented.</p></div>
+    </section>
+
+    <section id="privacy">
+      <h2><span class="num">16</span>Privacy, authority and execution policy</h2>
+      <div class="requirement" id="P-01"><p><span class="rid">P-01</span>Use trusted project/session binding supplied by the host. The insrc host MUST use daemon repository registration; an independent host MUST supply an explicit validated project identity and policy. Per-project filters are local scoping, not a claim of future multi-tenant authorization. Unbound or ambiguous roots require an explicit refusal/selection path.</p></div>
+      <div class="requirement" id="P-02"><p><span class="rid">P-02</span>Exclude credentials, private capabilities, unrelated files, hidden reasoning and unrestricted tool dumps. Attachments and multimodal content are not automatically admitted. Extraction input is already sensitive persisted data; privacy controls must run before durable enqueue.</p></div>
+      <div class="requirement" id="P-03"><p><span class="rid">P-03</span>Respect insrc's existing temporary/session-memory execution restrictions. Data that is prohibited from durable persistence MUST NOT enter the durable memory queue, source records or cloud memory processing. A later redaction pass is too late to establish that boundary.</p></div>
+      <div class="requirement" id="P-04"><p><span class="rid">P-04</span>Memory is subordinate context, not a new authority channel. Quoted text, fetched documents and tool output MUST NOT become active user instructions automatically. A recalled approval cannot authorize a new unrelated action.</p></div>
+      <div class="requirement" id="P-05"><p><span class="rid">P-05</span>Mark briefing text as prior project context with provenance and current applicability. Hook transports that inject developer/system-level text must not silently promote lower-authority memories. Keep authoritative host instructions separate from recalled evidence.</p></div>
+      <div class="requirement" id="P-06"><p><span class="rid">P-06</span>Logging and diagnostics MUST use bounded identifiers, states and hashes by default. Raw queue payloads, source text and compiled memory context require explicit inspection rather than routine telemetry.</p></div>
+    </section>
+
+    <section id="operations">
+      <h2><span class="num">17</span>Operations, metrics and inspection</h2>
+      <p>The system must explain both “what is remembered?” and “why did this agent receive it?” A memory inspector should show pending events, current records, source lineage, revisions, conflicts and the latest delivery status.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Metric group</th><th scope="col">Required measurements</th></tr></thead>
+        <tbody>
+          <tr><td>Queue health</td><td>Pending bytes/events, oldest pending age, segment count, retries, quarantines, ingress refusals and recovery actions.</td></tr>
+          <tr><td>Normalization quality</td><td>Eligible versus rejected extraction, invalid schemas, unresolved references, qualifier preservation and unsupported inferences.</td></tr>
+          <tr><td>Deduplication</td><td>Exact/semantic duplicates, false merges, missed duplicates, expanded records, conflicts and stable canonical counts under repeated paraphrases.</td></tr>
+          <tr><td>Compression</td><td>Source bytes/tokens, canonical size, delivered size, preservation checks and context-overflow outcomes.</td></tr>
+          <tr><td>Retrieval</td><td>Directive completeness, exact-identifier recall, historical relevance, empty versus unavailable results, cache hits and scoring/reranking stages.</td></tr>
+          <tr><td>Durability and lifecycle</td><td>Replay suppression, receipt repairs, logical-delete completion, physical-purge backlog and index/embedding maintenance state.</td></tr>
+          <tr><td>Provider integration</td><td>Capture/delivery mode, supported version, failures, generation/revision delivery and duplicate-owner suppression.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="requirement" id="M-01"><p><span class="rid">M-01</span>Publish measured latency and quality separately. A faster pipeline with dropped instructions or false merges is not an acceptable optimization. Cost reduction is subordinate to accuracy.</p></div>
+      <div class="requirement" id="M-02"><p><span class="rid">M-02</span>Maintenance actions must be inspectable and cancellable where appropriate. Source/record/prompt schema changes need explicit migration or reprocessing policy with versioned lineage.</p></div>
+    </section>
+
+    <section id="acceptance">
+      <h2><span class="num">18</span>Acceptance and evaluation matrix</h2>
+      <p>These are behavioral acceptance subjects, not claimed test results. Use synthetic transcripts and bounded real-project examples approved for the evaluation. Provider-specific live tests supplement deterministic unit/integration tests.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">ID</th><th scope="col">Scenario</th><th scope="col">Required observation</th></tr></thead>
+        <tbody>
+          <tr id="AC-01"><td>AC-01</td><td>Claude → Codex → Vibe → Ollama</td><td>One active instruction is available in the same validated project across all managed provider boundaries.</td></tr>
+          <tr id="AC-02"><td>AC-02</td><td>Repeated paraphrases</td><td>Canonical count and briefing footprint remain stable; independently attributed evidence is attached once.</td></tr>
+          <tr id="AC-03"><td>AC-03</td><td>Fact versus directive versus product decision</td><td>The three SQL Server examples remain distinct; no false semantic merge.</td></tr>
+          <tr id="AC-04"><td>AC-04</td><td>Conditional instruction expansion</td><td>Conditions, exceptions, negation and ordering survive atomization/compression.</td></tr>
+          <tr id="AC-05"><td>AC-05</td><td>Explicit override</td><td>One current eligible meaning remains; source/revision lineage explains the replacement.</td></tr>
+          <tr id="AC-06"><td>AC-06</td><td>Ambiguous contradiction</td><td>Conflict is inspectable and not injected as a settled instruction.</td></tr>
+          <tr id="AC-07"><td>AC-07</td><td>Old duplicate outside ANN candidates</td><td>Exact identity lookup prevents duplication despite the vector candidate limit.</td></tr>
+          <tr id="AC-08"><td>AC-08</td><td>Short follow-up: “same for JetBrains”</td><td>Bounded source context resolves the target or returns an explicit unresolved state.</td></tr>
+          <tr id="AC-09"><td>AC-09</td><td>Delayed processing of “today”</td><td>Occurrence time, not worker time, anchors the normalized assertion.</td></tr>
+          <tr id="AC-10"><td>AC-10</td><td>Technical identifier / exact path</td><td>Lexical/exact retrieval finds relevant memory without depending on semantic top-k membership.</td></tr>
+          <tr id="AC-11"><td>AC-11</td><td>Cross-project lookup</td><td>Other-project content is excluded from candidate results, source excerpts and final briefing.</td></tr>
+          <tr id="AC-12"><td>AC-12</td><td>Assistant echo and captured injected context</td><td>No duplicate extraction or authority promotion; no memory-worker feedback loop.</td></tr>
+          <tr id="AC-13"><td>AC-13</td><td>Malformed normalizer output / partial embedding</td><td>Failure remains retryable/inspectable, with no false no-memory or complete-applied receipt.</td></tr>
+          <tr id="AC-14"><td>AC-14</td><td>Crash at each queue/store boundary</td><td>Accepted events survive; replay after commit has no duplicate effects.</td></tr>
+          <tr id="AC-15"><td>AC-15</td><td>Rotation, partial tail and corrupt sealed segment</td><td>Complete events recover; incomplete/corrupt regions are handled explicitly without silent accepted-data loss.</td></tr>
+          <tr id="AC-16"><td>AC-16</td><td>Queue capacity exhausted</td><td>Backpressure is visible; pending events are not discarded.</td></tr>
+          <tr id="AC-17"><td>AC-17</td><td>Update/delete read freshness</td><td>Current table reads and cached context reflect committed revision/status changes.</td></tr>
+          <tr id="AC-18"><td>AC-18</td><td>Expiry without a new write</td><td>Time-sensitive cache eligibility changes; expired memory does not remain active due to an unchanged generation.</td></tr>
+          <tr id="AC-19"><td>AC-19</td><td>Forget followed by old queue replay</td><td>Source/tombstone/receipt checks prevent resurrection and derived-context reuse.</td></tr>
+          <tr id="AC-20"><td>AC-20</td><td>Logical deletion and physical purge</td><td>Separate states honestly account for revisions, old table versions, source evidence and backups.</td></tr>
+          <tr id="AC-21"><td>AC-21</td><td>Second writer / concurrent producer attempt</td><td>Store ownership prevents a second writer; queue ingress safely serializes producers.</td></tr>
+          <tr id="AC-22"><td>AC-22</td><td>Source rotation, detached panel and reconnect</td><td>Required evidence stays durable; capture identity and cursors suppress duplicate events.</td></tr>
+          <tr id="AC-23"><td>AC-23</td><td>Native hook, resume and compaction</td><td>Per-provider supported behavior is demonstrated; unsupported automatic delivery is labelled accurately.</td></tr>
+          <tr id="AC-24"><td>AC-24</td><td>Context budget overflow</td><td>Mandatory applicable directives are not silently removed; final invocation respects its actual budget.</td></tr>
+          <tr id="AC-25"><td>AC-25</td><td>Temporary/private execution</td><td>Prohibited source data never reaches the durable queue, memory store, logs or cloud memory calls.</td></tr>
+          <tr id="AC-26"><td>AC-26</td><td>Model/embedding version migration</td><td>Compatibility is checked; migration cannot revive deleted records or silently mix incompatible vectors.</td></tr>
+          <tr id="AC-27"><td>AC-27</td><td>Structured submission and explicit correction</td><td>Extraction can be bypassed while validation, replay protection and mutation guards still apply.</td></tr>
+          <tr id="AC-28"><td>AC-28</td><td>Store outage / missing memory</td><td>Unavailable and empty results are distinguishable; no fabricated recall or unchecked stale fallback.</td></tr>
+          <tr id="AC-29"><td>AC-29</td><td>Independent memory and index stores</td><td>Resolved database directories and connections are distinct. Index reset/rebuild preserves memory; memory reset/cleanup preserves index data and pending queue events. Unsafe overlapping cleanup paths are refused.</td></tr>
+          <tr id="AC-30"><td>AC-30</td><td>External embedded consumer</td><td>A separate minimal Node application imports the public package, supplies dependencies and completes capture, processing, context retrieval, correction and forgetting without importing daemon internals or starting insrc.</td></tr>
+          <tr id="AC-31"><td>AC-31</td><td>Standalone IPC and mode parity</td><td>With the insrc daemon stopped, a client exercises the standalone executable. The same behavioral suite passes in embedded and IPC modes, including durable acceptance, reconnect/retry identity, committed-operation barriers, scoped reads and error outcomes.</td></tr>
+          <tr id="AC-32"><td>AC-32</td><td>Cross-mode ownership and lifecycle</td><td>Embedded and standalone instances competing for one directory cannot obtain two writers. Distinct directories remain isolated. Import is side-effect-free; graceful stop and forced termination preserve accepted work, and host-owned providers remain usable.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small">A release decision requires defined quality thresholds, measured candidate/deduplication recall and false-merge rates, crash-injection evidence, and explicit live-integration coverage. No benchmark, supported-provider guarantee or completion approval is created by this document.</p>
+    </section>
+
+    <section id="delivery">
+      <h2><span class="num">19</span>Proposed delivery sequence</h2>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Increment</th><th scope="col">Usable outcome</th><th scope="col">Exit evidence</th></tr></thead>
+        <tbody>
+          <tr><td>1 · Independently hosted canonical directives</td><td>Reusable module boundary and lifecycle, persisted rotating queue, single writer, LanceDB commit/receipt model, explicit instructions, corrections and forgetting; public embedded API and standalone IPC host.</td><td>External consumer smoke test with insrc stopped; embedded/IPC parity; ownership and crash/replay tests; scoped canonical dedupe; qualifier preservation; no model-access bypass.</td></tr>
+          <tr><td>2 · Conversation context and recall</td><td>Bounded conversation capture, source retention, hybrid retrieval, compact handoff, generation-aware cache and inspector.</td><td>Delayed-reference tests, exact-identifier retrieval, source traceability, quality/latency measurements and overflow behavior.</td></tr>
+          <tr><td>3 · Native CLI integrations</td><td>Qualified Claude/Codex hooks, Vibe capture/MCP fallback, provider capability reporting and robust capture ownership.</td><td>Installed-version tests for hook delivery, interruption, resume, compaction and transcript parser changes.</td></tr>
+          <tr><td>4 · Verified experience and maintenance</td><td>Source-qualified lessons, conditional expiry, periodic duplicate review, migration and physical-purge operations.</td><td>No false authority promotion; recovery across reprocessing/migration; validated retention and backup boundaries.</td></tr>
+        </tbody>
+      </table></div>
+      <p>Implementation must enter insrc's tracked feature workflow. This document is a requirements input, not an approved plan, task ledger or authorization to bypass design/build/review gates. Relevant tests should run per task; broader sweeps follow the agreed implementation sequence.</p>
+      <p class="small">Deferred enhancements: optional learned reranking, richer entity graphs, procedural-memory generation, multimodal memory, global/team sharing and autonomous policy changes. Each needs its own accuracy and authority evaluation.</p>
+    </section>
+
+    <section id="decisions">
+      <h2><span class="num">20</span>Open implementation decisions</h2>
+      <p>The following questions are intentionally unresolved. They do not reopen the recorded single-writer, separate rotating queue or LanceDB-only memory-store direction.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">ID</th><th scope="col">Decision to qualify</th><th scope="col">Evidence needed</th></tr></thead>
+        <tbody>
+          <tr><td>OD-01</td><td>Exact Arrow schema and atomic typed-table mutation</td><td>Installed-version proof for nullable vectors, stable IDs, multi-row upserts, logical deletion, generation and receipt consistency.</td></tr>
+          <tr><td>OD-02</td><td>Queue frame format, segment size and disk budget</td><td>Representative payload sizes; fsync/rename recovery tests; clear producer backpressure behavior.</td></tr>
+          <tr><td>OD-03</td><td>Failed-event scheduling and causal ordering</td><td>Unrelated projects continue while same-subject corrections and forget commands remain causally safe.</td></tr>
+          <tr><td>OD-04</td><td>Source/evidence retention and physical forgetting</td><td>Interaction with transcript retention, old Lance versions, backups and deliberately retained minimal evidence.</td></tr>
+          <tr><td>OD-05</td><td>Normalizer model and compression validation</td><td>Typed-slot and semantic-quality evaluation under current model-role policy; no unmeasured capability downgrade.</td></tr>
+          <tr><td>OD-06</td><td>Semantic candidate recall and hybrid ranking</td><td>Paraphrases, technical identifiers, cross-topic distractions and scoped contradictions; measured false merges and missed duplicates.</td></tr>
+          <tr><td>OD-07</td><td>Context budgets and degraded/overflow policy</td><td>Provider-specific limits, native hook output behavior, mandatory-directive overflow and pending-operation barriers.</td></tr>
+          <tr><td>OD-08</td><td>Hook/transcript support matrix</td><td>Qualified installed versions and trust/configuration behavior, including failed/interrupted turns and independent Vibe limits.</td></tr>
+          <tr><td>OD-09</td><td>Embedding migration and store maintenance</td><td>Dimension/model changes, index visibility, compaction, read freshness and deletion-preserving rebuild.</td></tr>
+          <tr><td>OD-10</td><td>Receipt/tombstone compaction boundary</td><td>Producer replay watermarks or an explicit stale-event rejection protocol; queue recycling alone is insufficient.</td></tr>
+          <tr><td>OD-11</td><td>Meaning of project across worktrees/branches</td><td>Registered project identity shared where intended; environment and branch-specific facts remain scoped.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section id="research">
+      <h2><span class="num">21</span>Research findings and references</h2>
+      <p>Framework research informed the requirements; no external memory engine is selected as a runtime dependency. insrc setup/update already distributes common static instructions, so another instruction-file generator does not address this requirement.</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">Candidate</th><th scope="col">Useful evidence</th><th scope="col">Decision for this document</th></tr></thead>
+        <tbody>
+          <tr><td>Mastra Memory</td><td>Conversation history, working memory and public extraction/summarization entry points are reusable. Automatic observation uses Mastra's model/agent interfaces. Knowledge/Subconscious APIs are explicitly experimental.</td><td>Do not assume low-effort full adoption. Preserve insrc provider/storage/lifecycle boundaries; selective future reuse can be evaluated independently.</td></tr>
+          <tr><td>Mem0 OSS</td><td>The inspected TypeScript ingestion path uses additive extraction, scoped candidate retrieval and hash dedupe; explicit update/delete APIs exist. Retrieval includes lexical/semantic scoring, optional reranking and explanations; expiry and role attribution are relevant.</td><td>Adopt the missing requirements, not the assumption that an ADD path supplies canonical supersession or complete semantic deduplication. Node, Python and hosted capability sets must be checked separately.</td></tr>
+          <tr><td>LanceDB</td><td>Table mutations support updates/deletes and merge-insert operations. Table-version/read-consistency and maintenance behavior matter for a sole-store design.</td><td>Use as the new subsystem's authoritative store, subject to the atomic commit, reader freshness and installed-version qualification requirements above.</td></tr>
+        </tbody>
+      </table></div>
+      <ol class="source-list">
+        <li><a href="../cross-session-agent-memory-spec.md">Earlier insrc cross-session memory proposal</a> — useful provenance, capture and forgetting requirements; earlier LMDB authority is replaced by the later direction recorded here.</li>
+        <li><a href="../../src/daemon/steering-inject.ts">Current steering distribution</a>, <a href="../../src/daemon/mcp-register.ts">MCP registration</a>, <a href="../../vscode-plugin/src/chat/cli-adapter.ts">provider turn adapter</a>, <a href="../../src/agent/providers/cli-provider.ts">CliProvider</a> and <a href="../../src/agent/providers/ollama.ts">OllamaProvider</a> — repository integration points, not an implemented shared-memory pipeline.</li>
+        <li><a href="https://github.com/mastra-ai/mastra/blob/main/packages/memory/src/processors/observational-memory/summarize.ts">Mastra standalone summarization</a>, <a href="https://mastra.ai/docs/memory/working-memory">working memory</a>, <a href="https://github.com/mastra-ai/mastra/blob/main/packages/core/src/knowledge/index.ts">experimental Knowledge</a> and <a href="https://github.com/mastra-ai/mastra/blob/main/LICENSE.md">license boundaries</a>. Published artifacts inspected read-only: memory 1.40.0 and core 1.81.0; no runtime test was performed.</li>
+        <li><a href="https://github.com/mem0ai/mem0/tree/753496cf1435d76c3a711f3af51303f7fdcb6420">Pinned Mem0 source snapshot 753496cf1435</a>; <a href="https://github.com/mem0ai/mem0/blob/753496cf1435d76c3a711f3af51303f7fdcb6420/mem0-ts/src/oss/src/memory/index.ts">TypeScript ingestion/search implementation</a>, <a href="https://github.com/mem0ai/mem0/blob/753496cf1435d76c3a711f3af51303f7fdcb6420/mem0-ts/src/oss/src/prompts/index.ts">extraction prompts</a> and <a href="https://github.com/mem0ai/mem0/blob/753496cf1435d76c3a711f3af51303f7fdcb6420/mem0-ts/src/oss/src/utils/scoring.ts">retrieval scoring</a>. Source inspection, not a functional qualification or recommendation to copy scoring weights.</li>
+        <li><a href="https://lancedb.github.io/lancedb/js/classes/Table/#mergeinsert">LanceDB merge-insert API</a>, <a href="https://lancedb.github.io/lancedb/js/interfaces/ConnectionOptions/">connection/read consistency</a> and <a href="https://docs.lancedb.com/tables/update">updates</a>. Repository package observed during research: 0.40.0. Current online documentation can describe newer/distributed features; verify local embedded behavior explicitly.</li>
+        <li><a href="https://code.claude.com/docs/en/hooks">Claude Code hooks</a> — startup/prompt context and completion events. Completion capture must account for failures, interrupts and final-message availability.</li>
+        <li><a href="https://learn.chatgpt.com/docs/hooks">Official OpenAI hooks documentation</a> and <a href="https://learn.chatgpt.com/docs/config-file/config-reference">configuration reference</a> — context-delivery mechanisms, supported events, configuration and transcript stability limitations.</li>
+        <li><a href="https://docs.mistral.ai/vibe/code/cli/hooks">Mistral Vibe hooks</a> and <a href="https://docs.mistral.ai/vibe/code/cli/agents">AGENTS.md behavior</a> — tool/post-agent lifecycle support; static steering is separate from guaranteed per-turn memory delivery.</li>
+      </ol>
+      <div class="callout info"><p><strong>Evidence limits:</strong> this requirements document consolidates discussion and source/documentation inspection. It does not assert passing memory tests, measured performance, successful native hook installation, complete semantic dedupe, physical erasure guarantees or an approved implementation plan.</p></div>
+    </section>
+    <footer class="footer">insrc · Shared project memory requirements · Draft 0.1 · Self-contained HTML; no external scripts, fonts or runtime dependencies. Browser Print supports a document export.</footer>
+  </main>
+</div>
+</body>
+</html>

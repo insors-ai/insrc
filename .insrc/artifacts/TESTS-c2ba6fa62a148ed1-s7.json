@@ -1,0 +1,531 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s7",
+    "createdAt": "2026-11-01T19:07:14.344Z",
+    "updatedAt": "2026-11-01T20:10:12.199Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "71b4348d2",
+        "ranAt": "2026-11-01T19:07:14.344Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "evidence codec round-trip and unknown decoding",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/graph/__tests__/evidence-codec.test.ts",
+                "title": "s7 t1: every evidence value round-trips through the edge-row codec; unknown is the empty value and the others are one distinct byte",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/graph/__tests__/evidence-codec.test.ts",
+                "title": "s7 t1: an empty value, 0x00 and a byte no value uses decode to unknown; a string that is not a value encodes empty and is reported invalid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/graph/__tests__/evidence-codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 499,
+            "titles": [
+              {
+                "title": "s7 t1: every evidence value round-trips through the edge-row codec; unknown is the empty value and the others are one distinct byte",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t1: an empty value, 0x00 and a byte no value uses decode to unknown; a string that is not a value encodes empty and is reported invalid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "3537ca63c",
+        "ranAt": "2026-11-01T19:11:49.297Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "upsertResolvedRelationsInTxn evidence on both rows",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: upsertResolvedRelationsInTxn writes the evidence byte to both edge rows, and a rewrite with another evidence replaces it on both",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: an evidence that is not a value stores the relationship with an empty value and a warn log; it is not refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "promoteResolvedBatch evidence and carried meta.evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: a relationship kept awaiting its target carries its evidence, and promoteResolvedBatch without an evidence stores the carried one; a given evidence wins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "returnEdgeToPendingInTxn keeps evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/relations-evidence.test.ts",
+                "title": "s7 t2: an edge returned to pending when its target is removed keeps its evidence, and is promoted again with it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/relations-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1599,
+            "titles": [
+              {
+                "title": "s7 t2: upsertResolvedRelationsInTxn writes the evidence byte to both edge rows, and a rewrite with another evidence replaces it on both",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t2: an evidence that is not a value stores the relationship with an empty value and a warn log; it is not refused",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t2: a relationship kept awaiting its target carries its evidence, and promoteResolvedBatch without an evidence stores the carried one; a given evidence wins",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t2: an edge returned to pending when its target is removed keeps its evidence, and is promoted again with it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "45155b01d",
+        "ranAt": "2026-11-01T19:16:43.355Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "resolveRelations evidence 'extracted' through the file commit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: a call to a function of the same file, indexed through the file commit, is stored extracted",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: a relative import of a file not stored yet waits with its evidence, and is stored extracted when the file arrives (Pass 0)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: every relation resolveRelations returns as resolved carries evidence extracted; the ones it leaves pending carry none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manifest DEPENDS_ON evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+                "title": "s7 t3: the repository's DEPENDS_ON edges from its manifest are stored extracted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/evidence-extracted.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1366,
+            "titles": [
+              {
+                "title": "s7 t3: a call to a function of the same file, indexed through the file commit, is stored extracted",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t3: a relative import of a file not stored yet waits with its evidence, and is stored extracted when the file arrives (Pass 0)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t3: every relation resolveRelations returns as resolved carries evidence extracted; the ones it leaves pending carry none",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t3: the repository's DEPENDS_ON edges from its manifest are stored extracted",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "d896047e2",
+        "ranAt": "2026-11-01T19:22:06.745Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "cross-file passes evidence 'inferred'; Pass 0 keeps the carried value",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: a call resolved to a function of another file is stored inferred, beside the same-file call stored extracted (ac1)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: Pass 0 restores an awaiting relationship with the evidence it carried, not inferred",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: an import of a module stub that Pass 1 rewires to the in-tree file is stored inferred",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: the external-service and messaging endpoint passes store their edges inferred",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/reexport-callers.test.ts",
+                "title": "the stored EXPORTS edge holds the evidence inferred (Epic c2ba6fa6 s7) and export_names holds (barrel, g) -> f and the star entries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "ambiguous call stays pending; no 'chosen'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+                "title": "s7 t4: a call matching several candidates stays pending, classed ambiguous with its candidates, and no edge is written; no stored edge reads chosen (ac2)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/evidence-inferred.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1602,
+            "titles": [
+              {
+                "title": "s7 t4: a call resolved to a function of another file is stored inferred, beside the same-file call stored extracted (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: Pass 0 restores an awaiting relationship with the evidence it carried, not inferred",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: a call matching several candidates stays pending, classed ambiguous with its candidates, and no edge is written; no stored edge reads chosen (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: an import of a module stub that Pass 1 rewires to the in-tree file is stored inferred",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t4: the external-service and messaging endpoint passes store their edges inferred",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/reexport-callers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1560,
+            "titles": [
+              {
+                "title": "ac3: calls through `export { f } from`, an aliased re-export (g() is a call of f), a barrel of a barrel and `export *` resolve to f; a re-export cycle (named or `export *`) ends with the name no-candidate",
+                "result": "pass"
+              },
+              {
+                "title": "the stored EXPORTS edge holds the evidence inferred (Epic c2ba6fa6 s7) and export_names holds (barrel, g) -> f and the star entries",
+                "result": "pass"
+              },
+              {
+                "title": "an export_names entry pointing at a target that is not stored is ignored by the call matcher",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "37054280a",
+        "ranAt": "2026-11-01T19:30:26.290Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "findCallers/findCallees evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/search-evidence.test.ts",
+                "title": "s7 t5: findCallers and findCallees return each entity with the evidence of the relationship that reached it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pre-change store reads 'unknown'",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/search-evidence.test.ts",
+                "title": "s7 t5: edges written with an empty value, as before s7, read unknown after a reopen with no migration and the schema version unchanged (ac3)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "outNeighbors withEvidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/search-evidence.test.ts",
+                "title": "s7 t5: outNeighbors with withEvidence returns one row per stored relationship across kinds with its kind and evidence; the id-only form still dedupes",
+                "result": "pass"
+              },
+              {
+                "file": "src/db/__tests__/search-evidence.test.ts",
+                "title": "s7 t5: a transitive closure is the same whatever evidence its edges hold",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/search-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1317,
+            "titles": [
+              {
+                "title": "s7 t5: findCallers and findCallees return each entity with the evidence of the relationship that reached it",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t5: edges written with an empty value, as before s7, read unknown after a reopen with no migration and the schema version unchanged (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t5: outNeighbors with withEvidence returns one row per stored relationship across kinds with its kind and evidence; the id-only form still dedupes",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t5: a transitive closure is the same whatever evidence its edges hold",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "383398e2b",
+        "ranAt": "2026-11-01T19:45:32.101Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "search.callers / search.callees / search.callers_nhop evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-evidence-rpc.test.ts",
+                "title": "s7 t6: search.callers, search.callees and every hop of search.callers_nhop return each entity with its relationship evidence, existing fields unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "graph tools evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/search-evidence-rpc.test.ts",
+                "title": "s7 t6: graph_callers and graph_callees include the evidence in each short entity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/search-evidence-rpc.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1110,
+            "titles": [
+              {
+                "title": "s7 t6: search.callers, search.callees and every hop of search.callers_nhop return each entity with its relationship evidence, existing fields unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t6: graph_callers and graph_callees include the evidence in each short entity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "14cf172cc",
+        "ranAt": "2026-11-01T19:52:06.282Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "usage.example evidence and counts",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+                "title": "s7 t7: usage.example lists each caller with its evidence and states how many are inferred and how many of unknown origin (ac4)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+                "title": "s7 t7: an all-unknown caller list says the origin is unknown and none is known to be read from the source; a chosen relationship is named",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "class-hierarchy and import-graph evidence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+                "title": "s7 t7: class.hierarchy carries evidence on each supertype, interface, subclass and implementer; import.graph on each importer and importee file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/evidence-lookups.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1297,
+            "titles": [
+              {
+                "title": "s7 t7: usage.example lists each caller with its evidence and states how many are inferred and how many of unknown origin (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t7: an all-unknown caller list says the origin is unknown and none is known to be read from the source; a chosen relationship is named",
+                "result": "pass"
+              },
+              {
+                "title": "s7 t7: class.hierarchy carries evidence on each supertype, interface, subclass and implementer; import.graph on each importer and importee file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "6024a6b89",
+        "ranAt": "2026-11-01T20:10:12.199Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "installed daemon: evidence after re-index; untouched relationship 'unknown'",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S007/smoke-t8.jsonl (2026-11-01 20:09Z, installed daemon updated to ea991490 and restarted, driven by /tmp/s7-smoke.mjs over the daemon socket). Probe src/s7-smoke-probe/a.ts (s7SmokeMain calls s7SmokeLocal in the same file and s7SmokeHelper from ./b) indexed and linked within 5 s: search.callers(s7SmokeLocal) = ['s7SmokeMain: extracted'], search.callers(s7SmokeHelper) = ['s7SmokeMain: inferred']. Untouched relationships: search.callers(getLogger in src/shared/logger.ts) returned 254 callers, all 'unknown' (none of those files rewritten since the update). Probe files removed and gone from the index afterwards. Full sweep (once, /tmp/s7-sweep.log): 7247 tests, 7076 pass, 33 fail. Against the s2 baseline five failing files were new: resolver-file-target.test.ts (this Story: the Pass 1 rewire test compared the whole relation, now carrying 'inferred'; expectation updated in ea991490c), admin-worker.test.ts (s2's backfill-lane publishing: the threaded daemon.status omitted the lane until first published; fixed in eb481e7b6), check-model-definitions.test.ts (the other session's build-script change 2dfbf68f5, not this Story), and connection-manager-kotlin-entry / connection-manager-privacy (pass when rerun alone). Every other failing file also failed at the pre-s2 base."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

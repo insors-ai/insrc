@@ -243,7 +243,7 @@ export async function createPrivateDuckDB(options: {
   connection.closeSync(); connection = undefined;
   let closed = false;
   const owned = instance;
-  return { instance: owned, close() { if (closed) return; closed = true; owned.closeSync(); } };
+		return { instance: owned, close() { if (closed) return; owned.closeSync(); closed = true; } };
  } catch {
   connection?.closeSync(); instance?.closeSync();
   throw new Error('unsupported-temporary');

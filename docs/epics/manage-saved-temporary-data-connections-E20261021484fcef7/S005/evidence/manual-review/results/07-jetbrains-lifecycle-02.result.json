@@ -1,0 +1,116 @@
+{
+  "id": "07-jetbrains-lifecycle-02",
+  "model": "sonnet",
+  "effort": "high",
+  "started": "2026-11-01T04:49:42.831Z",
+  "finished": "2026-11-01T04:50:17.517Z",
+  "inputChars": 68471,
+  "inputSha256": "ac5d856aa7603500e33f5a202baeff26898573739b29f074663274eb929da57b",
+  "missingObligations": [],
+  "result": {
+    "summary": "Manual review of the three supplied changed files found no concrete, reachable defect. The files are ConnectionCapabilities.kt, ConnectionsPrivacyTest.kt and ConnectionsCompatibilityTest.kt. The capability gate (ConnectionActions) is consistent with its tests. The tests assert zero legacy mutations, no ticket or mutation calls when features are missing, zero registry or credential writes for temporary actions, and separate-project isolation. The assigned obligations mostly concern code that was not supplied: the session service, model, gateway, panel, protocol, TypeScript IPC and Settings wiring. Those obligations are could-not-verify, not failed. No test execution results were supplied, and nothing here counts as a pass.",
+    "findings": [],
+    "obligations": [
+      {
+        "key": "lld:data-model:2",
+        "status": "could-not-verify",
+        "evidence": "ConnectionManagerState and the TypeScript/Kotlin reducers, the fixture corpus digest and the extension wiring were not supplied. The privacy test asserts that ConnectionsSessionService is not a PersistentStateComponent. It also asserts that the session service, manager gateway and mutations serialize to \"{}\" through Gson. Neither check shows state parity or webview/memento absence."
+      },
+      {
+        "key": "lld:data-model:4",
+        "status": "could-not-verify",
+        "evidence": "ConnectionCapabilities.kt gates actions on exact feature lists. mutation() refuses any method outside db.connections.v2.* and unknown modes, so there is no legacy upsert/delete fallback. The compatibility test asserts upgrade-required, a disabled Add button and zero tickets, mutations and legacyMutations for missing/old/future/malformed/base-incomplete capabilities. The strict DTO decoders, ConnectionProtocol.kt and the credential keep/replace/clear handling were not supplied. The tests have no supplied execution result."
+      },
+      {
+        "key": "lld:data-model:7",
+        "status": "could-not-verify",
+        "evidence": "The removal controller, confirmation text and cleanup-phase projection were not supplied. The compatibility test shows saved remove is disabled and gateway.remove() creates no confirmation when saved-remove is absent. Temporary remove still works in that case. The unknown-operation test shows reconcile reuses the original ticket (tickets=1, mutations=1). Neither covers the removed-cleanup-pending state card or retry {ticket}."
+      },
+      {
+        "key": "lld:data-model:9",
+        "status": "could-not-verify",
+        "evidence": "The tests create real Projects with ProjectManager.createProject and use project.service<ConnectionsSessionService>(). They close the Project and await whenDisposed(). A second project with the same root is checked to see none of the first project's private canaries. ConnectionsSessionService, plugin.xml, the EDT/background discipline and the gateway statelessness were not supplied, and no execution result was provided."
+      },
+      {
+        "key": "lld:edge:6",
+        "status": "could-not-verify",
+        "evidence": "The privacy test covers a root re-select after expiry (selectRoot) and a second Project with its own service. Manager close/reopen and root A→B→A overlay retention are not exercised in the supplied files. No end-on-view-close assertion is visible."
+      },
+      {
+        "key": "lld:migration:3",
+        "status": "could-not-verify",
+        "evidence": "The Project-level service is exercised through project.service<...>() and Project disposal in the tests. The VS Code workbench owner and the explicit root-data and Saved lanes were not supplied. Two-owner isolation is only partly visible, in the second-project privacy check."
+      },
+      {
+        "key": "lld:migration:7",
+        "status": "could-not-verify",
+        "evidence": "The tests show the owner ends on actual Project disposal (closeAndDispose followed by whenDisposed()). Admission-first disablement and the release gate being false were not visible in the supplied files."
+      },
+      {
+        "key": "lld:scope",
+        "status": "could-not-verify",
+        "evidence": "The supplied files only consume capability feature names and the v2 method namespace, and do not re-implement daemon logic. The full diff boundary was not supplied. Whether the 41 shared capabilityCases are exercised identically in the TypeScript tests could not be checked."
+      },
+      {
+        "key": "plan:t4",
+        "status": "could-not-verify",
+        "evidence": "src/shared/ipc-client.ts and its transport tests were not supplied."
+      },
+      {
+        "key": "plan:t7",
+        "status": "could-not-verify",
+        "evidence": "ConnectionsManagerModel.kt and the common transcripts were not supplied. The tests use a Swing panel and the gateway, not the pure model."
+      },
+      {
+        "key": "plan:t9",
+        "status": "could-not-verify",
+        "evidence": "The ConnectionsSessionService source was not supplied. The tests show the Disposable lifecycle through whenDisposed(), a separate service per Project, and installFixturePorts per project. Heartbeat and EDT behavior was not visible."
+      },
+      {
+        "key": "plan:t15",
+        "status": "could-not-verify",
+        "evidence": "The privacy test clicks Test and waits for a terminal status and for probeActive==0. It checks nothing on cancel-on-draft-change, stale-result identity or EDT delivery guards. The Kotlin test-identity source was not supplied."
+      },
+      {
+        "key": "plan:t21",
+        "status": "could-not-verify",
+        "evidence": "ConnectionsConfigurable, ManageConnectionsAction, plugin.xml and the CM-S5-ENTRY-KT test were not supplied."
+      },
+      {
+        "key": "plan:t25",
+        "status": "could-not-verify",
+        "evidence": "ConnectionsCompatibilityTest covers missing/old/future/malformed/base-incomplete capabilities. It also covers partial saved-feature gating, pinned read-only rows, and a real legacy db.listConnections projection of {id,kind,family} for the saved scope only. It asserts legacyMutations==0 throughout. No execution results were supplied, and the TypeScript side of the compatibility test was not supplied."
+      },
+      {
+        "key": "plan:t28",
+        "status": "could-not-verify",
+        "evidence": "A live both-client lifecycle test was not supplied. The privacy test only provides fixture-backed expiry (fixture.clock at 90000, status expired) and Project-disposal checks. It is not live evidence, and the user's note says JetBrains live UI is deferred."
+      },
+      {
+        "key": "plan:t32",
+        "status": "could-not-verify",
+        "evidence": "No sweep manifest or results were supplied. The user states the sweep has known recorded failures, so it is not treated as proof of a defect."
+      }
+    ],
+    "inspectedFiles": [
+      "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionCapabilities.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsPrivacyTest.kt",
+      "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsCompatibilityTest.kt"
+    ],
+    "limitations": [
+      "Only three changed files were supplied. Most assigned obligations depend on unsupplied production code, so they are could-not-verify and not failed.",
+      "The test fixtures (ConnectionMutationBackend, ConnectionCorpus, AppScopedConsumers.claimForTest), ConnectionsSessionService, ConnectionsManagerPanel and ConnectionsManagerGateway were not supplied. Test correctness could only be judged from the call sites.",
+      "No test execution output or results were supplied, so none of the tests is claimed to pass.",
+      "The reflective Gson assertion that each service serializes to \"{}\" cannot be judged without the class fields. Whether the fields are transient was not visible.",
+      "The 41 capabilityCases corpus entries were not supplied, so the ConnectionActions truth table could not be checked against the expected values.",
+      "Per the user's note, JetBrains live UI, VS Code individual manual cases and external coverage (SQL Server, provider-service, worker-affinity) are outside this evidence."
+    ],
+    "evidenceRequests": [
+      "ConnectionsSessionService.kt (disposal, lanes, heartbeat, executor use) and its CM-S5-OWNER-KT test result.",
+      "ConnectionsManagerGateway.kt and ConnectionsManagerPanel.kt for stale-generation and EDT-publication guards, and the dispose-time password erasure.",
+      "The ConnectionCorpus JSON capabilityCases plus the TypeScript counterpart, to confirm parity of the capability policy.",
+      "Gradle test output for ConnectionsPrivacyTest and ConnectionsCompatibilityTest.",
+      "plugin.xml, ConnectionsConfigurable.kt and ManageConnectionsAction.kt, for t21 and the edge:6 reopen behavior."
+    ]
+  }
+}

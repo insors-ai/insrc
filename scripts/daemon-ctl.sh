@@ -14,7 +14,7 @@
 # Daemon pane (start / stop / restart / update).
 #
 # Usage:
-#   scripts/daemon-ctl.sh start      # sync origin, install if lock changed, build, start
+#   scripts/daemon-ctl.sh start      # sync origin, install unless already installed, build, start
 #   scripts/daemon-ctl.sh stop       # graceful stop (IPC + retained process wait); a daemon
 #                                    # that outlives the wait is killed
 #   scripts/daemon-ctl.sh restart    # stop then start
@@ -24,7 +24,7 @@
 #
 # Flags:
 #   --skip-sync       skip the git fetch / merge step
-#   --skip-install    skip npm install even if the lock changed
+#   --skip-install    skip npm install even when one is due
 #   --skip-build      skip the tsc build step
 #   --branch <name>   sync against a branch other than the current one (switches to it)
 #   --repo-url <url>  point origin at this git URL before the fetch (deploy a fork)
@@ -147,15 +147,30 @@ sync_repo() {
 	git -C "$DAEMON_ROOT" merge --ff-only "$incoming" >>"$LOG_FILE" 2>&1
 }
 
+# The install marker (ISSUE-ca9883ca): the git blob hash of the package-lock.json
+# the last SUCCESSFUL npm install ran from. Removed before an install, written
+# only after npm exits 0, so a failed or interrupted install is retried. Same
+# file and content as INSTALL_MARKER in src/cli/services/maintenance.ts.
+INSTALL_MARKER="$DAEMON_SRC/node_modules/.insrc-install-ok"
+# The C++ standard every daemon npm install asks for (NATIVE_CXX_STD in
+# maintenance.ts): fs-ext sets none and does not build on the Node 22.22.1 headers.
+NATIVE_CXX_STD="-std=c++17"
+
 npm_install_if_needed() {
-	local lock_before="${SYNC_LOCK_HASH_BEFORE:-}"
-	local lock_after
-	lock_after=$(git -C "$DAEMON_ROOT" hash-object package-lock.json 2>/dev/null || echo "")
-	if [ -z "$lock_before" ] || [ "$lock_before" != "$lock_after" ] || [ ! -d "$DAEMON_SRC/node_modules" ]; then
-		log "npm install ($DAEMON_SRC)"
-		( cd "$DAEMON_SRC" && npm install ) >>"$LOG_FILE" 2>&1 || die "npm install failed (see $LOG_FILE)" 4
-	else
-		log "npm install: package-lock.json unchanged; skipping"
+	local lock_hash marker=""
+	# Empty when there is no lockfile: never matches, and writes no marker.
+	lock_hash=$(git -C "$DAEMON_ROOT" hash-object package-lock.json 2>/dev/null || echo "")
+	[ -f "$INSTALL_MARKER" ] && marker=$(tr -d '[:space:]' < "$INSTALL_MARKER")
+	if [ -n "$lock_hash" ] && [ "$marker" = "$lock_hash" ]; then
+		log "npm install: the install marker matches package-lock.json; skipping"
+		return 0
+	fi
+	log "npm install ($DAEMON_SRC)"
+	rm -f "$INSTALL_MARKER"
+	( cd "$DAEMON_SRC" && CXXFLAGS="${CXXFLAGS:+$CXXFLAGS }$NATIVE_CXX_STD" npm install ) >>"$LOG_FILE" 2>&1 || die "npm install failed (see $LOG_FILE)" 4
+	if [ -n "$lock_hash" ]; then
+		{ mkdir -p "$(dirname "$INSTALL_MARKER")" && printf '%s\n' "$lock_hash" > "$INSTALL_MARKER"; } 2>>"$LOG_FILE" \
+			|| die "npm install succeeded but the install marker could not be written: $INSTALL_MARKER" 4
 	fi
 }
 
@@ -242,7 +257,6 @@ socket_status() {
 cmd_start() {
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"
-	SYNC_LOCK_HASH_BEFORE=$(git -C "$DAEMON_ROOT" hash-object package-lock.json 2>/dev/null || echo "")
 
 	[ "$SKIP_SYNC"    -eq 1 ] || sync_repo "$branch"
 	[ "$SKIP_INSTALL" -eq 1 ] || npm_install_if_needed
@@ -273,7 +287,6 @@ cmd_restart() {
 cmd_update() {
 	require_daemon_dir
 	local branch="${BRANCH:-$(git -C "$DAEMON_ROOT" rev-parse --abbrev-ref HEAD)}"
-	SYNC_LOCK_HASH_BEFORE=$(git -C "$DAEMON_ROOT" hash-object package-lock.json 2>/dev/null || echo "")
 
 	[ "$SKIP_SYNC"    -eq 1 ] || sync_repo "$branch"
 	[ "$SKIP_INSTALL" -eq 1 ] || npm_install_if_needed

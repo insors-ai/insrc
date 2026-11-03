@@ -1,0 +1,289 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793274735165-yjm3l5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-29T11:54:09.507Z",
+    "epicCreatedAt": "2026-10-29T11:39:36.587Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 114330,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "5d393a4b122cf64a",
+    "epicSlug": "classify-module-scope-mutable-state-reachable",
+    "storyId": "S001",
+    "lldRunId": "wf-1793273734088-3e69mj",
+    "lldEffectiveHash": "5d393a4b122cf64aa2fbc74f943c3e1c1b307c653fae2704e1dbedf8d3b3ff46",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-29T12:02:04.359Z",
+    "rangeBase": "fceafd0ecaac6b409e8279a1e6ff8462cca00d0a"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build adds a test-side compiler scanner that lists the module-scope state a session worker loads, and a small pure guard that compares that list with a reviewed inventory file. Most of the effort is the classification itself: reading each of a few hundred declarations and recording whether a per-thread copy is right, it lives in a shared store, or one thread must own it. Once the inventory is complete the guard runs over the whole repo, and the values that turn out to need a single owner are brought to you to decide, case by case, whether to move them here or track them separately."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Module-state scanner over the session worker's import closure",
+        "summary": "Add moduleStateInventory as a test-side module in src/daemon/threads/__tests__/ following connection-source-inventory's ts.Program approach: walk value imports (static and string-literal dynamic) from src/daemon/threads/session-worker.ts within src/, excluding __tests__ and *.test.ts, and report top-level lets/vars, non-frozen constructed instances, and const array/object literals that are not frozen and that the checker finds written. Deterministic order by key. Unit test over a temp project.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Reports let/var, constructed containers and written const literals; skips read-only and `as const`/Object.freeze literals",
+          "Follows static and dynamic imports; skips modules outside the entry's closure and type-only imports",
+          "Throws when the tsconfig cannot be read",
+          "Same input gives the same sorted output"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "module-state-inventory.test.ts: the scanner reports lets, constructed containers and written const literals, skips read-only and frozen tables, follows dynamic imports and skips modules outside the closure (temp project)"
+          },
+          {
+            "level": "unit",
+            "name": "module-state-inventory.test.ts: the scanner throws on an unreadable tsconfig and is deterministic"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Guard logic: compare sites with the fixture and validate entries",
+        "summary": "A pure function over (sites, fixture, routed method sets) that returns the problems: keys missing from the fixture, stale fixture keys, an invalid class, a one-owner entry with no owner, a reason under 40 characters, and a one-owner entry owned by the shared-state worker whose named method prefix no member of SHARED_STATE_METHODS or IN_DAEMON_SHARED_METHODS starts with. It can be limited to a key prefix so a classification slice can be checked alone.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Each kind of problem is reported, naming the key and what is wrong, on altered inputs",
+          "A clean input reports nothing",
+          "A prefix limit checks only keys under that prefix"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "module-state-inventory.test.ts: the guard names a missing key, a stale key, an invalid class, a missing owner, a short reason and an unrouted shared-state owner, and reports nothing on a clean input"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Classify the src/daemon entries",
+        "summary": "Run the scanner over the repo and write fixture entries (class, owner for one-owner, reason of at least 40 characters) for every site under src/daemon/, reading each declaration and its uses. The four s3 families are classified as s3 made them. Every entry that needs a single copy but does not have one is listed as a move candidate in the build record. A test checks the src/daemon/ slice with the guard logic.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The guard logic limited to src/daemon/ reports no problem over the real repo",
+          "The four s3 families carry the s3 mechanism as their reason",
+          "Move candidates are listed with the reason a single copy is needed"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "module-state-inventory.test.ts: every scanned key under src/daemon/ has a valid fixture entry, and the s3 families are one-owner on the shared-state worker or shared-store"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Classify every scanned key outside src/daemon and turn on the full guard",
+        "summary": "Write fixture entries for every scanned key not under src/daemon/, with the same rules, extending the move-candidate list; then add the full guard test over the real repo (no prefix limit), which from here on fails on any new, stale or invalid entry.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "The full guard test passes over the real repo",
+          "The fixture's keys equal the scanner's keys exactly",
+          "Move candidates outside src/daemon are listed"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "module-state-inventory.test.ts: every module-scope mutable value the session worker can load is classified (full guard over the repo)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Move-candidate review with the user",
+        "summary": "Present the complete move-candidate list (each value that needs a single copy but lacks one, with its reason and the likely mechanism) to the user, who decides per candidate: move inline in this Story, or raise as a separate tracked item. Record the decisions in the build record; file a tracked item for each one raised separately.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Every move candidate has a recorded user decision",
+          "Each candidate raised separately has a tracked item filed",
+          "If there are no candidates, that is recorded with the evidence"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "module-state-inventory.test.ts: every one-owner or shared-store entry names the mechanism that gives it one copy (no unresolved candidate is left in the fixture)"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Inline moves",
+        "summary": "For each candidate the user chose to move inline: route its method family to the owner (extending SHARED_STATE_METHODS/inDaemonTarget as s3 did) or keep the value in an existing cross-thread store; update its fixture entry; add a two-session-worker test that both workers reach the one owner. Skipped with a recorded reason if t5 chose none.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Each inline move has a two-session-worker test proving one owner",
+          "method-class tests and the guard pass",
+          "No inline move was made without a t5 decision"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "method-class.test.ts and a two-session-worker test per moved family: both workers reach the one owner (or, with no inline moves, method-class.test.ts still passes)"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Refresh the session-source inventory for edited production files",
+        "summary": "If t6 edited production files the session-source inventory pins, refresh their entries with the refresh tool and run that test; otherwise record that no production file changed.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "The session-source inventory entries for every production file this Story edited are refreshed, or the record states none were edited"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "session-source-inventory.test.ts: the entries for files this Story edited match (or no production file was edited)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "moduleStateInventory over a temp-dir fixture project (as session-source-inventory.test.ts's second test builds one)",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the module-state inventory fixture against moduleStateInventory(repo root)",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "SHARED_STATE_METHODS / IN_DAEMON_SHARED_METHODS coverage of shared-state one-owner entries",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/threads/__tests__/method-class.test.ts",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/threads/__tests__/purge-shared.test.ts or a new two-worker check for the moved family",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api moduleStateInventory"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges Module-state inventory fixture"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges Session-thread state ownership rule"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api SHARED_STATE_METHODS"
+    }
+  ]
+}

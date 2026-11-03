@@ -1,0 +1,154 @@
+TAP version 13
+# Subtest: upsertRelation writes a single resolved edge to both mirrors
+ok 1 - upsertRelation writes a single resolved edge to both mirrors
+  ---
+  duration_ms: 208.713791
+  type: 'test'
+  ...
+# Subtest: upsertRelations bulk-writes multiple resolved edges
+ok 2 - upsertRelations bulk-writes multiple resolved edges
+  ---
+  duration_ms: 225.070167
+  type: 'test'
+  ...
+# Subtest: upsertRelations dedupes intra-batch duplicates by (from, to, kind)
+ok 3 - upsertRelations dedupes intra-batch duplicates by (from, to, kind)
+  ---
+  duration_ms: 238.135625
+  type: 'test'
+  ...
+# Subtest: upsertRelations is idempotent across calls
+ok 4 - upsertRelations is idempotent across calls
+  ---
+  duration_ms: 215.606417
+  type: 'test'
+  ...
+# Subtest: upsertRelations writes no edge when an endpoint is missing (the relationship is kept pending or counted unwritable; see relations-awaiting-target.test.ts)
+ok 5 - upsertRelations writes no edge when an endpoint is missing (the relationship is kept pending or counted unwritable; see relations-awaiting-target.test.ts)
+  ---
+  duration_ms: 127.450458
+  type: 'test'
+  ...
+# Subtest: upsertRelations on empty array is a no-op
+ok 6 - upsertRelations on empty array is a no-op
+  ---
+  duration_ms: 112.343417
+  type: 'test'
+  ...
+# Subtest: different relation kinds coexist on the same (from, to) pair
+ok 7 - different relation kinds coexist on the same (from, to) pair
+  ---
+  duration_ms: 111.859083
+  type: 'test'
+  ...
+# Subtest: upsertRelation routes unresolved to the queue
+ok 8 - upsertRelation routes unresolved to the queue
+  ---
+  duration_ms: 152.941917
+  type: 'test'
+  ...
+# Subtest: upsertRelations splits resolved/unresolved correctly
+ok 9 - upsertRelations splits resolved/unresolved correctly
+  ---
+  duration_ms: 215.217333
+  type: 'test'
+  ...
+# Subtest: listUnresolvedRelations with file scope filters correctly
+ok 10 - listUnresolvedRelations with file scope filters correctly
+  ---
+  duration_ms: 220.172542
+  type: 'test'
+  ...
+# Subtest: an unresolved row missing meta.file/repo is not stored (it is counted unwritable; see relations-awaiting-target.test.ts)
+ok 11 - an unresolved row missing meta.file/repo is not stored (it is counted unwritable; see relations-awaiting-target.test.ts)
+  ---
+  duration_ms: 209.34325
+  type: 'test'
+  ...
+# Subtest: promoteToResolved writes the resolved edge + removes the unresolved row
+ok 12 - promoteToResolved writes the resolved edge + removes the unresolved row
+  ---
+  duration_ms: 213.773542
+  type: 'test'
+  ...
+# Subtest: updateUnresolvedMeta writes the new meta + bumps attemptedAt
+ok 13 - updateUnresolvedMeta writes the new meta + bumps attemptedAt
+  ---
+  duration_ms: 170.352666
+  type: 'test'
+  ...
+# Subtest: updateUnresolvedMeta on unknown id is a silent no-op
+ok 14 - updateUnresolvedMeta on unknown id is a silent no-op
+  ---
+  duration_ms: 106.210959
+  type: 'test'
+  ...
+# Subtest: deleteUnresolvedForFile removes only that file's unresolved rows
+ok 15 - deleteUnresolvedForFile removes only that file's unresolved rows
+  ---
+  duration_ms: 127.275333
+  type: 'test'
+  ...
+# Subtest: deleteUnresolvedForRepo removes everything for that repo only
+ok 16 - deleteUnresolvedForRepo removes everything for that repo only
+  ---
+  duration_ms: 186.698458
+  type: 'test'
+  ...
+# Subtest: deleteUnresolvedForRepo on unknown repo is a silent no-op
+ok 17 - deleteUnresolvedForRepo on unknown repo is a silent no-op
+  ---
+  duration_ms: 166.365125
+  type: 'test'
+  ...
+# Subtest: promoteResolvedBatch writes all edges + removes all unresolved rows
+ok 18 - promoteResolvedBatch writes all edges + removes all unresolved rows
+  ---
+  duration_ms: 222.660541
+  type: 'test'
+  ...
+# Subtest: updateUnresolvedMetaBatch updates each row
+ok 19 - updateUnresolvedMetaBatch updates each row
+  ---
+  duration_ms: 199.56575
+  type: 'test'
+  ...
+# Subtest: promoteResolvedBatch on empty array is a no-op
+ok 20 - promoteResolvedBatch on empty array is a no-op
+  ---
+  duration_ms: 171.140917
+  type: 'test'
+  ...
+# Subtest: updateUnresolvedMetaBatch on empty array is a no-op
+ok 21 - updateUnresolvedMetaBatch on empty array is a no-op
+  ---
+  duration_ms: 200.775875
+  type: 'test'
+  ...
+# Subtest: makeUnresolvedRelationId is deterministic
+ok 22 - makeUnresolvedRelationId is deterministic
+  ---
+  duration_ms: 200.972709
+  type: 'test'
+  ...
+# Subtest: makeUnresolvedRelationId differs for different inputs
+ok 23 - makeUnresolvedRelationId differs for different inputs
+  ---
+  duration_ms: 168.743041
+  type: 'test'
+  ...
+# Subtest: resolved edges + unresolved rows survive close + reopen
+ok 24 - resolved edges + unresolved rows survive close + reopen
+  ---
+  duration_ms: 160.359334
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4573.9355

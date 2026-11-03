@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: bfs from a single root yields the root + transitive descendants
+ok 1 - bfs from a single root yields the root + transitive descendants
+  ---
+  duration_ms: 228.228417
+  type: 'test'
+  ...
+# Subtest: bfs visits each node exactly once even with cycles
+ok 2 - bfs visits each node exactly once even with cycles
+  ---
+  duration_ms: 216.618375
+  type: 'test'
+  ...
+# Subtest: bfs respects maxDepth
+ok 3 - bfs respects maxDepth
+  ---
+  duration_ms: 193.449709
+  type: 'test'
+  ...
+# Subtest: bfs respects kindFilter
+ok 4 - bfs respects kindFilter
+  ---
+  duration_ms: 169.883875
+  type: 'test'
+  ...
+# Subtest: bfs with direction=in walks reverse edges
+ok 5 - bfs with direction=in walks reverse edges
+  ---
+  duration_ms: 177.122417
+  type: 'test'
+  ...
+# Subtest: bfs visitor pruning skips subtree expansion
+ok 6 - bfs visitor pruning skips subtree expansion
+  ---
+  duration_ms: 102.968542
+  type: 'test'
+  ...
+# Subtest: bfs from multiple roots merges the closures
+ok 7 - bfs from multiple roots merges the closures
+  ---
+  duration_ms: 120.646459
+  type: 'test'
+  ...
+# Subtest: bfs deduplicates roots
+ok 8 - bfs deduplicates roots
+  ---
+  duration_ms: 71.713875
+  type: 'test'
+  ...
+# Subtest: dfs visits the same nodes as bfs (different order)
+ok 9 - dfs visits the same nodes as bfs (different order)
+  ---
+  duration_ms: 192.894041
+  type: 'test'
+  ...
+# Subtest: dfs handles cycles without infinite loop
+ok 10 - dfs handles cycles without infinite loop
+  ---
+  duration_ms: 142.292583
+  type: 'test'
+  ...
+# Subtest: dfs respects maxDepth
+ok 11 - dfs respects maxDepth
+  ---
+  duration_ms: 110.452
+  type: 'test'
+  ...
+# Subtest: transitiveClosure returns the BFS-reachable set
+ok 12 - transitiveClosure returns the BFS-reachable set
+  ---
+  duration_ms: 149.298209
+  type: 'test'
+  ...
+# Subtest: transitiveClosure on empty roots returns empty set
+ok 13 - transitiveClosure on empty roots returns empty set
+  ---
+  duration_ms: 178.199083
+  type: 'test'
+  ...
+# Subtest: scc: isolated nodes are singletons
+ok 14 - scc: isolated nodes are singletons
+  ---
+  duration_ms: 258.417
+  type: 'test'
+  ...
+# Subtest: scc: a 3-node cycle is one component of size 3
+ok 15 - scc: a 3-node cycle is one component of size 3
+  ---
+  duration_ms: 223.4745
+  type: 'test'
+  ...
+# Subtest: scc: cycle + tail reports two components
+ok 16 - scc: cycle + tail reports two components
+  ---
+  duration_ms: 193.394125
+  type: 'test'
+  ...
+# Subtest: scc: two disjoint cycles + reachable from a single root via separate edge
+ok 17 - scc: two disjoint cycles + reachable from a single root via separate edge
+  ---
+  duration_ms: 227.604333
+  type: 'test'
+  ...
+# Subtest: scc respects kindFilter
+ok 18 - scc respects kindFilter
+  ---
+  duration_ms: 134.534208
+  type: 'test'
+  ...
+# Subtest: traversal results survive close + reopen
+ok 19 - traversal results survive close + reopen
+  ---
+  duration_ms: 124.418792
+  type: 'test'
+  ...
+# Subtest: unreachable: every entity outside the closure is yielded
+ok 20 - unreachable: every entity outside the closure is yielded
+  ---
+  duration_ms: 128.541667
+  type: 'test'
+  ...
+# Subtest: unreachable respects candidateKinds (only those kinds yielded)
+ok 21 - unreachable respects candidateKinds (only those kinds yielded)
+  ---
+  duration_ms: 139.182833
+  type: 'test'
+  ...
+# Subtest: unreachable: empty roots yields every entity of the candidate kinds
+ok 22 - unreachable: empty roots yields every entity of the candidate kinds
+  ---
+  duration_ms: 126.762
+  type: 'test'
+  ...
+# Subtest: unreachable: all roots, all reachable -> empty
+ok 23 - unreachable: all roots, all reachable -> empty
+  ---
+  duration_ms: 180.295042
+  type: 'test'
+  ...
+# Subtest: unreachable: empty candidateKinds is a no-op
+ok 24 - unreachable: empty candidateKinds is a no-op
+  ---
+  duration_ms: 167.323792
+  type: 'test'
+  ...
+# Subtest: unreachable handles cycles in the reachable subgraph
+ok 25 - unreachable handles cycles in the reachable subgraph
+  ---
+  duration_ms: 131.22125
+  type: 'test'
+  ...
+# Subtest: unreachable respects kindFilter on the closure traversal
+ok 26 - unreachable respects kindFilter on the closure traversal
+  ---
+  duration_ms: 110.658209
+  type: 'test'
+  ...
+# Subtest: unreachable respects direction=in (reverse reachability)
+ok 27 - unreachable respects direction=in (reverse reachability)
+  ---
+  duration_ms: 113.176416
+  type: 'test'
+  ...
+# Subtest: unreachable respects maxDepth
+ok 28 - unreachable respects maxDepth
+  ---
+  duration_ms: 198.717166
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4753.204042

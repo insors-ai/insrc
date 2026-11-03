@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: stripMetaFromSchema drops $id so ajv can compile it repeatedly
+ok 1 - stripMetaFromSchema drops $id so ajv can compile it repeatedly
+  ---
+  duration_ms: 0.588708
+  type: 'test'
+  ...
+# Subtest: stripMetaFromSchema is cached: identical reference across calls
+ok 2 - stripMetaFromSchema is cached: identical reference across calls
+  ---
+  duration_ms: 0.092792
+  type: 'test'
+  ...
+# Subtest: stripMetaFromSchema still drops the `meta` property + required entry
+ok 3 - stripMetaFromSchema still drops the `meta` property + required entry
+  ---
+  duration_ms: 0.073958
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 346.765125

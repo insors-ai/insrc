@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.009">
+  <properties/>
+  <testcase name="a normal result object parses to ok=true with its data()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <testcase name="over the real parse, a daemon structured error maps to Unavailable, NOT NothingPending()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.002"/>
+  <testcase name="a TOP-LEVEL string error (thrown handler or unknown method) parses to ok=false, no ClassCastException()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <testcase name="over the real parse, an empty repo_list array is Loaded(emptyList), NOT Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.001"/>
+  <testcase name="a STRUCTURED result_error (returned value) parses to ok=false — never a silent empty success (ac2)()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <testcase name="an empty result_error string is NOT treated as a failure()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <testcase name="a blank reply parses to ok=false()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.001"/>
+  <testcase name="over the real parse, a pending list maps to Available with the descriptors()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.001"/>
+  <testcase name="a top-level object error with a message is tolerated too()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <testcase name="parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.002"/>
+  <testcase name="over the real parse, repo_list's bare array maps to registeredRepos Loaded with the paths()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <testcase name="over the real parse, isProjectRegistered reads the bare-array repo paths()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <testcase name="a BARE ARRAY result parses to ok=true with list, NOT a ClassCastException (repo_list shape)()" classname="ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpcParseTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[[  56156]   WARN - #ai.insors.insrc.jetbrains.daemon.UnixSocketDaemonRpc - insrc: empty daemon reply
+]]></system-err>
+</testsuite>

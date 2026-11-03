@@ -1,0 +1,154 @@
+TAP version 13
+# Subtest: tokenise drops stopwords + short tokens
+ok 1 - tokenise drops stopwords + short tokens
+  ---
+  duration_ms: 1.614709
+  type: 'test'
+  ...
+# Subtest: tokenise lowercases + splits on non-alphanumeric
+ok 2 - tokenise lowercases + splits on non-alphanumeric
+  ---
+  duration_ms: 0.124708
+  type: 'test'
+  ...
+# Subtest: tokenise handles snake_case + dot-separated
+ok 3 - tokenise handles snake_case + dot-separated
+  ---
+  duration_ms: 0.066083
+  type: 'test'
+  ...
+# Subtest: tokenise drops framework-generic jargon
+ok 4 - tokenise drops framework-generic jargon
+  ---
+  duration_ms: 0.043125
+  type: 'test'
+  ...
+# Subtest: splitIdentifier handles snake_case
+ok 5 - splitIdentifier handles snake_case
+  ---
+  duration_ms: 0.241083
+  type: 'test'
+  ...
+# Subtest: splitIdentifier handles camelCase
+ok 6 - splitIdentifier handles camelCase
+  ---
+  duration_ms: 0.046333
+  type: 'test'
+  ...
+# Subtest: splitIdentifier handles kebab-case
+ok 7 - splitIdentifier handles kebab-case
+  ---
+  duration_ms: 0.094958
+  type: 'test'
+  ...
+# Subtest: splitIdentifier splits letter/digit boundary + drops single-char tokens
+ok 8 - splitIdentifier splits letter/digit boundary + drops single-char tokens
+  ---
+  duration_ms: 0.110333
+  type: 'test'
+  ...
+# Subtest: splitIdentifier handles filename with extension
+ok 9 - splitIdentifier handles filename with extension
+  ---
+  duration_ms: 0.2205
+  type: 'test'
+  ...
+# Subtest: directory match beats file match on same token count (Test 3 case)
+ok 10 - directory match beats file match on same token count (Test 3 case)
+  ---
+  duration_ms: 0.716709
+  type: 'test'
+  ...
+# Subtest: depth does NOT enter the score (docs shallow, code deep is a bad prior)
+ok 11 - depth does NOT enter the score (docs shallow, code deep is a bad prior)
+  ---
+  duration_ms: 0.142084
+  type: 'test'
+  ...
+# Subtest: zero token hits returns null (dropped)
+ok 12 - zero token hits returns null (dropped)
+  ---
+  duration_ms: 0.058041
+  type: 'test'
+  ...
+# Subtest: structural boost lifts dir scores over the same non-boosted case
+ok 13 - structural boost lifts dir scores over the same non-boosted case
+  ---
+  duration_ms: 0.056917
+  type: 'test'
+  ...
+# Subtest: score is bounded to [0, 1]
+ok 14 - score is bounded to [0, 1]
+  ---
+  duration_ms: 0.037125
+  type: 'test'
+  ...
+# Subtest: name-token match contributes to score
+ok 15 - name-token match contributes to score
+  ---
+  duration_ms: 0.047791
+  type: 'test'
+  ...
+# Subtest: code dir with real entities beats docs dir with zero entities on same tokens
+ok 16 - code dir with real entities beats docs dir with zero entities on same tokens
+  ---
+  duration_ms: 0.054167
+  type: 'test'
+  ...
+# Subtest: entity density buckets are monotonic
+ok 17 - entity density buckets are monotonic
+  ---
+  duration_ms: 0.306083
+  type: 'test'
+  ...
+# Subtest: classifier query matches classification/ via prefix (shared 8 chars)
+ok 18 - classifier query matches classification/ via prefix (shared 8 chars)
+  ---
+  duration_ms: 0.045333
+  type: 'test'
+  ...
+# Subtest: extract query matches extraction/ via prefix
+ok 19 - extract query matches extraction/ via prefix
+  ---
+  duration_ms: 0.211959
+  type: 'test'
+  ...
+# Subtest: exact match still beats prefix match at same density
+ok 20 - exact match still beats prefix match at same density
+  ---
+  duration_ms: 0.067917
+  type: 'test'
+  ...
+# Subtest: test file with exact matches loses to real module with prefix match
+ok 21 - test file with exact matches loses to real module with prefix match
+  ---
+  duration_ms: 0.069292
+  type: 'test'
+  ...
+# Subtest: test path regex matches common test directory conventions
+ok 22 - test path regex matches common test directory conventions
+  ---
+  duration_ms: 0.049042
+  type: 'test'
+  ...
+# Subtest: test path penalty fires WITHOUT structuralBoost too (regression: executor-placeholders.test.ts beat executor.ts)
+ok 23 - test path penalty fires WITHOUT structuralBoost too (regression: executor-placeholders.test.ts beat executor.ts)
+  ---
+  duration_ms: 0.053958
+  type: 'test'
+  ...
+# Subtest: short query token (<7 chars) does NOT prefix-match (no false hit)
+ok 24 - short query token (<7 chars) does NOT prefix-match (no false hit)
+  ---
+  duration_ms: 0.036541
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 360.588708

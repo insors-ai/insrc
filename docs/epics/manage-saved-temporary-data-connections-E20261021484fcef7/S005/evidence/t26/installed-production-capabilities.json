@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "daemonEpoch": "e2baebe5-702e-4733-849d-26b3a59b8b5a",
+  "features": [
+    "safe-read",
+    "driver-descriptors"
+  ],
+  "receiptRetentionDays": 30
+}

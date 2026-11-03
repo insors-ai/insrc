@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: registers exactly the five insrc.daemon.* commands
+ok 1 - registers exactly the five insrc.daemon.* commands
+  ---
+  duration_ms: 1.412333
+  type: 'test'
+  ...
+# Subtest: the install command asks sc4 and calls install() ONLY on accepted
+ok 2 - the install command asks sc4 and calls install() ONLY on accepted
+  ---
+  duration_ms: 0.282417
+  type: 'test'
+  ...
+# Subtest: each lifecycle command runs the action (no gate) and pushes the resulting state into sc2
+ok 3 - each lifecycle command runs the action (no gate) and pushes the resulting state into sc2
+  ---
+  duration_ms: 0.202
+  type: 'test'
+  ...
+# Subtest: a failing action pushes errored + the mapped message into the status surface
+ok 4 - a failing action pushes errored + the mapped message into the status surface
+  ---
+  duration_ms: 0.142625
+  type: 'test'
+  ...
+# Subtest: commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command
+ok 5 - commands.test.ts: restartDaemonAndReport resolves true only when the daemon is running again and reflects the result like the restart command
+  ---
+  duration_ms: 0.521375
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.184583

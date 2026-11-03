@@ -1,3 +1,6 @@
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+import { captureAnalysisDiagnostics } from '../connection-access.js';
+import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -124,11 +127,11 @@ export interface SynthesizeArgs {
  * schemaVersion, ...) after synthesis.
  */
 export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>> {
+	assertConnectionProviderAdmission(args.connectionExecution);
 	assertAnalysisConnectionExecution(args.connectionExecution);
-	if (args.connectionExecution?.mode === 'session-memory' && args.connectionExecution.provider.mode !== 'verified-local') throw new ConnectionExecutionError('unsupported-temporary');
 	const cfg = loadAnalyzeConfig();
 	const promptContent = loadPromptFile(args.target);
-	const provider = args.provider ?? resolveRoleProvider('analyze.synthesize', cfg);
+	const provider = args.provider ?? resolveRoleProvider('analyze.synthesize', cfg, undefined, args.connectionExecution);
 
 	const messages = buildMessages(promptContent, args.intent, args.executed);
 
@@ -152,8 +155,7 @@ export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeCont
 		throw errClass;
 	}
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:            args.runId,
 			target:           args.target,
 			explorationCount: args.executed.results.length,
@@ -161,9 +163,7 @@ export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeCont
 			structureLen:     raw.structure?.length ?? 0,
 			surfaceLen:       raw.surface?.length ?? 0,
 			artefactsLen:     raw.artefacts?.length ?? 0,
-		},
-		'synthesizer: bundle emitted',
-	);
+	}, 'synthesizer: bundle emitted']);
 
 	return raw;
 }
@@ -209,12 +209,12 @@ export function prepareSynthesize(
  * Meta stamping is the caller's responsibility -- same shape as the
  * driver's meta-stamp path today.
  */
-export function finalizeSynthesize(raw: unknown): Omit<AnalyzeContextBundle, 'meta'> {
+export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext): Omit<AnalyzeContextBundle, 'meta'> {
 	const strippedSchema = stripMetaFromSchema(
 		ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>,
 	) as StructuredSchema;
 	const result = validateAgainstSchema<Omit<AnalyzeContextBundle, 'meta'>>(
-		strippedSchema, raw,
+		strippedSchema, raw, execution,
 	);
 	if (!result.ok) {
 		throw new SynthesizerSchemaUnrecoverable(result.errors);

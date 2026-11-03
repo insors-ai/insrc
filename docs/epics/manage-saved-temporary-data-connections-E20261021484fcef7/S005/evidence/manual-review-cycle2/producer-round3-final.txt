@@ -1,0 +1,354 @@
+TAP version 13
+# (node:81569) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation
+ok 1 - CM-S1-A: every registered profile has positive and negative drafts, safe projection, and retained config preservation
+  ---
+  duration_ms: 85.454333
+  type: 'test'
+  ...
+# Subtest: CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection
+ok 2 - CM-S1-C: Keep Replace Clear use one effective draft and preserve pinned families without credential/reference projection
+  ---
+  duration_ms: 0.547083
+  type: 'test'
+  ...
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# Subtest: CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched
+ok 3 - CM-S1-P: abandoning safe reads and materialized create/edit drafts leaves exact registry and vault state untouched
+  ---
+  duration_ms: 12.83525
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only
+ok 4 - CM-S1-A: unclassified private fields and unsupported URI dialects remain redacted and read-only
+  ---
+  duration_ms: 0.739666
+  type: 'test'
+  ...
+# Subtest: CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects
+ok 5 - CM-S1-C: internal credential slot mapping preserves endpoints and supports opaque generation references without effects
+  ---
+  duration_ms: 0.482584
+  type: 'test'
+  ...
+# Subtest: CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly
+ok 6 - CM-S1-C: explicitly classified non-secret URI parameters survive label and credential edits exactly
+  ---
+  duration_ms: 0.564209
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied
+ok 7 - CM-S1-A: credential-bearing URI text is refused in public fields even when a private replacement is supplied
+  ---
+  duration_ms: 0.918666
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints
+ok 8 - CM-S1-A: unsupported semicolon connection strings and encoded reference paths never enter public endpoints
+  ---
+  duration_ms: 0.56575
+  type: 'test'
+  ...
+# Subtest: CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully
+ok 9 - CM-S1-A: private endpoint lists reject unrepresented DSN text and credential clear updates presence truthfully
+  ---
+  duration_ms: 0.479958
+  type: 'test'
+  ...
+# Subtest: CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence
+ok 10 - CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence
+  ---
+  duration_ms: 20.17675
+  type: 'test'
+  ...
+# Subtest: CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits
+ok 11 - CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits
+  ---
+  duration_ms: 18.041833
+  type: 'test'
+  ...
+# (node:81571) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries
+ok 12 - CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries
+  ---
+  duration_ms: 7.651
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata
+ok 13 - CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata
+  ---
+  duration_ms: 1.157917
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection
+ok 14 - CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection
+  ---
+  duration_ms: 25.048542
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal
+ok 15 - CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal
+  ---
+  duration_ms: 14.351083
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters
+ok 16 - CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters
+  ---
+  duration_ms: 74.647958
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use
+ok 17 - CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use
+  ---
+  duration_ms: 0.801666
+  type: 'test'
+  ...
+# Subtest: CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy
+ok 18 - CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy
+  ---
+  duration_ms: 0.631625
+  type: 'test'
+  ...
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [06:29:09] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [06:29:10] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1588.031334

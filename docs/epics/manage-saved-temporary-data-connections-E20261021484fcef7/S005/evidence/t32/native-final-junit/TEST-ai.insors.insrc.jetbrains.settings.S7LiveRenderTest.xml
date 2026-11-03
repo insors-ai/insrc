@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.S7LiveRenderTest" tests="1" skipped="1" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="live daemon - the Model tiers section, the per-repo section and an unlisted-model check()" classname="ai.insors.insrc.jetbrains.settings.S7LiveRenderTest" time="0.003">
+    <skipped/>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

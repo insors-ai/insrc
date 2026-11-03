@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "ca9883ca42f4d73f",
+    "storyId": "S001",
+    "createdAt": "2026-11-02T12:14:26.040Z",
+    "updatedAt": "2026-11-02T13:36:08.963Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:42:30.446Z",
+    "epicSlug": "daemon-update-never-retries-failed-npm",
+    "approvedAt": "2026-11-02T13:36:09.321Z",
+    "reviewOverride": {
+      "reason": "manual code review by an independent reviewer agent (code-review framework being rewritten); 2 rounds: pass with 6 LOWs (4 fixed @217c894a2), then pass with no new findings",
+      "at": "2026-11-02T13:36:09.321Z"
+    }
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      }
+    ],
+    "summary": "Clean install of the repository under Node 22 through daemon-ctl.sh built fs-ext and every native module (fs-ext previously failed with the same toolchain); the installed daemon's update installed once then skipped. Finding: a hand-run --ignore-scripts install (the s9 workaround) left fs-ext unbuilt, which a successful npm install does not repair; repaired with npm rebuild, and a genuinely failed install is rolled back by npm and retried correctly. Full sweep per directory: 7356 tests, 25 failures, all pre-existing and classified.",
+    "testRecord": {
+      "md": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "scripts/daemon-ctl.sh"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:06:49.464Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/full-sweep-t4.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:06:49.464Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-clean-install-t4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:06:49.464Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/daemon-update-never-retries-failed-npm-E20261102ca9883ca/S001/smoke-installed-update-t4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:06:49.464Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/daemon-ctl-install-marker.test.ts",
+          "version": "217c894a2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:36:08.963Z"
+      },
+      {
+        "target": {
+          "file": "scripts/insrc-daemon-install.sh",
+          "version": "217c894a2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:36:08.963Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/installer-defs.test.ts",
+          "version": "217c894a2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:36:08.963Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/assets/insrc-daemon-install.sh",
+          "version": "217c894a2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:36:08.963Z"
+      },
+      {
+        "target": {
+          "file": "README.md",
+          "version": "217c894a2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:36:08.963Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md",
+          "version": "217c894a2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:36:08.963Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/maintenance-install-marker.test.ts",
+          "version": "217c894a2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-02T13:36:08.963Z"
+      }
+    ],
+    "commit": "217c894a2"
+  }
+}

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: round-trip: append preserves meta + citations + other body keys byte-identical; only body.feedback grows
+ok 1 - round-trip: append preserves meta + citations + other body keys byte-identical; only body.feedback grows
+  ---
+  duration_ms: 4.573708
+  type: 'test'
+  ...
+# Subtest: rejects an out-of-tree path (not under .insrc/artifacts or docs/)
+ok 2 - rejects an out-of-tree path (not under .insrc/artifacts or docs/)
+  ---
+  duration_ms: 0.79225
+  type: 'test'
+  ...
+# Subtest: rejects a malformed / missing artifact JSON
+ok 3 - rejects a malformed / missing artifact JSON
+  ---
+  duration_ms: 1.473458
+  type: 'test'
+  ...
+# Subtest: rejects a blank author or blank comment
+ok 4 - rejects a blank author or blank comment
+  ---
+  duration_ms: 0.837875
+  type: 'test'
+  ...
+# Subtest: writeArtifactJson refuses an out-of-tree destination
+ok 5 - writeArtifactJson refuses an out-of-tree destination
+  ---
+  duration_ms: 0.161625
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 275.282

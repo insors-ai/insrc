@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793538574510-9anbqc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T13:12:39.621Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 185102,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s2",
+    "lldRunId": "wf-1793536984297-fx4r7l",
+    "lldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-01T13:13:11.445Z",
+    "rangeBase": "32e961b32931c1c7d717f4109c522e4defb981f5"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s2 means growing the store's unused whole-file replacement into commitFile in two halves (entities, then relationships) on top of in-transaction forms of s1's relationship writers, then reversing the embedding marker so it is set only after a vector is stored, counting and repairing missing vectors, and moving the indexer's refresh, delete and clean-up onto the one commit. The re-embed job becomes a backfill in its own queue lane, run at start and after an index, sized from a measured upsert-versus-add cost; the work ends with a full sweep and a smoke check on the installed daemon."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Split the resolved and pending relationship writers into in-transaction bodies",
+        "summary": "upsertResolvedRelations and upsertUnresolvedRelations each get a synchronous *InTxn body that takes the open GraphStore and returns its counts; the existing async functions call it inside their own withWriteTxn, so their behaviour (s1's keep-pending / count-unwritable rule) is unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the existing relations test files pass unchanged",
+          "both in-transaction bodies can be called inside a caller's withWriteTxn and their writes roll back with it"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "commitFile"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the FileCommit, FileCommitResult and RelationWrite types",
+        "summary": "Export the sc2 types from the store layer and the mapping of RelationWrite (stored / pending target, evidence accepted and ignored) onto the existing Relation shape the writers take.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "the types match the HLD sc2 sketch field for field",
+          "a RelationWrite with a stored target maps to a resolved Relation and one with a pending target to an unresolved Relation with the same meta"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "commitFile"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Grow reindexFile into commitFile: the entity half",
+        "summary": "One withWriteTxn: read the file's existing entities through entityByFile, upsert the parsed entities (module stubs ensure-exists), detach entities no longer parsed, advance the generation and drop the file from uncommittedFiles; contentHash null removes the file's entities. reindexFile becomes a thin wrapper. Returns FileCommitResult.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "the file's previous entities are found through entityByFile, not a scan of the entity table",
+          "a commit that throws part-way leaves every row of the file as before, read after a reopen",
+          "contentHash null removes the file's entities in one transaction",
+          "the generation advances and the file leaves uncommittedFiles in the same transaction",
+          "reindex-file-lmdb tests still pass through the wrapper"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c7",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "commitFile"
+          },
+          {
+            "level": "unit",
+            "name": "reindexFile"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "commitFile: the relationship half",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t3"
+        ],
+        "summary": "Inside commitFile's transaction: remove the outgoing edges of every previous entity of the file and the file's pending rows, write commit.relations through t1's in-transaction bodies, and return each incoming relationship of a removed entity whose holder survives to pending awaiting the removed id.",
+        "acceptanceChecks": [
+          "a refresh replaces the file's outgoing relationships and pending rows in the same transaction as its entities",
+          "incoming relationships of surviving entities are left in place",
+          "contentHash null removes the file's entities, relationships and pending rows together and returns incoming relationships of other files to pending (ac4)",
+          "a relationship whose target is not stored becomes a pending row awaiting the id (s1's rule, unchanged)"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "commitFile"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Set the embedding marker only after the vector is stored",
+        "summary": "Every writer stores entity rows with an empty marker; after the commit the vectors are written (plain add for an entity first allocated in this commit, upsert otherwise; deletes for removed entities) and a second transaction sets the written entities' markers to the active backend's model. upsertEntities and updateEmbedding get the same order; embedEntities no longer sets the marker on the entity.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "a failed vector write leaves the changed entities' markers empty",
+          "a successful write sets each marker to the active backend's model name",
+          "updateEmbedding writes the vector before the marker",
+          "a first-allocated entity uses the plain add, a changed one the upsert",
+          "FileCommitResult.vectorsOutstanding reports the entities whose vector was not written"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c8",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "commitFile"
+          },
+          {
+            "level": "integration",
+            "name": "updateEmbedding"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Count unembedded entities",
+        "summary": "IndexState.unembedded is adjusted in the commit transaction and the marker transaction for entities the embed step selects (non-empty body), and recounted from the entity table by reconcileIndexStateInTxn on open.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "after a commit whose vector write failed, unembedded equals the number of selected entities without a vector and the repository is not complete",
+          "empty-body entities (endpoints, module stubs) are never counted",
+          "the recount on open corrects a wrong stored count"
+        ],
+        "derivedFrom": [
+          "c9",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "commitFile"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Compare entity ids with the vector table at start",
+        "summary": "On the indexing worker at start, before any backfill is queued: delete vectors whose entity is not stored, and clear the marker (and count unembedded) of an entity whose marker is set but whose vector is missing.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "an orphan vector is deleted before a plain add for the same id can run",
+          "an entity with a set marker and no vector has its marker cleared and is counted unembedded"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "listUnembeddedEntities"
+          },
+          {
+            "level": "integration",
+            "name": "IndexerService.reembed"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Move the indexer's refresh, delete and clean-up removal onto commitFile",
+        "summary": "IndexerService.indexFile reads, parses, resolves and embeds, then calls commitFile once (no delete first); the delete branch of fileEvent and removeStoredFile call commitFile with contentHash null; a file event whose parse, embed or commit fails records the file in uncommittedFiles.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "a file event whose embed throws leaves the previous rows and records the file as uncommitted (ac1)",
+          "an integration test that holds the embed step on a promise and reads the file's entities and outgoing relationships through the store in the meantime gets the complete old set, and after the commit the complete new set (ac2)",
+          "no deleteEntitiesForFile / deleteUnresolvedForFile / upsertEntities / upsertRelations call remains on the refresh path"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "IndexerService.indexFile"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Give the backfill its own queue lane",
+        "summary": "A third IndexQueue lane takes the reembed jobs, running beside the index lane so file, full and reconcile jobs are never queued behind it; the status board publishes it with the other two lanes.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "a reembed job never delays a file job queued after it",
+          "the lane's depth and processing state are published",
+          "depthForRepo still counts a queued reembed for its repository"
+        ],
+        "derivedFrom": [
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "IndexerService.reembed"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Extend reembed into the backfill and queue it",
+        "summary": "reembed selects with the embed step's own selection (not force), reads through the by-repository index (listUnembeddedEntities), writes vector then marker, names the active backend's model, and sets embeddingAvailable false on an outage / true on success; it is queued for every registered repository at start (after t6) and after every full index and clean-up.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t6",
+          "t7",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "after a commit whose vector write failed, the backfill at start writes the vectors, sets the markers and the repository reads complete (ac3)",
+          "an unreachable backend sets embeddingAvailable false without failing the job",
+          "empty-body entities are never selected"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6",
+          "c9",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "IndexerService.reembed"
+          },
+          {
+            "level": "integration",
+            "name": "listUnembeddedEntities"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Measure the vector upsert against the plain add on this repository",
+        "summary": "Two-point smoke: time writeEntityEmbeddings vs addEntityEmbeddings on this repository's vector table at a refresh-sized and a backfill-sized batch, record both in the Story's test record, and set the backfill's batch size from them.",
+        "size": "S",
+        "order": 11,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "both timings at both sizes are recorded as a smoke result in the test record",
+          "the backfill batch size is set from the measurement and stated with it"
+        ],
+        "derivedFrom": [
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "upsert vs add on this repository's vector table (two-point)"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Ship and smoke on the installed daemon",
+        "summary": "Full sweep once, update the installed daemon, and on this repository check a refresh under load, a delete, and the backfill at start (unembedded goes to zero and the repository reads complete).",
+        "size": "S",
+        "order": 12,
+        "dependsOn": [
+          "t8",
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "full sweep shows no failure caused by this Story",
+          "on the installed daemon: while one indexed file of this repository is edited repeatedly, every poll of search.by_file for it returns the file's entities (recorded), a deleted file's rows are gone in one step, and unembedded reaches zero after the backfill at start with the repository reading complete"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "installed daemon: refresh under polling, delete, backfill at start"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "commitFile",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "reindexFile",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "updateEmbedding",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "IndexerService.reembed",
+        "coveredByTaskIds": [
+          "t7",
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "listUnembeddedEntities",
+        "coveredByTaskIds": [
+          "t7",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "IndexerService.indexFile",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api[0] commitFile"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api[1] reindexFile (thin wrapper)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api[2] IndexerService.indexFile"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api[3] updateEmbedding (vector before marker)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api[4] IndexerService.reembed (backfill)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 contractDetails.api[5] listUnembeddedEntities"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges[0] FileCommit / FileCommitResult / RelationWrite (sc2)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges[1] EntityRow.embeddingModel invariant (marker only after the vector)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges[2] IndexStateRow.unembedded / embeddingAvailable"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 dataModelChanges[3] graph-vs-vector consistency on open"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 migration (steps 1-6, backwardCompat)"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 errorPaths (errorCases, edgeCases, invariantsToPreserve)"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 testStrategy (acceptanceMapping ac1-ac4)"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 resolved question q199561da: the backfill runs in its own queue lane (user, 2026-11-01)"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD s2 resolved question q957956d1: two-point upsert-vs-add smoke on this repository (user, 2026-11-01)"
+    }
+  ]
+}

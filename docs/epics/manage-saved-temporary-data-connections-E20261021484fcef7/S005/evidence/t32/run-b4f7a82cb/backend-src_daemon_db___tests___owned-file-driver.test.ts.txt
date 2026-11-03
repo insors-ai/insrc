@@ -1,0 +1,54 @@
+TAP version 13
+# (node:7136) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S1-T: every file driver query uses its owned private resource and close disposes it without cache or source-path output
+ok 1 - CM-S1-T: every file driver query uses its owned private resource and close disposes it without cache or source-path output
+  ---
+  duration_ms: 91.661125
+  type: 'test'
+  ...
+# Subtest: CM-S1-H: converted driver memory reads cannot enter persistent conversion and workbook schema selection never crosses sheets
+ok 2 - CM-S1-H: converted driver memory reads cannot enter persistent conversion and workbook schema selection never crosses sheets
+  ---
+  duration_ms: 118.164208
+  type: 'test'
+  ...
+# Subtest: CM-S1-T: directory memory readers retain every matching file and single-quote CSV configuration is escaped
+ok 3 - CM-S1-T: directory memory readers retain every matching file and single-quote CSV configuration is escaped
+  ---
+  duration_ms: 40.2225
+  type: 'test'
+  ...
+# Subtest: CM-S1-T: legacy transient construction uses profile materialization memory policy and awaited private cleanup without writes
+ok 4 - CM-S1-T: legacy transient construction uses profile materialization memory policy and awaited private cleanup without writes
+  ---
+  duration_ms: 541.001083
+  type: 'test'
+  ...
+# Subtest: CM-S1-T: transient drafts cannot read another credential reference and nested owned credentials use read-only materialization
+ok 5 - CM-S1-T: transient drafts cannot read another credential reference and nested owned credentials use read-only materialization
+  ---
+  duration_ms: 8.060291
+  type: 'test'
+  ...
+# Subtest: CM-S1-T: renderer options cannot select execution policy and memory initialization errors redact source paths
+ok 6 - CM-S1-T: renderer options cannot select execution policy and memory initialization errors redact source paths
+  ---
+  duration_ms: 5.158333
+  type: 'test'
+  ...
+# Subtest: CM-S1-T: private native and converted driver initialization issues zero INSTALL calls
+ok 7 - CM-S1-T: private native and converted driver initialization issues zero INSTALL calls
+  ---
+  duration_ms: 21.10725
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2193.485042

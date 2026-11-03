@@ -4,11 +4,12 @@
  *--------------------------------------------------------------------------------------------*/
 
 /**
- * Source scan over daemon code (Epic ce99b72065d03b1b, Story s3 · t10): every
- * model decision reads the model definitions, so daemon code names no model,
- * no CLI family id and no runner 'ollama' outside the definitions' owners and
- * the family implementations, reads no models.shaper.ollamaNumCtx and imports
- * neither DEFAULT_TIERS nor TIER_EFFORTS (temporary exports for src/cli).
+ * Source scan over src (Epic ce99b72065d03b1b, Story s3 · t10; since s5 it
+ * covers the TUI under src/cli and the recommender too): every model decision
+ * reads the model definitions, so source names no model, no CLI family id and
+ * no runner 'ollama' outside the definitions' owners and the family
+ * implementations, reads no models.shaper.ollamaNumCtx and imports neither
+ * DEFAULT_TIERS nor TIER_EFFORTS (removed in s5).
  * Comments are not scanned. Each exclusion names the Story (or decision) that
  * owns it.
  *
@@ -26,14 +27,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 interface Exclusion { readonly file: string; readonly owner: string; readonly why: string }
 
 /** Whole trees outside the scan. */
-const EXCLUDED_TREES: readonly Exclusion[] = [
-	{ file: 'src/cli/', owner: 's5', why: 'the TUI moves to models.definitions / models.resolveRole in s5' },
-];
+const EXCLUDED_TREES: readonly Exclusion[] = [];
 
 /** Model-name literals allowed outside the definitions file. */
-const MODEL_NAME_EXCLUSIONS: readonly Exclusion[] = [
-	{ file: 'src/shared/model-recommender.ts', owner: 's5', why: 'DEFAULT_LOCAL_MODEL, replaced by the definitions in s5' },
-];
+const MODEL_NAME_EXCLUSIONS: readonly Exclusion[] = [];
 
 /** Where a CLI family id may be written: the definitions' owners and the family implementation. */
 const FAMILY_ID_OWNERS: readonly Exclusion[] = [
@@ -53,14 +50,23 @@ const OLLAMA_NON_RUNNER: readonly Exclusion[] = [
 	{ file: 'src/daemon/handler-runtime.ts', owner: 's3', why: "the 'ollama' npm package import and the daemon-wide ollama.host config key" },
 	{ file: 'src/shared/system-info.ts', owner: 's3', why: 'the SystemInfo ollama detection key' },
 	{ file: 'src/workflow/types.ts', owner: 's3', why: "the legacy run-label union ('client' | 'ollama')" },
+	{ file: 'src/cli/services/setup.ts', owner: 's5', why: "the 'ollama' program `setup pull` runs (spawn), not a runner" },
 ];
+
+interface ShippedDefinitions { families: Array<{ id: string; cliKind?: string; models: Array<{ id: string; aliases?: string[] }> }> }
+const shipped = (): ShippedDefinitions =>
+	JSON.parse(readFileSync(join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as ShippedDefinitions;
 
 /** The model ids and aliases the shipped definitions name. */
 function modelNames(): Set<string> {
-	const defs = JSON.parse(readFileSync(join(ROOT, 'src', 'assets', 'models', 'cloud-model-catalog.json'), 'utf8')) as { families: Array<{ models: Array<{ id: string; aliases?: string[] }> }> };
 	const names = new Set<string>();
-	for (const f of defs.families) for (const m of f.models) { names.add(m.id); for (const a of m.aliases ?? []) names.add(a); }
+	for (const f of shipped().families) for (const m of f.models) { names.add(m.id); for (const a of m.aliases ?? []) names.add(a); }
 	return names;
+}
+
+/** The ids of the shipped families that run a CLI (Epic b220bb61, Story s3: vendor and Ollama-hosted alike). */
+function cliFamilyIds(): string[] {
+	return shipped().families.filter(f => f.cliKind !== undefined).map(f => f.id);
 }
 
 /** The source with its comments removed, scanned lexically so a comment marker
@@ -108,13 +114,14 @@ function daemonFiles(): string[] {
 /** The violations in `files`, read from `source` (default: disk). */
 function scan(files: readonly string[], source: (file: string) => string = f => readFileSync(join(ROOT, f), 'utf8')): string[] {
 	const names = modelNames();
+	const familyIds = cliFamilyIds();
 	const violations: string[] = [];
 	for (const file of files) {
 		const code = stripComments(source(file));
 		if (!excluded(MODEL_NAME_EXCLUSIONS, file)) {
 			for (const n of names) if (quoted(n).test(code)) violations.push(`${file}: model-name literal '${n}'`);
 		}
-		if (!excluded(FAMILY_ID_OWNERS, file) && /['"`]cli-(claude|codex)['"`]/.test(code)) violations.push(`${file}: CLI family id literal`);
+		if (!excluded(FAMILY_ID_OWNERS, file) && familyIds.some(id => quoted(id).test(code))) violations.push(`${file}: CLI family id literal`);
 		if (!excluded(OLLAMA_NON_RUNNER, file) && /['"`]ollama['"`]/.test(code)) violations.push(`${file}: runner 'ollama' literal`);
 		// A read is code: `.ollamaNumCtx` outside a string (the retired path is named in one), or a bracket access.
 		if (/\.ollamaNumCtx\b/.test(blankStrings(code)) || /\[\s*['"]ollamaNumCtx['"]\s*\]/.test(code)) violations.push(`${file}: reads models.shaper.ollamaNumCtx`);
@@ -161,4 +168,35 @@ test('model-literal-scan.test.ts: the scan passes on the tree and fails on an in
 		assert.ok(e.why.length > 10, e.file);
 		assert.ok(statSync(join(ROOT, e.file)).isFile() || statSync(join(ROOT, e.file)).isDirectory(), e.file);
 	}
+});
+
+test('model-literal-scan.test.ts: the scan covers src/cli and the recommender', () => {
+	const files = daemonFiles();
+	for (const f of ['src/cli/panes/ModelTiersPane.tsx', 'src/cli/panes/ModelCheckScreen.tsx', 'src/cli/services/setup.ts', 'src/shared/model-recommender.ts']) {
+		assert.ok(files.includes(f), `${f} is scanned`);
+		const found = scan([f], g => readFileSync(join(ROOT, g), 'utf8') + "\nconst m = 'claude-opus-5-5';\n");
+		assert.deepEqual(found, [`${f}: model-name literal 'claude-opus-5-5'`], `a model literal in ${f} is caught`);
+	}
+	assert.deepEqual(scan(files.filter(f => f.startsWith('src/cli/') || f === 'src/shared/model-recommender.ts')), []);
+	// No exclusion covers the TUI tree or the recommender's model names.
+	assert.deepEqual(EXCLUDED_TREES, []);
+	assert.equal(MODEL_NAME_EXCLUSIONS.some(e => e.file.startsWith('src/cli') || e.file === 'src/shared/model-recommender.ts'), false);
+});
+
+test('model-literal-scan.test.ts: every CLI family id of the shipped definitions, including ollama-claude and cli-vibe, is flagged outside the owners', () => {
+	const ids = cliFamilyIds();
+	// Read from the shipped definitions: the vendor CLIs and the Ollama-hosted one, not the CLI-less local family.
+	for (const id of ['cli-claude', 'cli-codex', 'cli-vibe', 'ollama-claude']) assert.ok(ids.includes(id), `${id} is a shipped CLI family`);
+	assert.equal(ids.includes('ollama'), false);
+
+	const target = 'src/cli/panes/ModelTiersPane.tsx';
+	for (const id of ids) {
+		const found = scan([target], f => readFileSync(join(ROOT, f), 'utf8') + `\nconst r = '${id}';\n`);
+		assert.deepEqual(found, [`${target}: CLI family id literal`], `'${id}' is caught`);
+		// An owner may write it, and a comment naming it is not code.
+		assert.deepEqual(scan(['src/daemon/model-catalog.ts'], f => readFileSync(join(ROOT, f), 'utf8') + `\nconst r = '${id}';\n`), []);
+		assert.deepEqual(scan([target], f => readFileSync(join(ROOT, f), 'utf8') + `\n// const r = '${id}';\n`), []);
+	}
+	// A longer id that merely contains one is not a match.
+	assert.deepEqual(scan([target], f => readFileSync(join(ROOT, f), 'utf8') + "\nconst r = 'ollama-claude-next';\n"), []);
 });

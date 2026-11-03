@@ -1,0 +1,80 @@
+{
+  "findingId": "MANUAL-S3-01",
+  "status": "addressed",
+  "userAuthorization": "User approved the manual review finding.",
+  "recordedAt": "2026-10-29T06:55:29.816446+00:00",
+  "task": "484fcef7efaf229e/s3/t33",
+  "change": "Generate both private verifier inventories from their respective current build source maps; explicitly reject a stale self-consistent inventory with a recomputed document digest.",
+  "testSourceSha256": "af3250f7185181962eab6a40578d560d9e8733468c286c5c8658603923941d88",
+  "validation": {
+    "node": "v22.23.2",
+    "build": "pass",
+    "mappedTaskTestFiles": 9,
+    "tests": 42,
+    "pass": 42,
+    "fail": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "shippedEvidenceUnchanged": {
+    "src/assets/connection-management-gates.json": true,
+    "src/assets/connection-management-inventory.json": true,
+    "src/assets/connection-management-evidence.json": true
+  },
+  "fullSweepRepeated": false,
+  "daemonRestarted": false,
+  "approvalRecordsChanged": false,
+  "reviewSystemRebuildChanged": false,
+  "notes": [
+    "A preliminary post-edit run correctly refused a build made stale by concurrent production edits; rebuilt and ran all t33 mapped files successfully.",
+    "Historical manual review findings/logs retained; this file records their resolution.",
+    "Original full-sweep gaps and automated chunking smoke remain pending; no acceptance claim for either."
+  ],
+  "additionalValidationFinding": {
+    "cause": "Namespace wrapper assumed TAP without selecting it; Node26 child defaults to another reporter. Inner namespace case passed; outer summary assertion failed.",
+    "fix": "Explicit --test-reporter=tap on the namespace fixture child.",
+    "testFile": "src/daemon/db/__tests__/connection-reservations.test.ts",
+    "node22Focused": {
+      "tests": 10,
+      "pass": 10,
+      "fail": 0
+    },
+    "node26Namespace": {
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    "firstDaemonTaskValidation": "failed; retained verbatim in validation-first.json",
+    "finalDaemonTaskValidation": "pass"
+  },
+  "savedCompatibilityFollowup": {
+    "secondDaemonTaskValidation": "failed; preserved in validation-second.json",
+    "cause": "Concurrent legacy save calls had asynchronous preflight before entering the root gate, so invocation order did not guarantee the expected final label.",
+    "fix": "Use the existing credential-stage fixture barrier to admit the first call under the root gate before starting the second. Preserve two receipt, secret-redaction, document-retention, and pinned-family assertions.",
+    "productionChange": false,
+    "node22": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    "node26": {
+      "tests": 5,
+      "pass": 5,
+      "fail": 0
+    },
+    "finalTaskValidation": "pass"
+  },
+  "finalDaemonTaskValidation": {
+    "passed": true,
+    "typecheckClean": true,
+    "testsPassed": true,
+    "record": "validation-final.json",
+    "recordedAt": "2026-10-29T07:10:10.413401+00:00"
+  },
+  "manualFollowup": {
+    "finding": "MANUAL-S3-01 resolved",
+    "reviewedDiff": "Private test fixture generation, explicit TAP child reporter, deterministic mutation admission barrier. No production implementation changes.",
+    "newBlockingFindings": [],
+    "automatedCodeReviewStarted": false
+  }
+}

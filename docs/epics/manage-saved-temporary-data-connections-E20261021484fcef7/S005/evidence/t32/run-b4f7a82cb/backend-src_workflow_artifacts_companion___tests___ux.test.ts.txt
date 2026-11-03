@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: validateUxDefinition: a schema-valid card → no findings (ac1)
+ok 1 - validateUxDefinition: a schema-valid card → no findings (ac1)
+  ---
+  duration_ms: 23.511584
+  type: 'test'
+  ...
+# Subtest: validateUxDefinition: an unknown card element type → HIGH breach via ajv vs the vendored schema (ac2)
+ok 2 - validateUxDefinition: an unknown card element type → HIGH breach via ajv vs the vendored schema (ac2)
+  ---
+  duration_ms: 7.950292
+  type: 'test'
+  ...
+# Subtest: validateUxDefinition: a missing required field (TextBlock without text) → HIGH breach
+ok 3 - validateUxDefinition: a missing required field (TextBlock without text) → HIGH breach
+  ---
+  duration_ms: 13.135375
+  type: 'test'
+  ...
+# Subtest: validateUxDefinition: a wrong card discriminator → HIGH breach
+ok 4 - validateUxDefinition: a wrong card discriminator → HIGH breach
+  ---
+  duration_ms: 5.2035
+  type: 'test'
+  ...
+# Subtest: validateUxDefinition: validates the JSON element only — no path/file input exists
+ok 5 - validateUxDefinition: validates the JSON element only — no path/file input exists
+  ---
+  duration_ms: 7.018791
+  type: 'test'
+  ...
+# Subtest: validateUxDefinition: a malformed vendored asset raises UxDefinitionError (t1)
+ok 6 - validateUxDefinition: a malformed vendored asset raises UxDefinitionError (t1)
+  ---
+  duration_ms: 1.654083
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 329.254125

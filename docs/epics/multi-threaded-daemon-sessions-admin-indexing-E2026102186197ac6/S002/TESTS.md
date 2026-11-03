@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 98 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 142 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -52,7 +52,7 @@ Run at 2026-10-22T08:08:05.117Z on commit `6ce2d867`. Tests check: **passed**. 3
 
 ## t3
 
-Run at 2026-10-22T08:21:14.153Z on commit `eb38fa92`. Tests check: **passed**. 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T09:03:02.566Z on commit `9fc0d016b`. Tests check: **passed**. 28 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: new IpcServer(directDispatch(rpc, stream)) is wire-identical to today, including unknown method, invalid JSON, stream framing and the stream-to-unary fallback**
 
@@ -89,22 +89,32 @@ Run at 2026-10-22T08:21:14.153Z on commit `eb38fa92`. Tests check: **passed**. 2
 | pass | status after failure: storeFailure names another process and does not contain 'semume' | `src/daemon/__tests__/shutdown-store-failure.test.ts` |
 | pass | the steering refresh of an update gets the repositories from the daemon and opens no store | `src/cli/services/__tests__/steering-refresh-through-daemon.test.ts` |
 | pass | CLI review through the daemon: source roots come through the request and the CLI's process holds no descriptor on the store | `src/cli/services/__tests__/review-source-roots-daemon.test.ts` |
+| pass | refusal: process B is refused and never opens the lock file; process A then writes; a child of a declared process is refused | `src/db/graph/__tests__/live-store-refusal.test.ts` |
+| pass | refusal of a third process: beside the owner, a process with no declaration is refused the live graph store and holds no descriptor | `src/db/graph/__tests__/live-store-refusal.test.ts` |
+| pass | locks-lost recorded in a worker makes the main thread's next getGraphStore and withWriteTxn fail with LmdbStoreLocksLostError and write nothing | `src/db/graph/__tests__/store-health-threads.test.ts` |
+| pass | after locks-lost in a worker, getStoreHealth on the main thread reports it, runReaderCheck does not probe and a second detection does not log | `src/db/graph/__tests__/store-health-threads.test.ts` |
+| pass | the full locks-lost record reaches the main thread and every other worker through the hub | `src/db/graph/__tests__/store-health-threads.test.ts` |
+| pass | a worker's hub request is answered with its own requestId | `src/daemon/threads/__tests__/channel.test.ts` |
+| pass | closing the port rejects every pending hub request with HubUnavailableError | `src/daemon/threads/__tests__/channel.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/cli/services/__tests__/review-source-roots-daemon.test.ts` | 0 | 1 | 1 s |  |
-| `src/cli/services/__tests__/steering-refresh-through-daemon.test.ts` | 0 | 1 | 0.7 s |  |
+| `src/cli/services/__tests__/steering-refresh-through-daemon.test.ts` | 0 | 1 | 0.8 s |  |
 | `src/daemon/__tests__/server-forward.test.ts` | 0 | 3 | 0.6 s |  |
-| `src/daemon/__tests__/server-registry.test.ts` | 0 | 6 | 0.5 s |  |
-| `src/daemon/__tests__/shutdown-store-failure.test.ts` | 0 | 5 | 3.8 s |  |
-| `src/daemon/__tests__/store-failure-dispatch.test.ts` | 0 | 3 | 3.3 s |  |
-| `src/daemon/__tests__/understanding-rpc.test.ts` | 0 | 5 | 1.5 s |  |
-| `src/daemon/__tests__/update-handlers.test.ts` | 0 | 3 | 0.5 s |  |
-| `src/daemon/steps/__tests__/step-host.test.ts` | 0 | 6 | 1.2 s |  |
-| `src/mcp/__tests__/forward-step.test.ts` | 0 | 5 | 0.9 s |  |
-| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.8 s |  |
+| `src/daemon/__tests__/server-registry.test.ts` | 0 | 6 | 21 s |  |
+| `src/daemon/__tests__/shutdown-store-failure.test.ts` | 0 | 5 | 22 s |  |
+| `src/daemon/__tests__/store-failure-dispatch.test.ts` | 0 | 3 | 22.4 s |  |
+| `src/daemon/__tests__/understanding-rpc.test.ts` | 0 | 5 | 1.4 s |  |
+| `src/daemon/__tests__/update-handlers.test.ts` | 0 | 3 | 21.1 s |  |
+| `src/daemon/steps/__tests__/step-host.test.ts` | 0 | 9 | 1 s |  |
+| `src/daemon/threads/__tests__/channel.test.ts` | 0 | 2 | 21.3 s |  |
+| `src/db/graph/__tests__/live-store-refusal.test.ts` | 0 | 2 | 1.4 s |  |
+| `src/db/graph/__tests__/store-health-threads.test.ts` | 0 | 3 | 24.5 s |  |
+| `src/mcp/__tests__/forward-step.test.ts` | 0 | 6 | 4.7 s |  |
+| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.5 s |  |
 
 ## t4
 
@@ -339,19 +349,33 @@ Run at 2026-10-22T08:55:51.332Z on commit `b4c98ee7`. Tests check: **passed**. 4
 
 ## t12
 
-Run at 2026-10-22T09:01:42.169Z on commit `3602a797`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T09:05:05.147Z on commit `59424d934`. Tests check: **passed**. 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | codeReview.freshness on the main thread gets the code-indexing worker's codeIndexWorkFor result | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+| pass | the main thread's depthForRepo asks the code-indexing worker's queue | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+| pass | buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present) | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | index.ts registers a 'repo.stats' handler that delegates to collectRepoStats | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config) | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
 
 **integration: a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | a nested in-daemon call from a step handler to repo.reindex runs on the code-indexing worker | `src/daemon/threads/__tests__/indexing-port.test.ts` |
+| pass | a step handler's nested in-daemon call under a request's shared hold runs without re-requesting the maintenance lock | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+| pass | an exclusive maintenance request that becomes pending while a session request's nested call to repo.reindex is running on the code-indexing worker: the nested call completes, the outer request finishes, then maintenance proceeds | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
 
 **integration: daemon.status queue fields reflect the code-indexing worker's real lanes**
 
@@ -365,18 +389,24 @@ Run at 2026-10-22T09:01:42.169Z on commit `3602a797`. Tests check: **passed**. 5
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 4 | 2 s |  |
-| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 1 | 3.1 s |  |
+| `src/daemon/__tests__/repo-stats-handler-contract.test.ts` | 0 | 4 | 0.4 s |  |
+| `src/daemon/__tests__/repo-stats.test.ts` | 0 | 7 | 0.6 s |  |
+| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 5 | 1.6 s |  |
+| `src/daemon/threads/__tests__/maintenance-lock.test.ts` | 0 | 8 | 4.3 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 15.7 s |  |
 
 ## t13
 
-Run at 2026-10-22T09:33:13.695Z on commit `96671195`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T08:40:12.521Z on commit `e41b83d58`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | with the queue's two lanes on two threads, a summary starts only while the index lane is idle, and the order of jobs and the indexed and summarised results equal the single-thread queue for the same input | `src/daemon/threads/__tests__/summary-worker.test.ts` |
+| pass | the code-indexing end: a job in flight fails when the summary worker goes, the next waits for the replacement, and stop fails a waiting job | `src/daemon/threads/__tests__/summary-link.test.ts` |
+| pass | the summary end: the code-indexing worker going stops the job and answers a pending edit with none; a job from the new one runs | `src/daemon/threads/__tests__/summary-link.test.ts` |
+| pass | both ends speak the shared sc3 envelopes: a job is a streaming request with sweep frames and a reply, an edit is a unary request and its reply | `src/daemon/threads/__tests__/summary-link.test.ts` |
 
 **integration: waitForIndexIdle on the summary worker reflects the code-indexing worker's real state**
 
@@ -388,7 +418,8 @@ Run at 2026-10-22T09:33:13.695Z on commit `96671195`. Tests check: **passed**. 2
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/summary-worker.test.ts` | 0 | 2 | 3.5 s |  |
+| `src/daemon/threads/__tests__/summary-link.test.ts` | 0 | 3 | 0.7 s |  |
+| `src/daemon/threads/__tests__/summary-worker.test.ts` | 0 | 2 | 4.1 s |  |
 
 ## t14
 
@@ -427,7 +458,7 @@ Run at 2026-10-22T09:52:45.302Z on commit `9b2deef7`. Tests check: **passed**. 4
 
 ## t15
 
-Run at 2026-10-22T11:17:33.745Z on commit `aef1dc6d`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T08:35:22.956Z on commit `bd14e43e6`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: maintenance lock at the router: with the lock held exclusively by maintenance, a request other than daemon.status is refused with the activity, reason and start time and does not run; daemon.status is answered**
 
@@ -452,22 +483,24 @@ Run at 2026-10-22T11:17:33.745Z on commit `aef1dc6d`. Tests check: **passed**. 5
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | a prune-timer write scheduled to fire during compaction waits for the maintenance lock and lands in the compacted store; getGraphStore called on a worker during compaction rejects with MaintenanceInProgress | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+| pass | the todo-retention sweep that fires during maintenance waits for the maintenance lock and runs after it | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
 
 **integration: an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | an open understanding.watch stream does not prevent idle detection or maintenance; its refresh during maintenance is skipped and the next one after maintenance is delivered | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
+| pass | a todos.subscribe stream holds no lock; a push during maintenance is skipped and the next one after maintenance is delivered | `src/daemon/threads/__tests__/maintenance-lock.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/maintenance-lock.test.ts` | 0 | 5 | 2.6 s |  |
+| `src/daemon/threads/__tests__/maintenance-lock.test.ts` | 0 | 8 | 4.3 s |  |
 
 ## t16
 
-Run at 2026-10-22T12:14:53.345Z on commit `769f9bf5`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-10-27T08:33:11.261Z on commit `bd14e43e6`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: maintenance idle detection with a fake clock: admin requests do not reset idle; a non-admin request or a busy lane does**
 
@@ -498,6 +531,7 @@ Run at 2026-10-22T12:14:53.345Z on commit `769f9bf5`. Tests check: **passed**. 1
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | a request that keeps running past the pause limit makes maintenance abandon without closing anything, and requests are accepted again afterwards | `src/daemon/threads/__tests__/maintenance.test.ts` |
+| pass | the graph store losing its locks while maintenance waits for the lock, or once it is granted, stops it before anything is closed or compacted | `src/daemon/threads/__tests__/maintenance.test.ts` |
 
 **integration: the pre-rename check returns false when a worker has not acknowledged 'graph.close': no rename, no lock-file removal, the original store reopens and serves**
 
@@ -533,12 +567,12 @@ Run at 2026-10-22T12:14:53.345Z on commit `769f9bf5`. Tests check: **passed**. 1
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/threads/__tests__/maintenance.test.ts` | 0 | 11 | 3.5 s |  |
-| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 15.3 s |  |
+| `src/daemon/threads/__tests__/maintenance.test.ts` | 0 | 12 | 4.1 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 18.8 s |  |
 
 ## t17
 
-Run at 2026-10-22T15:26:51.591Z on commit `3d98673a`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-10-27T08:43:04.862Z on commit `2c3fde281`. Tests check: **passed**. 29 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: daemon.status, repo.list, debug-status, config.show, config.catalog and guide.list answer within 100 ms (p99 over 50 calls) while an indexing pass runs and another worker keeps an LMDB write transaction open**
 
@@ -566,19 +600,40 @@ Run at 2026-10-22T15:26:51.591Z on commit `3d98673a`. Tests check: **passed**. 1
 | pass | ac2 restart: an analyze step and a workflow step continue through a new MCP process with the same state token | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
 | pass | ac5 pass-through: emit_plan and emit_step prompts, schemas and state are byte-identical to the in-process replies | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
 | pass | ac3: with no daemon every moved tool returns DaemonUnreachableError through a real MCP process, which opens no store; against a daemon without step.call, DaemonTooOldError | `src/mcp/__tests__/mcp-process-e2e.test.ts` |
+| pass | buildRepoStats: fileCount is distinct files; filesByLanguage counts a mixed-language file in each bucket | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: entityCount total + entityCountByKind grouped by EntityKind | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: relationCount is per-repo; a source-repo not registered and a repo with 0 source are ignored | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: registry fields verbatim; a never-indexed registered repo yields a zero-count RepoStats (present) | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: sizeBytes = injected sizeOf; pendingJobs = injected pendingFor | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | buildRepoStats: an unregistered-repo entity row is ignored; empty inputs give all-zero RepoStats per repo | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | collectRepoStats: per-repo counts + cross-repo edge attributed to its source repo + best-effort size | `src/daemon/__tests__/repo-stats.test.ts` |
+| pass | index.ts registers a 'repo.stats' handler that delegates to collectRepoStats | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | the handler returns { error } (not throw) for an unregistered repoPath and returns the array when omitted | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/config) | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared | `src/daemon/__tests__/repo-stats-handler-contract.test.ts` |
+| pass | t2: the status object includes installedCommit populated from the reader | `src/daemon/__tests__/daemon-status-field.test.ts` |
+| pass | t2: a reader returning '' yields installedCommit:'' with the rest of the status intact (never throws) | `src/daemon/__tests__/daemon-status-field.test.ts` |
+| pass | t2: sc1 (daemon.update/updateOutcome) surface is untouched by the status change | `src/daemon/__tests__/daemon-status-field.test.ts` |
+| pass | t2: end-to-end — readInstalledCommit() with the default git exec returns this repo's real HEAD sha | `src/daemon/__tests__/daemon-status-field.test.ts` |
+| pass | daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost | `src/daemon/__tests__/status-store-failure.test.ts` |
+| pass | status handler with the store failed returns an empty repository list and storeFailure and does not throw | `src/daemon/__tests__/status-store-failure.test.ts` |
 
 **smoke: scripts/daemon-ctl.sh start, then status prints the daemon status; stop leaves no pid file, socket or worker behind**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts (commit 4b5e4fe1), run with `npm run build && INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts` against the compiled threaded daemon on a temporary HOME; it passed on 2026-10-22, and the output of the last run is in /tmp/insrc-s2-t17-daemon-ctl-smoke.log.
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/multi-threaded-daemon-sessions-admin-indexing-E2026102186197ac6/S002/evidence/t17-daemon-ctl-smoke.txt (committed d6bd23ab0): npm run build, then INSRC_SMOKE_TESTS=1 npx tsx --test src/daemon/threads/__tests__/daemon-ctl-smoke.test.ts against the compiled threaded daemon at 35b2b0afa on 2026-10-27; 1 pass, 0 fail, 0 skipped.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/queue-threads.test.ts` | 0 | 3 | 0.7 s |  |
-| `src/daemon/__tests__/repo-completeness.test.ts` | 0 | 1 | 18.6 s |  |
-| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 4 | 1.7 s |  |
-| `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 9.4 s |  |
-| `src/daemon/threads/__tests__/latency-isolation.test.ts` | 0 | 2 | 37.3 s |  |
-| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 17.7 s |  |
-| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.2 s |  |
+| `src/daemon/__tests__/daemon-status-field.test.ts` | 0 | 4 | 0.5 s |  |
+| `src/daemon/__tests__/queue-threads.test.ts` | 0 | 3 | 0.5 s |  |
+| `src/daemon/__tests__/repo-completeness.test.ts` | 0 | 1 | 17.8 s |  |
+| `src/daemon/__tests__/repo-stats-handler-contract.test.ts` | 0 | 4 | 0.4 s |  |
+| `src/daemon/__tests__/repo-stats.test.ts` | 0 | 7 | 0.6 s |  |
+| `src/daemon/__tests__/status-store-failure.test.ts` | 0 | 2 | 0.6 s |  |
+| `src/daemon/threads/__tests__/indexing-port.test.ts` | 0 | 5 | 1.5 s |  |
+| `src/daemon/threads/__tests__/indexing-worker.test.ts` | 0 | 4 | 9.7 s |  |
+| `src/daemon/threads/__tests__/latency-isolation.test.ts` | 0 | 2 | 37.4 s |  |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | 0 | 3 | 16.5 s |  |
+| `src/mcp/__tests__/mcp-process-e2e.test.ts` | 0 | 4 | 4.1 s |  |

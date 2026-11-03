@@ -1,0 +1,157 @@
+TAP version 13
+# Subtest: detectSourceRoots -- Java/Maven
+    # Subtest: walks <modules> recursively + picks up each child source dir
+    ok 1 - walks <modules> recursively + picks up each child source dir
+      ---
+      duration_ms: 1.495709
+      type: 'test'
+      ...
+    # Subtest: honours custom <sourceDirectory> when set
+    ok 2 - honours custom <sourceDirectory> when set
+      ---
+      duration_ms: 1.965958
+      type: 'test'
+      ...
+    1..2
+ok 1 - detectSourceRoots -- Java/Maven
+  ---
+  duration_ms: 6.408458
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- Java/Gradle
+    # Subtest: picks up custom srcDirs from a Kotlin DSL build script
+    ok 1 - picks up custom srcDirs from a Kotlin DSL build script
+      ---
+      duration_ms: 0.610166
+      type: 'test'
+      ...
+    1..1
+ok 2 - detectSourceRoots -- Java/Gradle
+  ---
+  duration_ms: 2.00575
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- Scala/SBT cross-build
+    # Subtest: includes scala-2.13 and scala-3 cross-build dirs alongside the base
+    ok 1 - includes scala-2.13 and scala-3 cross-build dirs alongside the base
+      ---
+      duration_ms: 0.322667
+      type: 'test'
+      ...
+    1..1
+ok 3 - detectSourceRoots -- Scala/SBT cross-build
+  ---
+  duration_ms: 1.815041
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- Python flat + nested
+    # Subtest: reports the parent of the shallowest __init__.py as a source root
+    ok 1 - reports the parent of the shallowest __init__.py as a source root
+      ---
+      duration_ms: 0.233
+      type: 'test'
+      ...
+    1..1
+ok 4 - detectSourceRoots -- Python flat + nested
+  ---
+  duration_ms: 1.314667
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- Python with src/ layout
+    # Subtest: reports src/ as a source root for src-layout projects
+    ok 1 - reports src/ as a source root for src-layout projects
+      ---
+      duration_ms: 0.27075
+      type: 'test'
+      ...
+    1..1
+ok 5 - detectSourceRoots -- Python with src/ layout
+  ---
+  duration_ms: 1.210208
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- Go
+    # Subtest: captures repoRoot + modulePath from go.mod
+    ok 1 - captures repoRoot + modulePath from go.mod
+      ---
+      duration_ms: 0.172416
+      type: 'test'
+      ...
+    # Subtest: returns null when no go.mod exists
+    ok 2 - returns null when no go.mod exists
+      ---
+      duration_ms: 1.044417
+      type: 'test'
+      ...
+    1..2
+ok 6 - detectSourceRoots -- Go
+  ---
+  duration_ms: 1.948125
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- TypeScript tsconfig
+    # Subtest: captures baseUrl and paths
+    ok 1 - captures baseUrl and paths
+      ---
+      duration_ms: 1.167041
+      type: 'test'
+      ...
+    # Subtest: handles JSON-with-comments tsconfig
+    ok 2 - handles JSON-with-comments tsconfig
+      ---
+      duration_ms: 0.843583
+      type: 'test'
+      ...
+    1..2
+ok 7 - detectSourceRoots -- TypeScript tsconfig
+  ---
+  duration_ms: 2.732792
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- JavaScript jsconfig
+    # Subtest: reads jsconfig.json when present
+    ok 1 - reads jsconfig.json when present
+      ---
+      duration_ms: 0.704209
+      type: 'test'
+      ...
+    # Subtest: falls back to tsconfig when no jsconfig exists
+    ok 2 - falls back to tsconfig when no jsconfig exists
+      ---
+      duration_ms: 0.42425
+      type: 'test'
+      ...
+    1..2
+ok 8 - detectSourceRoots -- JavaScript jsconfig
+  ---
+  duration_ms: 1.169416
+  type: 'suite'
+  ...
+# Subtest: detectSourceRoots -- no-manifest conventions
+    # Subtest: still finds src/main/java + src/main/scala without any manifest
+    ok 1 - still finds src/main/java + src/main/scala without any manifest
+      ---
+      duration_ms: 0.250458
+      type: 'test'
+      ...
+    # Subtest: Go / TS / JS slots are null when no go.mod / tsconfig / jsconfig exists
+    ok 2 - Go / TS / JS slots are null when no go.mod / tsconfig / jsconfig exists
+      ---
+      duration_ms: 0.455
+      type: 'test'
+      ...
+    1..2
+ok 9 - detectSourceRoots -- no-manifest conventions
+  ---
+  duration_ms: 1.50975
+  type: 'suite'
+  ...
+1..9
+# tests 14
+# suites 9
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 198.007125

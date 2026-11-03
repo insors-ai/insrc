@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -30,7 +31,7 @@ import { getDb } from '../../db/client.js';
 import { getEntitiesByIds, entityU64ForId, entityIdsByU64s, listEntitiesForRepo } from '../../db/entities.js';
 import { inNeighbors, outNeighbors } from '../../db/graph/edges.js';
 import { getLogger } from '../../shared/logger.js';
-import type { Entity } from '../../shared/types.js';
+import type { Entity, RelationEvidence } from '../../shared/types.js';
 
 import type {
 	Exploration,
@@ -99,7 +100,7 @@ export async function runImportGraph(
 	}
 
 	if (inScopeFiles.length === 0) {
-		log.info({ runId: ctx.runId, path }, 'import.graph: no in-scope files');
+		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, path }, 'import.graph: no in-scope files']);
 		return {
 			type: 'import.graph',
 			// No file of the graph lies under the path: an empty result, and a complete one.
@@ -119,6 +120,14 @@ export async function runImportGraph(
 	// OUTSIDE `path`).
 	const importerCount = new Map<string, number>();  // otherFile -> edges
 	const importeeCount = new Map<string, number>();  // otherFile -> edges
+	// otherFile -> how many of its edges rest on each kind of evidence (Epic c2ba6fa6 s7)
+	const importerEvidence = new Map<string, Partial<Record<RelationEvidence, number>>>();
+	const importeeEvidence = new Map<string, Partial<Record<RelationEvidence, number>>>();
+	const countEvidence = (into: Map<string, Partial<Record<RelationEvidence, number>>>, file: string, evidence: RelationEvidence): void => {
+		const counts = into.get(file) ?? {};
+		counts[evidence] = (counts[evidence] ?? 0) + 1;
+		into.set(file, counts);
+	};
 	let totalIn  = 0;
 	let totalOut = 0;
 
@@ -130,12 +139,15 @@ export async function runImportGraph(
 		if (u64 === undefined) { noGraphNode.push(f.file); continue; }
 
 		// Inbound: who imports THIS file (files outside our scope).
-		const importers = await inNeighbors(u64, { kindFilter: ['IMPORTS'] });
-		const importerIdMap = await entityIdsByU64s(importers);
+		const importers = await inNeighbors(u64, { kindFilter: ['IMPORTS'], withEvidence: true });
+		const importerIdMap = await entityIdsByU64s(importers.map(r => r.u64));
 		const importerIds: string[] = [];
-		for (const u of importers) {
-			const sid = importerIdMap.get(u);
-			if (sid !== undefined) importerIds.push(sid);
+		const importerEvidenceById = new Map<string, RelationEvidence>();
+		for (const r of importers) {
+			const sid = importerIdMap.get(r.u64);
+			if (sid === undefined) continue;
+			importerIds.push(sid);
+			importerEvidenceById.set(sid, r.evidence);
 		}
 		const importerEntities = await getEntitiesByIds(db, importerIds);
 		for (const ie of importerEntities) {
@@ -143,16 +155,20 @@ export async function runImportGraph(
 			if (!ctx.ignoreFilter.isIncluded(ie.file)) continue;
 			if (inScopePaths.has(ie.file)) continue;
 			importerCount.set(ie.file, (importerCount.get(ie.file) ?? 0) + 1);
+			countEvidence(importerEvidence, ie.file, importerEvidenceById.get(ie.id) ?? 'unknown');
 			totalIn += 1;
 		}
 
 		// Outbound: what THIS file imports (files outside our scope).
-		const importees = await outNeighbors(u64, { kindFilter: ['IMPORTS'] });
-		const importeeIdMap = await entityIdsByU64s(importees);
+		const importees = await outNeighbors(u64, { kindFilter: ['IMPORTS'], withEvidence: true });
+		const importeeIdMap = await entityIdsByU64s(importees.map(r => r.u64));
 		const importeeIds: string[] = [];
-		for (const u of importees) {
-			const sid = importeeIdMap.get(u);
-			if (sid !== undefined) importeeIds.push(sid);
+		const importeeEvidenceById = new Map<string, RelationEvidence>();
+		for (const r of importees) {
+			const sid = importeeIdMap.get(r.u64);
+			if (sid === undefined) continue;
+			importeeIds.push(sid);
+			importeeEvidenceById.set(sid, r.evidence);
 		}
 		const importeeEntities = await getEntitiesByIds(db, importeeIds);
 		for (const ie of importeeEntities) {
@@ -160,17 +176,18 @@ export async function runImportGraph(
 			if (!ctx.ignoreFilter.isIncluded(ie.file)) continue;
 			if (inScopePaths.has(ie.file)) continue;
 			importeeCount.set(ie.file, (importeeCount.get(ie.file) ?? 0) + 1);
+			countEvidence(importeeEvidence, ie.file, importeeEvidenceById.get(ie.id) ?? 'unknown');
 			totalOut += 1;
 		}
 	}
 
 	const k = topK ?? DEFAULT_TOP_K;
 	const topImporters = Array.from(importerCount.entries())
-		.map(([file, edges]) => ({ file, edges }))
+		.map(([file, edges]) => ({ file, edges, evidence: importerEvidence.get(file) ?? {} }))
 		.sort((a, b) => b.edges - a.edges)
 		.slice(0, k);
 	const topImportees = Array.from(importeeCount.entries())
-		.map(([file, edges]) => ({ file, edges }))
+		.map(([file, edges]) => ({ file, edges, evidence: importeeEvidence.get(file) ?? {} }))
 		.sort((a, b) => b.edges - a.edges)
 		.slice(0, k);
 
@@ -194,8 +211,7 @@ export async function runImportGraph(
 		totalOutDegree: totalOut,
 	};
 
-	log.info(
-		{
+	captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{
 			runId:         ctx.runId,
 			path,
 			inScopeFiles:  inScopeFiles.length,
@@ -203,9 +219,7 @@ export async function runImportGraph(
 			totalOut,
 			topImporters:  topImporters.length,
 			topImportees:  topImportees.length,
-		},
-		'import.graph: complete',
-	);
+	}, 'import.graph: complete']);
 
 	return { type: 'import.graph', completeness, summary };
 }

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: composeSpecFocus: includes intent, scope, every non-goal, and every decision; deterministic
+ok 1 - composeSpecFocus: includes intent, scope, every non-goal, and every decision; deterministic
+  ---
+  duration_ms: 4.088
+  type: 'test'
+  ...
+# Subtest: resolveStageFocus: an approved spec seeds the focus + sets seededFromSpec (ac1)
+ok 2 - resolveStageFocus: an approved spec seeds the focus + sets seededFromSpec (ac1)
+  ---
+  duration_ms: 3.581291
+  type: 'test'
+  ...
+# Subtest: resolveStageFocus: no specHash is a pure passthrough — focus verbatim, seededFromSpec unset (ac4)
+ok 3 - resolveStageFocus: no specHash is a pure passthrough — focus verbatim, seededFromSpec unset (ac4)
+  ---
+  duration_ms: 0.290208
+  type: 'test'
+  ...
+# Subtest: resolveStageFocus: an unapproved spec throws SpecNotApprovedError (never seeds an unapproved spec, k12)
+ok 4 - resolveStageFocus: an unapproved spec throws SpecNotApprovedError (never seeds an unapproved spec, k12)
+  ---
+  duration_ms: 4.882958
+  type: 'test'
+  ...
+# Subtest: resolveStageFocus: a missing specHash throws SpecArtifactNotFoundError
+ok 5 - resolveStageFocus: a missing specHash throws SpecArtifactNotFoundError
+  ---
+  duration_ms: 0.36825
+  type: 'test'
+  ...
+# Subtest: ac3: finalizeDefine stamps meta.seededFromSpec + renderDefineMarkdown surfaces it when seeded
+ok 6 - ac3: finalizeDefine stamps meta.seededFromSpec + renderDefineMarkdown surfaces it when seeded
+  ---
+  duration_ms: 4.18425
+  type: 'test'
+  ...
+# Subtest: ac4: a plain-focus finalizeDefine leaves meta.seededFromSpec unset + no seeded-from header line
+ok 7 - ac4: a plain-focus finalizeDefine leaves meta.seededFromSpec unset + no seeded-from header line
+  ---
+  duration_ms: 0.98525
+  type: 'test'
+  ...
+# Subtest: ac3: specScopeFitsStandalone is true for feature/small, false for epic/trivial (surfaced, never narrowed)
+ok 8 - ac3: specScopeFitsStandalone is true for feature/small, false for epic/trivial (surfaced, never narrowed)
+  ---
+  duration_ms: 0.092792
+  type: 'test'
+  ...
+# Subtest: ac4/provenance: a spec-seeded standalone LLD stamps meta.seededFromSpec + renders the Seeded-from line
+ok 9 - ac4/provenance: a spec-seeded standalone LLD stamps meta.seededFromSpec + renders the Seeded-from line
+  ---
+  duration_ms: 7.979042
+  type: 'test'
+  ...
+# Subtest: ac4: a plain-focus standalone LLD leaves meta.seededFromSpec unset + no Seeded-from line
+ok 10 - ac4: a plain-focus standalone LLD leaves meta.seededFromSpec unset + no Seeded-from line
+  ---
+  duration_ms: 5.13875
+  type: 'test'
+  ...
+# Subtest: ac1/ac2: resolveStageFocus composes the same framing for the standalone param bag as for define
+ok 11 - ac1/ac2: resolveStageFocus composes the same framing for the standalone param bag as for define
+  ---
+  duration_ms: 2.557709
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 387.740167

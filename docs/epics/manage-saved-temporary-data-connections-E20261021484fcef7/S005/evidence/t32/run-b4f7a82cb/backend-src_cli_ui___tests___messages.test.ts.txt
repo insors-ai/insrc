@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: appendMessage appends in order below the bound
+ok 1 - appendMessage appends in order below the bound
+  ---
+  duration_ms: 1.250875
+  type: 'test'
+  ...
+# Subtest: appendMessage bounds to the last N (older lines scroll off, no growth)
+ok 2 - appendMessage bounds to the last N (older lines scroll off, no growth)
+  ---
+  duration_ms: 0.104292
+  type: 'test'
+  ...
+# Subtest: appendMessage honours an explicit max
+ok 3 - appendMessage honours an explicit max
+  ---
+  duration_ms: 0.059583
+  type: 'test'
+  ...
+# Subtest: clearTransient removes ALL transient lines but keeps sticky note/task lines
+ok 4 - clearTransient removes ALL transient lines but keeps sticky note/task lines
+  ---
+  duration_ms: 0.057458
+  type: 'test'
+  ...
+# Subtest: dismissMessage removes only the line with the given id (sticky siblings survive)
+ok 5 - dismissMessage removes only the line with the given id (sticky siblings survive)
+  ---
+  duration_ms: 0.064959
+  type: 'test'
+  ...
+# Subtest: an error-kind line is non-transient and survives clearTransient
+ok 6 - an error-kind line is non-transient and survives clearTransient
+  ---
+  duration_ms: 0.040708
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 230.475666

@@ -2,6 +2,8 @@
 
 # HLD: manage-saved-temporary-data-connections
 
+> **Current client scope — 29 October 2026:** The user confirmed that insrc-ide is deprecated. Only `vscode-plugin/` and `jetbrains-plugin/` are delivery targets. [Scope correction](CLIENT-SCOPE-UPDATE.html) supersedes all fork-specific work and release gates in the historical approved text below; backend contracts remain unchanged.
+
 ## Summary
 
 One daemon service will give saved and temporary connections the same safe editing and truthful outcome rules. Saved connections retain the existing local registry; temporary connections belong to the workbench session and remain in memory. Both clients use a versioned management contract, while analysis receives only daemon-validated access to its session’s sources.

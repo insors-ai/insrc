@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: put + get round-trip
+ok 1 - put + get round-trip
+  ---
+  duration_ms: 216.615417
+  type: 'test'
+  ...
+# Subtest: get returns null on cache miss (never written)
+ok 2 - get returns null on cache miss (never written)
+  ---
+  duration_ms: 210.659
+  type: 'test'
+  ...
+# Subtest: same exploration params produce the same hash
+ok 3 - same exploration params produce the same hash
+  ---
+  duration_ms: 215.852292
+  type: 'test'
+  ...
+# Subtest: different exploration types produce distinct hashes
+ok 4 - different exploration types produce distinct hashes
+  ---
+  duration_ms: 213.309625
+  type: 'test'
+  ...
+# Subtest: nested params still canonicalise deterministically
+ok 5 - nested params still canonicalise deterministically
+  ---
+  duration_ms: 204.499833
+  type: 'test'
+  ...
+# Subtest: different lastIndexedAt produces cache miss
+ok 6 - different lastIndexedAt produces cache miss
+  ---
+  duration_ms: 220.028625
+  type: 'test'
+  ...
+# Subtest: repo scoping: repo A row is not visible to repo B lookup
+ok 7 - repo scoping: repo A row is not visible to repo B lookup
+  ---
+  duration_ms: 185.917458
+  type: 'test'
+  ...
+# Subtest: deleteCachedExplorationsForRepo drops every row for the repo
+ok 8 - deleteCachedExplorationsForRepo drops every row for the repo
+  ---
+  duration_ms: 239.8615
+  type: 'test'
+  ...
+# Subtest: put + get on unregistered repo is a no-op / null
+ok 9 - put + get on unregistered repo is a no-op / null
+  ---
+  duration_ms: 196.677709
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2165.634541

@@ -6,7 +6,7 @@ import { getGraphStore } from '../db/graph/store.js';
 import { readAssessment } from '../understanding/storage.js';
 import type { UnderstandingService, Owner } from '../understanding/service.js';
 import type { RpcHandlers, StreamHandlers } from './server.js';
-import { withRefreshHold } from '../shared/locks/maintenance-lock.js';
+import { withRefreshHold, withRequestHold } from '../shared/locks/maintenance-lock.js';
 
 interface Dependencies {
   service(): UnderstandingService;
@@ -89,7 +89,9 @@ export function createUnderstandingRoutes(deps: Dependencies): { rpc: RpcHandler
         service();
         const p = parse(WatchSchema, input);
         assessmentId = p.assessmentId;
-        const owner = await ownerFor(assessmentId);
+        // The setup reads the store: it runs under a no-wait hold, and during maintenance the
+        // watch is refused with the busy error (as at its admission) instead of reading it.
+        let owner!: Awaited<ReturnType<typeof ownerFor>>;
         // The stream holds no maintenance lock; each refresh takes it with no wait and is skipped during maintenance.
         const refresh = (): void => {
           chain = chain.then(() => withRefreshHold(async () => {
@@ -105,7 +107,15 @@ export function createUnderstandingRoutes(deps: Dependencies): { rpc: RpcHandler
             } catch (error) { if (error instanceof AssessmentError && error.code === 'not-found') close('unavailable'); else fatal(error); }
           })).catch(fatal);
         };
-        unsubscribe = await service().subscribe(owner, assessmentId, deleted => { if (deleted) close('deleted'); else refresh(); });
+        const setup = await withRequestHold(async () => {
+          owner = await ownerFor(assessmentId);
+          unsubscribe = await service().subscribe(owner, assessmentId, deleted => { if (deleted) close('deleted'); else refresh(); });
+        });
+        if (!setup.ran) {
+          send({ id: 0, stream: 'error', data: { protocolVersion: 1, code: 'busy', error: setup.busy, recoverable: true } });
+          close();
+          return;
+        }
         if (closed || signal.aborted) { unsubscribe(); close(); return; }
         active.add(stop);
         signal.addEventListener('abort', abort, { once: true });

@@ -37,7 +37,7 @@ registerDbTools();
 test('owner tool runtime and exploration matrix', async () => {
  const directory = await realpath(await mkdtemp(join(tmpdir(), 'cm-tool-owner-'))), root = join(directory, 'root'), other = join(directory,'other'); await mkdir(root); await mkdir(other);
  const originalIns=PATHS.insrc, originalTaskPath=PATHS.analyzeTaskOutput;PATHS.insrc=join(directory,'insrc');PATHS.analyzeTaskOutput=(runId,taskId)=>join(directory,'analyze',runId,'tasks',taskId+'.json');setGraphStorePath(join(directory,'graph.lmdb'));
- registerTemplateRuntime(dataSchemaTableRuntime);
+	registerTemplateRuntime(dataSchemaTableRuntime, { sessionMemory: 'read-only' });
  const overlays = new Map<string,TemporaryConnectionOverlay>();
  const runtime = new ConnectionSessionRpc({ enabled: async()=>true, isRegistered:async r=>r===root||r===other, createOverlay:(r,h,c)=>{ const o=createTemporaryOverlay(r,h,c);overlays.set(h,o);return o; }, dropOverlay:o=>o.close() });
  _setTaskScopeDepsForTest({listRepos:async()=>[],findEntitiesByFile:async()=>[],listEntitiesForRepo:async()=>[],loadConnections:async()=>{throw new Error('saved enumeration forbidden');}});
@@ -74,7 +74,7 @@ test('owner tool runtime and exploration matrix', async () => {
 
    const tables=await runDbTablesList({...exp,type:'db.tables.list'},ctx);assert.ok(JSON.stringify(tables).includes('data'));
    const listed=await runDbConnectionsList({...exp,type:'db.connections.list'},ctx);assert.ok(JSON.stringify(listed).includes('same'));
-   assert.equal((await executeTool('db_sql_sample',{connectionId:'same',target:'data'}, {...deps,repoPath:selected===root?other:root})).success,false);
+   await assert.rejects(executeTool('db_sql_sample',{connectionId:'same',target:'data'}, {...deps,repoPath:selected===root?other:root}),{code:'session-expired'});
    await runInStepContext({cwd:selected,connectionExecution:execution},async()=>{
     await assert.rejects(getTool('db_list_connections')!.execute({}, {...deps,connectionExecution:undefined}),{code:'session-expired'});
     await assert.rejects(runDbConnectionsList(exp,{...ctx,connectionExecution:undefined}),{code:'session-expired'});

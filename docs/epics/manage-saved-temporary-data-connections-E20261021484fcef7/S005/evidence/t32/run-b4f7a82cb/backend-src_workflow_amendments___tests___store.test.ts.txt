@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: nextAmendmentId starts at 1 in an empty repo
+ok 1 - nextAmendmentId starts at 1 in an empty repo
+  ---
+  duration_ms: 1.320708
+  type: 'test'
+  ...
+# Subtest: nextAmendmentId advances past existing entries
+ok 2 - nextAmendmentId advances past existing entries
+  ---
+  duration_ms: 2.059125
+  type: 'test'
+  ...
+# Subtest: proposeAmendment writes a record then readAmendment returns it
+ok 3 - proposeAmendment writes a record then readAmendment returns it
+  ---
+  duration_ms: 1.283
+  type: 'test'
+  ...
+# Subtest: proposeAmendment refuses duplicate ids
+ok 4 - proposeAmendment refuses duplicate ids
+  ---
+  duration_ms: 1.537166
+  type: 'test'
+  ...
+# Subtest: proposeAmendment refuses non-pending status at write time
+ok 5 - proposeAmendment refuses non-pending status at write time
+  ---
+  duration_ms: 0.3495
+  type: 'test'
+  ...
+# Subtest: approveAmendment sets status + approvedAt + approvedBy
+ok 6 - approveAmendment sets status + approvedAt + approvedBy
+  ---
+  duration_ms: 2.495542
+  type: 'test'
+  ...
+# Subtest: approveAmendment refuses double-approve
+ok 7 - approveAmendment refuses double-approve
+  ---
+  duration_ms: 2.160166
+  type: 'test'
+  ...
+# Subtest: rejectAmendment refuses missing reason
+ok 8 - rejectAmendment refuses missing reason
+  ---
+  duration_ms: 1.353917
+  type: 'test'
+  ...
+# Subtest: rejectAmendment refuses on approved records
+ok 9 - rejectAmendment refuses on approved records
+  ---
+  duration_ms: 1.751667
+  type: 'test'
+  ...
+# Subtest: listAmendments returns records in id-suffix order
+ok 10 - listAmendments returns records in id-suffix order
+  ---
+  duration_ms: 3.089
+  type: 'test'
+  ...
+# Subtest: listAmendments filters by Epic hash prefix
+ok 11 - listAmendments filters by Epic hash prefix
+  ---
+  duration_ms: 1.214916
+  type: 'test'
+  ...
+# Subtest: listApprovedAmendments filters + sorts by approvedAt
+ok 12 - listApprovedAmendments filters + sorts by approvedAt
+  ---
+  duration_ms: 14.548667
+  type: 'test'
+  ...
+# Subtest: readAmendment throws when record is missing
+ok 13 - readAmendment throws when record is missing
+  ---
+  duration_ms: 0.306792
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 214.151916

@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: first-boot equivalence: surviving former-literal keys match catalog defaults; retired ones are absent
+ok 1 - first-boot equivalence: surviving former-literal keys match catalog defaults; retired ones are absent
+  ---
+  duration_ms: 2.535625
+  type: 'test'
+  ...
+# Subtest: first boot with no config present → writes surviving former keys + canonical catalog defaults; no retired keys, one write
+ok 2 - first boot with no config present → writes surviving former keys + canonical catalog defaults; no retired keys, one write
+  ---
+  duration_ms: 1.956209
+  type: 'test'
+  ...
+# Subtest: module boundary: daemon imports the catalog from src/config, and src/daemon has zero imports of src/cli
+ok 3 - module boundary: daemon imports the catalog from src/config, and src/daemon has zero imports of src/cli
+  ---
+  duration_ms: 0.303208
+  type: 'test'
+  ...
+# Subtest: boot wiring contract: unconditional, no silent parse catch, distinguishable catalog-error, all outcomes handled
+ok 4 - boot wiring contract: unconditional, no silent parse catch, distinguishable catalog-error, all outcomes handled
+  ---
+  duration_ms: 0.202375
+  type: 'test'
+  ...
+# Subtest: reconcile never aborts boot: every failure input yields a structured outcome, not a throw
+ok 5 - reconcile never aborts boot: every failure input yields a structured outcome, not a throw
+  ---
+  duration_ms: 1.382167
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 217.374792

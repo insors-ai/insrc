@@ -1,0 +1,102 @@
+TAP version 13
+# Subtest: rpc resolves the daemon result and writes the { label, pid } identity envelope on connect
+ok 1 - rpc resolves the daemon result and writes the { label, pid } identity envelope on connect
+  ---
+  duration_ms: 1.453583
+  type: 'test'
+  ...
+# Subtest: rpc rejects with "daemon is not running" on ENOENT / ECONNREFUSED
+ok 2 - rpc rejects with "daemon is not running" on ENOENT / ECONNREFUSED
+  ---
+  duration_ms: 0.305791
+  type: 'test'
+  ...
+# Subtest: rpc surfaces a daemon-side error and an unparseable line distinctly
+ok 3 - rpc surfaces a daemon-side error and an unparseable line distinctly
+  ---
+  duration_ms: 0.149458
+  type: 'test'
+  ...
+# Subtest: IpcClient.status returns the wire DaemonStatus via daemon.status
+ok 4 - IpcClient.status returns the wire DaemonStatus via daemon.status
+  ---
+  duration_ms: 1.056583
+  type: 'test'
+  ...
+# Subtest: IpcClient.reachability derives running / stopped / errored and never throws
+ok 5 - IpcClient.reachability derives running / stopped / errored and never throws
+  ---
+  duration_ms: 0.264875
+  type: 'test'
+  ...
+# Subtest: sockFilePath resolves to the daemon socket
+ok 6 - sockFilePath resolves to the daemon socket
+  ---
+  duration_ms: 0.04625
+  type: 'test'
+  ...
+# Subtest: src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)
+ok 7 - src/cli/client.ts re-exports rpc from the shared ipc-client (CLI/TUI surface preserved)
+  ---
+  duration_ms: 0.375625
+  type: 'test'
+  ...
+# Subtest: src/shared/ipc-client imports only node:net + shared types/paths (no daemon internals/indexer/storage)
+ok 8 - src/shared/ipc-client imports only node:net + shared types/paths (no daemon internals/indexer/storage)
+  ---
+  duration_ms: 0.312791
+  type: 'test'
+  ...
+# Subtest: ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged
+ok 9 - ipc-client.test.ts: a connection lost after the request (end/close or ECONNRESET then close) rejects with DaemonDisconnectedError; pre-connect refusal and replies unchanged
+  ---
+  duration_ms: 0.491417
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility
+ok 10 - CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility
+  ---
+  duration_ms: 12.013042
+  type: 'test'
+  ...
+# (node:21055) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane
+ok 11 - CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane
+  ---
+  duration_ms: 2.524833
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth
+ok 12 - CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth
+  ---
+  duration_ms: 1.951
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely
+ok 13 - CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely
+  ---
+  duration_ms: 2.784333
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests
+ok 14 - CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests
+  ---
+  duration_ms: 51.803167
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners
+ok 15 - CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners
+  ---
+  duration_ms: 130.730958
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 392.882417

@@ -1,0 +1,234 @@
+TAP version 13
+# Subtest: CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+ok 1 - CM-S3-EXPIRY: actual end/exact deadline/restart during use/construction/probe/conversion/close failure; zero leaked handles
+  ---
+  duration_ms: 15985.4905
+  type: 'test'
+  ...
+# Subtest: CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+ok 2 - CM-S3-RECONNECT: before-deadline resume preserves entries and cancels revoked-generation work
+  ---
+  duration_ms: 0.123
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+ok 3 - CM-S4-TEMP: shutdown drains retained resources at capacity and retries failed close without new admission
+  ---
+  duration_ms: 4.832334
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+ok 4 - CM-S4-TEMP: cancellation and owner expiry preserve exact late-construction cleanup
+  ---
+  duration_ms: 0.214792
+  type: 'test'
+  ...
+# (node:72973) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners
+ok 5 - CM-S4-TEMP: retired resources retain a shared slot across roots and failed cleanup does not poison other owners
+  ---
+  duration_ms: 2.094
+  type: 'test'
+  ...
+# Subtest: CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete
+ok 6 - CM-S4-TEMP: exact private file failures remain owned and retain the slot until file and SDK close complete
+  ---
+  duration_ms: 0.336042
+  type: 'test'
+  ...
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "postgres"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cockroachdb"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mysql"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mariadb"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "sqlite"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mssql"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "oracle"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "clickhouse"
+#     [35mfamily[39m: "rdbms"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "redis"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "valkey"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "keydb"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "mongodb"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "cassandra"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "nats"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "dynamodb"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "etcd"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "memcached"
+#     [35mfamily[39m: "kv"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "csv"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "tsv"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "jsonl"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "ndjson"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "json"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "parquet"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "arrow"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "feather"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "avro"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "bson"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "fixed-width"
+#     [35mfamily[39m: "file"
+# [10:32:15] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+#     [35mmodule[39m: "db-registry"
+#     [35mkind[39m: "xlsx"
+#     [35mfamily[39m: "file"
+# [10:32:16] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-1Nm98a/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# [10:32:16] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-1Nm98a/a"
+#     [35mcount[39m: 0
+# [10:32:16] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-1Nm98a/a"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+ok 7 - CM-S3-LEASE: full callback pins revision through multiple calls busy update and retained-view revocation
+  ---
+  duration_ms: 49.328542
+  type: 'test'
+  ...
+# [10:32:16] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6bcqMG/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+ok 8 - CM-S3-LEASE: failed construction keeps committed truth and activation-only retry builds once
+  ---
+  duration_ms: 8.134
+  type: 'test'
+  ...
+# [10:32:16] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-141O5l/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+ok 9 - CM-S3-LEASE: late driver construction cannot publish after end and end awaits disposal
+  ---
+  duration_ms: 7.175875
+  type: 'test'
+  ...
+# [10:32:16] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-Yn8Kw7/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+ok 10 - CM-S3-LEASE: late rejection construction cannot publish after end and end awaits disposal
+  ---
+  duration_ms: 5.221458
+  type: 'test'
+  ...
+# [10:32:16] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-5rpykA/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# [10:32:16] [34mDEBUG[39m: [36m[db-config] loaded db-connections[39m
+#     [35mmodule[39m: "db-config"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-5rpykA/a"
+#     [35mcount[39m: 0
+# [10:32:16] [34mDEBUG[39m: [36m[db-pool] pool reloaded[39m
+#     [35mmodule[39m: "db-pool"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-5rpykA/a"
+#     [35mcount[39m: 0
+# Subtest: CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+ok 11 - CM-S3-LEASE: abandoned late iterator retains its lease and closes before end completes
+  ---
+  duration_ms: 10.215959
+  type: 'test'
+  ...
+# [10:32:16] [32mINFO[39m: [36m[ipc] listening on /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-service-6PoMMM/runtime.sock[39m
+#     [35mmodule[39m: "ipc"
+# Subtest: CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+ok 12 - CM-S3-ISOLATION: private factory receives only the matching owner root and immutable credential revision
+  ---
+  duration_ms: 11.631542
+  type: 'test'
+  ...
+# Subtest: CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+ok 13 - CM-S3-ISOLATION: actual private SQLite drivers return distinct rows for two owners roots and revisions
+  ---
+  duration_ms: 797.166667
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 16252.990041

@@ -1,3 +1,5 @@
+import { runWithConnectionExecution } from '../../shared/step-context.js';
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /**
  * Resolve a request's scope ONCE.
  *
@@ -31,7 +33,7 @@ import { dirname } from 'node:path';
 
 import { loadConnections } from '../../daemon/db/config.js';
 import type { LoadedConnections } from '../../daemon/db/config.js';
-import { findEntitiesByFile, listEntitiesForRepo } from '../../db/entities.js';
+import { findEntitiesByFile, listEntitiesForRepo, repoHasAnyEntity } from '../../db/entities.js';
 import { listRepos } from '../../db/repos.js';
 import type { AnalyzeScopeRef, AnalyzeTarget } from '../../shared/analyze-types.js';
 import { getLogger } from '../../shared/logger.js';
@@ -77,6 +79,15 @@ export interface ScopeDeps {
 	findEntitiesByFile(file: string): Promise<readonly Entity[]>;
 	listEntitiesForRepo(repoPath: string, opts?: { readonly limit: 1 } | undefined): Promise<readonly Entity[]>;
 	loadConnections(repoPath: string): Promise<LoadedConnections>;
+	/**
+	 * OPTIONAL fast path (Epic c2ba6fa6 Story s3, ac4): whether a repo
+	 * holds any stored entity, without building its entity list. When
+	 * absent, callers fall back to `listEntitiesForRepo(...).length ===
+	 * 0`. Optional (not required) so the ~30 existing files that
+	 * construct a `ScopeDeps`-shaped object literal keep compiling and
+	 * behaving unchanged.
+	 */
+	repoHasAnyEntity?: ((repoPath: string) => Promise<boolean>) | undefined;
 }
 
 const REAL_DEPS: ScopeDeps = {
@@ -84,6 +95,7 @@ const REAL_DEPS: ScopeDeps = {
 	findEntitiesByFile:  (file) => findEntitiesByFile(null, file),
 	listEntitiesForRepo: (repoPath, opts) => listEntitiesForRepo(null, repoPath, opts),
 	loadConnections,
+	repoHasAnyEntity:    (repoPath) => repoHasAnyEntity(null, repoPath),
 };
 
 export async function resolveScope(
@@ -92,7 +104,7 @@ export async function resolveScope(
 	execution?: ConnectionExecutionContext,
 ): Promise<ResolvedScope> {
 	assertAnalysisConnectionExecution(execution);
-	const result = await resolveScopeUnchecked(ref, deps, execution);
+	const result = await runWithConnectionExecution(execution, () => resolveScopeUnchecked(ref, deps, execution));
 	assertAnalysisConnectionExecution(execution);
 	return result;
 }
@@ -186,7 +198,7 @@ async function containingRepoOrNull(path: string, deps: ScopeDeps): Promise<stri
 	try {
 		repos = await deps.listRepos();
 	} catch (err) {
-		log.debug({ path, err: (err as Error).message }, 'resolveScope: registry read failed; repo unknown');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ path, err: (err as Error).message }, 'resolveScope: registry read failed; repo unknown']);
 		return null;
 	}
 	return longestPrefixRepo(path, repos)?.path ?? null;

@@ -1,3 +1,5 @@
+import { captureAnalysisDiagnostics } from '../analyze/connection-access.js';
+import { assertConnectionProviderAdmission } from '../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -86,7 +88,7 @@ export class ToolLoopDeadlineError extends Error {
  *  the caller decides what that means. Model errors propagate unchanged. */
 export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<ReadOnlyToolLoopResult> {
 	const execution = args.connectionExecution;
-	assertExplicitConnectionExecution(execution);
+	assertConnectionProviderAdmission(execution);
 	if (args.deps.connectionExecution !== execution) throw new ConnectionExecutionError('session-expired');
 	if (execution?.mode === 'session-memory' && (execution.audience !== 'workbench-ui' || execution.provider.mode !== 'verified-local')) throw new ConnectionExecutionError('unsupported-temporary');
 	const signals = [...new Set([execution?.lifetime.signal, args.signal, ...(execution ? [args.deps.signal] : [])].filter((value): value is AbortSignal => value !== undefined))];
@@ -105,8 +107,8 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 	const dispatch = async (name: string, input: unknown): Promise<ToolResult> => {
 		assertExplicitConnectionExecution(execution);
 		const tool = getTool(name);
-		if (tool === undefined) return unknownTool(name);
-		if (!args.allow.has(tool.id)) return refused(name, tool.id, args.reviewBudget !== undefined);
+		if (tool === undefined) return unknownTool(name, execution);
+		if (!args.allow.has(tool.id)) return refused(name, tool.id, execution, args.reviewBudget !== undefined);
 		return execute(name, args.root !== undefined ? rootedInput(tool.id, input, args.root) : input, deps);
 	};
 
@@ -192,7 +194,7 @@ export interface StructuredAnswerArgs {
  *  instruction, answered against `schema`. Model errors propagate unchanged. */
 export async function emitStructuredAnswer<T>(args: StructuredAnswerArgs): Promise<T> {
 	const execution = args.connectionExecution;
-	assertExplicitConnectionExecution(execution);
+	assertConnectionProviderAdmission(execution);
 	if (execution?.mode === 'session-memory' && (execution.audience !== 'workbench-ui' || execution.provider.mode !== 'verified-local')) throw new ConnectionExecutionError('unsupported-temporary');
 	const signals = [...new Set([execution?.lifetime.signal, args.signal].filter((value): value is AbortSignal => value !== undefined))];
 	const signal = signals.length > 1 ? AbortSignal.any(signals) : signals[0];
@@ -273,12 +275,14 @@ export function rootedInput(toolId: string, input: unknown, root: string): unkno
 	return out;
 }
 
-function unknownTool(name: string): ToolResult {
+function unknownTool(name: string, execution?: ConnectionExecutionContext): ToolResult {
+	if (execution?.mode === 'session-memory') return { output: 'Temporary tool is unavailable.', format: 'text', success: false, error: 'Temporary tool is unavailable.' };
 	return { output: `Unknown tool: ${name}`, format: 'text', success: false, error: `No tool registered for '${name}'` };
 }
 
-function refused(name: string, id: string, reviewScoped = false): ToolResult {
-	log.warn(reviewScoped ? { errorCode: 'tool-refused' } : { tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed');
+function refused(name: string, id: string, execution?: ConnectionExecutionContext, reviewScoped = false): ToolResult {
+	if (execution?.mode === 'session-memory') return { output: 'Temporary tool is unavailable.', format: 'text', success: false, error: 'Temporary tool is unavailable.' };
+	captureAnalysisDiagnostics(log, execution).emit('warn', () => [reviewScoped ? { errorCode: 'tool-refused' } : { tool: name, id }, 'read-only tool loop: refused a call to a tool outside the allowlist; it was not executed']);
 	return {
 		output:  `Tool '${name}' is not available in this session. Only the read-only tools offered to you can be used.`,
 		format:  'text',

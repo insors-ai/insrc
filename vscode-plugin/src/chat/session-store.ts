@@ -118,6 +118,14 @@ export interface ChatSession {
    * session (or a corrupt value) defaults to 'manual' on read.
    */
   mode?: PermissionMode;
+  /**
+   * The run config chosen in the chat panel's bottom-right controls: `model` is an
+   * id/alias of the provider's family (absent = the CLI's own default model) and
+   * `effort` a level of that model's efforts (absent = the CLI's default). Persisted
+   * per session; optional for back-compat (pre-run-config sessions read as absent).
+   */
+  model?: string | undefined;
+  effort?: string | undefined;
   transcript: TranscriptEntry[];
   /**
    * Story E202610101d04e560:S001: while a turn's output segment (session-output.ts) has not been
@@ -143,15 +151,21 @@ export interface ChatSummary {
   readonly updatedAt: string;
 }
 
+/** The per-session run config (model id/alias + effort level), both optional. */
+export interface RunConfig {
+  readonly model?: string | undefined;
+  readonly effort?: string | undefined;
+}
+
 export interface ChatSessionStore {
-  create(provider: ProviderId): ChatSession;
+  create(provider: ProviderId, run?: RunConfig): ChatSession;
   /**
    * A new in-memory session that is NOT persisted yet — it enters the store (index + history)
    * only on the first {@link save} (i.e. once it has a message). Lets the chat open a fresh
    * "draft" without cluttering history with empty chats that are never used. Same shape as
    * {@link create}, minus the immediate save.
    */
-  draft(provider: ProviderId): ChatSession;
+  draft(provider: ProviderId, run?: RunConfig): ChatSession;
   get(id: string): ChatSession | undefined;
   list(): ReadonlyArray<ChatSummary>;
   append(id: string, entry: TranscriptEntry): void;
@@ -267,20 +281,22 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
     }
   };
 
-    const draft = (provider: ProviderId): ChatSession => ({
+    const draft = (provider: ProviderId, run?: RunConfig): ChatSession => ({
       id: genId(),
       provider,
       createdAt: now(),
       title: 'new chat',
       editMode: 'auto',
       mode: 'manual',
+      ...(run?.model !== undefined ? { model: run.model } : {}),
+      ...(run?.effort !== undefined ? { effort: run.effort } : {}),
       transcript: [],
     });
 
   return {
     draft,
-    create(provider: ProviderId): ChatSession {
-      const session = draft(provider);
+    create(provider: ProviderId, run?: RunConfig): ChatSession {
+      const session = draft(provider, run);
       save(session); // create persists immediately (S005 eviction relies on this)
       return session;
     },

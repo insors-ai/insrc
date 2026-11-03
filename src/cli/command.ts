@@ -11,6 +11,7 @@
  */
 
 import type { Services } from './services/index.js';
+import type { ConfigWriteResult } from './services/config.js';
 import type { SteeringSelection } from '../shared/types.js';
 import type { UnitRef } from '../workflow/tracker/refs.js';
 import type { TrackerSetupStep } from '../workflow/tracker/setup.js';
@@ -19,6 +20,8 @@ import { formatMcpOutcome } from './services/repo.js';
 import { describeStop } from './services/daemon.js';
 import { formatBytes, formatUptime } from './ui/format.js';
 import { CONFIG_CATALOG } from './config-catalog.js';
+import type { LocalModelChoice } from '../shared/model-recommender.js';
+import { cannotRecommend, localModelFrom } from './services/setup.js';
 
 export interface CommandCtx {
 	readonly services: Services;
@@ -400,8 +403,13 @@ function renderTrackerStep(step: TrackerSetupStep): string[] {
 }
 
 async function runSetup(sub: string | undefined, svc: Services, ctx: CommandCtx): Promise<string[]> {
+	if (sub !== undefined && sub !== 'show' && sub !== 'apply' && sub !== 'pull') return ['usage: setup show|apply|pull'];
+	// The local model to recommend is the one the daemon's definitions name.
+	let local: LocalModelChoice | undefined;
+	try { local = localModelFrom(await svc.models.definitions()); } catch (err) { return [cannotRecommend(err)]; }
+	if (local === undefined) return [cannotRecommend()];
 	const info = svc.setup.detect();
-	const rec = svc.setup.recommend(info);
+	const rec = svc.setup.recommend(info, local);
 	switch (sub) {
 		case undefined: case 'show':
 			return [`tier ${rec.tier} · local ${rec.coder.model} · embedding ${rec.embedding.model} · context ${rec.context.shape}`];
@@ -416,6 +424,19 @@ async function runSetup(sub: string | undefined, svc: Services, ctx: CommandCtx)
 		}
 		default: return ['usage: setup show|apply|pull'];
 	}
+}
+
+/** Tiers, role tasks and per-repo settings are written only as whole objects at literal
+ *  segment paths (Model Tiers pane, Repos → m), never as a command-bar dot path. */
+export const MODEL_KEY_REFUSAL = '✗ edit tiers in the Model Tiers pane and per-repo tasks / coreFloor in Repos → m (models); the command bar does not write models.tiers, models.tasks or models.byRepo';
+
+function isModelKey(key: string): boolean {
+	return key === 'models' || ['models.tiers', 'models.tasks', 'models.byRepo'].some(p => key.startsWith(p));
+}
+
+function writeResult(res: ConfigWriteResult, done: string): string[] {
+	if (!res.ok) return [`✗ not saved: ${res.reason ?? 'refused'}${res.detail !== undefined ? ` — ${res.detail}` : ''}`];
+	return res.restartRequired === true ? [done, '(restart the daemon to apply)'] : [done];
 }
 
 async function runConfig(sub: string | undefined, rest: readonly string[], svc: Services): Promise<string[]> {
@@ -446,14 +467,14 @@ async function runConfig(sub: string | undefined, rest: readonly string[], svc: 
 		case 'set': {
 			if (rest[0] === undefined || rest.length < 2) return ['usage: config set <key> <value>   (value is JSON if parseable, else a string)'];
 			const key = rest[0];
+			if (isModelKey(key)) return [MODEL_KEY_REFUSAL];
 			const value = parseValue(rest.slice(1).join(' '));
-			await svc.config.write(key, value);
-			return [`set ${key} = ${render(value)}`];
+			return writeResult(await svc.config.write(key, value), `set ${key} = ${render(value)}`);
 		}
 		case 'unset': case 'clear': {
 			if (rest[0] === undefined) return ['usage: config unset <key>   (clears the key → falls back to default / auto)'];
-			await svc.config.write(rest[0], null);
-			return [`unset ${rest[0]} (cleared → default/auto)`];
+			if (isModelKey(rest[0])) return [MODEL_KEY_REFUSAL];
+			return writeResult(await svc.config.write(rest[0], null), `unset ${rest[0]} (cleared → default/auto)`);
 		}
 		case 'reload': {
 			await svc.config.reload();

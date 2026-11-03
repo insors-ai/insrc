@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: hinted request: focused with the prompt as focus, unfocused with an empty prompt
+ok 1 - hinted request: focused with the prompt as focus, unfocused with an empty prompt
+  ---
+  duration_ms: 255.907625
+  type: 'test'
+  ...
+# Subtest: hinted request: the validator's two checks are made, with the connection check it was given
+ok 2 - hinted request: the validator's two checks are made, with the connection check it was given
+  ---
+  duration_ms: 203.6425
+  type: 'test'
+  ...
+# Subtest: hinted pairing the table refuses fails at 'classify' with a failed run record
+ok 3 - hinted pairing the table refuses fails at 'classify' with a failed run record
+  ---
+  duration_ms: 217.776208
+  type: 'test'
+  ...
+# Subtest: hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'
+ok 4 - hinted request with a scope that does not resolve fails with 'scope-ref-unresolved'
+  ---
+  duration_ms: 211.004583
+  type: 'test'
+  ...
+# Subtest: hinted request with a valid pairing reaches the context builder and the planner
+ok 5 - hinted request with a valid pairing reaches the context builder and the planner
+  ---
+  duration_ms: 236.692667
+  type: 'test'
+  ...
+# Subtest: hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection
+ok 6 - hinted request: a connection check that throws fails the run at classify with a code, not an unhandled rejection
+  ---
+  duration_ms: 263.302584
+  type: 'test'
+  ...
+# Subtest: the classifier receives a connection check from each caller
+ok 7 - the classifier receives a connection check from each caller
+  ---
+  duration_ms: 319.663292
+  type: 'test'
+  ...
+# Subtest: connectionIsRegistered: declared by a registered repo or not; an unreadable file is reported
+ok 8 - connectionIsRegistered: declared by a registered repo or not; an unreadable file is reported
+  ---
+  duration_ms: 226.854459
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2522.773583

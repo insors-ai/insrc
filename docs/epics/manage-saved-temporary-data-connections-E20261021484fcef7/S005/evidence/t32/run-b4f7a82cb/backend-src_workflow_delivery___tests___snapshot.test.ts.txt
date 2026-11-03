@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: every work item is joined with its stage, evidence, gates, currency and notices
+ok 1 - every work item is joined with its stage, evidence, gates, currency and notices
+  ---
+  duration_ms: 10.731208
+  type: 'test'
+  ...
+# Subtest: two snapshots of the same store, with equal timestamps, are identical in order and counts
+ok 2 - two snapshots of the same store, with equal timestamps, are identical in order and counts
+  ---
+  duration_ms: 2.635375
+  type: 'test'
+  ...
+# Subtest: needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items
+ok 3 - needsAttention comes from a gate reason or an attention notice, each reason listed once, and store-level notices stay off items
+  ---
+  duration_ms: 0.712125
+  type: 'test'
+  ...
+# Subtest: a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not
+ok 4 - a full-chain, feature or sized-bugfix story with a build and no plan gets incomplete-evidence, and small, small-bugfix and trivial stories do not
+  ---
+  duration_ms: 0.632625
+  type: 'test'
+  ...
+# Subtest: an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records
+ok 5 - an epic's problem and summary, a story's purpose and size, and an issue's reproduction, root cause and fix intent are published from their records
+  ---
+  duration_ms: 0.376708
+  type: 'test'
+  ...
+# Subtest: missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent
+ok 6 - missing, blank or wrongly typed values read not recorded, and a value that does not apply to a kind is absent
+  ---
+  duration_ms: 0.427667
+  type: 'test'
+  ...
+# Subtest: a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded
+ok 7 - a story added by an extension takes its purpose from the EXT, and a standalone story reads not recorded
+  ---
+  duration_ms: 0.504333
+  type: 'test'
+  ...
+# Subtest: feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed
+ok 8 - feedback from an item's own design records is listed read-only, in order, and malformed entries are noticed
+  ---
+  duration_ms: 0.755959
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 297.88575

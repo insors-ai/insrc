@@ -1,0 +1,14 @@
+{
+  "attempt1": {
+    "tests": 10,
+    "pass": 9,
+    "fail": 1,
+    "cause": "DriverPool resolves references through the daemon keystore seam; resource-close fixture initially installed its fake store only in Saved management. Pool resolution correctly failed before driver construction.",
+    "correction": "Install existing _setKeystoreForTests fixture store during this test and restore it after all owned resources drain. No production changes.",
+    "evidenceRedaction": {
+      "reason": "Remove fixture-generated private secret reference from failure text; preserve failure status and stack.",
+      "replacements": 1
+    }
+  },
+  "interventions": []
+}

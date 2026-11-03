@@ -1,0 +1,1512 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s5",
+    "createdAt": "2026-10-29T14:41:37.350Z",
+    "updatedAt": "2026-11-01T06:48:38.214Z",
+    "epicCreatedAt": "2026-10-21T05:28:15.025Z",
+    "epicSlug": "manage-saved-temporary-data-connections"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:37:13.370Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-corpus.test.ts",
+                "title": "CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-corpus.test.ts",
+                "title": "CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-corpus.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12344,
+            "titles": [
+              {
+                "title": "CM-S5-SYNC-FIXTURES: common JSON corpus version/digest, valid and malformed wire/state transcripts and live-evidence coverage index",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-SYNC-FIXTURES: JUnit reads the identical packaged corpus and rejects digest/version drift",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:31:38.849Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+                "title": "CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-wire.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1103,
+            "titles": [
+              {
+                "title": "CM-S5-WIRE-TS: shared endpoint safety cases retain values across read list and patch boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: unsupported opaque producer inputs remain server-owned readonly metadata",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: producer projection remains list-decodable and daemon owns address dialect rejection",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: bounded strict TypeScript v2 reply decoding and descriptor refusal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: rejects accessor prototype symbol sparse cyclic and excessive data without invoking getters",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: validates root key operation mode epoch and stale test tuple before use",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-WIRE-TS: rejects private public-config values and strips untrusted error copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:38:42.339Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
+                "title": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-wire.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23232,
+            "titles": [
+              {
+                "title": "CM-S5-WIRE-KT: Kotlin v2 DTO decoding matches common corpus and preserves legacy gateway types",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "55adb15a3",
+        "ranAt": "2026-10-29T15:18:23.711Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/ipc-lane.test.ts",
+                "title": "CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/ipc-lane.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 481,
+            "titles": [
+              {
+                "title": "CM-S5-TRANSPORT-TS: actual persistent socket framing, multiplexing, write-outcome, overflow, timeout/cancel/close and one-shot compatibility",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: real late canceled reply cannot resolve another request or close a healthy lane",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: queued cancellation backpressure capacity and timeout preserve exact write truth",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: malformed duplicate unsolicited UTF8 and oversized frames reject safely",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: disconnects remote errors serialization and ID exhaustion never leak or evict unknown requests",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TRANSPORT-TS: aggregate byte pressure refuses before write and teardown retains no owned listeners",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "2772bd9a4",
+        "ranAt": "2026-10-29T15:33:17.819Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-transport.test.ts",
+                "title": "CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5729,
+            "titles": [
+              {
+                "title": "CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "300eff40c",
+        "ranAt": "2026-10-29T15:38:33.421Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-model.test.ts",
+                "title": "CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-model.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 437,
+            "titles": [
+              {
+                "title": "CM-S5-STATE-TS: all list states, full-key selection, root/view/epoch guards, counts/filters/search and committed reveal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "3fa48b8f5",
+        "ranAt": "2026-10-29T15:42:56.912Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-model.test.ts",
+                "title": "CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-model.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4592,
+            "titles": [
+              {
+                "title": "CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "863c1cc5a",
+        "ranAt": "2026-10-29T15:55:42.425Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+                "title": "CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+                "title": "CM-S5-OWNER-TS: exact expiry erases temporary inputs and epoch restart never resumes or replays old authority",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+                "title": "CM-S5-OWNER-TS: unavailable session features refuse without a claimed-lane Saved fallback",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+                "title": "CM-S5-OWNER-TS: disposal deadline closes only owned lanes even when end reply is lost",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/session-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1873,
+            "titles": [
+              {
+                "title": "CM-S5-OWNER-TS: real workbench control/data/Saved lanes, heartbeat/resume/epoch, root retention and disposal",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OWNER-TS: exact expiry erases temporary inputs and epoch restart never resumes or replays old authority",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OWNER-TS: unavailable session features refuse without a claimed-lane Saved fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OWNER-TS: disposal deadline closes only owned lanes even when end reply is lost",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "f5819230d",
+        "ranAt": "2026-10-29T16:14:53.729Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-owner.test.ts",
+                "title": "CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4626,
+            "titles": [
+              {
+                "title": "CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:33:40.176Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-draft.test.ts",
+                "title": "CM-S5-FORM-TS: repeated driver rendering reuses validators without a global compiler cache",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-draft.test.ts",
+                "title": "CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-draft.test.ts",
+                "title": "CM-S5-FORM-TS: unsafe input and unknown shapes refuse without changing draft or invoking getters",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-draft.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1099,
+            "titles": [
+              {
+                "title": "CM-S5-FORM-TS: repeated driver rendering reuses validators without a global compiler cache",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-FORM-TS: every descriptor, safe credential intents, pinned/read-only edits and dirty zero-effect Cancel",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-FORM-TS: unsafe input and unknown shapes refuse without changing draft or invoking getters",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "7faf99e13",
+        "ranAt": "2026-10-29T16:42:41.556Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-draft.test.ts",
+                "title": "CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-draft.test.ts",
+                "title": "CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-draft.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5143,
+            "titles": [
+              {
+                "title": "CM-S5-FORM-KT: Kotlin descriptor/credential serialization and dirty navigation parity without Settings persistence",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-FORM-KT: shared public fields require strict UTF8 percent decoding in both clients",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:42:28.488Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4562,
+            "titles": [
+              {
+                "title": "CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:44:25.280Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
+                "title": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-mutation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 27952,
+            "titles": [
+              {
+                "title": "CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "7bb98c890",
+        "ranAt": "2026-10-30T18:05:14.854Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+                "title": "CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+                "title": "CM-S5-TEST-TS: known input rejection is actionable without false worker cleanup, while prior uncertainty keeps its source",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/draft-test.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13985,
+            "titles": [
+              {
+                "title": "CM-S5-TEST-TS: identical Test/Save input, optional Test, repeated clicks, exact stale-result identity and cancel/drain behavior",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TEST-TS: real supervisor timeout keeps its transport and never treats the result as drain",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-TEST-TS: known input rejection is actionable without false worker cleanup, while prior uncertainty keeps its source",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "244aec78e",
+        "ranAt": "2026-11-01T05:47:13.567Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-test.test.ts",
+                "title": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-test.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 32267,
+            "titles": [
+              {
+                "title": "CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "6f78b8de2",
+        "ranAt": "2026-10-29T17:59:31.949Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1706,
+            "titles": [
+              {
+                "title": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "8f1861afd",
+        "ranAt": "2026-10-29T18:07:35.864Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-removal.test.ts",
+                "title": "CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-removal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11551,
+            "titles": [
+              {
+                "title": "CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:35:12.881Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
+                "title": "CM-S5-RENDER-TS: product icons cover every driver and the icon picker supports selection and keyboard navigation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/feedback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2350,
+            "titles": [
+              {
+                "title": "CM-S5-RENDER-TS: product icons cover every driver and the icon picker supports selection and keyboard navigation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: fixed two-line history retains safe messages, cycles in a popup, and survives manager reopen",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: per-row removal captures its own target with dirty-draft cancellation and stale-row refusal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3171,
+            "titles": [
+              {
+                "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: list precedes registration at every width and toolbar icons retain accessible names",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: schema-source Path uses a functional icon picker and initializes its fixed format",
+                "result": "pass"
+              },
+              {
+                "title": "Connections repository default matches the deepest registered containing path with directory boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "Connections defaults to opened context and preserves manual selection and dirty drafts across reopen",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: Refresh recovers repository discovery after reload, retaining Saved registrations and expiring Temporary ones",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: repository discovery retries ignore stale replies and restore unselected guidance without an opened-path match",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:40:22.862Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-render.test.ts",
+                "title": "CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-render.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 22577,
+            "titles": [
+              {
+                "title": "CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t20",
+        "commit": "edf10ffe1",
+        "ranAt": "2026-10-30T14:57:55.805Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/entry.test.ts",
+                "title": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/entry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2258,
+            "titles": [
+              {
+                "title": "CM-S5-ENTRY-TS: manifest Settings discovery and palette/editor route equivalence with explicit registered roots",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t21",
+        "commit": "5e347aa1c",
+        "ranAt": "2026-10-29T19:43:06.192Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-kotlin-entry.test.ts",
+                "title": "CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-kotlin-entry.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 27500,
+            "titles": [
+              {
+                "title": "CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t22",
+        "commit": "86515b7ec",
+        "ranAt": "2026-10-29T19:49:45.573Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-WINDOW: two real workbench/project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+                "title": "CM-S5-WINDOW: two real workbench owners isolate same IDs, overlapping lane IDs, roots and disposal",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-isolation.test.ts",
+                "title": "CM-S5-WINDOW: two real project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 28935,
+            "titles": [
+              {
+                "title": "CM-S5-WINDOW: two real project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1886,
+            "titles": [
+              {
+                "title": "CM-S5-WINDOW: two real workbench owners isolate same IDs, overlapping lane IDs, roots and disposal",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t23",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:43:19.741Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-SYNC: TypeScript and Kotlin execute identical wire/sc7 recovery transcripts and divergent-consumer negative controls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+                "title": "CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+                "title": "CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations",
+                "result": "pass"
+              },
+              {
+                "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+                "title": "CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-parity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 64420,
+            "titles": [
+              {
+                "title": "CM-S5-SYNC: complete TypeScript and Kotlin wire/sc7 outputs match and divergent consumer controls fail",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-SYNC: actual client bundle inputs exclude daemon storage and provider implementations",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-SYNC: native signed-operation recovery matrix preserves original attempts revisions and cleanup targets",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2902,
+            "titles": [
+              {
+                "title": "CM-S5-OUTCOME-TS: expired ticket received before submit is dismissible without a mutation or replay",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: pending polling is bounded and malformed committed replies reconcile without another create",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: temporary expiry erases attempts while saved unknowns survive view close and owner resume",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: resource limits refuse before ticket and never evict an unknown operation",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-OUTCOME-TS: malformed ticket correlation fails before mutation and draft remains editable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1343,
+            "titles": [
+              {
+                "title": "CM-S5-REMOVE-TS: exact selection confirmation, zero-effect Cancel, busy/conflict/unknown and independent ticket-only cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-REMOVE-TS: all twenty unchanged sc6 consumer snapshots keep the exact confirmation and phase copy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t24",
+        "commit": "02bd623fb",
+        "ranAt": "2026-10-29T20:34:29.967Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-privacy.test.ts",
+                "title": "CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-privacy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 29553,
+            "titles": [
+              {
+                "title": "CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t25",
+        "commit": "cfb166a34",
+        "ranAt": "2026-10-29T21:39:25.738Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-compatibility.test.ts",
+                "title": "CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-compatibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 114036,
+            "titles": [
+              {
+                "title": "CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t26",
+        "commit": "c1d7950c2",
+        "ranAt": "2026-10-30T04:08:46.065Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S5-UI-VSCODE: actual extension host light/dark/highcontrast, keyboard, Settings/routes and all manager state flows against isolated daemon",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t26/result.json; no live UI actions were verified; CUA existing-window misbinding, copied-app timeouts/invalid binding, and isolated positive-peer socket replacement invalidate acceptance. Default fixture mutation regression and backend typecheck passed."
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: CM-S5-UI-VSCODE: actual extension host light/dark/highcontrast, keyboard, Settings/routes and all manager state flows against isolated daemon"
+      },
+      {
+        "taskId": "t30",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:44:53.050Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+                "title": "CM-DEFAULT: runtime is enabled independently of unverified release evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+                "title": "CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen and removal with real file driver",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2112,
+            "titles": [
+              {
+                "title": "CM-DEFAULT: runtime is enabled independently of unverified release evidence",
+                "result": "pass"
+              },
+              {
+                "title": "CM-DEFAULT: fresh initialization refuses unregistered legacy symlink and interrupted roots without modifying their data",
+                "result": "pass"
+              },
+              {
+                "title": "CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen and removal with real file driver",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/connection-manager-release.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 393,
+            "titles": [
+              {
+                "title": "CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t31",
+        "commit": "77571a318",
+        "ranAt": "2026-11-01T06:48:38.214Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-packaging.test.ts",
+                "title": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/connection-manager-packaging.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 38096,
+            "titles": [
+              {
+                "title": "CM-S5-PACKAGING: fresh targeted Node22 typecheck/bundle/runtime and JDK21 compile/assemble smoke; no early full suite",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t32",
+        "commit": "ffaf014af",
+        "ranAt": "2026-10-30T05:27:43.361Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "CM-S5-SWEEP: after all implementation freeze commit/tree/test manifests; fresh Node22 builds plus full backend and explicit extension suites, JDK21 Gradle test/build and applicable verifyPlugin; retain original results and20subject acceptance matrix",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/BUILD-REPORT.md; evidence/t32/summary.json and run-b4f7a82cb preserve all original raw results, source/test manifests and zero drift. Native full revalidation passes after a test-only descriptor fix; legacy TS corrections27/27 and logging diagnostics8/8 pass separately. Broader unresolved failures/cancellations and unavailable newer-IDE verifier keep the required full-sweep test failed. Packages are ready for manual installation/testing, not release."
+            }
+          }
+        ],
+        "files": [],
+        "note": "no test files to run; reported as failed by the builder: CM-S5-SWEEP: after all implementation freeze commit/tree/test manifests; fresh Node22 builds plus full backend and explicit extension suites, JDK21 Gradle test/build and applicable verifyPlugin; retain original results and20subject acceptance matrix"
+      }
+    ]
+  }
+}

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -88,12 +89,11 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 						} catch (err) {
 							// Non-fatal: some dialects/permissions don't expose
 							// indexes. Log + omit; the schema itself is still valuable.
-							log.warn(
-								{ runId: args.runId, taskId: args.task.taskId, connectionId, table,
-								  err: (err as Error).message },
-								'listIndexes failed; omitting indexes from deep schema',
-							);
-							skipped.push({ what: `the indexes of ${table}`, reason: `the driver could not list them (${(err as Error).message})` });
+							captureAnalysisDiagnostics(log, args.connectionExecution).emit('warn', () => [{
+								runId: args.runId, taskId: args.task.taskId, connectionId, table,
+								err: (err as Error).message
+							}, 'listIndexes failed; omitting indexes from deep schema']);
+							skipped.push({ what: `the indexes of ${table}`, reason: args.connectionExecution?.mode === 'session-memory' ? 'The driver could not list indexes.' : `the driver could not list them (${(err as Error).message})` });
 						}
 					}
 					break;
@@ -126,8 +126,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 				...(indexes !== undefined ? { indexes: indexes.indexes } : {}),
 			};
 
-			log.info(
-				{
+			captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 					runId:        args.runId,
 					taskId:       args.task.taskId,
 					connectionId,
@@ -136,9 +135,7 @@ export const dataSchemaTableRuntime: TemplateRuntime = {
 					source:       schema.source,
 					depth:        deep ? 'deep' : 'shallow',
 					indexCount:   indexes?.indexes.length ?? 0,
-				},
-				'data.schema.table: extracted',
-			);
+			}, 'data.schema.table: extracted']);
 
 			return {
 				outputs: new Map<string, unknown>([['table-schema', result]]),

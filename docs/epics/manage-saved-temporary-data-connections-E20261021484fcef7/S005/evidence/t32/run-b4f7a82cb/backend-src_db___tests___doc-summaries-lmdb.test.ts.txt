@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: writeDocSummary + getDocSummary round-trip
+ok 1 - writeDocSummary + getDocSummary round-trip
+  ---
+  duration_ms: 243.339042
+  type: 'test'
+  ...
+# Subtest: writeDocSummary overwrites an existing summary
+ok 2 - writeDocSummary overwrites an existing summary
+  ---
+  duration_ms: 219.440417
+  type: 'test'
+  ...
+# Subtest: getDocSummary returns null for unknown entity
+ok 3 - getDocSummary returns null for unknown entity
+  ---
+  duration_ms: 141.826833
+  type: 'test'
+  ...
+# Subtest: getDocSummary returns null for known entity with no summary
+ok 4 - getDocSummary returns null for known entity with no summary
+  ---
+  duration_ms: 146.043875
+  type: 'test'
+  ...
+# Subtest: writeDocSummary rejects an unknown entity
+ok 5 - writeDocSummary rejects an unknown entity
+  ---
+  duration_ms: 120.334208
+  type: 'test'
+  ...
+# Subtest: writeDocSummary rejects an unregistered repo
+ok 6 - writeDocSummary rejects an unregistered repo
+  ---
+  duration_ms: 126.548291
+  type: 'test'
+  ...
+# Subtest: writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo
+ok 7 - writeDocSummaryIfCurrent writes when the entity exists with the summarised body, writes nothing and returns entity-gone or body-changed otherwise, and throws for an unregistered repo
+  ---
+  duration_ms: 186.214166
+  type: 'test'
+  ...
+# Subtest: listDocSummariesForRepo returns every summary for the repo
+ok 8 - listDocSummariesForRepo returns every summary for the repo
+  ---
+  duration_ms: 215.401834
+  type: 'test'
+  ...
+# Subtest: countDocSummariesForRepo matches the list length
+ok 9 - countDocSummariesForRepo matches the list length
+  ---
+  duration_ms: 210.109875
+  type: 'test'
+  ...
+# Subtest: listDocSummaryEntityIdsForRepo returns the same entity ids
+ok 10 - listDocSummaryEntityIdsForRepo returns the same entity ids
+  ---
+  duration_ms: 181.090542
+  type: 'test'
+  ...
+# Subtest: listDocSummariesForRepo returns empty for an unregistered repo
+ok 11 - listDocSummariesForRepo returns empty for an unregistered repo
+  ---
+  duration_ms: 171.750042
+  type: 'test'
+  ...
+# Subtest: deleteDocSummary drops primary + secondary index
+ok 12 - deleteDocSummary drops primary + secondary index
+  ---
+  duration_ms: 201.024792
+  type: 'test'
+  ...
+# Subtest: deleteDocSummariesForRepo scoped drop
+ok 13 - deleteDocSummariesForRepo scoped drop
+  ---
+  duration_ms: 200.720625
+  type: 'test'
+  ...
+# Subtest: deleteEntitiesForFile cascades to the summary row
+ok 14 - deleteEntitiesForFile cascades to the summary row
+  ---
+  duration_ms: 219.604333
+  type: 'test'
+  ...
+# Subtest: placeholder rows persist the errorCode field
+ok 15 - placeholder rows persist the errorCode field
+  ---
+  duration_ms: 211.001167
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3125.195375

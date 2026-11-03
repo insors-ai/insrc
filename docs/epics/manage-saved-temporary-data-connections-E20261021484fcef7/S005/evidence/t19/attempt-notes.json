@@ -1,0 +1,41 @@
+{
+  "attempt1": {
+    "nodeTests": 1,
+    "pass": 1,
+    "junitTests": 5,
+    "failures": 0,
+    "note": "Initial native event, control and lifecycle cases passed."
+  },
+  "attempt-shared1": {
+    "nodeTests": 4,
+    "pass": 3,
+    "fail": 1,
+    "cause": "Corpus file also invokes JUnit; default sandbox could not create Gradle wrapper lock. Reran with authorized Gradle access; no source change."
+  },
+  "attempt-native2": {
+    "nodeTests": 3,
+    "pass": 1,
+    "fail": 2,
+    "cause": "Overlapping Gradle invocations raced in shared Kotlin compiler outputs; also exposed a Saved-probe fixture prerequisite.",
+    "recovery": "All invocations completed naturally; serial nonincremental compile succeeded. Subsequent native commands use --test-concurrency=1. No processes terminated or caches manually deleted."
+  },
+  "attempt-native3": {
+    "nodeTests": 3,
+    "pass": 2,
+    "fail": 1,
+    "cause": "Saved probe preparation correctly refuses when probeMetadataReady is absent in this Saved-management fixture.",
+    "correction": "Resume/modality case uses a new Temporary draft and closed loopback port, exercising real supervisor/worker without altering any producer gate."
+  },
+  "focused-native": {
+    "nodeTests": 3,
+    "pass": 3,
+    "junitTests": 12,
+    "failures": 0
+  },
+  "focused-shared": {
+    "nodeTests": 4,
+    "pass": 4,
+    "junitTests": 2,
+    "failures": 0
+  }
+}

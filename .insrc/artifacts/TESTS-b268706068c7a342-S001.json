@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "b268706068c7a342",
+    "storyId": "S001",
+    "createdAt": "2026-10-27T06:29:25.184Z",
+    "updatedAt": "2026-10-27T06:29:25.184Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-27T06:28:52.033Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "ec9ea015a",
+        "ranAt": "2026-10-27T06:29:25.184Z",
+        "testsPassed": true,
+        "tests": [],
+        "files": [],
+        "note": "no tests named for a trivial build"
+      }
+    ]
+  }
+}

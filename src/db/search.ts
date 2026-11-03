@@ -18,7 +18,8 @@
  */
 
 import type { DbClient } from './client.js';
-import type { Entity, EntityKind } from '../shared/types.js';
+import type { Entity, EntityKind, RelationEvidence } from '../shared/types.js';
+
 import {
 	entityU64ForId,
 	entityIdsByU64s,
@@ -33,6 +34,9 @@ import {
 	type TraversalOpts,
 } from './graph/traversal.js';
 import { getLogger } from '../shared/logger.js';
+
+/** An entity reached through one relationship, with that relationship's evidence (Epic c2ba6fa6 s7). */
+export type EntityWithEvidence = Entity & { readonly evidence: RelationEvidence };
 
 const log = getLogger('search');
 
@@ -183,28 +187,28 @@ export async function searchEntities(
 // ---------------------------------------------------------------------------
 
 /** Find all entities that directly call the entity with the given id. */
-export async function findCallers(db: DbClient, entityId: string): Promise<Entity[]> {
+export async function findCallers(db: DbClient, entityId: string): Promise<EntityWithEvidence[]> {
 	const results = await neighborEntities(db, entityId, 'CALLS', 'in');
 	log.debug({ entity: entityId, callers: results.length }, 'findCallers');
 	return results;
 }
 
 /** Find all entities directly called by the entity with the given id. */
-export async function findCallees(db: DbClient, entityId: string): Promise<Entity[]> {
+export async function findCallees(db: DbClient, entityId: string): Promise<EntityWithEvidence[]> {
 	const results = await neighborEntities(db, entityId, 'CALLS', 'out');
 	log.debug({ entity: entityId, callees: results.length }, 'findCallees');
 	return results;
 }
 
 /** Find all entities defined in a file (DEFINES edges from File). */
-export async function findDefinedIn(db: DbClient, fileEntityId: string): Promise<Entity[]> {
+export async function findDefinedIn(db: DbClient, fileEntityId: string): Promise<EntityWithEvidence[]> {
 	const results = await neighborEntities(db, fileEntityId, 'DEFINES', 'out');
 	log.debug({ file: fileEntityId, defined: results.length }, 'findDefinedIn');
 	return results;
 }
 
 /** Find all files/modules a file imports (IMPORTS edges). */
-export async function findImports(db: DbClient, fileEntityId: string): Promise<Entity[]> {
+export async function findImports(db: DbClient, fileEntityId: string): Promise<EntityWithEvidence[]> {
 	const results = await neighborEntities(db, fileEntityId, 'IMPORTS', 'out');
 	log.debug({ file: fileEntityId, imports: results.length }, 'findImports');
 	return results;
@@ -313,36 +317,33 @@ export async function sccEntities(
 }
 
 /**
- * Internal: 1-hop neighbour query that returns hydrated `Entity` rows.
- * Pipeline:
- *   string id → u64 → outNeighbors / inNeighbors (kind-filtered)
- *   → bulk reverse lookup u64 → string ids
- *   → hydrate via getEntitiesByIds
- *
- * If the source entity isn't known to LMDB, returns []. If a neighbor
- * u64 has no corresponding string id (shouldn't happen under normal
- * cascade rules but possible if a write was partial), it's silently
- * dropped during reverse-mapping.
+ * The entities one kind of relationship reaches from `entityId`, each with the
+ * evidence its relationship holds (Epic c2ba6fa6 s7). One kind is read, and an
+ * edge key is unique per (from, kind, to), so each neighbour has exactly one
+ * relationship; one stored before s7 reads 'unknown'.
  */
 async function neighborEntities(
 	db: DbClient,
 	entityId: string,
 	kind: 'CALLS' | 'DEFINES' | 'IMPORTS',
 	direction: 'in' | 'out',
-): Promise<Entity[]> {
+): Promise<EntityWithEvidence[]> {
 	const u64 = await entityU64ForId(entityId);
 	if (u64 === undefined) return [];
 
-	const neighborU64s = direction === 'out'
-		? await outNeighbors(u64, { kindFilter: [kind] })
-		: await inNeighbors(u64, { kindFilter: [kind] });
-	if (neighborU64s.length === 0) return [];
+	const relations = direction === 'out'
+		? await outNeighbors(u64, { kindFilter: [kind], withEvidence: true })
+		: await inNeighbors(u64, { kindFilter: [kind], withEvidence: true });
+	if (relations.length === 0) return [];
 
-	const idMap = await entityIdsByU64s(neighborU64s);
+	const idMap = await entityIdsByU64s(relations.map(r => r.u64));
+	const evidenceById = new Map<string, RelationEvidence>();
 	const stringIds: string[] = [];
-	for (const u of neighborU64s) {
-		const sid = idMap.get(u);
-		if (sid !== undefined) stringIds.push(sid);
+	for (const r of relations) {
+		const sid = idMap.get(r.u64);
+		if (sid === undefined) continue;
+		stringIds.push(sid);
+		evidenceById.set(sid, r.evidence);
 	}
-	return getEntitiesByIds(db, stringIds);
+	return (await getEntitiesByIds(db, stringIds)).map(e => ({ ...e, evidence: evidenceById.get(e.id) ?? 'unknown' }));
 }

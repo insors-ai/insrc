@@ -92,6 +92,7 @@ export interface LLMResponse {
 export interface CompletionOpts {
   /** Optional immutable per-review admission contract; absent for non-review callers. */
   readonly reviewBudget?: ReviewExecutionBudget | undefined;
+	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   maxTokens?: number;
   temperature?: number;
   tools?: ToolDefinition[] | undefined;
@@ -194,7 +195,7 @@ export interface LLMProvider {
   complete(messages: LLMMessage[], opts?: CompletionOpts): Promise<LLMResponse>;
   stream(messages: LLMMessage[], opts?: CompletionOpts): AsyncIterable<string>;
   /** Embed text into a vector. Returns empty array if not supported. */
-  embed(text: string): Promise<number[]>;
+	embed(text: string, execution?: import('./step-context.js').ConnectionExecutionContext): Promise<number[]>;
   readonly supportsTools: boolean;
   /** The largest prompt, in characters, the provider accepts; undefined when not
    *  known in advance (a size refusal then tells the caller). ISSUE-aef82b03. */
@@ -253,6 +254,7 @@ export interface BoundedReviewSessionOpts {
   readonly codeTaskCommands?: readonly string[] | undefined;
   /** Optional immutable per-review admission contract; absent for non-review callers. */
   readonly reviewBudget?: ReviewExecutionBudget | undefined;
+	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   /** The repo root the session reads. */
   readonly cwd:        string;
   /** Time allowed for the whole call, its one possible retry included. */
@@ -268,6 +270,7 @@ export interface BoundedReviewSessionOpts {
 }
 
 export interface ActivityReviewSessionOpts {
+	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   readonly mode: 'activity';
   readonly cwd: string;
   readonly inactivityMs: 1800000;
@@ -292,6 +295,8 @@ export type ReviewSessionOpts = BoundedReviewSessionOpts | ActivityReviewSession
 export interface ProviderCapabilities {
   /** Native review activity adapter; absent means unsupported. */
   readonly reviewActivity?: boolean | undefined;
+  /** Enforces boundedInput or refuses it before any model call. Omitted means unsupported. */
+  readonly boundedStructuredInput?: boolean | undefined;
   /** `completeStructured` honours its `schema` argument at the wire layer. */
   readonly structuredOutput: boolean;
   /** Tool/function calling in chat completions. */
@@ -321,6 +326,8 @@ export type StructuredSchema = Readonly<Record<string, unknown>>;
 export interface StructuredCompletionOpts {
   /** Optional immutable per-review admission contract; absent for non-review callers. */
   readonly reviewBudget?: ReviewExecutionBudget | undefined;
+  readonly boundedInput?: { readonly maxInputChars: number; readonly contextMode: 'isolated-structured' } | undefined;
+	readonly connectionExecution?: import('./step-context.js').ConnectionExecutionContext | undefined;
   readonly temperature?: number | undefined;
   readonly maxTokens?:   number | undefined;
   /** Default 3. The validation-feedback retry loop's cap. */
@@ -586,6 +593,8 @@ export interface AgentConfig {
 
 export type Language = 'python' | 'go' | 'typescript' | 'javascript'
   | 'java' | 'scala' | 'kotlin'
+  // Epic c2ba6fa6 s9: 'c' and 'cpp' are one family when calls are matched across files
+  | 'rust' | 'csharp' | 'c' | 'cpp'
   | 'markdown' | 'html' | 'css' | 'yaml' | 'json' | 'toml' | 'shell'
   | 'sql' | 'proto' | 'graphql' | 'dockerfile' | 'config';
 
@@ -603,7 +612,10 @@ export type EntityKind =
   | 'section'
   | 'config'
   // External-service dependency node (sc1 — E20260806914cbf5e:S001)
-  | 'externalEndpoint';
+  | 'externalEndpoint'
+  // SQL objects (Epic c2ba6fa6 s9)
+  | 'table'
+  | 'view';
 
 export type RelationKind =
   | 'DEFINES'
@@ -708,6 +720,74 @@ export interface Relation {
   /** Whether 'to' is a resolved entity id or a raw import specifier */
   resolved: boolean;
   meta?: Record<string, unknown>;
+  /** How the writer established it (Epic c2ba6fa6 s7); absent = not known, stored empty ('unknown'). */
+  evidence?: RelationEvidence | undefined;
+}
+
+// ---------------------------------------------------------------------------
+// File commit (Epic c2ba6fa6 sc2) -- the one write for a file's rows
+// ---------------------------------------------------------------------------
+
+/**
+ * How a relationship was established (sc3, Epic c2ba6fa6 s7), stored as the
+ * one-byte value of its edge rows and returned wherever relationships are read.
+ *   'unknown'   stored before this change (an empty value), or not recorded
+ *   'extracted' read directly from the source text
+ *   'inferred'  established by resolution across files
+ *   'chosen'    one target picked among several candidates; reserved, written
+ *               only if a choosing rule is added (none is)
+ *   'model'     proposed by a model
+ */
+export type RelationEvidence = 'unknown' | 'extracted' | 'inferred' | 'chosen' | 'model';
+
+/** One stored relationship as it is read (sc3). */
+export interface RelationRead {
+  readonly from:     string;
+  readonly kind:     RelationKind;
+  readonly to:       string;
+  readonly evidence: RelationEvidence;
+}
+
+/** A name or path reference the cross-file pass resolves later: the raw
+ *  target and the record the pending row keeps (its file and repository). */
+export interface UnresolvedRef {
+  readonly to:   string;
+  readonly meta: Record<string, unknown>;
+}
+
+/** One relationship of a file commit, from an entity of the file. */
+export interface RelationWrite {
+  readonly from:     string;
+  readonly kind:     RelationKind;
+  readonly target:
+    | { readonly stored: string; readonly meta?: Record<string, unknown> | undefined }   // id of an entity expected to be stored
+    | { readonly pending: UnresolvedRef };                                                 // name/path reference for the cross-file pass
+  readonly evidence: RelationEvidence;
+}
+
+/** A file's full new state, handed to the store's commitFile. */
+export interface FileCommit {
+  readonly repoPath:    string;
+  readonly filePath:    string;
+  /** null = the file is removed. */
+  readonly contentHash: string | null;
+  /** Empty when removed; module stubs (kind 'module', repo '') go to the shared-modules rows. */
+  readonly entities:    Entity[];
+  readonly relations:   RelationWrite[];
+}
+
+/** What one file commit did. */
+export interface FileCommitResult {
+  readonly generation:                 number;
+  readonly entitiesWritten:            number;
+  readonly entitiesRemoved:            number;
+  readonly relationsStored:            number;
+  /** Includes { stored } targets found absent. */
+  readonly relationsPending:           number;
+  readonly relationsUnwritable:        number;
+  /** Incoming relationships whose target entity was removed. */
+  readonly relationsReturnedToPending: number;
+  readonly vectorsOutstanding:         number;
 }
 
 // ---------------------------------------------------------------------------
@@ -723,8 +803,13 @@ export interface Relation {
 export interface SteeringSelection {
   /** Install the steering block into the repo's CLAUDE.md (Claude Code). */
   readonly claude?: boolean | undefined;
-  /** Install the steering block into the repo's AGENTS.md (Codex). */
+  /** Install the steering block into the repo's AGENTS.md (Codex, Mistral Vibe). */
   readonly agents?: boolean | undefined;
+  /** Register the insrc MCP server with the Mistral Vibe CLI (`vibe mcp add`).
+   *  Vibe reads the same AGENTS.md steering block as Codex, so the block
+   *  injection is covered by `agents`; this flag only gates the MCP
+   *  registration. */
+  readonly vibe?: boolean | undefined;
 }
 
 /**
@@ -736,7 +821,7 @@ export interface SteeringSelection {
  * fork render it. Note: the `agents` selection flag maps to the `codex`
  * client, so outcomes are keyed on the CLIENT name to avoid that mislabel.
  */
-export type McpClient = 'claude' | 'codex';
+export type McpClient = 'claude' | 'codex' | 'vibe';
 export type McpRegisterAction = 'registered' | 'unchanged' | 'skipped' | 'failed';
 export interface McpClientOutcome {
   readonly client: McpClient;
@@ -755,7 +840,7 @@ export interface RegisteredRepo {
   kind?:        'workspace' | 'shared-modules';
   /**
    * Namespace for `kind === 'shared-modules'` rows; absent
-   * otherwise. Possible values: 'jvm' | 'npm' | 'python' | 'go'.
+   * otherwise. Possible values: 'jvm' | 'npm' | 'python' | 'go' | 'cargo' | 'nuget' | 'native'.
    */
   namespace?:   string;
   path:         string;
@@ -842,7 +927,13 @@ export type IndexJob =
    * upserts entities, then enqueues one of these per doc entity
    * so the summary follows the body.
    */
-  | { kind: 'doc-summarise-entity'; entityId: string };
+  | { kind: 'doc-summarise-entity'; entityId: string }
+  /**
+   * Group a graph-complete repository's code into subsystems and summarise
+   * the new ones (Epic c2ba6fa6 s8). A summary-lane job, enqueued after a full
+   * index, a settle or a clean-up that leaves the repository's graph complete.
+   */
+  | { kind: 'subsystems'; repoPath: string };
 
 // ---------------------------------------------------------------------------
 // Config management
@@ -1106,12 +1197,42 @@ export interface DaemonStatus {
    * daemon.status is refused meanwhile with the same activity and reason.
    */
   maintenance?:      { state: 'compacting'; since: string; activity: string; reason: string };
+  /**
+   * Present ONLY with daemon threads (Epic 86197ac6 s4): one entry per live
+   * worker thread, what it is for and what it is doing now. Absent without
+   * daemon threads, so a consumer that does not know the field sees no change.
+   */
+  threads?:          ThreadView[];
+}
+
+/** What a daemon worker thread is for (`ThreadView.role`). */
+export type ThreadRole = 'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state';
+
+/** One daemon worker thread in `DaemonStatus.threads` and the debug-status answer. */
+export interface ThreadView {
+  threadId:    number;
+  role:        ThreadRole;
+  /** The request class it serves; undefined for a worker that serves none (document summaries). */
+  cls:         'admin' | 'session' | 'indexing' | undefined;
+  /** The client session a session worker serves. */
+  session?:    { label: string; pid: number } | undefined;
+  /** Serving a request now (the document-summary thread: running a summary). */
+  busy:        boolean;
+  /** The method of its oldest request in flight, and how long that has run. */
+  method?:     string | undefined;
+  elapsedMs?:  number | undefined;
+  /** Requests waiting in its session's queue. */
+  queued:      number;
+  /** Detached workflow runs it owns that are still running. */
+  activeRuns:  number;
 }
 
 /** Per-lane state of the daemon's index queue (`DaemonStatus.queueLanes`). */
 export interface QueueLanes {
   index:   { depth: number; running: boolean };
   summary: { depth: number; running: boolean; sweep?: { repoPath: string; done: number; total: number } };
+  /** The vector backfill's own lane (Epic c2ba6fa6 s2); absent from a daemon that predates it. */
+  backfill?: { depth: number; running: boolean } | undefined;
 }
 
 /**

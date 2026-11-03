@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request
+ok 1 - maintenance lock at the router: a target missing for 30 s answers the not-available error, and one registering within 30 s serves the held request
+  ---
+  duration_ms: 556.364917
+  type: 'test'
+  ...
+# Subtest: an admin or indexing request reaches its registered target and a session request runs on the main thread
+ok 2 - an admin or indexing request reaches its registered target and a session request runs on the main thread
+  ---
+  duration_ms: 173.860584
+  type: 'test'
+  ...
+# Subtest: a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires
+ok 3 - a socket closed during a unary request on a worker: the handler completes (its side effect is visible) and no reply is written; during a stream request the stream's AbortSignal fires
+  ---
+  duration_ms: 461.796291
+  type: 'test'
+  ...
+# Subtest: debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself
+ok 4 - debug-status called right after other requests reports each client's lastMethod exactly as today, including 'daemon.debug-status' for the caller itself
+  ---
+  duration_ms: 291.236833
+  type: 'test'
+  ...
+# Subtest: requests held for a class that stops being routed are served in this thread
+ok 5 - requests held for a class that stops being routed are served in this thread
+  ---
+  duration_ms: 41.940625
+  type: 'test'
+  ...
+# Subtest: a unary request cancelled while held for a worker ends its activity: the request-ended callback runs, so idle maintenance is not blocked for good
+ok 6 - a unary request cancelled while held for a worker ends its activity: the request-ended callback runs, so idle maintenance is not blocked for good
+  ---
+  duration_ms: 0.610542
+  type: 'test'
+  ...
+# Subtest: router: Router.request with shared reaches the shared-state target and is held while none is registered
+ok 7 - router: Router.request with shared reaches the shared-state target and is held while none is registered
+  ---
+  duration_ms: 33.077292
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1887.823

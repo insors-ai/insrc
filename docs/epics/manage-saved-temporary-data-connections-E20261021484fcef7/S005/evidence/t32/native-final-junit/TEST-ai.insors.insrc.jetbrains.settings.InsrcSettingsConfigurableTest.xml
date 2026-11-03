@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="PerRoleSection persists via the sc2 gateway with a literal segment list, not a raw config write()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.0"/>
+  <testcase name="InsrcSettingsConfigurable is editable via the sc2 gateway, not a raw config write()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.001"/>
+  <testcase name="InsrcSettingsConfigurable host registers a PerRepoSection and reads perRepoOverrides plus registeredRepos (S005)()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.0"/>
+  <testcase name="PerRepoSection persists via the sc2 gateway with a byRepo segment list, not a raw config write (S005)()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.0"/>
+  <testcase name="InsrcSettingsConfigurable renders collapsible category sections with editable tables in one scrolling page (S001 a2 rework)()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.001"/>
+  <testcase name="InsrcSettingsConfigurable host renders SettingsSections and fans apply-isModified-reset to them (S004)()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.0"/>
+  <testcase name="InsrcSettingsConfigurable installs type-appropriate edit controls()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.0"/>
+  <testcase name="plugin_xml registers an applicationConfigurable pointing at InsrcSettingsConfigurable()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.0"/>
+  <testcase name="per-repo editor has no tier runner or model field()" classname="ai.insors.insrc.jetbrains.settings.InsrcSettingsConfigurableTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,3 +1,4 @@
+import { assertConnectionProviderAdmission } from '../../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -33,7 +34,9 @@ export const genericAggregateReportRuntime: TemplateRuntime = {
 	templateId: 'generic.aggregate.report',
 
 	async execute(args: TemplateExecuteArgs): Promise<TemplateExecuteResult> {
+		assertConnectionProviderAdmission(args.connectionExecution);
 		const report = await runAggregator({
+			connectionExecution: args.connectionExecution,
 			promptRelPath:   GENERIC_AGGREGATE_PROMPT_PATH,
 			target:          'generic',
 			scope:           args.intent.scope as AnalyzeScope,

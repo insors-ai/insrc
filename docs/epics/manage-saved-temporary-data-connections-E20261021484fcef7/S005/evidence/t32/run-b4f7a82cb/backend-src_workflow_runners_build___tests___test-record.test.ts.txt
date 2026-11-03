@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt
+ok 1 - the first write creates the record with one Task; a second Task is added; writing the first Task again replaces its entry only and keeps createdAt
+  ---
+  duration_ms: 7.497625
+  type: 'test'
+  ...
+# Subtest: the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)
+ok 2 - the json is TESTS-<epicHash>-<storyId>.json and the document is TESTS.md in the same folder as the Story's BUILD.md, for an Epic's Story and for a standalone one (mutation: derive the folder from the record's own time)
+  ---
+  duration_ms: 82.07575
+  type: 'test'
+  ...
+# Subtest: the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases
+ok 3 - the document shows totals, then per Task and per named test a table of result, title and file, the tests reported by the builder with their evidence, and the failures outside the named cases
+  ---
+  duration_ms: 2.418083
+  type: 'test'
+  ...
+# Subtest: the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping
+ok 4 - the stored mapping of a Task is read back as the mapping that was supplied, and an unreadable or misshapen record reads as no stored mapping
+  ---
+  duration_ms: 5.969208
+  type: 'test'
+  ...
+# Subtest: when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run
+ok 5 - when the document cannot be written after the json was, the json is put back: a first write leaves no record, a later one leaves the earlier run
+  ---
+  duration_ms: 6.574542
+  type: 'test'
+  ...
+# Subtest: text that came from the builder is rendered on one line, so it cannot add lines that read as the record's own; and an unreadable record is told from an absent one
+ok 6 - text that came from the builder is rendered on one line, so it cannot add lines that read as the record's own; and an unreadable record is told from an absent one
+  ---
+  duration_ms: 3.114209
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 346.72175

@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: legacy config on disk → exactly 1 writeFile + 1 rename; retired keys pruned, live namespaces byte-identical
+ok 1 - legacy config on disk → exactly 1 writeFile + 1 rename; retired keys pruned, live namespaces byte-identical
+  ---
+  duration_ms: 4.725875
+  type: 'test'
+  ...
+# Subtest: prune-only change (nothing to fill/repair) → still exactly 1 writeFile + 1 rename
+ok 2 - prune-only change (nothing to fill/repair) → still exactly 1 writeFile + 1 rename
+  ---
+  duration_ms: 4.341208
+  type: 'test'
+  ...
+# Subtest: already-pruned/normalized config → 0 writeFile, 0 rename, mtime unchanged (steady state)
+ok 3 - already-pruned/normalized config → 0 writeFile, 0 rename, mtime unchanged (steady state)
+  ---
+  duration_ms: 1.441917
+  type: 'test'
+  ...
+# Subtest: ENOENT → degrades to reconcileConfig(undefined) and writes defaults once (first-boot equivalence)
+ok 4 - ENOENT → degrades to reconcileConfig(undefined) and writes defaults once (first-boot equivalence)
+  ---
+  duration_ms: 0.720041
+  type: 'test'
+  ...
+# Subtest: unreadable file (EISDIR) → nothing written, errno surfaced
+ok 5 - unreadable file (EISDIR) → nothing written, errno surfaced
+  ---
+  duration_ms: 0.475542
+  type: 'test'
+  ...
+# Subtest: unreadable file (EACCES) → nothing written (skipped when running as root)
+ok 6 - unreadable file (EACCES) → nothing written (skipped when running as root)
+  ---
+  duration_ms: 0.510166
+  type: 'test'
+  ...
+# Subtest: corrupt / zero-byte JSON → aborts, writes NOTHING, on-disk bytes identical, no default-fill fallback
+ok 7 - corrupt / zero-byte JSON → aborts, writes NOTHING, on-disk bytes identical, no default-fill fallback
+  ---
+  duration_ms: 1.171833
+  type: 'test'
+  ...
+# Subtest: write failure (ENOSPC) → temp file unlinked, no partial or half-renamed document
+ok 8 - write failure (ENOSPC) → temp file unlinked, no partial or half-renamed document
+  ---
+  duration_ms: 1.866417
+  type: 'test'
+  ...
+# Subtest: concurrent modification between read stat and pre-rename re-stat → write abandoned, non-fatal
+ok 9 - concurrent modification between read stat and pre-rename re-stat → write abandoned, non-fatal
+  ---
+  duration_ms: 0.914958
+  type: 'test'
+  ...
+# Subtest: ConfigCatalogError surfaces as a structurally distinct outcome kind from I/O and parse failures
+ok 10 - ConfigCatalogError surfaces as a structurally distinct outcome kind from I/O and parse failures
+  ---
+  duration_ms: 0.722541
+  type: 'test'
+  ...
+# Subtest: the wrapper source has no ~/.insrc or config.json string literal (path resolves via PATHS.config)
+ok 11 - the wrapper source has no ~/.insrc or config.json string literal (path resolves via PATHS.config)
+  ---
+  duration_ms: 0.448708
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 230.370042

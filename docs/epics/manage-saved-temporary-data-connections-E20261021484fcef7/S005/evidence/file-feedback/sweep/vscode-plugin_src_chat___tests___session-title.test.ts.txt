@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: clampSessionTitle: a name longer than 32 chars -> 32 chars + a trailing ellipsis (ac4)
+ok 1 - clampSessionTitle: a name longer than 32 chars -> 32 chars + a trailing ellipsis (ac4)
+  ---
+  duration_ms: 0.749667
+  type: 'test'
+  ...
+# Subtest: clampSessionTitle: a name of exactly 32 chars is unchanged (no ellipsis)
+ok 2 - clampSessionTitle: a name of exactly 32 chars is unchanged (no ellipsis)
+  ---
+  duration_ms: 0.11525
+  type: 'test'
+  ...
+# Subtest: clampSessionTitle: a short name is unchanged
+ok 3 - clampSessionTitle: a short name is unchanged
+  ---
+  duration_ms: 0.048042
+  type: 'test'
+  ...
+# Subtest: parity: eval(clampSessionTitleWebviewSource()) equals clampSessionTitle for every sample (drift fails build)
+ok 4 - parity: eval(clampSessionTitleWebviewSource()) equals clampSessionTitle for every sample (drift fails build)
+  ---
+  duration_ms: 0.169584
+  type: 'test'
+  ...
+# Subtest: clampSessionTitleWebviewSource() is CSP-safe: no import/remote/vscode
+ok 5 - clampSessionTitleWebviewSource() is CSP-safe: no import/remote/vscode
+  ---
+  duration_ms: 0.08025
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 212.655667

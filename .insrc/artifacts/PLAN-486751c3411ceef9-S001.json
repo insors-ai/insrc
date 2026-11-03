@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793388503996-hkkoh3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-30T19:30:22.478Z",
+    "epicCreatedAt": "2026-10-30T19:19:13.160Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 118463,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "486751c3411ceef9",
+    "epicSlug": "shared-insors-branded-light-dark-mermaid",
+    "storyId": "S001",
+    "lldRunId": "wf-1793387884098-ijyj5y",
+    "lldEffectiveHash": "486751c3411ceef960c827289644bc406329f6d6057cb15f80c200c01611cf2a",
+    "authoredBy": "controller",
+    "approvedAt": "2026-10-30T19:32:12.085Z",
+    "rangeBase": "eb6dc30678b742d1d022bbb9fb9a0f2819ed9436"
+  },
+  "body": {
+    "summary": {
+      "prose": "Six ordered tasks: package Poppins offline (t1), build the shared theme-policy module (t2), rewire the companion shell (t3) and the docgen shell + fallback (t4), add viewer behavior tests (t5), then run the full sweep + build + a regeneration smoke and document the regen route (t6)."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Package Poppins fonts as offline assets",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "summary": "Add src/assets/fonts/poppins/{400,600,700}.woff2 (OFL-1.1) with provenance; copy-assets.mjs ships src/assets wholesale.",
+        "acceptanceChecks": [
+          "woff2 under src/assets/fonts/poppins and out/assets/fonts after build",
+          "OFL note present"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/artifact-theme/__tests__/fonts.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Shared theme-policy module (src/artifact-theme/theme.ts + fonts.ts)",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "summary": "THEME_VERSION; 6 exact brand tokens; light/dark surfaces; CONTRAST_PAIRS (NFR1); ROLE_PALETTE + legend; mermaidConfigFor(mode); pageCssFor(mode) under .insrc-viewer; DIAGRAM_OVERRIDES_CSS under .insrc-viewer-diagram (ER dark-on-Crayola); FONT_FACE_CSS base64; viewerBootScript; exportableSvg.",
+        "acceptanceChecks": [
+          "theme/fonts/contrast tests pass",
+          "no CDN, no .insrc-artifact selector"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/artifact-theme/__tests__/theme.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "src/artifact-theme/__tests__/fonts.test.ts"
+          },
+          {
+            "level": "unit",
+            "name": "src/artifact-theme/__tests__/contrast.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Rewire companion shell to the policy",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "summary": "companion/shell.ts: .insrc-viewer root + .insrc-viewer-diagram wrapper (keep #stage); drop theme neutral + fixed STYLE; policy CSS/fonts/overrides/boot; toolbar + error+source + meta stamp.",
+        "acceptanceChecks": [
+          "shell.test.ts branded-output assertions"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Rewire docgen shell (+ fallback) to the policy",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "summary": "docgen/render/shell.ts + fallback.ts: shared classes (#docgen-diagram kept); policy on primary + fallback paths.",
+        "acceptanceChecks": [
+          "docgen shell.test.ts: shared classes both outputs, override matches both DOMs"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/docgen/render/__tests__/shell.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Viewer behavior tests",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "summary": "boot node --check; scale clamp floor 16px; re-frame w/o overriding manual zoom; theme switch restores transform; export standalone svg; structural preservation (NFR4); perf baselines (NFR5).",
+        "acceptanceChecks": [
+          "viewer-script + perf tests pass"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/artifact-theme/__tests__/viewer-script.test.ts"
+          },
+          {
+            "level": "live",
+            "name": "src/artifact-theme/__tests__/perf.integration.test.ts"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Full sweep + build + regen smoke + docs",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "summary": "Full backend test sweep, npm run build, regen smoke of one companion + one docgen doc, document the regeneration route (R14).",
+        "acceptanceChecks": [
+          "sweep green, build green, smoke artifacts branded"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "regen smoke"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "prose": "theme module policy tests",
+        "lldStrategyItem": "src/artifact-theme/__tests__/theme.test.ts",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "prose": "font packaging tests",
+        "lldStrategyItem": "src/artifact-theme/__tests__/fonts.test.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "prose": "contrast pair measurement (NFR1)",
+        "lldStrategyItem": "src/artifact-theme/__tests__/contrast.test.ts",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "prose": "companion shell branded output",
+        "lldStrategyItem": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "prose": "docgen shell branded output + cross-DOM override match",
+        "lldStrategyItem": "src/docgen/render/__tests__/shell.test.ts",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "prose": "viewer boot/export/scale behavior",
+        "lldStrategyItem": "src/artifact-theme/__tests__/viewer-script.test.ts",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "prose": "perf baselines (NFR5)",
+        "lldStrategyItem": "src/artifact-theme/__tests__/perf.integration.test.ts",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "file",
+      "ref": ".insrc/artifacts/LLD-486751c3411ceef9-S001.json"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "plans/mermaid-theme-and-readability-requirements.md"
+    },
+    {
+      "id": "c3",
+      "kind": "file",
+      "ref": "src/workflow/artifacts/companion/shell.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "file",
+      "ref": "src/docgen/render/shell.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "file",
+      "ref": "copy-assets.mjs"
+    }
+  ]
+}

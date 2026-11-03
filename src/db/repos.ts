@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * Repo registry CRUD on the LMDB graph store. Phase 2.1 of
  * docs/plans/storage-migration-lmdb-lance.md.
@@ -31,6 +32,7 @@ import {
 } from './graph/store.js';
 import { allocateRepoIdInTxn } from './graph/ids.js';
 import { encodeRepoKey } from './graph/keys.js';
+import { deleteSubsystemInputsInTxn } from './subsystem-changes.js';
 import {
 	encodeRepoRow,
 	decodeRepoRow,
@@ -151,6 +153,7 @@ type DbClient = unknown;
 // ---------------------------------------------------------------------------
 
 export async function addRepo(_db: DbClient, repo: RegisteredRepo): Promise<void> {
+	assertNoSessionPersistence();
 	// Defense in depth -- shape-only validation here (no filesystem
 	// existence check) so synthetic-path tests still work. The IPC
 	// handler at `daemon/index.ts:repo.add` does the full validation
@@ -175,6 +178,7 @@ export async function addRepo(_db: DbClient, repo: RegisteredRepo): Promise<void
 }
 
 export async function removeRepo(_db: DbClient, path: string): Promise<void> {
+	assertNoSessionPersistence();
 	// Phase 2.10 cascade: delete entities (which transitively cascades
 	// to out_edge / in_edge mirrors + entity_id_by_string + name_index),
 	// then unresolved relations for the repo, then conversation sessions
@@ -198,6 +202,12 @@ export async function removeRepo(_db: DbClient, path: string): Promise<void> {
 		if (id === undefined) return;
 		s.repo.remove(encodeRepoKey(id));
 		s.indexState.remove(encodeRepoKey(id));
+		// The repository's subsystems (Epic c2ba6fa6 s8): every key from its
+		// 4-byte prefix up to the next repository's.
+		const range = { start: encodeRepoKey(id), end: encodeRepoKey(id + 1) };
+		for (const { key } of s.subsystem.getRange(range)) s.subsystem.remove(key);
+		for (const { key } of s.subsystemByFile.getRange(range)) s.subsystemByFile.remove(key);
+		deleteSubsystemInputsInTxn(s, id);   // ISSUE-7d42b5dc
 	});
 }
 
@@ -250,6 +260,7 @@ export async function updateRepoStatus(
 	/** The run's final figures, written with the final status; when omitted the stored ones are kept. */
 	lastRun?: RepoLastRun,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	await withWriteTxn(s => {
 		const id = findRepoIdByPath(s, path);
 		if (id === undefined) {

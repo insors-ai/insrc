@@ -6,7 +6,8 @@
 /**
  * Repos pane — the registered repositories and their indexing status.
  * ↑/↓ selects (the highlighted repo is what the Workflows pane targets);
- * a add · d remove · i reindex · t tracker setup · s tracker settings.
+ * a add · d remove · i reindex · t tracker setup · s tracker settings · m the selected repo's
+ * models view (role tiers and coreFloor; tiers themselves are global).
  */
 
 import { Box, Text, useInput } from 'ink';
@@ -21,13 +22,14 @@ import { Panel, KeyHints, TextPrompt, ConfirmPrompt } from '../ui/widgets.js';
 import { formatWhen } from '../ui/format.js';
 import { trackerStatusGlyph, trackerReportSummary } from './tracker-report.js';
 import { RepoSettingsModal } from './RepoSettingsModal.js';
+import { RepoModelsView } from './RepoModelsView.js';
 import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
 
 const STATUS_COLOR: Record<RegisteredRepo['status'], string> = {
 	ready: 'green', indexing: 'yellow', pending: 'gray', error: 'red',
 };
 
-type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'confirm-remove' | 'tracker' | 'settings';
+type Modal = 'none' | 'add' | 'steer-claude' | 'steer-agents' | 'steer-vibe' | 'confirm-remove' | 'tracker' | 'settings' | 'models';
 
 export function ReposPane(props: {
 	daemon: DaemonState;
@@ -41,20 +43,22 @@ export function ReposPane(props: {
 	const [cursor, setCursor] = useState(0);
 	const [modal, setModal] = useState<Modal>('none');
 	// Steering-injection add flow: path entered, then a per-file confirm for
-	// CLAUDE.md and AGENTS.md before the repo.add call carries the selection.
+	// CLAUDE.md and AGENTS.md, then a confirm for the Mistral Vibe MCP
+	// registration, before the repo.add call carries the selection.
 	const [addPath, setAddPath] = useState('');
 	const [steerClaude, setSteerClaude] = useState(false);
+	const [steerAgents, setSteerAgents] = useState(false);
 	// Tracker-setup modal: `running` while the (synchronous, gh-shelling) engine
 	// runs on a deferred tick; `report` once it returns (or a synthetic failed
 	// report if it threw).
 	const [running, setRunning] = useState(false);
 	const [report, setReport] = useState<TrackerSetupReport | null>(null);
 
-	const finishAdd = (claude: boolean, agents: boolean): void => {
+	const finishAdd = (claude: boolean, agents: boolean, vibe: boolean): void => {
 		setModal('none'); ui.capture(false);
 		const picks = [claude ? 'CLAUDE.md' : null, agents ? 'AGENTS.md' : null].filter(Boolean).join(' + ');
 		act('add', async () => {
-			const { path: registered, mcp } = await svc.repo.add(addPath, { claude, agents });
+			const { path: registered, mcp } = await svc.repo.add(addPath, { claude, agents, vibe });
 			const mcpLine = formatMcpOutcome(mcp);
 			return `registered ${registered} — indexing started${picks ? ` · steering → ${picks}` : ''}${mcpLine ? ` · mcp: ${mcpLine}` : ''}`;
 		});
@@ -103,10 +107,13 @@ export function ReposPane(props: {
 		else if (input === 'd' && current !== undefined) { setModal('confirm-remove'); ui.capture(true); }
 		else if (input === 't' && current !== undefined) startTrackerSetup(current.path);
 		else if (input === 's' && current !== undefined) { setModal('settings'); ui.capture(true); }
+		else if (input === 'm') setModal('models');
 	}, { isActive: modal === 'none' && !captured });
 
 	// The tracker report modal dismisses on any key.
 	useInput(() => { setModal('none'); setReport(null); setRunning(false); ui.capture(false); }, { isActive: modal === 'tracker' });
+
+	if (modal === 'models') return <RepoModelsView repoPath={props.selectedRepo} onClose={() => setModal('none')} />;
 
 	if (modal === 'add') {
 		return (
@@ -140,9 +147,21 @@ export function ReposPane(props: {
 		return (
 			<Panel title="Repos · add · steering" active>
 				<ConfirmPrompt
-					label="install the insrc steering block into this repo's AGENTS.md (Codex)?"
-					onYes={() => finishAdd(steerClaude, true)}
-					onNo={()  => finishAdd(steerClaude, false)}
+					label="install the insrc steering block into this repo's AGENTS.md (Codex, Mistral Vibe)?"
+					onYes={() => { setSteerAgents(true);  setModal('steer-vibe'); }}
+					onNo={()  => { setSteerAgents(false); setModal('steer-vibe'); }}
+				/>
+			</Panel>
+		);
+	}
+
+	if (modal === 'steer-vibe') {
+		return (
+			<Panel title="Repos · add · steering" active>
+				<ConfirmPrompt
+					label="register the insrc MCP server with Mistral Vibe (vibe mcp add)?"
+					onYes={() => finishAdd(steerClaude, steerAgents, true)}
+					onNo={()  => finishAdd(steerClaude, steerAgents, false)}
 				/>
 			</Panel>
 		);
@@ -200,7 +219,7 @@ export function ReposPane(props: {
 				? <Text dimColor>{props.daemon.running ? 'no repositories registered — press a to add one' : 'daemon down — start it in the Daemon pane'}</Text>
 				: repos.map((r, i) => <RepoRow key={r.path} repo={r} selected={i === clamped} />)}
 			<Box marginTop={1}>
-				<KeyHints hints={[['↑/↓', 'select'], ['a', 'add'], ['d', 'remove'], ['i', 'reindex'], ['t', 'tracker setup'], ['s', 'settings']]} />
+				<KeyHints hints={[['↑/↓', 'select'], ['a', 'add'], ['d', 'remove'], ['i', 'reindex'], ['t', 'tracker setup'], ['s', 'settings'], ['m', 'models']]} />
 			</Box>
 		</Panel>
 	);

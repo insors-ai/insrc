@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: codex input_too_large becomes an InputTooLargeError with maxChars and actualChars; the message is unchanged
+ok 1 - codex input_too_large becomes an InputTooLargeError with maxChars and actualChars; the message is unchanged
+  ---
+  duration_ms: 2.381584
+  type: 'test'
+  ...
+# Subtest: withStructuredRetry rethrows an InputTooLargeError after one call
+ok 2 - withStructuredRetry rethrows an InputTooLargeError after one call
+  ---
+  duration_ms: 0.434708
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 298.305416

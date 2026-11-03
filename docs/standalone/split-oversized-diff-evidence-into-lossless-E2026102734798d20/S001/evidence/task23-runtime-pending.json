@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "taskId": "t23",
+  "test": "DIFF-S003-RETRY",
+  "status": "pending-stale-owner-recovery",
+  "attemptPerformed": true,
+  "reportedResult": "fail",
+  "target": {
+    "repo": "/Users/subhagho/work/projects/insors/insrc",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s3",
+    "groundingMode": "degraded",
+    "chunkTokens": 128000
+  },
+  "verifiedBuild": {
+    "sourceCommit": "69df880c890ecd62c6fd59692184b7e195831b5a",
+    "root": "/private/tmp/cm-chunk-final-3fbfb0fa5",
+    "daemonEntry": "/private/tmp/cm-chunk-final-3fbfb0fa5/out/daemon/index.js",
+    "deploymentManifestSha256": "1261bbc7d4320a7b88b14faa8a4301cb0a49477e483c59b05c077a90212ebb4a",
+    "verificationEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task22-final-full-sweep.json"
+  },
+  "observedDaemon": {
+    "checkedAt": "2026-10-27T14:58:30.631Z",
+    "installedCommit": "2e448ba15d362ec927b7f736fcd1775ebd6cea99",
+    "queueDepth": 8,
+    "storeFailure": null
+  },
+  "requiredAuthorization": null,
+  "planPath": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/PLAN.md",
+  "planConstraint": "No automatic daemon restart or release changes; if activation unavailable preserve pending proof honestly, never script a fake review success.",
+  "independentCodeReviewStatus": "not-run; stale S003 owner still active; no parallel LLM reviews started",
+  "globalConfigurationChanged": false,
+  "releaseGatesChanged": false,
+  "historicalS003EvidenceChanged": false,
+  "recordedAt": "2026-10-27T14:59:31.375898+00:00",
+  "initialActivationRequest": {
+    "status": "pending-runtime-activation-approval",
+    "requiredAuthorization": "Activate the verified built runtime and restart the shared daemon, then perform the actual S003 retry and independent code review of this Story.",
+    "observedDaemon": {
+      "checkedAt": "2026-10-27T14:58:30.631Z",
+      "installedCommit": "2e448ba15d362ec927b7f736fcd1775ebd6cea99",
+      "queueDepth": 8,
+      "storeFailure": null
+    }
+  },
+  "runtimeRetryEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-second-runtime-retry.json",
+  "activationConfirmedByUser": true,
+  "installedCommitAtAttempt": "c29dc673aa742ff564da78d2786d9a7ea3db92ea",
+  "requiredAction": "Clear the stale daemon-owned review, preserve stable HEAD, then retry through bounded control start with explicit degraded grounding and retain its handle. Independent Story code review remains pending.",
+  "requiredCorrectedSourceSha256": "408f2da1e9b34af3dc42af5f41434477e61eb86df54a3df66a391a7a45996a5c",
+  "localPreparationEvidence": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/task23-order-fixed-local.json",
+  "updatedAt": "2026-10-27T18:29:31.957411+00:00",
+  "validatedCorrection": {
+    "commit": "fd6b5fcc9",
+    "taskId": "t12",
+    "daemonValidation": "pass",
+    "targetedTests": {
+      "pass": 27,
+      "fail": 0,
+      "skipped": 0
+    },
+    "node22Build": "pass",
+    "typecheck": "pass"
+  },
+  "smokeValidation": {
+    "taskId": "t23",
+    "passed": false,
+    "testsPassed": false,
+    "reason": "Actual installed-runtime DIFF-S003-RETRY failed before a completed CR; acceptance of honest reporting does not pass the smoke test."
+  }
+}

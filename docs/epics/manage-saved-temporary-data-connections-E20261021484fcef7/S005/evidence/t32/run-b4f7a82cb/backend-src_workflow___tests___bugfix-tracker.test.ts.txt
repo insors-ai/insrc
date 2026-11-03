@@ -1,0 +1,178 @@
+TAP version 13
+# Subtest: createBugfixTrackerIssue: configured + parent resolves -> created+linked, k4 body verbatim, ref recorded
+ok 1 - createBugfixTrackerIssue: configured + parent resolves -> created+linked, k4 body verbatim, ref recorded
+  ---
+  duration_ms: 1.525542
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: standalone (parentRef null) -> created UNLINKED
+ok 2 - createBugfixTrackerIssue: standalone (parentRef null) -> created UNLINKED
+  ---
+  duration_ms: 0.104833
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: parentRef present but resolveParentIssueRef null -> created unlinked, no link attempt
+ok 3 - createBugfixTrackerIssue: parentRef present but resolveParentIssueRef null -> created unlinked, no link attempt
+  ---
+  duration_ms: 0.080875
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: resolveConfig type:none -> skipped, NO createIssue (ac2)
+ok 4 - createBugfixTrackerIssue: resolveConfig type:none -> skipped, NO createIssue (ac2)
+  ---
+  duration_ms: 0.108292
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> skipped, NO createIssue (ac2)
+ok 5 - createBugfixTrackerIssue: resolveConfig throws GithubConfigError -> skipped, NO createIssue (ac2)
+  ---
+  duration_ms: 0.071625
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: authOk false -> skipped, NO createIssue
+ok 6 - createBugfixTrackerIssue: authOk false -> skipped, NO createIssue
+  ---
+  duration_ms: 0.055416
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: meta.tracker already carries the ref -> reused, NO createIssue (idempotent)
+ok 7 - createBugfixTrackerIssue: meta.tracker already carries the ref -> reused, NO createIssue (idempotent)
+  ---
+  duration_ms: 0.101625
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> still created + recorded, linked:false
+ok 8 - createBugfixTrackerIssue: linkSubIssue throws (sub-issues disabled) -> still created + recorded, linked:false
+  ---
+  duration_ms: 0.080166
+  type: 'test'
+  ...
+# Subtest: createBugfixTrackerIssue: createIssue throws (post-config) -> propagates, nothing recorded
+ok 9 - createBugfixTrackerIssue: createIssue throws (post-config) -> propagates, nothing recorded
+  ---
+  duration_ms: 0.471834
+  type: 'test'
+  ...
+# Subtest: closeBugfixTrackerIssue: recorded ref + configured -> closed
+ok 10 - closeBugfixTrackerIssue: recorded ref + configured -> closed
+  ---
+  duration_ms: 0.411
+  type: 'test'
+  ...
+# Subtest: closeBugfixTrackerIssue: no recorded ref -> skipped, closeIssue NOT called (ac2 symmetry)
+ok 11 - closeBugfixTrackerIssue: no recorded ref -> skipped, closeIssue NOT called (ac2 symmetry)
+  ---
+  duration_ms: 0.273334
+  type: 'test'
+  ...
+# Subtest: closeBugfixTrackerIssue: resolveConfig none/GithubConfigError -> skipped, closeIssue NOT called
+ok 12 - closeBugfixTrackerIssue: resolveConfig none/GithubConfigError -> skipped, closeIssue NOT called
+  ---
+  duration_ms: 0.116833
+  type: 'test'
+  ...
+# Subtest: closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates
+ok 13 - closeBugfixTrackerIssue: closeIssue throws (deleted issue) -> propagates
+  ---
+  duration_ms: 0.086625
+  type: 'test'
+  ...
+# Subtest: ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec
+ok 14 - ghCloseIssue: shells `gh issue close <N> --repo owner/repo` via the injectable _exec
+  ---
+  duration_ms: 0.167666
+  type: 'test'
+  ...
+# Subtest: prompt-on-lost-ref (create): recordRef throws -> promptOnLostRef gets the created ref; retry-record re-writes
+ok 15 - prompt-on-lost-ref (create): recordRef throws -> promptOnLostRef gets the created ref; retry-record re-writes
+  ---
+  duration_ms: 0.130916
+  type: 'test'
+  ...
+# Subtest: prompt-on-lost-ref (create): 'skip' -> created with reason ref-unrecorded, no throw
+ok 16 - prompt-on-lost-ref (create): 'skip' -> created with reason ref-unrecorded, no throw
+  ---
+  duration_ms: 0.064708
+  type: 'test'
+  ...
+# Subtest: prompt-on-lost-ref (close): no recorded ref + 'relink-by-label' -> re-discover via labels, re-record, close
+ok 17 - prompt-on-lost-ref (close): no recorded ref + 'relink-by-label' -> re-discover via labels, re-record, close
+  ---
+  duration_ms: 0.079041
+  type: 'test'
+  ...
+# Subtest: prompt-on-lost-ref (close): 'relink-by-label' with no labels -> skipped (a2 dedup stays deferred)
+ok 18 - prompt-on-lost-ref (close): 'relink-by-label' with no labels -> skipped (a2 dedup stays deferred)
+  ---
+  duration_ms: 0.050167
+  type: 'test'
+  ...
+# Subtest: close default (no prompter): skip never re-discovers by label
+ok 19 - close default (no prompter): skip never re-discovers by label
+  ---
+  duration_ms: 0.049375
+  type: 'test'
+  ...
+# Subtest: normal create path: promptOnLostRef is never consulted (a1 no-per-create-round-trip)
+ok 20 - normal create path: promptOnLostRef is never consulted (a1 no-per-create-round-trip)
+  ---
+  duration_ms: 0.110458
+  type: 'test'
+  ...
+# Subtest: parentRefIdentifiers: slug first, then storyId; a bare epicHash is not a resolvable candidate (MED-1)
+ok 21 - parentRefIdentifiers: slug first, then storyId; a bare epicHash is not a resolvable candidate (MED-1)
+  ---
+  duration_ms: 0.04675
+  type: 'test'
+  ...
+# Subtest: integration: configured repo -> create records the ref, close reads it back and closes (fake gh)
+ok 22 - integration: configured repo -> create records the ref, close reads it back and closes (fake gh)
+  ---
+  duration_ms: 2.6615
+  type: 'test'
+  ...
+# Subtest: integration: unconfigured repo -> no create/close commands, local issue unchanged (ac2)
+ok 23 - integration: unconfigured repo -> no create/close commands, local issue unchanged (ac2)
+  ---
+  duration_ms: 0.941917
+  type: 'test'
+  ...
+# Subtest: bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter
+ok 24 - bugfix create keeps CreatedIssue, readonly labels and the parent link through the adapter
+  ---
+  duration_ms: 0.437458
+  type: 'test'
+  ...
+# Subtest: a failed link makes linkToParent return false and a failed close propagates instead of reporting closed
+ok 25 - a failed link makes linkToParent return false and a failed close propagates instead of reporting closed
+  ---
+  duration_ms: 0.377667
+  type: 'test'
+  ...
+# Subtest: relink-by-label match is recorded, closed and returned as closed
+ok 26 - relink-by-label match is recorded, closed and returned as closed
+  ---
+  duration_ms: 0.236125
+  type: 'test'
+  ...
+# Subtest: relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue
+ok 27 - relink-by-label with no labels, no match and a failed lookup returns skipped and never creates an issue
+  ---
+  duration_ms: 0.193125
+  type: 'test'
+  ...
+# Subtest: both default deps factories keep their optional opts
+ok 28 - both default deps factories keep their optional opts
+  ---
+  duration_ms: 0.106791
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 304.987417

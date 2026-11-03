@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists
+ok 1 - chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists
+  ---
+  duration_ms: 333.140833
+  type: 'test'
+  ...
+# Subtest: a queued turn that ends with done ok:false resolves failed with the text, not done
+ok 2 - a queued turn that ends with done ok:false resolves failed with the text, not done
+  ---
+  duration_ms: 20.396542
+  type: 'test'
+  ...
+# Subtest: a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause
+ok 3 - a turn that emitted a tool-call, file-edit or tool-result before its error reports acted true; one that failed with none reports acted false with the classified cause
+  ---
+  duration_ms: 94.074333
+  type: 'test'
+  ...
+# Subtest: a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true
+ok 4 - a claude is_error result with an overload text before any tool call is reported failed with the overload cause; the same after a file edit reports acted true
+  ---
+  duration_ms: 10.516542
+  type: 'test'
+  ...
+# Subtest: every failed turn's cause and error text are logged
+ok 5 - every failed turn's cause and error text are logged
+  ---
+  duration_ms: 17.5515
+  type: 'test'
+  ...
+# Subtest: a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI
+ok 6 - a retried message is started with skipUserRow, so the stored transcript has a single user row after a retry while the prompt is still sent to the CLI
+  ---
+  duration_ms: 6.343541
+  type: 'test'
+  ...
+# Subtest: a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text
+ok 7 - a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text
+  ---
+  duration_ms: 12.75725
+  type: 'test'
+  ...
+# Subtest: an auth failure stores and posts a sign-in line in the chat
+ok 8 - an auth failure stores and posts a sign-in line in the chat
+  ---
+  duration_ms: 6.718625
+  type: 'test'
+  ...
+# Subtest: a normal turn still pushes and echoes its user row exactly as before
+ok 9 - a normal turn still pushes and echoes its user row exactly as before
+  ---
+  duration_ms: 6.782625
+  type: 'test'
+  ...
+# Subtest: the worker give-up note is shown live and is not stored in the transcript
+ok 10 - the worker give-up note is shown live and is not stored in the transcript
+  ---
+  duration_ms: 6.76075
+  type: 'test'
+  ...
+# Subtest: a chat page rebuilt while a turn runs is told the turn is running, and one rebuilt when nothing runs is not
+ok 11 - a chat page rebuilt while a turn runs is told the turn is running, and one rebuilt when nothing runs is not
+  ---
+  duration_ms: 5.176375
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 725.367583

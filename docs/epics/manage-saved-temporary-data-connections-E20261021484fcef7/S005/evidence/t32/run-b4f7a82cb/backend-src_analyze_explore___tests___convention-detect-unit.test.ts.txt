@@ -1,0 +1,172 @@
+TAP version 13
+# Subtest: classifyName: snake_case with underscore
+ok 1 - classifyName: snake_case with underscore
+  ---
+  duration_ms: 0.754292
+  type: 'test'
+  ...
+# Subtest: classifyName: all-lowercase word reads as snake_case
+ok 2 - classifyName: all-lowercase word reads as snake_case
+  ---
+  duration_ms: 0.087875
+  type: 'test'
+  ...
+# Subtest: classifyName: PascalCase class name
+ok 3 - classifyName: PascalCase class name
+  ---
+  duration_ms: 0.041542
+  type: 'test'
+  ...
+# Subtest: classifyName: camelCase identifier
+ok 4 - classifyName: camelCase identifier
+  ---
+  duration_ms: 0.033791
+  type: 'test'
+  ...
+# Subtest: classifyName: kebab-case file name
+ok 5 - classifyName: kebab-case file name
+  ---
+  duration_ms: 0.08575
+  type: 'test'
+  ...
+# Subtest: classifyName: strips single leading underscore for classification
+ok 6 - classifyName: strips single leading underscore for classification
+  ---
+  duration_ms: 0.032375
+  type: 'test'
+  ...
+# Subtest: classifyName: dunder methods classify as unknown
+ok 7 - classifyName: dunder methods classify as unknown
+  ---
+  duration_ms: 0.093042
+  type: 'test'
+  ...
+# Subtest: classifyName: mixed underscore + uppercase
+ok 8 - classifyName: mixed underscore + uppercase
+  ---
+  duration_ms: 0.033125
+  type: 'test'
+  ...
+# Subtest: classifyName: 1-char and empty strings are unknown
+ok 9 - classifyName: 1-char and empty strings are unknown
+  ---
+  duration_ms: 0.227125
+  type: 'test'
+  ...
+# Subtest: classifyTestFile: test_*.py -> test_*
+ok 10 - classifyTestFile: test_*.py -> test_*
+  ---
+  duration_ms: 0.324667
+  type: 'test'
+  ...
+# Subtest: classifyTestFile: *_test.go -> *_test
+ok 11 - classifyTestFile: *_test.go -> *_test
+  ---
+  duration_ms: 0.041834
+  type: 'test'
+  ...
+# Subtest: classifyTestFile: *.spec.ts -> *.spec
+ok 12 - classifyTestFile: *.spec.ts -> *.spec
+  ---
+  duration_ms: 0.037375
+  type: 'test'
+  ...
+# Subtest: classifyTestFile: *.test.tsx -> *.test
+ok 13 - classifyTestFile: *.test.tsx -> *.test
+  ---
+  duration_ms: 0.0395
+  type: 'test'
+  ...
+# Subtest: classifyTestFile: file inside tests/ dir with plain name -> inline
+ok 14 - classifyTestFile: file inside tests/ dir with plain name -> inline
+  ---
+  duration_ms: 0.127708
+  type: 'test'
+  ...
+# Subtest: classifyTestFile: production file -> none
+ok 15 - classifyTestFile: production file -> none
+  ---
+  duration_ms: 0.098167
+  type: 'test'
+  ...
+# Subtest: dominant: single bucket at 100% wins
+ok 16 - dominant: single bucket at 100% wins
+  ---
+  duration_ms: 0.088417
+  type: 'test'
+  ...
+# Subtest: dominant: 60% share + 2x runner-up wins
+ok 17 - dominant: 60% share + 2x runner-up wins
+  ---
+  duration_ms: 0.035333
+  type: 'test'
+  ...
+# Subtest: dominant: 50/50 split -> mixed
+ok 18 - dominant: 50/50 split -> mixed
+  ---
+  duration_ms: 0.02925
+  type: 'test'
+  ...
+# Subtest: dominant: unknown bucket is ignored in the total
+ok 19 - dominant: unknown bucket is ignored in the total
+  ---
+  duration_ms: 0.026875
+  type: 'test'
+  ...
+# Subtest: dominant: empty -> unknown
+ok 20 - dominant: empty -> unknown
+  ---
+  duration_ms: 0.026583
+  type: 'test'
+  ...
+# Subtest: config.trace role: JSON file, quoted key -> definition
+ok 21 - config.trace role: JSON file, quoted key -> definition
+  ---
+  duration_ms: 0.147041
+  type: 'test'
+  ...
+# Subtest: config.trace role: python getenv with fallback -> default
+ok 22 - config.trace role: python getenv with fallback -> default
+  ---
+  duration_ms: 0.115292
+  type: 'test'
+  ...
+# Subtest: config.trace role: python getenv without fallback -> usage
+ok 23 - config.trace role: python getenv without fallback -> usage
+  ---
+  duration_ms: 0.09
+  type: 'test'
+  ...
+# Subtest: config.trace role: comment line -> unknown
+ok 24 - config.trace role: comment line -> unknown
+  ---
+  duration_ms: 0.030375
+  type: 'test'
+  ...
+# Subtest: test.locate tokenise: strips stopwords + short tokens
+ok 25 - test.locate tokenise: strips stopwords + short tokens
+  ---
+  duration_ms: 0.741792
+  type: 'test'
+  ...
+# Subtest: test.locate tokenise: camelCase splits into fragments
+ok 26 - test.locate tokenise: camelCase splits into fragments
+  ---
+  duration_ms: 0.037708
+  type: 'test'
+  ...
+# Subtest: test.locate tokenise: dedupes repeats
+ok 27 - test.locate tokenise: dedupes repeats
+  ---
+  duration_ms: 0.028917
+  type: 'test'
+  ...
+1..27
+# tests 27
+# suites 0
+# pass 27
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 355.492958

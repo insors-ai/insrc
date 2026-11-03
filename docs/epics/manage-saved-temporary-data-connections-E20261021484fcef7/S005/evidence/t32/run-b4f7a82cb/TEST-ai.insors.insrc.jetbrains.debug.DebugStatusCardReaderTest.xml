@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.debug.DebugStatusCardReaderTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.002">
+  <properties/>
+  <testcase name="a Stopped daemon yields a not-reachable card that still carries socket + best-effort()" classname="ai.insors.insrc.jetbrains.debug.DebugStatusCardReaderTest" time="0.002"/>
+  <testcase name="an Unavailable daemon carries the reason and still the socket()" classname="ai.insors.insrc.jetbrains.debug.DebugStatusCardReaderTest" time="0.0"/>
+  <testcase name="a missing pidfile and package_json degrade pid and version to null without failing()" classname="ai.insors.insrc.jetbrains.debug.DebugStatusCardReaderTest" time="0.0"/>
+  <testcase name="a Loaded status folds into a reachable card with the sc2 fields + local-derive()" classname="ai.insors.insrc.jetbrains.debug.DebugStatusCardReaderTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

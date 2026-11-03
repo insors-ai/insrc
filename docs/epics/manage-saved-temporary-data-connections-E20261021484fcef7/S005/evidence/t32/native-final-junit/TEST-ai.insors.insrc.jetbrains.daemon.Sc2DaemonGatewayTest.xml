@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.Sc2DaemonGatewayTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.001">
+  <properties/>
+  <testcase name="registerProject routes repo_add, is idempotent, returns reason on rejection, never auto-allocates others()" classname="ai.insors.insrc.jetbrains.daemon.Sc2DaemonGatewayTest" time="0.0"/>
+  <testcase name="probe maps reachable-unreachable-unknown-freshness to current-stale-absent()" classname="ai.insors.insrc.jetbrains.daemon.Sc2DaemonGatewayTest" time="0.0"/>
+  <testcase name="isProjectRegistered is read-only, surfaces DaemonUnavailable, and never auto-allocates()" classname="ai.insors.insrc.jetbrains.daemon.Sc2DaemonGatewayTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

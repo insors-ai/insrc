@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity
+ok 1 - a code task with a module scope uses only the entities under that directory, with a file scope only that file's, with a symbol scope the one entity
+  ---
+  duration_ms: 307.629292
+  type: 'test'
+  ...
+# Subtest: the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused
+ok 2 - the adherence check gives the same result for a repo scope as before, as a code, a data and an infra template, and as a data template on an unregistered directory is not refused
+  ---
+  duration_ms: 263.927208
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1027.925791

@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill
+ok 1 - stop outcome with an injected process table: stops by itself, forced after the wait, pid not a daemon, pid survives the kill
+  ---
+  duration_ms: 1.59275
+  type: 'test'
+  ...
+# Subtest: stop outcome: no socket and no live pid rejects with 'daemon is not running'
+ok 2 - stop outcome: no socket and no live pid rejects with 'daemon is not running'
+  ---
+  duration_ms: 0.176917
+  type: 'test'
+  ...
+# Subtest: stop outcome: a live pid whose command line does not match is not killed and its pid file is kept
+ok 3 - stop outcome: a live pid whose command line does not match is not killed and its pid file is kept
+  ---
+  duration_ms: 0.244042
+  type: 'test'
+  ...
+# Subtest: stop outcome: a refused connection with a LIVE daemon pid goes on to the wait and the kill
+ok 4 - stop outcome: a refused connection with a LIVE daemon pid goes on to the wait and the kill
+  ---
+  duration_ms: 0.091125
+  type: 'test'
+  ...
+# Subtest: stop outcome: no reply within the bound goes on to the wait and the kill
+ok 5 - stop outcome: no reply within the bound goes on to the wait and the kill
+  ---
+  duration_ms: 0.080917
+  type: 'test'
+  ...
+# Subtest: stop outcome: a kill that throws for a live process fails naming the pid and removes nothing
+ok 6 - stop outcome: a kill that throws for a live process fails naming the pid and removes nothing
+  ---
+  duration_ms: 0.093
+  type: 'test'
+  ...
+# Subtest: restart: steps include 'force-stop' after a forced stop and the start follows
+ok 7 - restart: steps include 'force-stop' after a forced stop and the start follows
+  ---
+  duration_ms: 0.16725
+  type: 'test'
+  ...
+# Subtest: describeStop: says when the daemon was killed
+ok 8 - describeStop: says when the daemon was killed
+  ---
+  duration_ms: 0.045542
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 330.660417

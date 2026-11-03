@@ -1,0 +1,13 @@
+{
+  "sourceCommit": "b09162a00",
+  "version": "0.5.23",
+  "package": "vscode-plugin/insrc-vscode-0.5.23-s005-b09162a00.vsix",
+  "sha256": "bf217b50c93006473054928da8e01a17199eca01c3552dfed49b1ee63b5eec24",
+  "bundleSha256": "0eb509fcc239f43b3616f3b0e8d692a097605c70efd84825c27701ace1f6544b",
+  "originalSVGsVerified": 24,
+  "datasourceTypes": 29,
+  "licensesBundled": true,
+  "assetSheetInspected": true,
+  "manualNativeUI": "pending-user",
+  "daemonRestarted": false
+}

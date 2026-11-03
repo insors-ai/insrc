@@ -122,4 +122,30 @@ class UnixSocketDaemonRpcParseTest {
         val loaded = assertInstanceOf(RegisteredReposResult.Loaded::class.java, result)
         assertTrue(loaded.repos.isEmpty())
     }
+
+    @Test
+    fun `parse with resultErrorIsFailure=false keeps a not-run check's error, checkId and efforts, default parse unchanged`() {
+        // Epic ce99b72065d03b1b s7/t2: models.check answers a check that did not run with
+        // its own `error` beside checkId and the per-effort evidence.
+        val reply = """{"id":1,"result":{"checkId":"c-1","family":"cli-codex","modelId":"x-new","runs":false,""" +
+            """"efforts":[{"effort":"lo","verdict":"rejected","evidence":"model not found"}],"error":"codex refused x-new"}}"""
+        val kept = rpc.parse(reply, resultErrorIsFailure = false)
+        assertTrue(kept.ok)
+        assertEquals("c-1", kept.data["checkId"])
+        assertEquals(false, kept.data["runs"])
+        assertEquals("codex refused x-new", kept.data["error"])
+        assertEquals("rejected", ((kept.data["efforts"] as List<*>)[0] as Map<*, *>)["verdict"])
+
+        // The default parse still treats result.error as the structured failure.
+        val default = rpc.parse(reply)
+        assertFalse(default.ok)
+        assertEquals("codex refused x-new", default.error)
+        // A top-level error fails either way.
+        assertFalse(rpc.parse("""{"id":1,"error":"unknown method: models.check"}""", resultErrorIsFailure = false).ok)
+        // A fake DaemonRpc that only implements the two-argument call answers the three-argument one.
+        val fake = object : DaemonRpc {
+            override fun call(method: String, params: Map<String, Any?>): DaemonResult = DaemonResult(ok = true, data = mapOf("m" to method))
+        }
+        assertEquals("models.check", fake.call("models.check", emptyMap(), resultErrorIsFailure = false).data["m"])
+    }
 }

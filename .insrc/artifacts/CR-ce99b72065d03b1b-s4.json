@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793007177563-c0s3r3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-26T09:32:57.815Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 453638,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s4",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s4",
+    "groundingMode": "degraded",
+    "fallbackReason": {
+      "kind": "declined"
+    },
+    "subject": {
+      "changedFiles": [
+        "src/daemon/__tests__/handler-runtime.test.ts",
+        "src/daemon/__tests__/model-check.live.test.ts",
+        "src/daemon/__tests__/model-check.test.ts",
+        "src/daemon/__tests__/model-registry.test.ts",
+        "src/daemon/__tests__/models-daemon-s4.test.ts",
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json",
+        "src/daemon/handler-runtime.ts",
+        "src/daemon/model-check.ts",
+        "src/daemon/model-registry.ts",
+        "src/daemon/threads/method-class.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [
+        "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+      ],
+      "excludedFromScope": [
+        "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+        "src/agent/providers/ollama.ts",
+        "src/agent/providers/structured-output.ts",
+        "src/daemon/steps/__tests__/fixtures/provider-live.ts",
+        "src/daemon/steps/__tests__/provider-admission.test.ts"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "src/daemon/model-check.ts:224",
+            "message": "The Codex parser silently discards malformed JSONL lines. An exit-0 response containing malformed output alongside a turn.completed event therefore produces runs:true and permits approval. Reject unreadable JSONL rather than treating partial parsing as successful completion.",
+            "expectationRef": "LLD errorPaths.errorCases: CLI output cannot be parsed — a run with unreadable output must return runs:false with 'gave unreadable output'."
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 0
+    }
+  }
+}

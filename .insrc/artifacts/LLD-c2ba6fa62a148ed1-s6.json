@@ -1,0 +1,825 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793519701699-0od7dh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T08:05:00.255Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 598505,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s6",
+    "hldBaseRunId": "wf-1791697214822-7bombm",
+    "hldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "hldAmendmentsApplied": [
+      "AMD-c2ba6fa62a148ed1-1",
+      "AMD-c2ba6fa62a148ed1-2",
+      "AMD-c2ba6fa62a148ed1-7",
+      "AMD-c2ba6fa62a148ed1-8",
+      "AMD-c2ba6fa62a148ed1-9",
+      "AMD-c2ba6fa62a148ed1-10"
+    ],
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every s6-relevant acceptance criterion (ac1-ac9) and local constraint (lc1-lc3, k9, k11) from the DEF is designed in the LLD, and the LLD builds no non-goal.",
+          "evidence": "DEF-c2ba6fa62a148ed1.json k9/k11 (local-model/cheap-tier proposal, git-sources-only + two built-ins) and s6's lc1/lc2/lc3 (bare-list retirement, model-failure fallback, extensible RuleSource list) are quoted near-verbatim in the LLD's §2.2-2.5 postconditions and §7 migration. DEF ac1-ac5 (anchored-vs-nested rule precedence, tracked-but-ignored directory, subdirectory scoping, single-file-event exclusion, live refresh without re-add) and the functional requirement 'a folder not under version control is filtered by the same ignore files' (ac9) all have a named test in LLD §6's acceptance mapping table. The HLD's own s6 boundary text (HLD-c2ba6fa62a148ed1.json storyBoundaries[s6]) names the exact same 5+1 call-site families (index.ts sites, watcher, analyzer reader + 2 walkers + infra walker, source-roots) that the LLD's §3/§7 migration table lists, plus a non-goal the HLD states explicitly -- the 5 text-search tools (glob/grep/list-dir/recent/review-probe) 'deliberately left as they are' -- which the LLD correctly does not touch (none of those files appear in any LLD call-site list). [files: /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/DEF-c2ba6fa62a148ed1.json, /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/HLD-c2ba6fa62a148ed1.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "repo-ignore-config.ts's initRepoIgnore/resolveRepoIgnore/gitignoreDirs exist as described: a per-repo .insrc/config.json 'ignore' array, idempotently seeded from IGNORE_DIRS plus .gitignore dir names or repo-type defaults, read by resolveRepoIgnore with an IGNORE_DIRS fallback.",
+          "evidence": "repo-ignore-config.ts:58-108 implements exactly this: resolveRepoIgnore falls back to [...IGNORE_DIRS] when no non-empty config exists; initRepoIgnore never overwrites an existing non-empty 'ignore' and seeds from .gitignore dirs else repo-type defaults. [files: /Users/subhagho/work/projects/insors/insrc/src/indexer/repo-ignore-config.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "file-selection.ts's hasIgnoredSegment is a bare-path-segment membership test used by selectFile after its not-code/generated-file checks, and index.ts's lines 275/341/366/480/648/824 are the call sites the LLD names for repo-ignore-config.ts and hasIgnoredSegment.",
+          "evidence": "file-selection.ts:47-64: hasIgnoredSegment splits the relative path on sep and checks set membership; selectFile calls it only after the parser/generated/artifact checks. index.ts:275 `initRepoIgnore(repo.path)` passed into watcher.addRepo; :341 `resolveRepoIgnore(repoPath)` in detectDelta; :366 `initRepoIgnore(repoPath)` in addRepo; :480 `resolveRepoIgnore(repoPath)` in reconcileInto feeding hasIgnoredSegment at :496; :648 `resolveRepoIgnore(repoPath)` feeding selectFile in fullIndex; :824 `hasIgnoredSegment(filePath, repoPath, new Set(resolveRepoIgnore(repoPath)))` on the single file-event path. [files: /Users/subhagho/work/projects/insors/insrc/src/indexer/file-selection.ts, /Users/subhagho/work/projects/insors/insrc/src/indexer/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.3",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "watcher.ts's IGNORE_DIRS bare-name constant is passed as the default for Watcher.addRepo's ignore parameter, and this is the mechanism the LLD says is removed/replaced with a FileFilter instance.",
+          "evidence": "watcher.ts:13-16 defines IGNORE_DIRS as a bare directory-name array; :44 `addRepo(repoPath, ignore: readonly string[] = IGNORE_DIRS)` passes it to parcelWatcher.subscribe's `{ ignore: [...ignore] }` option. [files: /Users/subhagho/work/projects/insors/insrc/src/indexer/watcher.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.4",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "src/analyze/context/repo-ignore-filter.ts's createRepoIgnoreFilter is git-ls-files-based, runs once per analyze run, is distributed via ExplorationRunnerContext.ignoreFilter, and degrades to fully permissive (isIncluded always true) for a non-git repo or on a git failure, exactly as the LLD's §3.5 'current behaviour' describes.",
+          "evidence": "repo-ignore-filter.ts:98-121: non-git repo (no .git dir) or a thrown/non-zero `git ls-files --cached --others --exclude-standard` both return permissiveFilter(), whose isIncluded() always returns true (:161-168). executor.ts:170 and :506 each call `createRepoIgnoreFilter(args.repoPath)` once and thread it through as `ignoreFilter` into the runner context (e.g. :240, :562, :627). [files: /Users/subhagho/work/projects/insors/insrc/src/analyze/context/repo-ignore-filter.ts, /Users/subhagho/work/projects/insors/insrc/src/analyze/explore/executor.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.5",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The three separate analyzer-side bare-name list literals the LLD/HLD describe actually exist as distinct mechanisms: concept-resolve.ts's IGNORE_DIRS, module-profile.ts's IGNORE_DIRS, and infra/_shared.ts's SKIP_DIRS, the last of which (unlike the other two) consults no RepoIgnoreFilter/ctx.ignoreFilter at all today.",
+          "evidence": "concept-resolve.ts:323-326 defines its own `IGNORE_DIRS` Set used at :352 alongside `ctx.ignoreFilter.isIncluded` at :361. module-profile.ts:50-52 defines its own `IGNORE_DIRS` Set used at :205 alongside `ctx.ignoreFilter.isIncluded` at :212. infra/_shared.ts:55-70 defines `SKIP_DIRS` (a different, third list) and a search of the file for 'ignoreFilter' found no matches at all -- this walker has no git-backed filter today, only its own hardcoded list. [files: /Users/subhagho/work/projects/insors/insrc/src/analyze/explore/concept-resolve.ts, /Users/subhagho/work/projects/insors/insrc/src/analyze/explore/module-profile.ts, /Users/subhagho/work/projects/insors/insrc/src/analyze/runtimes/infra/_shared.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "FileFilter, createFileFilter, refreshFileFilter and proposeIgnoreFile are genuinely new -- no such symbol exists anywhere in src today -- and the `ignore` npm package is not already a runtime dependency.",
+          "evidence": "Grep for `createFileFilter|interface FileFilter|refreshFileFilter|proposeIgnoreFile` across src returned no files. Grep for `\"ignore\"` in package.json returned no matches (the package is not currently listed as a dependency), matching the LLD's migration step 1 'Add the ignore package as a new runtime dependency.' [files: /Users/subhagho/work/projects/insors/insrc/package.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.2",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "RepoIgnoreFilter's public interface (isIncluded, include, repoPath, gitBacked) that the LLD claims stays unchanged (reused) while its internal implementation is swapped for FileFilter, is exactly the shape the 9 consumer files already call.",
+          "evidence": "repo-ignore-filter.ts:66-91 declares exactly `isIncluded(absPath): boolean`, `include<T>(items): T[]`, `readonly repoPath: string`, `readonly gitBacked: boolean` -- the identical shape the LLD §3.5 names as staying unchanged, and the identical names its consumers (concept-resolve.ts, module-profile.ts, executor.ts) already call (`ctx.ignoreFilter.isIncluded(...)`). [files: /Users/subhagho/work/projects/insors/insrc/src/analyze/context/repo-ignore-filter.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The specific line numbers the LLD cites for index.ts's repo-ignore-config.ts call sites (275, 341, 366, 480, 648, 824) each actually contain the call the LLD attributes to them.",
+          "evidence": "Verified by direct read: :275 initRepoIgnore(repo.path) feeding watcher.addRepo; :341 resolveRepoIgnore(repoPath) in detectDelta; :366 initRepoIgnore(repoPath) in addRepo; :480 resolveRepoIgnore(repoPath) feeding hasIgnoredSegment in reconcileInto; :648 resolveRepoIgnore(repoPath) feeding selectFile in fullIndex; :824 hasIgnoredSegment(... resolveRepoIgnore(repoPath)) on the single file-event path. All six match exactly, with no off-by-line drift. [files: /Users/subhagho/work/projects/insors/insrc/src/indexer/index.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The watcher's addRepo signature and watcher.ts:13-16's IGNORE_DIRS constant, and source-roots.ts:245's PY_IGNORE/bare-name list, are at the lines the LLD cites and match the described shape.",
+          "evidence": "watcher.ts:13 is the start of the IGNORE_DIRS array; :44 addRepo(repoPath, ignore: readonly string[] = IGNORE_DIRS). source-roots.ts:244-248 defines PY_IGNORE as a bare-name Set starting at line 244 (the cited line 245 falls inside that literal), used for Python source-root detection. [files: /Users/subhagho/work/projects/insors/insrc/src/indexer/watcher.ts, /Users/subhagho/work/projects/insors/insrc/src/indexer/source-roots.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "No stored schema or graph-store row changes with this Story; FileFilter and its sibling types are runtime-only, and a repository's stale .insrc/config.json 'ignore' array is left on disk but no longer read by any path once repo-ignore-config.ts is removed.",
+          "evidence": "repo-ignore-config.ts's writer (initRepoIgnore) only ever writes to <repo>/.insrc/config.json, a per-repo on-disk file, not a graph-store row; grepping the codebase found no SCHEMA_VERSION or graph-store write tied to the 'ignore' key. Removing repo-ignore-config.ts's reader functions (as §3.2 proposes) leaves that on-disk array inert but harmless, matching the LLD's lc1 claim and HLD-c2ba6fa62a148ed1.json's Phase B backwardCompat text ('the ignore entry in its .insrc config is no longer read'). [files: /Users/subhagho/work/projects/insors/insrc/src/indexer/repo-ignore-config.ts, /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/HLD-c2ba6fa62a148ed1.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "sc4 (FileFilter) is owned solely by s6 per the HLD, and the LLD's adjacent-scope list (s1/s2/s3/s4/s5/s7/s8/s9/s10) correctly attributes sc1/sc2/sc3 to the other named stories without redesigning any of them.",
+          "evidence": "HLD-c2ba6fa62a148ed1.json sharedContracts: sc4 'FileFilter' has `\"ownedByStory\": \"s6\"`, `\"consumedByStories\": []`; sc1 IndexState ownedByStory s1; sc2 FileCommit ownedByStory s2; sc3 RelationEvidence ownedByStory s7. The LLD's §1 'Adjacent scope' table assigns sc1->s1, sc2->s2, sc3->s7 exactly matching the HLD, and the LLD's own contract section (§4) only implements sc4, touching none of the others' interfaces. [files: /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/HLD-c2ba6fa62a148ed1.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "proposeIgnoreFile's stated error handling -- a model-call failure or malformed response is caught and a fallback ignore file is written instead, without failing repo registration -- matches the DEF's lc2 constraint for s6.",
+          "evidence": "DEF-c2ba6fa62a148ed1.json s6 local constraint lc2 (line 1071-1075): 'A failure of the model call that proposes an ignore file does not fail the adding of the repository; a plain ignore file is written instead and the fallback is stated.' The LLD's §2.5 Errors clause and §5 error-case table restate this exactly, including the IgnoreFileProposal{written:true, source:'fallback', reason} return shape. [files: /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/DEF-c2ba6fa62a148ed1.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The acceptance criteria ac1 through ac5 (and the ac9 functional requirement) that the LLD's test-strategy table maps to specific unit/integration tests are the same criteria stated in the DEF for s6, not criteria invented by the LLD.",
+          "evidence": "DEF-c2ba6fa62a148ed1.json s6 acceptanceCriteria ac1 (anchored top-level rule vs. deeper same-named dir), ac2 (tracked dir on today's built-in list but no ignore rule stays indexed), ac3 (subdirectory-scoped ignore rule, same name elsewhere unaffected), ac4 (single file event honours a pattern rule), ac5 (ignore-file edit takes effect without re-adding the repo) match word-for-word the given/when/then the LLD's §6 acceptance-mapping table cites for the same ids. The functional requirement 'a folder not under version control is filtered by the same ignore files' is the ac9 case the LLD's integration test table names. [files: /Users/subhagho/work/projects/insors/insrc/.insrc/artifacts/DEF-c2ba6fa62a148ed1.json]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.2",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The test framework and fixture pattern the LLD names (node:test / tsx --test, extending src/indexer/__tests__'s fixture-tree + mkdtempSync pattern) is a real, existing pattern in this test directory, and the existing tests this Story must migrate (ignore-dirs.test.ts, repo-ignore-config.test.ts, file-selection.test.ts) exist.",
+          "evidence": "src/indexer/__tests__/ contains ignore-dirs.test.ts, repo-ignore-config.test.ts and file-selection.test.ts alongside other fixture-tree-based tests (source-roots.test.ts, full-index-rebuild.test.ts, reconcile.test.ts), confirming the stated test layer and migration surface exist as described. [files: /Users/subhagho/work/projects/insors/insrc/src/indexer/__tests__]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 15,
+        "unverified": 0
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-01T08:12:08.176Z",
+      "model": "cli-claude:claude-sonnet-5",
+      "reviewedBy": "daemon"
+    },
+    "approvedAt": "2026-11-01T08:30:53.076Z"
+  },
+  "body": {
+    "summary": {
+      "prose": "This Story replaces the many separate bare-name ignore lists scattered across the indexer, the watcher, and three analyzer walkers with one FileFilter: an in-process gitignore-grammar matcher built from the repository's real .gitignore files (nested), its clone's own exclude file, and the user's global gitignore, unioned with git's own tracked-file list so a tracked file is always included. A repository added with no root ignore file gets one proposed by the local model, falling back to a plain file if the model call fails; an existing ignore file is never touched. Every site that decides what the index holds now asks the same filter, so a full walk, a single file event, and the live watcher agree.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Three layers, each depending only on the one below. Layer 1, the file commit: the store has one write operation for a file, which in a single LMDB transaction replaces the file's entities, replaces its relationships and its pending relationships, and advances the repository's generation and completeness counters. It grows out of the existing whole-file replacement (reindexFile), which already replaces a file's entities in one transaction but removes relationships only for entities that disappeared from the file; the commit goes further and replaces the outgoing relationships of every entity of the file. The indexer's refresh, the delete event and the repair all call it; a file is selected for it by one filter built from the repository's ignore files. A relationship is never dropped in the commit: when its target is not stored it becomes a pending row, and pending rows are completed only by the passes that own them: the cross-file pass for code symbols, and the two endpoint passes of the external-services Epic for theirs. Layer 2, the recorded state: one row per repository holds the generation and what is known to be incomplete (relationships awaiting a target that is in an indexed repository, relationships that could not be written, entities without vectors). The four repository status values keep their meaning; completeness is a separate field read from this row and shown wherever status is shown, so a repository with anything outstanding does not read as fully ready. Layer 3, derived data: evidence is a one-byte value on the relationship row, written in the commit, by the cross-file pass and by every other writer of a stored relationship; subsystem grouping, subsystem summaries and model-proposed document relationships are queued passes that start only from a repository whose state is complete, write their own tables, and stamp what they wrote with the generation it was computed from. All new stored data arrives as steps on the existing migration chain (SCHEMA_VERSION 4 onward); no existing edge key or kind byte changes.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "FileFilter",
+          "purpose": "The one rule for what the index leaves out, built from git's ignore sources and used by every place that selects files. The filter is composed from a list of rule sources, of which this Epic supplies one (git's); a further source is added by adding to that list, and none is added here. No other Story consumes it as a contract; it is stated here because it replaces a list that six call sites in the indexer and the watcher read today.",
+          "interfaceSketch": "interface RuleSource {\n  name: string;                        // 'git' is the only one supplied\n  ruleFiles: string[];                 // every rule file read, root first\n}\n\ntype BuiltInExclusion = 'generated-or-minified' | 'insrc-directory';   // applied whatever the sources say\n\ninterface FileFilter {\n  repoPath: string;\n  sources: RuleSource[];\n  builtIn: BuiltInExclusion[];\n  includes(absolutePath: string): boolean;   // true for an included file and for a directory that holds one\n  listFiles(): string[];               // every included file under repoPath\n}\n\ninterface FilterChange {\n  left: string[];                      // files that are now left out\n  entered: string[];                   // files that are now included\n}\n\ninterface IgnoreFileProposal {\n  written: boolean;\n  source: 'model' | 'fallback';\n  reason?: string;                     // why the fallback was used\n}",
+          "ownedByStory": "s6",
+          "consumedByStories": [],
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s6",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [],
+        "internal": "The in-process matcher of the gitignore grammar over nested ignore files and its conformance test against git; the move onto the one filter of every site that reads the list today in src/indexer/index.ts (the full walk, the start-up scan for changed files, the file event, the clean-up pass, and the two places that seed the list when a repository is registered), of the watcher, and of the analyzer's reader, its two exploration walkers and its infra walker (src/analyze/runtimes/infra/_shared.ts), each of which has its own list of names today, and of the indexer's source-root detection (src/indexer/source-roots.ts), whose own list would otherwise hide a package in a directory the filter includes; a search of the source for such lists found five more, in the daemon's four file-search tools (glob, grep, list-dir, recent under src/daemon/tools/builtins/search) and in the review probe (src/workflow/review/probe.ts), which search the working tree as text, do not decide what the index holds, and are deliberately left as they are; the filter keeps answering for a directory that holds an included file, as the analyzer's reader does now; the retirement of the bare-name list and of the ignore entry in the repository's .insrc config; the two built-in exclusions (generated or minified files, the .insrc directory) applied inside the filter so that the full walk and the file event no longer differ on them; the handling of a change to an ignore file as an event that removes and adds files, and the comparison by content hash of the clone's exclude file and the global ignore file, which the watcher cannot see, whenever the filter is used; the queued step that proposes a root ignore file with the cheap-tier model when a repository is added without one, its fallback, and the rule that an existing file is never written. Two points were decided by the stakeholder: the filter honours all three of git's ignore sources (the .gitignore files, the clone's exclude file, the user's global ignore file), and a file git tracks is indexed even when a rule matches it, so the filter takes git's list of tracked files as an input and a plain folder is filtered by the rules alone."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1"
+          ],
+          "depends": [],
+          "internal": "s1's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1"
+          ],
+          "internal": "s2's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s3",
+          "owns": [],
+          "depends": [],
+          "internal": "s3's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s4",
+          "owns": [],
+          "depends": [],
+          "internal": "s4's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s5",
+          "owns": [],
+          "depends": [],
+          "internal": "s5's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s7",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "s7's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s8",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc3"
+          ],
+          "internal": "s8's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s9",
+          "owns": [],
+          "depends": [
+            "sc2"
+          ],
+          "internal": "s9's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s10",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "s10's full boundary text, unchanged from the HLD."
+        },
+        {
+          "storyId": "s11",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s11: The step tools run inside the daemon, and the MCP server opens no store"
+        },
+        {
+          "storyId": "s12",
+          "owns": [],
+          "depends": [],
+          "internal": "Private implementation of s12: Every supported parser records the calls its code makes, and calls resolve within a package"
+        },
+        {
+          "storyId": "s13",
+          "owns": [],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Private implementation of s13: Settling file changes does work proportional to the changed files, never a scan of the repository or the store"
+        }
+      ],
+      "rolloutPhase": "Phase B — nothing lost, nothing wrongly left out, fast reads",
+      "nonFunctional": {
+        "performance": "Reading one file's entities costs in proportion to that file's rows, and one repository's in proportion to that repository's rows. A file commit is one write transaction whose size is bounded by one file. A first full index holds more pending rows than today until the cross-file pass runs, and that pass does more work; this is accepted under the accuracy rule. Index jobs take precedence in the queue and a derived pass yields between its units of work, so a commit waits for at most one unit of a pass. Model calls are serial; the mid-tier pass sends only new or changed documents. Vector writes keep the plain insert for entities first stored in the same commit, so a first full index writes vectors at today's cost; the upsert, which costs more against a large vector table, is used only for changed entities and for the backfill, and Story s2's design measures it on this repository.",
+        "security": "No store is opened outside the daemon and no model is reached except through the local provider or the CLI providers. The ignore-file proposal sends the model file names and manifest names, not file contents, and writes into the user's repository only when no root ignore file exists. Document text sent to the mid-tier model goes through the user's own CLI session, as other mid-tier calls do.",
+        "observability": "Repository status carries the completeness counts and the reason a repository is incomplete. A relationship the store refuses is logged at warn with its reason and counted, not logged at debug. A fallback ignore file, a skipped language reader, a store failure after its locks were taken away, and a model-proposed capability that is off each state their cause where status is read. Each derived row carries the generation it was computed from.",
+        "durability": "The file commit is atomic in LMDB: after a crash a file holds its old rows or its new rows. Vectors are written after the commit and may be missing after a crash; the gap is recorded by an empty embedding marker, checked against the vector table on open, and backfilled, and the repository reads as incomplete until it is, unless the embedding backend is unavailable, which is reported as its own reason. The IndexState fields that the tables can answer are recounted when the store is opened; the rest, including the paths of files that could not be committed, are persisted in the state row and survive a restart. Every new table and value arrives by a migration step applied on open; no existing key or kind byte changes, so an older store is brought forward without a re-index. Derived tables can be dropped and recomputed without loss."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "FileFilter",
+          "signature": "interface FileFilter { repoPath: string; sources: RuleSource[]; builtIn: BuiltInExclusion[]; includes(absolutePath: string): boolean; listFiles(): string[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "FileFilter",
+            "meaning": "The one rule for what the index leaves out, per the HLD's own sc4 interface sketch."
+          },
+          "errors": [],
+          "preconditions": [
+            "repoPath is an absolute, existing directory."
+          ],
+          "postconditions": [
+            "includes() returns true for a file git tracks even when a pattern rule would otherwise exclude it, and for a directory that holds any included file; listFiles() returns every included file under repoPath."
+          ]
+        },
+        {
+          "name": "RuleSource",
+          "signature": "interface RuleSource { name: string; ruleFiles: string[]; }",
+          "parameters": [],
+          "returns": {
+            "type": "RuleSource",
+            "meaning": "One named source of ignore rules, per sc4's interface sketch. This Story supplies exactly one: name 'git', ruleFiles the repo's nested .gitignore files root-first, the clone's .git/info/exclude, and the user's global gitignore."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "This Story adds no second RuleSource (lc3); FileFilter.sources has exactly one entry."
+          ]
+        },
+        {
+          "name": "createFileFilter",
+          "signature": "function createFileFilter(repoPath: string): FileFilter",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository's absolute root path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FileFilter",
+            "meaning": "Builds the filter by reading the repo's real ignore files from disk and (when repoPath/.git exists) the tracked-file set via `git ls-files --cached`."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "For a non-git repoPath, the tracked-file override is simply empty and the ignore-file rules alone decide inclusion (ac9)."
+          ]
+        },
+        {
+          "name": "refreshFileFilter",
+          "signature": "function refreshFileFilter(filter: FileFilter, changedIgnoreFile: string): FilterChange",
+          "parameters": [
+            {
+              "name": "filter",
+              "type": "FileFilter",
+              "purpose": "The filter to update in place after one of its ignore files changed on disk.",
+              "optional": false
+            },
+            {
+              "name": "changedIgnoreFile",
+              "type": "string",
+              "purpose": "The absolute path of the ignore file (a .gitignore, the clone's exclude file, or the global ignore file) whose content changed.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "FilterChange",
+            "meaning": "{ left: string[]; entered: string[]; } -- the files that newly left and newly entered the included set as a result, per sc4's own FilterChange shape."
+          },
+          "errors": [],
+          "preconditions": [
+            "changedIgnoreFile is one of filter.sources[0].ruleFiles, or the repo's clone-exclude/global-ignore file compared by content hash (the watcher cannot see edits to the global ignore file directly)."
+          ],
+          "postconditions": [
+            "filter.includes() reflects the new rule content for every subsequent call; the repository is not re-added (ac5)."
+          ]
+        },
+        {
+          "name": "proposeIgnoreFile",
+          "signature": "function proposeIgnoreFile(repoPath: string, model: CheapTierModel): Promise<IgnoreFileProposal>",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "The repository being added.",
+              "optional": false
+            },
+            {
+              "name": "model",
+              "type": "CheapTierModel",
+              "purpose": "The local cheap-tier model used to propose ignore entries that fit the repository's languages/tools (k9).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<IgnoreFileProposal>",
+            "meaning": "{ written: boolean; source: 'model' | 'fallback'; reason?: string; } -- per sc4's own interface sketch."
+          },
+          "errors": [
+            {
+              "type": "caught-and-reported",
+              "condition": "The model call fails or times out -- caught, a plain fallback ignore file is written instead, and the proposal's source/reason record the fallback (ac7, lc2); the repository add is never failed by this."
+            }
+          ],
+          "preconditions": [
+            "Called only when repoPath has no root ignore file at all (functional requirement); an existing root ignore file is never read into or touched by this path (ac8)."
+          ],
+          "postconditions": [
+            "written is true exactly when no root ignore file existed before the call and one now exists at repoPath's root, with entries fit to the repo's detected languages/tools when source is 'model', or a plain default set when source is 'fallback'."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "FileFilter / RuleSource / BuiltInExclusion / FilterChange / IgnoreFileProposal",
+        "change": "new",
+        "details": "New in-process types per sc4's own interface sketch; BuiltInExclusion is a closed union of 'generated-or-minified' | 'insrc-directory', applied by FileFilter.includes() after the rule sources regardless of what they say (k11's built-in-exclusions clause). No existing stored row or schema changes -- these are runtime-only types, nothing persists to the graph store.",
+        "callSites": [
+          "src/indexer/index.ts:275",
+          "src/indexer/index.ts:341",
+          "src/indexer/index.ts:366",
+          "src/indexer/index.ts:480",
+          "src/indexer/index.ts:648",
+          "src/indexer/index.ts:824",
+          "src/indexer/cross-file-resolver.ts:236",
+          "src/indexer/source-roots.ts:245",
+          "src/indexer/watcher.ts:13",
+          "src/analyze/explore/concept-resolve.ts:324",
+          "src/analyze/explore/module-profile.ts:51",
+          "src/analyze/runtimes/infra/_shared.ts:57"
+        ]
+      },
+      {
+        "entity": "src/indexer/repo-ignore-config.ts (initRepoIgnore / resolveRepoIgnore / gitignoreDirs)",
+        "change": "field-remove",
+        "details": "Retired entirely: the per-repo .insrc/config.json 'ignore' array and every function that reads or writes it are removed, replaced by createFileFilter. A repository that carries a persisted 'ignore' array from before this Story reads it as dead config data -- the array is left in place on disk (never rewritten by this Story) but nothing reads it anymore, so there are no longer two disagreeing rules (lc1): only FileFilter decides.",
+        "callSites": [
+          "src/indexer/repo-ignore-config.ts",
+          "src/indexer/index.ts:275",
+          "src/indexer/index.ts:341",
+          "src/indexer/index.ts:366",
+          "src/indexer/cross-file-resolver.ts:236"
+        ]
+      },
+      {
+        "entity": "src/indexer/file-selection.ts (hasIgnoredSegment)",
+        "change": "field-remove",
+        "details": "The bare-path-segment membership test is removed from selectFile's ignore check; selectFile now asks FileFilter.includes() instead, after its existing parser/generated-file checks (which stay -- Story s6 only replaces the ignore decision, not the not-code/generated-file decisions file-selection.ts already makes correctly).",
+        "callSites": [
+          "src/indexer/file-selection.ts"
+        ]
+      },
+      {
+        "entity": "src/indexer/watcher.ts (IGNORE_DIRS, Watcher.addRepo)",
+        "change": "field-modify",
+        "details": "IGNORE_DIRS (the bare-name constant) is removed; Watcher.addRepo's ignore parameter changes from a bare-name list to a FileFilter instance, passed to @parcel/watcher's own 'ignore' option via FileFilter.listFiles()-derived exclusion, or via a post-filter on emitted events using FileFilter.includes() -- the exact mechanism is an implementation choice, not a contract change; either way every emitted file event is filtered through the same FileFilter before reaching the indexer.",
+        "callSites": [
+          "src/indexer/watcher.ts:13",
+          "src/indexer/index.ts:275"
+        ]
+      },
+      {
+        "entity": "src/analyze/context/repo-ignore-filter.ts (createRepoIgnoreFilter, RepoIgnoreFilter)",
+        "change": "field-modify",
+        "details": "A third pre-existing mechanism, found by review: RepoIgnoreFilter (isIncluded(absPath): boolean, include<T>(items): T[], repoPath: string, gitBacked: boolean) is built once per analyze run in executor.ts:170 and :506 and distributed via ExplorationRunnerContext.ignoreFilter to 9 exploration files beyond module-profile.ts/concept-resolve.ts's own separate bare-name lists (which the first dataModelChanges entry already covers): import-graph.ts, convention-detect.ts, test-locate.ts, usage-example.ts, class-hierarchy.ts, symbol-locate.ts, data-model-trace.ts, manifests-locate.ts, and module-profile.ts's own ctx.ignoreFilter use (distinct from its bare IGNORE_DIRS literal already covered). Today it runs its own git ls-files --cached --others --exclude-standard subprocess call and degrades to fully permissive (no filtering at all) for a non-git repo or on a git failure. This Story retires that internal implementation and reimplements createRepoIgnoreFilter(repoPath) as a thin wrapper over createFileFilter(repoPath): isIncluded delegates to FileFilter.includes (plus the existing ancestor-directory inclusion logic for directory queries, which FileFilter.includes's own directory-inclusion postcondition already provides), include<T> stays sugar over isIncluded, and gitBacked becomes true whenever repoPath/.git exists. The public RepoIgnoreFilter interface is UNCHANGED, so none of the 9 consumer files need to change. One deliberate behavior change: a non-git repo no longer degrades to fully permissive -- it gets FileFilter's own correct ignore-file-rules-alone handling (ac9), which is strictly more correct than today's permissive fallback.",
+        "callSites": [
+          "src/analyze/context/repo-ignore-filter.ts",
+          "src/analyze/explore/executor.ts:170",
+          "src/analyze/explore/executor.ts:506"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "This Story is sc4's sole owner (HLD boundary text: 'ownedByStory: s6'); FileFilter, RuleSource, BuiltInExclusion, FilterChange and IgnoreFileProposal are implemented exactly per the HLD's own interface sketch, with git as the only RuleSource supplied (lc3: the shape allows a second source to be added later by another Story, but none is added here)."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "proposeIgnoreFile's model call fails, times out, or returns content that is not valid ignore-file text.",
+          "detection": "The call is wrapped in try/catch; a successful but malformed response is detected by a basic syntactic check (non-empty, line-based) before writing, failing that check the same way a thrown error does.",
+          "response": "Writes a plain fallback ignore file (the universal base entries) at the repo's root instead, and returns IgnoreFileProposal{ written: true, source: 'fallback', reason: <the failure or malformed-content reason> }; repo registration proceeds unchanged.",
+          "userImpact": "The repository is still added and indexed on schedule; the fallback ignore file may be coarser than a model-proposed one, but nothing fails or blocks.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A file event arrives for an ignore file itself (e.g. the repo's root .gitignore is edited) concurrently with a burst of other file events for files whose inclusion that edit changes.",
+          "detection": "The watcher's event batch is inspected for a path matching one of filter.sources[0].ruleFiles (or the clone-exclude/global-ignore files compared by content hash) before the batch's other files are evaluated.",
+          "response": "refreshFileFilter runs first for the changed ignore file, producing a FilterChange; the batch's other file events are then evaluated against the REFRESHED filter, so newly-excluded files in the same batch are not indexed and newly-included ones are.",
+          "userImpact": "An edit to an ignore file and a simultaneous edit to a file it newly covers are handled consistently in one pass, matching ac5's intent.",
+          "recoverable": true
+        },
+        {
+          "scenario": "git ls-files --cached fails (e.g. a corrupted .git directory, or git itself is not installed) while building the tracked-file override for a repository that does have a .git directory.",
+          "detection": "The spawned process exits non-zero or throws (ENOENT for a missing git binary).",
+          "response": "The tracked-file override set is treated as empty for that repository (logged at warn) -- the filter falls back to ignore-file rules alone, the same behavior ac9 specifies for a genuinely non-git folder.",
+          "userImpact": "A tracked file that a pattern rule would otherwise exclude is, in this one failure case, excluded like an untracked file would be -- a narrower result than normal, not a crash or a hang.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A repository with .gitignore files at the root and in three nested subdirectories, where a deeper file re-includes (via a negation rule) something an ancestor's rule excludes.",
+          "expected": "Per-directory composition evaluates the deepest applicable directory's rules last, matching git's own precedence (later / more specific rules win) -- verified directly against real git in the conformance test (ac1, ac3)."
+        },
+        {
+          "input": "A plain (non-git) folder with no ignore files anywhere.",
+          "expected": "FileFilter.sources[0].ruleFiles is empty; only the two built-in exclusions apply; every other file is included (ac9's baseline case)."
+        },
+        {
+          "input": "A repository already carrying a persisted .insrc/config.json 'ignore' array from before this Story shipped.",
+          "expected": "The array is never read by any code path after this Story (repo-ignore-config.ts's reader is removed); FileFilter alone decides, so the repository is not filtered by two disagreeing rules (lc1). The stale array itself is left on disk untouched -- this Story does not rewrite or delete files outside its own scope."
+        },
+        {
+          "input": "A repository whose root ignore file already exists and whose content a model, if asked, would propose differently.",
+          "expected": "proposeIgnoreFile is never invoked at all when a root ignore file exists (the functional requirement gates on absence, not on content quality); the existing file is byte-for-byte unchanged (ac8)."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A file git tracks is indexed even when a pattern rule in an ignore file would otherwise exclude it -- the stakeholder-decided override (k11) that FileFilter's tracked-file union exists to enforce.",
+          "source": "c1"
+        },
+        {
+          "text": "The full walk and the single file event path must agree after this Story -- the exact 'two rules disagree' defect this Story fixes.",
+          "source": "c1"
+        },
+        {
+          "text": "selectFile's existing not-code / generated-or-minified / artifact-skip checks are unchanged by this Story -- only the ignore decision inside selectFile is replaced.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify FileFilter's matching, listFiles, and live-refresh behavior directly over fixture ignore-file trees, without touching real git or the daemon.",
+          "subjects": [
+            "createFileFilter",
+            "FileFilter.includes",
+            "FileFilter.listFiles",
+            "refreshFileFilter",
+            "proposeIgnoreFile"
+          ],
+          "fixturesNeeded": [
+            "A set of temp-directory fixture trees with nested .gitignore files, a .git/info/exclude, and a fake global-ignore path, each with a known expected included/excluded file set",
+            "A fake cheap-tier model stub for proposeIgnoreFile's success/failure/malformed-response paths"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove the conformance claim: FileFilter's in-process answer matches real git's own answer over the same fixture tree, and that every migrated call site now agrees.",
+          "subjects": [
+            "src/indexer/index.ts (full walk, single file event, clean-up pass, registration)",
+            "src/indexer/watcher.ts",
+            "src/indexer/cross-file-resolver.ts",
+            "src/indexer/source-roots.ts",
+            "src/analyze/explore/concept-resolve.ts",
+            "src/analyze/explore/module-profile.ts",
+            "src/analyze/runtimes/infra/_shared.ts"
+          ],
+          "fixturesNeeded": [
+            "A real temp git repository (git init + real .gitignore + real git ls-files) for the conformance comparison",
+            "A real temp non-git folder with ignore files for the ac9 case"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: FileFilter.includes returns false for a top-level directory matched by an anchored rule and true for a same-named directory deeper in the tree, over a fixture tree",
+            "integration: the conformance test asserts this matches real git's own check-ignore/ls-files result on the same fixture"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: a full index of a fixture repo with a tracked directory named after a retired built-in bare name but not matched by any ignore rule includes that directory's files"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: FileFilter.includes scopes a subdirectory's .gitignore rule to that subdirectory and below, excluding a same-named file elsewhere in the tree",
+            "integration: a single file event for a file under the subdirectory rule is excluded both at full-walk time and at file-event time"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: a single FileEvent for a file matched only by a pattern rule in an ignore file results in the file not being indexed, exercising the same code path index.ts:824 calls today"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: refreshFileFilter, given an ignore file whose content gained one rule and lost another, returns FilterChange.left and FilterChange.entered correctly, without any repo re-registration call"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "unit: proposeIgnoreFile, given a fixture repo with no root ignore file and a model stub that succeeds, writes a root ignore file before returning and returns IgnoreFileProposal{written:true, source:'model'}"
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "unit: proposeIgnoreFile, given a model stub that throws, still writes a fallback ignore file and returns IgnoreFileProposal{written:true, source:'fallback', reason: <set>}, and the caller's repo-add flow does not throw"
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "unit: proposeIgnoreFile given a fixture repo whose root ignore file already exists asserts the file's bytes are identical before and after the call, and that the model stub is never invoked"
+          ]
+        },
+        {
+          "criterionId": "ac9",
+          "provingTests": [
+            "integration: a real temp non-git folder with root and subdirectory ignore files is indexed and the files those rules cover are excluded exactly as the git-repo fixture's equivalent files are"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx --test), extending src/indexer/__tests__'s existing fixture-tree + mkdtempSync pattern used by the indexer's other full-walk/watcher tests"
+    },
+    "migration": {
+      "stateBefore": "12 call sites across 3 mechanism families decide what the index/watcher/analyzer leaves out today: src/indexer/watcher.ts's bare-name IGNORE_DIRS constant; src/indexer/repo-ignore-config.ts's per-repo .insrc/config.json 'ignore' array (initRepoIgnore/resolveRepoIgnore); src/indexer/file-selection.ts's hasIgnoredSegment bare-path-segment test (called from listRepoFiles at index.ts:97 on top of git's own already-correct ls-files result, and alone at index.ts:824 for the single file event, which has no real gitignore grammar at all); src/indexer/source-roots.ts:245's own bare-name list; three separate analyzer-side bare-name list literals; AND a third, distinct mechanism -- src/analyze/context/repo-ignore-filter.ts's git-ls-files-based RepoIgnoreFilter, built once per analyze run and consumed via ExplorationRunnerContext.ignoreFilter by 9 exploration files, which today degrades to fully permissive (no filtering) for a non-git repo or on a git failure. No in-process gitignore-grammar matcher exists anywhere in the repo.",
+      "stateAfter": "One FileFilter per repository (sc4), built from the repo's real nested .gitignore files, its .git/info/exclude, and the user's global gitignore via the `ignore` npm package, unioned with git's own tracked-file list; the two built-in exclusions apply on top. All 12 call sites ask the same filter; repo-ignore-config.ts, hasIgnoredSegment, watcher.ts's IGNORE_DIRS, source-roots.ts's list, and the three analyzer-side lists are all removed. createRepoIgnoreFilter is reimplemented as a thin wrapper over FileFilter, with its public RepoIgnoreFilter interface unchanged, so its 9 consumer files need no changes; its non-git permissive fallback is replaced by FileFilter's correct ignore-file-rules-alone handling. A repository added with no root ignore file gets one proposed by the cheap-tier model, or a plain fallback on model failure; an existing root ignore file is never touched.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the `ignore` package as a new runtime dependency.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Implement createFileFilter/FileFilter/RuleSource/BuiltInExclusion/refreshFileFilter per the HLD's sc4 interface sketch, reading real ignore files and git's tracked-file list, with the two built-in exclusions applied inside includes().",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Implement proposeIgnoreFile (model proposal + fallback) and wire it into the repo-registration path to run exactly when no root ignore file exists.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Route the full walk, the single file event, the clean-up pass, and the two registration seed sites in src/indexer/index.ts (lines 275, 341, 366, 480, 648, 824) onto FileFilter, removing their resolveRepoIgnore/initRepoIgnore/hasIgnoredSegment calls.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Route src/indexer/cross-file-resolver.ts:236, src/indexer/source-roots.ts:245, and src/indexer/watcher.ts's addRepo (replacing IGNORE_DIRS) onto FileFilter.",
+          "rollbackable": true
+        },
+        {
+          "order": 6,
+          "action": "Route the analyzer's reader, its two exploration walkers, and the infra walker onto FileFilter, removing their own bare-name list literals.",
+          "rollbackable": true
+        },
+        {
+          "order": 7,
+          "action": "Remove src/indexer/repo-ignore-config.ts and src/indexer/file-selection.ts's hasIgnoredSegment entirely; selectFile calls FileFilter.includes() instead, after its unchanged not-code/generated-file checks.",
+          "rollbackable": true
+        },
+        {
+          "order": 8,
+          "action": "Wire the watcher's ignore-file-edit detection to call refreshFileFilter before evaluating the rest of that event batch.",
+          "rollbackable": true
+        },
+        {
+          "order": 9,
+          "action": "Reimplement createRepoIgnoreFilter (src/analyze/context/repo-ignore-filter.ts) as a thin wrapper over createFileFilter, keeping its public RepoIgnoreFilter interface (isIncluded/include/repoPath/gitBacked) unchanged so its 9 exploration-file consumers need no changes; remove its own git-ls-files subprocess call and its non-git permissive-degrade branch.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No stored schema or graph-store change -- every change is in-process runtime behavior, so there is no SCHEMA_VERSION migration step and no re-index is required for existing repositories. A repository carrying a stale .insrc/config.json 'ignore' array from before this Story is unaffected functionally (lc1) because nothing reads that key anymore, though the file itself is left on disk untouched. Watcher.addRepo's ignore parameter changes shape -- this is an internal signature change with exactly one caller, migrated in the same Story, not a public API break.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "In-process ignore-grammar library (the `ignore` npm package) fed from the repo's real ignore files, plus git's tracked-file list as an override",
+        "oneLineSummary": "Build FileFilter by reading each directory's .gitignore (nested, root-first), .git/info/exclude and the user's global gitignore into the `ignore` package's matcher per directory, unioned with `git ls-files --cached` for the tracked-file override; a conformance test runs both this and real git over the same fixture tree.",
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Always shell out to real git (git check-ignore / git ls-files) for every filter decision, everywhere",
+        "oneLineSummary": "Replace every site with calls into git itself, including the single file event and the watcher's live-update path.",
+        "costEstimate": "M",
+        "reasonRejected": "Fails ac4 (process-spawn cost on the single-file-event hot path) and ac9 (no git repository to query in a non-git folder) outright, and only partially satisfies ac5 and sc4's implied performance shape."
+      },
+      {
+        "id": "a3",
+        "name": "Hand-rolled in-process gitignore-grammar matcher (no new dependency)",
+        "oneLineSummary": "Implement gitignore's pattern grammar directly in this codebase instead of depending on a library.",
+        "costEstimate": "L",
+        "reasonRejected": "Behaviorally equivalent to a1 on every acceptance criterion and the sc4 contract, so the tie-break is cost/risk: a1 reuses a mature, correctness-focused grammar implementation instead of hand-rolling the same negation/anchor/double-star edge cases this project would otherwise have to get right and maintain itself."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:64-117"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/index.ts:824"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/indexer/repo-ignore-config.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/indexer/file-selection.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/indexer/watcher.ts:13-16"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/indexer/source-roots.ts:245"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/analyze/context/repo-ignore-filter.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/analyze/explore/executor.ts:170-506"
+    }
+  ]
+}

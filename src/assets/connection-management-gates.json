@@ -3,7 +3,9 @@
   "ready": false,
   "sourceFiles": {},
   "compiledFiles": {},
-  "inventoryDigest": "f0b5af31c05c5f39ed0b8b7233ca8b9e003b50094c5a7c38d00f5206bcd34937",
-  "testReportDigest": "d4c6334c250ff4ef8673e3e030b81beee4399073ee140b22bf27bb469ca2bbe6",
-  "scopes": []
+  "inventoryDigest": "6af2307588c87637ee378b79d83f635bc11591a579405b7816439057ddbcbd55",
+  "testReportDigest": "2d4242392510383e27351b916149b3c3df49226ba52e38c5b80150993d21c259",
+  "scopes": [],
+  "inventoryFile": "connection-management-inventory.json",
+  "testReportFile": "connection-management-evidence.json"
 }

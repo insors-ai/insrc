@@ -1,0 +1,56 @@
+{
+  "releaseEnabled": false,
+  "cases": [
+    {
+      "case": "lost reply after known effect",
+      "ts": "CM-S5-OUTCOME-TS: immutable signed attempts, lost-reply same-ticket status/replay, expiry and independent activation/refresh recovery",
+      "kotlin": "testProjectMemoryUnknownSurvivesViewCloseAndLostReplyReconcilesWithoutAnotherCreate",
+      "facts": [
+        "one ticket",
+        "one mutation",
+        "unknown blocks new attempt",
+        "same-ticket status commits",
+        "draft erased only after known commit"
+      ],
+      "tsFile": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+      "kotlinFile": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt"
+    },
+    {
+      "case": "not-seen replay and expiry",
+      "ts": "CM-S5-OUTCOME-TS: not-seen requires explicit byte-identical same-ticket replay and expiry blocks all fresh mutation",
+      "kotlin": "testSameTicketReplayIsExplicitAndIdenticalWhileExpiredUnknownBlocksNewMutation",
+      "facts": [
+        "no automatic replay",
+        "identical original payload",
+        "expired unknown blocks fresh mutation"
+      ],
+      "tsFile": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+      "kotlinFile": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt"
+    },
+    {
+      "case": "activation cleanup and refresh",
+      "ts": "CM-S5-OUTCOME-TS: activation cleanup and read retries preserve committed revision and never repeat mutation",
+      "kotlin": "testPostcommitActivationCleanupAndRefreshRemainSeparateFromRegistration",
+      "facts": [
+        "persisted registration remains committed",
+        "retry phase only",
+        "same revision",
+        "one mutation"
+      ],
+      "tsFile": "vscode-plugin/src/connections/__tests__/mutation.test.ts",
+      "kotlinFile": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionMutationControllerTest.kt"
+    },
+    {
+      "case": "same-ID recreation and cleanup",
+      "ts": "CM-S5-REMOVE-TS: independent original-ticket cleanup survives same-ID recreation without touching its source",
+      "kotlin": "testCredentialAndResourceCleanupUseOriginalTicketAcrossSameIdRecreation",
+      "facts": [
+        "cleanup receives original ticket only",
+        "new registration remains intact",
+        "source bytes remain unchanged"
+      ],
+      "tsFile": "vscode-plugin/src/connections/__tests__/removal.test.ts",
+      "kotlinFile": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionRemovalsTest.kt"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "pid": 8593,
+  "startedAt": "2026-10-28T04:36:42.567Z",
+  "node": "v22.23.2",
+  "target": {
+    "repo": "/Users/subhagho/work/projects/insors/insrc",
+    "epicHash": "484fcef7efaf229e",
+    "storyId": "s3"
+  }
+}

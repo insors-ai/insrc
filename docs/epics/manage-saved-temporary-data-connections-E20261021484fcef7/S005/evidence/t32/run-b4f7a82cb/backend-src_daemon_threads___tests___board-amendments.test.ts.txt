@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today
+ok 1 - publishLane: two lanes merge, idle is derived from both, queueDepth and QueueLanes map as composeQueueLanes does today
+  ---
+  duration_ms: 7.849584
+  type: 'test'
+  ...
+# Subtest: a repo row without completeness is published unchanged; underHold and maintenance are absent by default
+ok 2 - a repo row without completeness is published unchanged; underHold and maintenance are absent by default
+  ---
+  duration_ms: 1.45925
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 391.698916

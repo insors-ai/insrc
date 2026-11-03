@@ -104,7 +104,7 @@ declare module 'vscode' {
     reveal(viewColumn?: ViewColumn, preserveFocus?: boolean): void;
     onDidDispose(listener: () => unknown): Disposable;
     /** Fires when the panel's `active` / `visible` state changes (chat group lock). */
-    onDidChangeViewState(listener: (e: unknown) => unknown): Disposable;
+    onDidChangeViewState(listener: (e: { readonly webviewPanel: WebviewPanel }) => unknown): Disposable;
   }
 
   /** A tab in an editor group; `input` identifies what it shows (chat group lock). */
@@ -139,6 +139,8 @@ declare module 'vscode' {
   }
 
   export namespace window {
+    /** Current text editor, absent when only a webview is active. */
+    export const activeTextEditor: { readonly document: { readonly uri: Uri } } | undefined;
     /** The editor tab model across all groups (chat group lock). */
     export const tabGroups: TabGroups;
     export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
@@ -154,8 +156,15 @@ declare module 'vscode' {
       viewType: string,
       title: string,
       showOptions: ViewColumn | { readonly viewColumn: ViewColumn; readonly preserveFocus?: boolean | undefined },
-      options?: { enableScripts?: boolean | undefined },
+      options?: { enableScripts?: boolean | undefined; localResourceRoots?: readonly Uri[] | undefined },
     ): WebviewPanel;
+    /** Ask for a line of text; resolves the entered text, or undefined when dismissed (Epic ce99b72065d03b1b s6). */
+    export function showInputBox(options?: { prompt?: string | undefined; value?: string | undefined }): PromiseLike<string | undefined>;
+    /** A multi-select quick-pick; resolves the chosen items or undefined on dismiss (Epic ce99b72065d03b1b s6: choosing approved effort levels). */
+    export function showQuickPick<T extends QuickPickItem>(
+      items: readonly T[] | PromiseLike<readonly T[]>,
+      options: { placeHolder?: string | undefined; canPickMany: true },
+    ): PromiseLike<readonly T[] | undefined>;
     /** Present a quick-pick menu; resolves the chosen item or undefined on dismiss (S004 sc9). */
     export function showQuickPick<T extends QuickPickItem>(
       items: readonly T[] | PromiseLike<readonly T[]>,
@@ -188,7 +197,7 @@ declare module 'vscode' {
   }
 
   export interface WorkspaceFolder {
-    readonly uri: { readonly fsPath: string };
+    readonly uri: Uri;
   }
 
   /**
@@ -222,6 +231,8 @@ declare module 'vscode' {
   export namespace workspace {
     /** The open workspace folders, or undefined when no folder is open (S004). */
     export const workspaceFolders: readonly WorkspaceFolder[] | undefined;
+    /** The workspace folder containing a resource, including nested roots. */
+    export function getWorkspaceFolder(uri: Uri): WorkspaceFolder | undefined;
     /** A configuration handle; with a `section` its ids are relative to that section (sc8). */
     export function getConfiguration(section?: string): WorkspaceConfiguration;
     /** Subscribe to settings-change events (sc8 live-sync listener). */

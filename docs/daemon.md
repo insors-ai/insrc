@@ -143,9 +143,16 @@ Use the ctl script bundled with the repo:
 
 ```bash
 cd ~/.insrc/daemon/scripts
-./daemon-ctl.sh update      # git fetch + fast-forward, npm install if lock changed, npm run build
+./daemon-ctl.sh update      # git fetch + fast-forward, npm install unless already installed, npm run build
 ./daemon-ctl.sh restart     # graceful stop (waits for full drain), then start
 ```
+
+`npm install` runs whenever the last install of the current lockfile did not
+finish: `node_modules/.insrc-install-ok` records the lockfile of the last
+successful install, so a failed or interrupted install is retried on the next
+update. Every install builds native modules with `-std=c++17`. The update that
+first brings this rule in still runs the old one, so a daemon left broken by a
+failed install is repaired by the update after it.
 
 The ctl script pins the target to `~/.insrc/daemon` regardless of
 where you invoke it from (override with `INSRC_DAEMON_ROOT=/path`).
@@ -188,7 +195,7 @@ your indexed repo sizes — expect ~150-300 MB per medium repo.
 Everything routes through `daemon-ctl.sh`:
 
 ```bash
-./daemon-ctl.sh start      # sync origin, install if lock changed, build, start
+./daemon-ctl.sh start      # sync origin, install unless already installed, build, start
 ./daemon-ctl.sh stop       # graceful stop, waits for queue drain
 ./daemon-ctl.sh restart    # stop → wait → start
 ./daemon-ctl.sh update     # sync + install + build (no restart)
@@ -446,7 +453,7 @@ narrow probes, tracker rendering, and summaries can run on a cheap model
 always via the `claude`/`codex` CLI subprocess (never a direct REST call).
 
 **Three tiers.** Each maps a `runner` (`ollama` \| `cli-claude` \|
-`cli-codex` — no REST target) to a `model`:
+`cli-codex` \| `cli-vibe` — no REST target) to a `model`:
 
 | Tier | Built-in default | Serves |
 | :--- | :--- | :--- |

@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: candidate-roundtrip admits only eligible material and exports complete notices
+ok 1 - candidate-roundtrip admits only eligible material and exports complete notices
+  ---
+  duration_ms: 1832.052834
+  type: 'test'
+  ...
+# Subtest: candidate-roundtrip validates original-only and multi-source derived packages
+ok 2 - candidate-roundtrip validates original-only and multi-source derived packages
+  ---
+  duration_ms: 21.438167
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2325.176208

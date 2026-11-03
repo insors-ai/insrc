@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: mcpProgressSink: undefined progressToken → sink sends nothing
+ok 1 - mcpProgressSink: undefined progressToken → sink sends nothing
+  ---
+  duration_ms: 0.6055
+  type: 'test'
+  ...
+# Subtest: mcpProgressSink: defined token → monotonic progress + correct token + messages
+ok 2 - mcpProgressSink: defined token → monotonic progress + correct token + messages
+  ---
+  duration_ms: 0.159458
+  type: 'test'
+  ...
+# Subtest: mcpProgressSink: a rejecting sendNotification does not throw out of the sink
+ok 3 - mcpProgressSink: a rejecting sendNotification does not throw out of the sink
+  ---
+  duration_ms: 0.160375
+  type: 'test'
+  ...
+1..3
+# tests 3
+# suites 0
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 184.384208

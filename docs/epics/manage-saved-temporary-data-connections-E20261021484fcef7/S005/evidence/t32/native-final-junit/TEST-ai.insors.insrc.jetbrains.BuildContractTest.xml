@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.BuildContractTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.01">
+  <properties/>
+  <testcase name="the one artifact's descriptor depends only on the common platform module()" classname="ai.insors.insrc.jetbrains.BuildContractTest" time="0.006"/>
+  <testcase name="gradle properties pin a version and an open-ended since-build range()" classname="ai.insors.insrc.jetbrains.BuildContractTest" time="0.001"/>
+  <testcase name="build is a single module that emits one plugin artifact()" classname="ai.insors.insrc.jetbrains.BuildContractTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

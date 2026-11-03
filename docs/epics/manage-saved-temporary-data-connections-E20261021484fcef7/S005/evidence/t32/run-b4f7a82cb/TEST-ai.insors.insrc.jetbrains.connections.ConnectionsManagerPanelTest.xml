@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:29" hostname="subho-office-mac" time="8.043">
+  <properties/>
+  <testcase name="testNativeEventsDirtyCancelMaskedFieldsAndImmediateSaveWithoutSettingsApply" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest" time="1.446"/>
+  <testcase name="testLateRegistryAndPanelCallbacksCannotResurrectDisposedNativeView" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest" time="1.138"/>
+  <testcase name="testViewCloseRetainsDraftAndOwnerWhileProjectCloseErasesFieldsAndRejectsQueuedUpdates" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest" time="1.25"/>
+  <testcase name="testNativeManagerUpdatesInsideSettingsModalityWithoutWaitingForDialogClose" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest" time="1.495"/>
+  <testcase name="testEveryListStateStaleRowsAndScopeCountsAreNativeAndNonactionableWhenUnavailable" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest" time="1.575"/>
+  <testcase name="testAllDescriptorsRenderTypedNativeFieldsAndBlankPasswordControls" classname="ai.insors.insrc.jetbrains.connections.ConnectionsManagerPanelTest" time="1.138"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

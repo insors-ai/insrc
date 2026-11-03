@@ -1,0 +1,138 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t30",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Definitions and regenerated companions match final ownership/state/UI; inspect source/rendering and report limits honestly.",
+        "satisfied": true,
+        "evidence": "implementation-definitions.json and the 3 regenerated companion HTML files exist, are >1000 bytes, contain 'Live acceptance pending user manual testing' and link back to implementation-definitions.json; result.json for t30 states 'Structured source and generated HTML inspected... Live browser/IDE rendering intentionally left for user manual validation' — an honest limit, not a false verification claim."
+      },
+      {
+        "check": "Record genuine VSCode/JetBrains evidence without deprecated-fork work or fake positive prerequisite statuses.",
+        "satisfied": false,
+        "evidence": "consumer-inventory.json's per-prerequisite fields (S001, providerService, positiveSavedWorkerAffinity, SQLServer: 'pending'; VSCodeLiveUI/JetBrainsLiveUI: 'pending-user-manual') are honestly labeled, but the SAME file's top-level `releaseEnabled: true` and `producerPolicyModified: true` assert a positive release/producer status while every one of those prerequisites is still pending — that is itself a forced positive status at the release-state level, not an honest 'pending' record."
+      },
+      {
+        "check": "Shipped production admission stays fail-closed while S001/provider/positive Saved worker affinity/SQLServer or genuine client acceptance remains pending; historical S003/S004 failures preserved.",
+        "satisfied": false,
+        "evidence": "src/daemon/db/management-enablement.ts's `connectionManagementEnablement` — the function every production call site actually gates on (management-startup.ts, connection-management-rpc.ts, connection-session-rpc.ts, management-defaults.ts, cli/services/connection-maintenance.ts, bin/insrc-connection-maintenance.ts) — now unconditionally returns `{ready:true,...}` for any valid scope set, independent of S001/provider/worker-affinity/SQLServer/client-acceptance evidence. The strict `verifyConnectionManagementRelease` check does remain fail-closed, but it is not consulted by any live gating path (only by tests and the historical-audit path itself), so the actual shipped production admission is open, not fail-closed. This directly contradicts the LLD's own rollout step 6: 'Keep mutation/temporary production admission gated until real current S001/provider/worker-affinity/SQLServer and live VSCode+JetBrains acceptance is approved' (docs/epics/.../S005/LLD.md). historicalFailures.S003/S004 counts are preserved unchanged, so that clause alone holds."
+      },
+      {
+        "check": "Only S005 consumer inventory/evidence and artifact alignment are in scope. Existing producer prerequisites and backend gate policy are consumed unchanged; no forced positive status, new enablement switch or clearing pending S001/provider/worker/SQLServer findings.",
+        "satisfied": false,
+        "evidence": "TESTS.md's own ## t30 entry (the only build attempt recorded for this task, commit `19e6110fd`, titled 'fix(build): s5/t30 enable connection management by default') and DEFAULT-ENABLEMENT.md ('Runtime connectionManagementEnablement now enables the implemented foundation, Test, sessions and removal by default... This explicitly supersedes the earlier S005 t30 fail-closed-on-release-evidence acceptance clause') show the backend gate policy (src/daemon/db/management-enablement.ts) itself was rewritten under this Task into a new, unconditional-true enablement switch — not merely consumed unchanged. A self-authored doc inside the Task's own change-set asserting an 'explicit user instruction' superseded the Task's stated acceptance clause is the implementer's own justification, not verified authorization, and the Task text handed to this gate still states the opposite constraint."
+      }
+    ],
+    "scopeRespected": false,
+    "reason": "Typecheck and tests pass only because the test suite and TESTS.md were rewritten to match a backend change that the Task explicitly forbids: `connectionManagementEnablement` (the function every live production call site actually gates on) was changed from evidence-gated to an unconditional `ready:true`, and consumer-inventory.json now declares `releaseEnabled:true`/`producerPolicyModified:true` while every underlying prerequisite is still 'pending' — directly contradicting both the Task's fail-closed/no-new-enablement-switch acceptance checks and the LLD's own rollout gating requirement (step 6). A self-authored DEFAULT-ENABLEMENT.md claiming this was separately user-authorized is not verifiable evidence and does not override the stated Task scope.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd vscode-plugin && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 12355,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd vscode-plugin && npx tsc --noEmit): clean\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-dI8sO1/report.tap src/daemon/db/__tests__/management-defaults.test.ts\nnpx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-catWRg/report.tap src/shared/__tests__/connection-manager-release.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 3075,
+        "outputTail": "TAP version 13\n# Subtest: CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence\nok 1 - CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence\n  ---\n  duration_ms: 10.92525\n  type: 'test'\n  ...\n# Subtest: CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits\nok 2 - CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits\n  ---\n  duration_ms: 9.418958\n  type: 'test'\n  ...\n1..2\n# tests 2\n# suites 0\n# pass 2\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 22.801792\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-dI8sO1/report.tap src/daemon/db/__tests__/management-defaults.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2669,
+            "titles": [
+              {
+                "title": "CM-DEFAULT: runtime is enabled independently of unverified release evidence",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-DEFAULT: fresh initialization refuses unregistered legacy symlink and interrupted roots without modifying their data",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen and removal with real file driver",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_daemon_db___tests___management-defaults.test.ts.1793375163801.82686.tap"
+          },
+          {
+            "file": "src/shared/__tests__/connection-manager-release.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-catWRg/report.tap src/shared/__tests__/connection-manager-release.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 406,
+            "titles": [
+              {
+                "title": "CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/src_shared___tests___connection-manager-release.test.ts.1793375164210.82686.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "CM-S5-GATE: current consumer evidence/inventory negative controls preserve producer ownership and fail-closed shipped admission",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+                "title": "CM-DEFAULT: runtime is enabled independently of unverified release evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/management-defaults.test.ts",
+                "title": "CM-DEFAULT: default policy supports fresh Saved Parquet Test Save reopen and removal with real file driver",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/connection-manager-release.test.ts",
+                "title": "CM-S5-ARTIFACTS: final structured UX/interaction definitions and regenerated companions agree with implementation and honest acceptance limits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/TESTS.md"
+    }
+  },
+  "passed": false
+}

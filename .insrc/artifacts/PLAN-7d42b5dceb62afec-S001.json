@@ -1,0 +1,340 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793715498498-22xyjz",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T14:20:54.846Z",
+    "epicCreatedAt": "2026-11-02T11:44:58.745Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 156343,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7d42b5dceb62afec",
+    "epicSlug": "subsystem-pass-regroups-whole-repository-after",
+    "storyId": "S001",
+    "lldRunId": "wf-1793712130091-0po013",
+    "lldEffectiveHash": "f009825f00df27bf5aab689aa50ccddf0423e33cb4430e51a4a22a49ea98d4f2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-03T14:24:43.010Z",
+    "rangeBase": "f0a25275075562d4f3848d9e8525485749d956a6"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story adds two store tables and records, in the store's own transactions, every file whose cross-file relationships change; then makes the subsystem pass recompute only those files, publish its results in one guarded transaction, and skip the regroup when nothing changed. Scheduling moves to the one IndexerService that owns the queue, which paces passes by their real start time and retries failed summaries on a bounded back-off across the worker boundary. The last task measures the cost before and after on the installed daemon and runs the full sweep.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Store tables and the changed-file record",
+        "summary": "Open subsystem_dirty and subsystem_file in the graph store. Record (repoId, repository-relative file) with an increasing stamp in the same transaction at every grouping-input change: commitFile (the committed file once), putEdgeInTxn outside a commit (promotions with the row's repoId/fromFile; upsertRelations from the source row), deleteResolvedRelations, returnInferredSqlReferencesToPending, the out/in sweeps, and entity-row removal (removeEntityRowInTxn) on every path. deleteEntitiesForRepo deletes the repository's contribution rows and record entries and increments its reset counter (reserved key repoId ++ 0x00) in its transaction. Store helpers to read the record with stamps, read/write contribution rows, read the reset counter, and consume entries conditionally inside a given transaction.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Each change site records its source file in the same transaction; a non-grouping kind records nothing",
+          "Entity-row removal records its file on commitFile, detachDeleteEntities and deleteEntitiesForRepo paths",
+          "deleteEntitiesForRepo drops the repository's contribution rows and record and increments its reset counter",
+          "A conditional consume deletes an entry only when its stamp equals the one read"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t1: every change site records its source file in the same transaction, and a non-grouping kind records nothing"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t1: entity-row removal records its file on every path, and a whole-repository delete drops the contributions and bumps the reset counter"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t1: a record entry is consumed only while its stamp is unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Incremental contributions and modes",
+        "summary": "runSubsystemPass computes per-file contribution rows with the full pass's endpoint rule (sources and targets are code or file entities of the repository in different files; edges kept whatever the target file's code status) and chooses mode 'full' (no contribution rows, null computedAtGeneration, or the first pass per repository in this process), 'incremental' (a recorded file's row or the file set changed: regroup over files with entityCount > 0) or 'unchanged' (restamp only). The result gains mode, filesRead, elapsedMs and startedAt; one log line with them. Publication in this task may use the existing writeSubsystems; t3 makes it one guarded transaction.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "After each edit in the sequence (comment-only, new call, removed call, new file, deleted file, last code entity removed, another file's call resolved by a settle) the stored groups, ids and contribution rows equal a forced full pass",
+          "A comment-only edit is mode 'unchanged' with filesRead 1 and no subsystem rewrite",
+          "An unchanged importer stays correct while its target gains, loses and regains code entities",
+          "The first pass per repository in a process, and the first after a full index, is mode 'full'"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t2: after each edit in the sequence the incremental pass stores what a forced full pass stores, and a comment-only edit is unchanged with one file read"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t2: an unchanged importer stays correct while its target gains, loses and regains code entities"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Atomic publication and the reset guard",
+        "summary": "Publish the recomputed contribution rows, the groups (an in-transaction form of writeSubsystems) or the restamp, and the conditional record consumption in ONE write transaction that first re-reads the repository's reset counter and publishes nothing when it differs from the value read at the pass's start.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A fault in the publication transaction leaves contributions, groups and record unchanged; the next pass converges to the forced full pass",
+          "An edge written between the pass's read and its publication keeps its record entry",
+          "A pass held before publication across a full index publishes nothing, and the next (full) pass equals a forced full pass with the deleted file absent"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t3: a fault in the publication transaction changes nothing, and the next pass converges"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t3: an edge written while the pass runs keeps its record entry"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "One scheduling owner: start-based pacing and summary retry across the worker boundary",
+        "summary": "IndexerService.subsystemPass and processJob resolve { summariesFailed, stopped, startedAt } for a subsystems job; the summary worker's reply carries it (ReplyEnvelope.result), SummaryRunner.run and runIndexJob resolve it, and both queue drivers hand it (or a failure) to the queue-owning IndexerService. That scheduler tracks queued/in-flight, the last actual start, the pacing timer (queue only when none queued or in flight and the last actual start >= 60 s ago) and the retry timer (60 s doubling, capped at 30 min, reset by a clean pass, a failed job counted as a failure starting at its rejection); timers are unref'd, do nothing while the queue is stopping, and are disposed from both stop paths.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Across the real worker link, two settles within the interval queue one job; consecutive actual starts are at least 60 s apart even when the summary lane or a held hand-over delays a start",
+          "A pass with failed summaries arms the retry with the 60 s / 120 s / 240 s ... 30 min back-off on the queue owner; a clean pass clears it; a stopped pass changes nothing; a rejected job is retried",
+          "After an outage a retry writes the summaries; summary calls never overlap and each waits for code work",
+          "Dispose on both stop paths clears every timer; a timer firing while the queue is stopping queues nothing"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t4: after an outage a retry writes the summaries, one call at a time after code work"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Cost measurement on the installed daemon and the full sweep",
+        "summary": "First, while the installed daemon still runs its current commit (the old pass), measure the subsystem pass on the largest graph-complete registered repository (job start to end, entities read) for a comment-only save and a save adding a cross-file call. Then, after the push, update and restart the installed daemon and measure the same saves from the pass's log line (mode, filesRead, elapsedMs). Record both as evidence; then run the full sweep per directory and classify every failure.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Evidence file with before (old pass) and after numbers for both saves on the same repository",
+          "Full sweep recorded with every failure classified"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "S001 t5: on the installed daemon a comment-only save no longer re-reads the repository, and a cross-file save reads only the changed files"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the subsystem changed-file record and its write sites",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "commitFile",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "putEdgeInTxn",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "deleteResolvedRelations",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "returnInferredSqlReferencesToPending",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "runSubsystemPass",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the subsystem file contribution table",
+        "coveredByTaskIds": [
+          "t1",
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "SubsystemRow.computedAtGeneration restamp",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "runSubsystemPass publication",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "the subsystem changed-file record",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "enqueueSubsystemsIfComplete",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runIndexJob",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "IndexerService.subsystemPass",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "runSubsystemPass summaries",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the installed daemon's subsystem pass",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails runSubsystemPass"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges subsystem changed-file record (subsystem_dirty)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges subsystem file contribution (subsystem_file)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails commitFile, putEdgeInTxn, deleteResolvedRelations, returnInferredSqlReferencesToPending, deleteEntitiesForRepo"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails enqueueSubsystemsIfComplete, runIndexJob, IndexerService.subsystemPass"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration"
+    }
+  ]
+}

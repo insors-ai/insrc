@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: every code-review dimension judge passes the reviewed repoPath as cwd
+ok 1 - every code-review dimension judge passes the reviewed repoPath as cwd
+  ---
+  duration_ms: 25.213542
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 344.75075

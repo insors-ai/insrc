@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: every default format: unnumbered required Summary, a References section, and a numbered body
+ok 1 - every default format: unnumbered required Summary, a References section, and a numbered body
+  ---
+  duration_ms: 0.709792
+  type: 'test'
+  ...
+# Subtest: defaultFormat(kind) returns the matching format
+ok 2 - defaultFormat(kind) returns the matching format
+  ---
+  duration_ms: 0.065083
+  type: 'test'
+  ...
+# Subtest: DEF format: business-tagged Summary + FR section + Stories, in human-first order
+ok 3 - DEF format: business-tagged Summary + FR section + Stories, in human-first order
+  ---
+  duration_ms: 0.707666
+  type: 'test'
+  ...
+# Subtest: LLD format: HLD context is a shared-ref (de-dup) + NAMED S003/S004 extension slots
+ok 4 - LLD format: HLD context is a shared-ref (de-dup) + NAMED S003/S004 extension slots
+  ---
+  duration_ms: 0.073
+  type: 'test'
+  ...
+# Subtest: renderFromFormat over the LLD default: numbered envelope with a populated Summary
+ok 5 - renderFromFormat over the LLD default: numbered envelope with a populated Summary
+  ---
+  duration_ms: 0.382791
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 186.643708

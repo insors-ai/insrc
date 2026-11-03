@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: completenessOf table test: graphComplete and complete follow the sc1 formula for every combination of the inputs, and reasons are empty exactly when complete
+ok 1 - completenessOf table test: graphComplete and complete follow the sc1 formula for every combination of the inputs, and reasons are empty exactly when complete
+  ---
+  duration_ms: 5.710041
+  type: 'test'
+  ...
+# Subtest: completenessOf(undefined) reads not complete with "a reindex is needed"
+ok 2 - completenessOf(undefined) reads not complete with "a reindex is needed"
+  ---
+  duration_ms: 3.651208
+  type: 'test'
+  ...
+# Subtest: completeness reason lines: one per non-zero cause with its count, awaiting rows split by reason, no-candidate and ambiguous rows not a cause
+ok 3 - completeness reason lines: one per non-zero cause with its count, awaiting rows split by reason, no-candidate and ambiguous rows not a cause
+  ---
+  duration_ms: 7.970833
+  type: 'test'
+  ...
+# Subtest: an aborted transaction leaves the counts unchanged: a callback that writes a pending row and its count, then throws, leaves neither
+ok 4 - an aborted transaction leaves the counts unchanged: a callback that writes a pending row and its count, then throws, leaves neither
+  ---
+  duration_ms: 214.240291
+  type: 'test'
+  ...
+# Subtest: recount on open corrects a hand-edited count with a warn log, and deletes the row of an unregistered repoId
+ok 5 - recount on open corrects a hand-edited count with a warn log, and deletes the row of an unregistered repoId
+  ---
+  duration_ms: 182.120625
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 729.339375

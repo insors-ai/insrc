@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.SettingsWriteGatewayTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:45" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="Saved(restartRequired) and Rejected(reason, detail) from config-write()" classname="ai.insors.insrc.jetbrains.daemon.SettingsWriteGatewayTest" time="0.002"/>
+  <testcase name="over the real parse, an ok reply maps to Saved and a returned error to Rejected()" classname="ai.insors.insrc.jetbrains.daemon.SettingsWriteGatewayTest" time="0.001"/>
+  <testcase name="writeSetting maps a bare daemon ok=false to Rejected and DaemonUnavailable to Unavailable()" classname="ai.insors.insrc.jetbrains.daemon.SettingsWriteGatewayTest" time="0.0"/>
+  <testcase name="clearSetting sends config-write with NO value key and maps daemon ok=true to Saved()" classname="ai.insors.insrc.jetbrains.daemon.SettingsWriteGatewayTest" time="0.0"/>
+  <testcase name="writeSetting sends config-write with path segments and value, and maps daemon ok=true to Saved()" classname="ai.insors.insrc.jetbrains.daemon.SettingsWriteGatewayTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -52,7 +53,7 @@ export function readRunRecord(runId: string, execution?: ConnectionExecutionCont
 	try {
 		return JSON.parse(readFileSync(path, 'utf8')) as RunRecord;
 	} catch (err) {
-		log.warn({ path, err: (err as Error).message }, 'run record unreadable; treating as miss');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ path, err: (err as Error).message }, 'run record unreadable; treating as miss']);
 		return null;
 	}
 }
@@ -62,10 +63,7 @@ export function writeRunRecord(record: RunRecord, execution?: ConnectionExecutio
 	assertRunRecordSource(record, execution);
 	const path = runRecordPathFor(record.runId, execution);
 	atomicWriteJson(path, record);
-	log.debug(
-		{ runId: record.runId, stage: record.stage, status: record.status },
-		'wrote run record',
-	);
+	captureAnalysisDiagnostics(log).emit('debug', () => [{ runId: record.runId, stage: record.stage, status: record.status }, 'wrote run record']);
 	return path;
 }
 
@@ -131,9 +129,9 @@ export function abandonRunRecord(record: RunRecord, execution?: ConnectionExecut
 	};
 	try {
 		writeRunRecord(abandoned, execution);
-		log.info({ runId: record.runId, stage: record.stage }, 'run record rewritten as abandoned: in-progress with no live run');
+		captureAnalysisDiagnostics(log).emit('info', () => [{ runId: record.runId, stage: record.stage }, 'run record rewritten as abandoned: in-progress with no live run']);
 	} catch (err) {
-		log.warn({ runId: record.runId, err: (err as Error).message }, 'the abandoned run record could not be written; it is reported as abandoned all the same');
+		captureAnalysisDiagnostics(log).emit('warn', () => [{ runId: record.runId, err: (err as Error).message }, 'the abandoned run record could not be written; it is reported as abandoned all the same']);
 	}
 	return abandoned;
 }
@@ -159,17 +157,14 @@ export function purgeRun(
 			// purged without force. The rewrite is best effort; the purge follows.
 			abandonRunRecord(record, execution);
 		} else if (record !== null && record.status === 'in-progress') {
-			log.info(
-				{ runId, stage: record.stage },
-				'purgeRun refused: run is in-progress (use force=true to override)',
-			);
+			captureAnalysisDiagnostics(log).emit('info', () => [{ runId, stage: record.stage }, 'purgeRun refused: run is in-progress (use force=true to override)']);
 			return { ok: false, code: 'run-in-progress', stage: record.stage };
 		}
 	}
 
 	try {
 		rmSync(dir, { recursive: true });
-		log.info({ runId, dir }, 'purgeRun: run directory removed');
+		captureAnalysisDiagnostics(log).emit('info', () => [{ runId, dir }, 'purgeRun: run directory removed']);
 		return { ok: true, purged: true };
 	} catch (err) {
 		if ((err as NodeJS.ErrnoException).code === 'ENOENT') {

@@ -1,3 +1,4 @@
+import { isPublicEndpoint } from '../../shared/connection-manager/endpoint.js';
 /** Audited, daemon-only driver projections. Materialization has a read-only credential port. */
 import { Ajv } from 'ajv';
 import type { ConnectionConfig, DriverFamily } from '../../shared/db-driver.js';
@@ -290,7 +291,7 @@ function projected(config: ConnectionConfig, p: Profile): {
 	if (p.url) {
 		try {
 			const endpoint = uri(config.url, config.kind).endpoint;
-			if (!clean(endpoint))
+			if (!clean(endpoint) || !isPublicEndpoint(endpoint))
 				throw new ProfileError();
 			fields['endpoint'] = endpoint;
 		}
@@ -307,7 +308,10 @@ function projected(config: ConnectionConfig, p: Profile): {
 			try {
 				if (Array.isArray(value) && value.some(v => typeof v === 'string' && v.includes('${secret:')) || typeof value === 'string' && value.includes('${secret:'))
 					continue;
-				opts[key] = Array.isArray(value) ? value.map(v => address(v, p.kind).publicValue) : address(value, p.kind).publicValue;
+				const publicValue = Array.isArray(value) ? value.map(v => address(v, p.kind).publicValue) : address(value, p.kind).publicValue;
+				if (key === 'endpoint' && !isPublicEndpoint(publicValue))
+					throw new ProfileError();
+				opts[key] = publicValue;
 			}
 			catch {
 				readonly = true;

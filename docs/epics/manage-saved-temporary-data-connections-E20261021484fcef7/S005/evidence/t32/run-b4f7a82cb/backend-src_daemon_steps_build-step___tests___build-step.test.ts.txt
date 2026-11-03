@@ -1,0 +1,415 @@
+TAP version 13
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# Subtest: implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref
+ok 1 - implement: approved+fresh plan returns a prompt carrying acceptance checks + issue ref
+  ---
+  duration_ms: 35.632667
+  type: 'test'
+  ...
+# Subtest: implement: does NOT gate on the LLD open questions (resolved at stage-start now)
+ok 2 - implement: does NOT gate on the LLD open questions (resolved at stage-start now)
+  ---
+  duration_ms: 26.926709
+  type: 'test'
+  ...
+# Subtest: implement: unapproved plan returns next=refused with reason plan-unapproved
+ok 3 - implement: unapproved plan returns next=refused with reason plan-unapproved
+  ---
+  duration_ms: 20.181958
+  type: 'test'
+  ...
+# Subtest: implement: a non-task target (a story) is a resolution error
+ok 4 - implement: a non-task target (a story) is a resolution error
+  ---
+  duration_ms: 37.714875
+  type: 'test'
+  ...
+# Subtest: validate: returns the judge verdict from a stubbed CliProvider review session
+ok 5 - validate: returns the judge verdict from a stubbed CliProvider review session
+  ---
+  duration_ms: 96.181417
+  type: 'test'
+  ...
+# Subtest: validate: a failing judge verdict gives passed:false
+ok 6 - validate: a failing judge verdict gives passed:false
+  ---
+  duration_ms: 95.288792
+  type: 'test'
+  ...
+# Subtest: the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS
+ok 7 - the build-validation session is run with stallMs 90 s and deadlineMs JUDGE_DEADLINE_MS
+  ---
+  duration_ms: 104.153542
+  type: 'test'
+  ...
+# Subtest: validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed
+ok 8 - validate: persists a plan-driven BUILD ledger record (standalone key ABSENT since t9) recording the task + passed
+  ---
+  duration_ms: 136.818708
+  type: 'test'
+  ...
+# Subtest: validate: a BUILD-record persist failure is swallowed — the verdict is still returned
+ok 9 - validate: a BUILD-record persist failure is swallowed — the verdict is still returned
+  ---
+  duration_ms: 102.484625
+  type: 'test'
+  ...
+# Subtest: validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)
+ok 10 - validate[standalone]: no plan → resolves identity from context, persists a BUILD record (standalone key ABSENT since t9, story task)
+  ---
+  duration_ms: 73.227625
+  type: 'test'
+  ...
+# fatal: not a git repository (or any of the parent directories): .git
+# Subtest: validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set
+ok 11 - validate[standalone]: the persisted record carries the file-level change-log for a non-empty changed set
+  ---
+  duration_ms: 272.836709
+  type: 'test'
+  ...
+# Subtest: validate[standalone]: a persist failure is swallowed — the verdict is still returned
+ok 12 - validate[standalone]: a persist failure is swallowed — the verdict is still returned
+  ---
+  duration_ms: 73.990333
+  type: 'test'
+  ...
+# Subtest: validate[standalone]: a Small build with no resolvable identity → err(no-identity)
+ok 13 - validate[standalone]: a Small build with no resolvable identity → err(no-identity)
+  ---
+  duration_ms: 8.495375
+  type: 'test'
+  ...
+# Subtest: validate[standalone]: the persisted record is approvable by the completion gate
+ok 14 - validate[standalone]: the persisted record is approvable by the completion gate
+  ---
+  duration_ms: 73.357125
+  type: 'test'
+  ...
+# Subtest: implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds
+ok 15 - implement: multi-epic dir + { target:'s1/t1', epicHash } resolves + proceeds
+  ---
+  duration_ms: 34.093167
+  type: 'test'
+  ...
+# Subtest: validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict
+ok 16 - validate: multi-epic dir + { target:'s1/t1', epicHash } resolves + returns a verdict
+  ---
+  duration_ms: 99.712375
+  type: 'test'
+  ...
+# Subtest: implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)
+ok 17 - implement: multi-epic dir + 's1/t1' WITHOUT epicHash still returns err(unresolved-target)
+  ---
+  duration_ms: 28.256459
+  type: 'test'
+  ...
+# Subtest: CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '\#\# Scope' for its body.focus
+ok 18 - CHARACTERISATION A (INVERTED at t8): a standalone build's persisted md now RENDERS '\#\# Scope' for its body.focus
+  ---
+  duration_ms: 386.350291
+  type: 'test'
+  ...
+# Subtest: CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate
+ok 19 - CHARACTERISATION B (INVERTED at t9): a standalone build KEEPS meta.standalone true through validate
+  ---
+  duration_ms: 374.023916
+  type: 'test'
+  ...
+# Subtest: CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '\#\# Changes' section
+ok 20 - CHARACTERISATION C (TRIVIAL route — NOT a defect, re-labelled at t6): a CLEAN tree with NO upstream yields an empty changeLog and no '\#\# Changes' section
+  ---
+  duration_ms: 371.834625
+  type: 'test'
+  ...
+# Subtest: t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story
+ok 21 - t10 END-TO-END: a trivial-routed build produces ONE record carrying the change set, the summary, the commit, its scope and its route — none of which it could carry before this Story
+  ---
+  duration_ms: 369.432833
+  type: 'test'
+  ...
+# Subtest: t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped
+ok 22 - t10 AUDIT: all three of t1's characterisations are still here, each carrying the task that INVERTED it — none deleted, none skipped
+  ---
+  duration_ms: 0.737125
+  type: 'test'
+  ...
+# Subtest: CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable
+ok 23 - CHARACTERISATION harness: read-only — rev-list --count and status --porcelain unchanged afterwards, and the suite skips cleanly when git is unavailable
+  ---
+  duration_ms: 391.493167
+  type: 'test'
+  ...
+# Subtest: t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change
+ok 24 - t4: the validate writer EXCLUDES its own json + md from its own change-log, keeping the Story's real change
+  ---
+  duration_ms: 381.364917
+  type: 'test'
+  ...
+# Subtest: t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set
+ok 25 - t6 THE POINT OF THE STORY: a CLEAN tree WITH a stamped base yields the Story's committed change set
+  ---
+  duration_ms: 226.122042
+  type: 'test'
+  ...
+# Subtest: t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest
+ok 26 - t6: a multi-task Story's change set GROWS across tasks rather than describing only the latest
+  ---
+  duration_ms: 288.771042
+  type: 'test'
+  ...
+# Subtest: t6: a DIRTY tree still yields the Story's committed change set, and an unrelated uncommitted file is left out (ISSUE-b97752e9)
+ok 27 - t6: a DIRTY tree still yields the Story's committed change set, and an unrelated uncommitted file is left out (ISSUE-b97752e9)
+  ---
+  duration_ms: 222.287
+  type: 'test'
+  ...
+# Subtest: the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9)
+ok 28 - the validate phase's changeLog leaves out another Story's commit and replaces a stale changeLog (ISSUE-b97752e9)
+  ---
+  duration_ms: 419.657708
+  type: 'test'
+  ...
+# Subtest: t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range
+ok 29 - t6: an UNRESOLVABLE base still WRITES the record, keeps the verdict, and substitutes no range
+  ---
+  duration_ms: 294.512417
+  type: 'test'
+  ...
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# fatal: not a git repository (or any of the parent directories): .git
+# Subtest: t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains
+ok 30 - t6: BOTH writers resolve the SAME base for the same Story — one resolver, not two chains
+  ---
+  duration_ms: 356.337125
+  type: 'test'
+  ...
+# Subtest: t7: a SUPPLIED summary reaches body.summary
+ok 31 - t7: a SUPPLIED summary reaches body.summary
+  ---
+  duration_ms: 64.585167
+  type: 'test'
+  ...
+# Subtest: t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)
+ok 32 - t7: NO summary supplied → the record carries NO summary key (never synthesised from the task list)
+  ---
+  duration_ms: 64.073834
+  type: 'test'
+  ...
+# Subtest: t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank
+ok 33 - t7: an EMPTY or WHITESPACE-ONLY summary is treated as omitted, not stored as a blank
+  ---
+  duration_ms: 221.679667
+  type: 'test'
+  ...
+# Subtest: t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference
+ok 34 - t7: the summary input is OPTIONAL — a controller that never supplies it sees no behavioural difference
+  ---
+  duration_ms: 139.55925
+  type: 'test'
+  ...
+# Subtest: validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head
+ok 35 - validate: a standalone work item gets meta.standalone TRUE on the FIRST write, read from its definition head
+  ---
+  duration_ms: 65.336625
+  type: 'test'
+  ...
+# Subtest: validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/
+ok 36 - validate: an EPIC-parented work item is unchanged — no flag written, record under docs/epics/
+  ---
+  duration_ms: 69.286709
+  type: 'test'
+  ...
+# Subtest: 0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD
+ok 37 - 0855311b — validate, LLD-only Small story: first write is standalone, sized, and filed beside the LLD
+  ---
+  duration_ms: 77.622834
+  type: 'test'
+  ...
+# Subtest: 0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written
+ok 38 - 0855311b — validate, no head and no LLD: the route the standalone branch declared is what is written
+  ---
+  duration_ms: 85.21225
+  type: 'test'
+  ...
+# Subtest: 0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise
+ok 39 - 0855311b — validate: a caller's declaration does NOT relabel a story whose definition head says otherwise
+  ---
+  duration_ms: 69.761416
+  type: 'test'
+  ...
+# Subtest: 0855311b — completion: an LLD-only story's record is written standalone, beside the LLD
+ok 40 - 0855311b — completion: an LLD-only story's record is written standalone, beside the LLD
+  ---
+  duration_ms: 49.239917
+  type: 'test'
+  ...
+# Subtest: 43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path
+ok 41 - 43d72766 — a record that never got its flag is still re-rendered beside its story, and resolves by its md path
+  ---
+  duration_ms: 62.009375
+  type: 'test'
+  ...
+# Subtest: validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results
+ok 42 - validate runs the checks before the judge and overwrites testsPassed and typecheckClean from the daemon results
+  ---
+  duration_ms: 108.724667
+  type: 'test'
+  ...
+# Subtest: a judge passed:true with a failing typecheck gives passed:false
+ok 43 - a judge passed:true with a failing typecheck gives passed:false
+  ---
+  duration_ms: 91.248459
+  type: 'test'
+  ...
+# Subtest: a judge timeout returns verdict-session-timeout and writes no BUILD record
+ok 44 - a judge timeout returns verdict-session-timeout and writes no BUILD record
+  ---
+  duration_ms: 46.679833
+  type: 'test'
+  ...
+# Subtest: the validate judge is called through runReviewSession with the repo as cwd and a verdict schema
+ok 45 - the validate judge is called through runReviewSession with the repo as cwd and a verdict schema
+  ---
+  duration_ms: 78.4485
+  type: 'test'
+  ...
+# Subtest: a judge object without a boolean passed gives unparseable-verdict
+ok 46 - a judge object without a boolean passed gives unparseable-verdict
+  ---
+  duration_ms: 80.863792
+  type: 'test'
+  ...
+# Subtest: a non-timeout judge error gives verdict-session-failed and writes no BUILD record
+ok 47 - a non-timeout judge error gives verdict-session-failed and writes no BUILD record
+  ---
+  duration_ms: 48.282833
+  type: 'test'
+  ...
+# Subtest: plan-driven and standalone validate each hand the check runner the plan for their route
+ok 48 - plan-driven and standalone validate each hand the check runner the plan for their route
+  ---
+  duration_ms: 243.056875
+  type: 'test'
+  ...
+# Subtest: implement and validate return merge-in-progress while a merge is uncommitted
+ok 49 - implement and validate return merge-in-progress while a merge is uncommitted
+  ---
+  duration_ms: 226.941875
+  type: 'test'
+  ...
+# Subtest: a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record
+ok 50 - a validate turn with a wrong mapping returns 'invalid-test-mapping', runs no check, calls no judge and writes neither record
+  ---
+  duration_ms: 180.45625
+  type: 'test'
+  ...
+# Subtest: a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)
+ok 51 - a second validate turn of the same Task with no mapping uses the stored one (mutation: fall back to the prefix rule when a stored mapping exists)
+  ---
+  duration_ms: 1085.363125
+  type: 'test'
+  ...
+# Subtest: ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none
+ok 52 - ISSUE-b4b6b835: validate hands the check runner the other TypeScript projects the build touched; a build inside the root project names none
+  ---
+  duration_ms: 410.448875
+  type: 'test'
+  ...
+# Subtest: a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused
+ok 53 - a stored mapping whose file is gone gives that case not found and a failed check, and the turn is not refused
+  ---
+  duration_ms: 1188.866625
+  type: 'test'
+  ...
+# Subtest: the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails
+ok 54 - the builder's reported results never set testsPassed: a mapping of reported passes with a failing mapped case still fails
+  ---
+  duration_ms: 208.940667
+  type: 'test'
+  ...
+# Subtest: the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field
+ok 55 - the build tool's registered input shape accepts `tests` on the validate phase, refuses an entry or a case with a key the shape does not have, and the schema lookup returns the field
+  ---
+  duration_ms: 118.04
+  type: 'test'
+  ...
+# Subtest: a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path
+ok 56 - a validate turn with a mapping writes the test record, the build record links to it, the change log leaves out both records' files, and the verdict's evidence carries the cases with their results and the record's path
+  ---
+  duration_ms: 589.028958
+  type: 'test'
+  ...
+# Subtest: when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)
+ok 57 - when the test record cannot be written the verdict is returned unchanged with a note; on a first turn the build record carries no testRecord, and on a second turn the record on disk still shows the first run with its commit and time (mutation: let the write's error escape)
+  ---
+  duration_ms: 670.85725
+  type: 'test'
+  ...
+# Subtest: when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)
+ok 58 - when the judge session throws after the checks ran, the turn returns the same error as before, the test record holds this run's results with testsPassed from the tests check and the supplied mapping, and the build record is not written (mutation: write the test record in the build record's write, after the judge)
+  ---
+  duration_ms: 1059.143541
+  type: 'test'
+  ...
+# Subtest: a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)
+ok 59 - a trivial standalone build validated with no implement turn before it, whose judge fails on the first turn and passes on a turn dated a day later, has its BUILD.md and TESTS.md in one folder; with an implement turn first, the BUILD record it wrote is the anchor and the test record follows it; and a small standalone build's test record carries the declared standalone flag before any BUILD record exists and the same when the first BUILD record is written by the completion path (mutation: anchor the BUILD record on its own time when a test record exists)
+  ---
+  duration_ms: 436.259208
+  type: 'test'
+  ...
+# Subtest: a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)
+ok 60 - a standalone validate call on a Story whose definition head is silent about standalone files TESTS.md beside BUILD.md under docs/epics, and the test record carries no standalone flag (mutation: hand the test record the raw declaration)
+  ---
+  duration_ms: 129.246625
+  type: 'test'
+  ...
+# Subtest: when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn
+ok 61 - when the Story's route cannot be resolved, the verdict is returned with a note and neither record is written on that turn
+  ---
+  duration_ms: 288.000875
+  type: 'test'
+  ...
+# Subtest: a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live
+ok 62 - a stored test record that cannot be read is said so in the verdict, and a stored reported result is not reused once its test is no longer live
+  ---
+  duration_ms: 1198.37025
+  type: 'test'
+  ...
+# fatal: not a git repository (or any of the parent directories): .git
+# Subtest: on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build
+ok 63 - on the standalone routes: a wrong mapping on a small build is refused with 'invalid-test-mapping', a good one is planned by subject, and `tests` is ignored on a trivial build
+  ---
+  duration_ms: 381.967167
+  type: 'test'
+  ...
+# Subtest: builder text in the judge's evidence is kept to one line
+ok 64 - builder text in the judge's evidence is kept to one line
+  ---
+  duration_ms: 0.553875
+  type: 'test'
+  ...
+# Subtest: c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)
+ok 65 - c00559b7 — implement + validate admit t1 of a standalone LLD+PLAN (was unresolved-target)
+  ---
+  duration_ms: 109.138
+  type: 'test'
+  ...
+1..65
+# tests 65
+# suites 0
+# pass 65
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 15910.15125

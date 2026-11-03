@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the adapter spawns the CLI directly via node:child_process (k1)
+ok 1 - the adapter spawns the CLI directly via node:child_process (k1)
+  ---
+  duration_ms: 0.800083
+  type: 'test'
+  ...
+# Subtest: the exec path never reaches the daemon IPC (k1: extension-managed, bypasses daemon)
+ok 2 - the exec path never reaches the daemon IPC (k1: extension-managed, bypasses daemon)
+  ---
+  duration_ms: 0.362666
+  type: 'test'
+  ...
+# Subtest: the exec path makes no direct cloud REST call (k2: own-CLI-OAuth only)
+ok 3 - the exec path makes no direct cloud REST call (k2: own-CLI-OAuth only)
+  ---
+  duration_ms: 0.428333
+  type: 'test'
+  ...
+# Subtest: the adapter is vscode-free (import-scan)
+ok 4 - the adapter is vscode-free (import-scan)
+  ---
+  duration_ms: 0.211
+  type: 'test'
+  ...
+# Subtest: Ollama is never a registrable provider (k4)
+ok 5 - Ollama is never a registrable provider (k4)
+  ---
+  duration_ms: 0.31125
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 189.337667

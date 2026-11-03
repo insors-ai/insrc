@@ -16,7 +16,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MessageChannel, Worker } from 'node:worker_threads';
 
-import { serveHub } from '../channel.js';
+import { RequestLifetime } from '../../request-context.js';
+import { serveHub, wireRequest } from '../channel.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -87,4 +88,15 @@ test('closing the port rejects every pending hub request with HubUnavailableErro
 	} finally {
 		await worker.terminate();
 	}
+});
+
+test('wireRequest with ack asks for the completion message for unary and stream requests; without it the rule is unchanged (ISSUE-7c39e5cd)', () => {
+	const unary = { kind: 'request' as const, requestId: 'u', method: 'x.m', params: null, stream: false };
+	const stream = { ...unary, requestId: 's', stream: true };
+	const tracked = { ...stream, requestId: 't', lifetime: new RequestLifetime() };
+	for (const r of [unary, stream, tracked]) assert.equal(wireRequest(r, { ack: true }).trackCompletion, true, `${r.requestId}: acked`);
+	assert.equal('trackCompletion' in wireRequest(unary), false, 'a unary request without ack asks for none');
+	assert.equal('trackCompletion' in wireRequest(stream), false, 'nor a stream without a lifetime');
+	assert.equal(wireRequest(tracked).trackCompletion, true, 'a stream with a lifetime still does');
+	assert.deepEqual(wireRequest(unary, {}), wireRequest(unary), 'no option is the same envelope');
 });

@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "6d0a66b136a135dd",
+    "storyId": "S001",
+    "createdAt": "2026-10-29T14:49:17.098Z",
+    "authoredBy": "controller",
+    "triageRationale": "Test-only, mechanical: two assertions in two test files change from fixed-delay guesses to waiting on the event they check, using the existing `until` helper and the LLD's own ac1 wording (B answered before A's spin ends). No production code, no contract, no design choice. Grounded by reading both files directly (a plain lookup; no relationships involved).",
+    "epicCreatedAt": "2026-10-29T14:49:17.098Z",
+    "updatedAt": "2026-10-29T14:53:47.778Z",
+    "approvedAt": "2026-10-29T15:03:12.203Z",
+    "reviewOverride": {
+      "reason": "User approval in chat 2026-10-29. Test-only change; code review was manual (the daemon code-review framework is being rewritten): no HIGH/MED findings. Daemon validate passed (tsc clean, both files pass); 3/3 runs under CPU load.",
+      "at": "2026-10-29T15:03:12.203Z"
+    }
+  },
+  "body": {
+    "focus": "Two daemon-threading tests fail under full-sweep load because they guess at timing instead of checking the property they name. (1) src/daemon/threads/__tests__/s3-acceptance.test.ts ac1 asserts session B answered within 2000 ms while A spins 4 s; the Story's LLD (86197ac6 S003 ac1) says A spins 5 s and B is answered BEFORE A's ends. Under load B's first request (which starts a new worker) took 2-3.9 s, still before A ended. Fix: spin 5 s and assert B's reply arrives before A's. (2) src/daemon/threads/__tests__/router-session.test.ts \"one session's three requests reach its worker in arrival order\" waits a fixed 30 ms then expects the first request started; under load the log was still empty. Fix: wait for the event (the existing `until` helper) before each positive check, keeping the fixed waits only before the \"has not started\" checks. Test-only; no production change; s4 ac5's 100 ms p99 bound is the acceptance criterion itself and stays.",
+    "producesLld": false,
+    "commit": "36a0a9974",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "ac1 now checks its LLD row: A spins 5 s and B is answered before A's spin ends (no fixed bound, since B's first request also starts its worker). The router arrival-order test waits for each start with until() and keeps fixed waits only before the \"has not started\" checks. Both files pass 26/26 alone and 3/3 runs under 10 busy-loop processes; s4 ac5's 100 ms p99 bound is unchanged.",
+    "testRecord": {
+      "md": "docs/standalone/6d0a66b136a135dd-E202610296d0a66b1/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T14:53:47.778Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/s3-acceptance.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T14:53:47.778Z"
+      }
+    ]
+  }
+}

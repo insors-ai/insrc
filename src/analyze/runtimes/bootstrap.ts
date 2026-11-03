@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -25,7 +26,7 @@ import {
 import type { TemplateRuntime } from '../executor/types.js';
 
 import { CODE_RUNTIMES    } from './code/index.js';
-import { DATA_RUNTIMES    } from './data/index.js';
+import { dataDiscoveryConnectionsRuntime, dataDiscoveryObjectsRuntime, dataSchemaTableRuntime, DATA_RUNTIMES } from './data/index.js';
 import { INFRA_RUNTIMES   } from './infra/index.js';
 import { GENERIC_RUNTIMES } from './generic/index.js';
 import { DOCS_RUNTIMES    } from './docs/index.js';
@@ -43,7 +44,7 @@ let LATCHED = false;
  */
 export function registerBuiltinRuntimes(): void {
 	if (LATCHED) {
-		log.debug('registerBuiltinRuntimes: already latched (no-op)');
+		captureAnalysisDiagnostics(log).emit('debug', () => ['registerBuiltinRuntimes: already latched (no-op)']);
 		return;
 	}
 	LATCHED = true;
@@ -56,15 +57,16 @@ export function registerBuiltinRuntimes(): void {
 		{ name: 'docs',    runtimes: DOCS_RUNTIMES    },
 	];
 
+	const memoryReadOnly = new Set<TemplateRuntime>([dataDiscoveryConnectionsRuntime, dataDiscoveryObjectsRuntime, dataSchemaTableRuntime]);
 	let total = 0;
 	for (const fam of families) {
 		for (const rt of fam.runtimes) {
-			registerTemplateRuntime(rt);
+			registerTemplateRuntime(rt, memoryReadOnly.has(rt) ? { sessionMemory: 'read-only' } : undefined);
 			total++;
 		}
-		log.debug({ family: fam.name, count: fam.runtimes.length }, 'family runtimes registered');
+		captureAnalysisDiagnostics(log).emit('debug', () => [{ family: fam.name, count: fam.runtimes.length }, 'family runtimes registered']);
 	}
-	log.info({ total }, 'analyze runtimes registered');
+	captureAnalysisDiagnostics(log).emit('info', () => [{ total }, 'analyze runtimes registered']);
 }
 
 // ---------------------------------------------------------------------------

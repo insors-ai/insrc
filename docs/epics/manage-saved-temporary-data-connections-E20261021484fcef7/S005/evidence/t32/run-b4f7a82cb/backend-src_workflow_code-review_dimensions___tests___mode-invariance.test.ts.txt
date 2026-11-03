@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: buildConventionsPrompt is byte-identical across the three review modes (contract-independent)
+ok 1 - buildConventionsPrompt is byte-identical across the three review modes (contract-independent)
+  ---
+  duration_ms: 0.575458
+  type: 'test'
+  ...
+# Subtest: buildQualityPrompt is byte-identical across the three review modes (contract-independent)
+ok 2 - buildQualityPrompt is byte-identical across the three review modes (contract-independent)
+  ---
+  duration_ms: 0.144166
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 333.1725

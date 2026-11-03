@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: each <Stage>Body type-checks with functionalDefinition present
+ok 1 - each <Stage>Body type-checks with functionalDefinition present
+  ---
+  duration_ms: 0.663375
+  type: 'test'
+  ...
+# Subtest: each <Stage>Body type-checks WITHOUT functionalDefinition (absent-safe)
+ok 2 - each <Stage>Body type-checks WITHOUT functionalDefinition (absent-safe)
+  ---
+  duration_ms: 0.079416
+  type: 'test'
+  ...
+# Subtest: validateFunctionalDefinition treats undefined and empty requirements as absent
+ok 3 - validateFunctionalDefinition treats undefined and empty requirements as absent
+  ---
+  duration_ms: 0.122209
+  type: 'test'
+  ...
+# Subtest: a valid doc-level + per-item record passes
+ok 4 - a valid doc-level + per-item record passes
+  ---
+  duration_ms: 0.199292
+  type: 'test'
+  ...
+# Subtest: duplicate FR ids are rejected with a duplicate-id error
+ok 5 - duplicate FR ids are rejected with a duplicate-id error
+  ---
+  duration_ms: 0.10025
+  type: 'test'
+  ...
+# Subtest: a per-item FR with a dangling itemRef is rejected
+ok 6 - a per-item FR with a dangling itemRef is rejected
+  ---
+  duration_ms: 0.061958
+  type: 'test'
+  ...
+# Subtest: a per-item FR missing itemRef is rejected
+ok 7 - a per-item FR missing itemRef is rejected
+  ---
+  duration_ms: 0.112208
+  type: 'test'
+  ...
+# Subtest: a malformed FR id is rejected
+ok 8 - a malformed FR id is rejected
+  ---
+  duration_ms: 0.058208
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 192.870875

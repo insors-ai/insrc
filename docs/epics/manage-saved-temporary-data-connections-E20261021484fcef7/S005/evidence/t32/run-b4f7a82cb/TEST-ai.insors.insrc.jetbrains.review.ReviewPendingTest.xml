@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.review.ReviewPendingTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.004">
+  <properties/>
+  <testcase name="pendingArtifacts maps ok with a list to Available(list) and forwards descriptors verbatim()" classname="ai.insors.insrc.jetbrains.review.ReviewPendingTest" time="0.0"/>
+  <testcase name="pendingArtifacts maps ok with an empty list to Available(emptyList) — 'nothing pending'()" classname="ai.insors.insrc.jetbrains.review.ReviewPendingTest" time="0.0"/>
+  <testcase name="pendingArtifacts maps a DaemonUnavailableException to Unavailable(reason), never Available(emptyList)()" classname="ai.insors.insrc.jetbrains.review.ReviewPendingTest" time="0.0"/>
+  <testcase name="pendingArtifacts does no classification — a malformed payload degrades safely, not throws()" classname="ai.insors.insrc.jetbrains.review.ReviewPendingTest" time="0.0"/>
+  <testcase name="ReviewListViews maps Available(list) to Pending, Available(empty) to NothingPending, Unavailable to Unavailable()" classname="ai.insors.insrc.jetbrains.review.ReviewPendingTest" time="0.001"/>
+  <testcase name="pendingArtifacts maps ok=false to Unavailable(reason), never Available(emptyList)()" classname="ai.insors.insrc.jetbrains.review.ReviewPendingTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

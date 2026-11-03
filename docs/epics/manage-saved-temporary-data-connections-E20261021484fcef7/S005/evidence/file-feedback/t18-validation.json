@@ -1,0 +1,150 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t18",
+    "passed": true,
+    "checks": [
+      {
+        "check": "Two-pane responsive list/draft layout, explicit root/scope/filter/counts and all error/empty/recovery states.",
+        "satisfied": true,
+        "evidence": "Root/scope/filter/counts controls are present and wired (renderer.ts #root select, #filter-all/saved/temporary, #search, #counts, #add/#refresh); host.ts projects list.roots/repoRoot/filter/counts/matchingCount into the view every publish. All list states (loading, ready, empty-registry, empty-filter, read-error, offline, no-repository, upgrade-required) are rendered with distinct status copy and verified by the 'real renderer covers every descriptor, all list states...' test. The literal 'two-pane' (side-by-side) layout from the original LLD/UX mock was explicitly superseded by a documented, user-authorized correction (docs/.../S005/UI-FEEDBACK.md: 'The user explicitly replaced the old two-pane layout with registration above list... at all widths'), and the current renderer.ts CSS (`.manager{display:flex;flex-direction:column}`) plus the dedicated test 'registration precedes list at every width...' implement exactly that corrected, user-approved design — so the deviation from the literal word 'two-pane' is a sanctioned scope change, not a missed requirement."
+      },
+      {
+        "check": "Strict allowlisted webview intent messages, CSP/escaping, no raw capabilities/config/secret persistence via setState or generic RPC bridge.",
+        "satisfied": true,
+        "evidence": "types.ts `parseConnectionIntent` enumerates every accepted `type`, validates each field's shape/enum, and rejects any object whose key set doesn't exactly match the expected fields (lines 45-66) — verified by the 'exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC' test, which throws getters, extra capability/ticket fields, bad generations and a raw RPC-method message and asserts every one parses to null. renderer.ts emits a CSP meta tag with `default-src 'none'; connect-src 'none'; img-src 'none'; form-action 'none'` and a per-render nonce; the script never uses innerHTML/setState/getState/localStorage/fetch/eval, asserted directly by regex in the same test. Credentials are never echoed into postMessage payloads (`assert.ok(!JSON.stringify(panel.posts).includes(secretValue))` across multiple host.test.ts assertions)."
+      },
+      {
+        "check": "Accessible labels/focus-visible/status region; masked replacement fields; dirty close/hide handled without ending owner.",
+        "satisfied": true,
+        "evidence": "Every input is paired with a `<label for>` via the `label()` helper; icon-only toolbar buttons carry `aria-label` + `title` + hidden decorative SVGs, verified by 'toolbar icons retain accessible names'. `:focus-visible{outline:...}` is present and asserted. `#list-status`/`#notice`/`#error` are `role=\"status\"`/`role=\"alert\"` live regions. Credential replacement inputs are `type=\"password\"`, start blank and are erased on hide/pagehide (`eraseSecrets`), verified by `password()` helper assertions. host.test.ts shows hiding the panel and attempting a 'save' while hidden has zero daemon-call effect and owner status stays 'ready'; closing a dirty draft requires confirm, and after the panel disposes `f.owner.view.status` is still 'ready' — the owner/session is never ended by a view-only close or hide."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "host.ts/renderer.ts/types.ts implement an injected webview host + renderer with a strict allowlisted intent protocol, CSP/escaping, accessible controls, masked credential fields and view-only close/hide semantics; the only deviation from the literal 'two-pane' wording is a documented, explicitly user-authorized layout correction (UI-FEEDBACK.md) that the shipped code and its dedicated test implement faithfully. The required named test exists, exercises exactly what its title claims, and the daemon's typecheck/test runs both passed with no scope creep beyond the vscode-plugin/src/connections module.</reason>\n",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd vscode-plugin && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 8873,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd vscode-plugin && npx tsc --noEmit): clean\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-6jMSou/report.tap vscode-plugin/src/connections/__tests__/compatibility.test.ts\nnpx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-wYMo5r/report.tap vscode-plugin/src/connections/__tests__/host.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 22258,
+        "outputTail": "TAP version 13\n# Subtest: CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view\nok 1 - CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view\n  ---\n  duration_ms: 265.161791\n  type: 'test'\n  ...\n# Subtest: CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close\nok 2 - CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close\n  ---\n  duration_ms: 5868.568\n  type: 'test'\n  ...\n# Subtest: CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC\nok 3 - CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC\n  ---\n  duration_ms: 0.868792\n  type: 'test'\n  ...\n# Subtest: CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON\nok 4 - CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON\n  ---\n  duration_ms: 131.947791\n  type: 'test'\n  ...\n# Subtest: CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names\nok 5 - CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names\n  ---\n  duration_ms: 0.555208\n  type: 'test'\n  ...\n# Subtest: CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input\nok 6 - CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input\n  ---\n  duration_ms: 2136.071833\n  type: 'test'\n  ...\n1..6\n# tests 6\n# suites 0\n# pass 6\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 8407.95725\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-6jMSou/report.tap vscode-plugin/src/connections/__tests__/compatibility.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11404,
+            "titles": [
+              {
+                "title": "CM-S5-COMPAT-TS: old missing malformed and base-incomplete handshakes show upgrade without legacy writes",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: per-action feature admission preserves optional Test independence and refuses disabled Save and Remove intents",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: capability loss retains original unknown attempts and recovery resumes without another mutation",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: shared capability decisions pinned read-only metadata and actual legacy Saved projection remain unchanged",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/vscode-plugin_src_connections___tests___compatibility.test.ts.1793372004334.82686.tap"
+          },
+          {
+            "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-wYMo5r/report.tap vscode-plugin/src/connections/__tests__/host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10854,
+            "titles": [
+              {
+                "title": "CM-S5-RENDER-TS: a closed panel cannot apply its late repository read to a replacement view",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: exact bounded intent shapes reject authority fields, accessors, stale protocol and generic RPC",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: real renderer covers every descriptor, all list states and masked blank credentials without raw JSON",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: registration precedes list at every width and toolbar icons retain accessible names",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/vscode-plugin_src_connections___tests___host.test.ts.1793372015198.82686.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: injected webview host, strict messages/CSP/escaping, all states, masked input and view-only close",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/host.test.ts",
+                "title": "CM-S5-RENDER-TS: Parquet file picker is prominent, optional Label stays optional, and disabled actions explain missing input",
+                "result": "pass"
+              },
+              {
+                "file": "vscode-plugin/src/connections/__tests__/compatibility.test.ts",
+                "title": "CM-S5-COMPAT-TS: metadata-only daemon permits local drafts while Save Test and legacy writes stay refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/TESTS.md"
+    }
+  },
+  "passed": true
+}

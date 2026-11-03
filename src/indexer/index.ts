@@ -1,26 +1,24 @@
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { join, extname, resolve, relative, sep, basename } from 'node:path';
+import { join, extname, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity } from '../shared/types.js';
+import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity, LLMProvider } from '../shared/types.js';
 import type { SummariseDocResult } from '../analyze/summariser/index.js';
-import { upsertEntities, listEntityFilesForRepo, deleteEntitiesById, deleteEntitiesForRepo } from '../db/entities.js';
+import { upsertEntities, listEntityFilesForRepo, deleteEntitiesForRepo, reconcileEntityVectors } from '../db/entities.js';
 import {
   upsertRelations,
-  deleteRelationsForFile,
-  deleteUnresolvedForFile,
-  deleteUnresolvedForRepoFile,
   deleteUnresolvedForRepo,
 } from '../db/relations.js';
-import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, readIndexState, setUncommittedFiles } from '../db/index-state.js';
+import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, addUncommittedFile, readIndexState, setEmbeddingAvailable, setUncommittedFiles } from '../db/index-state.js';
 import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
+import { withBackgroundHold } from '../shared/locks/maintenance-lock.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
 import { resolveMessagingEndpoints } from './messaging-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
-import { deleteEntitiesForFile, getEntity } from '../db/entities.js';
+import { commitFile, getEntity } from '../db/entities.js';
+import { writeOfRelation } from '../db/file-commit.js';
 import { updateRepoStatus, lookupRepoId, UnregisteredRepoError } from '../db/repos.js';
 import { bumpIndexRunDone, closeIndexRun, openIndexRun, readIndexRun, setIndexRunSelected } from './run-record.js';
 import { SHARED_MODULES_REPO_ID } from '../shared/repo-namespaces.js';
@@ -36,11 +34,18 @@ import './parser/go.js';
 import './parser/java.js';
 import './parser/scala.js';
 import './parser/kotlin.js';
+import './parser/c.js';
+import './parser/cpp.js';
+import './parser/rust.js';
+import './parser/csharp.js';
+import './parser/sql.js';
 import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
-import { hasIgnoredSegment, selectFile } from './file-selection.js';
-import { Watcher, IGNORE_DIRS } from './watcher.js';
-import { resolveRepoIgnore, initRepoIgnore } from './repo-ignore-config.js';
+import { selectFile } from './file-selection.js';
+import { runSubsystemPass } from './subsystem-pass.js';
+import { asSubsystemsOutcome, SubsystemScheduler, type SchedulerClock, type SubsystemsOutcome } from './subsystem-scheduler.js';
+import { Watcher } from './watcher.js';
+import { createFileFilter, isGeneratedOrMinifiedFile, proposeIgnoreFile, refreshFileFilter, type CheapTierModel, type FileFilter } from './file-filter.js';
 import { IndexQueue } from '../daemon/queue.js';
 import { getLogger } from '../shared/logger.js';
 import type { ConfigStore } from '../config/store.js';
@@ -60,64 +65,33 @@ import {
 const log = getLogger('indexer');
 
 // ---------------------------------------------------------------------------
-// File walker — git-aware (respects .gitignore)
+// File walker — FileFilter is the one rule (Epic c2ba6fa6 s6)
 // ---------------------------------------------------------------------------
 
-const IGNORE_SET = new Set(IGNORE_DIRS);
+/** Every file `filter` includes — the one rule for what the index holds,
+ *  for a git repo and a plain folder alike (Epic c2ba6fa6 s6). */
+function listRepoFiles(filter: FileFilter): string[] {
+  return filter.listFiles();
+}
+
+/** Used in place of a real cheap-tier model when the daemon has not wired
+ *  one in: `proposeIgnoreFile` treats the immediate rejection exactly like
+ *  a real model failure, writing the plain fallback ignore file (ac7). */
+const NO_MODEL: CheapTierModel = {
+  complete: () => Promise.reject(new Error('no cheap-tier model configured')),
+};
 
 /**
- * List all files in a repo, respecting .gitignore when inside a git repo.
- *
- * Uses `git ls-files` which correctly handles:
- *   - nested .gitignore files
- *   - global gitignore (~/.config/git/ignore)
- *   - .git/info/exclude
- *
- * Falls back to the directory walker for non-git repos.
+ * Entities the backfill embeds and writes per round (Epic c2ba6fa6 s2), set
+ * from t11's measurement on this repository's vector table (80,043 rows, 1024
+ * dims; medians of 5): an upsert of 1 row took 25 ms, of 16 rows 29 ms, of 256
+ * rows 49 ms (a plain add: 11 ms and 31 ms; a delete of 16 ids ~15 ms). The
+ * write is nearly a fixed cost per call, and a round is one delete plus one add
+ * (ISSUE-8c7d75b0), so 256 per round keeps the backfill's write time to ~0.2 ms per
+ * entity while a round's embedding (16 Ollama batches) still finishes in
+ * seconds, which bounds the work redone after a crash mid-round.
  */
-
-function listRepoFiles(repoPath: string, ignore: readonly string[] = IGNORE_DIRS): string[] {
-  const ignoreSet = new Set(ignore);
-  if (!existsSync(join(repoPath, '.git'))) {
-    log.debug({ repo: repoPath }, 'not a git repo, using directory walker');
-    return [...walkFilesLegacy(repoPath, ignoreSet)];
-  }
-
-  try {
-    // --cached: tracked files
-    // --others: untracked files (new files not yet committed)
-    // --exclude-standard: honour .gitignore, .git/info/exclude, global gitignore
-    const stdout = execFileSync(
-      'git',
-      ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
-      { cwd: repoPath, maxBuffer: 50 * 1024 * 1024, encoding: 'utf8' },
-    );
-    const files = stdout.split('\0').filter(Boolean).map(f => resolve(repoPath, f))
-      .filter(f => !hasIgnoredSegment(f, repoPath, ignoreSet));
-    log.info({ repo: repoPath, files: files.length }, 'git ls-files');
-    return files;
-  } catch (err) {
-    log.warn({ repo: repoPath, err: String(err) }, 'git ls-files failed, falling back to directory walker');
-    return [...walkFilesLegacy(repoPath, ignoreSet)];
-  }
-}
-
-/** Legacy directory walker — used as fallback for non-git repos. */
-function* walkFilesLegacy(dir: string, ignoreSet: Set<string> = IGNORE_SET): Iterable<string> {
-  let entries;
-  try { entries = readdirSync(dir, { withFileTypes: true }); }
-  catch { return; }
-
-  for (const entry of entries) {
-    if (ignoreSet.has(entry.name)) continue;
-    const full = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      yield* walkFilesLegacy(full, ignoreSet);
-    } else if (entry.isFile()) {
-      yield full;
-    }
-  }
-}
+const BACKFILL_BATCH = 256;
 
 function contentHash(source: string): string {
   return createHash('sha256').update(source).digest('hex').slice(0, 16);
@@ -178,6 +152,13 @@ export interface IndexerQueue {
 export class IndexerService {
   private readonly db:      DbClient;
   private readonly queue:   IndexerQueue;
+  /** When subsystem passes run (ISSUE-7d42b5dc): pacing by actual start, retry with back-off. */
+  private readonly subsystems = new SubsystemScheduler({
+    graphComplete: async repoPath => (await readIndexState(repoPath))?.graphComplete === true,
+    enqueue:       repoPath => this.queue.enqueue({ kind: 'subsystems', repoPath }),
+    isStopping:    () => this.queue.isStopping,
+    clock:         this.subsystemSchedulerClock(),
+  });
   private readonly watcher: Watcher;
   private readonly supported: Set<string>;
   private readonly configStore: ConfigStore | null;
@@ -201,6 +182,14 @@ export class IndexerService {
    * paths. Now we restrict to the explicitly-registered roots.
    */
   private readonly registeredRepos: Set<string> = new Set();
+  /** One FileFilter per registered repo (Epic c2ba6fa6 s6) -- built once at
+   *  registration / daemon start, reused everywhere so the full walk, a
+   *  single file event, and the clean-up pass all agree without rebuilding
+   *  (a repo walk + a git subprocess call) on every event. Refreshed on an
+   *  ignore-file edit (Story s6/t10) and on every full index. */
+  private readonly repoFilters: Map<string, FileFilter> = new Map();
+  /** See the constructor's `cheapTierModel` parameter. */
+  private readonly cheapTierModel: CheapTierModel;
   /** The running document-summary sweep's progress (summarySweepProgress). */
   private sweepProgress: { repoPath: string; done: number; total: number } | undefined = undefined;
 
@@ -219,6 +208,11 @@ export class IndexerService {
     configStore?: ConfigStore | undefined,
     settleWindowMs: number = 2000,
     filePresence: FilePresenceCheck = statPresence,
+    /** The cheap-tier model `proposeIgnoreFile` asks when a newly-added
+     *  repository has no root ignore file (Epic c2ba6fa6 s6/ac6). Absent,
+     *  every repository still gets the plain fallback ignore file --
+     *  `proposeIgnoreFile` itself never fails the add either way. */
+    cheapTierModel?: CheapTierModel | undefined,
   ) {
     this.db             = db;
     this.queue          = queue;
@@ -227,6 +221,7 @@ export class IndexerService {
     this.configStore    = configStore ?? null;
     this.settleWindowMs = settleWindowMs;
     this.filePresence   = filePresence;
+    this.cheapTierModel = cheapTierModel ?? NO_MODEL;
   }
 
   /**
@@ -235,6 +230,18 @@ export class IndexerService {
    */
   async start(repos: RegisteredRepo[]): Promise<void> {
     log.info({ repos: repos.length }, 'indexer starting');
+    // Before any job runs: the graph and the vector table agree again (Epic
+    // c2ba6fa6 s2). A vector store that cannot be read must not stop the
+    // indexer; the backfill and the next start try again.
+    try {
+      await reconcileEntityVectors();
+    } catch (err) {
+      log.warn({ err: err instanceof Error ? err.message : String(err) }, 'graph/vector reconciliation failed at start');
+    }
+    // A live ignore-rule change: the clean-up pass removes every stored file
+    // the new rules leave out -- also one indexed after the filter was last
+    // rebuilt, which the refresh's own 'left' list cannot name (s6 review).
+    this.watcher.onFilterRefreshed?.(repoPath => this.queue.enqueue({ kind: 'reconcile', repoPath }));
     this.watcher.onEvents(events => {
       for (const e of events) {
         // Check if this is a config file event
@@ -268,10 +275,10 @@ export class IndexerService {
       }
 
       this.registeredRepos.add(repo.path);
-      // Seed the per-repo ignore config for already-registered repos too
-      // (idempotent) so every repo gets the externalized `.insrc` config,
-      // not just fresh adds.
-      await this.watcher.addRepo(repo.path, initRepoIgnore(repo.path));
+      await this.ensureRootIgnoreFile(repo.path, 'daemon start');
+      // FileFilter is the one rule (Epic c2ba6fa6 s6) -- built fresh on
+      // every daemon start, not persisted.
+      await this.watcher.addRepo(repo.path, this.refreshedFileFilter(repo.path));
 
       if (
         repo.status === 'pending' ||
@@ -308,6 +315,8 @@ export class IndexerService {
         // by the clean-up pass -- queued, so start-up does not wait for it.
         this.queue.enqueue({ kind: 'reconcile', repoPath: repo.path });
       }
+      // The vector backfill, in its own lane, after the start-up reconciliation (Epic c2ba6fa6 s2).
+      this.queue.enqueue({ kind: 'reembed', repoPath: repo.path });
 
       // Watch project config dir if it exists
       const projectConfig = projectConfigBase(repo.path);
@@ -337,7 +346,7 @@ export class IndexerService {
     const sinceMs = new Date(lastIndexed).getTime();
     if (Number.isNaN(sinceMs)) return [];
 
-    const allFiles = listRepoFiles(repoPath, resolveRepoIgnore(repoPath));
+    const allFiles = listRepoFiles(this.fileFilterFor(repoPath));
     const changed: string[] = [];
 
     for (const filePath of allFiles) {
@@ -357,13 +366,61 @@ export class IndexerService {
     return changed;
   }
 
+  /** The repo's cached FileFilter, built fresh and cached when none is held
+   *  yet (Epic c2ba6fa6 s6). Registration and a full index always build a
+   *  new one (the repo may have changed since any previous build); every
+   *  other caller reuses the cached instance. */
+  private fileFilterFor(repoPath: string): FileFilter {
+    let filter = this.repoFilters.get(repoPath);
+    if (filter === undefined) {
+      filter = createFileFilter(repoPath);
+      this.repoFilters.set(repoPath, filter);
+    }
+    return filter;
+  }
+
+  /** The repo's FileFilter rebuilt from disk (created and cached when none
+   *  is held) -- used at registration and by a full index, both of which
+   *  already walk the whole repo so the extra build is not wasted work. */
+  private refreshedFileFilter(repoPath: string): FileFilter {
+    // The held instance is refreshed in place: the watcher holds the same
+    // object and refreshes it on an ignore-file edit (s6/t10), so a new one
+    // here would leave the two judging by different rules.
+    const held = this.repoFilters.get(repoPath);
+    if (held !== undefined) {
+      refreshFileFilter(held, 'a full index or registration');
+      void this.watcher.syncIgnores?.(repoPath);
+      return held;
+    }
+    const filter = createFileFilter(repoPath);
+    this.repoFilters.set(repoPath, filter);
+    return filter;
+  }
+
+  /** A registered repository with no root ignore file gets one proposed by
+   *  the cheap tier (or the plain fallback) before its FileFilter is built --
+   *  at registration (ac6), and at start-up and before a full index for a
+   *  repository registered before Story s6, which until then relied on the
+   *  retired built-in list of directory names (user decision 2026-11-01, s6
+   *  code review). An existing root ignore file is never touched (ac8), and
+   *  this never fails: proposeIgnoreFile does not throw. */
+  private async ensureRootIgnoreFile(repoPath: string, when: string): Promise<void> {
+    if (existsSync(join(repoPath, '.gitignore'))) return;
+    const proposal = await proposeIgnoreFile(repoPath, this.cheapTierModel);
+    if (proposal.written) {
+      log.info({ repo: repoPath, source: proposal.source, reason: proposal.reason }, `${when}: root ignore file created`);
+    }
+  }
+
   /** Add a repo: start watching + enqueue full index. */
   async addRepo(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'repo added, enqueuing full index');
     this.registeredRepos.add(repoPath);
-    // Seed the per-repo .insrc ignore config (idempotent) + watch with it.
-    const ignore = initRepoIgnore(repoPath);
-    await this.watcher.addRepo(repoPath, ignore);
+    // A repo with no root ignore file gets one before the FileFilter below
+    // reads it, so the first index already sees it (ac6, Epic c2ba6fa6 s6).
+    await this.ensureRootIgnoreFile(repoPath, 'repo added');
+    // FileFilter is the one rule (Epic c2ba6fa6 s6).
+    await this.watcher.addRepo(repoPath, this.refreshedFileFilter(repoPath));
     this.queue.enqueue({ kind: 'full', repoPath });
 
     // Watch project config dir if it exists
@@ -378,11 +435,15 @@ export class IndexerService {
   async removeRepo(repoPath: string): Promise<void> {
     log.info({ repo: repoPath }, 'repo removed');
     this.registeredRepos.delete(repoPath);
+    this.repoFilters.delete(repoPath);
     await this.watcher.removeRepo(repoPath);
   }
 
-  /** Process a single IndexJob — called by the queue worker loop. */
-  async processJob(job: IndexJob): Promise<void> {
+  /**
+   * Process a single IndexJob — called by the queue worker loop. Resolves the
+   * job's outcome where it has one (a subsystems job's, for the scheduler).
+   */
+  async processJob(job: IndexJob): Promise<unknown> {
     switch (job.kind) {
       case 'full':           await this.fullIndex(job.repoPath);            break;
       case 'file':           await this.fileEvent(job.filePath, job.event); break;
@@ -393,6 +454,7 @@ export class IndexerService {
       case 'config-reindex': await this.configReindex(job.scope);           break;
       case 'doc-summarise-repo':   await this.docSummariseRepo(job.repoPath);   break;
       case 'doc-summarise-entity': await this.docSummariseEntity(job.entityId); break;
+      case 'subsystems':           return this.subsystemPass(job.repoPath);
     }
   }
 
@@ -439,7 +501,13 @@ export class IndexerService {
       await attempt('dropping the cached explorations', () => deleteCachedExplorationsForRepo(repoPath));
       await attempt('the resolver run', () => this.resolveAfterReconcile(repoPath));
     }
+    // Every clean-up -- the one each daemon start queues included -- queues the
+    // subsystem pass, so a summary that failed is retried even when the
+    // repository is never edited again (s8 review); the pass is cheap when the
+    // groups are current and every summary is written.
+    await attempt('queueing the subsystem pass', () => this.enqueueSubsystemsIfComplete(repoPath));
     log.info({ repo: repoPath, ...counts }, 'index clean-up complete');
+    this.queue.enqueue({ kind: 'reembed', repoPath });
     if (failure !== undefined) throw failure;
   }
 
@@ -476,7 +544,7 @@ export class IndexerService {
       return;
     }
 
-    const ignoreSet = new Set(resolveRepoIgnore(repoPath));
+    const filter = this.fileFilterFor(repoPath);
     const stored = await listEntityFilesForRepo(this.db, repoPath);
 
     // Phase 1: decide, without writing. Nothing is removed until the whole
@@ -492,7 +560,11 @@ export class IndexerService {
         await new Promise<void>(resolveYield => setImmediate(resolveYield));
       }
 
-      const ignored = hasIgnoredSegment(file, repoPath, ignoreSet);
+      // A generated/minified file is kept unindexed by the full walk's own
+      // not-code check (file-selection.ts), not removed here as "ignored"
+      // -- the clean-up pass's "ignored" reason is the gitignore-rule (and
+      // .insrc) decision alone, unchanged from before this Story.
+      const ignored = !filter.includes(file) && !isGeneratedOrMinifiedFile(file);
       // An ignored file goes whether or not it exists; it is stat'ed only
       // while no stored file has been seen on disk yet (see below).
       let onDisk: boolean | null = null;
@@ -548,8 +620,9 @@ export class IndexerService {
    * visited again, while entities left behind are found by the next pass.
    */
   protected async removeStoredFile(repoPath: string, file: string, ids: readonly string[]): Promise<void> {
-    await deleteUnresolvedForRepoFile(this.db, repoPath, file);
-    await deleteEntitiesById(this.db, ids);
+    // One commit: the file's entities, relationships and pending rows go together (Epic c2ba6fa6 s2).
+    void ids;
+    await commitFile({ repoPath, filePath: file, contentHash: null, entities: [], relations: [] });
   }
 
   /**
@@ -558,8 +631,9 @@ export class IndexerService {
    * as in the settle pass).
    */
   protected async resolveAfterReconcile(repoPath: string): Promise<void> {
-    const sourceRoots = detectSourceRoots(repoPath);
-    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'repository' });
+    const fileFilter = this.fileFilterFor(repoPath);
+    const sourceRoots = detectSourceRoots(repoPath, fileFilter);
+    const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'repository', fileFilter });
     log.info({ repo: repoPath, ...cf }, 'cross-file pass after index clean-up');
     try {
       await resolveExternalEndpoints({ db: this.db, repo: repoPath });
@@ -577,6 +651,68 @@ export class IndexerService {
         'messaging-endpoint pass after index clean-up failed (non-fatal)',
       );
     }
+    await this.enqueueSubsystemsIfComplete(repoPath);
+  }
+
+  /**
+   * Queue the subsystem pass (Epic c2ba6fa6 s8) when the repository's graph is
+   * complete: after a full index, a settle or a clean-up. The pass itself does
+   * nothing when its stored groups are of the current generation.
+   */
+  /**
+   * The subsystem pass for one repository, yielding to code work and stopping
+   * on shutdown as the document sweep does (a seam: a test overrides it).
+   */
+  protected async subsystemPass(repoPath: string): Promise<SubsystemsOutcome> {
+    const r = await runSubsystemPass({
+      db: this.db, repoPath, provider: this.subsystemProvider(),
+      waitForCodeIdle: () => this.queue.waitForIndexIdle(),
+      isCodeIdle:      () => this.queue.isIndexIdle,
+      shouldStop:      () => this.queue.isStopping,
+    });
+    return {
+      summariesFailed: r.summariesFailed, stopped: r.stopped, startedAt: r.startedAt,
+      ...((r.reason === 'graph-incomplete' || r.reason === 'superseded') && { grouped: false }),
+    };
+  }
+
+  /** The summaries' model: undefined is the cheap tier (a seam: the stub summary worker runs none). */
+  protected subsystemProvider(): LLMProvider | undefined {
+    return undefined;
+  }
+
+  /**
+   * Request a subsystem pass: the scheduler queues it now or when pacing allows
+   * (ISSUE-7d42b5dc). Only the IndexerService that owns the queue requests.
+   */
+  protected async enqueueSubsystemsIfComplete(repoPath: string): Promise<void> {
+    await this.subsystems.request(repoPath);
+  }
+
+  /**
+   * Run one queued job for the queue driver, telling the subsystem scheduler
+   * when a subsystems job starts and how it ended -- its outcome, wherever it
+   * ran (here, or on the document-summary worker), or a failure.
+   */
+  async runQueuedJob(job: IndexJob, run: () => Promise<unknown>): Promise<void> {
+    if (job.kind !== 'subsystems') { await run(); return; }
+    this.subsystems.started(job.repoPath);
+    let outcome: SubsystemsOutcome | undefined;
+    try {
+      outcome = asSubsystemsOutcome(await run());
+    } finally {
+      this.subsystems.finished(job.repoPath, outcome);
+    }
+  }
+
+  /** The subsystem scheduler's time and timers: the real ones (a seam for tests). */
+  protected subsystemSchedulerClock(): SchedulerClock | undefined {
+    return undefined;
+  }
+
+  /** Stop: clear the subsystem scheduler's timers (both stop paths call it). */
+  disposeSubsystemScheduler(): void {
+    this.subsystems.dispose();
   }
 
   /** Test seam: how many per-repo settle timers are armed. */
@@ -644,12 +780,16 @@ export class IndexerService {
       await beginFullIndexState(repoPath);
       log.info({ repo: repoPath, returnedToPending, carriedDocSummaries }, 'full index: repository rows deleted');
 
-      const ignore = resolveRepoIgnore(repoPath);
-      const files = listRepoFiles(repoPath, ignore);
+      // FileFilter (Epic c2ba6fa6 s6) is the one rule for what the walk
+      // holds; selectFile() asks the same filter, so a listed file is never
+      // 'excluded-by-ignore' -- only not-code / generated / artifact remain.
+      await this.ensureRootIgnoreFile(repoPath, 'full index');
+      const filter = this.refreshedFileFilter(repoPath);
+      const files = listRepoFiles(filter);
       const supported: string[] = [];
       let notCode = 0;
       for (const filePath of files) {
-        if (selectFile(filePath, repoPath, ignore) === 'selected') supported.push(filePath);
+        if (selectFile(filePath, filter) === 'selected') supported.push(filePath);
         else notCode++;
       }
       setIndexRunSelected(repoPath, supported.length);
@@ -689,8 +829,9 @@ export class IndexerService {
         // error.
         if (total % 500 === 0) {
           try {
-            const { compactEntityVecTable } = await import('../db/lance/entity-vec.js');
-            const r = await compactEntityVecTable();
+            // Under the vector lock: the backfill lane may be writing (ISSUE-8c7d75b0 review).
+            const { compactEntityVectors } = await import('../db/entities.js');
+            const r = await compactEntityVectors();
             log.info({ repo: repoPath, progress: total, ...r }, 'lance entity_vec compacted');
           } catch (err) {
             log.warn({ repo: repoPath, progress: total, err: err instanceof Error ? err.message : String(err) }, 'lance compact failed (non-fatal)');
@@ -723,8 +864,9 @@ export class IndexerService {
       // outer catch correctly sets `status='error'` on the repo so the
       // next startup re-enqueues a full index instead of treating a
       // half-done index as ready.
-      const sourceRoots = detectSourceRoots(repoPath);
-      const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'full' });
+      const fileFilter = this.fileFilterFor(repoPath);
+      const sourceRoots = detectSourceRoots(repoPath, fileFilter);
+      const cf = await runCrossFileResolver({ db: this.db, repoRoot: repoPath, sourceRoots, mode: 'full', fileFilter });
       log.info({ repo: repoPath, ...cf }, 'cross-file pass after full index');
       let endpointPassFailed = false;
 
@@ -765,8 +907,8 @@ export class IndexerService {
       // build above it. Search latency drops from brute-force scan
       // (~860 ms p99 at 1M rows) to ~10-50 ms p99 once this lands.
       try {
-        const { optimizeEntityVecIndex } = await import('../db/lance/entity-vec.js');
-        const r = await optimizeEntityVecIndex();
+        const { optimizeEntityVectorIndex } = await import('../db/entities.js');
+        const r = await optimizeEntityVectorIndex();
         if (r.built) {
           log.info({ repo: repoPath, rowCount: r.rowCount, elapsedMs: r.elapsedMs }, 'entity_vec HNSW index built');
         } else {
@@ -784,6 +926,8 @@ export class IndexerService {
       // whatever else is pending. Skip-if-unchanged inside the driver
       // makes re-runs cheap; safe to fire on every full-index.
       this.queue.enqueue({ kind: 'doc-summarise-repo', repoPath });
+      this.queue.enqueue({ kind: 'reembed', repoPath });
+      await this.enqueueSubsystemsIfComplete(repoPath);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       log.error({ repo: repoPath, err: msg }, 'full index failed');
@@ -809,22 +953,30 @@ export class IndexerService {
       return;
     }
     if (event === 'delete') {
-      await deleteRelationsForFile(this.db, filePath);
-      await deleteEntitiesForFile(this.db, filePath);
-      await deleteUnresolvedForFile(this.db, filePath);
+      // One commit removes the file's entities, relationships and pending rows together (ac4).
+      await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
       log.info({ file: filePath }, 'file deleted from index');
       this.scheduleSettle(repoPath, filePath);
       return;
     }
-    // create or update. A file the repo's ignore list excludes is not
-    // indexed: the walker applies the list, but a `file` job (the watcher,
-    // or the daemon's `index.file` request for any path) did not, so an
-    // ignored file could re-enter the index between two clean-ups.
-    if (hasIgnoredSegment(filePath, repoPath, new Set(resolveRepoIgnore(repoPath)))) {
-      log.debug({ file: filePath, event }, 'file event skipped: excluded by the repo ignore list');
+    // create or update. A file FileFilter excludes is not indexed: the
+    // walker applies it, but a `file` job (the watcher, or the daemon's
+    // `index.file` request for any path) is a separate entry point, so an
+    // excluded file could re-enter the index between two clean-ups. Using
+    // the same FileFilter here as the full walk is the invariant this
+    // Story (Epic c2ba6fa6 s6) exists to hold: both must agree (ac4).
+    if (!this.fileFilterFor(repoPath).includes(filePath)) {
+      log.debug({ file: filePath, event }, 'file event skipped: excluded by the repo file filter');
       return;
     }
-    await this.indexFile(filePath, repoPath, true);
+    try {
+      await this.indexFile(filePath, repoPath, true);
+    } catch (err) {
+      // Nothing was written: the file's previous rows stand (ac1). The
+      // repository reads incomplete with the file named until it next commits.
+      await addUncommittedFile(repoPath, filePath).catch(e => log.warn({ file: filePath, err: e instanceof Error ? e.message : String(e) }, 'could not record the uncommitted file'));
+      throw err;
+    }
     this.scheduleSettle(repoPath, filePath);
     // Doc-summariser follow-up: if the touched file produced doc /
     // section entities, enqueue per-entity summarisation. Queue
@@ -871,7 +1023,8 @@ export class IndexerService {
     if (existing !== undefined) clearTimeout(existing);
     const timer = setTimeout(() => {
       this.settleTimers.delete(repoPath);
-      const pass = this.runSettlePass(repoPath).catch(err => {
+      // A background write: with daemon threads it waits for maintenance (bounded) instead of failing (Epic 86197ac6 s2).
+      const pass = withBackgroundHold(() => this.runSettlePass(repoPath)).catch(err => {
         const msg = err instanceof Error ? err.message : String(err);
         log.warn({ repo: repoPath, err: msg }, 'settle pass failed');
       });
@@ -887,9 +1040,12 @@ export class IndexerService {
     this.settleScopeFiles.delete(repoPath);
     if (scope === undefined || scope.size === 0) return;
 
-    const sourceRoots = detectSourceRoots(repoPath);
+    // The cached FileFilter: a settle follows every save, and building a
+    // filter walks the whole repository.
+    const fileFilter = this.fileFilterFor(repoPath);
+    const sourceRoots = detectSourceRoots(repoPath, fileFilter);
     const result = await runCrossFileResolver({
-      db: this.db, repoRoot: repoPath, sourceRoots, mode: 'settle', committedFiles: [...scope],
+      db: this.db, repoRoot: repoPath, sourceRoots, mode: 'settle', committedFiles: [...scope], fileFilter,
     });
     const totalResolved = result.resolved, totalAmbiguous = result.ambiguous, totalRewired = result.importsRewired;
 
@@ -922,6 +1078,7 @@ export class IndexerService {
       { repo: repoPath, files: scope.size, resolved: totalResolved, ambiguous: totalAmbiguous, importsRewired: totalRewired },
       'cross-file settle pass complete',
     );
+    await this.enqueueSubsystemsIfComplete(repoPath);
   }
 
   // ---------------------------------------------------------------------------
@@ -1015,34 +1172,43 @@ export class IndexerService {
   // Reembed
   // ---------------------------------------------------------------------------
 
+  /**
+   * The vector backfill (Epic c2ba6fa6 s2), in its own queue lane: every
+   * entity of the repository the embed step selects whose marker is empty --
+   * a vector write that failed, a crash between a commit and its vectors, a
+   * vector store reset -- is embedded in batches and written vector first,
+   * marker second (writeBackfillVectors: one delete and one add per batch). A batch the backend returns no
+   * vectors for means it cannot be reached: the repository records
+   * embeddingAvailable false and the job stops; a successful run records true.
+   */
   private async reembed(repoPath: string): Promise<void> {
     // Loaded lazily to avoid a circular import with db/entities
-    const { listUnembeddedEntities, updateEmbedding } = await import('../db/entities.js');
-    const { embeddingModel }                           = await import('./embedder.js');
-    const { Ollama }                                   = await import('ollama');
+    const { listUnembeddedEntities, writeBackfillVectors } = await import('../db/entities.js');
 
     const entities = await listUnembeddedEntities(this.db, repoPath);
     if (entities.length === 0) {
-      log.debug({ repo: repoPath }, 'reembed: no unembedded entities');
+      log.debug({ repo: repoPath }, 'backfill: no entity without a vector');
       return;
     }
 
-    log.info({ repo: repoPath, count: entities.length }, 'reembed started');
+    log.info({ repo: repoPath, count: entities.length }, 'backfill started');
     const t0 = Date.now();
-    await embedEntities(entities, { force: true });
-
-    const ollama = new Ollama();
-    void ollama; // suppress unused warning — embedEntities uses the module-level instance
-
-    let updated = 0;
-    for (const e of entities) {
-      if (e.embedding.length > 0) {
-        await updateEmbedding(this.db, e.id, e.embedding, embeddingModel());
-        updated++;
+    let written = 0;
+    for (let i = 0; i < entities.length; i += BACKFILL_BATCH) {
+      const batch = entities.slice(i, i + BACKFILL_BATCH);
+      await this.embed(batch);
+      const ready = batch.filter(e => e.embedding.length > 0);
+      if (ready.length === 0) {
+        await setEmbeddingAvailable(repoPath, false);
+        log.warn({ repo: repoPath, remaining: entities.length - written }, 'backfill: the embedding backend returned no vectors; recorded as unavailable');
+        return;
       }
+      // One delete and one add per batch, then the batch's markers (writeBackfillVectors logs a failure).
+      written += ready.length - await writeBackfillVectors(ready);
     }
+    await setEmbeddingAvailable(repoPath, true);
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-    log.info({ repo: repoPath, updated, total: entities.length, elapsed: `${elapsed}s` }, 'reembed complete');
+    log.info({ repo: repoPath, written, total: entities.length, elapsed: `${elapsed}s` }, 'backfill complete');
   }
 
   // -------------------------------------------------------------------------
@@ -1063,7 +1229,18 @@ export class IndexerService {
 
     let source: string;
     try { source = readFileSync(filePath, 'utf8'); }
-    catch { return false; } // file disappeared between event and read
+    catch (err) {
+      // A full index has nothing stored for the file: skip it, as before.
+      if (opts?.fresh === true) return false;
+      // Gone between the event and the read: its rows go in one commit, as
+      // the delete event's would (s2 review -- nothing is deleted first now).
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
+        return false;
+      }
+      // Unreadable: the previous rows stay, and the caller records the file as uncommitted.
+      throw err;
+    }
 
     const hash = contentHash(source);
 
@@ -1076,11 +1253,9 @@ export class IndexerService {
         log.debug({ file: filePath }, 'skipped (unchanged)');
         return false;
       }
-    } else {
-      await deleteRelationsForFile(this.db, filePath);
-      await deleteEntitiesForFile(this.db, filePath);
-      await deleteUnresolvedForFile(this.db, filePath);
     }
+    // Nothing is deleted first (Epic c2ba6fa6 s2): the file's previous rows
+    // stay readable until the one commit below replaces them (ac1, ac2).
 
     // Phase 5.x strict-contract: resolve the repoId once per file
     // and hand it to the parser. Lookup throws if the repo isn't
@@ -1103,17 +1278,22 @@ export class IndexerService {
     const resolvedCount = resolved.filter(r => r.resolved).length;
 
     // Embed entities (no-op if Ollama is unavailable)
-    await embedEntities(result.entities);
+    await this.embed(result.entities);
 
-    // Persist
-    await upsertEntities(this.db, result.entities);
-    await upsertRelations(this.db, resolved);
+    // Persist: ONE commit replaces the file's entities, relationships and pending rows.
+    await commitFile({ repoPath, filePath, contentHash: hash, entities: result.entities, relations: resolved.map(writeOfRelation) });
 
     log.debug(
       { file: filePath, entities: result.entities.length, relations: resolved.length, resolved: resolvedCount },
       'indexed',
     );
     return true;
+  }
+
+  /** The embed step of a file refresh (a test holds or fails it to see a
+   *  refresh in progress, or one that fails after the parse). */
+  protected async embed(entities: Entity[]): Promise<void> {
+    await embedEntities(entities);
   }
 
   /** The repository's own entity (kind 'repo'): the source of its DEPENDS_ON edges. */
@@ -1163,6 +1343,8 @@ export class IndexerService {
         // The repository entity has no file: a refused or kept-pending write is
         // counted against this repository, and only its repository delete removes it.
         meta: { repo: repoPath, file: repoPath },
+        // Read from the manifest's own text (s7).
+        evidence: 'extracted',
       }]);
     }
     void workspaceRepoId;  // not directly referenced in this loop, but

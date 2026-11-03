@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: search.text rejects empty params
+ok 1 - search.text rejects empty params
+  ---
+  duration_ms: 0.775666
+  type: 'test'
+  ...
+# Subtest: search.text rejects whitespace-only pattern
+ok 2 - search.text rejects whitespace-only pattern
+  ---
+  duration_ms: 0.078792
+  type: 'test'
+  ...
+# Subtest: search.text rejects non-string pattern
+ok 3 - search.text rejects non-string pattern
+  ---
+  duration_ms: 0.060875
+  type: 'test'
+  ...
+# Subtest: search.text rejects absolute path outside repoPath
+ok 4 - search.text rejects absolute path outside repoPath
+  ---
+  duration_ms: 0.114916
+  type: 'test'
+  ...
+# Subtest: search.text rejects sibling-scoped absolute path
+ok 5 - search.text rejects sibling-scoped absolute path
+  ---
+  duration_ms: 0.115208
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 323.113041

@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -89,10 +90,7 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 				const text = await readFile(f.absPath, 'utf8');
 				docs = loadAll(text);
 			} catch (err) {
-				log.debug(
-					{ file: f.relPath, err: (err as Error).message },
-					'inventory.kubernetes: YAML parse failed -- skipping',
-				);
+				captureAnalysisDiagnostics(log, args.connectionExecution).emit('debug', () => [{ file: f.relPath, err: (err as Error).message }, 'inventory.kubernetes: YAML parse failed -- skipping']);
 				skipped.push(unreadableFile(f.relPath, err));
 				continue;
 			}
@@ -132,8 +130,7 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 			resources,
 		};
 
-		log.info(
-			{
+		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 				runId:         args.runId,
 				taskId:        args.task.taskId,
 				repoPath,
@@ -141,9 +138,7 @@ export const infraInventoryKubernetesRuntime: TemplateRuntime = {
 				resourceCount: resources.length,
 				fileCount:     filesSummary.length,
 				truncated,
-			},
-			'infra.inventory.kubernetes: enumerated',
-		);
+		}, 'infra.inventory.kubernetes: enumerated']);
 
 		return {
 			outputs: new Map<string, unknown>([['k8s-inventory', inventory]]),

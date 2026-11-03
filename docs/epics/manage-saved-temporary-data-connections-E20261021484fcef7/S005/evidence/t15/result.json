@@ -1,0 +1,34 @@
+{
+  "task": "t15",
+  "node": "22.23.2",
+  "jdk": "21",
+  "focusedNodeCases": {
+    "tests": 4,
+    "pass": 4,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "focusedJUnit": {
+    "ConnectionDraftTestsTest": 4,
+    "ConnectionDraftTest": 4,
+    "ConnectionsSessionServiceTest": 4,
+    "failures": 0
+  },
+  "backendTypecheck": "pass",
+  "sourceSha256": {
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraft.kt": "f24e179c7c5a2ddd94877b3f9b46ae719af050eb750a1f4c503cd3d6f0e02096",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTests.kt": "1e3f33a07bc933bcb65ecd4bba920c9f4da3720237116f169a129ce0ec181056",
+    "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionsSessionService.kt": "c8bf621198405136a6c6ac567e8adfa93a853909a14d52bd251ee06ffa6544e9",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionDraftTestsTest.kt": "25e4b49b3854b7b050fecc1c3212ebc2db9fa4e0febb75cb9717eb973c1374b4",
+    "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/connections/ConnectionTestBackend.kt": "977323c6858a5c202034bee82615b3056ff803c72c6c7c262ad6c045e341c31b",
+    "src/shared/__tests__/fixtures/connection-test-server.ts": "398240fe692ec724667a097b9fe6d73253daee09a00d1a6418e3ebc4fb0a20f0",
+    "src/shared/__tests__/connection-manager-kotlin-test.test.ts": "08ad9625eb0058893a01a07671577011b60f428598012288625e7138328837e5"
+  },
+  "reuse": "Fresh t14 analyzer examined native ConnectionDraft and Project owner as partial matches; reuse both and existing strict testResult decoder. Implement only native test lifecycle, no driver or producer changes.",
+  "lifecycle": "Actual ProjectManager-created Projects with real AF_UNIX server, session authority, DraftTestSupervisor and one-shot worker. Ten-second timeout/cancellation retains original source and requires authoritative same-transport admission after true drain. EDT subscribers gate on active subscription, current controller generation, service and Project disposal.",
+  "limits": [
+    "Actual Swing manager UI acceptance remains t27-t29; this task verifies controller/service integration.",
+    "Full sweeps deferred until all tasks, per user instruction."
+  ]
+}

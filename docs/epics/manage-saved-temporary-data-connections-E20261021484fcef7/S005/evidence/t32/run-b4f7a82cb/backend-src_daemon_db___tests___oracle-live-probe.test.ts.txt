@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: CM-S2-A4: Oracle actual service authenticates SELECT1 and closes without exposing database rows
+ok 1 - CM-S2-A4: Oracle actual service authenticates SELECT1 and closes without exposing database rows
+  ---
+  duration_ms: 63058.198167
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 63367.728375

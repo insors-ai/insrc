@@ -1,0 +1,97 @@
+{
+  "capturedAt": "2026-11-03T08:25:47.854403+00:00",
+  "sourceCommit": "0f4ee7724215c3661e2193d761338c290a1b99e9",
+  "rootBuild": "pass",
+  "memoryPackage": {
+    "tests": 63,
+    "pass": 63,
+    "fail": 0,
+    "skip": 0,
+    "actualSigkillScenarios": 55
+  },
+  "backendSweep": {
+    "sourceCommit": "2befc2d83832ceedd71ab9d75c6209858f669825",
+    "endCommit": "72bf1dc570e7709216f370c9ea50fdd015f22187",
+    "unchangedHead": false,
+    "exitCode": 1,
+    "globalDeadlineExceeded": false,
+    "durationSeconds": 1415.65,
+    "command": [
+      "/opt/homebrew/opt/node@22/bin/node",
+      "--import",
+      "tsx",
+      "--test",
+      "--test-concurrency=2",
+      "--test-timeout=180000",
+      "src/**/__tests__/*.test.ts"
+    ],
+    "failures": [
+      "not ok 1569 - the poll interval fires while open and is cleared on unmount (ac2)",
+      "not ok 1959 - docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path",
+      "not ok 1960 - /Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/doc-summary-restore-ipc.test.ts",
+      "not ok 2114 - repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+      "not ok 2131 - search.callers across repositories leaves out the entities of a repository under index",
+      "not ok 2132 - search.query while one repository is being indexed returns rows from the other repositories only",
+      "not ok 2133 - entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+      "not ok 2137 - search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+      "not ok 2138 - entity.closure / entity.unreachable with a root in a repository under index are refused",
+      "not ok 2139 - search guard: a registry read that throws skips the guard and the request is answered as today",
+      "not ok 2140 - search request contract: each guarded search request accepts its existing params and answers",
+      "not ok 2350 - DuckDBFileDriver -- pool path-escape guard",
+      "not ok 2541 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+      "not ok 2543 - CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+      "not ok 466 - src/daemon/threads/__tests__/worker-stores.test.ts",
+      "not ok 3303 - file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link",
+      "not ok 543 - src/db/lance/__tests__/config-vec.test.ts",
+      "not ok 4510 - import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+      "not ok 4638 - CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee",
+      "not ok 4639 - CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation"
+    ],
+    "counts": {
+      "tests": 7337,
+      "pass": 7179,
+      "fail": 18,
+      "cancelled": 2,
+      "skipped": 135,
+      "todo": 3
+    },
+    "status": "completed-with-failures-and-revision-change",
+    "fullLog": "/tmp/insrc-s2-stable-backend-sweep.tap",
+    "notes": [
+      "Completed bounded full sweep; not a clean fixed-revision qualification. Parallel S8 commits advanced HEAD during execution.",
+      "These backend failures are outside the self-contained project-memory package; no unrelated production fixes were made.",
+      "The separately run project-memory suite passed all 62 cases on both supported platforms."
+    ]
+  },
+  "linuxQualification": {
+    "status": "pass",
+    "run": "https://github.com/insors-ai/insrc/actions/runs/41602463831",
+    "sourceCommit": "0f4ee7724215c3661e2193d761338c290a1b99e9",
+    "tests": 63,
+    "pass": 63,
+    "fail": 0,
+    "skipped": 0,
+    "actualSigkillScenarios": 55,
+    "note": "Full job on separate validation branch after the receipt-consistency self-review fix; native 14, packed 4, queue 45 all pass. No main push."
+  },
+  "refactorValidation": {
+    "relevantTests": 16,
+    "packageTests": 62,
+    "pass": 62,
+    "fail": 0,
+    "skipped": 0,
+    "rootBuildLog": "root-build.log",
+    "note": "First sandboxed package attempt failed only npm cache EPERM; permitted full rerun passed. The backend sweep remains the prior recorded result; no new clean backend-wide claim.",
+    "historical": true,
+    "sourceCommit": "2688289f7562b99be0e55f411bb591b61ef81c99"
+  },
+  "manualReviewValidation": {
+    "relevantTests": 11,
+    "packageTests": 63,
+    "pass": 63,
+    "fail": 0,
+    "skipped": 0,
+    "rootBuildLog": "root-build.log",
+    "note": "Failing-before/passing-after regression proves retained receipt conflict protection; full permitted package run passed. The backend sweep remains the prior recorded result; no new clean backend-wide claim."
+  }
+}

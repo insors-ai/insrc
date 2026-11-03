@@ -1,0 +1,92 @@
+TAP version 13
+# Subtest: memory-only Ollama transport rejects malformed frames before SDK console diagnostics
+ok 1 - memory-only Ollama transport rejects malformed frames before SDK console diagnostics
+# Subtest: memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame
+ok 2 - memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame
+# Subtest: memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics
+ok 3 - memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics
+# Subtest: admitted Session expiry during real structured validation prevents the next SDK retry
+ok 4 - admitted Session expiry during real structured validation prevents the next SDK retry
+# Subtest: memory-only adapter refuses internal helper substitution before native construction
+ok 5 - memory-only adapter refuses internal helper substitution before native construction
+# Subtest: issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls
+ok 6 - issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls
+# Subtest: a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase
+ok 7 - a missing answer prompt after the lookups ran returns a non-retryable error with the results and the report, from the plan phase and from the narrow phase
+# Subtest: the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member
+ok 8 - the step tool's JSON output carries error.data, its message starts with the completeness line, and any other error has no data member
+# Subtest: the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'
+ok 9 - the step tool's bundle phase attaches the report it derives from its state and rejects an agent-supplied one as 'bundle-schema'
+# Subtest: stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion)
+ok 10 - stepPlan with a lookup whose prepare throws records the failed output and goes on to the next lookup (mutation: remove the conversion)
+# Subtest: an agent's answer that fails the lookup's schema is rejected as retryable before finalize is called
+ok 11 - an agent's answer that fails the lookup's schema is rejected as retryable before finalize is called
+# Subtest: a finalize that throws records the failed output and the run goes on
+ok 12 - a finalize that throws records the failed output and the run goes on
+# Subtest: no answer at all to capability.reuse-check is accepted and gives a record that is not established
+ok 13 - no answer at all to capability.reuse-check is accepted and gives a record that is not established
+# Subtest: a finalize that throws, and a prepare that throws, leave no row in the lookup cache (mutation: store before the check)
+ok 14 - a finalize that throws, and a prepare that throws, leave no row in the lookup cache (mutation: store before the check)
+# Subtest: a step state minted before the change still resumes
+ok 15 - a step state minted before the change still resumes
+# Subtest: a plan with two lookups that need a model call pauses again after the first
+ok 16 - a plan with two lookups that need a model call pauses again after the first
+# Subtest: handler rejects non-object input
+ok 17 - handler rejects non-object input
+# Subtest: handler rejects an unknown phase
+ok 18 - handler rejects an unknown phase
+# Subtest: handler rejects missing phase field
+ok 19 - handler rejects missing phase field
+# Subtest: start returns emit_plan with a state blob + a real prompt
+ok 20 - start returns emit_plan with a state blob + a real prompt
+# Subtest: start with no repo + no INSRC_REPO env → clear no-repo error
+ok 21 - start with no repo + no INSRC_REPO env → clear no-repo error
+# Subtest: plan phase with a garbage state blob returns wrong-state error
+ok 22 - plan phase with a garbage state blob returns wrong-state error
+# Subtest: bundle phase with awaiting_plan state returns wrong-stage error
+ok 23 - bundle phase with awaiting_plan state returns wrong-stage error
+# Subtest: envelope is { content: [{type:"text", text: JSON}] }
+ok 24 - envelope is { content: [{type:"text", text: JSON}] }
+# Subtest: state codec round-trips awaiting_narrow with preparedBlob + resumeState
+ok 25 - state codec round-trips awaiting_narrow with preparedBlob + resumeState
+# Subtest: handler rejects phase=narrow with a garbage state blob
+ok 26 - handler rejects phase=narrow with a garbage state blob
+# Subtest: handler rejects phase=narrow when state stage is awaiting_plan
+ok 27 - handler rejects phase=narrow when state stage is awaiting_plan
+# Subtest: handler rejects phase=narrow when explorationId does not match paused exp
+ok 28 - handler rejects phase=narrow when explorationId does not match paused exp
+# Subtest: encodeState + decodeState round-trip preserves every field
+ok 29 - encodeState + decodeState round-trip preserves every field
+# Subtest: encodeState mints a short URL-safe base64 token (22 chars, no padding)
+ok 30 - encodeState mints a short URL-safe base64 token (22 chars, no padding)
+# Subtest: decodeState rejects a bogus token with StepStateDecodeError
+ok 31 - decodeState rejects a bogus token with StepStateDecodeError
+# Subtest: decodeState rejects a token of the wrong shape (too short)
+ok 32 - decodeState rejects a token of the wrong shape (too short)
+# Subtest: assertStage passes for a matching stage
+ok 33 - assertStage passes for a matching stage
+# Subtest: assertStage throws on a stage mismatch
+ok 34 - assertStage throws on a stage mismatch
+# Subtest: releaseState drops the entry so a subsequent decodeState fails
+ok 35 - releaseState drops the entry so a subsequent decodeState fails
+# Subtest: token round-trips a state with an executed plan attached
+ok 36 - token round-trips a state with an executed plan attached
+# Subtest: analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted
+ok 37 - analyze replaceState: a > MAX_ENTRIES(100) run keeps ~1 live token; active token never LRU-evicted
+# Subtest: analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)
+ok 38 - analyze replaceState(undefined, ...) === saveState (first-mint, nothing released)
+# Subtest: analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)
+ok 39 - analyze reencodeState: version guard throws wrong-version, else delegates (releases prev)
+# Subtest: CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal
+ok 40 - CM-S3-PROVIDER: structured retry inner authority guard and nonretryable refusal
+# Subtest: CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control
+ok 41 - CM-S3-CONSUMER-LOGS: actual provider prompt/retry/late-stream trace sink and saved control
+# Subtest: CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+ok 42 - CM-S3-CONSUMER-LOGS: tool/RPC/progress/error/throwing-delivery envelopes and normal sink, saved concurrent marker
+# tests 42
+# pass 42
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3102.000459

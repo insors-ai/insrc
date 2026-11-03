@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: inline params.constraints pass through untouched
+ok 1 - inline params.constraints pass through untouched
+# Subtest: constraintIds hydrate keyConstraints from summarised docs
+ok 2 - constraintIds hydrate keyConstraints from summarised docs
+# Subtest: constraintIds skip ids that do not resolve to summarised docs
+ok 3 - constraintIds skip ids that do not resolve to summarised docs
+# Subtest: a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at
+ok 4 - a constraintsSource in the params is not read: beside usable ids the ids are used, and the upstream outputs are never looked at
+# Subtest: an inline list wins over ids; an empty inline list counts as not given and the ids are used
+ok 5 - an inline list wins over ids; an empty inline list counts as not given and the ids are used
+# Subtest: with no source of constraints the check throws, naming constraintTopic, constraints and constraintIds
+ok 6 - with no source of constraints the check throws, naming constraintTopic, constraints and constraintIds
+# Subtest: one enumeration per run, repository and topic is made, recorded under the run's directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is
+ok 7 - one enumeration per run, repository and topic is made, recorded under the run's directory with its whole output, and read back; a topic that differs only in case or spacing reuses it; a different maxSources, topic or run does not; a failed enumeration is not recorded and one with no constraint is
+# Subtest: a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check
+ok 8 - a record that is unreadable, of another version or of another topic is enumerated again and overwritten; a record that cannot be written does not fail the check
+# Subtest: the seam replaces the enumeration, and is handed the topic, the repository, the limit and no area
+ok 9 - the seam replaces the enumeration, and is handed the topic, the repository, the limit and no area
+# Subtest: a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path
+ok 10 - a check with a topic judges against the constraints enumerated from the repository's documents, and its output carries those constraints, their citations and the record's path
+# Subtest: four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not
+ok 11 - four checks with one topic in one run make one enumeration; a topic that differs only in case or spacing reuses it; a different maxConstraintSources, a different topic or a different run does not
+# Subtest: the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record
+ok 12 - the enumeration's reached limit, partly read section and skipped search by meaning appear in the completeness record of the check that made it and of a check that read its record
+# Subtest: an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic
+ok 13 - an inline list or stored-document ids are used alone when given, with a topic also present, and no enumeration is made; an empty inline list beside ids uses the ids, and beside a topic uses the topic
+# Subtest: a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents
+ok 14 - a data check under a connection scope and an infra check under a manifest directory read the documents of the declaring or containing repository, and a code check scoped to one file reads the whole repository's documents
+# Subtest: when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration
+ok 15 - when the documents state no constraint on the topic the check fails with that reason, with the number of sections read or the note that none matched, the record is written, and a sibling check fails the same way without a second enumeration
+# Subtest: when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays
+ok 16 - when the enumeration's model call fails the check fails with 'could not be enumerated', writes no record, and the next check enumerates again; when the judging call fails the reason is the judging's and the record stays
+# Subtest: an override that yields no constraint fails naming the override and does not fall back to the topic
+ok 17 - an override that yields no constraint fails naming the override and does not fall back to the topic
+# Subtest: run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks
+ok 18 - run through the plan walk, a failed check's reason is in the task's record and in tasksFailed, and the plan's report is still written from the other tasks
+# Subtest: no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs
+ok 19 - no template, runtime or prompt of the analyze framework names constraintsSource, and the check does not read upstreamOutputs
+# tests 19
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2441.531083

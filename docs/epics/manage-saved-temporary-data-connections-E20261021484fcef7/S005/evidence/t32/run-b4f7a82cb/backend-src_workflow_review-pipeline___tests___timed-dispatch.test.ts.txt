@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: DIFF-TIME-FIXED: structured and session dispatch use remaining time and reject a late valid answer before completion
+ok 1 - DIFF-TIME-FIXED: structured and session dispatch use remaining time and reject a late valid answer before completion
+  ---
+  duration_ms: 23.558958
+  type: 'test'
+  ...
+# Subtest: DIFF-TIME-FIXED: deterministic boundaries reject an output that finishes after the fixed deadline
+ok 2 - DIFF-TIME-FIXED: deterministic boundaries reject an output that finishes after the fixed deadline
+  ---
+  duration_ms: 0.472417
+  type: 'test'
+  ...
+# Subtest: DIFF-TIME-OUTER: healthy serial structured and session jobs can exceed four hours under their derived budget
+ok 3 - DIFF-TIME-OUTER: healthy serial structured and session jobs can exceed four hours under their derived budget
+  ---
+  duration_ms: 8.417334
+  type: 'test'
+  ...
+# Subtest: DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure
+ok 4 - DIFF-TIME-FIXED: timeout and explicit cancellation await the owned process close before reporting terminal failure
+  ---
+  duration_ms: 256.662958
+  type: 'test'
+  ...
+# Subtest: DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write
+ok 5 - DIFF-TIME-FIXED: the final publication boundary refuses an expired root before any CR write
+  ---
+  duration_ms: 1.248458
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 593.015209

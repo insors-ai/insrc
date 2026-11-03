@@ -1,3 +1,5 @@
+import { assertNoSessionEmbedding } from '../shared/connection-provider.js';
+import { ConnectionExecutionError } from '../shared/step-context.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -43,6 +45,7 @@ import { reloadChatConfig, chatStart, chatCancel, chatInject, chatClose, chatLis
 import type { RpcHandler, RpcHandlers, StreamHandler, StreamHandlers } from './server.js';
 import { listModels } from './list-models.js';
 import { claudeModels, modelDefinitions, resolveRoleWire } from './model-definitions.js';
+import { approveCheck, checkModel, rejectCheck } from './model-check.js';
 import { sharedAdminHandlers } from './admin-handlers.js';
 import { getGraphStore } from '../db/graph/store.js';
 import { readInstalledCommit } from './installed-commit.js';
@@ -74,7 +77,7 @@ import {
 import { compactConversations, type CompactionOpts } from '../db/compaction.js';
 // Cleanup: plan-store + Plan / PlanStepStatus dropped with the legacy planner.
 import type { RegisteredRepo, DaemonStatus, Entity, ConfigScope, ConfigSearchOpts, TemplateQuery, AttachedClient, IndexJob } from '../shared/types.js';
-import { basename, isAbsolute, join } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve as resolvePath } from 'node:path';
 import type { ConfigStore } from '../config/store.js';
 import { applyConfigWrite } from './config-write.js';
 import { getModelRegistry } from './model-registry.js';
@@ -122,10 +125,10 @@ export interface CodeIndexWork { readonly inFlight: boolean; readonly pending: n
 export interface RuntimeQueue {
 	readonly depth: number;
 	readonly isProcessing: boolean;
-	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean } };
+	laneStatus(): { index: { depth: number; running: boolean }; summary: { depth: number; running: boolean }; backfill?: { depth: number; running: boolean } | undefined };
 	enqueue(job: IndexJob): void;
 	codeIndexWorkFor(repoPath: string): CodeIndexWork | Promise<CodeIndexWork>;
-	depthForRepo(repoPath: string): number;
+	depthForRepo(repoPath: string): number | Promise<number>;
 }
 
 /** What the handlers use of the indexer. */
@@ -151,6 +154,22 @@ export interface HandlerRuntimeDeps {
 	readonly attachedClients: () => AttachedClient[];
 	/** The understanding service once it has opened (after the server listens), else undefined. */
 	readonly understandingService: () => UnderstandingService | undefined;
+	/**
+	 * With daemon threads (s3): the nested in-daemon call, so the session purge reaches the chat
+	 * pool and the todos bus on the thread that holds them. Absent, the purge calls them here.
+	 */
+	readonly nestedCall?: ((method: string, params: unknown) => Promise<unknown>) | undefined;
+}
+
+/** Served to in-daemon calls only, never over the socket (s3): the purge's chat-pool drop on the thread that holds the pool. */
+export function inDaemonOnlyHandlers(): RpcHandlers {
+	return {
+		'chat.dropSession': async (params) => {
+			const { dropSessionFromPool } = await import('./chat-handler.js');
+			dropSessionFromPool((params as { sessionId: string }).sessionId);
+			return { ok: true };
+		},
+	};
 }
 
 export interface HandlerRuntime {
@@ -204,7 +223,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		//    subsequent deletes don't race with a live run touching the
 		//    same rows.
 		try {
-			dropSessionFromPool(sessionId);
+			if (deps.nestedCall !== undefined) await deps.nestedCall('chat.dropSession', { sessionId });
+			else dropSessionFromPool(sessionId);
 		} catch (err) {
 			log.warn({ err: (err as Error).message, sessionId }, 'purgeSession: pool.drop failed');
 		}
@@ -230,10 +250,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		let todosListsDeleted = 0;
 		let todosItemsDeleted = 0;
 		try {
-			const cleanupResult = await todosRpc.cleanup(db, {
-				caller: 'system',
-				sessionIds: [sessionId],
-			});
+			const cleanupParams = { caller: 'system' as const, sessionIds: [sessionId] };
+			const cleanupResult = deps.nestedCall !== undefined
+				? await deps.nestedCall('todos.cleanup', cleanupParams) as Awaited<ReturnType<typeof todosRpc.cleanup>>
+				: await todosRpc.cleanup(db, cleanupParams);
 			if (!('error' in cleanupResult)) {
 				todosListsDeleted = cleanupResult.deletedListCount;
 				todosItemsDeleted = cleanupResult.deletedItemCount;
@@ -266,8 +286,11 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// 6. Tmp directory at ~/.insrc/tmp/<sessionId>/.
 		let tmpFilesDeleted = 0;
 		try {
-			const tmpDir = join(PATHS.tmp, sessionId);
-			if (existsFs(tmpDir)) {
+			// Only a direct child of the tmp root: an id such as '..' or 'a/b' never reaches rmSync.
+			const tmpDir = sessionTmpDir(PATHS.tmp, sessionId);
+			if (tmpDir === undefined) {
+				log.warn({ sessionId }, 'purgeSession: the session id does not name a directory under the tmp root; not removed');
+			} else if (existsFs(tmpDir)) {
 				// Count files (one level deep) for telemetry, then nuke
 				// the directory. We don't recurse into subdirs for the
 				// count -- the synth-spill / reports layout is flat.
@@ -348,7 +371,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			let steering: Awaited<ReturnType<typeof injectSteeringBlock>> | undefined;
 			let mcp: Awaited<ReturnType<typeof registerMcpClients>> | undefined;
 			const sel = (params as { steering?: SteeringSelection }).steering;
-			if (sel !== undefined && (sel.claude === true || sel.agents === true)) {
+			if (sel !== undefined && (sel.claude === true || sel.agents === true || sel.vibe === true)) {
 				try {
 					steering = await injectSteeringBlock(normalisedPath, sel);
 				} catch (err) {
@@ -361,7 +384,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				// each approved client (--scope user / global, idempotent). A
 				// registration failure is captured per-client and never fails the add.
 				try {
-					mcp = await registerMcpClients(daemonInstallRoot(), sel);
+					mcp = await registerMcpClients(daemonInstallRoot(), sel, {}, normalisedPath);
 				} catch (err) {
 					log.warn(
 						{ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) },
@@ -392,6 +415,48 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
+		// ('mcp.status' lives in sharedAdminHandlers — ./admin-handlers.ts — so the
+		// admin worker serves it too; the method-class table routes it there.)
+
+		// Post-setup provider registration for an ALREADY-registered repo: the
+		// same steering-block injection + per-client MCP registration repo.add
+		// performs, without re-adding the repo. Per-section guarded exactly like
+		// repo.add — a failure never fails the call.
+		'mcp.register': async (params) => {
+			const rawPath = (params as { path?: unknown })?.path;
+			let normalisedPath: string;
+			try {
+				normalisedPath = validateRepoPath(rawPath);
+			} catch (err) {
+				const reason = err instanceof InvalidRepoPathError ? err.message : `unexpected validation error: ${(err as Error).message}`;
+				throw new Error(`Cannot register providers: ${reason}`);
+			}
+			const repos = await listRepos(db);
+			if (!repos.some(r => r.path === normalisedPath)) {
+				throw new Error(`Cannot register providers: ${normalisedPath} is not a registered repo`);
+			}
+			const sel = (params as { steering?: SteeringSelection }).steering ?? {};
+			let steering: Awaited<ReturnType<typeof injectSteeringBlock>> | undefined;
+			let mcp: Awaited<ReturnType<typeof registerMcpClients>> | undefined;
+			if (sel.claude === true || sel.agents === true || sel.vibe === true) {
+				try {
+					steering = await injectSteeringBlock(normalisedPath, sel);
+				} catch (err) {
+					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'steering injection failed; MCP registration proceeds regardless');
+				}
+				try {
+					mcp = await registerMcpClients(daemonInstallRoot(), sel, {}, normalisedPath);
+				} catch (err) {
+					log.warn({ repo: normalisedPath, err: err instanceof Error ? err.message : String(err) }, 'mcp registration failed');
+				}
+			}
+			return {
+				ok: true,
+				...(steering !== undefined ? { steering } : {}),
+				...(mcp !== undefined ? { mcp } : {}),
+			};
+		},
+
 		'repo.list': async () => {
 			return await withCompleteness(await listRepos(db), r => r.path);
 		},
@@ -405,7 +470,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { repoPath } = (params ?? {}) as { repoPath?: unknown };
 			const repos = await listRepos(db);
 			const store = await getGraphStore();
-			const all = await withCompleteness(collectRepoStats(store, repos, queue), s => s.repoPath);
+			const all = await withCompleteness(await collectRepoStats(store, repos, queue), s => s.repoPath);
 			if (typeof repoPath === 'string' && repoPath.length > 0) {
 				const one = all.find(s => s.repoPath === repoPath);
 				return one ?? { error: `repo.stats: ${repoPath} is not a registered repo` };
@@ -829,6 +894,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			if (typeof sessionId !== 'string' || sessionId.length === 0) {
 				return { deleted: false, reason: 'invalid-input', message: 'sessionId required' };
 			}
+			if (!isSafeSessionId(sessionId)) {
+				return { deleted: false, reason: 'invalid-input', message: 'sessionId must not be a path' };
+			}
 			const counts = await purgeSession(sessionId, { compact: true });
 			return { deleted: true, counts };
 		},
@@ -903,7 +971,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// (k5). deps.attachedClients reads the server, which exists before any request fires.
 		'daemon.debug-status': async (): Promise<{ clients: AttachedClient[] }> => ({ clients: deps.attachedClients() }),
 
-		'search.query': async (params) => {
+		'search.query': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { text, limit, filter } = params as { text: string; limit?: number; filter?: string };
 			const searchFilter = (filter === 'code' || filter === 'artifact') ? filter : 'all';
 			log.debug({ query: text.slice(0, 120), limit: limit ?? 10, filter: searchFilter }, 'search.query request');
@@ -1027,7 +1097,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ...hit, raw };
 		},
 
-		'artifact.search': async (params) => {
+		'artifact.search': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { query, sessionId, limit, intent } = params as {
 				query:     string;
 				sessionId: string;
@@ -1068,7 +1140,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 				}));
 		},
 
-		'repo.search_cross_repo': async (params) => {
+		'repo.search_cross_repo': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { query, repoId, limit } = params as {
 				query:  string;
 				repoId: string;
@@ -1154,7 +1228,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return pruneConversations(db);
 		},
 
-		'session.search_turns': async (params) => {
+		'session.search_turns': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const { repo, queryVector, limit } = params as {
 				repo: string; queryVector: number[]; limit?: number;
 			};
@@ -1163,7 +1239,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 
 		// ----- Conversation management -----
 
-		'conversation.saveTurn': async (params) => {
+		'conversation.saveTurn': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const turn = params as TurnRecord;
 			// Generate embedding for the turn (user + assistant text)
 			const text = `${turn.user}\n${turn.assistant}`.slice(0, 1000);
@@ -1186,7 +1264,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
-		'conversation.compact': async (params) => {
+		'conversation.compact': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const opts = params as CompactionOpts;
 			return compactConversations(db, async (text) => embedQuery(text), opts);
 		},
@@ -1217,6 +1297,22 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
+		// The languages the index reads, from the registry of the worker that
+		// indexes (Epic c2ba6fa6 s9, ac4): availability, and why a reader is missing.
+		'index.languages': async () => {
+			const { listReaders } = await import('../indexer/parser/registry.js');
+			const { languageOfExtension } = await import('../indexer/resolver.js');
+			return { languages: listReaders(languageOfExtension) };
+		},
+
+		// A repository's subsystems, with what they rest on (Epic c2ba6fa6 s8).
+		'index.subsystems': async (params) => {
+			const { repoPath } = (params ?? {}) as { repoPath?: unknown };
+			if (typeof repoPath !== 'string' || repoPath === '') return { error: 'index.subsystems: repoPath is required' };
+			const { subsystemsAnswer } = await import('../db/subsystems.js');
+			return subsystemsAnswer(repoPath);
+		},
+
 		// ----- Config management -----
 
 		'system.info': async () => {
@@ -1228,7 +1324,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { getSystemInfo } = await import('../shared/system-info.js');
 			const { recommendModels, toConfig } = await import('../shared/model-recommender.js');
 			const info = getSystemInfo();
-			const recommendation = recommendModels(info);
+			// The local model is the definitions' tool-loop model (Epic ce99b72065d03b1b, s5).
+			const local = getModelRegistry().toolLoopModel();
+			const recommendation = recommendModels(info, { model: local.id, ...(local.memoryMb !== undefined ? { memoryMb: local.memoryMb } : {}) });
 			const config = toConfig(recommendation);
 			return { system: info, recommendation, config };
 		},
@@ -1341,7 +1439,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return { ok: true };
 		},
 
-		'config.search': async (params) => {
+		'config.search': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const opts = params as ConfigSearchOpts;
 			const queryVec = await embedQuery(opts.query);
 			const results = await searchConfig(configStore, queryVec, opts);
@@ -1355,7 +1455,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return configStore.listEntries({ namespace, category, scope });
 		},
 
-		'config.resolveTemplate': async (params) => {
+		'config.resolveTemplate': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
+			assertNoSessionEmbedding(context?.connectionExecution);
 			const opts = params as TemplateQuery;
 			const queryVec = await embedQuery(opts.name);
 			return resolveTemplate(configStore, queryVec, opts);
@@ -1449,6 +1551,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// shows a clean error and the user can switch panes.
 		'models.resolveRole':   async (params) => resolveRoleWire(params),   // sc5 (Epic ce99b72065d03b1b, s3): a role's tier, model and provider settings
 		'models.definitions':   () => modelDefinitions(),          // sc3 (Epic ce99b72065d03b1b, s2): read-only model definitions
+		'models.check':         (params) => checkModel(params),    // sc4 (Epic ce99b72065d03b1b, s4): check an unknown model through its CLI
+		'models.approve':       (params) => approveCheck(params),  // sc4: record the approval of a checked model
+		'models.reject':        (params) => rejectCheck(params),   // sc4: record the rejection of a checked model
 		'providers.listModels': (params) => listModels(params),   // sc2 (Epic ba132c185fe45860, S002): revived read-only model-list dispatch
 		'providers.testKey':    offlineRpc('providers.testKey'),
 		'providers.getConfig':  offlineRpc('providers.getConfig'),
@@ -1540,17 +1645,20 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Each handler returns a tagged union AnalyzeRpcResponse so typed
 		// shaper errors (ScopeNotIndexedError, ShaperLlmUnavailable, ...)
 		// surface with stable error codes instead of generic string errors.
-		'analyze.context.buildClassification': async (params) => {
+		'analyze.context.buildClassification': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.buildClassification(params);
+			return mod.buildClassification(params, context?.connectionExecution);
 		},
-		'analyze.context.buildRun': async (params) => {
+		'analyze.context.buildRun': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.buildRun(params);
+			return mod.buildRun(params, context?.connectionExecution);
 		},
-		'analyze.context.buildTask': async (params) => {
+		'analyze.context.buildTask': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.buildTask(params);
+			return mod.buildTask(params, context?.connectionExecution);
 		},
 		// Classifier (LLM-driven ClassifiedIntent producer). Tagged
 		// union response with `intent` (not `bundle`) on success;
@@ -1559,9 +1667,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// is unwrapped at the wire: error.code carries the inner
 		// failure code (scope-ref-unresolved or
 		// scope-ref-kind-target-mismatch) directly.
-		'analyze.classify': async (params) => {
+		'analyze.classify': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.classify(params);
+			return mod.classify(params, context?.connectionExecution);
 		},
 		// Plan Builder. Internally builds the run-level context bundle
 		// + calls runPlanner. Tagged union: ok:true carries `plan`,
@@ -1569,24 +1678,27 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// with the inner invariant id in `data`, max-plan-depth-exceeded,
 		// etc.). Shaper-side errors from the pre-step bundle build
 		// surface with the shaper's stable codes.
-		'analyze.plan.build': async (params) => {
+		'analyze.plan.build': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.plan(params);
+			return mod.plan(params, context?.connectionExecution);
 		},
 		// Read-only lookup of <runRoot>/run.json. Returns
 		// ok:false/code:invalid-input when the runId has no on-disk
 		// record. Used by IDE polling + by resume callers.
-		'analyze.run.status': async (params) => {
+		'analyze.run.status': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runStatus(params);
+			return mod.runStatus(params, context?.connectionExecution);
 		},
 		// Remove a run's on-disk artifacts (plan.json + plan.attempts/
 		// + tasks/ + run.json + context cache). Default refuses on
 		// status='in-progress'; pass `force: true` to override.
 		// Idempotent: purged=false when the run dir didn't exist.
-		'analyze.run.purge': async (params) => {
+		'analyze.run.purge': async (params, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runPurge(params);
+			return mod.runPurge(params, context?.connectionExecution);
 		},
 
 		// Async (start/poll/abort) lifecycle for `workflow.run`. The
@@ -1602,7 +1714,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'workflow.run.poll': async (params) => {
 			const mod = await import('./workflow-run-registry.js');
 			const p = (params ?? {}) as { runId?: string; cursor?: number };
-			return mod.pollWorkflowRun(String(p.runId ?? ''), p.cursor ?? 0);
+			return mod.pollRun(String(p.runId ?? ''), p.cursor ?? 0);
 		},
 		'workflow.run.abort': async (params) => {
 			const mod = await import('./workflow-run-registry.js');
@@ -1678,9 +1790,10 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Persistence happens inside runAnalyze regardless of how the
 		// stream ends (IDE disconnect, signal abort) -- terminal state
 		// is recoverable via analyze.run.status.
-		'analyze.run.start': async (params, send, signal) => {
+		'analyze.run.start': async (params, send, signal, context) => {
+			if (context?.connectionSession && !context.connectionExecution) throw new ConnectionExecutionError('session-expired');
 			const mod = await import('./analyze-rpc.js');
-			return mod.runStart(params, send, signal);
+			return mod.runStart(params, send, signal, context?.connectionExecution);
 		},
 		// Daemon-side workflow runner: drives one workflow (define / design.* /
 		// plan / stub) end-to-end through the LLMProvider (config → invoking
@@ -1748,4 +1861,16 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	gateHandlers(rpcHandlers as never, 'rpc', registeredRepos, APPROVAL_FAMILY);
 	gateHandlers(streamHandlers as never, 'stream', registeredRepos);
 	return { rpcHandlers, streamHandlers, understandingRoutes };
+}
+
+/** A session id that is a single path segment: not '.', '..', empty, or holding a separator or NUL. */
+export function isSafeSessionId(id: string): boolean {
+	return id.length > 0 && id !== '.' && id !== '..' && !/[\\/\0]/.test(id);
+}
+
+/** The session's own tmp directory under `root`, or undefined when the id would name anything else. */
+export function sessionTmpDir(root: string, sessionId: string): string | undefined {
+	if (!isSafeSessionId(sessionId)) return undefined;
+	const dir = resolvePath(root, sessionId);
+	return dirname(dir) === resolvePath(root) ? dir : undefined;
 }

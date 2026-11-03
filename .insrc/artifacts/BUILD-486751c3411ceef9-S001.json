@@ -1,0 +1,357 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "486751c3411ceef9",
+    "storyId": "S001",
+    "createdAt": "2026-10-30T19:37:31.977Z",
+    "updatedAt": "2026-10-31T05:05:21.897Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-30T19:19:13.160Z",
+    "epicSlug": "shared-insors-branded-light-dark-mermaid",
+    "approvedAt": "2026-10-31T05:59:08.548Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "t6 final re-validate - sweep reconciliation now COMPLETE: all 35 full-sweep failures on the current tree (/tmp/full-mine-final.log, /tmp/fullmine-fails.txt) are reproduced per-file at pristine HEAD (union /tmp/pristine-union2.txt covers 100%: /tmp/disputed-pristine.log, /tmp/extra-pristine.log, /tmp/root-pristine.log cover every title; the earlier 2 exceptions are now covered too - CM-S3-RECURSION root variant fails per-file on BOTH trees (/tmp/root-mine.log, /tmp/root-pristine.log), tui-models passes per-file on both). Zero failures unique to this Story. Inventory /tmp/inv2.out (post-fix): theme.ts + fonts.ts classified-consistent true. Affected suites /tmp/fix4.log 311/0; tsc 0; build /tmp/build-t6.log exit 0; smoke /tmp/smoke2.log 8/8 both shells. Scope note: 3 test-pin repairs + .vibe/config.toml in the change set (sweep-green repairs / user-triggered Vibe registration).",
+    "testRecord": {
+      "md": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-2ec4d97980969dd5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-dc0bd8089ce15fcd.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-e587866ef17ae15a.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-e587866ef17ae15a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-486751c3411ceef9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".vibe/config.toml"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/answer-abort-finished-run-status-board-E20261029e587866e/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "plans/mermaid-theme-and-readability-requirements.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/contrast.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/fonts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/perf.integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/viewer-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/fonts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/theme.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/artifacts/companion/panzoom.js"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/OFL.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/poppins-400.woff2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/poppins-600.woff2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/assets/fonts/poppins/poppins-700.woff2"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/services/__tests__/debug-mcp.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/admin-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/fallback.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/narrative-band.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/fallback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/code-ref-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-486751c3411ceef9-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/shared-insors-branded-light-dark-mermaid-E20261030486751c3/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/extract/__tests__/narrative.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/BUILD-e587866ef17ae15a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-2ec4d97980969dd5-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TESTS-e587866ef17ae15a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/build-start/e587866ef17ae15a-S001.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/answer-abort-finished-run-status-board-E20261029e587866e/S001/BUILD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/answer-abort-finished-run-status-board-E20261029e587866e/S001/TESTS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-router-session-test-ts-type-E202610292ec4d979/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/router-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-31T05:05:21.897Z"
+      }
+    ],
+    "commit": "ba08c1806"
+  }
+}

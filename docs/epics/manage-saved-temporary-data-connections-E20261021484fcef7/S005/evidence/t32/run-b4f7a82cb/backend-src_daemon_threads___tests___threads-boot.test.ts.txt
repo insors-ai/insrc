@@ -1,0 +1,91 @@
+TAP version 13
+# Subtest: the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down
+ok 1 - the daemon boots with daemon.threads.enabled, answers admin, indexing and session methods through its threads, and shuts down
+  ---
+  duration_ms: 2964.170334
+  type: 'test'
+  ...
+# Subtest: SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged
+not ok 2 - SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged
+  ---
+  duration_ms: 22482.192041
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/threads-boot.test.ts:1:2547'
+  failureType: 'testCodeFailure'
+  error: |-
+    the daemon exited cleanly after SIGTERM
+    
+    1 !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: 1
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/threads-boot.test.ts:96:17)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down
+not ok 3 - daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down
+  ---
+  duration_ms: 6479.071291
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/threads-boot.test.ts:3:1430'
+  failureType: 'testCodeFailure'
+  error: `logged: shutdown signal received; draining... (the daemon's last lines: ["    module: \\"daemon:model-catalog\\"","    dir: \\"/private/tmp/s5-frozen-qldpq8za/repo/src/assets/models\\"","    version: 1","    models: {","      \\"cli-claude\\": 4,","      \\"cli-codex\\": 7,","      \\"cli-vibe\\": 4,","      \\"ollama\\": 2,","      \\"ollama-claude\\": 6","    }","[04:45:50] INFO: [embedder] embedder backend set","    module: \\"embedder\\"","    backend: \\"ollama\\"","[04:45:51] INFO: [daemon:model-catalog] model definitions validated","    module: \\"daemon:model-catalog\\"","    dir: \\"/private/tmp/s5-frozen-qldpq8za/repo/src/assets/models\\"","    version: 1","    models: {","      \\"cli-claude\\": 4,","      \\"cli-codex\\": 7,","      \\"cli-vibe\\": 4,","      \\"ollama\\": 2,","      \\"ollama-claude\\": 6","    }","[04:45:51] WARN: [session-worker] understanding service unavailable: initialization checks failed","    module: \\"session-worker\\"","[04:45:51] INFO: [embedder] embedder backend set","    module: \\"embedder\\"","    backend: \\"ollama\\"",""])`
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/threads-boot.test.ts:149:38)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+# Subtest: boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0
+ok 4 - boot: threads enabled serves a session method from a session worker over the socket, and SIGTERM drains and exits 0
+  ---
+  duration_ms: 2870.798125
+  type: 'test'
+  ...
+# Subtest: boot: threads disabled runs every session method on the main thread as today
+not ok 5 - boot: threads disabled runs every session method on the main thread as today
+  ---
+  duration_ms: 1446.62075
+  type: 'test'
+  location: '/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/threads-boot.test.ts:4:151'
+  failureType: 'testCodeFailure'
+  error: |-
+    the daemon exited cleanly after SIGTERM:
+    (node:81285) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+    (Use `node --trace-warnings ...` to show where the warning was created)
+    fatal: cannot change to '/private/tmp/s5-frozen-qldpq8za/home/.insrc/daemon': No such file or directory
+    
+    
+    null !== 0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 0
+  actual: ~
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (/private/tmp/s5-frozen-qldpq8za/repo/src/daemon/threads/__tests__/threads-boot.test.ts:215:11)
+    process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 2
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36614.007334

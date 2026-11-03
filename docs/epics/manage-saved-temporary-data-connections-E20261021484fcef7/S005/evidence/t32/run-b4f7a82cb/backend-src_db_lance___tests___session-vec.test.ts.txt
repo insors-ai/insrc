@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: writeSessionEmbedding + searchSessionVecs round-trip
+ok 1 - writeSessionEmbedding + searchSessionVecs round-trip
+  ---
+  duration_ms: 75.020542
+  type: 'test'
+  ...
+# Subtest: searchSessionVecs scopes by repo
+ok 2 - searchSessionVecs scopes by repo
+  ---
+  duration_ms: 44.171333
+  type: 'test'
+  ...
+# Subtest: searchSessionVecs with notExpired drops expired sessions
+ok 3 - searchSessionVecs with notExpired drops expired sessions
+  ---
+  duration_ms: 71.553125
+  type: 'test'
+  ...
+# Subtest: upsert: writing the same id replaces
+ok 4 - upsert: writing the same id replaces
+  ---
+  duration_ms: 57.064125
+  type: 'test'
+  ...
+# Subtest: deleteSessionVec / deleteSessionVecsByIds / deleteSessionVecsForRepo
+ok 5 - deleteSessionVec / deleteSessionVecsByIds / deleteSessionVecsForRepo
+  ---
+  duration_ms: 116.570667
+  type: 'test'
+  ...
+# Subtest: returns [] for empty query / empty repo
+ok 6 - returns [] for empty query / empty repo
+  ---
+  duration_ms: 1.891625
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 793.129875

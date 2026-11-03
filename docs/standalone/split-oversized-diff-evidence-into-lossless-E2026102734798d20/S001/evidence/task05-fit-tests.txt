@@ -1,0 +1,884 @@
+TAP version 13
+# Subtest: assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)
+ok 1 - assembler: the Story range yields one pseudo-symbol per changed file (kind:file, name:file, hunks in signature)
+  ---
+  duration_ms: 2.102167
+  type: 'test'
+  ...
+# Subtest: assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)
+ok 2 - assembler: with no base the diff-only review is unavailable and no seam is called (ISSUE-b97752e9)
+  ---
+  duration_ms: 0.363125
+  type: 'test'
+  ...
+# Subtest: assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles
+ok 3 - assembler: a binary changed file yields a pseudo-symbol with a binary marker (no hunks), still present in changedFiles
+  ---
+  duration_ms: 0.122209
+  type: 'test'
+  ...
+# Subtest: assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)
+ok 4 - assembler: an empty range and a clean tree => a valid grounding with symbols:[] (no crash)
+  ---
+  duration_ms: 0.129583
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: unrecoverable truncated input refuses before any grounding is returned
+ok 5 - DIFF-READER: unrecoverable truncated input refuses before any grounding is returned
+  ---
+  duration_ms: 0.17325
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder
+ok 6 - DIFF-READER: missing textual hunks refuse instead of producing a reviewed placeholder
+  ---
+  duration_ms: 0.098458
+  type: 'test'
+  ...
+# Subtest: assembler: a working-tree git failure propagates (DiffUnavailableError)
+ok 7 - assembler: a working-tree git failure propagates (DiffUnavailableError)
+  ---
+  duration_ms: 0.111583
+  type: 'test'
+  ...
+# Subtest: assembler: a range git failure propagates at once — no step-down to the working tree or a last commit
+ok 8 - assembler: a range git failure propagates at once — no step-down to the working tree or a last commit
+  ---
+  duration_ms: 0.079208
+  type: 'test'
+  ...
+# Subtest: assembler (integration): a real repo with no base is refused, and the assembler is read-only
+ok 9 - assembler (integration): a real repo with no base is refused, and the assembler is read-only
+  ---
+  duration_ms: 244.753167
+  type: 'test'
+  ...
+# Subtest: a base and no globs: the range then the working tree, with no excludeGlobs argument
+ok 10 - a base and no globs: the range then the working tree, with no excludeGlobs argument
+  ---
+  duration_ms: 0.53525
+  type: 'test'
+  ...
+# Subtest: a base and globs: the RANGE is read first, then the working tree, both with the globs
+ok 11 - a base and globs: the RANGE is read first, then the working tree, both with the globs
+  ---
+  duration_ms: 0.169166
+  type: 'test'
+  ...
+# Subtest: a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope
+ok 12 - a dirty working tree: a Story file's uncommitted hunks join its committed ones; an unrelated file is left out and listed in excludedFromScope
+  ---
+  duration_ms: 0.155958
+  type: 'test'
+  ...
+# Subtest: T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported
+ok 13 - T45: a base whose range is EMPTY after exclusion gives an empty result, and an uncommitted file is only reported
+  ---
+  duration_ms: 0.104958
+  type: 'test'
+  ...
+# Subtest: seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read
+ok 14 - seams without rangeDiff cannot anchor the Story: DiffUnavailableError, and the working tree is not read
+  ---
+  duration_ms: 0.079792
+  type: 'test'
+  ...
+# Subtest: an error that is not a diff failure propagates at once
+ok 15 - an error that is not a diff failure propagates at once
+  ---
+  duration_ms: 0.077792
+  type: 'test'
+  ...
+# Subtest: T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions
+ok 16 - T44 (integration, real git): DIFF-READER: real git recovers full file evidence after an aggregate cap and preserves exclusions
+  ---
+  duration_ms: 326.520958
+  type: 'test'
+  ...
+# Subtest: integration, real git: with no base and a clean tree nothing is reviewed in the Story's place
+ok 17 - integration, real git: with no base and a clean tree nothing is reviewed in the Story's place
+  ---
+  duration_ms: 95.774958
+  type: 'test'
+  ...
+# Subtest: the range diff carries full hunks for the Story files and none for merged-in files
+ok 18 - the range diff carries full hunks for the Story files and none for merged-in files
+  ---
+  duration_ms: 261.210167
+  type: 'test'
+  ...
+# Subtest: a file changed by both a Story commit and the merge carries only the Story's own hunks
+ok 19 - a file changed by both a Story commit and the merge carries only the Story's own hunks
+  ---
+  duration_ms: 214.494542
+  type: 'test'
+  ...
+# Subtest: edits folded into a merge commit are reviewed and marked
+ok 20 - edits folded into a merge commit are reviewed and marked
+  ---
+  duration_ms: 208.500417
+  type: 'test'
+  ...
+# Subtest: a range with no Story change gives an empty grounding without calling git_diff
+ok 21 - a range with no Story change gives an empty grounding without calling git_diff
+  ---
+  duration_ms: 176.036167
+  type: 'test'
+  ...
+# Subtest: a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first
+ok 22 - a shared path touched by two Story commits keeps both commits' hunks and a folded marker stays on its own file when it is not first
+  ---
+  duration_ms: 243.244583
+  type: 'test'
+  ...
+# Subtest: without hunksByFile buildDiffSymbols splits the body as before
+ok 23 - without hunksByFile buildDiffSymbols splits the body as before
+  ---
+  duration_ms: 0.321458
+  type: 'test'
+  ...
+# Subtest: the range diff applies the exclusions to every per-unit call
+ok 24 - the range diff applies the exclusions to every per-unit call
+  ---
+  duration_ms: 0.196042
+  type: 'test'
+  ...
+# Subtest: a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable
+ok 25 - a truncated per-unit call marks the grounding truncated and a storyChangeSet failure makes the review unavailable
+  ---
+  duration_ms: 126.554792
+  type: 'test'
+  ...
+# Subtest: splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes
+ok 26 - splitDiffByFile keys a quoted header by its decoded literal path: tab, newline, quote, backslash and octal UTF-8 escapes
+  ---
+  duration_ms: 0.31
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte
+ok 27 - DIFF-READER: a real file larger than the public tool hard cap is recovered through its final byte
+  ---
+  duration_ms: 335.126958
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence
+ok 28 - DIFF-READER: unflagged partial or header-only hunks cannot masquerade as complete evidence
+  ---
+  duration_ms: 0.3005
+  type: 'test'
+  ...
+# Subtest: DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file
+ok 29 - DIFF-READER: a later complete unit cannot hide an earlier missing section for the same file
+  ---
+  duration_ms: 0.078417
+  type: 'test'
+  ...
+# Subtest: DIFF-SPANS: large text is a deterministic lossless ordered partition; small and binary rows keep legacy identity
+ok 30 - DIFF-SPANS: large text is a deterministic lossless ordered partition; small and binary rows keep legacy identity
+  ---
+  duration_ms: 13.135458
+  type: 'test'
+  ...
+# Subtest: DIFF-COORDS: continuation spans preserve UTF16 diff/source coordinates and renamed-file ownership
+ok 31 - DIFF-COORDS: continuation spans preserve UTF16 diff/source coordinates and renamed-file ownership
+  ---
+  duration_ms: 0.491708
+  type: 'test'
+  ...
+# Subtest: DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered spans/coordinates are rejected
+ok 32 - DIFF-INTEGRITY: missing, duplicated, reordered, overlapping or tampered spans/coordinates are rejected
+  ---
+  duration_ms: 12.697458
+  type: 'test'
+  ...
+# Subtest: DIFF-SPANS: staging rows retain original file order and unique changed paths
+ok 33 - DIFF-SPANS: staging rows retain original file order and unique changed paths
+  ---
+  duration_ms: 1.496959
+  type: 'test'
+  ...
+# Subtest: DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid
+ok 34 - DIFF-INTEGRITY: a digest-preserving partition that splits a surrogate pair is invalid
+  ---
+  duration_ms: 0.132583
+  type: 'test'
+  ...
+# Subtest: over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory
+ok 35 - over the limit, symbols that call each other share a chunk before symbols that only share a file, and those before symbols that only share a directory
+  ---
+  duration_ms: 5.683208
+  type: 'test'
+  ...
+# Subtest: a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol
+ok 36 - a call relation cut between two chunks gives each chunk a neighbour summary of the other symbol
+  ---
+  duration_ms: 3.605583
+  type: 'test'
+  ...
+# Subtest: every changed symbol is whole in exactly one chunk and every chunk fits the limit
+ok 37 - every changed symbol is whole in exactly one chunk and every chunk fits the limit
+  ---
+  duration_ms: 8.53675
+  type: 'test'
+  ...
+# Subtest: a summary larger than the limit on its own raises AtomTooLargeError naming its file\#name
+ok 38 - a summary larger than the limit on its own raises AtomTooLargeError naming its file\#name
+  ---
+  duration_ms: 3.429625
+  type: 'test'
+  ...
+# Subtest: under the limit the plan is one chunk and the dimension prompt is unchanged
+ok 39 - under the limit the plan is one chunk and the dimension prompt is unchanged
+  ---
+  duration_ms: 1.331792
+  type: 'test'
+  ...
+# Subtest: every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars
+ok 40 - every rendered chunk call, with array formatting, neighbours, context and envelope, measures within limitChars
+  ---
+  duration_ms: 1.11675
+  type: 'test'
+  ...
+# Subtest: a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call
+ok 41 - a row whose JSON fits the limit but whose rendered singleton call does not raises AtomTooLargeError before any provider call
+  ---
+  duration_ms: 0.41625
+  type: 'test'
+  ...
+# Subtest: an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large
+ok 42 - an atom whose singleton call with every same-directory line exceeds the limit is packed, its lines added only while they fit, and not reported as too large
+  ---
+  duration_ms: 2.756791
+  type: 'test'
+  ...
+# Subtest: a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged
+ok 43 - a symbol that cannot hold its call summaries beside it is kept whole, the summaries that do not fit are left out, and the omission is logged
+  ---
+  duration_ms: 2.528042
+  type: 'test'
+  ...
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:prepare] review pipeline: a chunk cannot hold all its usage summaries beside its atom; leaving out the ones that do not fit[39m
+#     [35mmodule[39m: "review-pipeline:prepare"
+#     [35mchunk[39m: "c1"
+#     [35matoms[39m: [
+#       "hub"
+#     ]
+#     [35msummaries[39m: 25
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 2
+# Subtest: each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan
+ok 44 - each dimension's obligations equal what today's prompt judges: clauses and plan tasks, FRs, promised tests, touched modules; adherence has none without an approved LLD or plan
+  ---
+  duration_ms: 210.922792
+  type: 'test'
+  ...
+# Subtest: a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild
+ok 45 - a promised test's obligation context holds its reported result, build tasks, notes and test-file atoms chosen by name, also with empty grounding, and is identical on every rebuild
+  ---
+  duration_ms: 2.9805
+  type: 'test'
+  ...
+# Subtest: adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk
+ok 46 - adherence, functional-coverage and conventions chunk schemas have no findings field, so a missing clause or unrealized FR naming a valid chunk location cannot be recorded from a chunk
+  ---
+  duration_ms: 21.835125
+  type: 'test'
+  ...
+# Subtest: a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note
+ok 47 - a chunk answer with an unknown key, an atom outside its call's carries, or a coverage finding that is not symbol coverage of a carried symbol is rejected and re-issued with a correction note
+  ---
+  duration_ms: 14.469958
+  type: 'test'
+  ...
+# Subtest: a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's
+ok 48 - a notes-only chunk call carries the chunk's rows, neighbour lines and context atoms within the limit, and under the limit the single prompt is today's
+  ---
+  duration_ms: 8.739625
+  type: 'test'
+  ...
+# Subtest: a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review
+ok 49 - a quality chunk answer missing, repeating or adding a description is rejected, re-issued once, then fails the review
+  ---
+  duration_ms: 5.445542
+  type: 'test'
+  ...
+# Subtest: a key with no notes is adjudicated on the no-evidence statement
+ok 50 - a key with no notes is adjudicated on the no-evidence statement
+  ---
+  duration_ms: 8.084708
+  type: 'test'
+  ...
+# Subtest: a conventions candidate rejected by the module judgement is absent from the merged result
+ok 51 - a conventions candidate rejected by the module judgement is absent from the merged result
+  ---
+  duration_ms: 3.632708
+  type: 'test'
+  ...
+# Subtest: a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing
+ok 52 - a promised test passed only by a reported smoke run, with no test file or reaching edge, gets that evidence in its obligation context and is not reported missing
+  ---
+  duration_ms: 12.149417
+  type: 'test'
+  ...
+# Subtest: a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits
+ok 53 - a key whose notes exceed the limit is reduced into notes within noteCapChars and then judged, and every gather call fits
+  ---
+  duration_ms: 4.099292
+  type: 'test'
+  ...
+# Subtest: a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits
+ok 54 - a relation call carries both full summaries when they fit, else full against neighbour summary in each direction, and every call fits
+  ---
+  duration_ms: 14.935125
+  type: 'test'
+  ...
+# Subtest: a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review
+ok 55 - a relation answer naming a counterpart or location outside its two symbols is rejected, re-issued once, then fails the review
+  ---
+  duration_ms: 10.205875
+  type: 'test'
+  ...
+# Subtest: a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller
+ok 56 - a caller and callee in different chunks whose contract disagrees: the job judges their call in a relation call, and the mismatch is reported at the caller
+  ---
+  duration_ms: 4.778542
+  type: 'test'
+  ...
+# Subtest: every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit
+ok 57 - every two symbols in different chunks are compared through their descriptions in calls within the limit, and no compare or pair call is made under the limit
+  ---
+  duration_ms: 6.826083
+  type: 'test'
+  ...
+# Subtest: a pair answer naming a counterpart outside its two symbols is rejected
+ok 58 - a pair answer naming a counterpart outside its two symbols is rejected
+  ---
+  duration_ms: 5.837958
+  type: 'test'
+  ...
+# Subtest: compare and pair calls are counted under pipelineCalls.relation, not chunk
+ok 59 - compare and pair calls are counted under pipelineCalls.relation, not chunk
+  ---
+  duration_ms: 5.172292
+  type: 'test'
+  ...
+# Subtest: out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today
+ok 60 - out-of-set findings are dropped on the daemon path and kept in outOfScope on the controller path, as today
+  ---
+  duration_ms: 9.010791
+  type: 'test'
+  ...
+# Subtest: a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today
+ok 61 - a functional-coverage finding with an unknown expectationRef at a valid changed-file location is dropped by merge, as today
+  ---
+  duration_ms: 1.8945
+  type: 'test'
+  ...
+# Subtest: pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review
+ok 62 - pipelineCalls counts chunk, obligation, relation and merge calls and is absent on a single-chunk review
+  ---
+  duration_ms: 10.450083
+  type: 'test'
+  ...
+# Subtest: merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once
+ok 63 - merge keeps identical findings once, accepts only file:line locations (a note id is re-asked), moves out-of-set findings to outOfScope, and normalises coverage once
+  ---
+  duration_ms: 25.26325
+  type: 'test'
+  ...
+# Subtest: a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row
+ok 64 - a size-refused compare or pair call is re-divided by its stage within the refused size: smaller batches, or the pair's two halves; a refused half names its row
+  ---
+  duration_ms: 5.197917
+  type: 'test'
+  ...
+# Subtest: a mutual call cut between chunks is checked in both directions, each at its own caller
+ok 65 - a mutual call cut between chunks is checked in both directions, each at its own caller
+  ---
+  duration_ms: 4.020834
+  type: 'test'
+  ...
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "972761db-cacc-4a28-994b-eef69ecf5a64"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "0dc7458a-b98e-45f5-97ef-b832e14c5f7d"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "50cdeab6-4994-4a50-9a42-95da0906ebae"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "0ac0e042-75f4-474b-b8eb-46fa303480bc"
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "0ac0e042-75f4-474b-b8eb-46fa303480bc"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "a81a5672-f080-4a98-99b5-73f0404a7f75"
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "a81a5672-f080-4a98-99b5-73f0404a7f75"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "5664777b-0e56-4339-94f4-4bb560142a8a"
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "5664777b-0e56-4339-94f4-4bb560142a8a"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "ec97af2d-54af-4ffd-a533-9227533351ff"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "af9683ba-86fe-4816-9df5-bf450e3b670b"
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "af9683ba-86fe-4816-9df5-bf450e3b670b"
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "af9683ba-86fe-4816-9df5-bf450e3b670b"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "conventions"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 0
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "d4b7d84e-0e7e-485f-813a-175c9e71ab38"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: an obligation's context is over the limit; reducing it with its evidence[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mkey[39m: "fr:FR1"
+#     [35mcontextAtoms[39m: 1
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "19a1bc66-1a16-44b2-a730-78449a44858c"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "f9028af9-5215-4568-8410-297e3366f03d"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "5ee5eb60-d8ec-4f0a-98f2-60e46200e6b6"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "499d8d6a-e46d-4c10-87e7-de8eb3eeb39f"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "compare"
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "b5220893-7b57-47e9-89ac-5fd132d40bd7"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "functional-coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: re-issuing a call once under a new callId[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "adherence"
+#     [35mstage[39m: ""
+#     [35mcause[39m: "invalid-answer"
+#     [35mcallId[39m: "852a266b-a924-45d7-811d-b6ee4d8fbf60"
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "coverage"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 5
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "compare"
+#     [35mchars[39m: 11188
+#     [35mbudget[39m: 6712
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 7239
+#     [35mbudget[39m: 6839
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 6395
+#     [35mbudget[39m: 6381
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 6391
+#     [35mbudget[39m: 6381
+# [08:13:12] [33mWARN[39m: [36m[review-pipeline:job] review pipeline: a call was refused for its size; the stage re-divides it[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "pair"
+#     [35mchars[39m: 7239
+#     [35mbudget[39m: 6381
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 3
+# Subtest: each included summary is one atom with id entityId, label file\#name, the file's directory as module, and text equal to the row's JSON
+ok 66 - each included summary is one atom with id entityId, label file\#name, the file's directory as module, and text equal to the row's JSON
+  ---
+  duration_ms: 7.432375
+  type: 'test'
+  ...
+# Subtest: a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none
+ok 67 - a callee or caller name matching a changed symbol gives a calls relation; a same-named pair relates to both; no self-relation; an unmatched name gives none
+  ---
+  duration_ms: 1.243458
+  type: 'test'
+  ...
+# Subtest: same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only
+ok 68 - same-file and same-module relations join atoms sharing a file or directory; a diff review gets same-module relations only
+  ---
+  duration_ms: 0.950208
+  type: 'test'
+  ...
+# Subtest: a duplicate entityId throws an error naming it
+ok 69 - a duplicate entityId throws an error naming it
+  ---
+  duration_ms: 0.271666
+  type: 'test'
+  ...
+# Subtest: the same grounding gives identical material and identical neighbour summaries every time
+ok 70 - the same grounding gives identical material and identical neighbour summaries every time
+  ---
+  duration_ms: 1.479792
+  type: 'test'
+  ...
+# Subtest: a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names
+ok 71 - a neighbour summary names kind, name, file, the first signature line within 200 characters, and the related changed names
+  ---
+  duration_ms: 0.455917
+  type: 'test'
+  ...
+# Subtest: coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence
+ok 72 - coverage material built from prepareCoverageGrounding keeps only eligible rows and carries their coverageEvidence
+  ---
+  duration_ms: 2.290458
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before
+ok 73 - ISSUE-e940023a: codeReviewMaterial and neighbourSummary give exactly the relations, in the same order, and the summaries they gave before
+  ---
+  duration_ms: 162.34425
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took
+ok 74 - ISSUE-e940023a: a material of 3000 atoms is built and every atom summarised in well under the time the old code took
+  ---
+  duration_ms: 713.726458
+  type: 'test'
+  ...
+# Subtest: ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time
+ok 75 - ISSUE-e940023a: 50000 symbols sharing one name, each in its own directory and with no calls, build their material in well under the quadratic time
+  ---
+  duration_ms: 69.276
+  type: 'test'
+  ...
+# Subtest: ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds
+ok 76 - ISSUE-2f4cb54c: an adapter builds its material once however many calls read it, and it is the same material a fresh adapter builds
+  ---
+  duration_ms: 0.780083
+  type: 'test'
+  ...
+# Subtest: DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span
+ok 77 - DIFF-LOW-CAP: actual quality framing and schema fit below a 16384-character staging span
+  ---
+  duration_ms: 28.45875
+  type: 'test'
+  ...
+# Subtest: DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence
+ok 78 - DIFF-LOW-CAP: fixed framing that cannot fit refuses instead of exploding into tiny evidence
+  ---
+  duration_ms: 2.57175
+  type: 'test'
+  ...
+# Subtest: DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom
+ok 79 - DIFF-INTEGRITY: material rejects bad fragment provenance before accepting any atom
+  ---
+  duration_ms: 0.42975
+  type: 'test'
+  ...
+# Subtest: DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls
+ok 80 - DIFF-SCALE: sibling material links remain linear and do not fabricate graph calls
+  ---
+  duration_ms: 325.315666
+  type: 'test'
+  ...
+# Subtest: DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered
+ok 81 - DIFF-LARGE: S003-sized complete evidence plans bounded primary calls with every span covered
+  ---
+  duration_ms: 326.138541
+  type: 'test'
+  ...
+# Subtest: DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments
+ok 82 - DIFF-LOW-CAP: a small renamed file keeps its original path when fitting requires new fragments
+  ---
+  duration_ms: 0.519083
+  type: 'test'
+  ...
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 14
+# [08:13:12] [32mINFO[39m: [36m[review-pipeline:job] review pipeline: the single call is over the limit; the review is divided[39m
+#     [35mmodule[39m: "review-pipeline:job"
+#     [35mdimension[39m: "quality"
+#     [35mstage[39m: "judge"
+#     [35mchunks[39m: 6
+1..82
+# tests 82
+# suites 0
+# pass 82
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2521.74825

@@ -1,0 +1,286 @@
+TAP version 13
+# Subtest: opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time
+ok 1 - opening the board creates one editor-tab panel with a CSP-locked document and posts the snapshot's items with its taken-at time
+  ---
+  duration_ms: 8.131417
+  type: 'test'
+  ...
+# Subtest: when the earlier refresh answers after the later one, only the later snapshot is posted
+ok 2 - when the earlier refresh answers after the later one, only the later snapshot is posted
+  ---
+  duration_ms: 2.965083
+  type: 'test'
+  ...
+# Subtest: a client that throws synchronously ends the refresh as failed instead of leaving the board loading
+ok 3 - a client that throws synchronously ends the refresh as failed instead of leaving the board loading
+  ---
+  duration_ms: 0.459667
+  type: 'test'
+  ...
+# Subtest: an answer or timeout that arrives after the panel is closed is neither posted nor logged
+ok 4 - an answer or timeout that arrives after the panel is closed is neither posted nor logged
+  ---
+  duration_ms: 0.694625
+  type: 'test'
+  ...
+# Subtest: the board document inserts text only through textContent and posts only board up-messages
+ok 5 - the board document inserts text only through textContent and posts only board up-messages
+  ---
+  duration_ms: 1.333667
+  type: 'test'
+  ...
+# Subtest: show-more reveals the next page of one stage, and a new search resets paging
+ok 6 - show-more reveals the next page of one stage, and a new search resets paging
+  ---
+  duration_ms: 2.789708
+  type: 'test'
+  ...
+# Subtest: an item with an unknown stage is left off the board and logged once per refresh
+ok 7 - an item with an unknown stage is left off the board and logged once per refresh
+  ---
+  duration_ms: 0.762041
+  type: 'test'
+  ...
+# Subtest: a filter change that cannot be rendered keeps the previous board and is logged
+ok 8 - a filter change that cannot be rendered keeps the previous board and is logged
+  ---
+  duration_ms: 0.631333
+  type: 'test'
+  ...
+# Subtest: a refresh whose loading state cannot be shown is logged and asks the daemon nothing
+ok 9 - a refresh whose loading state cannot be shown is logged and asks the daemon nothing
+  ---
+  duration_ms: 0.659708
+  type: 'test'
+  ...
+# Subtest: a logger that throws never leaves the board loading or stops a refresh
+ok 10 - a logger that throws never leaves the board loading or stops a refresh
+  ---
+  duration_ms: 0.734042
+  type: 'test'
+  ...
+# Subtest: opening a story reads its plan once per snapshot and shows the dependencies when it arrives
+ok 11 - opening a story reads its plan once per snapshot and shows the dependencies when it arrives
+  ---
+  duration_ms: 1.64325
+  type: 'test'
+  ...
+# Subtest: a review-view record opens in the review pane and a build record opens read-only from the daemon as text
+ok 12 - a review-view record opens in the review pane and a build record opens read-only from the daemon as text
+  ---
+  duration_ms: 1.528792
+  type: 'test'
+  ...
+# Subtest: a failed, malformed or stale plan read leaves the details standing with a notice
+ok 13 - a failed, malformed or stale plan read leaves the details standing with a notice
+  ---
+  duration_ms: 2.895
+  type: 'test'
+  ...
+# Subtest: a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing
+ok 14 - a filter change, Back and announcements: screen changes are announced once, a settled refresh once, and filters, density and reloads say nothing
+  ---
+  duration_ms: 1.0665
+  type: 'test'
+  ...
+# Subtest: clear-filters clears the screen's search and attention, keeps the screen, and resets paging
+ok 15 - clear-filters clears the screen's search and attention, keeps the screen, and resets paging
+  ---
+  duration_ms: 2.889958
+  type: 'test'
+  ...
+# Subtest: opening an epic and then a story replaces \#main each time, and nothing from an earlier screen remains
+ok 16 - opening an epic and then a story replaces \#main each time, and nothing from an earlier screen remains
+  ---
+  duration_ms: 3.3755
+  type: 'test'
+  ...
+# Subtest: the filter bar has exactly the four views and Needs attention, and no epic is a chip
+ok 17 - the filter bar has exactly the four views and Needs attention, and no epic is a chip
+  ---
+  duration_ms: 5.005583
+  type: 'test'
+  ...
+# Subtest: an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control
+ok 18 - an Epics row opens that epic's board with its header, breadcrumb and ← Epics, and no view control
+  ---
+  duration_ms: 1.843709
+  type: 'test'
+  ...
+# Subtest: stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh
+ok 19 - stages render as six <details> sections in workflow order, and a toggled section stays as the reader left it across a refresh
+  ---
+  duration_ms: 1.155833
+  type: 'test'
+  ...
+# Subtest: a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form
+ok 20 - a narrow pane shortens the breadcrumb and folds empty stages into Other stages · 0 matching, and widening re-renders the wide form
+  ---
+  duration_ms: 1.0315
+  type: 'test'
+  ...
+# Subtest: Back restores the saved scroll and focuses the card that opened the story; Escape goes back
+ok 21 - Back restores the saved scroll and focuses the card that opened the story; Escape goes back
+  ---
+  duration_ms: 0.7485
+  type: 'test'
+  ...
+# Subtest: empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner
+ok 22 - empty replaces the screen, no matches replaces the list area with Clear filters, and a failed refresh over a story keeps the story under the banner
+  ---
+  duration_ms: 1.503541
+  type: 'test'
+  ...
+# Subtest: CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes
+ok 23 - CSP string unchanged, exactly one aria-live region, and the script uses textContent only and posts only BoardUpMessage envelopes
+  ---
+  duration_ms: 1.508792
+  type: 'test'
+  ...
+# Subtest: opening a story replaces the screen: \#main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from
+ok 24 - opening a story replaces the screen: \#main holds only the story screen, with its breadcrumb and Back, and no card from the list it came from
+  ---
+  duration_ms: 1.438959
+  type: 'test'
+  ...
+# Subtest: the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons
+ok 25 - the story tabs post set-item-tab; overview shows the conflict first, tasks, why and chain; evidence is a records table with open buttons
+  ---
+  duration_ms: 2.684875
+  type: 'test'
+  ...
+# Subtest: linked work lists the epic, children and correcting issues, each opening its own screen
+ok 26 - linked work lists the epic, children and correcting issues, each opening its own screen
+  ---
+  duration_ms: 1.642083
+  type: 'test'
+  ...
+# Subtest: the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories
+ok 27 - the issue screen opens what it corrects, or shows the parent notice, and lists its fix stories
+  ---
+  duration_ms: 3.726125
+  type: 'test'
+  ...
+# Subtest: density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen
+ok 28 - density is restored from the webview state, saved on change and mirrored to the host, and both densities render every screen
+  ---
+  duration_ms: 11.68125
+  type: 'test'
+  ...
+# Subtest: the refresh announcement text is unchanged after statusView takes now
+ok 29 - the refresh announcement text is unchanged after statusView takes now
+  ---
+  duration_ms: 0.462083
+  type: 'test'
+  ...
+# Subtest: the live region and density control sit in a small footer, and a new list screen focuses its chosen view
+ok 30 - the live region and density control sit in a small footer, and a new list screen focuses its chosen view
+  ---
+  duration_ms: 2.658792
+  type: 'test'
+  ...
+# Subtest: the breadcrumb renders the wordmark, crumbs and current place, without the wordmark when narrow
+ok 31 - the breadcrumb renders the wordmark, crumbs and current place, without the wordmark when narrow
+  ---
+  duration_ms: 0.656792
+  type: 'test'
+  ...
+# Subtest: list screens use the mocks' filter bar, count line and stage boxes, with no heading
+ok 32 - list screens use the mocks' filter bar, count line and stage boxes, with no heading
+  ---
+  duration_ms: 0.497166
+  type: 'test'
+  ...
+# Subtest: Back to a list screen whose opener is gone focuses the chosen view
+ok 33 - Back to a list screen whose opener is gone focuses the chosen view
+  ---
+  duration_ms: 0.810334
+  type: 'test'
+  ...
+# Subtest: the epic board and Epics rows follow the mocks: head with meter, rows with completion and attention on one line
+ok 34 - the epic board and Epics rows follow the mocks: head with meter, rows with completion and attention on one line
+  ---
+  duration_ms: 0.989292
+  type: 'test'
+  ...
+# Subtest: the Issues screen shows its issues in collapsible stage boxes
+ok 35 - the Issues screen shows its issues in collapsible stage boxes
+  ---
+  duration_ms: 1.005042
+  type: 'test'
+  ...
+# Subtest: story and issue screens follow the mocks: stage pill, section labels, chain rows and the Open what it corrects button
+ok 36 - story and issue screens follow the mocks: stage pill, section labels, chain rows and the Open what it corrects button
+  ---
+  duration_ms: 1.271542
+  type: 'test'
+  ...
+# Subtest: state panels use the mocks' panel and warning styles
+ok 37 - state panels use the mocks' panel and warning styles
+  ---
+  duration_ms: 0.288208
+  type: 'test'
+  ...
+# Subtest: the Epics screen shows its epics in collapsible stage boxes, and epics with no stories after them
+ok 38 - the Epics screen shows its epics in collapsible stage boxes, and epics with no stories after them
+  ---
+  duration_ms: 2.430583
+  type: 'test'
+  ...
+# Subtest: Refresh is an icon-only button that keeps its name and tooltip
+ok 39 - Refresh is an icon-only button that keeps its name and tooltip
+  ---
+  duration_ms: 0.173375
+  type: 'test'
+  ...
+# Subtest: BOARD_STYLE carries the mocks' product rules with theme colours and no hiding rule
+ok 40 - BOARD_STYLE carries the mocks' product rules with theme colours and no hiding rule
+  ---
+  duration_ms: 7.619416
+  type: 'test'
+  ...
+# Subtest: the narrow layout applies the mocks' container rules to the body
+ok 41 - the narrow layout applies the mocks' container rules to the body
+  ---
+  duration_ms: 0.2185
+  type: 'test'
+  ...
+# Subtest: a refresh timing that cannot be measured says so in the log instead of reading as instant
+ok 42 - a refresh timing that cannot be measured says so in the log instead of reading as instant
+  ---
+  duration_ms: 0.539833
+  type: 'test'
+  ...
+# Subtest: an intent that changes nothing posts nothing
+ok 43 - an intent that changes nothing posts nothing
+  ---
+  duration_ms: 0.416958
+  type: 'test'
+  ...
+# Subtest: a story's planned tasks are a table: short id, title, result pill, dependency chips with the title on hover, and a checks count
+ok 44 - a story's planned tasks are a table: short id, title, result pill, dependency chips with the title on hover, and a checks count
+  ---
+  duration_ms: 0.9195
+  type: 'test'
+  ...
+# Subtest: a task's checks toggle opens them as a plain list under its row, and the open choice survives a re-render
+ok 45 - a task's checks toggle opens them as a plain list under its row, and the open choice survives a re-render
+  ---
+  duration_ms: 0.8345
+  type: 'test'
+  ...
+# Subtest: a task with no checks, or a plan still loading, shows a dash and no checks row; a story with no plan has no table
+ok 46 - a task with no checks, or a plan still loading, shows a dash and no checks row; a story with no plan has no table
+  ---
+  duration_ms: 1.13625
+  type: 'test'
+  ...
+1..46
+# tests 46
+# suites 0
+# pass 46
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 450.652833

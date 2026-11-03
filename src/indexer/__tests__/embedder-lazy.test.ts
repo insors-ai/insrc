@@ -59,7 +59,10 @@ test('embedder-lazy.test.ts: importing embedder.ts calls no settings loader; the
 	assert.match(lifecycle, /embeddingDim\(\) !== ONNX_EMBEDDING_DIM/);
 	const indexer = readFileSync(join(SRC, 'indexer', 'index.ts'), 'utf8');
 	const reembed = indexer.slice(indexer.indexOf('private async reembed('));
-	assert.match(reembed.slice(0, 2000), /updateEmbedding\(this\.db, e\.id, e\.embedding, embeddingModel\(\)\)/);
+	// The backfill writes through the store (Epic c2ba6fa6 s2), which names the model from the settings getter.
+	assert.match(reembed.slice(0, 2500), /await writeBackfillVectors\(ready\)/);
+	const entities = readFileSync(join(SRC, 'db', 'entities.ts'), 'utf8');
+	assert.match(entities, /function activeEmbeddingModel\(\): string \{\s*return loadLocalProviderConfig\(\)\.embeddingModel;/);
 	const offenders: string[] = [];
 	const walk = (dir: string): void => {
 		for (const name of readdirSync(dir)) {

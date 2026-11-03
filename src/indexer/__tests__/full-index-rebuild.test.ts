@@ -31,7 +31,8 @@ import { dirname, join } from 'node:path';
 import { closeGraphStore, getGraphStore, setGraphStorePath, withWriteTxn } from '../../db/graph/store.js';
 import { encodeEntityKey, encodeInEdgeKey, encodeOutEdgeKey, RELATION_KIND_BYTE } from '../../db/graph/keys.js';
 import { useTemporaryLance } from '../../db/lance/__tests__/helpers/temp-lance.js';
-import { addRepo, listRepos } from '../../db/repos.js';
+import { addRepo, listRepos, lookupRepoId } from '../../db/repos.js';
+import { updateIndexStateRowInTxn } from '../../db/graph/index-state-rows.js';
 import { findCallers } from '../../db/search.js';
 import { entityU64ForId, getEntity, listEntitiesForRepo, upsertEntities } from '../../db/entities.js';
 import { getDocSummary, writeDocSummaryIfCurrent } from '../../db/doc-summaries.js';
@@ -116,6 +117,10 @@ test('ac2: a cross-file edge deleted by hand from a store whose file hashes are 
 
 	await reindex(repo);
 	assert.deepEqual((await findCallers(null, fn)).map(e => e.id), [run], 'repo.reindex brought it back');
+	// No embedding backend runs in this test (see the header): say so, as the backfill
+	// records it (Epic c2ba6fa6 s2), so entities without vectors do not count against completeness.
+	const repoId = (await lookupRepoId(repo))!;
+	await withWriteTxn(s => { updateIndexStateRowInTxn(s, repoId, row => { row.embeddingAvailable = false; }); });
 	const state = await readIndexState(repo);
 	assert.equal(state?.fullIndexFinished, true);
 	assert.equal(completenessOf(state).complete, true, completenessOf(state).reasons.join('; '));

@@ -1,0 +1,84 @@
+TAP version 13
+# Subtest: an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)
+ok 1 - an uncaught error gives a failed record at the stage reached and a returned failure, 'done' fires once and the run is no longer live (mutation: remove the handler)
+  ---
+  duration_ms: 280.541459
+  type: 'test'
+  ...
+# [04:39:13] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-uncaught-plan-daadace"
+#     [35mstage[39m: "plan"
+#     err: "the signal could not be read (after the request was classified)"
+# [04:39:13] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-uncaught-early-1f16afe"
+#     [35mstage[39m: "classify"
+#     err: "the signal could not be read (reading 1)"
+# [04:39:13] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-uncaught-first-216a8f31"
+#     [35mstage[39m: "classify"
+#     err: "the request could not be read"
+# Subtest: a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)
+ok 2 - a run is live from its first read of a record until it returns, and with two runs under one id until the second returns (mutation: hold a set of ids instead of a count)
+  ---
+  duration_ms: 280.113334
+  type: 'test'
+  ...
+# [04:39:13] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-thrown-215f13d0"
+#     [35mstage[39m: "plan"
+#     err: "the signal could not be read (after the request was classified)"
+# Subtest: with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)
+ok 3 - with a run record that cannot be written the handler still returns 'internal-error' and fires 'done' once (mutation: let the write's error escape)
+  ---
+  duration_ms: 249.63075
+  type: 'test'
+  ...
+# [04:39:13] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-unwritable-2fcecc38"
+#     [35mstage[39m: "classify"
+#     err: "EISDIR: illegal operation on a directory, rename '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-root-saved-8reb2D/analyze/live-runs-unwritable-2fcecc38/run.json.tmp-73668-1793335153844' -> '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-root-saved-8reb2D/analyze/live-runs-unwritable-2fcecc38/run.json'"
+# [04:39:13] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: the failed run record could not be written[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-unwritable-2fcecc38"
+#     err: "EISDIR: illegal operation on a directory, rename '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-root-saved-8reb2D/analyze/live-runs-unwritable-2fcecc38/run.json.tmp-73668-1793335153844' -> '/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/cm-root-saved-8reb2D/analyze/live-runs-unwritable-2fcecc38/run.json'"
+# Subtest: a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite
+ok 4 - a completed run asked for again returns its stored result and report; a record left in progress is replaced by the new run's first record, with no abandoned rewrite
+  ---
+  duration_ms: 230.979583
+  type: 'test'
+  ...
+# Subtest: the handler of an uncaught error leaves a record that already says how the run ended, and the record of another run still going under the same id
+ok 5 - the handler of an uncaught error leaves a record that already says how the run ended, and the record of another run still going under the same id
+  ---
+  duration_ms: 343.329792
+  type: 'test'
+  ...
+# [04:39:14] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-after-the-end-9803404"
+#     [35mstage[39m: "plan"
+#     err: "the subscriber could not be read"
+# [04:39:14] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-completed-then-thrown-2ac8f21c"
+#     [35mstage[39m: "classify"
+#     err: "the subscriber could not be read"
+# [04:39:14] [31mERROR[39m: [36m[analyze:orchestrator:driver] runAnalyze: uncaught error; the run is recorded as failed[39m
+#     [35mmodule[39m: "analyze:orchestrator:driver"
+#     [35mrunId[39m: "live-runs-shared-752211c"
+#     [35mstage[39m: "classify"
+#     err: "the signal could not be read (reading 1)"
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2002.908375

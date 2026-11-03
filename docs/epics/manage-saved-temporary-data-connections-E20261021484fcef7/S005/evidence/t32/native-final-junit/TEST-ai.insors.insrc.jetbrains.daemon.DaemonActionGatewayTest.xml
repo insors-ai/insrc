@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:06" hostname="subho-office-mac" time="0.003">
+  <properties/>
+  <testcase name="a malformed RuntimeException reply maps to Failed, never a throw()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.001"/>
+  <testcase name="backup and compact map an unreachable daemon to Failed, never a throw()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.001"/>
+  <testcase name="shutdown treats an unreachable daemon as already-stopped Ok (never throws)()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <testcase name="backup maps a framed 'target path required' error to Failed()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <testcase name="compact sends METHOD_COMPACT with no params and maps ok to Ok()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <testcase name="shutdown sends METHOD_SHUTDOWN and maps ok to Ok()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <testcase name="backup sends the path param and maps an ok reply to Ok()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <testcase name="compact forwards the indexer-busy refusal verbatim as Failed()" classname="ai.insors.insrc.jetbrains.daemon.DaemonActionGatewayTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

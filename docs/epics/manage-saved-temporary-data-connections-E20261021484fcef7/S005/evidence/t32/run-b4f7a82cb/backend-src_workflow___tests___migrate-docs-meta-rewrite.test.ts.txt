@@ -1,0 +1,154 @@
+TAP version 13
+# Subtest: t1 — a repo with no artifact store plans an empty metaRewrites list
+ok 1 - t1 — a repo with no artifact store plans an empty metaRewrites list
+  ---
+  duration_ms: 2.256958
+  type: 'test'
+  ...
+# Subtest: t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line
+ok 2 - t1 — epicShortName and hldShortName: the slug when set, else the first sentence / first line
+  ---
+  duration_ms: 0.190333
+  type: 'test'
+  ...
+# Subtest: t2 — a moved PLAN whose stored label and anchor differ from its LLD head gets one rewrite setting both
+ok 3 - t2 — a moved PLAN whose stored label and anchor differ from its LLD head gets one rewrite setting both
+  ---
+  duration_ms: 4.427833
+  type: 'test'
+  ...
+# Subtest: t2 — an already-placed member with stale metadata (no move) still gets a rewrite
+ok 4 - t2 — an already-placed member with stale metadata (no move) still gets a rewrite
+  ---
+  duration_ms: 3.55075
+  type: 'test'
+  ...
+# Subtest: t2 — a hash-fallback group gets no label rewrite; anchor and standalone rewrites are still planned
+ok 5 - t2 — a hash-fallback group gets no label rewrite; anchor and standalone rewrites are still planned
+  ---
+  duration_ms: 3.261167
+  type: 'test'
+  ...
+# Subtest: t2 — a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned
+ok 6 - t2 — a legacy unflagged head LLD in a standalone group gets only standalone: true; false is never planned
+  ---
+  duration_ms: 4.893042
+  type: 'test'
+  ...
+# Subtest: t2 — a SPEC with no stored standalone flag in a standalone group gets standalone: true
+ok 7 - t2 — a SPEC with no stored standalone flag in a standalone group gets standalone: true
+  ---
+  duration_ms: 1.979541
+  type: 'test'
+  ...
+# Subtest: t2 — a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor
+ok 8 - t2 — a same-day unstamped BUILD plans no anchor rewrite; a later-day unstamped BUILD plans epicCreatedAt = group anchor
+  ---
+  duration_ms: 3.237208
+  type: 'test'
+  ...
+# Subtest: t2 — a consistent repo plans no metaRewrites, and planning leaves docs and .insrc byte-identical
+ok 9 - t2 — a consistent repo plans no metaRewrites, and planning leaves docs and .insrc byte-identical
+  ---
+  duration_ms: 3.994292
+  type: 'test'
+  ...
+# Subtest: t3 — PLAN and LLD get the '**Epic:**' edit at the post-move path, including an old '`undefined`' line
+ok 10 - t3 — PLAN and LLD get the '**Epic:**' edit at the post-move path, including an old '`undefined`' line
+  ---
+  duration_ms: 6.772167
+  type: 'test'
+  ...
+# Subtest: t3 — BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit
+ok 11 - t3 — BUILD/CR/TESTS get JSON-only rewrites; EXT gets its two title-line edits; DEF and HLD get their H1 edit
+  ---
+  duration_ms: 5.885791
+  type: 'test'
+  ...
+# Subtest: t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes
+ok 12 - t3 — a relabelled HLD with a companion page plans no edit to the page and lists it in companionNotes
+  ---
+  duration_ms: 7.516
+  type: 'test'
+  ...
+# Subtest: t4 — after apply, deriveMdPath on every member's stored meta is where its md sits, and PLAN.md shows the head label
+ok 13 - t4 — after apply, deriveMdPath on every member's stored meta is where its md sits, and PLAN.md shows the head label
+  ---
+  duration_ms: 204.640625
+  type: 'test'
+  ...
+# Subtest: t4 — only the planned meta fields change; a consistent member's JSON is byte-identical
+ok 14 - t4 — only the planned meta fields change; a consistent member's JSON is byte-identical
+  ---
+  duration_ms: 159.185833
+  type: 'test'
+  ...
+# Subtest: t4 — a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit
+ok 15 - t4 — a group's moves, JSON rewrites and md edits land in one commit; a rewrite-only group gets its own realign commit
+  ---
+  duration_ms: 260.223
+  type: 'test'
+  ...
+# Subtest: t4 — a plan with rewrites but no moves still applies
+ok 16 - t4 — a plan with rewrites but no moves still applies
+  ---
+  duration_ms: 138.376042
+  type: 'test'
+  ...
+# Subtest: t4 — a label line broken and committed after planning rolls the whole two-group run back to the start commit
+ok 17 - t4 — a label line broken and committed after planning rolls the whole two-group run back to the start commit
+  ---
+  duration_ms: 225.228083
+  type: 'test'
+  ...
+# Subtest: t4 — a JSON broken and committed after planning rolls the whole two-group run back to the start commit
+ok 18 - t4 — a JSON broken and committed after planning rolls the whole two-group run back to the start commit
+  ---
+  duration_ms: 241.44875
+  type: 'test'
+  ...
+# Subtest: t4 — a second plan after apply has no moves and no metaRewrites
+ok 19 - t4 — a second plan after apply has no moves and no metaRewrites
+  ---
+  duration_ms: 216.727416
+  type: 'test'
+  ...
+# Subtest: t4 — a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath
+ok 20 - t4 — a SPEC realigned to standalone resolves under docs/standalone via deriveMdPath
+  ---
+  duration_ms: 124.254
+  type: 'test'
+  ...
+# Subtest: t4 — a label line the md does not hold is reported, and apply refuses the plan until the md is fixed
+ok 21 - t4 — a label line the md does not hold is reported, and apply refuses the plan until the md is fixed
+  ---
+  duration_ms: 174.157625
+  type: 'test'
+  ...
+# Subtest: t4 — a duplicate render checks and edits the copy kept at the destination
+ok 22 - t4 — a duplicate render checks and edits the copy kept at the destination
+  ---
+  duration_ms: 141.567625
+  type: 'test'
+  ...
+# Subtest: t4 — a link rewritten in a file that does not move is committed, leaving a clean tree
+ok 23 - t4 — a link rewritten in a file that does not move is committed, leaving a clean tree
+  ---
+  duration_ms: 172.401416
+  type: 'test'
+  ...
+# Subtest: t5 — the insrc-migrate-docs dry run prints each metadata rewrite, its md edits and companion notes, and mutates nothing
+ok 24 - t5 — the insrc-migrate-docs dry run prints each metadata rewrite, its md edits and companion notes, and mutates nothing
+  ---
+  duration_ms: 435.62575
+  type: 'test'
+  ...
+1..24
+# tests 24
+# suites 0
+# pass 24
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2805.515875

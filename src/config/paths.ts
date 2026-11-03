@@ -34,6 +34,13 @@ export function projectConfigBase(repoPath: string): string {
   return join(repoPath, '.insrc');
 }
 
+/** `<repo>/.insrc/config.json`: the project's own config (its `projectName`).
+ *  A stale `ignore` array in it from before Epic c2ba6fa6 s6 is left on disk
+ *  and read by nothing (lc1). */
+export function repoConfigPath(repoPath: string): string {
+  return join(projectConfigBase(repoPath), 'config.json');
+}
+
 // ---------------------------------------------------------------------------
 // Namespace inference
 // ---------------------------------------------------------------------------

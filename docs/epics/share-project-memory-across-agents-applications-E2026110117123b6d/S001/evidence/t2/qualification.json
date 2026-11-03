@@ -1,0 +1,38 @@
+{
+  "runtime": "{\"version\":\"v22.23.2\",\"abi\":\"127\",\"platform\":\"darwin\",\"arch\":\"arm64\"}",
+  "headerTarget": "22.22.1",
+  "filesystem": {
+    "platform": "darwin",
+    "type": 26,
+    "qualifiedHere": "local APFS"
+  },
+  "dependencyProvenance": {
+    "node_modules/fs-ext": {
+      "version": "2.1.1",
+      "resolved": "https://registry.npmjs.org/fs-ext/-/fs-ext-2.1.1.tgz",
+      "integrity": "sha512-/TrISPOFhCkbgIRWK9lzscRzwPCu0PqtCcvMc9jsHKBgZGoqA0VzhspVht5Zu8lxaXjIYIBWILHpRotYkCCcQA=="
+    },
+    "node_modules/nan": {
+      "version": "2.30.0",
+      "resolved": "https://registry.npmjs.org/nan/-/nan-2.30.0.tgz",
+      "integrity": "sha512-P5mokDkSvCGBz6mZDD/2l+w9QoICRXdCyZ9ONGmTePr40oihJg3Kpn0YU3twKd6PJnwSlLBWNQeOT6yWEV2c4A=="
+    }
+  },
+  "build": {
+    "defaultCompilerResult": "failed: C++ standard too old for Node 22 headers",
+    "qualifiedCommand": "PATH=/opt/homebrew/opt/node@22/bin:$PATH CXXFLAGS=-std=c++17 npm rebuild fs-ext --foreground-scripts",
+    "result": "pass"
+  },
+  "tests": {
+    "command": "Node 22 --import tsx --test packages/project-memory/src/__tests__/native.test.ts",
+    "pass": 2,
+    "fail": 0,
+    "skipped": 0
+  },
+  "notYetQualified": [
+    "Linux/ext4",
+    "worker threads",
+    "process crash",
+    "isolated packed consumer"
+  ]
+}

@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /**
  * LMDB-backed entity persistence. Phase 2.2 of
  * docs/plans/storage-migration-lmdb-lance.md.
@@ -37,7 +38,7 @@
 
 import { relative } from 'node:path';
 
-import type { Entity, EntityKind, Language } from '../shared/types.js';
+import type { Entity, EntityKind, FileCommit, FileCommitResult, Language } from '../shared/types.js';
 import { getLogger } from '../shared/logger.js';
 import {
 	getGraphStore,
@@ -47,8 +48,9 @@ import {
 import { allocateEntityIdInTxn } from './graph/ids.js';
 import {
 	encodeEntityKey,
-	encodeEntityFileKey,
-	absoluteEntityFilePath as toAbsolutePath,
+	encodeEntityByFileKey,
+	encodeEntityByFilePrefix,
+	decodeRepoKey,
 	encodeOutEdgePrefix,
 	encodeInEdgePrefix,
 	encodeNameIndexKey,
@@ -70,7 +72,10 @@ import {
 	SHARED_MODULES_NAMESPACE_BY_LANG,
 	SHARED_MODULES_REPO_ID,
 } from '../shared/repo-namespaces.js';
+import { trackUnembeddedInTxn, updateIndexStateRowInTxn } from './graph/index-state-rows.js';
+import { loadLocalProviderConfig } from '../config/local.js';
 import { carryDocSummariesInTxn, deleteCarriedDocSummariesInTxn, deleteDocSummaryInTxn } from './doc-summaries.js';
+import { isGroupingKindByte, recordChangedEntityFileInTxn, recordChangedFileInTxn, resetSubsystemInputsInTxn } from './subsystem-changes.js';
 
 const log = getLogger('db.entities');
 
@@ -195,7 +200,25 @@ export function unwrapEmbedding(raw: unknown): number[] {
 // Public API (signatures unchanged from the DuckDB era)
 // ---------------------------------------------------------------------------
 
+/**
+ * A module stub (kind 'module', no repo) is a shared external reference: it
+ * lives under the reserved shared-modules row of its language's namespace,
+ * never under the workspace that first imported it. Undefined for any other
+ * entity; throws for a stub whose language has no namespace.
+ */
+function sharedModulesRepoIdOf(e: Entity): number | undefined {
+	if (e.kind !== 'module' || e.repo !== '') return undefined;
+	const namespace = SHARED_MODULES_NAMESPACE_BY_LANG[e.language];
+	if (namespace === undefined) {
+		throw new UnregisteredRepoError(
+			`module entity '${e.name}' (language=${e.language}) has no shared-modules namespace mapping`,
+		);
+	}
+	return SHARED_MODULES_REPO_ID[namespace];
+}
+
 export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (entities.length === 0) return;
 
 	const { unique, duplicateIds } = dedupeEntitiesById(entities);
@@ -219,8 +242,7 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 	// Lance write step. Filled inside the txn so we have prior-row
 	// state available; flushed to Lance after the LMDB commit so a
 	// Lance failure doesn't block the structural write.
-	type LanceWrite = { entity: Entity; firstEmbed: boolean };
-	const lanceWrites: LanceWrite[] = [];
+	const vectorWrites: VectorWrite[] = [];
 
 	await withWriteTxn(s => {
 		// Phase 5.x strict-contract resolver. The storage layer no
@@ -238,15 +260,8 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 			// from language. Modules are shared external references
 			// (no specific workspace); they live under reserved
 			// namespace-keyed rows.
-			if (e.kind === 'module' && e.repo === '') {
-				const namespace = SHARED_MODULES_NAMESPACE_BY_LANG[e.language];
-				if (namespace === undefined) {
-					throw new UnregisteredRepoError(
-						`module entity '${e.name}' (language=${e.language}) has no shared-modules namespace mapping`,
-					);
-				}
-				return SHARED_MODULES_REPO_ID[namespace];
-			}
+			const shared = sharedModulesRepoIdOf(e);
+			if (shared !== undefined) return shared;
 
 			// Workspace entities: pre-registered path required.
 			const cached = repoIdCache.get(e.repo);
@@ -266,103 +281,220 @@ export async function upsertEntities(_db: DbClient, entities: Entity[]): Promise
 			if (existingU64 !== undefined) {
 				// Module entities are ensure-exists: don't overwrite.
 				if (e.kind === 'module') continue;
-				const row = entityToRow(e, repoId, e.repo);
+				const row = rowAwaitingVector(e, repoId, e.repo);
 				const prevBuf = s.entity.get(encodeEntityKey(existingU64));
 				const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
-				s.entity.put(encodeEntityKey(existingU64), encodeEntityRow(row));
-				rewireMembershipsInTxn(s, existingU64, prev, row);
-				// Reconcile name_index: drop the prior (repo, kind, name)
-				// entry if any of those identity fields changed, then
-				// rewrite the new one. Idempotent for unchanged rows.
-				rewireNameIndexInTxn(s, existingU64, prev, row);
-				if (e.embedding !== undefined && e.embedding.length > 0) {
-					lanceWrites.push({
-						entity: e,
-						firstEmbed: prev === null || prev.embeddingModel === '',
-					});
-				}
+				putEntityRowInTxn(s, existingU64, prev, row);
+				if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, replace: false });
 				continue;
 			}
 
 			// New entity: allocate u64, write the row + index entries
 			const u64 = allocateEntityIdInTxn(s);
-			const row = entityToRow(e, repoId, e.repo);
-			s.entity.put(encodeEntityKey(u64), encodeEntityRow(row));
-			rewireMembershipsInTxn(s, u64, null, row);
+			const row = rowAwaitingVector(e, repoId, e.repo);
 			s.entityIdByString.put(e.id, u64);
 			s.entityStringByU64.put(encodeEntityKey(u64), e.id);
-			// dupsort put: multiple entities can share (repo, kind, name)
-			s.nameIndex.put(encodeNameIndexKey(repoId, ENTITY_KIND_BYTE[row.kind], row.name), encodeEntityKey(u64));
-			if (e.embedding !== undefined && e.embedding.length > 0) {
-				lanceWrites.push({ entity: e, firstEmbed: true });
-			}
+			putEntityRowInTxn(s, u64, null, row);
+			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, replace: true });
 		}
 	});
 
-	// Push vectors to Lance after the LMDB commit. Two paths:
-	//   - firstEmbed:  use addEntityEmbeddings (raw .add(), no JOIN).
-	//                  Indexer's bulk first-index hits this path for
-	//                  every entity -- O(N) total instead of the
-	//                  O(N²) cost of mergeInsert at scale.
-	//   - re-embed:    use writeEntityEmbeddings (mergeInsert) so the
-	//                  prior Lance row is replaced.
-	// Lance failure is non-fatal: the LMDB row's `embeddingModel`
-	// already reflects the intent; a `daemon reembed` (Phase 9.x or
-	// manual) replays the missing vectors.
-	if (lanceWrites.length > 0) {
-		try {
-			const lance = await import('./lance/entity-vec.js');
-			type Row = Parameters<typeof lance.addEntityEmbeddings>[0][number];
-			const adds:    Row[] = [];
-			const upserts: Row[] = [];
-			for (const w of lanceWrites) {
-				const row: Row = {
-					id:        w.entity.id,
-					embedding: new Float32Array(w.entity.embedding),
-					repo:      w.entity.repo,
-					kind:      w.entity.kind as string,
-					artifact:  w.entity.artifact ?? false,
-				};
-				if (w.firstEmbed) adds.push(row); else upserts.push(row);
-			}
-			if (adds.length > 0)    await lance.addEntityEmbeddings(adds);
-			if (upserts.length > 0) await lance.writeEntityEmbeddings(upserts);
-		} catch (err) {
-			log.warn(
-				{ count: lanceWrites.length, err: err instanceof Error ? err.message : String(err) },
-				'upsertEntities: Lance write failed after LMDB commit -- vectors not persisted; rerun reembed to backfill',
-			);
-		}
-	}
+	// The vectors, then the markers (writeVectorsThenMarkers).
+	await writeVectorsThenMarkers(vectorWrites, 'upsertEntities');
+}
+
+/** The vector writes this module makes; a test puts a failing one in front of the real table. */
+type VectorWriter = Pick<typeof import('./lance/entity-vec.js'), 'addEntityEmbeddings' | 'writeEntityEmbeddings' | 'writeEntityEmbedding' | 'deleteEntityVecsByIds' | 'deleteEntityVecsForRepo'>;
+let vectorWriterForTest: Partial<VectorWriter> | undefined;
+/** Test seam: the vector writes and deletes commitFile, upsertEntities, updateEmbedding and the reconciliation use; the methods given replace the real table's (undefined: the real table). */
+export function _setVectorWriterForTest(writer: Partial<VectorWriter> | undefined): void { vectorWriterForTest = writer; }
+async function vectorWriter(): Promise<VectorWriter> {
+	const real = await import('./lance/entity-vec.js');
+	return vectorWriterForTest === undefined ? real : { ...real, ...vectorWriterForTest };
+}
+/** Ids per vector delete: a long IN-list stalls Lance's predicate planner (see writeEntityEmbeddings). */
+const VECTOR_DELETE_CHUNK = 500;
+async function deleteVectorsInChunks(lance: VectorWriter, ids: readonly string[]): Promise<void> {
+	for (let i = 0; i < ids.length; i += VECTOR_DELETE_CHUNK) await lance.deleteEntityVecsByIds(ids.slice(i, i + VECTOR_DELETE_CHUNK));
 }
 
 /**
- * Atomic re-index of a single file. Phase 2.9 of the LMDB+Lance
- * migration: snapshot the file's existing entities, upsert each
- * parsed entity (allocating new u64 IDs as needed), then tombstone
- * any entities that disappeared from the parse. All in one LMDB
- * write transaction so readers never see a half-state.
- *
- * Compared to calling `deleteEntitiesForFile` followed by
- * `upsertEntities`:
- *   - Atomic: no window where rows are deleted but new ones not yet
- *     written.
- *   - Idempotent: parsing the same file twice produces the same row
- *     set (same SHA → same u64 → same EntityRow).
- *   - Body-write short-circuit: rows whose `contentHash` matches the
- *     prior parse are skipped (typical re-index hits this for
- *     unchanged entities).
- *   - Cascade: tombstoned entities take their incident edges with
- *     them via the same prefix-scan logic used by
- *     `deleteEntitiesForFile`.
- *
- * `repoPath` is the repo root path (e.g. `/repo/foo`); `filePath` is
- * the absolute path of the file being re-parsed (matches the prior
- * call shape used by the indexer). Caller passes the parsed entities
- * exactly as returned by the parser (`Entity[]` with string SHA ids).
- *
- * Auto-allocates a u32 repoId for `repoPath` if the repo isn't
- * registered yet (matches the existing `upsertEntities` behaviour).
+ * Every change to the entity vector table from this module -- a write and its
+ * markers, a removal's delete, a repository's delete, the start-time
+ * reconciliation, the full index's compaction and index build -- runs under
+ * this one lock (ISSUE-8c7d75b0 review): the backfill lane and the index lane
+ * run side by side in the code-indexing worker, and without it a backfill
+ * write can land between the index lane's delete and add of the same id,
+ * delete a row the index lane has just written, or be cut by a compaction that
+ * deletes unverified files. The lock is per thread: the queue's lanes, and the
+ * repository removal routed to that worker, share it. A removal running on
+ * another thread is still safe for the one-row rule: the backfill's check
+ * before its write and its delete of an entity gone by its marker transaction
+ * cover it.
+ */
+let vectorLock: Promise<void> = Promise.resolve();
+function withVectorLock<T>(fn: () => Promise<T>): Promise<T> {
+	const run = vectorLock.then(fn);
+	vectorLock = run.then(() => undefined, () => undefined);
+	return run;
+}
+
+/** One entity whose vector is written after its row commits. */
+interface VectorWrite {
+	readonly entity: Entity;
+	/**
+	 * Write as delete-then-add, which leaves exactly one row whatever was
+	 * stored: an entity first allocated in the same commit (a vector may have
+	 * outlived an earlier entity of that id), or a backfill write. Otherwise an
+	 * upsert of the entity's one row.
+	 */
+	readonly replace: boolean;
+}
+
+/** The embedded text's source still matches the stored row: the vector describes what is stored. */
+function rowMatches(row: EntityRow, e: Entity): boolean {
+	return row.body === e.body && row.name === e.name && (row.signature ?? '') === (e.signature ?? '');
+}
+
+/**
+ * The embedding marker is set only once the vector is stored (Epic c2ba6fa6
+ * s2): rows are committed with an empty marker, then the vectors are written
+ * (a plain add for an entity first allocated in that commit, an upsert for any
+ * other, which may still have a vector from before), then ONE transaction sets
+ * each written entity's marker to the active embedding model (the
+ * configured models.local.embeddingModel, which names the ONNX model too
+ * when that backend runs). Returns how many vectors are
+ * still outstanding: all of them when the vector write or the marker
+ * transaction fails, which is logged and never fails the caller's graph write;
+ * their markers stay empty for the backfill to find.
+ */
+function writeVectorsThenMarkers(all: readonly VectorWrite[], who: string): Promise<number> {
+	if (all.length === 0) return Promise.resolve(0);
+	return withVectorLock(() => writeVectorsThenMarkersLocked(all, who));
+}
+
+async function writeVectorsThenMarkersLocked(all: readonly VectorWrite[], who: string): Promise<number> {
+	// Only entities still stored as embedded here and awaiting a vector: one
+	// removed or refreshed since (the backfill embeds beside the index lane) is
+	// left to the index lane, whose own vector write for it is ordered after this
+	// one by the lock (s2 review: a stale vector must not replace a fresh one).
+	const store = await getGraphStore();
+	const writes = all.filter(w => {
+		const u64 = lookupU64ByStringId(store, w.entity.id);
+		const row = u64 === undefined ? null : readEntityRowSync(store, u64);
+		return row !== null && row.embeddingModel === '' && rowMatches(row, w.entity);
+	});
+	if (writes.length === 0) return 0;
+	const lance = await vectorWriter();
+	type Row = Parameters<VectorWriter['addEntityEmbeddings']>[0][number];
+	const rowOf = (e: Entity): Row => ({
+		id:        e.id,
+		embedding: new Float32Array(e.embedding),
+		repo:      e.repo,
+		kind:      e.kind as string,
+		artifact:  e.artifact ?? false,
+	});
+	try {
+		const adds    = writes.filter(w => w.replace).map(w => rowOf(w.entity));
+		const upserts = writes.filter(w => !w.replace).map(w => rowOf(w.entity));
+		// The plain add needs the ids to have no row: a vector can outlive its
+		// entity (a failed removal delete) or an id hold two rows, so any rows
+		// stored for these ids go first (ISSUE-8c7d75b0). One row per id.
+		if (adds.length > 0) {
+			await deleteVectorsInChunks(lance, adds.map(r => r.id));
+			await lance.addEntityEmbeddings(adds);
+		}
+		if (upserts.length > 0) await lance.writeEntityEmbeddings(upserts);
+	} catch (err) {
+		log.warn(
+			{ count: writes.length, err: err instanceof Error ? err.message : String(err) },
+			`${who}: vector write failed after the graph commit -- markers left empty for the backfill`,
+		);
+		return writes.length;
+	}
+	const model = activeEmbeddingModel();
+	const gone: string[] = [];
+	try {
+		await withWriteTxn(s => {
+			gone.length = 0;
+			for (const w of writes) {
+				const u64 = lookupU64ByStringId(s, w.entity.id);
+				if (u64 === undefined) { gone.push(w.entity.id); continue; }
+				const row = readEntityRowSync(s, u64);
+				// Refreshed since the check above: the index lane writes its vector
+				// (after this, under the lock) and sets the marker; not this one.
+				if (row === null || row.embeddingModel !== '' || !rowMatches(row, w.entity)) continue;
+				putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: model });
+			}
+		});
+	} catch (err) {
+		log.warn(
+			{ count: writes.length, err: err instanceof Error ? err.message : String(err) },
+			`${who}: marker transaction failed after the vector write -- markers left empty for the backfill`,
+		);
+		return writes.length;
+	}
+	// A vector written for an entity no longer stored (removed by the index lane
+	// while the backfill embedded it) is deleted, so it cannot become an orphan
+	// that a later add of the same id would sit beside (ISSUE-8c7d75b0).
+	if (gone.length > 0) {
+		try {
+			await deleteVectorsInChunks(lance, gone);
+		} catch (err) {
+			log.warn({ count: gone.length, err: err instanceof Error ? err.message : String(err) },
+				`${who}: deleting vectors of entities removed meanwhile failed -- the start-time reconciliation deletes them`);
+		}
+	}
+	return 0;
+}
+
+/**
+ * The backfill's write (Epic c2ba6fa6 s2): one batch's vectors in ONE delete
+ * and ONE add (an entity with an empty marker may still have a vector from an
+ * interrupted write, or two rows a failed reconciliation left: the write leaves
+ * exactly one, ISSUE-8c7d75b0), then their markers in one transaction. A Lance
+ * write costs ~10-50 ms whatever its size up to a few hundred rows (t11,
+ * measured on this repository's table), so a per-entity write would dominate
+ * the job. Entities removed or refreshed since they were listed are skipped.
+ * Returns how many entities were left without a marker (0 on success).
+ */
+export async function writeBackfillVectors(entities: readonly Entity[]): Promise<number> {
+	assertNoSessionPersistence();
+	return writeVectorsThenMarkers(entities.filter(e => e.embedding.length > 0).map(entity => ({ entity, replace: true })), 'backfill');
+}
+
+/**
+ * The full index's compaction of the entity vector table, under the vector
+ * lock: it deletes unverified files, which would corrupt a write in flight
+ * from the backfill lane (ISSUE-8c7d75b0 review, Lance optimize docs).
+ */
+export function compactEntityVectors(): ReturnType<typeof import('./lance/entity-vec.js').compactEntityVecTable> {
+	assertNoSessionPersistence();
+	return withVectorLock(async () => (await import('./lance/entity-vec.js')).compactEntityVecTable());
+}
+
+/** The full index's build of the entity vector index, under the vector lock. */
+export function optimizeEntityVectorIndex(): ReturnType<typeof import('./lance/entity-vec.js').optimizeEntityVecIndex> {
+	assertNoSessionPersistence();
+	return withVectorLock(async () => (await import('./lance/entity-vec.js')).optimizeEntityVecIndex());
+}
+
+/** The model a stored marker names: the configured embedding model. */
+function activeEmbeddingModel(): string {
+	return loadLocalProviderConfig().embeddingModel;
+}
+
+/** The row an entity is committed as: its marker empty when a vector write follows. */
+function rowAwaitingVector(e: Entity, repoId: number, repoPath: string): EntityRow {
+	const row = entityToRow(e, repoId, repoPath);
+	return e.embedding !== undefined && e.embedding.length > 0 ? { ...row, embeddingModel: '' } : row;
+}
+
+/**
+ * Atomic re-index of a single file, kept as the entity-only form of
+ * commitFile (Epic c2ba6fa6 s2, lc1: the file commit grew from this
+ * function). `repoPath` is the registered repo root; `filePath` the
+ * absolute path of the re-parsed file; `parsed` its entities.
  */
 export async function reindexFile(
 	_db: DbClient,
@@ -370,13 +502,36 @@ export async function reindexFile(
 	filePath: string,
 	parsed: Entity[],
 ): Promise<void> {
-	// Phase 2.10 / 2026-05-07 guardrail: reject reindex calls with
-	// invalid repo paths. Same intent as the upsertEntities check --
-	// don't let an empty / banned-root repoPath silently auto-allocate
-	// a phantom Repo registry row through `allocateRepoIdInTxn` below.
-	// Unlike upsertEntities, reindexFile has no kind-module fallback
-	// path (it's whole-file replacement); empty repoPath here is
-	// always a bug.
+	const fileEntity = parsed.find(e => e.kind === 'file' && e.file === filePath);
+	await commitFile({ repoPath, filePath, contentHash: fileEntity?.hash ?? '', entities: parsed, relations: [] });
+}
+
+const NOTHING_COMMITTED: FileCommitResult = {
+	generation: 0, entitiesWritten: 0, entitiesRemoved: 0, relationsStored: 0, relationsPending: 0,
+	relationsUnwritable: 0, relationsReturnedToPending: 0, vectorsOutstanding: 0,
+};
+
+/**
+ * The file commit (Epic c2ba6fa6 sc2): ONE write transaction replaces the
+ * file's entity rows and advances the repository's index state, so a reader
+ * sees the file's complete old set or its complete new set, and a failure
+ * leaves the old set (withWriteTxn aborts a throwing transaction).
+ *
+ * In the transaction: the file's previous entities are read through
+ * entity_by_file (Story s3), each parsed entity is upserted (module stubs
+ * ensure-exist under the shared-modules rows; an unchanged row is not
+ * rewritten), the outgoing relationships of every previous entity of the
+ * file and the file's pending rows are removed, the previous entities no
+ * longer parsed are removed with their derived rows (a relationship another
+ * entity holds into one of them returns to pending), the file's new
+ * relationships are written by Story s1's rule, the generation advances and
+ * the file leaves uncommittedFiles. `contentHash: null` removes the file: no entities are
+ * written and every previous one is removed. After the commit the removed
+ * entities' vectors are deleted and the new vectors written.
+ */
+export async function commitFile(commit: FileCommit): Promise<FileCommitResult> {
+	assertNoSessionPersistence();
+	const { repoPath, filePath } = commit;
 	try {
 		validateRepoPathShape(repoPath);
 	} catch (err) {
@@ -385,38 +540,52 @@ export async function reindexFile(
 				repoPath,
 				filePath,
 				reason: err instanceof Error ? err.message : String(err),
-				stackHint: new Error('reindexFile caller stack').stack?.split('\n').slice(2, 7),
+				stackHint: new Error('commitFile caller stack').stack?.split('\n').slice(2, 7),
 			},
-			'reindexFile: rejected -- invalid repoPath. Caller should be passing the registered repo root, not a derived / empty / system path.',
+			'commitFile: rejected -- invalid repoPath. Caller should be passing the registered repo root, not a derived / empty / system path.',
 		);
-		return;
+		return NOTHING_COMMITTED;
 	}
 
-	// Dedupe by SHA id (same protective pass `upsertEntities` does)
-	const { unique, duplicateIds } = dedupeEntitiesById(parsed);
+	const removing = commit.contentHash === null;
+	const { unique, duplicateIds } = dedupeEntitiesById(removing ? [] : commit.entities);
 	if (duplicateIds.size > 0) {
 		log.warn(
-			{ totalDuplicates: duplicateIds.size, kept: unique.length, original: parsed.length, file: filePath },
-			'reindexFile: collapsed duplicate entity ids in input batch (last-wins)',
+			{ totalDuplicates: duplicateIds.size, kept: unique.length, original: commit.entities.length, file: filePath },
+			'commitFile: collapsed duplicate entity ids in input batch (last-wins)',
 		);
 	}
 
+	// Imported before the transaction: relations.ts imports this module (a cycle).
+	const rel = await import('./relations.js');
+	const { relationOfWrite } = await import('./file-commit.js');
+	const relations = removing ? [] : commit.relations.map(relationOfWrite);
+	const resolved = rel.dedupeResolvedRelations(relations.filter(r => r.resolved));
+	const unresolved = relations.filter(r => !r.resolved);
+
 	const toLanceDelete: string[] = [];
-	type LanceWrite = { entity: Entity; firstEmbed: boolean };
-	const lanceWrites: LanceWrite[] = [];
+	const vectorWrites: VectorWrite[] = [];
+	let entitiesWritten = 0;
+	let entitiesRemoved = 0;
+	let generation = 0;
+	let returnedToPending = 0;
+	let resolvedCounts: import('./relations.js').RelationWriteCounts | undefined;
+	let unresolvedCounts: import('./relations.js').RelationWriteCounts | undefined;
 	await withWriteTxn(s => {
-		// Phase 5.x strict-contract: repo must be pre-registered.
-		// reindexFile is only ever called for files inside a known
-		// workspace, so the lookup should always succeed; throw
-		// otherwise to surface the programming error loudly.
+		// Strict contract: the repository must be registered.
 		const repoId = lookupRepoIdInTxn(s, repoPath);
 		if (repoId === undefined) {
 			throw new UnregisteredRepoError(repoPath);
 		}
 
-		// Snapshot only this file's indexed candidates inside the write transaction.
-		const existing = collectEntityU64sByFileInTxn(s, filePath)
-			.filter(u64 => readEntityRowSync(s, u64)?.repoId === repoId);
+		// The file's outgoing edges and entities are rewritten: the subsystem pass recomputes it (ISSUE-7d42b5dc).
+		recordChangedFileInTxn(s, repoId, toRepoRelative(filePath, repoPath));
+
+		// 1. The file's existing entities, by its entity_by_file key.
+		const existing: bigint[] = [];
+		for (const u64Buf of s.entityByFile.getValues(encodeEntityByFileKey(repoId, toRepoRelative(filePath, repoPath)))) {
+			existing.push(decodeKeyU64(u64Buf as Buffer));
+		}
 
 		// 2. Upsert each parsed entity, tracking which u64s we touched.
 		const seen = new Set<bigint>();
@@ -441,85 +610,148 @@ export async function reindexFile(
 			// Body-write short-circuit: skip the put if everything that
 			// would change is identical. We compare contentHash + body
 			// (contentHash alone is a hash collision risk but body adds
-			// the actual-bytes safety net).
-			const newRow = entityToRow(e, repoId, repoPath);
+			// the actual-bytes safety net). An unchanged row whose marker
+			// already names this vector's model (or that was not re-embedded)
+			// keeps its marker and its vector.
+			// A module stub goes to the shared-modules rows, as upsertEntities
+			// routes it (HLD sc2), not under this workspace (s2 review).
+			const sharedRepoId = sharedModulesRepoIdOf(e);
+			const newRow = sharedRepoId === undefined ? rowAwaitingVector(e, repoId, repoPath) : rowAwaitingVector(e, sharedRepoId, e.repo);
 			if (prevBuf !== undefined) {
 				const prev = decodeEntityRow(prevBuf as Buffer);
-				if (prev.repoId === newRow.repoId
-				 && prev.filePath === newRow.filePath
-				 && prev.contentHash === newRow.contentHash
+				const embedded = e.embedding !== undefined && e.embedding.length > 0;
+				if (prev.contentHash === newRow.contentHash
 				 && prev.body === newRow.body
 				 && prev.startLine === newRow.startLine
 				 && prev.endLine === newRow.endLine
 				 && prev.signature === newRow.signature
-				 && prev.embeddingModel === newRow.embeddingModel) {
+				 && (!embedded || prev.embeddingModel === activeEmbeddingModel())) {
 					seen.add(u64);
 					continue; // unchanged -- skip write
 				}
 			}
 
 			const prev = prevBuf !== undefined ? decodeEntityRow(prevBuf as Buffer) : null;
-			s.entity.put(encodeEntityKey(u64), encodeEntityRow(newRow));
-			rewireMembershipsInTxn(s, u64, prev, newRow);
-			rewireNameIndexInTxn(s, u64, prev, newRow);
-			if (e.embedding !== undefined && e.embedding.length > 0) {
-				lanceWrites.push({
-					entity: e,
-					firstEmbed: isNew || prev === null || prev.embeddingModel === '',
-				});
-			}
+			putEntityRowInTxn(s, u64, prev, newRow);
+			entitiesWritten++;
+			if (e.embedding !== undefined && e.embedding.length > 0) vectorWrites.push({ entity: e, replace: isNew });
 			seen.add(u64);
 		}
 
-		// 3. Tombstone unseen (= deleted from the file).
+		// 3. The file's relationships are replaced, not merged: the outgoing
+		//    edges of EVERY previous entity of the file and the file's pending rows go.
 		for (const u64 of existing) {
-			if (!seen.has(u64)) {
-				const sid = lookupStringIdByU64(s, u64);
-				if (sid !== undefined) toLanceDelete.push(sid);
+			sweepOutgoingEdges(s, u64);
+			// The names a file re-exports are written with its EXPORTS edges
+			// (Story s1): they go with them, and the cross-file pass writes them again.
+			const exportPrefix = encodeEntityKey(u64);
+			for (const key of [...s.exportNames.getKeys({ start: exportPrefix, end: prefixSuccessor(exportPrefix) })]) s.exportNames.remove(key);
+		}
+		rel.deletePendingRowsForFileInTxn(s, repoId, filePath);
+
+		// 4. Remove the previous entities no longer parsed (all of them for a
+		//    removal). A relationship another entity holds into one of them is
+		//    not lost: it returns to pending, awaiting the removed id, so the
+		//    cross-file pass completes it if the entity comes back.
+		const toDelete = existing.filter(u64 => !seen.has(u64));
+		const removed = new Set(toDelete);
+		for (const u64 of toDelete) {
+			const sid = lookupStringIdByU64(s, u64);
+			if (sid !== undefined) toLanceDelete.push(sid);
+			for (const { kind, from } of incomingEdgesInTxn(s, u64)) {
+				if (removed.has(from)) continue;
+				if (rel.returnEdgeToPendingInTxn(s, from, kind, u64)) returnedToPending++;
 			}
 		}
-		const toDelete: bigint[] = [];
-		for (const u64 of existing) {
-			if (!seen.has(u64)) toDelete.push(u64);
-		}
-		detachDeleteEntitiesInTxn(s, toDelete);
+		detachDeleteEntitiesInTxn(s, toDelete, { recordFile: false });   // the committed file is recorded once, above
+		entitiesRemoved = toDelete.length;
+
+		// 5. The file's new relationships, by Story s1's rule (edge / pending / counted unwritable).
+		const now = Date.now();
+		resolvedCounts = rel.upsertResolvedRelationsInTxn(s, resolved, now, { recordSources: false });   // the file is recorded above
+		unresolvedCounts = rel.upsertUnresolvedRelationsInTxn(s, unresolved, now);
+
+		// 6. The repository's index state, in the same transaction.
+		generation = updateIndexStateRowInTxn(s, repoId, row => {
+			row.generation++;
+			row.uncommittedFiles = row.uncommittedFiles.filter(f => f !== filePath);
+		}).generation;
 	});
-	// After LMDB commits, drop Lance rows for the tombstoned entities.
+	// After LMDB commits, drop Lance rows for the removed entities.
+	// A failure is logged, not thrown: the graph commit stands, a later add of
+	// these ids deletes any row first, and the start-time reconciliation deletes
+	// the orphans (ISSUE-8c7d75b0).
 	if (toLanceDelete.length > 0) {
-		const { deleteEntityVecsByIds } = await import('./lance/entity-vec.js');
-		await deleteEntityVecsByIds(toLanceDelete);
-	}
-	// Push vectors for newly-parsed / re-embedded entities. Same
-	// dispatch as upsertEntities -- addEntityEmbeddings for first-
-	// embed (no JOIN), writeEntityEmbeddings for re-embed (mergeInsert).
-	if (lanceWrites.length > 0) {
 		try {
-			const lance = await import('./lance/entity-vec.js');
-			type Row = Parameters<typeof lance.addEntityEmbeddings>[0][number];
-			const adds:    Row[] = [];
-			const upserts: Row[] = [];
-			for (const w of lanceWrites) {
-				const row: Row = {
-					id:        w.entity.id,
-					embedding: new Float32Array(w.entity.embedding),
-					repo:      w.entity.repo,
-					kind:      w.entity.kind as string,
-					artifact:  w.entity.artifact ?? false,
-				};
-				if (w.firstEmbed) adds.push(row); else upserts.push(row);
-			}
-			if (adds.length > 0)    await lance.addEntityEmbeddings(adds);
-			if (upserts.length > 0) await lance.writeEntityEmbeddings(upserts);
+			await withVectorLock(async () => deleteVectorsInChunks(await vectorWriter(), toLanceDelete));
 		} catch (err) {
-			log.warn(
-				{ count: lanceWrites.length, err: err instanceof Error ? err.message : String(err) },
-				'reindexFile: Lance write failed after LMDB commit -- vectors not persisted; rerun reembed to backfill',
-			);
+			log.warn({ count: toLanceDelete.length, file: filePath, err: err instanceof Error ? err.message : String(err) },
+				'commitFile: vector delete for removed entities failed after the graph commit -- left for the start-time reconciliation');
 		}
 	}
+	// The vectors of the written entities, then their markers.
+	const vectorsOutstanding = await writeVectorsThenMarkers(vectorWrites, 'commitFile');
+	if (resolvedCounts !== undefined) rel.logResolvedWrite(resolvedCounts, resolved.length);
+	if (unresolvedCounts !== undefined) rel.logUnresolvedWrite(unresolvedCounts, unresolved.length);
+	return {
+		...NOTHING_COMMITTED, generation, entitiesWritten, entitiesRemoved,
+		relationsStored:            resolvedCounts?.stored ?? 0,
+		relationsPending:           (resolvedCounts?.pending ?? 0) + (unresolvedCounts?.pending ?? 0),
+		relationsUnwritable:        (resolvedCounts?.unwritable ?? 0) + (unresolvedCounts?.unwritable ?? 0),
+		relationsReturnedToPending: returnedToPending,
+		vectorsOutstanding,
+	};
+}
+
+/**
+ * Bring the graph and the vector table back into agreement (Epic c2ba6fa6
+ * s2), once when the daemon starts, before any job runs: a vector whose
+ * entity is not stored is deleted (a removal whose vector delete failed), so
+ * a later plain add for a re-allocated id cannot meet it; an entity whose
+ * marker says embedded but whose vector is missing (a store written before
+ * the marker order changed, or a vector store reset) has its marker cleared,
+ * which counts it unembedded for the backfill. An id stored more than once
+ * (ISSUE-8c7d75b0) has every row deleted and its entity's marker cleared, so
+ * the backfill writes exactly one row for it.
+ */
+export function reconcileEntityVectors(): Promise<{ orphanVectorsDeleted: number; markersCleared: number; duplicateIdsRepaired: number }> {
+	assertNoSessionPersistence();
+	return withVectorLock(reconcileEntityVectorsLocked);
+}
+
+async function reconcileEntityVectorsLocked(): Promise<{ orphanVectorsDeleted: number; markersCleared: number; duplicateIdsRepaired: number }> {
+	const lance = await vectorWriter();
+	const rowsPerId = new Map<string, number>();
+	for (const id of await (await import('./lance/entity-vec.js')).listEntityVecIds()) rowsPerId.set(id, (rowsPerId.get(id) ?? 0) + 1);
+	const storedIds = new Set<string>();
+	let markersCleared = 0;
+	const duplicated: string[] = [];
+	await withWriteTxn(s => {
+		markersCleared = 0;
+		duplicated.length = 0;
+		for (const { key, value } of s.entity.getRange()) {
+			const u64 = decodeKeyU64(key as Buffer);
+			const id = lookupStringIdByU64(s, u64);
+			if (id === undefined) continue;
+			storedIds.add(id);
+			const rows = rowsPerId.get(id) ?? 0;
+			if (rows > 1) duplicated.push(id);
+			const row = decodeEntityRow(value as Buffer);
+			if (row.embeddingModel === '' || rows === 1) continue;
+			putEntityRowInTxn(s, u64, row, { ...row, embeddingModel: '' });
+			if (rows === 0) markersCleared++;
+		}
+	});
+	const orphans = [...rowsPerId.keys()].filter(id => !storedIds.has(id));
+	await deleteVectorsInChunks(lance, [...orphans, ...duplicated]);
+	if (orphans.length > 0 || markersCleared > 0 || duplicated.length > 0) {
+		log.info({ orphanVectorsDeleted: orphans.length, markersCleared, duplicateIdsRepaired: duplicated.length }, 'graph and vector table reconciled');
+	}
+	return { orphanVectorsDeleted: orphans.length, markersCleared, duplicateIdsRepaired: duplicated.length };
 }
 
 export async function deleteEntitiesForFile(_db: DbClient, filePath: string): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const ids = await collectEntityU64sByFile(store, filePath);
 	await detachDeleteEntities(store, ids);
@@ -547,6 +779,7 @@ async function deleteUnresolvedForFileCascade(filePath: string): Promise<void> {
  * file=''; S001). Missing/stale ids are skipped (no throw); idempotent.
  */
 export async function deleteEntitiesById(_db: DbClient, ids: readonly string[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (ids.length === 0) return;
 	const store = await getGraphStore();
 	const u64s: bigint[] = [];
@@ -575,6 +808,7 @@ export async function deleteEntitiesForRepo(
 		readonly carryDocSummaries?: boolean | undefined;
 	},
 ): Promise<{ returnedToPending: number; carriedDocSummaries: number }> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	const repoId = await withReadTxn(store, () => lookupRepoIdInTxn(store, repo));
 	if (repoId === undefined) return { returnedToPending: 0, carriedDocSummaries: 0 };
@@ -593,15 +827,23 @@ export async function deleteEntitiesForRepo(
 				}
 			}
 		}
-	});
-	// Its own transaction: detachDeleteEntities skips its hook when the repository has no entities left.
+	}, s => resetSubsystemInputsInTxn(s, repoId));   // after the removals, which record their files
+	// Its own transaction: detachDeleteEntities skips its hooks when the repository has no entities left.
+	if (ids.length === 0) await withWriteTxn(s => { resetSubsystemInputsInTxn(s, repoId); });
 	if (opts?.carryDocSummaries !== true) await withWriteTxn(s => { deleteCarriedDocSummariesInTxn(s, repoId); });
 	// Repo-scoped Lance cleanup: belt-and-suspenders alongside the
 	// per-id cleanup detachDeleteEntities does. Catches any rows whose
 	// LMDB string-id mapping was already missing (e.g. corruption-
 	// recovery paths).
-	const { deleteEntityVecsForRepo } = await import('./lance/entity-vec.js');
-	await deleteEntityVecsForRepo(repo);
+	// Under the vector lock, and logged rather than thrown (ISSUE-8c7d75b0
+	// review): the graph removal stands, and the start-time reconciliation
+	// deletes any vector left behind.
+	try {
+		await withVectorLock(async () => (await vectorWriter()).deleteEntityVecsForRepo(repo));
+	} catch (err) {
+		log.warn({ repo, err: err instanceof Error ? err.message : String(err) },
+			'deleteEntitiesForRepo: vector delete failed after the graph removal -- left for the start-time reconciliation');
+	}
 	// Doc-summary repo cascade: repo-scoped drop of every summary row +
 	// secondary-index entry. Belt-and-suspenders alongside the per-id
 	// cascade `detachDeleteEntitiesInTxn` fires -- catches summary rows
@@ -810,49 +1052,93 @@ export async function listEntitiesByKinds(
 	return out;
 }
 
-export async function listEntitiesForRepo(_db: DbClient, repo: string, opts?: { readonly limit: 1 } | undefined): Promise<Entity[]> {
+/**
+ * Whether `repo` holds any stored entity, without building its entity
+ * list (Epic c2ba6fa6 Story s3, ac4): a limit-1 range on entity_by_file
+ * by repoId-prefix. An unregistered repo answers false.
+ */
+export async function repoHasAnyEntity(_db: DbClient, repo: string): Promise<boolean> {
 	const store = await getGraphStore();
-	return readEntityScope(store, transaction => {
-		const repoId = scopedRepoId(store, repo, transaction);
-		if (repoId === undefined) return [];
-		const out: Entity[] = [];
-		for (const candidate of indexedEntityRows(store, store.entityByRepo, encodeRepoKey(repoId), transaction)) {
-			if (candidate.row.repoId !== repoId) continue;
-			out.push(rowToDomainEntity(candidate.stringId, candidate.row, candidate.repoPath));
-			if (opts?.limit === 1) break;
-		}
-		return out;
-	});
+	const repoId = lookupRepoIdInTxn(store, repo);
+	if (repoId === undefined) return false;
+	const prefix = encodeEntityByFilePrefix(repoId);
+	for (const _ of store.entityByFile.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+		return true;
+	}
+	return false;
 }
 
-/** Group this repository's indexed entities by exact absolute file, preserving u64 order. */
-export async function listEntityFilesForRepo(_db: DbClient, repo: string): Promise<Map<string, string[]>> {
+export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]> {
 	const store = await getGraphStore();
-	return readEntityScope(store, transaction => {
-		const out = new Map<string, string[]>();
-		const repoId = scopedRepoId(store, repo, transaction);
-		if (repoId === undefined) return out;
-		for (const { row, stringId, repoPath } of indexedEntityRows(store, store.entityByRepo, encodeRepoKey(repoId), transaction)) {
-			if (row.repoId !== repoId || row.filePath === '') continue;
-			const file = toAbsolutePath(row.filePath, repoPath);
-			const ids = out.get(file);
-			if (ids === undefined) out.set(file, [stringId]); else ids.push(stringId);
-		}
-		return out;
-	});
+	const repoId = lookupRepoIdInTxn(store, repo);
+	if (repoId === undefined) return [];
+	const out: Entity[] = [];
+	const repoCache = new Map<number, string>([[repoId, repo]]);
+	// Epic c2ba6fa6 Story s3: a repoId-prefix range over entity_by_file,
+	// not a full store.entity scan -- cost follows this repo's own rows.
+	const prefix = encodeEntityByFilePrefix(repoId);
+	for (const { value } of store.entityByFile.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+		const u64 = decodeKeyU64(value as Buffer);
+		const row = readEntityRow(store, u64);
+		if (row === null) continue;
+		const stringId = lookupStringIdByU64(store, u64);
+		if (stringId === undefined) continue;
+		out.push(rowToDomainEntity(stringId, row, lookupRepoPath(store, row.repoId, repoCache)));
+	}
+	return out;
+}
+
+/**
+ * The files the store holds for one repo: each non-empty absolute file
+ * path mapped to the string ids of THIS repo's entities in it. One pass
+ * over the entity table, no entity construction. Entities with an empty
+ * file path (external endpoints) belong to no file and are left out.
+ * An unregistered repo yields an empty map.
+ */
+export async function listEntityFilesForRepo(
+	_db: DbClient,
+	repo: string,
+): Promise<Map<string, string[]>> {
+	const store = await getGraphStore();
+	const out = new Map<string, string[]>();
+	const repoId = lookupRepoIdInTxn(store, repo);
+	if (repoId === undefined) return out;
+	for (const { key, value } of store.entity.getRange()) {
+		const row = decodeEntityRow(value as Buffer);
+		if (row.repoId !== repoId) continue;
+		if (row.filePath === '') continue;
+		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
+		if (stringId === undefined) continue;
+		const file = toAbsolutePath(row.filePath, repo);
+		const ids = out.get(file);
+		if (ids === undefined) out.set(file, [stringId]);
+		else ids.push(stringId);
+	}
+	return out;
 }
 
 export async function findEntitiesByFile(_db: DbClient, file: string): Promise<Entity[]> {
 	const store = await getGraphStore();
-	return readEntityScope(store, transaction => {
-		const out: Entity[] = [];
-		for (const { row, stringId, repoPath } of indexedEntityRows(store, store.entityByFile, encodeEntityFileKey(file), transaction)) {
-			// Digest collisions must never broaden exact-file equality.
-			if (toAbsolutePath(row.filePath, repoPath) !== file) continue;
-			out.push(rowToDomainEntity(stringId, row, repoPath));
-		}
-		return out;
-	});
+	// Epic c2ba6fa6 Story s3: resolve the owning repo (longest matching
+	// root), then an exact (repoId, relativeFilePath) key lookup on
+	// entity_by_file -- not a full store.entity scan with per-row path
+	// recomputation. `file` from callers is absolute; rows store the
+	// repo-relative `filePath`.
+	const repoId = resolveOwningRepoIdInTxn(store, file);
+	if (repoId === undefined) return [];
+	const repoPath = readRepoPath(store, repoId) ?? '';
+	const relativeFilePath = toRepoRelative(file, repoPath);
+	const out: Entity[] = [];
+	const key = encodeEntityByFileKey(repoId, relativeFilePath);
+	for (const u64Buf of store.entityByFile.getValues(key)) {
+		const u64 = decodeKeyU64(u64Buf as Buffer);
+		const row = readEntityRow(store, u64);
+		if (row === null) continue;
+		const stringId = lookupStringIdByU64(store, u64);
+		if (stringId === undefined) continue;
+		out.push(rowToDomainEntity(stringId, row, repoPath));
+	}
+	return out;
 }
 
 export async function listUnembeddedEntities(_db: DbClient, repo: string): Promise<Entity[]> {
@@ -861,11 +1147,15 @@ export async function listUnembeddedEntities(_db: DbClient, repo: string): Promi
 	if (repoId === undefined) return [];
 	const out: Entity[] = [];
 	const repoCache = new Map<number, string>([[repoId, repo]]);
-	for (const { key, value } of store.entity.getRange()) {
-		const row = decodeEntityRow(value as Buffer);
-		if (row.repoId !== repoId) continue;
-		if (row.embeddingModel !== '') continue; // already embedded
-		const stringId = lookupStringIdByU64(store, decodeKeyU64(key as Buffer));
+	// The repository's rows through entity_by_file (Story s3), not the whole
+	// entity table; only the rows the embed step selects (a non-empty body)
+	// whose marker is empty -- the ones IndexState counts as unembedded (s2).
+	const prefix = encodeEntityByFilePrefix(repoId);
+	for (const { value } of store.entityByFile.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+		const u64 = decodeKeyU64(value as Buffer);
+		const row = readEntityRow(store, u64);
+		if (row === null || row.body === '' || row.embeddingModel !== '') continue;
+		const stringId = lookupStringIdByU64(store, u64);
 		if (stringId === undefined) continue;
 		out.push(rowToDomainEntity(stringId, row, lookupRepoPath(store, row.repoId, repoCache)));
 	}
@@ -919,54 +1209,34 @@ export async function updateEmbedding(
 	embedding: number[],
 	embeddingModel: string,
 ): Promise<void> {
-	// Two-step write: update the LMDB row first (sync inside a write
-	// txn), then persist the vector to Lance. Lance write happens after
-	// the LMDB commit so a Lance failure leaves the EntityRow's
-	// `embeddingModel` advertising "embedded" -- caller can re-run.
-	//
-	// Dispatch the Lance side based on whether this is a first-time
-	// embed or a re-embed. First-time = prior `embeddingModel` was
-	// empty; we know the entity has no existing Lance row, so we can
-	// use the fast `addEntityEmbedding` (table.add, no JOIN). Re-embed
-	// = prior model non-empty; the row may already exist, so we must
-	// upsert via `writeEntityEmbedding` (mergeInsert). This matters at
-	// scale: the indexer reembeds 1M entities through this path
-	// serially; mergeInsert against a growing target is O(target) per
-	// call and goes quadratic, while pure add stays linear.
-	let repoId = -1;
-	let repoPath = '';
-	let kind = '';
-	let artifact = false;
-	let touched = false;
-	let isFirstEmbed = false;
-	await withWriteTxn(s => {
-		const u64 = s.entityIdByString.get(id) as bigint | number | undefined;
-		if (u64 === undefined) return; // no-op (matches prior DuckDB UPDATE behaviour)
-		const row = readEntityRowSync(s, u64);
-		if (row === null) return;
-		isFirstEmbed = row.embeddingModel === '';
-		const next: EntityRow = { ...row, embeddingModel };
-		s.entity.put(encodeEntityKey(toBigInt(u64)), encodeEntityRow(next));
-		rewireMembershipsInTxn(s, toBigInt(u64), row, next);
-		repoId = row.repoId;
-		kind = row.kind;
-		artifact = row.artifact;
-		touched = true;
+	assertNoSessionPersistence();
+	if (embedding.length === 0) return;
+	// The vector first, the marker second (Epic c2ba6fa6 s2): a marker is set
+	// only for a vector that is stored. One entity's write, for an entity that
+	// may still have a vector from an interrupted earlier write, so an upsert,
+	// never a plain add; under the vector lock like every vector change.
+	await withVectorLock(async () => {
+	const store = await getGraphStore();
+	const u64 = lookupU64ByStringId(store, id);
+	if (u64 === undefined) return; // no-op (matches prior DuckDB UPDATE behaviour)
+	const row = readEntityRowSync(store, u64);
+	if (row === null) return;
+	const lance = await vectorWriter();
+	await lance.writeEntityEmbedding({
+		id,
+		embedding: new Float32Array(embedding),
+		repo: readRepoPath(store, row.repoId) ?? '',
+		kind: row.kind,
+		artifact: row.artifact,
 	});
-	if (!touched) return;
-	if (embedding.length > 0) {
-		const store = await getGraphStore();
-		repoPath = readRepoPath(store, repoId) ?? '';
-		const lance = await import('./lance/entity-vec.js');
-		const writer = isFirstEmbed ? lance.addEntityEmbedding : lance.writeEntityEmbedding;
-		await writer({
-			id,
-			embedding: new Float32Array(embedding),
-			repo: repoPath,
-			kind,
-			artifact,
-		});
-	}
+	await withWriteTxn(s => {
+		const at = lookupU64ByStringId(s, id);
+		if (at === undefined) return;
+		const current = readEntityRowSync(s, at);
+		if (current === null) return;
+		putEntityRowInTxn(s, at, current, { ...current, embeddingModel });
+	});
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -989,25 +1259,13 @@ const lookupStringIdByU64 = (s: GraphStore, u64: bigint): string | undefined => 
 	return typeof v === 'string' ? v : undefined;
 };
 
-/** Reconcile exact-file and repository memberships inside the authoritative row transaction. */
-function rewireMembershipsInTxn(s: GraphStore, u64: bigint, prev: EntityRow | null, next: EntityRow | null): void {
-	const fileKey = (row: EntityRow): Buffer => {
-		const root = readRepoPath(s, row.repoId);
-		if (root === undefined) throw new UnregisteredRepoError(`entity repository id ${row.repoId}`);
-		return encodeEntityFileKey(toAbsolutePath(row.filePath, root));
-	};
-	const before = prev === null ? undefined : fileKey(prev);
-	const after = next === null ? undefined : fileKey(next);
-	const id = encodeEntityKey(u64);
-	if (prev !== null) {
-		if (after === undefined || !before!.equals(after)) s.entityByFile.remove(before!, id);
-		if (next === null || prev.repoId !== next.repoId) s.entityByRepo.remove(encodeRepoKey(prev.repoId), id);
-	}
-	if (next !== null) {
-		s.entityByFile.put(after!, id);
-		s.entityByRepo.put(encodeRepoKey(next.repoId), id);
-	}
-}
+// GUARD-TEST-BOUNDARY: entity-row write path begins. The guard test in
+// entities-lmdb.test.ts (Epic c2ba6fa6 Story s3, t4) strips everything
+// between this marker and its "ends" counterpart before scanning this
+// file for a raw entity.put/entity.remove/nameIndex.put/nameIndex.remove/
+// entityByFile.put/entityByFile.remove call. Only `putEntityRowInTxn` and
+// `removeEntityRowInTxn` (and their own private helpers) may write these
+// tables directly; every other site in this file must call one of them.
 
 /**
  * Reconcile `name_index` for an entity write:
@@ -1040,6 +1298,71 @@ function rewireNameIndexInTxn(
 	s.nameIndex.put(nextKey, u64Buf);
 }
 
+/**
+ * Reconcile `entity_by_file` for an entity write (Epic c2ba6fa6 Story s3):
+ * drop the prior (repoId, filePath) entry if either changed, then write
+ * the new one. Mirrors `rewireNameIndexInTxn`'s shape exactly. An entity
+ * with an empty filePath (e.g. an external-service endpoint) still gets
+ * a (repoId, '') entry -- that key is part of the repoId-prefix range
+ * `listEntitiesForRepo` scans, so such entities stay included there,
+ * while no absolute file path ever resolves to '' for `findEntitiesByFile`.
+ */
+function rewireEntityByFileInTxn(
+	s: GraphStore,
+	u64: bigint,
+	prev: EntityRow | null,
+	next: EntityRow,
+): void {
+	const nextKey = encodeEntityByFileKey(next.repoId, next.filePath);
+	const u64Buf  = encodeEntityKey(u64);
+	if (prev !== null) {
+		const prevKey = encodeEntityByFileKey(prev.repoId, prev.filePath);
+		if (!prevKey.equals(nextKey)) {
+			s.entityByFile.remove(prevKey, u64Buf);
+		}
+	}
+	s.entityByFile.put(nextKey, u64Buf);
+}
+
+/**
+ * Write (create or replace) an entity row, keeping `entity`, `nameIndex`
+ * and `entityByFile` in exact step inside the caller's transaction. The
+ * SOLE entry point for an entity-row write (Epic c2ba6fa6 Story s3) --
+ * every call site that used to write `store.entity`/`nameIndex` raw now
+ * calls this instead, closing the gap where some sites wrote nameIndex
+ * inline rather than through `rewireNameIndexInTxn`.
+ */
+export function putEntityRowInTxn(
+	s: GraphStore,
+	u64: bigint,
+	prev: EntityRow | null,
+	next: EntityRow,
+): void {
+	s.entity.put(encodeEntityKey(u64), encodeEntityRow(next));
+	rewireNameIndexInTxn(s, u64, prev, next);
+	rewireEntityByFileInTxn(s, u64, prev, next);
+	trackUnembeddedInTxn(s, prev, next);
+}
+
+/**
+ * Remove an entity row, dropping its `nameIndex` and `entityByFile`
+ * entries along with it. The other half of the single write path every
+ * entity-row mutation now goes through (Epic c2ba6fa6 Story s3).
+ */
+export function removeEntityRowInTxn(s: GraphStore, u64: bigint, row: EntityRow, recordFile = true): void {
+	s.nameIndex.remove(
+		encodeNameIndexKey(row.repoId, ENTITY_KIND_BYTE[row.kind], row.name),
+		encodeEntityKey(u64),
+	);
+	s.entityByFile.remove(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
+	s.entity.remove(encodeEntityKey(u64));
+	trackUnembeddedInTxn(s, row, null);
+	// The file lost an entity: the subsystem pass recomputes it (ISSUE-7d42b5dc), on every removal path.
+	if (recordFile) recordChangedFileInTxn(s, row.repoId, row.filePath);
+}
+
+// GUARD-TEST-BOUNDARY: entity-row write path ends.
+
 const readEntityRow = (s: GraphStore, u64: bigint | number): EntityRow | null => {
 	const buf = s.entity.get(encodeEntityKey(toBigInt(u64)));
 	if (buf === undefined) return null;
@@ -1067,6 +1390,30 @@ const readRepoPath = (s: GraphStore, repoId: number): string | undefined => {
 	return decodeRepoRow(buf as Buffer).path;
 };
 
+/**
+ * The registered repo owning an absolute file path, by the longest
+ * (most specific) root that contains it at a path-segment boundary
+ * (Epic c2ba6fa6 Story s3). `src/db` cannot import
+ * `src/analyze/context/scope.ts`'s `longestPrefixRepo` (layering), so
+ * this independently re-implements the identical boundary-safe
+ * comparison: a plain string-prefix test would wrongly match
+ * `/x/repo2/a.ts` against root `/x/repo`.
+ */
+function resolveOwningRepoIdInTxn(s: GraphStore, file: string): number | undefined {
+	let bestId: number | undefined;
+	let bestPathLen = -1;
+	for (const { key, value } of s.repo.getRange()) {
+		const row = decodeRepoRow(value as Buffer);
+		const contains = file === row.path || file.startsWith(`${row.path}/`);
+		if (!contains) continue;
+		if (row.path.length > bestPathLen) {
+			bestPathLen = row.path.length;
+			bestId = decodeRepoKey(key as Buffer);
+		}
+	}
+	return bestId;
+}
+
 const decodeKeyU64 = (buf: Buffer): bigint => buf.readBigUInt64BE(0);
 
 const encodeRepoKey = (id: number): Buffer => {
@@ -1075,57 +1422,31 @@ const encodeRepoKey = (id: number): Buffer => {
 	return b;
 };
 
-type EntityReadTransaction = ReturnType<GraphStore['root']['useReadTransaction']>;
-
-/** Keep index enumeration and every authoritative lookup on the same LMDB snapshot. */
-function readEntityScope<T>(store: GraphStore, read: (transaction: EntityReadTransaction) => T): T {
-	const transaction = store.root.useReadTransaction();
-	try { return read(transaction); } finally { transaction.done(); }
-}
-
-function scopedRepoId(store: GraphStore, path: string, transaction: EntityReadTransaction): number | undefined {
-	for (const { value } of store.repo.getRange({ transaction })) {
-		const repo = decodeRepoRow(value as Buffer);
-		if (repo.path === path) return repo.id;
-	}
-	return undefined;
-}
-
-function* indexedEntityRows(store: GraphStore, index: GraphStore['entityByFile'], key: Buffer, transaction?: EntityReadTransaction | undefined): Generator<{ u64: bigint; row: EntityRow; stringId: string; repoPath: string }> {
-	const options = transaction === undefined ? undefined : { transaction };
-	for (const id of index.getValues(key, options)) {
-		const u64Key = id as Buffer;
-		const value = store.entity.get(u64Key, options);
-		if (value === undefined) throw new Error('Entity membership index refers to a missing authoritative row');
-		const row = decodeEntityRow(value as Buffer);
-		const repo = store.repo.get(encodeRepoKey(row.repoId), options);
-		if (repo === undefined) throw new Error('Entity membership index refers to an unregistered repository');
-		const stringId = store.entityStringByU64.get(u64Key, options);
-		if (typeof stringId !== 'string') throw new Error('Entity membership index refers to an entity without its string ID');
-		yield { u64: decodeKeyU64(u64Key), row, stringId, repoPath: decodeRepoRow(repo as Buffer).path };
-	}
-}
-
 async function collectEntityU64sByFile(store: GraphStore, file: string): Promise<bigint[]> {
-	return readEntityScope(store, transaction => collectEntityU64sByFileInTxn(store, file, transaction));
+	return collectEntityU64sByFileInTxn(store, file);
 }
 
-function collectEntityU64sByFileInTxn(store: GraphStore, file: string, transaction?: EntityReadTransaction | undefined): bigint[] {
+function collectEntityU64sByFileInTxn(store: GraphStore, file: string): bigint[] {
 	const out: bigint[] = [];
-	for (const { u64, row, repoPath } of indexedEntityRows(store, store.entityByFile, encodeEntityFileKey(file), transaction)) {
-		if (toAbsolutePath(row.filePath, repoPath) === file) out.push(u64);
+	const repoCache = new Map<number, string>();
+	for (const { key, value } of store.entity.getRange()) {
+		const row = decodeEntityRow(value as Buffer);
+		const repoPath = lookupRepoPath(store, row.repoId, repoCache);
+		if (toAbsolutePath(row.filePath, repoPath) === file) {
+			out.push(decodeKeyU64(key as Buffer));
+		}
 	}
 	return out;
 }
 
 async function collectEntityU64sByRepo(store: GraphStore, repoId: number): Promise<bigint[]> {
-	return readEntityScope(store, transaction => {
-		const out: bigint[] = [];
-		for (const { u64, row } of indexedEntityRows(store, store.entityByRepo, encodeRepoKey(repoId), transaction)) {
-			if (row.repoId === repoId) out.push(u64);
-		}
-		return out;
-	});
+	const out: bigint[] = [];
+	for (const { key, value } of store.entity.getRange()) {
+		const row = decodeEntityRow(value as Buffer);
+		if (row.repoId !== repoId) continue;
+		out.push(decodeKeyU64(key as Buffer));
+	}
+	return out;
 }
 
 /**
@@ -1137,7 +1458,7 @@ async function collectEntityU64sByRepo(store: GraphStore, repoId: number): Promi
  * Phase 2.3 edge API; for Phase 2.2 we do raw key-range scans on the
  * out_edge / in_edge sub-DBs.
  */
-async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], before?: (s: GraphStore) => void): Promise<void> {
+async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], before?: (s: GraphStore) => void, after?: (s: GraphStore) => void): Promise<void> {
 	if (u64s.length === 0) return;
 	// Capture string IDs BEFORE the delete (we lose the entity_id_by_string
 	// mapping inside the txn). After LMDB commits, drop the corresponding
@@ -1147,10 +1468,18 @@ async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], 
 		const sid = lookupStringIdByU64(store, u64);
 		if (sid !== undefined) stringIds.push(sid);
 	}
-	await withWriteTxn(s => { before?.(s); detachDeleteEntitiesInTxn(s, u64s); });
+	await withWriteTxn(s => { before?.(s); detachDeleteEntitiesInTxn(s, u64s); after?.(s); });
+	// As commitFile's removal (ISSUE-8c7d75b0): chunked, under the vector lock,
+	// and a failure is logged, not thrown -- the graph change stands, a later add
+	// of these ids deletes any row first, and the start-time reconciliation
+	// deletes the orphans.
 	if (stringIds.length > 0) {
-		const { deleteEntityVecsByIds } = await import('./lance/entity-vec.js');
-		await deleteEntityVecsByIds(stringIds);
+		try {
+			await withVectorLock(async () => deleteVectorsInChunks(await vectorWriter(), stringIds));
+		} catch (err) {
+			log.warn({ count: stringIds.length, err: err instanceof Error ? err.message : String(err) },
+				'detachDeleteEntities: vector delete failed after the graph commit -- left for the start-time reconciliation');
+		}
 	}
 }
 
@@ -1159,7 +1488,7 @@ async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], 
  * `reindexFile` helper (Phase 2.9) so the snapshot + upsert + tombstone
  * pass commits as a single LMDB transaction.
  */
-function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void {
+function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[], opts: { readonly recordFile?: boolean | undefined } = {}): void {
 	if (u64s.length === 0) return;
 	for (const u64 of u64s) {
 		// Forward direction: edges where this entity is the `from`.
@@ -1181,26 +1510,18 @@ function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void
 			s.exportNames.remove(key);
 		}
 		// Drop derived indices BEFORE the row itself so we have the
-		// row's (repoId, kind, name) available for the name_index
-		// lookup. Reverse-lookup via entityStringByU64 is O(1).
+		// row's (repoId, kind, name, filePath) available for the
+		// name_index / entity_by_file lookups. Reverse-lookup via
+		// entityStringByU64 is O(1).
 		const stringId = s.entityStringByU64.get(encodeEntityKey(u64)) as string | undefined;
 		const rowBuf = s.entity.get(encodeEntityKey(u64));
 		if (rowBuf !== undefined) {
-			const row = decodeEntityRow(rowBuf as Buffer);
-			rewireMembershipsInTxn(s, u64, row, null);
-			// dupsort remove(key, value): drop only this entity's u64 from
-			// the dup set, leaving other entities that share (repo, kind,
-			// name) untouched.
-			s.nameIndex.remove(
-				encodeNameIndexKey(row.repoId, ENTITY_KIND_BYTE[row.kind], row.name),
-				encodeEntityKey(u64),
-			);
+			removeEntityRowInTxn(s, u64, decodeEntityRow(rowBuf as Buffer), opts.recordFile);
 		}
 		if (stringId !== undefined) {
 			s.entityIdByString.remove(stringId);
 			s.entityStringByU64.remove(encodeEntityKey(u64));
 		}
-		s.entity.remove(encodeEntityKey(u64));
 	}
 }
 
@@ -1240,6 +1561,8 @@ function incomingEdgesInTxn(s: GraphStore, u64: bigint): Array<{ kind: number; f
 
 function sweepIncomingEdges(s: GraphStore, u64: bigint): void {
 	for (const { kind, from } of incomingEdgesInTxn(s, u64)) {
+		// The holder's file loses an outgoing edge (ISSUE-7d42b5dc).
+		if (isGroupingKindByte(kind)) recordChangedEntityFileInTxn(s, from);
 		const inKey = Buffer.alloc(17);
 		inKey.writeBigUInt64BE(u64, 0);
 		inKey.writeUInt8(kind, 8);
@@ -1280,6 +1603,10 @@ function toRepoRelative(absoluteOrRelative: string, repoRoot: string): string {
 	return rel === '' ? '.' : rel;
 }
 
+function toAbsolutePath(filePath: string, repoRoot: string): string {
+	if (filePath.startsWith('/') || repoRoot === '') return filePath;
+	return repoRoot.endsWith('/') ? `${repoRoot}${filePath}` : `${repoRoot}/${filePath}`;
+}
 
 function parseTimestamp(s: string | undefined): number {
 	if (s === undefined || s === '') return 0;

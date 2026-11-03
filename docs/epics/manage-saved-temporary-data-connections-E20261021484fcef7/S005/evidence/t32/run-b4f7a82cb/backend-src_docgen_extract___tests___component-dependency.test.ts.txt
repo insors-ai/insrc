@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: componentKey: first segment under the scope base (subdir or bare file)
+ok 1 - componentKey: first segment under the scope base (subdir or bare file)
+  ---
+  duration_ms: 0.702083
+  type: 'test'
+  ...
+# Subtest: buildComponentDependencyIR: files → component nodes; cross-module import → depends-on edge
+ok 2 - buildComponentDependencyIR: files → component nodes; cross-module import → depends-on edge
+  ---
+  duration_ms: 0.7675
+  type: 'test'
+  ...
+# Subtest: intra-component imports are dropped (not a cross-module dependency)
+ok 3 - intra-component imports are dropped (not a cross-module dependency)
+  ---
+  duration_ms: 0.068625
+  type: 'test'
+  ...
+# Subtest: out-of-scope import target is dropped; source component still shown
+ok 4 - out-of-scope import target is dropped; source component still shown
+  ---
+  duration_ms: 0.101875
+  type: 'test'
+  ...
+# Subtest: an isolated component (no imports in/out) is still a node (ac3)
+ok 5 - an isolated component (no imports in/out) is still a node (ac3)
+  ---
+  duration_ms: 0.101417
+  type: 'test'
+  ...
+# Subtest: duplicate cross-module imports collapse to one edge (dedupe)
+ok 6 - duplicate cross-module imports collapse to one edge (dedupe)
+  ---
+  duration_ms: 0.112
+  type: 'test'
+  ...
+# Subtest: same input → deep-equal IR (determinism, ac2)
+ok 7 - same input → deep-equal IR (determinism, ac2)
+  ---
+  duration_ms: 0.111833
+  type: 'test'
+  ...
+# Subtest: documentIRToMermaid renders a component IR as a FLOWCHART with --> arrows
+ok 8 - documentIRToMermaid renders a component IR as a FLOWCHART with --> arrows
+  ---
+  duration_ms: 0.191417
+  type: 'test'
+  ...
+# Subtest: extract: source-not-ready / empty-scope / ok
+ok 9 - extract: source-not-ready / empty-scope / ok
+  ---
+  duration_ms: 0.382291
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 184.289958

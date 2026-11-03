@@ -23,21 +23,27 @@ import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 /** Methods that run without the request hold. */
 export const UNHELD_METHODS: ReadonlySet<string> = new Set(['daemon.status', 'daemon.compact', 'understanding.watch', 'todos.subscribe']);
 
+/**
+ * Subscriptions: not held for their lifetime (each refresh takes its own no-wait
+ * hold), but admitted like any request: one opened during maintenance is refused
+ * at once with the maintenance activity, reason and start time.
+ */
+const SUBSCRIPTIONS: ReadonlySet<string> = new Set(['understanding.watch', 'todos.subscribe']);
+
 /** `forward`, with each request run under the maintenance lock's shared hold. */
 export function holdingForward(forward: ForwardRequest): ForwardRequest {
 	return (request, deliver) => {
-		if (!maintenanceLockEnabled() || (UNHELD_METHODS.has(request.method) && request.trustedContext?.connectionSession === undefined && request.trustedContext?.connectionExecution?.mode !== 'session-memory') || request.underHold === true || holdsMaintenanceLock()) {
-			return forward(request, deliver);
-		}
+		const unheld = UNHELD_METHODS.has(request.method) && request.trustedContext?.connectionSession === undefined && request.trustedContext?.connectionExecution?.mode !== 'session-memory';
+		if (!maintenanceLockEnabled() || request.underHold === true || holdsMaintenanceLock()) return forward(request, deliver);
+		if (unheld && SUBSCRIPTIONS.has(request.method)) return admitted(forward, request, deliver);
+		if (unheld) return forward(request, deliver);
 		let cancel: (() => void) | undefined;
 		let cancelled = false;
-		let release: () => void = () => {};
 		const complete = (): void => request.lifetime?.complete();
 		const reply = (envelope: Parameters<DeliverEnvelope>[0]): void => {
 			try { if (!cancelled) deliver(envelope); } finally { complete(); }
 		};
 		void withRequestHold(() => new Promise<void>(resolve => {
-			release = resolve;
 			if (cancelled || request.lifetime?.signal.aborted) { complete(); resolve(); return; }
 			if (request.lifetime) void Promise.all([request.lifetime.completed, request.lifetime.drained]).then(() => resolve());
 			const ending: DeliverEnvelope = envelope => {
@@ -66,7 +72,44 @@ export function holdingForward(forward: ForwardRequest): ForwardRequest {
 			request.lifetime?.abort();
 			if (cancel) cancel();
 			else complete();
-			if (request.stream && !request.lifetime) release();
+			// A stream with no lifetime keeps its hold until its handler's terminal frame, not the
+			// cancel: the handler may still be finishing a write. (One that never ends cannot block
+			// maintenance for good: maintenance gives up after its pause limit.)
 		};
+	};
+}
+
+/**
+ * A subscription: admitted with a no-wait shared request, then started unheld. Refused at once
+ * (the busy error, as an error frame) while maintenance holds or waits for the lock.
+ *
+ * The stream is started after the admission hold is released and outside its async context:
+ * started inside it, work the stream began would see the hold as its own (holdsMaintenanceLock)
+ * and skip taking one, then go on running after admission released it. Each of its store reads
+ * takes its own hold (or refuses, or skips) as any request or refresh does.
+ */
+function admitted(forward: ForwardRequest, request: Parameters<ForwardRequest>[0], deliver: DeliverEnvelope): () => void {
+	let cancel: (() => void) | undefined;
+	let cancelled = false;
+	const fail = (error: string): void => {
+		try {
+			deliver(request.stream
+				? { kind: 'frame', requestId: request.requestId, frame: { id: 0, stream: 'error', data: { error, recoverable: true } } }
+				: { kind: 'reply', requestId: request.requestId, error });
+		} finally { request.lifetime?.complete(); }
+	};
+	// The continuation runs in the context `.then` was called from: this one, which holds nothing.
+	void withRequestHold(async () => {}).then(outcome => {
+		if (cancelled) return;
+		if (!outcome.ran) { fail(outcome.busy); return; }
+		cancel = forward(request, deliver);
+	}).catch((err: unknown) => {
+		if (!cancelled) fail(err instanceof Error ? err.message : String(err));
+		else request.lifetime?.complete();
+	});
+	return () => {
+		cancelled = true;
+		if (cancel) cancel();
+		else { request.lifetime?.abort(); request.lifetime?.complete(); }
 	};
 }

@@ -42,6 +42,7 @@ serveRequests(init.hubPort, directDispatch(adminWorkerHandlers({
 	status: () => status.daemonStatus(),
 	clients: async () => (await board.snapshot()).clients,
 	repoList: () => status.repoList(),
+	threads: () => status.threads(),
 })));
 
 parentPort!.postMessage('worker-ready');

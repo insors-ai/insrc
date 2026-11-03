@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793525544169-1i1mqx",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T09:32:23.244Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 169120,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "866873cab2dedcc7",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "866873cab2dedcc7",
+      "storyId": "S001",
+      "author": "controller",
+      "sourceDigest": "4cf3c08e26410da9a1e94aac47648a2dd3b2a172b292188e96d52f0be3a8e7a1",
+      "contractDigest": "aba12bf23798714dc877d148dc209c6baffb67b67c194d24513d07323af2206d",
+      "buildDigest": "67130f5329b5bfe41b779af2a3b1cc0523b3b763262c101981ee38c5840860eb",
+      "testsDigest": "eb287650a9a45e129af67941434b4e429f75d44ac56a642e49c2b3d7a86ef306",
+      "digest": "9a7c713e513a13015917e531ad91c08ac10bc4069f70ca1f6a6d94dfad0427a5"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-11-01T07:02:58.354Z",
+    "epicSlug": "write-versioned-marker-delimited-insrc-steering",
+    "standalone": true,
+    "approvedAt": "2026-11-01T09:35:31.167Z"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "866873cab2dedcc7",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/daemon/__tests__/mcp-register.test.ts",
+        "src/daemon/mcp-register.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "daemonInstallRoot has no testsReaching edge in the graph, but the Story's test file src/daemon/__tests__/mcp-register.test.ts passes in full; likely exercised transitively but the call edge may be missing from the graph.",
+            "expectationRef": "daemonInstallRoot",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830025"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "runCli has no testsReaching edge in the graph, but the Story's test file passes in full (e.g. CLI add/spawn scenarios); likely exercised transitively but the call edge may be missing from the graph.",
+            "expectationRef": "runCli",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830027"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "defaultVibeConfigText has no testsReaching edge in the graph, but the Story's test file passes in full; likely exercised transitively but the call edge may be missing from the graph.",
+            "expectationRef": "defaultVibeConfigText",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830030"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "defaultVibeHome has no testsReaching edge in the graph, but the Story's test file passes in full; likely exercised transitively but the call edge may be missing from the graph.",
+            "expectationRef": "defaultVibeHome",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830031"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "defaultVibeAgentsMdText has no testsReaching edge, but its caller upsertVibeAgentsSteering is reached-passing and the AGENTS.md steering-block tests in the Story's test file pass; likely covered but the graph missed this edge.",
+            "expectationRef": "defaultVibeAgentsMdText",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830032"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "vibeServerTomlBlock has no testsReaching edge, but its caller upsertVibeProjectServer is reached-passing and the project .vibe/config.toml tests pass; likely covered but the graph missed this edge.",
+            "expectationRef": "vibeServerTomlBlock",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830034"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "defaultVibeProjectConfigText has no testsReaching edge in the graph, but the Story's test file passes in full (vibe+repoPath scenarios); likely exercised transitively but the call edge may be missing from the graph.",
+            "expectationRef": "defaultVibeProjectConfigText",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830035"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "alreadyRegistered has no testsReaching edge, but the 'existing insrc entry in mcp list' / 'substring only inside a path' passing titles in the Story's test file exercise this logic; likely covered but the graph missed this edge.",
+            "expectationRef": "alreadyRegistered",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830039"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "clientPlans has no testsReaching edge, but its callers registerMcpClients and probeMcpClients are reached-passing; likely covered but the graph missed this edge.",
+            "expectationRef": "clientPlans",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830040"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/daemon/mcp-register.ts",
+            "message": "registerOne has no testsReaching edge, but its caller registerMcpClients is reached-passing and per-client registration titles in the Story's test file pass; likely covered but the graph missed this edge.",
+            "expectationRef": "registerOne",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "830044"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/mcp-register.ts:registerOne",
+            "message": "registerOne takes 7 parameters — three of them bare callbacks (run, entrypointExists, vibeConfigText) plus a defaulted deps object — making the call site (registerMcpClients) and the function body hard to read and easy to miscall as the signature grows further. Collapsing the callback trio into deps (which already exists as a bag for this purpose) would remove the positional-callback pile-up.",
+            "counterpartRef": "McpRegisterDeps",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/daemon/mcp-register.ts:vibeConfigHasServer",
+            "message": "vibeConfigHasServer (checked against vibe project/agents config text) and alreadyRegistered (checked against CLI stdout) both exist to answer the same question — 'is this MCP server already registered for this client' — from two different evidence sources, and registerOne calls both. If their notions of 'already registered' ever diverge, registerOne's branching on the two independently can produce an inconsistent outcome (e.g. reporting 'registered' while the config-text path says 'unchanged', or vice versa) instead of funneling through one shared predicate.",
+            "counterpartRef": "alreadyRegistered",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 10
+    }
+  }
+}

@@ -13,7 +13,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { runCommand, COMMAND_HELP, type CommandCtx } from '../command.js';
+import { runCommand, COMMAND_HELP, MODEL_KEY_REFUSAL, type CommandCtx } from '../command.js';
 import type { Services } from '../services/index.js';
 
 interface Spies {
@@ -25,6 +25,8 @@ interface Spies {
 	panes: number[];
 	exited: boolean;
 }
+
+const notFaked = (what: string) => (): never => { throw new Error(`${what} is not faked in this test`); };
 
 function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: Spies } {
 	const spies: Spies = { repoAdd: [], repoAddSteering: [], configWrite: [], teamInit: [], teamRefresh: [], panes: [], exited: false };
@@ -56,14 +58,14 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			approveAmendment: async () => ({} as never),
 			rejectAmendment: async () => ({} as never),
 			staleness: () => [],
-			reviewArtifact: async () => ({} as never),
-			reviewFindings: () => ({} as never),
-			resolveFinding: () => ({} as never),
-			runWorkflowStreaming: async () => ({} as never),
-			sync: () => ({} as never),
+			trackerSetup: notFaked('workflow.trackerSetup'),
+			reviewArtifact: async () => notFaked('workflow.reviewArtifact')(),
+			reviewFindings: notFaked('workflow.reviewFindings'),
+			resolveFinding: notFaked('workflow.resolveFinding'),
+			runWorkflowStreaming: async () => notFaked('workflow.runWorkflowStreaming')(),
+			sync: notFaked('workflow.sync'),
 			deferredQuestions: () => [],
-			resolveEpicHashArg: h => h,
-			trackerSetup: async () => ({ steps: [], manualRemaining: 0 }),
+			resolveEpicHashArg: () => undefined,
 		},
 		setup: {
 			detect: () => ({} as never),
@@ -71,6 +73,13 @@ function ctxWith(overrides: Partial<Services> = {}): { ctx: CommandCtx; spies: S
 			apply: () => '/cfg',
 			modelsToPull: () => [],
 			pullModels: async () => [],
+		},
+		models: {
+			definitions: async () => ({ version: 1, defaultFamily: 'cli-claude' as const, families: [{ id: 'ollama' as const, displayName: 'Local', toolLoopModel: 'fake-local:1', models: [{ id: 'fake-local:1', aliases: [], efforts: [], source: 'shipped' as const, installed: false, memoryMb: 9000 }] }] }),
+			check:       async () => ({ error: 'invalid-params: fake', recoverable: false as const }),
+			approve:     async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
+			reject:      async () => ({ ok: false as const, reason: 'unknown-check' as const, detail: 'fake' }),
+			resolveRole: async () => ({ error: 'fake', recoverable: false as const }),
 		},
 		config: {
 			show: async () => ({ models: { local: { embeddingDim: 768 }, tiers: { core: { runner: 'cli-claude', model: '' } } } }),
@@ -194,6 +203,33 @@ test('config set keeps a non-JSON token as a string', async () => {
 	const { ctx, spies } = ctxWith();
 	await runCommand('config set models.local qwen3-coder:latest', ctx);
 	assert.deepEqual(spies.configWrite, [{ path: 'models.local', value: 'qwen3-coder:latest' }]);
+});
+
+test('command.test.ts: config set / unset refuse model keys and report refusals and restartRequired', async () => {
+	const { ctx, spies } = ctxWith();
+	const refused = [
+		'config set models {}',
+		'config set models.tiers.core.runner cli-codex',
+		'config set models.tiers {"core":{}}',
+		'config set models.tasks.context.assemble cheap',
+		'config set models.byRepo {"/w/repo":{"tiers":{}}}',
+		'config set models.byRepo./w/repo.coreFloor mid',
+		'config unset models.tiers.core',
+		'config unset models.byRepo',
+		'config unset models',
+	];
+	for (const line of refused) assert.deepEqual(await runCommand(line, ctx), [MODEL_KEY_REFUSAL], line);
+	assert.deepEqual(spies.configWrite, [], 'no model key reaches config.write');
+
+	// A non-model key is written; restartRequired adds the restart hint.
+	ctx.services.config.write = async (path, value) => { spies.configWrite.push({ path, value }); return { ok: true, restartRequired: true }; };
+	assert.deepEqual(await runCommand('config set analyze.timeoutMs 1000', ctx), ['set analyze.timeoutMs = 1000', '(restart the daemon to apply)']);
+	assert.deepEqual(spies.configWrite, [{ path: 'analyze.timeoutMs', value: 1000 }]);
+
+	// A refusal prints the reason and detail, never 'set' / 'unset'.
+	ctx.services.config.write = async () => ({ ok: false, reason: 'invalid-path', detail: 'analyze.timeoutMs is not a known option' });
+	assert.deepEqual(await runCommand('config set analyze.timeoutMs fast', ctx), ['✗ not saved: invalid-path — analyze.timeoutMs is not a known option']);
+	assert.deepEqual(await runCommand('config unset analyze.timeoutMs', ctx), ['✗ not saved: invalid-path — analyze.timeoutMs is not a known option']);
 });
 
 test('pane switches the active pane', async () => {
@@ -386,4 +422,38 @@ test('command.test.ts: sync, claim, release and resolveFinding results are await
 	assert.match((await runCommand('workflow resolve docs/x.md f1 accept', ctx))[0] ?? '', /^resolved f1 \(resolved\)/);
 	assert.deepEqual(await runCommand('team claim 0123456789abcdef s1', ctx), ['✓ claimed story 0123456789abcdef/s1'.replace('story 0123456789abcdef/s1', 'story h/s1')]);
 	assert.deepEqual(await runCommand('team release 0123456789abcdef s1', ctx), ['✓ released story h/s1']);
+});
+
+test("command.test.ts: setup show|apply|pull recommend the definitions' tool-loop model and stop with the not-running line when the daemon is down", async () => {
+	const seen: Array<{ model: string; installed?: boolean | undefined; memoryMb?: number | undefined }> = [];
+	const applied: unknown[] = [];
+	const pulled: string[][] = [];
+	const setupWith = (definitions: Services['models']['definitions']) => ctxWith({
+		models: { ...ctxWith().ctx.services.models, definitions },
+		setup: {
+			detect: () => ({}) as never,
+			recommend: (_info, local) => { seen.push(local); return { tier: 'standard', coder: { model: local.model, pull: true }, embedding: { model: 'e', pull: false }, context: { shape: '32k' } } as never; },
+			apply: rec => { applied.push(rec); return '/tmp/config.json'; },
+			modelsToPull: rec => [(rec as { coder: { model: string } }).coder.model],
+			pullModels: async models => { pulled.push([...models]); return models.map(model => ({ model, ok: true })); },
+		},
+	});
+	const answer = async () => ({ version: 1, defaultFamily: 'cli-claude' as const, families: [
+		{ id: 'cli-claude' as const, cliKind: 'claude' as const, displayName: 'C', models: [] },
+		{ id: 'ollama' as const, displayName: 'Local', toolLoopModel: 'fake-local:2', models: [{ id: 'fake-local:2', aliases: [], efforts: [], source: 'shipped' as const, installed: false, memoryMb: 5000 }] },
+	] });
+	const up = setupWith(answer);
+	assert.deepEqual(await runCommand('setup show', up.ctx), ['tier standard · local fake-local:2 · embedding e · context 32k']);
+	assert.deepEqual(seen[0], { model: 'fake-local:2', installed: false, memoryMb: 5000 });
+	assert.deepEqual(await runCommand('setup apply', up.ctx), ['config written to /tmp/config.json']);
+	assert.deepEqual(await runCommand('setup pull', up.ctx), ['models pulled']);
+	assert.deepEqual(pulled, [['fake-local:2']]);
+
+	// The daemon is down: every sub-command stops before recommending, applying or pulling.
+	const down = setupWith(async () => { throw new Error('daemon is not running — start it with: insrc daemon start'); });
+	applied.length = 0; pulled.length = 0; seen.length = 0;
+	for (const sub of ['show', 'apply', 'pull']) {
+		assert.deepEqual(await runCommand(`setup ${sub}`, down.ctx), ['cannot recommend a local model: the daemon is not running'], sub);
+	}
+	assert.deepEqual([seen.length, applied.length, pulled.length], [0, 0, 0]);
 });

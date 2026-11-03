@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../../shared/connection-persistence.js';
 /**
  * `artifact_vec` LanceDB table -- per-skill-output embeddings.
  *
@@ -102,10 +103,12 @@ export function _resetArtifactVecCache(): void {
 // ---------------------------------------------------------------------------
 
 export async function upsertArtifactVec(row: ArtifactVecRow): Promise<void> {
+	assertNoSessionPersistence();
 	await upsertArtifactVecBatch([row]);
 }
 
 export async function upsertArtifactVecBatch(rows: readonly ArtifactVecRow[]): Promise<void> {
+	assertNoSessionPersistence();
 	if (rows.length === 0) return;
 	const table = await getArtifactVecTable();
 	await table.mergeInsert('id')
@@ -139,6 +142,7 @@ export async function upsertArtifactVecBatch(rows: readonly ArtifactVecRow[]): P
  * keeping the artifact reachable without a summary.
  */
 export async function updateArtifactSummary(id: string, summary: string): Promise<boolean> {
+	assertNoSessionPersistence();
 	if (id === '' || id === '_seed_artifact_vec') return false;
 	const existing = await getArtifactById(id);
 	if (existing === null) return false;
@@ -174,6 +178,7 @@ export async function queryArtifactVec(
 	queryVec: number[],
 	opts: QueryArtifactVecOpts,
 ): Promise<ArtifactVecHit[]> {
+	assertNoSessionPersistence();
 	if (queryVec.length === 0 || opts.sessionId === '' || opts.k <= 0) return [];
 	const table = await getArtifactVecTable();
 
@@ -207,6 +212,7 @@ export async function queryArtifactVec(
  * to verify the id is real and pull the row's metadata.
  */
 export async function getArtifactById(id: string): Promise<ArtifactVecHit | null> {
+	assertNoSessionPersistence();
 	if (id === '') return null;
 	const table = await getArtifactVecTable();
 	const rows = await table.query()
@@ -265,6 +271,7 @@ const MAX_LIST_LIMIT     = 2000;
 export async function listArtifactsForSession(
 	opts: ListArtifactsForSessionOpts,
 ): Promise<ArtifactVecHit[]> {
+	assertNoSessionPersistence();
 	if (opts.sessionId === '') return [];
 	const limit = clampListLimit(opts.limit);
 	const table = await getArtifactVecTable();
@@ -317,6 +324,7 @@ function clampListLimit(requested: number | undefined): number {
 // ---------------------------------------------------------------------------
 
 export async function deleteArtifactsForSession(sessionId: string): Promise<number> {
+	assertNoSessionPersistence();
 	if (sessionId === '') return 0;
 	const table = await getArtifactVecTable();
 	// Lance's delete() doesn't return a removed-count, so we count by

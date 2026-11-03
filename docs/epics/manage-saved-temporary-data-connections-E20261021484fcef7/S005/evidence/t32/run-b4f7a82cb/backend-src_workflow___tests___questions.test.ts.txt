@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: questionId: parses a leading [id / verdict] tag; falls back to a stable sha
+ok 1 - questionId: parses a leading [id / verdict] tag; falls back to a stable sha
+  ---
+  duration_ms: 1.035625
+  type: 'test'
+  ...
+# Subtest: openQuestions / unresolvedOpen reflect recorded resolutions
+ok 2 - openQuestions / unresolvedOpen reflect recorded resolutions
+  ---
+  duration_ms: 0.884958
+  type: 'test'
+  ...
+# Subtest: recordResolution persists a resolved choice to HLD meta + renders section
+ok 3 - recordResolution persists a resolved choice to HLD meta + renders section
+  ---
+  duration_ms: 20.223458
+  type: 'test'
+  ...
+# Subtest: recordResolution ignore + defer persist the right status to DEF meta
+ok 4 - recordResolution ignore + defer persist the right status to DEF meta
+  ---
+  duration_ms: 20.818459
+  type: 'test'
+  ...
+# Subtest: recordResolution throws on an unknown questionId
+ok 5 - recordResolution throws on an unknown questionId
+  ---
+  duration_ms: 3.301333
+  type: 'test'
+  ...
+# Subtest: listDeferred enumerates deferred questions across DEF + HLD + LLDs
+ok 6 - listDeferred enumerates deferred questions across DEF + HLD + LLDs
+  ---
+  duration_ms: 45.937375
+  type: 'test'
+  ...
+# Subtest: the comment goes through the adapter with the same argv and a failure is logged in the existing catch
+ok 7 - the comment goes through the adapter with the same argv and a failure is logged in the existing catch
+  ---
+  duration_ms: 4.101292
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 466.704

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.host.MarkerWriterTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.002">
+  <properties/>
+  <testcase name="ioFailure_surfacesHostFileAccessException_noPartialWrite()" classname="ai.insors.insrc.jetbrains.host.MarkerWriterTest" time="0.001"/>
+  <testcase name="writeBlock_replacesExistingSameMarkerBlockInPlace_noDuplicate()" classname="ai.insors.insrc.jetbrains.host.MarkerWriterTest" time="0.0"/>
+  <testcase name="writeBlock_insertsOnce_preservesSurrounding_idempotentOnRerun()" classname="ai.insors.insrc.jetbrains.host.MarkerWriterTest" time="0.0"/>
+  <testcase name="removeBlock_stripsOnlyTheBlock_restoresPriorContent_noopWhenAbsent()" classname="ai.insors.insrc.jetbrains.host.MarkerWriterTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

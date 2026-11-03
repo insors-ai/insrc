@@ -1,0 +1,661 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "86197ac660732ceb",
+    "storyId": "s4",
+    "createdAt": "2026-10-29T08:13:45.184Z",
+    "updatedAt": "2026-10-29T09:22:25.430Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t5",
+        "commit": "804daf0bc",
+        "ranAt": "2026-10-29T08:13:45.184Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts",
+                "title": "lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts",
+                "title": "lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/lazy-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 502,
+            "titles": [
+              {
+                "title": "lazy runtime: the local forward builds once on the first local request and reuses it; a failed build answers that request and the next one builds again",
+                "result": "pass"
+              },
+              {
+                "title": "lazy runtime: a nested in-daemon call made while serving a local request works after the lazy build",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t1",
+        "commit": "b9e5a54bd",
+        "ranAt": "2026-10-29T08:41:05.655Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+                "title": "board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/registry-board.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1037,
+            "titles": [
+              {
+                "title": "TargetRegistry refuses a second live admin, indexing, unattributed or same-session target and resolves an identity-less session request to the unattributed target",
+                "result": "pass"
+              },
+              {
+                "title": "registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker",
+                "result": "pass"
+              },
+              {
+                "title": "a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op",
+                "result": "pass"
+              },
+              {
+                "title": "StatusBoard keeps the latest status per thread and snapshots empty as specified",
+                "result": "pass"
+              },
+              {
+                "title": "publishIndexing, publishClients, publishRun and publishStore are each reflected in snapshot, runs by runId with frames only growing",
+                "result": "pass"
+              },
+              {
+                "title": "a status published from a worker appears in a main-thread snapshot",
+                "result": "pass"
+              },
+              {
+                "title": "board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread",
+                "result": "pass"
+              },
+              {
+                "title": "board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is",
+                "result": "pass"
+              },
+              {
+                "title": "board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "35b52305d",
+        "ranAt": "2026-10-29T08:46:15.357Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+                "title": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/router-thread-view.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 706,
+            "titles": [
+              {
+                "title": "router thread view: attach publishes idle with the registry's role; a request marks busy with its method and since; its reply marks idle",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: the oldest in-flight request names method and since; a stream is busy until its done or error frame, a cancelled stream until its lifetime completes",
+                "result": "pass"
+              },
+              {
+                "title": "router thread view: a session worker's queued equals its FIFO length; detach forgets the thread and nothing re-adds it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "b9477bb83",
+        "ranAt": "2026-10-29T08:49:45.478Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "admin status: threads carries role, cls, session, busy, method, elapsedMs, queued and activeRuns from one board snapshot; other fields unchanged; absent when no thread is published",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-status.test.ts",
+                "title": "admin status: threads carries role, cls, session, busy, method, elapsedMs, queued and activeRuns from one board snapshot; other fields unchanged; absent when no thread is published",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "admin status: activeRuns counts only that thread's running runs, and the document-summary thread is busy while the summary lane processes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-status.test.ts",
+                "title": "admin status: activeRuns counts only that thread's running runs, and the document-summary thread is busy while the summary lane processes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "admin handlers: daemon.debug-status keeps clients as before and adds threads",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/admin-status.test.ts",
+                "title": "admin handlers: daemon.debug-status keeps clients as before and adds threads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/admin-status.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 665,
+            "titles": [
+              {
+                "title": "daemon.status that waited for the first publish reports the queue as it is after the wait, not before it",
+                "result": "pass"
+              },
+              {
+                "title": "admin status: threads carries role, cls, session, busy, method, elapsedMs, queued and activeRuns from one board snapshot; other fields unchanged; absent when no thread is published",
+                "result": "pass"
+              },
+              {
+                "title": "admin status: activeRuns counts only that thread's running runs, and the document-summary thread is busy while the summary lane processes",
+                "result": "pass"
+              },
+              {
+                "title": "admin handlers: daemon.debug-status keeps clients as before and adds threads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1ee787f77",
+        "ranAt": "2026-10-29T09:19:32.933Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "supervisor: a tracked worker is terminated by terminateAll and its error is logged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor-track.test.ts",
+                "title": "supervisor: a tracked worker is terminated by terminateAll and its error is logged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor-track.test.ts",
+                "title": "supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+                "title": "session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7309,
+            "titles": [
+              {
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              },
+              {
+                "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              },
+              {
+                "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+                "result": "pass"
+              },
+              {
+                "title": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)",
+                "result": "pass"
+              },
+              {
+                "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/session-pool.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 385,
+            "titles": [
+              {
+                "title": "session pool: concurrent workerFor calls for one session start one worker",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: idle and pid-gone release at the sweep; never a worker with an active run or a request in flight",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: start failure answers waiting requests with SessionWorkerStartError and the next request retries",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: the unattributed worker starts once under session:unattributed; sessionIdleMs default 900000 from config",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a worker that exits is unregistered and disconnected from its main-thread services",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a request sent straight to a worker (startedOn) keeps it from the idle sweep until endedOn",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: close waits for a start under way, releases that worker too, and refuses any later start",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: every created worker is handed to onCreated; a refused shared-state restart rejects with SessionWorkerStartError",
+                "result": "pass"
+              },
+              {
+                "title": "session pool: a shared-state worker that fails to start counts like one that exited: its next start is a restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/supervisor-track.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 345,
+            "titles": [
+              {
+                "title": "supervisor: a tracked worker is terminated by terminateAll and its error is logged",
+                "result": "pass"
+              },
+              {
+                "title": "supervisor: the restart query refuses past 5 restarts in 60 s and runs the daemon's shutdown",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "4ed9e00a6",
+        "ranAt": "2026-10-29T09:22:25.430Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+                "title": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+                "title": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+                "title": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 29137,
+            "titles": [
+              {
+                "title": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/session-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7665,
+            "titles": [
+              {
+                "title": "failure: a session worker exit fails only its running and queued requests; the next request gets a new worker",
+                "result": "pass"
+              },
+              {
+                "title": "runs: workflow.run.abort from another session reaches the owner; an owner exit makes polls return error with the named reason",
+                "result": "pass"
+              },
+              {
+                "title": "shared-state worker exit ends an open todos.subscribe with an error frame and the next chat.list starts a new one",
+                "result": "pass"
+              },
+              {
+                "title": "session failure: session workers are still recreated on demand with s3's failure messages under supervisor tracking",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac2: a worker of each class exits mid-request; that request fails, the thread leaves threads and is replaced while others answer (session, shared-state)",
+                "result": "pass"
+              },
+              {
+                "title": "close: a request in flight on a released worker is answered, and a request after close is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/threads/__tests__/supervisor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10092,
+            "titles": [
+              {
+                "title": "admin, code-indexing and summary workers killed in turn: in-flight requests error, the worker is replaced, other threads keep serving",
+                "result": "pass"
+              },
+              {
+                "title": "a sixth restart within 60 s shuts the daemon down",
+                "result": "pass"
+              },
+              {
+                "title": "a dead worker's store-guard permits and named locks are reclaimed before its replacement starts",
+                "result": "pass"
+              },
+              {
+                "title": "a worker whose first start fails is replaced like one that exited (startOrReplace), not given up on",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "450e019d0",
+        "ranAt": "2026-10-29T09:08:08.853Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+                "title": "s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+                "title": "s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+                "title": "s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 26450,
+            "titles": [
+              {
+                "title": "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac4: daemon.status threads lists the admin, code-indexing, document-summary, shared-state and two session threads with role, class and session",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac5: with a session worker spinning, daemon.status answers within 100 ms at p99, shows it busy with growing elapsedMs, and reachability is running",
+                "result": "pass"
+              },
+              {
+                "title": "s4 ac6: daemon.status and debug-status keep every field of a threads-disabled daemon with the same types; threads is the only addition",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -33,6 +33,9 @@ import {
 	type SubprocessRenderer,
 } from './fallback.js';
 import { renderNarrativeBand } from './narrative.js';
+import {
+	DIAGRAM_OVERRIDES_CSS, THEME_VERSION, asDiagramRole, diagramRoles, fontFaceCssForArtifacts, legendSlotHtml, mermaidConfigFor, pageStyleTags, viewerBootScript,
+} from '../../artifact-theme/theme.js';
 
 /** The single source of truth for where the docgen runtime assets live
  *  (out/assets/docgen, resolved from import.meta.url). Both the renderer
@@ -125,7 +128,10 @@ function toClassDiagram(ir: DocumentIR, alias: ReadonlyMap<string, string>): str
 function toFlowchart(ir: DocumentIR, alias: ReadonlyMap<string, string>): string {
 	const lines: string[] = ['flowchart LR'];
 	for (const n of ir.derived.nodes) {
-		lines.push(`  ${alias.get(n.id)!}["${escapeLabel(n.label)}"]`);
+		// R4: a node whose structured kind IS a role carries the role class, so the
+		// legend (and role palette) apply; other kinds stay unclassified.
+		const role = asDiagramRole(n.kind);
+		lines.push(`  ${alias.get(n.id)!}["${escapeLabel(n.label)}"]${role !== undefined ? `:::${role}` : ''}`);
 	}
 	for (const e of ir.derived.edges) {
 		const from = alias.get(e.from);
@@ -190,6 +196,22 @@ function escapeHtml(s: string): string {
  *  diagram (s4); empty `sections` AND no `sourceLink` yields byte-identical
  *  output to the pre-s4 shell. The `sourceLink` (S001) renders an escaped `<a>`
  *  back-reference to the source artifact markdown inside that band. */
+/** The docgen page CSS: packaged Poppins + per-mode page CSS + diagram overrides,
+ *  all scoped under .insrc-viewer / .insrc-viewer-diagram so they match the
+ *  companion shell's DOM (review round-2 fix). */
+function docgenPageStyle(): string {
+	const base = [
+		'.insrc-viewer html,.insrc-viewer body{margin:0;height:100%}',
+		'.insrc-viewer #docgen-diagram{width:100%;height:100vh;background:var(--iv-bg)}',
+		'.insrc-viewer #docgen-diagram svg{width:100%;height:100%}',
+		'.insrc-viewer [data-insrc-path]{cursor:pointer}',
+		'.insrc-viewer .iv-narr{max-width:1180px;margin:0 auto;padding:20px 28px;color:var(--iv-text)}',
+	].join('\n');
+	// The branded page chrome is composed by the ONE shared helper (R1), so the
+	// docgen shell cannot drift from the companion shell.
+	return pageStyleTags(base);
+}
+
 function buildHtml(
 	title: string,
 	mermaidSource: string,
@@ -199,40 +221,49 @@ function buildHtml(
 	sourceLink?: { readonly label: string; readonly href: string } | undefined,
 ): string {
 	const narrative = renderNarrativeBand(sections, sourceLink);
+	// R4: the legend renders only when the diagram source carries role classes.
+	const legend = legendSlotHtml(diagramRoles(mermaidSource));
 	// A narrative doc shares the viewport between diagram + prose; a derived-only
 	// doc keeps the full-height diagram (no inline style → byte-identical).
 	const diagramStyle = narrative !== '' ? ' style="height:65vh"' : '';
 	const init = `
-mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', theme: 'neutral' });
-(async () => {
-  try {
-    await mermaid.run({ querySelector: '.mermaid' });
-    if (window.insrcMarkCodeRefs) window.insrcMarkCodeRefs();
-    var svg = document.querySelector('#docgen-diagram svg');
-    if (svg && window.svgPanZoom) {
+(function () {
+  // svg-pan-zoom drives pan/zoom; expose it to the theme boot script as window.insrcPz.
+  var panzoomInstance = null;
+  var svg = document.querySelector('#docgen-diagram svg');
+  function attachPz() {
+    svg = document.querySelector('#docgen-diagram svg');
+    if (svg && window.svgPanZoom && !panzoomInstance) {
       svg.setAttribute('width', '100%'); svg.setAttribute('height', '100%');
       svg.style.maxWidth = 'none';
-      window.svgPanZoom(svg, { controlIconsEnabled: true, fit: true, center: true, minZoom: 0.2, maxZoom: 20 });
+      panzoomInstance = window.svgPanZoom(svg, { controlIconsEnabled: true, fit: true, center: true, minZoom: 0.2, maxZoom: 20 });
     }
-  } catch (e) { document.getElementById('docgen-error').textContent = 'diagram render failed: ' + e; }
-})();`;
+  }
+  attachPz();
+  window.insrcPz = panzoomInstance ? {
+    fit: function () { panzoomInstance.fit(); },
+    reset: function () { panzoomInstance.reset(); },
+    zoomTo: function (s) { panzoomInstance.zoomTo(s); },
+    getT: function () { return { s: panzoomInstance.getZoom(), x: 0, y: 0 }; },
+    setT: function (t) { if (t && typeof t.s === 'number') panzoomInstance.zoomTo(t.s); },
+  } : null;
+})();
+` + viewerBootScript({ initialMode: 'light', configs: { light: mermaidConfigFor('light'), dark: mermaidConfigFor('dark') } });
 	return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="insrc-theme" content="${THEME_VERSION}">
 <title>${escapeHtml(title)}</title>
-<style>
-  html, body { margin: 0; height: 100%; font-family: system-ui, sans-serif; }
-  #docgen-diagram { width: 100%; height: 100vh; }
-  #docgen-diagram svg { width: 100%; height: 100%; }
-  #docgen-error { color: #b00020; padding: 8px; font-family: monospace; }
-  [data-insrc-path] { cursor: pointer; }
-</style>
+${docgenPageStyle()}
 </head>
-<body>
-<div id="docgen-error"></div>
-<div id="docgen-diagram"${diagramStyle}><pre class="mermaid">${escapeHtml(mermaidSource)}</pre></div>${narrative}
+<body class="insrc-viewer" data-theme="light" data-iv-export-css="${escapeHtml(fontFaceCssForArtifacts() + '\n' + DIAGRAM_OVERRIDES_CSS)}">
+<div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-zin" aria-label="zoom in">+</button><span id="iv-zl">100%</span><button id="iv-zout" aria-label="zoom out">−</button><button id="iv-zfit" aria-label="fit to view">Fit</button><button id="iv-z100" aria-label="actual size">1:1</button><button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button><button id="iv-srcbtn" aria-label="show diagram source" title="Show source">src</button></div>
+<div class="iv-err" id="iv-err" role="alert"></div>
+<div id="docgen-diagram" class="insrc-viewer-diagram"${diagramStyle}><pre class="mermaid">${escapeHtml(mermaidSource)}</pre></div>
+${legend}
+<pre class="iv-src" id="iv-src"></pre>${narrative}
 <script>${mermaid}</script>
 <script>${svgPanZoom}</script>
 <script>${CODE_REF_SCRIPT}</script>

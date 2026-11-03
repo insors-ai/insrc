@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793511395029-b92zbj",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-01T05:36:23.311Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 173744,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "16b8d3d50f14fc1d",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "16b8d3d50f14fc1d",
+      "storyId": "S001",
+      "author": "controller",
+      "sourceDigest": "c42d64a600e2d3e78c34892406a0fe92ff1f021ac8e8d523ce44e3a94b23ec70",
+      "contractDigest": "94bca157d055c25f71f8fee743108fd0ad536a07424d7b2877d1e271f640153b",
+      "buildDigest": "281d04cf5228f8aa73ee6cebe9448403d85f82383a290fb954b8b90d292205e1",
+      "testsDigest": "51b3c48189d270f305444d07db92ca97d914f9b1893dda06bf5e304e37a5ad10",
+      "digest": "c232d9e62e57fead36d2e6f60777f7becc4b6181a52b6125f9fe1dc8d6f8de75"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-10-31T14:59:44.852Z",
+    "epicSlug": "insrc-present-cannot-resolve-standalone-story",
+    "standalone": true,
+    "approvedAt": "2026-11-01T05:56:03.583Z"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "16b8d3d50f14fc1d",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/__tests__/pending.test.ts",
+        "src/workflow/pending.ts",
+        "vscode-plugin/CHANGELOG.md",
+        "vscode-plugin/package.json",
+        "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
+        "vscode-plugin/src/chat/docs-review-panel.ts",
+        "vscode-plugin/src/chat/protocol.ts",
+        "src/mcp/__tests__/present-dispatch.test.ts",
+        "src/mcp/server.ts",
+        "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
+        "vscode-plugin/src/chat/docs-review-client.ts"
+      ],
+      "changeSetAttribution": "first-parent-range",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:decide/decideNow",
+            "message": "decide() calls decideNow(), and decideNow() calls decide() back (per the call graph: decide -> {startQuiet, decideNow}; decideNow -> {..., decide, ...}). With no base case visible in the structural summary, a repeated 'needs another decision pass' condition inside decideNow could re-enter decide indefinitely, growing the call stack or looping on the same artifactId/decision/comments.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/docs-review-panel.ts:createDocsReviewHost",
+            "message": "createDocsReviewHost defines and wires roughly 25+ nested closures (post, refreshPending, startPoll, tickPoll, postUnavailable, openArtifactFrom, deriveSections, dropWatch, startQuiet, setOpened, openDoc, reopen, refuse, handOver, decide, decideNow, openCompanion, renderShell, handleMessage, show, isReviewDecision, baseName, htmlCompanionsOf, stampScriptNonce) inside a single factory function, several of which call each other in cycles (openDoc -> setOpened -> startQuiet -> reopen -> openDoc). This concentration makes the host hard to unit-test or reason about independently of the whole closure graph.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 1,
+      "low": 1
+    }
+  }
+}

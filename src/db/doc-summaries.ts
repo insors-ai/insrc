@@ -1,3 +1,4 @@
+import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -147,6 +148,7 @@ export async function writeDocSummary(
 	repo: string,
 	summary: DocSummary,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const u64 = await entityU64ForId(entityId);
 	if (u64 === undefined) {
 		throw new Error(
@@ -218,6 +220,7 @@ export async function writeDocSummaryIfCurrent(
 	summary: DocSummary,
 	opts?: { readonly keepGoodSummary?: boolean | undefined },
 ): Promise<DocSummaryWriteOutcome | 'kept-good'> {
+	assertNoSessionPersistence();
 	return withWriteTxn(s => {
 		// The caller's repo is checked only when the row is about to be written, as before.
 		const outcome = writeIfCurrentInTxn(s, entityId, summary, { keepGoodSummary: opts?.keepGoodSummary }, () => {
@@ -246,6 +249,7 @@ export function writeDocSummaryIfCurrentInTxn(
 	summary: DocSummary,
 	opts: { readonly onlyIfAbsent?: boolean | undefined; readonly keepGoodSummary?: boolean | undefined } = {},
 ): DocSummaryWriteOutcome | 'already-present' | 'kept-good' {
+	assertNoSessionPersistence();
 	return writeIfCurrentInTxn(s, entityId, summary, opts, entityRepoId => entityRepoId);
 }
 
@@ -307,6 +311,7 @@ export function encodeCarryKey(repoId: number, entityId: string): Buffer {
  * overwritten: the live summary is the newer one. Returns how many were carried.
  */
 export function carryDocSummariesInTxn(s: GraphStore, repoId: number, u64s: readonly bigint[]): number {
+	assertNoSessionPersistence();
 	let carried = 0;
 	for (const u64 of u64s) {
 		const buf = s.docSummary.get(encodeEntityKey(u64)) as Buffer | undefined;
@@ -321,6 +326,7 @@ export function carryDocSummariesInTxn(s: GraphStore, repoId: number, u64s: read
 
 /** Delete every carry row of the repository, inside the caller's write transaction. */
 export function deleteCarriedDocSummariesInTxn(s: GraphStore, repoId: number): void {
+	assertNoSessionPersistence();
 	const prefix = encodeByRepoPrefix(repoId);
 	const keys = [...s.docSummaryCarry.getKeys({ start: prefix, end: prefixSuccessor(prefix) })] as Buffer[];
 	for (const k of keys) s.docSummaryCarry.remove(k);
@@ -345,6 +351,7 @@ const CARRY_BATCH = 500;
 export async function restoreCarriedDocSummaries(
 	repo: string,
 ): Promise<{ written: number; keptGood: number; entityGone: number; bodyChanged: number }> {
+	assertNoSessionPersistence();
 	const counts = { written: 0, keptGood: 0, entityGone: 0, bodyChanged: 0 };
 	for (;;) {
 		const done = await withWriteTxn(s => {
@@ -391,6 +398,7 @@ export interface DocSummaryRestoreCounts {
  * closed before this returns. Running it again writes nothing new.
  */
 export async function restoreDocSummariesFromBackup(backupPath: string): Promise<DocSummaryRestoreCounts> {
+	assertNoSessionPersistence();
 	if (!isAbsolute(backupPath)) throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' is not an absolute path`);
 	let isFile: boolean;
 	try { isFile = statSync(backupPath).isFile(); } catch { throw new Error(`restoreDocSummariesFromBackup: '${backupPath}' does not exist`); }
@@ -456,6 +464,7 @@ export async function deleteDocSummary(
 	_db: DbClient,
 	entityId: string,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const u64 = await entityU64ForId(entityId);
 	if (u64 === undefined) return;
 	await withWriteTxn(s => {
@@ -472,6 +481,7 @@ export async function deleteDocSummary(
  * it's bounded by workspace repo count.
  */
 export function deleteDocSummaryInTxn(store: GraphStore, u64: bigint): void {
+	assertNoSessionPersistence();
 	const primaryKey = encodeEntityKey(u64);
 	if (store.docSummary.get(primaryKey) === undefined) return;
 	store.docSummary.remove(primaryKey);
@@ -502,6 +512,7 @@ export async function deleteDocSummariesForRepo(
 	_db: DbClient,
 	repo: string,
 ): Promise<void> {
+	assertNoSessionPersistence();
 	const store = await getGraphStore();
 	await withWriteTxn(s => {
 		const repoId = lookupRepoIdInTxn(s, repo);

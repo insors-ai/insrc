@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: task push is opt-out by default (pushTasks unset) → skipped, no issues
+ok 1 - task push is opt-out by default (pushTasks unset) → skipped, no issues
+  ---
+  duration_ms: 10.30775
+  type: 'test'
+  ...
+# Subtest: pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue
+ok 2 - pushTasks: creates a typed Task issue per PlanTask, linked as a sub-issue
+  ---
+  duration_ms: 6.327791
+  type: 'test'
+  ...
+# Subtest: pushTasks: falls back to an untyped issue when the org lacks the issue type
+ok 3 - pushTasks: falls back to an untyped issue when the org lacks the issue type
+  ---
+  duration_ms: 5.818375
+  type: 'test'
+  ...
+# Subtest: pushTasks: re-push is idempotent (adopts taskRefs, no new issues)
+ok 4 - pushTasks: re-push is idempotent (adopts taskRefs, no new issues)
+  ---
+  duration_ms: 5.728708
+  type: 'test'
+  ...
+# Subtest: pushTasks: skips when the Story issue does not exist yet
+ok 5 - pushTasks: skips when the Story issue does not exist yet
+  ---
+  duration_ms: 1.86925
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 445.378042

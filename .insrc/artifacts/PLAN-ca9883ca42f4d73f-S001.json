@@ -1,0 +1,257 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793621027670-7dwlrt",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-02T12:05:18.321Z",
+    "epicCreatedAt": "2026-11-02T11:42:30.446Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 90648,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ca9883ca42f4d73f",
+    "epicSlug": "daemon-update-never-retries-failed-npm",
+    "storyId": "S001",
+    "lldRunId": "wf-1793620136484-pv7ygj",
+    "lldEffectiveHash": "0926c9113ed3d3106653fabb84f8693becb7eec32eebc86cde26de6e60c20f68",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-02T12:10:34.890Z",
+    "rangeBase": "99eea17d9b82c4a0618f2b55c4a31fd4eed3c7bc"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this fix means changing the install decision in the two update paths (the TypeScript update service and the daemon-ctl.sh script) to a marker written only after a successful install, adding the C++17 compiler flag to every daemon npm install including the installers, and proving it with fake-npm tests over a scratch git checkout plus a real clean install and a real update of the installed daemon.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "maintenance.update installs on a missing or stale marker, with C++17 CXXFLAGS",
+        "summary": "In update() (src/cli/services/maintenance.ts), replace the lockfile-changed decision with the install-marker rule: read node_modules/.insrc-install-ok, compare it with the synced lockfile's git blob hash, remove the marker before an install, write it after npm install exits 0, and run npm install with CXXFLAGS extended by -std=c++17. Keep skipInstall, the failure result and the lockfile-churn discard. Add the fake-npm integration test over a scratch git checkout.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An update after a failed install installs again, and the marker exists only after a successful install",
+          "A matching marker skips the install and the log says the marker matches the lockfile; a stale or missing marker installs",
+          "npm sees CXXFLAGS ending in -std=c++17 with any existing CXXFLAGS kept",
+          "skipInstall leaves npm uncalled and the marker unchanged; a failed install returns { ok:false, error:'npm install failed' }",
+          "An empty lockfile hash installs and writes no marker; a marker write failure returns ok:false"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t1: an update after a failed install installs again, and the marker exists only after a successful install"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t1: a matching marker skips the install; a stale or missing marker installs"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t1: npm runs with -std=c++17 appended to the caller's CXXFLAGS"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t1: skipInstall leaves npm uncalled and the marker unchanged"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t1: an empty lockfile hash installs and writes no marker; a marker write failure fails the update"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "daemon-ctl.sh applies the same marker rule and CXXFLAGS",
+        "summary": "In scripts/daemon-ctl.sh, npm_install_if_needed uses the same marker path, content and decision as t1, removes it before and writes it after a successful install, and runs npm install with CXXFLAGS extended by -std=c++17; SYNC_LOCK_HASH_BEFORE no longer drives the decision. Add an integration test driving `daemon-ctl.sh update --skip-build` over a scratch checkout with a fake npm.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The failed-then-retried, matching, stale and missing marker cases behave as in t1",
+          "npm sees CXXFLAGS ending in -std=c++17 with an existing value kept",
+          "An empty lockfile hash installs and writes no marker",
+          "A marker written by update() is honoured by daemon-ctl.sh and the other way round",
+          "--skip-install leaves npm uncalled; a failed install exits 4"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "S001 t2: daemon-ctl.sh update retries after a failed install (exit 4), then skips on a matching marker"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t2: daemon-ctl.sh installs on a stale or missing marker, with -std=c++17 appended to CXXFLAGS"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t2: daemon-ctl.sh and maintenance.update honour each other's marker"
+          },
+          {
+            "level": "integration",
+            "name": "S001 t2: --skip-install leaves npm uncalled; an empty lockfile hash installs and writes no marker"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Installers build with C++17 and write the install marker",
+        "summary": "In scripts/insrc-daemon-install.sh, run npm install with CXXFLAGS extended by -std=c++17 and, after it succeeds, write the marker holding `git hash-object package-lock.json` of the checkout; copy the result to vscode-plugin/assets/insrc-daemon-install.sh. Extend src/config/__tests__/installer-defs.test.ts.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Both installer copies set CXXFLAGS with -std=c++17 on the npm install",
+          "Both write the marker after the install, holding the checkout's lockfile blob hash, so the first update after a fresh install skips",
+          "The two copies stay byte-identical"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "S001 t3: the installer builds with -std=c++17 and writes the install marker after npm install, in both identical copies"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Real install and installed-daemon update smoke, then the full sweep",
+        "summary": "Clean clone of the repository under Node 22: npm install through the new path builds every native module including fs-ext and the project-memory native probe loads; after the push, update the installed daemon (~/.insrc/daemon): it installs once (no marker yet) and skips on the next update. Record both as evidence, then run the full test sweep once.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "A clean install under Node 22 succeeds with fs-ext built and loadable (evidence file)",
+          "The installed daemon's update installs once then skips (evidence file)",
+          "Full sweep recorded with every failure classified"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "S001 t4: clean install under Node 22 builds fs-ext and the native modules"
+          },
+          {
+            "level": "smoke",
+            "name": "S001 t4: the installed daemon's update installs once, then skips"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "update() in src/cli/services/maintenance.ts",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "npm_install_if_needed / cmd_update in scripts/daemon-ctl.sh",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "scripts/insrc-daemon-install.sh",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/assets/insrc-daemon-install.sh",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "clean scratch clone of the repository",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "~/.insrc/daemon update path",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api update"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 contractDetails.api npm_install_if_needed"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges install marker"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 dataModelChanges daemon npm install environment (CXXFLAGS)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 errorPaths"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 testStrategy"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 migration"
+    }
+  ]
+}

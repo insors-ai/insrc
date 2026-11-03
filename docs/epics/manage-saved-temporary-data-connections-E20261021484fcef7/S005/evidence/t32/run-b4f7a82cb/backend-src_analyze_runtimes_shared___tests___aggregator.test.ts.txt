@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: stableStringify: object keys sorted
+ok 1 - stableStringify: object keys sorted
+  ---
+  duration_ms: 0.970292
+  type: 'test'
+  ...
+# Subtest: stableStringify: Map entries sorted + emitted as object
+ok 2 - stableStringify: Map entries sorted + emitted as object
+  ---
+  duration_ms: 0.155458
+  type: 'test'
+  ...
+# Subtest: stableStringify: arrays preserve order
+ok 3 - stableStringify: arrays preserve order
+  ---
+  duration_ms: 0.07875
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: empty map -> "No upstream outputs" sentinel
+ok 4 - renderUpstreamSection: empty map -> "No upstream outputs" sentinel
+  ---
+  duration_ms: 0.083833
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: tasks emitted in sorted taskId order
+ok 5 - renderUpstreamSection: tasks emitted in sorted taskId order
+  ---
+  duration_ms: 0.104
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: null upstream rendered as unavailable note
+ok 6 - renderUpstreamSection: null upstream rendered as unavailable note
+  ---
+  duration_ms: 0.058875
+  type: 'test'
+  ...
+# Subtest: renderUpstreamSection: JSON output rendered in fenced block
+ok 7 - renderUpstreamSection: JSON output rendered in fenced block
+  ---
+  duration_ms: 0.147792
+  type: 'test'
+  ...
+# Subtest: buildMessages: system has prompt content, user has Target/Scope/upstream
+ok 8 - buildMessages: system has prompt content, user has Target/Scope/upstream
+  ---
+  duration_ms: 0.177709
+  type: 'test'
+  ...
+# Subtest: buildMessages: focus is included in the user message when present
+ok 9 - buildMessages: focus is included in the user message when present
+  ---
+  duration_ms: 0.213291
+  type: 'test'
+  ...
+# Subtest: buildMessages: focus omitted when undefined
+ok 10 - buildMessages: focus omitted when undefined
+  ---
+  duration_ms: 0.421791
+  type: 'test'
+  ...
+# Subtest: classifyError: Ollama-down patterns -> aggregator-llm-unavailable
+ok 11 - classifyError: Ollama-down patterns -> aggregator-llm-unavailable
+  ---
+  duration_ms: 0.271167
+  type: 'test'
+  ...
+# Subtest: classifyError: arbitrary error -> aggregator-schema-unrecoverable
+ok 12 - classifyError: arbitrary error -> aggregator-schema-unrecoverable
+  ---
+  duration_ms: 0.057208
+  type: 'test'
+  ...
+# Subtest: classifyError: non-Error -> aggregator-internal wrapper
+ok 13 - classifyError: non-Error -> aggregator-internal wrapper
+  ---
+  duration_ms: 0.041833
+  type: 'test'
+  ...
+# Subtest: runAggregator: stub provider -> report carries LLM output + runtime metadata
+ok 14 - runAggregator: stub provider -> report carries LLM output + runtime metadata
+  ---
+  duration_ms: 2.535625
+  type: 'test'
+  ...
+# Subtest: runAggregator: focus passed through to the user message
+ok 15 - runAggregator: focus passed through to the user message
+  ---
+  duration_ms: 0.182583
+  type: 'test'
+  ...
+# Subtest: runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable
+ok 16 - runAggregator: provider throws ECONNREFUSED -> rethrown as aggregator-llm-unavailable
+  ---
+  duration_ms: 0.3405
+  type: 'test'
+  ...
+# Subtest: runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable
+ok 17 - runAggregator: provider throws arbitrary error -> aggregator-schema-unrecoverable
+  ---
+  duration_ms: 0.097125
+  type: 'test'
+  ...
+# Subtest: runAggregator: missing prompt file -> "aggregator prompt missing"
+ok 18 - runAggregator: missing prompt file -> "aggregator prompt missing"
+  ---
+  duration_ms: 0.082333
+  type: 'test'
+  ...
+# Subtest: AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false
+ok 19 - AGGREGATE_LLM_SCHEMA: requires summary + findings, additionalProperties false
+  ---
+  duration_ms: 0.730667
+  type: 'test'
+  ...
+# Subtest: the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent
+ok 20 - the aggregator's prompt lists each absent input with its producer and reason after the outputs that exist, and is unchanged when nothing is absent
+  ---
+  duration_ms: 0.68775
+  type: 'test'
+  ...
+# Subtest: a map in which every name has one output renders a user message byte-identical to the one rendered before the change
+ok 21 - a map in which every name has one output renders a user message byte-identical to the one rendered before the change
+  ---
+  duration_ms: 0.484167
+  type: 'test'
+  ...
+# Subtest: a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section
+ok 22 - a name with several outputs renders one sub-section per task in plan order, with the task id, the template and the params, and a null value renders the unavailable line in its sub-section
+  ---
+  duration_ms: 0.136708
+  type: 'test'
+  ...
+# Subtest: an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording
+ok 23 - an absent output of one of several producers is worded by its task and the others are said to be available; a name with no output keeps the old wording
+  ---
+  duration_ms: 0.072417
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 712.517916

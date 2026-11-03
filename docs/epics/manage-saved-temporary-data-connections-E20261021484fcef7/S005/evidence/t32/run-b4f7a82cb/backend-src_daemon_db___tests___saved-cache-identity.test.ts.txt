@@ -1,0 +1,48 @@
+TAP version 13
+# (node:7973) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: CM-S1-I: all saved cache identity components isolate destinations sidecars inflight work and exact-owned cleanup
+ok 1 - CM-S1-I: all saved cache identity components isolate destinations sidecars inflight work and exact-owned cleanup
+  ---
+  duration_ms: 44.25525
+  type: 'test'
+  ...
+# Subtest: CM-S1-I: unchanged size and mtime cannot reuse stale contents and corrupt derived output is rebuilt without changing source
+ok 2 - CM-S1-I: unchanged size and mtime cannot reuse stale contents and corrupt derived output is rebuilt without changing source
+  ---
+  duration_ms: 9.548459
+  type: 'test'
+  ...
+# Subtest: CM-S1-I: same-identity conversions join while separate roots proceed and source changes discard all staged output
+ok 3 - CM-S1-I: same-identity conversions join while separate roots proceed and source changes discard all staged output
+  ---
+  duration_ms: 9.21575
+  type: 'test'
+  ...
+# Subtest: CM-S1-T: saved file-driver roots contents revisions and converter options return correct complete rows
+ok 4 - CM-S1-T: saved file-driver roots contents revisions and converter options return correct complete rows
+  ---
+  duration_ms: 461.548583
+  type: 'test'
+  ...
+# Subtest: CM-S1-I: cache maintenance evicts only unpinned derived generations and leaves source bytes intact
+ok 5 - CM-S1-I: cache maintenance evicts only unpinned derived generations and leaves source bytes intact
+  ---
+  duration_ms: 4.326875
+  type: 'test'
+  ...
+# Subtest: CM-S1-T: directory saved reads include only current sources and current XLSX sheets across content generations
+ok 6 - CM-S1-T: directory saved reads include only current sources and current XLSX sheets across content generations
+  ---
+  duration_ms: 318.288125
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1720.336542

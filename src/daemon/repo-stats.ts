@@ -10,7 +10,6 @@ import type {
   RegisteredRepo,
   RepoStats,
 } from '../shared/types.js';
-import type { IndexQueue } from './queue.js';
 
 /**
  * Per-repo index statistics (Story add-new-repo-stats-daemon-ipc / S001).
@@ -119,11 +118,15 @@ export function buildRepoStats(input: {
  * repo's distinct files, contributing 0 for a file that vanished since indexing
  * (best-effort — never throws for a readable store). Read-only.
  */
-export function collectRepoStats(
+export async function collectRepoStats(
   store: GraphStore,
   registeredRepos: RegisteredRepo[],
-  queue: Pick<IndexQueue, 'depthForRepo'>,
-): RepoStats[] {
+  queue: { depthForRepo(repoPath: string): number | Promise<number> },
+): Promise<RepoStats[]> {
+  // The queue may be the code-indexing worker's (a request each): resolved one repository at a time, up front.
+  const pending = new Map<string, number>();
+  for (const r of registeredRepos) pending.set(r.path, await queue.depthForRepo(r.path));
+
   const entities: RepoStatsEntity[] = [];
   const u64ToRepo = new Map<bigint, string>();
 
@@ -160,6 +163,6 @@ export function collectRepoStats(
     relationSourceRepos: relationSourceRepos(),
     registeredRepos,
     sizeOf,
-    pendingFor: (repoPath) => queue.depthForRepo(repoPath),
+    pendingFor: (repoPath) => pending.get(repoPath) ?? 0,
   });
 }

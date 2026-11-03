@@ -1,5 +1,33 @@
 ## insrc — front door (insrc MCP server)
 
+### Hard gates — never skipped, whatever the host agent
+
+These apply to every agent (Claude Code, Codex, Vibe, …) working in this repo.
+If a gate cannot be satisfied, stop and ask the user — do not improvise around it.
+
+1. **Approval is a human gate.** Never call `insrc_workflow_approve` unless the
+   user gave an explicit in-chat yes in the same turn, for the specific artifact:
+   the yes names the artifact id/path, or answers "yes" to the summary you just
+   presented after `insrc_present`. A blanket "approve all" covers ONLY the
+   artifacts you declared with `insrc_present` in that same turn — list them.
+   Never batch-approve via `{ epicHash }` without naming each artifact and
+   getting a yes for that batch. Never approve via raw daemon IPC/socket —
+   only through the registered `insrc_workflow_approve` MCP tool.
+2. **Present before you ask.** `insrc_present` must report every declared name
+   as `presented` before you ask for approval. If it errors, or any name comes
+   back `notPending`, correct the name and call again; if it cannot succeed,
+   STOP and tell the user — do not approve anything that was not presented.
+3. **Mandatory reviews only, max three rounds each** (DEF/HLD/LLD review before
+   approval; code review before BUILD completion). After the third round, stop
+   and ask the user.
+4. **Never patch off-ledger.** Every feature and every defect goes through
+   triage → tracked artifact → approval → build → review → approve. No direct
+   commits that implement tracked work without the chain's records.
+5. **Workflows run only via `insrc_workflow_step`**, turn-by-turn, preserving
+   the opaque `state` token. Never `insrc_workflow_run`, never raw IPC.
+6. **If `insrc_schema` / `insrc_guide` / `insrc_present` are unavailable or
+   error, do not improvise their content from memory — say so and ask the user.**
+
 This is the SKELETON. It names every insrc surface and routes an intent to the
 right one; it does NOT inline each workflow's full procedure. Two on-demand
 lookups carry the detail so this block can stay small:
@@ -124,13 +152,20 @@ These checks stay within the existing three-round review limit.
 ### Approval discipline (applies to every workflow artifact)
 
 Never auto-approve and never send the user to the TUI. When a `done` response
-carries a `pendingApproval` block (or a build or review step leaves a record to
-approve), first DECLARE what you are about to show: call
-`insrc_present({ documents: [...] })` with each document's artifact id (for
-example `LLD-<hash>-s1`) or repo-relative path. Then PRESENT a concise summary
-(give the document's path in your message too) and ASK the user; only on their
-explicit in-chat yes call `insrc_workflow_approve({ artifactPath })` (or
-`{ epicHash }` to batch). Review a DEF, HLD or LLD before you approve it — see
+carries a `pendingApproval` block — or any step you drove leaves a record
+pending (check `insrc_workflow_step`'s done response and the pending list) —
+the gate is the same every time: first DECLARE what you are about to show by
+calling `insrc_present({ documents: [...] })` with each document's artifact id
+(for example `LLD-<hash>-S001`) or repo-relative path, and require every name
+to come back `presented`; then PRESENT a concise summary (give the document's
+path in your message too) and ASK the user. Only then, on the user's explicit
+in-chat yes **for that artifact** (the message names its id/path, or answers
+"yes" to the summary you just presented), call
+`insrc_workflow_approve({ artifactPath })`. A blanket "approve all" authorizes
+only the artifacts you presented in that same turn. Never batch via
+`{ epicHash }` without listing each artifact and getting a yes for the batch.
+Never call `insrc_workflow_approve` through raw daemon IPC or a socket — only
+through the MCP tool. Review a DEF, HLD or LLD before you approve it — see
 `insrc_guide({ workflow: 'review' })`.
 
 ### Review discipline (applies to every review)
@@ -152,9 +187,10 @@ The chat opens exactly the documents you declare with `insrc_present`; it does
 not work out what to open from tool output, so a document you do not declare is
 not opened for the user. The answer lists each name as `presented` or
 `notPending` (misspelt, already approved, or with no document file yet): correct
-a `notPending` name and call again. Declaring is steering-only for now, and a
-missed call shows up as nothing opening; if that proves unreliable, revisit it
-(a reminder from the daemon in tool responses, or detection of a missing call).
+a `notPending` name and call again, and require every declared name to be
+`presented` before you ask for approval. If `insrc_present` itself is
+unavailable or errors, do not approve anything that turn — report the tool
+failure and ask the user instead.
 
 <!-- insrc:guide:triage:start -->
 ## triage — size a feature request and route it (`insrc_triage`)
@@ -251,7 +287,7 @@ require an ERD for isolated class edits. Use structured companion definitions on
 Produces one Story's **LLD** (low-level design: interfaces, files, tasks,
 citations). Requires an approved **HLD** for an epic Story; a **standalone**
 `design.story` (from triage `feature` / `small`) skips the HLD/epic reads and
-runs on its own. Pass the LOWERCASE story id (e.g. `s1`) — an uppercase story id
+runs on its own. Pass the LOWERCASE story id (e.g. `s1`) — an uppercase `S001`
 crashes with "Story not found".
 
 Stay inside the Story's own scope — the LLD carries `adjacentBoundaries` and an
@@ -306,7 +342,10 @@ the code-review-gated completion act. A Story with NO code review, or one
 reviewed by the party that wrote the code, is always withheld into `skipped[]`.
 A code review whose verdict is `block` withholds completion under
 `codeReview.enforce` (config, off / advisory by default). Either is passed only
-with an explicit `overrideReview`.
+with an explicit `overrideReview`. A fingerprinted BUILD review additionally
+requires unchanged source, contracts, BUILD and TESTS. A `stale-review` outcome
+in `codeReview[]` withholds approval even with an override or enforcement off;
+run a new independent review.
 Apply the front-door **Relevant design artifacts** rule: assess relevance
 independently, document relationship changes even when simple, and do not
 require an ERD for isolated class edits. Builders keep affected artifacts aligned with the implementation.
@@ -330,34 +369,26 @@ and the tool routes by who authored the artifact:
 - **You authored it (or the author is not recorded):** the tool asks the daemon
   to review, waits, and returns `done` with the daemon's verdict in the same
   call. This can take several minutes (a DEF has measured about 13; the tool
-  uses its configured outer execution ceiling). If the daemon is not running, is too old
+  waits up to 30). If the daemon is not running, is too old
   to know the request, fails, or passes the wait limit, the tool returns an
   error naming the cause. It does NOT fall back to a review by you: fix the
   cause and call again, or tell the user, who can approve with an override
   reason.
 - **The daemon authored it:** you review it, through the loop below.
 
-For a daemon-authored artifact, supply `reviewBudget` on start and every
-continuation: `{ version: 1, profile, hostContextReserveTokens }`. Look up the
-registered profile fields with `insrc_schema`; use an explicit
-`controller-reserved` profile and refresh the estimate of the host conversation
-every turn. The server owns and pins its cap/profile. These are estimates and
-reserves, not measured host context or a verified hard native ceiling.
+Your review loop, for a daemon-authored artifact: `phase:'start'` → `claims` →
+`verdicts`. It extracts the artifact's load-bearing premises, the server re-runs
+deterministic probes against real source, and you judge the verdicts against
+that evidence. For a DESIGN document (an HLD or LLD) `start` returns
+`emit_findings` instead of `emit_claims`: a fixed checklist, chosen by whether
+the design answers an ISSUE or a SPEC. Check every item against the real code
+and docs yourself — use insrc analyze for drill-down — then answer once with
+`phase:'findings'`. Report each premise as `holds`, `does-not-hold` or
+`could-not-verify`; only `does-not-hold` blocks approval. An answer that breaks
+the checklist is rejected with the reasons and stamps nothing; correct it and
+send `findings` again.
 
-The tool returns one admitted assigned request, its versioned reply schema,
-call metadata, timing and opaque state. Execute the complete request and send
-`reply: { version: 1, generation, callId, answer }`, `state`, and a fresh
-`reviewBudget`, using the indicated outer phase: `claims` after `emit_claims`,
-`verdicts` after `emit_verdicts`, or `findings` after `emit_findings`. Continue
-the same run until `done`. Extraction finishes before deterministic probes;
-each verification call owns exactly its assigned claims and all their evidence.
-An HLD/LLD uses its fixed template checklist. Every required claim/item must
-validate before a review is persisted. The server measures the complete
-response, never appends unmeasured whole grounding, and refuses unsupported
-indivisible requests rather than truncating required material. Old raw final
-arrays and stale tokens refuse; a final replay returns `already_completed`.
-
-Either way the review is recorded on the lifecycle, and **approval requires it**: a
+Either way the review stamps `meta.review`, and **approval requires it**: a
 DEF, HLD or LLD with no review, or with a review done by the party that
 authored it, is withheld, and so is one whose verdict is `block` (unresolved
 HIGH/MED findings). Resolve the blocking findings (apply / accept-with-note /
@@ -388,26 +419,44 @@ routes it. Call `phase:'start'` with `{ epicHash, storyId, repo? }`:
 
 - **You wrote the code (a build you drove with `insrc_build_step`), or the
   author is not recorded:** the tool asks the daemon to review and returns
-  `done` with its verdict. If the index is stale it first returns
+  `done` with its verdict, or `review_pending` with an opaque `state`, handle,
+  daemon epoch and progress. Each turn waits at most200 seconds. Resume with
+  `phase:'start'` and that SAME state; do not relaunch, poll the host or reset
+  deadlines. The daemon owns the review across disconnected turns. Its fixed
+  total budget is10 minutes per initial primary chunk; status polls grant no
+  additional time. With a `review_pending` state, `proceed:false` explicitly
+  cancels owned work; failed/cancelled/lost operations claim no completed CR.
+  Active tokens survive the normal1h TTL and LRU pressure, then expire after
+  terminal grace. Daemon restart loses handles: start a new review only when
+  the tool reports loss. If the index is stale it first returns
   `confirm_wait`: ask the user, then call `start` again with that `state` and
   `proceed` (true = wait for a fresh index, false = review the diff instead). A
   review of the diff is recorded as `degraded` and can be `warn` at best. If the
   daemon review does not complete the tool returns an error naming the cause;
   it does NOT fall back to a review by you.
-- **The daemon wrote the code:** declare a versioned `controller-reserved`
-  profile and a fresh `hostContextReserveTokens` as `reviewBudget`. Each
-  `emit_judgements` assigns one complete request and its answer schema. Execute
-  only that request; resume with `reply={version:1,generation,callId,answer}`,
-  the opaque state and a fresh declaration until `done`. Preserve all evidence;
-  never submit an aggregate legacy answer or reuse an older generation. Host
-  context is declared/reserved; external execution is not measured by the daemon.
+- **The daemon wrote the code:** a legacy full-graph review returns
+  `emit_judgements`; emit the `{ judgements }` JSON. A degraded diff review
+  instead requires the verified fresh isolated local CLI helper. The bundled
+  MCP helper consumes `emit_review_call` internally, executes its complete
+  bounded task through CliProvider and forwards the identified enveloped result.
+  It returns `controller_call_pending` with `state`, callId and expiry while
+  owning work. Continue with `phase:'start'` and that SAME state to rejoin;
+  never execute the task in inherited chat or submit raw callResult. Calls run
+  serially and retain the original root/child clocks. `proceed:false` cancels
+  both helper work and server state; a freshness `confirm_wait` decline still
+  chooses a diff review. Raw controllerInput flags cannot register capability.
+  The installed CLI must pass the enforcing isolation probe; unsupported hosts
+  return `unsupported-bounded-controller` before receiving evidence. A lost
+  helper epoch requires cancellation/restart; the daemon never substitutes its
+  own judgement. Legacy degraded tokens require a restart through the helper.
+
 
 Either way it writes a code-review record across four dimensions — **adherence /
 conventions / coverage / quality** → block / warn / pass.
 
-When you are the reviewer and the graph grounding comes back hollow on
-just-created files (no symbol/test edges), judge coverage by RUNNING the suite
-and flag the caveat honestly — never fabricate a HIGH from empty grounding.
+Coverage judgements require actual recorded test evidence. Hollow graph
+grounding routes through the bounded diff protocol; never fabricate a HIGH
+from missing graph edges or replace the isolated helper with chat reasoning.
 PRESENT the verdict, then COMPLETE the Story by approving its **BUILD** artifact
 (see the `build` guide — BUILD approval is the code-review-gated completion act,
 and a Story with no code review is always withheld).

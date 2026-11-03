@@ -1,0 +1,15 @@
+[90m[main 2026-10-30T03:56:30.332Z][0m [node-compile-cache] main: packaged cache inactive (status: disabled, configured: /Applications/Visual Studio Code.app/Contents/Resources/app/node-compile-cache/main, active: none)
+[90m[main 2026-10-30T03:56:30.366Z][0m StorageMainService: creating application shared storage
+[90m[main 2026-10-30T03:56:31.109Z][0m [shared storage] Creating shared storage database at '/private/tmp/s5-live-j5jogfty/home/.vscode-shared/sharedStorage/state.vscdb' (wasCreated: true)
+[90m[main 2026-10-30T03:56:31.110Z][0m [shared storage] Initializing fallback application storage (path: /private/tmp/s5-live-j5jogfty/profile/User/globalStorage/state.vscdb)
+[90m[main 2026-10-30T03:56:31.112Z][0m [shared storage] Fallback application storage initialized with 3 items
+[90m[main 2026-10-30T03:56:31.925Z][0m update#disable - updates are disabled by user preference
+[90m[main 2026-10-30T03:56:31.925Z][0m update#setState disabled
+[90m[main 2026-10-30T03:56:31.943Z][0m AgentHostProcessManager: agent host started
+[91m[main 2026-10-30T03:56:32.308Z][0m [AgentHost:stderr] (node:45290) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+(Use `Code Helper --trace-deprecation ...` to show where the warning was created)
+
+Unknown channel: agentHostClientByokLm
+Unknown channel: agentHostClientProxy
+Unknown channel: agentHostClientProxy
+[90m[main 2026-10-30T03:58:59.658Z][0m Extension host with pid 45308 exited with code: 0, signal: unknown.

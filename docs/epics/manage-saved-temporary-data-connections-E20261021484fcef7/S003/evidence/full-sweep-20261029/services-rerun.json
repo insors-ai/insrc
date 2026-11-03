@@ -1,0 +1,31 @@
+{
+  "startedAt": "2026-10-29T07:29:12.333663+00:00",
+  "argv": [
+    "/opt/homebrew/opt/node@22/bin/node",
+    "--import",
+    "tsx",
+    "--test",
+    "--test-reporter=tap",
+    "src/daemon/db/__tests__/clickhouse-live-probe.test.ts",
+    "src/daemon/db/__tests__/oracle-live-probe.test.ts",
+    "src/daemon/db/__tests__/other-kv-probes.test.ts",
+    "src/daemon/db/__tests__/redis-mongo-probes.test.ts",
+    "src/daemon/db/__tests__/session-service-isolation.test.ts"
+  ],
+  "reason": "Retry only service files whose original full-sweep failures were caused by Docker not running.",
+  "dockerVersion": "29.8.2",
+  "pid": 68106,
+  "finishedAt": "2026-10-29T07:31:23.304786+00:00",
+  "exitCode": 0,
+  "counts": {
+    "tests": 8,
+    "suites": 0,
+    "pass": 8,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "failureTitles": [],
+  "logSha256": "15d4fb1cd2506fc944fbe7a731fdc02aaa230ab8e6e936b8d4420a78e90a3af4"
+}

@@ -1,0 +1,175 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793084322625-loctd9",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-10-27T06:58:42.625Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 2153579,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s7",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-23T09:24:56.590Z",
+    "epicSlug": "per-family-model-definitions-served-daemon"
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "ce99b72065d03b1b",
+    "storyId": "s7",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "jetbrains-plugin/__tests__/s7-gradle.test.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurable.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoSection.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/PerRoleSection.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/SettingsWriteGatewayTest.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpcParseTest.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGatewayService.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitions.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/ModelDefinitionsGatewayTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/lifecycle/DaemonLifecycleServiceTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingCleanupIntegrationTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingLifecycleTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/onboarding/OnboardingWiringTest.kt",
+        "jetbrains-plugin/__tests__/model-tiers-effort-gradle.test.ts",
+        "jetbrains-plugin/__tests__/model-tiers-unset-gradle.test.ts",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModelTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersWiringSourceScanTest.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckDialog.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlowTest.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ApplyCompletion.kt",
+        "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/SettingsView.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableRestartTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/daemon/PerRepoOverridesGatewayTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/InsrcSettingsConfigurableTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/PerRepoOverridesModelTest.kt",
+        "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/S7LiveRenderTest.kt"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1332",
+            "message": "The supplied evidence establishes the signature and result variants, but shows no implementation of the required decision behavior: routing approval/rejection to models.approve/models.reject, preserving daemon refusal reasons, and converting failures into Failed without throwing. These executable contract requirements remain unimplemented in the evidence.",
+            "expectationRef": "LLD contract 3: DaemonGateway.decideModel"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:253",
+            "message": "The required caller updates are unimplemented in the supplied evidence: no note shows ModelTiersSection, PerRoleSection, PerRepoSection, and InsrcSettingsConfigurable all matching `is SaveResult.Saved` and displaying rejection detail when present. Type declarations and test intent alone do not satisfy this postcondition.",
+            "expectationRef": "LLD contract 5: SaveResult (extended)"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt:1295",
+            "message": "The evidence shows failure types and UI surfaces, but no implementation of the required unavailable-daemon path: catching DaemonUnavailableException as Failed(NotRunning), displaying the prescribed message without editable rows or writes, and retrying on Refresh. This required error case remains unimplemented on the supplied evidence.",
+            "expectationRef": "LLD error case 1: The daemon is not running when the settings page opens or Refresh is pressed"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckDialog.kt:108",
+            "message": "The supplied evidence does not show the required expired-check response implemented: an unknown-check refusal must tell the user that the check is no longer pending and offer Check again. Available state and a test name establish intent, but do not establish this dialog behavior.",
+            "expectationRef": "LLD error case 6: The check expired or the daemon restarted before the decision"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersModel.kt:83",
+            "message": "The evidence shows supporting helpers and state, but no implementation of the required unset-tier behavior: display the default family's tier default, remain clean, and produce no Apply writes. This expectation remains unimplemented in the supplied evidence.",
+            "expectationRef": "LLD edge case 4: A tier with nothing configured"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelCheckFlow.kt:63",
+            "message": "The supplied evidence shows the family-selection surface and cliKind metadata, but does not show the required CLI-only filtering implemented. The check dialog must exclude Ollama from its offered families.",
+            "expectationRef": "LLD edge case 7: Choosing Ollama in the check dialog"
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt:70",
+            "message": "The evidence shows Apply entry points and per-tier saved/pending state, but no implementation of off-EDT execution, baseline advancement gated on Saved, or a ConfigurationException naming the failed tier. These required behaviors are unimplemented in the supplied evidence.",
+            "expectationRef": "LLD invariant 1: Apply runs off the EDT and advances a tier's baseline only when its write Saved; a failed tier keeps its pending edit and Apply throws a ConfigurationException naming it (jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/settings/ModelTiersSection.kt:70)."
+          },
+          {
+            "dimension": "adherence",
+            "severity": "MED",
+            "location": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/settings/S7LiveRenderTest.kt:1",
+            "message": "The evidence shows component-rendering helpers and a live-daemon test declaration, but no executed runIde walkthrough. It also does not establish coverage of approve + restart or Apply with restartRequired, comparison against the LLD UX mock, or recorded screenshots of every required state. Complete and record the sandbox IDE walkthrough required by t10.",
+            "expectationRef": "PLAN task t10: Live check in a sandbox IDE"
+          }
+        ],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 66,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "conventions",
+        "findings": [],
+        "pipelineCalls": {
+          "chunk": 2,
+          "obligation": 7,
+          "relation": 0,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "coverage",
+        "findings": []
+      },
+      {
+        "dimension": "quality",
+        "findings": [],
+        "pipelineCalls": {
+          "chunk": 3,
+          "obligation": 0,
+          "relation": 2,
+          "merge": 0
+        }
+      },
+      {
+        "dimension": "diagram",
+        "findings": [
+          {
+            "dimension": "diagram",
+            "severity": "LOW",
+            "location": "docs/epics/per-family-model-definitions-served-daemon-E20261023ce99b720/S007/ux-mock.html",
+            "message": "no registered diagram handler for companion type 'ux' ('UX mock') — not judged in this Story",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "ux",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 8,
+      "low": 1
+    }
+  }
+}

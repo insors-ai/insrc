@@ -11,6 +11,9 @@ import { RevisionLeaseGate, ConnectionUseError } from './lease-gate.js';
 import { guardedDriver, driverFailure } from './driver-guard.js';
 import { fileExecutionPolicy } from './file-policy.js';
 import { prepareRuntimeConfig } from './runtime-config.js';
+import { RemovalRetirementOwner } from './removal-retirement.js';
+import type { RemovalCleanup } from './removal-retirement.js';
+import { ManagementServiceError } from './management.js';
 const log = getLogger('db-pool');
 const IDLE_CLOSE_MS = 10 * 60 * 1000;
 interface PoolEntry {
@@ -24,6 +27,14 @@ interface PoolEntry {
 	lastUsedAt: number;
 	idleTimer: ReturnType<typeof setTimeout> | null;
 }
+interface PreparedRemoval {
+	readonly id: string;
+	readonly revision: string;
+	entry: PoolEntry | undefined;
+	readonly reservation: object | undefined;
+	readonly release: () => void;
+	phase: 'prepared' | 'committed' | 'canceled';
+}
 export interface DriverPoolOptions {
 	readonly idleCloseMs?: number | undefined;
 	readonly factory?: ((kind: string) => DriverFactory | undefined) | undefined;
@@ -36,8 +47,12 @@ export class DriverPool {
 	readonly #replacing = new Set<string>();
 	#reloadTail: Promise<void> = Promise.resolve();
 	#closing = false;
+	readonly #retirements: RemovalRetirementOwner;
+	readonly #removalTokens = new WeakMap<object, PreparedRemoval>();
+	readonly #preparedRemovals = new Set<string>();
 	constructor(private readonly repoPath: string, private readonly options: DriverPoolOptions = {}) {
 		this.#gate = options.gate ?? new RevisionLeaseGate(repoPath);
+		this.#retirements = new RemovalRetirementOwner(repoPath);
 	}
 	async reload(): Promise<{
 		warnings: readonly string[];
@@ -53,9 +68,11 @@ export class DriverPool {
 	private async reloadNow(): Promise<{
 		warnings: readonly string[];
 	}> {
-		if (this.#closing)
+		if (this.#closing || this.#preparedRemovals.size)
 			throw new ConnectionUseError('busy');
 		const { file, resolved, warnings } = await loadConnections(this.repoPath);
+		if (this.#closing || this.#preparedRemovals.size)
+			throw new ConnectionUseError('busy');
 		const next = new Map<string, PoolEntry>();
 		for (const config of resolved) {
 			const stored = file.connections.find(c => c.id === config.id)!;
@@ -118,6 +135,61 @@ export class DriverPool {
 			throw new ConnectionUseError('busy');
 		return this.#gate.beginMutation(id, mode, expectedRevision);
 	}
+	/** Holds the existing revision barrier until proven commit or cancellation; no cleanup starts here. */
+	prepareRemoval(id: string, oldRevision: string, operationId: string): object {
+		const release = this.beginMutation(id, 'remove', oldRevision);
+		try {
+			const entry = this.entries.get(id);
+			if (!entry || entry.revision !== oldRevision) throw new ConnectionUseError('conflict');
+			if (entry.closing) throw new ConnectionUseError('busy');
+			const reservation = entry.driver || entry.building ? this.#retirements.prepare(operationId, oldRevision) : undefined;
+			if (entry.idleTimer) { clearTimeout(entry.idleTimer); entry.idleTimer = null; }
+			const token = Object.freeze({});
+			this.#removalTokens.set(token, {id,revision:oldRevision,entry,reservation,release,phase:'prepared'});
+			this.#preparedRemovals.add(id);
+			return token;
+		} catch (error) { release(); throw error; }
+	}
+	#preparedRemoval(token: object): PreparedRemoval {
+		const record = this.#removalTokens.get(token);
+		if (!record) throw new ConnectionUseError('conflict');
+		return record;
+	}
+	cancelRemoval(token: object): void {
+		const record = this.#preparedRemoval(token);
+		if (record.phase === 'canceled') return;
+		if (record.phase !== 'prepared') throw new ConnectionUseError('conflict');
+		if (record.reservation) this.#retirements.cancel(record.reservation);
+		const entry = record.entry;
+		record.phase = 'canceled'; record.entry = undefined;
+		this.#preparedRemovals.delete(record.id); record.release();
+		if (entry?.driver) this.touch(entry);
+	}
+	/** Known committed registry truth only. Detach synchronously before returning a cleanup-only handle. */
+	commitRemoval(token: object): RemovalCleanup {
+		const record = this.#preparedRemoval(token);
+		const entry = record.entry;
+		if (record.phase !== 'prepared' || !entry || this.entries.get(record.id) !== entry) throw new ConnectionUseError('conflict');
+		let driver = entry.driver;
+		let building = entry.building;
+		const cleanup = record.reservation ? this.#retirements.commit(record.reservation, async () => {
+			if (building) {
+				try { driver = await building; } catch { /* A failed constructor yielded no SDK handle. */ }
+				building = null;
+			}
+			if (driver) { await driver.close(); driver = null; }
+		}) : Object.freeze({close:async () => {}});
+		const revisions = new Map([...this.entries].filter(([id]) => id !== record.id).map(([id,e]) => [id,e.revision]));
+		this.#gate.sync(revisions);
+		this.entries.delete(record.id);
+		if (entry.idleTimer) clearTimeout(entry.idleTimer);
+		entry.idleTimer = null;
+		record.phase = 'committed'; record.entry = undefined;
+		this.#preparedRemovals.delete(record.id); record.release();
+		return cleanup;
+	}
+	removalCleanupPending(operationId: string, oldRevision: string): boolean { return this.#retirements.pending(operationId,oldRevision); }
+	retryRemovalCleanup(operationId: string, oldRevision: string): Promise<void> { return this.#retirements.retry(operationId,oldRevision); }
 	async lease(id: string): Promise<ConnectionLease> {
 		if (this.#closing || this.#replacing.has(id))
 			throw new ConnectionUseError('busy');
@@ -164,6 +236,7 @@ export class DriverPool {
 			await entry.closing;
 		if (this.entries.get(connectionId) !== entry)
 			throw new ConnectionUseError('conflict');
+		this.#gate.assertAcquirable(connectionId);
 		if (entry.driver) {
 			this.touch(entry);
 			return entry.driver;
@@ -176,18 +249,23 @@ export class DriverPool {
 				entry.building = null;
 			});
 		const driver = await entry.building;
+		if (this.entries.get(connectionId) !== entry) throw new ConnectionUseError('conflict');
+		this.#gate.assertAcquirable(connectionId);
 		this.touch(entry);
 		return driver;
 	}
 	async closeAll(): Promise<void> {
 		this.#closing = true;
+		this.#retirements.stopAdmission();
 		await this.#reloadTail;
+		if (this.#preparedRemovals.size) throw new ConnectionUseError('busy');
 		for (const entry of this.entries.values()) {
 			await this.#gate.idle(entry.connectionId);
 			await this.closeEntry(entry);
 		}
 		this.entries.clear();
 		this.#gate.sync(new Map());
+		await this.#retirements.drain();
 	}
 	async registerEphemeral(config: ConnectionConfig): Promise<void> {
 		if (this.#closing || this.#gate.snapshot(config.id).barrier !== 'none')
@@ -222,6 +300,7 @@ export class DriverPool {
 		}) } : undefined);
 	}
 	private touch(entry: PoolEntry): void {
+		if (this.entries.get(entry.connectionId) !== entry || this.#gate.snapshot(entry.connectionId).barrier !== 'none') return;
 		entry.lastUsedAt = Date.now();
 		if (entry.idleTimer)
 			clearTimeout(entry.idleTimer);
@@ -253,6 +332,7 @@ export class DriverPool {
 				}
 				catch {
 					log.warn({ id: entry.connectionId }, 'driver close failed');
+					throw new ManagementServiceError('recovery-required');
 				}
 				entry.driver = null;
 			}

@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "recordedAt": "2026-10-29T07:33:33.068244+00:00",
+  "request": "Run the full sweep; automated code review remains excluded.",
+  "snapshotCommit": "8a33b7f8ad8d7237c48a48d5619ff9457dc6b979",
+  "snapshotPath": "/private/tmp/cm-s3-sweep-20261029-davnayql",
+  "node": "v22.23.2",
+  "build": {
+    "result": "pass",
+    "log": "build.log"
+  },
+  "fullSweep": {
+    "testFiles": 835,
+    "counts": {
+      "tests": 6858,
+      "suites": 112,
+      "pass": 6713,
+      "fail": 8,
+      "cancelled": 0,
+      "skipped": 134,
+      "todo": 3,
+      "duration_ms": 460120.761083
+    },
+    "exitCode": 1,
+    "log": "sweep.log",
+    "logSha256": "bfeeaab93271e5f9f0ccc05d1f063e058781076515eb55b17505c5fca6382545",
+    "sourceDrift": [],
+    "interventions": [
+      {
+        "recordedAt": "2026-10-29T07:24:46.247279+00:00",
+        "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+        "sweepPid": 80522,
+        "testPid": 75756,
+        "elapsed": "05:12",
+        "signal": "SIGTERM",
+        "reason": "Worker-store test process remained blocked beyond five minutes with no completed test output; terminate only this owned file so the complete sweep can report its failure.",
+        "ownedPids": [
+          75756,
+          75924
+        ]
+      }
+    ],
+    "countsAdjustedForReruns": false
+  },
+  "reruns": {
+    "databaseServices": {
+      "counts": {
+        "tests": 8,
+        "suites": 0,
+        "pass": 8,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "exitCode": 0,
+      "log": "services-rerun.log",
+      "reason": "Docker runtime was stopped during full sweep; started installed OrbStack and reran only the blocked service files.",
+      "coveredInitialFailures": 5
+    },
+    "threadShutdown": {
+      "counts": {
+        "tests": 5,
+        "suites": 0,
+        "pass": 5,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "threads-boot-rerun.log",
+      "result": "pass in isolation; original full-sweep failure remains recorded, not claimed fixed"
+    },
+    "workerStores": {
+      "counts": {
+        "tests": 7,
+        "suites": 0,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 1,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "worker-stores-rerun.log",
+      "exitCode": 1,
+      "perTestTimeoutMs": 30000,
+      "outerTimeout": false,
+      "result": "Six assertions pass, but the file does not exit and reaches the runner timeout."
+    },
+    "fileStoreRefusal": {
+      "counts": {
+        "tests": 2,
+        "suites": 0,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "log": "file-refusal-rerun.log",
+      "result": "Directory search output contains protected graph.lmdb and graph.lmdb-lock fixture contents."
+    }
+  },
+  "remainingFindings": [
+    {
+      "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+      "status": "reproduced",
+      "kind": "nonterminating test file / resource cleanup"
+    },
+    {
+      "file": "src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts",
+      "status": "reproduced",
+      "kind": "protected store-file contents returned in directory search"
+    },
+    {
+      "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+      "status": "failed in full sweep; passes isolated rerun",
+      "kind": "shutdown under load; root cause not established"
+    }
+  ],
+  "postRerunSourceDrift": [],
+  "trackedManifest": "tracked-before.json",
+  "testFileManifest": "test-files.json",
+  "liveTestsEnvironment": {
+    "INSRC_LIVE_TESTS": null,
+    "INSRC_MODE": null
+  },
+  "automatedCodeReviewRun": false,
+  "productionCodeChanged": false,
+  "insrcDaemonRestarted": false,
+  "releaseGatesChanged": false,
+  "sourceRetained": true,
+  "logs": {
+    "threads-boot-rerun.log": {
+      "bytes": 1691,
+      "sha256": "49bc5f042937674ff3d04296cd4e87d7a57b46b949a8851b44d33621b969a4d7"
+    },
+    "services-rerun.log": {
+      "bytes": 17211,
+      "sha256": "15d4fb1cd2506fc944fbe7a731fdc02aaa230ab8e6e936b8d4420a78e90a3af4"
+    },
+    "sweep.log": {
+      "bytes": 6456564,
+      "sha256": "bfeeaab93271e5f9f0ccc05d1f063e058781076515eb55b17505c5fca6382545"
+    },
+    "worker-stores-rerun.log": {
+      "bytes": 8399,
+      "sha256": "8fd4cb760b2e922e3f0122ac622703f84e98826761572e2ef94b3636b08f1421"
+    },
+    "file-refusal-rerun.log": {
+      "bytes": 1832,
+      "sha256": "fc0d17778d07ed37dfd6346b687b34e49fb52ec68cb200085ae99fd1077429cc"
+    },
+    "build.log": {
+      "bytes": 744,
+      "sha256": "6fe1a2d1a33deb734df37df5bb1e1f3145bf5538b095eb898beb03942fb4331f"
+    }
+  }
+}

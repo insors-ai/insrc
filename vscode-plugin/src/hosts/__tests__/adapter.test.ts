@@ -128,3 +128,49 @@ test('createHostAdapter builds an adapter from a data-only HostSpec (ac3): a new
   await detected[0]!.wire();
   assert.ok(fs.files.has('/home/u/new/mcp.json'), 'the new host wired via the same shared factory');
 });
+
+// ---- vibe host (TOML mcp registry + ~/.vibe/AGENTS.md steering) -------------
+
+import { HOST_SPECS, matchesDetection } from '../specs.js';
+
+function vibeSpec(): HostSpec {
+  const s = HOST_SPECS.find((x) => x.descriptor.id === 'mistral.vibe');
+  assert.ok(s, 'HOST_SPECS carries the mistral.vibe entry');
+  return s;
+}
+
+test('HOST_SPECS: the vibe entry detects by home path, targets ~/.vibe/config.toml (toml) + ~/.vibe/AGENTS.md', () => {
+  const s = vibeSpec();
+  assert.equal(s.descriptor.displayName, 'Mistral Vibe');
+  assert.equal(s.mcpFormat, 'toml');
+  const cfg = s.resolveConfig();
+  assert.ok(cfg.mcpConfigPath.endsWith('.vibe/config.toml'), cfg.mcpConfigPath);
+  assert.ok(cfg.steeringPath.endsWith('.vibe/AGENTS.md'), cfg.steeringPath);
+  assert.equal(matchesDetection(s.descriptor.detection, fakeEnv({ homePaths: ['.vibe'] })), true);
+  assert.equal(matchesDetection(s.descriptor.detection, fakeEnv({ homePaths: [] })), false);
+});
+
+test('vibe adapter wire() writes the [[mcp_servers]] insrc TOML entry + the steering block; unwire() reverses both', async () => {
+  const spec = vibeSpec();
+  const { mcpConfigPath: VIBE_MCP, steeringPath: VIBE_STEER } = spec.resolveConfig();
+  const fs = fakeFs({
+    [VIBE_MCP]: 'active_model = "mistral-medium-3.5"\n\n[[mcp_servers]]\nname = "docs"\nurl = "https://x"\n',
+    [VIBE_STEER]: '# my vibe notes\n',
+  });
+  const a = createHostAdapter(spec, deps(fs, { env: fakeEnv({ homePaths: ['.vibe'] }) }));
+  assert.equal(await a.detectPresent(), true);
+  await a.wire();
+
+  const toml = fs.files.get(VIBE_MCP)!;
+  assert.match(toml, /\[\[mcp_servers\]\]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = \[".*insrc-mcp\.js"\]\n/, 'insrc stdio entry written');
+  assert.match(toml, /name = "docs"/, 'existing vibe servers preserved');
+  assert.match(toml, /active_model = "mistral-medium-3.5"/, 'unrelated keys preserved');
+  assert.match(fs.files.get(VIBE_STEER)!, new RegExp(STEERING_MARKER_START.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')), 'steering block in ~/.vibe/AGENTS.md');
+  assert.match(fs.files.get(VIBE_STEER)!, /# my vibe notes/, 'prior AGENTS.md content preserved');
+
+  await a.unwire();
+  const after = fs.files.get(VIBE_MCP)!;
+  assert.ok(!after.includes('"insrc"'), 'toml entry removed');
+  assert.match(after, /name = "docs"/, 'other servers survive unwire');
+  assert.equal(fs.files.get(VIBE_STEER), '# my vibe notes\n', 'steering block removed, prior content restored');
+});

@@ -4,8 +4,9 @@ import { assertSavedIdAvailable } from './connection-reservations.js';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { realpath } from 'node:fs/promises';
 import type { ConnectionConfig } from '../../shared/db-driver.js';
-import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection, CommittedOutcome, OperationStatus, ActivationRetry, CommittedReceipt, DraftTestRequest, EffectiveDraft } from '../../shared/connection-management.js';
-import { parseMutationRequest, parseOperationTicket, parseConnectionKey, ManagementInputError } from '../../shared/connection-management-wire.js';
+import type { ConnectionKey, CredentialPatch, ManagementErrorCode, ManagementRequestContext, MutationOutcome, MutationRequest, OperationTicket, SafeConnection, CommittedOutcome, OperationStatus, ActivationRetry, CommittedReceipt, DraftTestRequest, EffectiveDraft, RemovalState } from '../../shared/connection-management.js';
+import { parseMutationRequest, parseOperationTicket, parseConnectionKey, parseRemovalStateRequest, ManagementInputError } from '../../shared/connection-management-wire.js';
+import { projectRemovalState } from '../../shared/connection-removal.js';
 import { canonicalRequestJson, SavedTicketAuthority, TicketError } from './management-tickets.js';
 import { connectionsPath, loadConnections } from './config.js';
 import { credentialValues, materializeDraft, ProfileError, safeConnection } from './driver-profiles.js';
@@ -86,6 +87,10 @@ export class SavedConnectionManagement {
 		promise: Promise<MutationOutcome>;
 	}>();
 	readonly #phase = new Map<string, CommittedOutcome>();
+	/** Exact prepared ownership retained if the registry commit cannot yet be classified. */
+	readonly #pendingRemovals = new Map<string, { readonly ticket: OperationTicket; readonly requestMac: string; readonly prepared: object; readonly oldRevision: string }>();
+	/** Index into the existing pool's cleanup ownership, never a new SDK/config store. */
+	readonly #removalRevisions = new Map<string, string>();
 	private constructor(private readonly ports: SavedManagementPorts) {
 		this.root = ports.root;
 	}
@@ -139,7 +144,7 @@ export class SavedConnectionManagement {
 			throw new ManagementServiceError('invalid-input');
 	}
 	/** Readonly selected draft preparation; metadata admission must precede every keychain read. */
-	async prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest,'key'|'expectedRevision'|'publicPatch'|'credentials'>, signal?: AbortSignal): Promise<EffectiveDraft> {
+	async prepareDraft(context: ManagementRequestContext, request: Pick<DraftTestRequest,'key'|'expectedRevision'|'publicPatch'|'credentials'>, signal?: AbortSignal, drained?: Promise<void>): Promise<EffectiveDraft> {
 		this.context(context);
 		const key = parseConnectionKey(request.key);
 		if (key.repoRoot !== this.root || key.scope !== 'saved') throw new ManagementServiceError('invalid-input');
@@ -155,6 +160,12 @@ export class SavedConnectionManagement {
 			if (editing && !config) throw new ManagementServiceError('not-found');
 			if (!editing && config) throw new ManagementServiceError('duplicate-id');
 			if (editing && revision !== request.expectedRevision) throw new ManagementServiceError('conflict');
+   if(editing && drained){
+    const lease=await this.ports.pool.lease(key.id);
+    if(lease.revision!==revision){await lease.release();throw new ManagementServiceError('conflict');}
+    // The supervisor resolves this only after preparation and the actual child close.
+    void drained.then(()=>lease.release(),()=>lease.release()).catch(()=>{});
+   }
 			await this.ports.tickets.assertAvailable();
 			signal?.throwIfAborted();
 			const refs = referencedSecrets(config);
@@ -174,6 +185,9 @@ export class SavedConnectionManagement {
 			return 'pending';
 		if (receipt.outcome.credentialCleanup === 'complete')
 			return 'complete';
+		// Removal always prepared an empty staging journal before its atomic receipt.
+		// No outstanding journal means its credential cleanup/finalization completed.
+		if (receipt.outcome.registration === 'removed') return 'complete';
 		const live = referencedSecrets(current.file.connections);
 		for (const ref of receipt.cleanupRefs) {
 			if (!live.has(ref) && await this.ports.readSecret(ref) !== null)
@@ -197,7 +211,7 @@ export class SavedConnectionManagement {
 		try {
 			this.context(context);
 			request = parseMutationRequest(JSON.parse(canonicalRequestJson(value)));
-			if (request.key.repoRoot !== this.root || request.key.scope !== 'saved' || request.mode === 'remove')
+			if (request.key.repoRoot !== this.root || request.key.scope !== 'saved')
 				throw new ManagementServiceError('invalid-input');
 		}
 		catch (error) {
@@ -217,13 +231,81 @@ export class SavedConnectionManagement {
 				this.#inflight.delete(request.operationId);
 		}
 	}
+	private finishRemovalCommit(ticket: OperationTicket, oldRevision: string, prepared: object, outcome: CommittedOutcome): void {
+		const cleanup = this.ports.pool.commitRemoval(prepared);
+		this.#pendingRemovals.delete(ticket.operationId);
+		if (this.#lastCommitted.get(ticket.connectionId)?.revision === oldRevision) this.#lastCommitted.delete(ticket.connectionId);
+		this.#phase.set(ticket.operationId,outcome);
+		if (this.ports.pool.removalCleanupPending(ticket.operationId,oldRevision)) {
+			this.#removalRevisions.set(ticket.operationId,oldRevision);
+			void cleanup.close().then(() => {
+				if (this.#removalRevisions.get(ticket.operationId) === oldRevision) this.#removalRevisions.delete(ticket.operationId);
+			}, () => {});
+		}
+	}
+	/** Only a reconciled canonical precommit/replacement inode may release a prepared remove barrier. */
+	private async reconcilePreparedRemoval(ticket: OperationTicket, current: RegistrySnapshot): Promise<void> {
+		const pending = this.#pendingRemovals.get(ticket.operationId);
+		if (!pending) return;
+		if (canonicalRequestJson(ticket) !== canonicalRequestJson(pending.ticket)) throw new ManagementServiceError('operation-mismatch');
+		const receipt = current.file._management!.receipts[ticket.operationId];
+		if (receipt) {
+			if (canonicalRequestJson(receipt.ticket) !== canonicalRequestJson(ticket) || receipt.requestMac !== pending.requestMac || receipt.outcome.registration !== 'removed' || receipt.outcome.activation !== 'not-applicable') throw new ManagementServiceError('recovery-required');
+			this.finishRemovalCommit(ticket,pending.oldRevision,pending.prepared,receipt.outcome);
+			return;
+		}
+		if (current.file._management!.revisions[ticket.connectionId] !== pending.oldRevision || !current.file.connections.some(config => config.id === ticket.connectionId)) throw new ManagementServiceError('recovery-required');
+		const recovered = await this.ports.generations.recover();
+		if (recovered.find(value => value.operationId === ticket.operationId)?.cleanup === 'pending') throw new ManagementServiceError('recovery-required');
+		this.ports.pool.cancelRemoval(pending.prepared);
+		this.#pendingRemovals.delete(ticket.operationId);
+	}
+	private async applyRemoval(request: MutationRequest, current: RegistrySnapshot): Promise<MutationOutcome> {
+		let prepared: object | undefined;
+		let attempted = false;
+		let committed: CommittedOutcome | undefined;
+		try {
+			const requestMac = await this.ports.tickets.requestMac(request);
+			const envelope = current.file._management!;
+			const id = request.key.id, oldRevision = request.expectedRevision!;
+			if (!current.file.connections.some(config => config.id === id)) throw new ManagementServiceError('not-found');
+			if (envelope.revisions[id] !== oldRevision) throw new ManagementServiceError('conflict');
+			await this.ports.pool.reload();
+			prepared = this.ports.pool.prepareRemoval(id,oldRevision,request.operationId);
+			const staged = await this.ports.generations.prepareRemoval({operationId:request.operationId,connectionId:id,expectedRevision:oldRevision});
+			const outcome: CommittedOutcome = {operationId:request.operationId,revision:randomUUID(),registration:'removed',activation:'not-applicable',credentialCleanup:'pending'};
+			const revisions = {...envelope.revisions}; delete revisions[id];
+			const next = {...current.file,connections:current.file.connections.filter(config => config.id !== id),_management:{...envelope,generation:randomUUID(),revisions,
+				receipts:{...envelope.receipts,[request.operationId]:{ticket:request.ticket,requestMac,outcome,cleanupRefs:staged.cleanupRefs}}}};
+			this.#pendingRemovals.set(request.operationId,{ticket:request.ticket,requestMac,prepared,oldRevision});
+			attempted = true;
+			await this.ports.store.commit(current,next);
+			committed = outcome;
+			this.finishRemovalCommit(request.ticket,oldRevision,prepared,outcome);
+			let credentialCleanup: 'complete'|'pending' = 'pending';
+			try { credentialCleanup = (await this.ports.generations.recover()).find(value => value.operationId === request.operationId)?.cleanup ?? 'complete'; } catch { /* Committed truth survives cleanup failure. */ }
+			const final = {...outcome,credentialCleanup}; this.#phase.set(request.operationId,final);
+			return {status:'committed',value:final};
+		} catch (error) {
+			if (prepared && !attempted) this.ports.pool.cancelRemoval(prepared);
+			// An attempted commit may have renamed the registry. Its barrier/token remain
+			// owned until canonical same-ticket reconciliation classifies the result.
+			return committed ? {status:'committed',value:committed} : managementRejection(attempted ? new ManagementServiceError('reconciliation-required') : error);
+		}
+	}
 	private async apply(request: MutationRequest): Promise<MutationOutcome> {
 		let barrier: (() => void) | undefined;
 		let committed: Extract<MutationOutcome, {
 			status: 'committed';
 		}> | undefined;
 		try {
-			const current = await this.current();
+			const pending = request.mode === 'remove' ? this.#pendingRemovals.get(request.operationId) : undefined;
+			if (pending) {
+				const mac = await this.ports.tickets.requestMac(request,{reconciliationOnly:true});
+				if (!timingSafeEqual(Buffer.from(mac,'base64url'),Buffer.from(pending.requestMac,'base64url'))) throw new ManagementServiceError('operation-mismatch');
+			}
+			const current = await this.current(pending !== undefined);
+			if (pending) await this.reconcilePreparedRemoval(request.ticket,current);
 			const envelope = current.file._management!;
 			const recorded = envelope.receipts[request.operationId];
 			if (recorded) {
@@ -234,6 +316,7 @@ export class SavedConnectionManagement {
 			}
 			if (this.ports.tickets.expired(request.ticket))
 				throw new ManagementServiceError('reconciliation-required');
+			if (request.mode === 'remove') return this.applyRemoval(request,current);
 			if (request.mode === 'create') await assertSavedIdAvailable(this.root, request.key.id);
 			const existing = current.file.connections.find(c => c.id === request.key.id);
 			if (request.mode === 'create' && existing)
@@ -309,14 +392,18 @@ export class SavedConnectionManagement {
 			if (inFlight) {
 				if (canonicalRequestJson(inFlight.ticket) !== canonicalRequestJson(ticket))
 					throw new ManagementServiceError('operation-mismatch');
+				const phase = this.#phase.get(ticket.operationId);
+				if (ticket.mode === 'remove' && phase?.registration === 'removed') return {status:'committed',value:structuredClone(phase)};
 				return { status: 'pending' };
 			}
 			return await withSavedRootGate(this.root, async () => {
 				let current = await this.current(true);
+				if (ticket.mode === 'remove') await this.reconcilePreparedRemoval(ticket,current);
 				const receipt = current.file._management!.receipts[ticket.operationId];
 				if (receipt && canonicalRequestJson(receipt.ticket) !== canonicalRequestJson(ticket))
 					throw new ManagementServiceError('operation-mismatch');
-				const recovered = await this.ports.generations.recover();
+				const ownPreparation = (await this.ports.generations.journal.pending()).some(record => record.operationId === ticket.operationId);
+				const recovered = ticket.mode !== 'remove' || ownPreparation ? await this.ports.generations.recover() : [];
 				current = await this.current();
 				const canonical = current.file._management!.receipts[ticket.operationId];
 				if (canonical) {
@@ -336,6 +423,36 @@ export class SavedConnectionManagement {
 		catch {
 			return { status: 'reconciliation-required' };
 		}
+	}
+	private async removalTicket(context: ManagementRequestContext, value: OperationTicket): Promise<OperationTicket> {
+		this.context(context);
+		const parsed = parseRemovalStateRequest({ticket:value});
+		return (await this.ports.tickets.inspect(structuredClone(parsed.ticket))).ticket;
+	}
+	private removalResourceState(operationId: string): 'complete'|'pending' {
+		const revision = this.#removalRevisions.get(operationId);
+		if (revision === undefined) return 'complete'; // Old-process SDK handles do not survive restart.
+		if (this.ports.pool.removalCleanupPending(operationId,revision)) return 'pending';
+		this.#removalRevisions.delete(operationId);
+		return 'complete';
+	}
+	async removalState(context: ManagementRequestContext, value: OperationTicket): Promise<RemovalState> {
+		const ticket = await this.removalTicket(context,value);
+		const status = await this.status(context,ticket);
+		return projectRemovalState(ticket,status,this.removalResourceState(ticket.operationId));
+	}
+	async retryRemovalCleanup(context: ManagementRequestContext, value: OperationTicket): Promise<RemovalState> {
+		const ticket = await this.removalTicket(context,value);
+		const status = await this.status(context,ticket);
+		if (status.status !== 'committed') return projectRemovalState(ticket,status);
+		if (status.value.registration !== 'removed' || status.value.operationId !== ticket.operationId) throw new ManagementServiceError('operation-mismatch');
+		const revision = this.#removalRevisions.get(ticket.operationId);
+		// SDK close runs outside the root gate. A paused close must not block a new
+		// generation or a status query; the pool joins concurrent retries exactly.
+		if (revision !== undefined) {
+			try { await this.ports.pool.retryRemovalCleanup(ticket.operationId,revision); } catch { /* The projection retains pending cleanup. */ }
+		}
+		return this.removalState(context,ticket);
 	}
 	async retryActivation(context: ManagementRequestContext, value: ActivationRetry): Promise<MutationOutcome> {
 		try {
@@ -379,6 +496,7 @@ export class SavedConnectionManagement {
 	async pruneReceipts(context: ManagementRequestContext): Promise<void> {
 		this.context(context);
 		await withSavedRootGate(this.root, async () => {
+			if (this.#pendingRemovals.size) throw new ManagementServiceError('recovery-required');
 			const current = await this.current();
 			const envelope = current.file._management!;
 			const pending = new Set((await this.ports.generations.journal.pending()).map(r => r.operationId));
@@ -386,7 +504,7 @@ export class SavedConnectionManagement {
 			const removed: string[] = [];
 			for (const [id, receipt] of Object.entries(receipts)) {
 				const inspected = await this.ports.tickets.inspect(receipt.ticket);
-				if (inspected.expired && !pending.has(id) && await this.cleanupState(receipt, current) === 'complete') {
+				if (inspected.expired && !pending.has(id) && !(receipt.ticket.mode === 'remove' && this.removalResourceState(id) === 'pending') && await this.cleanupState(receipt, current) === 'complete') {
 					delete receipts[id];
 					removed.push(id);
 				}

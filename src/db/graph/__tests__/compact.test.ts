@@ -183,6 +183,23 @@ test('compactGraphStore with a beforeRename hook that returns false: no rename, 
 	assert.equal(await countOutEdges(), 1_010);
 });
 
+test('compactGraphStore with a beforeRename hook that throws: rejects with the cause, no rename, the compacted copy is removed and the original store reopens with its data', async () => {
+	await getGraphStore();
+	await bulkInsertEdges(5_000);
+	await deleteEdges(0, 4_000);
+	const ino = statSync(lmdbPath).ino;
+	await assert.rejects(
+		() => compactGraphStore({ beforeRename: async () => { throw new Error('the worker channel closed'); } }),
+		(e: unknown) => e instanceof Error && e.name === 'LmdbStoreError' && /the check before the rename failed: the worker channel closed; nothing renamed/.test(e.message),
+	);
+	assert.equal(statSync(lmdbPath).ino, ino, 'graph.lmdb was not renamed or replaced');
+	assert.ok(!existsSync(`${lmdbPath}.compact`), 'the compacted copy is removed');
+	assert.ok(!existsSync(`${lmdbPath}.bak`), 'no backup was made');
+	assert.equal(await countOutEdges(), 1_000);
+	await bulkInsertEdges(10, 1_000_000);
+	assert.equal(await countOutEdges(), 1_010);
+});
+
 test('compactGraphStore with a hook returning true or no hook returns today\'s CompactResult', async () => {
 	await getGraphStore();
 	await bulkInsertEdges(5_000);
@@ -198,4 +215,21 @@ test('compactGraphStore with a hook returning true or no hook returns today\'s C
 	const again = await compactGraphStore();
 	assert.ok(again.afterBytes <= again.beforeBytes);
 	assert.equal(await countOutEdges(), 500);
+});
+
+test('compactGraphStore keeps an asynchronous write queued just before it: the write is committed before the copy, never lost in the swap', async () => {
+	await getGraphStore();
+	await bulkInsertEdges(2_000, 0);
+	await deleteEdges(0, 1_500);
+	for (let i = 0; i < 20; i++) {
+		// Queued, not awaited: lmdb commits it asynchronously. (The handle is fresh: compaction reopens the store.)
+		const store = await getGraphStore();
+		void store.meta.put(`queued-${i}`, Buffer.from([i]));
+		await compactGraphStore().catch((e: Error) => {
+			// Refusing is acceptable; losing the write is not.
+			assert.match(e.message, /nothing renamed/);
+		});
+		const reopened = await getGraphStore();
+		assert.deepEqual(reopened.meta.get(`queued-${i}`), Buffer.from([i]), `the queued write ${i} survived the compaction`);
+	}
 });

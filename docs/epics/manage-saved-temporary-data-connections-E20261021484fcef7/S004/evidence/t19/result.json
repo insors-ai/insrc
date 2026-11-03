@@ -1,0 +1,57 @@
+{
+  "subject": "CM-S4-AFFINITY",
+  "scope": "Pre-use production refusal verified; global positive owner-affinity remains pending.",
+  "runtime": "Node22.23.2",
+  "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-reporter=tap src/daemon/db/__tests__/removal-production-affinity.test.ts",
+  "result": {
+    "tests": 2,
+    "pass": 2,
+    "fail": 0,
+    "skip": 0,
+    "todo": 0
+  },
+  "daemonModes": [
+    "single-thread",
+    "threads-enabled with an actual serving session worker"
+  ],
+  "productionProof": [
+    "No saved-remove/temporary-remove/removal-state/removal-cleanup-retry capabilities advertised.",
+    "Saved removal tickets and both-scope ticket-only cleanup/state requests refuse upgrade-required before owner receipt/cleanup lookup.",
+    "A failed session admission is sticky; subsequent private analysis/step/tool/edit-probe requests cannot enter data use or model execution."
+  ],
+  "limitations": [
+    "This does not prove every existing Saved analysis/tool worker shares the main management pool.",
+    "Positive stored-revision callbacks/iterators/constructors/probes are tested against current main/session owners in t15/t16; those checks do not establish global worker affinity.",
+    "No release asset, daemon configuration, user daemon process or deferred worker-crossing architecture was changed."
+  ],
+  "releasePrerequisite": {
+    "allConsumerOwnerAffinity": "pending",
+    "reason": "Process-local Saved pools remain distinct across worker module instances; all production consumer lease identities are not proved shared with SavedConnectionManagement. sc6 stays disabled."
+  },
+  "sourceVerification": {
+    "src/daemon/db/pool-cache.ts": "CACHE is a module-local Map; createConnectionResolver defaults to acquirePool.",
+    "src/daemon/db/management-startup.ts": "Managed owner receives the main process acquirePool result.",
+    "src/daemon/threads/session-worker.ts": "Worker imports and builds its own handler runtime, and creates its own in-daemon client.",
+    "src/daemon/threads/router.ts": "Connection management methods stay on main, while ordinary session requests may reach workers.",
+    "src/daemon/connection-session-rpc.ts": "Verified session bindings are main-local; unsupported or failed private-channel admission refuses before forwarding.",
+    "additionalAcquirePoolSitesMissedByAnalyzer": [
+      "src/analyze/runtimes/data/_shared.ts",
+      "src/analyze/explore/db-table-describe.ts",
+      "src/analyze/explore/db-connections-list.ts",
+      "src/analyze/explore/db-tables-list.ts",
+      "src/daemon/db/management-startup.ts",
+      "src/daemon/db/pool-cache.ts"
+    ]
+  },
+  "analyzerLimit": "See analyzer-result.json: incomplete import/caller graph and unrelated test discovery; source verification supplements it, without inferring absence from missing edges.",
+  "earlierAttempt": {
+    "file": "first-socket-path-failure.tap",
+    "result": "fail",
+    "cause": "Test-owned Unix socket path was 115 bytes; shortened fixture root under /private/tmp. Original failed startup output retained."
+  },
+  "logs": {
+    "analyzer-result.json": "ee58c8917c514532076449cdb9a402024cb0c3b3bd6f75b47622fa880c6ff378",
+    "production-refusal-pass.tap": "9ddae1289514ca6a3079bfd930c6296d586bee7841d9c343a8621675f72dbfd1",
+    "first-socket-path-failure.tap": "9d4e46b351e7d6bcfd82b99f733dd0bc0a5d2af0a4c13cd1a89ca3ab480034ff"
+  }
+}

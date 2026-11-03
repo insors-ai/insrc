@@ -1,0 +1,416 @@
+{
+  "sourceCommit": "b4f7a82cb44550ef55e522966c2237417bd15307",
+  "tree": "38ff9012a5dcbd6ec88b5a1c2cbad79c2c2234ad",
+  "node": "v22.23.2",
+  "javaHome": "/Library/Java/JavaVirtualMachines/amazon-corretto-21.jdk/Contents/Home",
+  "snapshot": "/private/tmp/s5-frozen-qldpq8za/repo",
+  "sourceDrift": [],
+  "backend": {
+    "files": 868,
+    "failedFiles": 9,
+    "counts": {
+      "tests": 7039,
+      "pass": 6888,
+      "fail": 13,
+      "cancelled": 1,
+      "skipped": 134,
+      "todo": 3
+    }
+  },
+  "extension": {
+    "files": 115,
+    "failedFiles": 4,
+    "counts": {
+      "tests": 1448,
+      "pass": 1423,
+      "fail": 2,
+      "cancelled": 15,
+      "skipped": 8,
+      "todo": 0
+    }
+  },
+  "nativeJUnit": {
+    "tests": 468,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 1
+  },
+  "connectionsNodeCohort": {
+    "files": 30,
+    "failedFiles": 0,
+    "counts": {
+      "tests": 70,
+      "pass": 70,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    }
+  },
+  "connectionsNativeCohort": {
+    "classes": 14,
+    "tests": 50,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "executedCheckResults": [
+    {
+      "name": "backend-build",
+      "exitCode": 0,
+      "timedOut": false,
+      "output": "backend-build.txt"
+    },
+    {
+      "name": "extension-typecheck",
+      "exitCode": 0,
+      "timedOut": false,
+      "output": "extension-typecheck.txt"
+    },
+    {
+      "name": "extension-bundle",
+      "exitCode": 0,
+      "timedOut": false,
+      "output": "extension-bundle.txt"
+    },
+    {
+      "name": "jetbrains-test-build",
+      "exitCode": 1,
+      "timedOut": false,
+      "output": "jetbrains-test-build.txt"
+    },
+    {
+      "name": "jetbrains-plugin-verifier",
+      "exitCode": 1,
+      "timedOut": false,
+      "output": "jetbrains-plugin-verifier.txt"
+    },
+    {
+      "name": "vscode-vsix",
+      "exitCode": 0,
+      "timedOut": false,
+      "output": "vscode-vsix.txt"
+    },
+    {
+      "name": "jetbrains-package",
+      "exitCode": 0,
+      "timedOut": false,
+      "output": "jetbrains-package.txt"
+    }
+  ],
+  "failedFiles": [
+    {
+      "file": "src/cli/services/__tests__/debug-mcp.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 9,
+        "pass": 7,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "mcpStatusWith: canned claude+codex output -> per-client registered + connected",
+        "mcpStatusWith: always exactly one entry per known client (claude, codex), never omitted"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/daemon/__tests__/models-daemon-s3.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 0,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "models-daemon-s3.test.ts: a real daemon removes byRepo tiers at boot with warnings and models.resolveRole returns the global tier's model for a repo-chosen tier",
+        "models-daemon-s3.test.ts: a cold start with an alternate catalog changing toolLoopModel uses the reconciled coreModel"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/daemon/db/__tests__/session-source-inventory.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 3,
+        "pass": 2,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/daemon/threads/__tests__/s4-acceptance.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 3,
+        "fail": 2,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "s4 ac1: routed requests leave the main thread's handler runtime unbuilt; a connection-scoped request is answered and builds it",
+        "s4 ac3: SIGTERM and daemon.shutdown exit 0 after 'bye' with every worker, session-pool workers included, terminated"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/daemon/threads/__tests__/threads-boot.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 5,
+        "pass": 2,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+        "daemon.shutdown during maintenance is refused with the activity and reason; SIGTERM during maintenance waits for the compaction and then shuts down",
+        "boot: threads disabled runs every session method on the main thread as today"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/daemon/threads/__tests__/worker-stores.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 7,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 1,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "src/daemon/threads/__tests__/worker-stores.test.ts"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 2,
+        "pass": 1,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/mcp/__tests__/import-graph.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "src/understanding/__tests__/service.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 6,
+        "pass": 5,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "Assessment lifecycle logs omit private identity and answer content"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "vscode-plugin/src/__tests__/activation.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 15,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 14,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "runReachabilityProbe degrades a hung probe to errored within the bounded deadline",
+        "runReachabilityProbe never throws even if reachability() rejects",
+        "activateExtension returns synchronously without throwing and leaves status at unknown until the probe resolves",
+        "the extension package is scaffolded (package.json + tsconfig + activate/deactivate entry)",
+        "only extension.ts imports vscode, and it reaches the daemon only via the shared ipc-client (k2/k5)",
+        "a stopped, installed daemon is started once after the probe, as a plain start, and the status shows running",
+        "no start is attempted for a running or errored daemon, for a daemon that is not installed, or when no controller is given",
+        "a start is skipped when the fresh reachability check just before it finds the daemon running",
+        "a failed or throwing start leaves an errored status with the reason, is not retried, and never rejects into activation",
+        "a start that reports success while the daemon is still unreachable is shown as errored with the reason 'the daemon did not answer after start'",
+        "runReachabilityProbe answers the state it pushed into the status surface",
+        "the extension entry passes the daemon lifecycle controller into the activation",
+        "activation calls onSettled once after the probe and any start have finished, also when the probe or the start fails or throws",
+        "the extension entry runs the settings pull, the update check and onboarding only after activation has settled"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 164,
+        "pass": 163,
+        "fail": 0,
+        "cancelled": 1,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 88,
+        "pass": 87,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group"
+      ],
+      "interventions": []
+    },
+    {
+      "file": "vscode-plugin/src/config/__tests__/truthful-sync.test.ts",
+      "exitCode": 1,
+      "timedOut": false,
+      "counts": {
+        "tests": 12,
+        "pass": 11,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "failures": [
+        "package.json contributes.commands includes insrc.settings.refresh alongside the 7 shipped commands"
+      ],
+      "interventions": []
+    }
+  ],
+  "packages": [
+    {
+      "name": "insrc-jetbrains-0.5.2-s005-b4f7a82cb.zip",
+      "path": "/Users/subhagho/work/projects/insors/insrc/jetbrains-plugin/build/distributions/insrc-jetbrains-0.5.2-s005-b4f7a82cb.zip",
+      "sha256": "05fef79e1f7fea853a68a3aef1297b9173ae2aabfbfa04b83be6b26bc828f8d4",
+      "bytes": 2697317
+    },
+    {
+      "name": "insrc-vscode-0.5.16-s005-b4f7a82cb.vsix",
+      "path": "/Users/subhagho/work/projects/insors/insrc/vscode-plugin/insrc-vscode-0.5.16-s005-b4f7a82cb.vsix",
+      "sha256": "d72c043d2716c937d4791ed30d777752610e10181faeb50d381fdc0397592115",
+      "bytes": 368330
+    }
+  ],
+  "allExecutedChecksPassed": false,
+  "manualUIAcceptance": "pending-user-after-installation",
+  "independentCodeReview": "not performed; builder manual inspection recorded",
+  "releaseEnabled": false,
+  "harnessEnvironment": {
+    "INSRC_LOG_LEVEL": "error",
+    "INSRC_LIVE_TESTS": "unset",
+    "HOME": "isolated",
+    "JAVA_TOOL_OPTIONS": "isolated user.home"
+  },
+  "diagnosticDefaultLogging": {
+    "tests": 8,
+    "passed": 8,
+    "failed": 0,
+    "evidence": "docs/epics/manage-saved-temporary-data-connections-E20261021484fcef7/S005/evidence/t32/run-b4f7a82cb/diagnostic-default-logging.txt",
+    "doesNotReplaceOriginalSweep": true
+  },
+  "nativeFullRevalidation": {
+    "exitCode": 0,
+    "counts": {
+      "tests": 468,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "productionSourceChanged": false,
+    "evidence": "native-final-revalidation.json",
+    "original468TestFailureRetained": true
+  },
+  "postSweepTestCorrections": {
+    "typescript": {
+      "tests": 27,
+      "passed": 27,
+      "failed": 0,
+      "evidence": "test-corrections-final.json"
+    },
+    "nativeDescriptor": {
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "evidence": "native-test-correction.txt"
+    },
+    "productionSourceChanged": false,
+    "correctionCommits": [
+      "93480f3fd",
+      "ee8990fd3",
+      "3dea5014f"
+    ]
+  },
+  "pluginVerifier": {
+    "status": "pending-unavailable-offline",
+    "reason": "IntelliJ 2024.3.7 aarch64 is not cached; original verifyPlugin command failed before verification."
+  },
+  "packagesReadyForManualInstallation": true,
+  "storyComplete": false,
+  "ownedTestProcessesExited": true,
+  "installedDaemonRestarted": false,
+  "pluginsInstalled": false,
+  "published": false,
+  "workingTreeChangesFromOtherStoriesExcluded": true
+}

@@ -1,0 +1,27 @@
+{
+  "artifact": "LLD-484fcef7efaf229e-s4",
+  "cycle": 1,
+  "calls": [
+    {
+      "round": 1,
+      "result": "No review recorded: canonical JSON path was interpreted as an adjacent Markdown path, which does not exist."
+    },
+    {
+      "round": 2,
+      "result": "pass",
+      "reviewedBy": "daemon",
+      "model": "cli-claude:claude-sonnet-5",
+      "counts": {"high": 0, "med": 0, "low": 15, "unverified": 0},
+      "findings": "All 15 reported premises held. Connector timed out after 300 seconds; the continuing daemon subsequently persisted this result.",
+      "followup": "Controller source inspection corrected the ER inverse relation to ConnectionKey one-to-many RemovalReceipt. Contracts, tests and implementation scope are unchanged; canonical workflow regenerated the artifact and companions."
+    },
+    {
+      "round": 3,
+      "result": "block",
+      "counts": {"high": 0, "med": 1, "low": 15, "unverified": 0},
+      "reason": "New-versus-reuse wording implied that shared remove ticket/wire support was new, although shared types/decoder and SavedTicketAuthority already support it.",
+      "correction": "Preserve existing shared mode/receipt/barrier types, decoder and saved signer. Scope implementation to RPC/service rejection branches, session-ledger mode admission and the planned removal commit/cleanup behavior. Corrected artifact awaits a new authorized review cycle."
+    }
+  ],
+  "limit": "No fourth review call in this cycle without explicit user authorization."
+}

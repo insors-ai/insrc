@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: freshness: a changed file whose per-file indexedAt predates its mtime is stale
+ok 1 - freshness: a changed file whose per-file indexedAt predates its mtime is stale
+  ---
+  duration_ms: 1.289208
+  type: 'test'
+  ...
+# Subtest: freshness: a changed file whose watermark is >= its mtime is NOT stale
+ok 2 - freshness: a changed file whose watermark is >= its mtime is NOT stale
+  ---
+  duration_ms: 0.094042
+  type: 'test'
+  ...
+# Subtest: freshness: a changed path with NO indexable entity (repo indexed AFTER the change) is excluded — does not block forever
+ok 3 - freshness: a changed path with NO indexable entity (repo indexed AFTER the change) is excluded — does not block forever
+  ---
+  duration_ms: 0.069125
+  type: 'test'
+  ...
+# Subtest: freshness: a never-indexed changed source file (no entities, repo behind the change) is stale
+ok 4 - freshness: a never-indexed changed source file (no entities, repo behind the change) is stale
+  ---
+  duration_ms: 0.108
+  type: 'test'
+  ...
+# Subtest: freshness: a never-indexed repo (watermark 0) with a changed file is stale
+ok 5 - freshness: a never-indexed repo (watermark 0) with a changed file is stale
+  ---
+  duration_ms: 0.060375
+  type: 'test'
+  ...
+# Subtest: freshness: isProcessing mirrors the injected queue flag and the compute triggers no reindex
+ok 6 - freshness: isProcessing mirrors the injected queue flag and the compute triggers no reindex
+  ---
+  duration_ms: 0.120458
+  type: 'test'
+  ...
+# Subtest: freshness: a mixed changed set reports only the stale files
+ok 7 - freshness: a mixed changed set reports only the stale files
+  ---
+  duration_ms: 0.0655
+  type: 'test'
+  ...
+# Subtest: freshness: an empty changed set is fresh (no stale files)
+ok 8 - freshness: an empty changed set is fresh (no stale files)
+  ---
+  duration_ms: 0.097459
+  type: 'test'
+  ...
+# Subtest: computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before
+ok 9 - computeCodeReviewFreshness reports isProcessing and pendingCodeIndexJobs from codeIndexWork and leaves staleFiles as before
+  ---
+  duration_ms: 0.368667
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 195.862666

@@ -1,0 +1,97 @@
+TAP version 13
+# (node:8775) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: SqliteDriver (via pool)
+    # Subtest: describe returns columns + PK + FK + nullability
+    ok 1 - describe returns columns + PK + FK + nullability
+      ---
+      duration_ms: 9.575958
+      type: 'test'
+      ...
+    # Subtest: sample with where + limit
+    ok 2 - sample with where + limit
+      ---
+      duration_ms: 1.471
+      type: 'test'
+      ...
+    # Subtest: rejects unknown columns in where
+    ok 3 - rejects unknown columns in where
+      ---
+      duration_ms: 1.163583
+      type: 'test'
+      ...
+    # Subtest: rejects invalid target identifiers
+    ok 4 - rejects invalid target identifiers
+      ---
+      duration_ms: 1.133041
+      type: 'test'
+      ...
+    # Subtest: aggregate count / sum / avg / min / max returns flat numeric record
+    ok 5 - aggregate count / sum / avg / min / max returns flat numeric record
+      ---
+      duration_ms: 1.8315
+      type: 'test'
+      ...
+    # Subtest: aggregate rejects unknown columns and invalid target
+    ok 6 - aggregate rejects unknown columns and invalid target
+      ---
+      duration_ms: 1.42025
+      type: 'test'
+      ...
+    # Subtest: histogram equal-width returns bucket counts spanning min..max
+    ok 7 - histogram equal-width returns bucket counts spanning min..max
+      ---
+      duration_ms: 2.810291
+      type: 'test'
+      ...
+    # Subtest: histogram equal-frequency uses NTILE and returns per-bucket bounds
+    ok 8 - histogram equal-frequency uses NTILE and returns per-bucket bounds
+      ---
+      duration_ms: 4.097959
+      type: 'test'
+      ...
+    # Subtest: correlationMatrix pearson via portable formula
+    ok 9 - correlationMatrix pearson via portable formula
+      ---
+      duration_ms: 2.906166
+      type: 'test'
+      ...
+    # Subtest: correlationMatrix spearman ranks then correlates
+    ok 10 - correlationMatrix spearman ranks then correlates
+      ---
+      duration_ms: 3.766959
+      type: 'test'
+      ...
+    # Subtest: count_where with regex op uses the registered REGEXP function (Phase 5d.3 Gap 1)
+    ok 11 - count_where with regex op uses the registered REGEXP function (Phase 5d.3 Gap 1)
+      ---
+      duration_ms: 2.75925
+      type: 'test'
+      ...
+    # Subtest: temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1)
+    ok 12 - temporalTrend recovers slope/intercept/R² via expression-based regression (Phase 5g.1)
+      ---
+      duration_ms: 10.170083
+      type: 'test'
+      ...
+    # Subtest: aggregate stddev surfaces SQLite-no-such-function as a clean engine error
+    ok 13 - aggregate stddev surfaces SQLite-no-such-function as a clean engine error
+      ---
+      duration_ms: 1.902875
+      type: 'test'
+      ...
+    1..13
+ok 1 - SqliteDriver (via pool)
+  ---
+  duration_ms: 46.405458
+  type: 'suite'
+  ...
+1..1
+# tests 13
+# suites 1
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 379.724542

@@ -17,7 +17,7 @@ import { MessageChannel, Worker } from 'node:worker_threads';
 
 import { serveHub } from '../channel.js';
 import { TargetConflictError, TargetRegistry } from '../registry.js';
-import { StatusBoard, statusBoardHubHandlers } from '../status-board.js';
+import { MAX_RUNS, StatusBoard, statusBoardHubHandlers } from '../status-board.js';
 import type { RunRecord } from '../status-board.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -43,6 +43,20 @@ test('TargetRegistry refuses a second live admin, indexing, unattributed or same
 	assert.equal(r.targetFor('session', B)?.threadId, 5);
 	assert.equal(r.targetFor('session')?.threadId, 3, 'no identity: the unattributed target');
 	assert.equal(r.targetFor('session', { label: 'cli', pid: 1 }), undefined, 'an unknown session has no target yet');
+});
+
+test('registry: a shared target and an unattributed target register together without TargetConflictError and each lookup resolves to its own worker', () => {
+	const r = new TargetRegistry();
+	r.register({ threadId: 11, cls: 'session', unattributed: true });
+	r.register({ threadId: 12, cls: 'session', shared: true });
+	r.register({ threadId: 13, cls: 'session', session: { label: 'mcp', pid: 42 } });
+	assert.equal(r.targetFor('session')?.threadId, 11, 'no identity: the unattributed target');
+	assert.equal(r.targetFor('session', undefined, { shared: true })?.threadId, 12, 'only a shared lookup reaches the shared-state target');
+	assert.equal(r.targetFor('session', { label: 'mcp', pid: 42 })?.threadId, 13);
+	assert.throws(() => r.register({ threadId: 14, cls: 'session', shared: true }), TargetConflictError, 'one live shared-state target');
+	r.unregister(12);
+	assert.equal(r.targetFor('session', undefined, { shared: true }), undefined);
+	assert.equal(r.targetFor('session')?.threadId, 11, 'the unattributed target is untouched');
 });
 
 test('a target re-registered after unregister succeeds and unregistering an unknown thread is a no-op', () => {
@@ -121,4 +135,55 @@ test('a status published from a worker appears in a main-thread snapshot', async
 		main.close();
 		await worker.terminate();
 	}
+});
+
+test('board: forgetRun hub binding removes a run published from a worker; ownerThreadId is the publishing thread', async () => {
+	const { mkdtempSync, rmSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-run-board-'));
+	const board = new StatusBoard();
+	const { port1: main, port2: workerPort } = new MessageChannel();
+	serveHub(main, statusBoardHubHandlers(board));
+	const worker = new Worker(join(HERE, 'helpers', 'run-board-worker.ts'), { workerData: { port: workerPort, repo }, transferList: [workerPort] });
+	try {
+		const msg = await new Promise<{ threadId: number; runId: string }>((res, rej) => { worker.once('message', res); worker.once('error', rej); });
+		const record = board.snapshot().runs.find(r => r.runId === msg.runId);
+		assert.ok(record !== undefined, 'the worker\'s run is on the main-thread board');
+		assert.equal(record.ownerThreadId, msg.threadId, 'owned by the thread that published it');
+		assert.notEqual(record.ownerThreadId, 0, 'not the main thread');
+		assert.equal(record.status, 'done');
+		assert.ok(record.frames.length > 0, 'its progress frames came with it');
+		worker.postMessage('forget');
+		await new Promise<void>((res, rej) => { worker.once('message', () => res()); worker.once('error', rej); });
+		assert.equal(board.snapshot().runs.some(r => r.runId === msg.runId), false, 'forgotten through the hub');
+	} finally {
+		main.close();
+		await worker.terminate();
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+test('board: past MAX_RUNS the oldest finished runs are dropped, whichever thread owned them; a running run never is', () => {
+	const b = new StatusBoard();
+	const run = (n: number, status: RunRecord['status']): RunRecord => ({ runId: `r${n}`, status, ownerThreadId: 100 + (n % 3), startedAt: n, model: 'm', frames: [] });
+	b.publishRun(run(0, 'running'));
+	for (let n = 1; n <= MAX_RUNS + 5; n++) b.publishRun(run(n, n % 2 === 0 ? 'done' : 'error'));
+	const ids = b.snapshot().runs.map(r => r.runId);
+	assert.equal(ids.length, MAX_RUNS, 'kept at the cap');
+	assert.ok(ids.includes('r0'), 'the oldest run is kept while it is running');
+	for (let n = 1; n <= 5; n++) assert.ok(!ids.includes(`r${n}`), `r${n}, among the oldest finished, was dropped`);
+	assert.ok(ids.includes(`r${MAX_RUNS + 5}`), 'the newest is kept');
+});
+
+test('board: a ThreadStatus published with a role keeps it in the snapshot, and one without a role is unchanged', () => {
+	const b = new StatusBoard();
+	const plain = { threadId: 7, cls: 'admin', busy: false, queued: 0 } as const;
+	b.publish(plain);
+	b.publish({ threadId: 8, cls: 'session', session: { label: 'mcp', pid: 41 }, busy: true, method: 'x.run', since: 5, queued: 2, role: 'session' });
+	b.publish({ threadId: 9, cls: 'session', busy: false, queued: 0, role: 'shared-state' });
+	const threads = b.snapshot().threads;
+	assert.deepEqual(threads.find(t => t.threadId === 7), plain, 'a status without a role is kept as published, with no role added');
+	assert.equal(threads.find(t => t.threadId === 8)?.role, 'session');
+	assert.deepEqual(threads.find(t => t.threadId === 8)?.session, { label: 'mcp', pid: 41 });
+	assert.equal(threads.find(t => t.threadId === 9)?.role, 'shared-state', 'role tells the shared-state worker apart from a session worker of the same class');
 });

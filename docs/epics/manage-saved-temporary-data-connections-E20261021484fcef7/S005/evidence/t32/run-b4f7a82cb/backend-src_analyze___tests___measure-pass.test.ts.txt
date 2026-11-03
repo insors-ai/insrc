@@ -1,0 +1,100 @@
+TAP version 13
+# Subtest: measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)
+ok 1 - measureRequestScope on a temporary store gives different sizes for a small directory and for the whole repo with the same prompt, and makes no model call (mutation: read the whole repo for a module scope)
+  ---
+  duration_ms: 153.398792
+  type: 'test'
+  ...
+# Subtest: measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)
+ok 2 - measureRequestScope returns a measure that is not determined, with size XL and the reason, for a scope that cannot be resolved, a scope no registered repo contains, a repo that holds no stored entity, a failed read of the store, and a registry read that rejects while a symbol scope or a connection scope is being resolved, and does not throw; an empty directory inside an indexed repo is XS and determined (mutation: return the count of zero for a path the index does not hold)
+  ---
+  duration_ms: 135.558792
+  type: 'test'
+  ...
+# Subtest: a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)
+ok 3 - a workspace that a registered repo contains is counted through the area predicate (the whole repo at the repo's path, only what lies under a directory inside it); a workspace that no repo contains is summed over the registered repos under it, each read once, for a generic request and for a direct call of measureResolvedScope, is not determined when none lies under it, and is not determined for a code or docs request, which the index check refuses (mutation: treat every workspace as a sum over the repos under it)
+  ---
+  duration_ms: 158.024667
+  type: 'test'
+  ...
+# Subtest: measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)
+ok 4 - measureDataSource counts a relational source through the complete mode of its table listing beyond the limited mode's cap, a namespace source through its namespace listing, and a file source through the file listing with no limit (mutation: call the listing in its limited mode)
+  ---
+  duration_ms: 190.844667
+  type: 'test'
+  ...
+# Subtest: measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not
+ok 5 - measureDataSource is not determined, with size XL and its own reason, for a driver with no listing, a listing that is not supported, a listing that reports it was cut, a Redis or etcd source, and a source that cannot be reached; a data request over several connections is not determined when one of them is not
+  ---
+  duration_ms: 156.504667
+  type: 'test'
+  ...
+# Subtest: dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id
+ok 6 - dataScopeOf gives the pool path and connection id resolveDataScope gave before for each kind of scope, and a data request on a repo is measured by one call per registered connection, each with its connection id
+  ---
+  duration_ms: 135.651417
+  type: 'test'
+  ...
+# Subtest: an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)
+ok 7 - an infra request is measured from the files the infra tasks' own walk visits, with no cap and without the stored graph, also in a directory no registered repo contains, and is not determined when the directory cannot be read (mutation: count the stored entities)
+  ---
+  duration_ms: 136.62475
+  type: 'test'
+  ...
+# Subtest: a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution
+ok 8 - a generic request is measured from the stored graph for a path or entity scope and from the live source for a connection scope, through the generic scope resolution
+  ---
+  duration_ms: 126.974333
+  type: 'test'
+  ...
+# Subtest: a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count
+ok 9 - a live source whose listing never returns, and one that is never reached, is reported as not determined after the time limit with the reason that the listing timed out, and is never a count
+  ---
+  duration_ms: 302.355875
+  type: 'test'
+  ...
+# Subtest: a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing
+ok 10 - a request cancelled while a source is being measured stops at once and the remaining sources of a pool are not asked; a signal already aborted reads nothing
+  ---
+  duration_ms: 160.664541
+  type: 'test'
+  ...
+# Subtest: one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count
+ok 11 - one stalled connection among several does not stop the others from being measured, each has its own time limit, and the sum is not a count
+  ---
+  duration_ms: 232.973333
+  type: 'test'
+  ...
+# Subtest: the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection
+ok 12 - the rejection of a listing abandoned after its time limit is caught and is not an unhandled rejection
+  ---
+  duration_ms: 410.244167
+  type: 'test'
+  ...
+# Subtest: the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds
+ok 13 - the time limit comes from the setting, a value in the options replaces it, and a value that cannot be a time limit gives the default of 120 seconds
+  ---
+  duration_ms: 480.892292
+  type: 'test'
+  ...
+# Subtest: a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read
+ok 14 - a symbol scope is measured with one read by id and a file scope with the read of that file's entities; the measure of a resolved scope (measureResolvedScope) asks the store for every entity of the repository in neither case, and the counts and the size equal those of the whole-repository read; driven through measureRequestScope for a code request, the index check of the scope resolution is the only whole-repository read
+  ---
+  duration_ms: 127.687291
+  type: 'test'
+  ...
+# Subtest: a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before
+ok 15 - a symbol or file scope whose narrow read finds nothing, or finds entities of another repository only, is read as before with the same result; a repo, module or directory scope is read as before
+  ---
+  duration_ms: 120.883042
+  type: 'test'
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3368.046125

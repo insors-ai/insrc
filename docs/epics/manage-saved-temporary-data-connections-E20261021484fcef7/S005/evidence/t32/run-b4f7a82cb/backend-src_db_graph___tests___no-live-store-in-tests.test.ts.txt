@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: the two formerly live-store test files pass against a temporary store and create nothing at the default path
+ok 1 - the two formerly live-store test files pass against a temporary store and create nothing at the default path
+  ---
+  duration_ms: 1228.028667
+  type: 'test'
+  ...
+# Subtest: the review probe test, found by the same search, creates nothing at the default path either
+ok 2 - the review probe test, found by the same search, creates nothing at the default path either
+  ---
+  duration_ms: 533.438375
+  type: 'test'
+  ...
+# Subtest: three daemon request tests, found by the same search, create nothing at the default path
+ok 3 - three daemon request tests, found by the same search, create nothing at the default path
+  ---
+  duration_ms: 1813.203667
+  type: 'test'
+  ...
+# Subtest: the MCP step and review tests, found by the full audit, create nothing at the default path
+ok 4 - the MCP step and review tests, found by the full audit, create nothing at the default path
+  ---
+  duration_ms: 6707.607584
+  type: 'test'
+  ...
+# Subtest: the check sees a store that IS opened at the default path
+ok 5 - the check sees a store that IS opened at the default path
+  ---
+  duration_ms: 449.205
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10906.434791

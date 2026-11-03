@@ -1,0 +1,47 @@
+{
+  "backendCommit": "fa57ed5911ca1347f850981776a492a242073d9e",
+  "externalCommit": "83393569f2da98a92cff8bf4d2a4952ae0d2a2ec",
+  "backendFiles": {
+    "src/shared/connection-management.ts": "91420d8952759a0c5c4a1602b9b143979fa211e7b656192bade5bab749a01200",
+    "src/shared/connection-removal.ts": "e8597a68c8bbd87253dc646340c7adf6b43730a92041779641ebc792d486378e",
+    "src/shared/ipc-client.ts": "6136c30776d61af4dfbde8ca440aada23b9fb54709a6e94561fbf0cb8d2643c0",
+    "src/daemon/connection-session-rpc.ts": "e5e63916aebfc404150cdc3e139755f3e2493713f64b22d788ad0d674dccdb6b",
+    "vscode-plugin/package.json": "53ffe1920c84687c4475cede8a69c4075c8a9e12f16140f9ce05381e98a5ccaf",
+    "vscode-plugin/src/extension.ts": "1c0744c2a922df87e595ff84013652d9cd6fd3b134b1d23cb0a81d76663b61d2",
+    "vscode-plugin/src/panels/types.ts": "7f4e563d42ba1cd81bb44845683a5c86fcb2476cd404eefab9ebb5fd3f4ee92d"
+  },
+  "externalFiles": {
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversPane.ts": "366a718898df2b6ebed387eecb7d7b88199bd0004748674ba4077ea711c284f8",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbDriversCommands.ts": "29d9254ffc3fe2edc25a40b49dfe20b72c1f2f8c7483942e59232d86f77b7695",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/dbConnectionCommands.ts": "412bb8a799ddfa0f241960798d2a8cd4e0cc2c23ef7deff8700b7cdafc88b037",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/browser/dbDrivers/insrcDbConnectionsServiceImpl.ts": "c3a8c752cb66f238f27988aa950e1a52c6101c12183630cb2bbad2d888803a77",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/dbConnectionsService.ts": "ceb8d04fc00254ea76685b706389c21b6c306b916484413f597c0b3913d28ca4",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/common/insrcConfiguration.ts": "6801afac86195b6d8afed46317f0f82a70f17338a79743731f8b382df7787eac",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/workbench/contrib/insrc/electron-sandbox/daemonServiceImpl.ts": "e27654327cf3f60fc58748bbf843b4c2bc74677d63394be16a2dfc20131a333f",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/platform/insrc/electron-main/insrcDaemonMainService.ts": "2c23bc82aa20fac19b0305195e3c93ce5b2958a46adb142d1cb0c941c56be599",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/code/electron-main/app.ts": "cb9fc190056a1698f992a5d4cfc94513c1c5af26a2b568ebade342dc1f02a3ca",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/base/parts/ipc/electron-main/ipcMain.ts": "1d94324e5856b9c024b7412a5cac6407bf3138dd572eb2136a0b169ae869bb7e",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/base/parts/ipc/electron-main/ipc.electron.ts": "bcb7b2588a0f15d122bcb5b8629d1346b36d8d7c27e9f6c72654acfaa0ea3f5a",
+    "/Users/subhagho/work/projects/insors/insrc-ide/src/vs/platform/windows/electron-main/windows.ts": "3a205310aedce2ddc55350d089a9bbf5fdb90bda9b365f6e6ed546d3ed9030a7"
+  },
+  "externalEdits": false,
+  "graphLimits": "Backend3unattempted/260source-missing; external scope-not-indexed. Source supplement retained; no index/repo registration performed.",
+  "trustedIpcSourceEvidence": "app.ts already uses validatedIpcMain.handle with event.sender and windowsMainService.getWindowByWebContents(event.sender); IPCServer transport filters by native sender ID, while generic ProxyChannel is not sufficient authority. Build must use the validated native sender route, never renderer-supplied ctx/windowId.",
+  "rendering": {
+    "method": "Isolated headless Chrome with dedicated /private/tmp profile, local files only",
+    "ux": {
+      "screenshot": "ux.png",
+      "status": "Visible two-pane schematic, fields/buttons, scope/counts and alternate-state copy inspected"
+    },
+    "sequence": {
+      "screenshot": "sequence.png",
+      "status": "Mermaid4participants11messages rendered without diagram error"
+    },
+    "component": {
+      "screenshot": "component.png",
+      "status": "Mermaid6components6dependencies rendered"
+    },
+    "limit": "Design companions only; actual client theme/focus/keyboard and runtime behavior not yet tested."
+  },
+  "releaseEnabled": false
+}

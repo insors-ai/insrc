@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: the VS Code plugin type-checks against the published delivery types
+ok 1 - the VS Code plugin type-checks against the published delivery types
+  ---
+  duration_ms: 2320.276166
+  type: 'test'
+  ...
+# Subtest: the JetBrains sample snapshot is plain JSON and equals what the assembler produces
+ok 2 - the JetBrains sample snapshot is plain JSON and equals what the assembler produces
+  ---
+  duration_ms: 12.104917
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2574.102917

@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: lancedb native binding loads
+ok 1 - lancedb native binding loads
+  ---
+  duration_ms: 5.375125
+  type: 'test'
+  ...
+# Subtest: create table + insert + count round-trip
+ok 2 - create table + insert + count round-trip
+  ---
+  duration_ms: 19.413834
+  type: 'test'
+  ...
+# Subtest: vector search returns nearest first
+ok 3 - vector search returns nearest first
+  ---
+  duration_ms: 20.058083
+  type: 'test'
+  ...
+# Subtest: vector dim 1024 is accepted (post-0.2 default)
+ok 4 - vector dim 1024 is accepted (post-0.2 default)
+  ---
+  duration_ms: 16.178333
+  type: 'test'
+  ...
+# Subtest: table reopened from disk retains data (file-backed persistence)
+ok 5 - table reopened from disk retains data (file-backed persistence)
+  ---
+  duration_ms: 17.879209
+  type: 'test'
+  ...
+# Subtest: filter columns work alongside vector search (where clause)
+ok 6 - filter columns work alongside vector search (where clause)
+  ---
+  duration_ms: 23.661792
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 355.868334

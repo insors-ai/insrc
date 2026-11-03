@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: RELATION_KIND_BYTE: no duplicate byte; boundary kinds appended at 13-16
+ok 1 - RELATION_KIND_BYTE: no duplicate byte; boundary kinds appended at 13-16
+  ---
+  duration_ms: 0.643708
+  type: 'test'
+  ...
+# Subtest: ENTITY_KIND_BYTE: no duplicate byte; externalEndpoint appended at 13
+ok 2 - ENTITY_KIND_BYTE: no duplicate byte; externalEndpoint appended at 13
+  ---
+  duration_ms: 0.0805
+  type: 'test'
+  ...
+# Subtest: each boundary RelationKind byte round-trips via kindByteToName
+ok 3 - each boundary RelationKind byte round-trips via kindByteToName
+  ---
+  duration_ms: 0.068584
+  type: 'test'
+  ...
+# Subtest: frozen sc1 vocabulary: protocol enum + boundary names
+ok 4 - frozen sc1 vocabulary: protocol enum + boundary names
+  ---
+  duration_ms: 0.704542
+  type: 'test'
+  ...
+# Subtest: externalEndpoint EntityRow round-trips (resolved variant)
+ok 5 - externalEndpoint EntityRow round-trips (resolved variant)
+  ---
+  duration_ms: 1.17025
+  type: 'test'
+  ...
+# Subtest: externalEndpoint EntityRow round-trips (unresolved variant with rawExpression)
+ok 6 - externalEndpoint EntityRow round-trips (unresolved variant with rawExpression)
+  ---
+  duration_ms: 0.240291
+  type: 'test'
+  ...
+# Subtest: forward-compat: a pre-S001 row (no endpoint fields) decodes unchanged, endpoint fields undefined
+ok 7 - forward-compat: a pre-S001 row (no endpoint fields) decodes unchanged, endpoint fields undefined
+  ---
+  duration_ms: 0.113792
+  type: 'test'
+  ...
+# Subtest: graph closure
+ok 8 - graph closure
+  ---
+  duration_ms: 115.920291
+  type: 'test'
+  ...
+# Subtest: v3 -> v4 no-op migration advances schema_version leaving rows byte-identical
+ok 9 - v3 -> v4 no-op migration advances schema_version leaving rows byte-identical
+  ---
+  duration_ms: 91.846417
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 450.517041

@@ -1,0 +1,125 @@
+[07:00:05] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "postgres"
+    [35mfamily[39m: "rdbms"
+[07:00:05] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "cockroachdb"
+    [35mfamily[39m: "rdbms"
+[07:00:05] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mysql"
+    [35mfamily[39m: "rdbms"
+[07:00:05] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mariadb"
+    [35mfamily[39m: "rdbms"
+[07:00:05] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "sqlite"
+    [35mfamily[39m: "rdbms"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mssql"
+    [35mfamily[39m: "rdbms"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "oracle"
+    [35mfamily[39m: "rdbms"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "clickhouse"
+    [35mfamily[39m: "rdbms"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "redis"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "valkey"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "keydb"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "mongodb"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "cassandra"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "nats"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "dynamodb"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "etcd"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "memcached"
+    [35mfamily[39m: "kv"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "csv"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "tsv"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "jsonl"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "ndjson"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "json"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "parquet"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "arrow"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "feather"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "avro"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "bson"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "fixed-width"
+    [35mfamily[39m: "file"
+[07:00:06] [34mDEBUG[39m: [36m[db-registry] driver registered[39m
+    [35mmodule[39m: "db-registry"
+    [35mkind[39m: "xlsx"
+    [35mfamily[39m: "file"
+✔ CM-S3-NAMESPACE: alias relative and trailing writes refuse while actual saved and temporary SQLite rows stay separate (699.113833ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1942.590625

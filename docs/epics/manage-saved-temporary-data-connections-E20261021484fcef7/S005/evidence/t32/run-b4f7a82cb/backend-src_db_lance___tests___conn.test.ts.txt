@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: getLanceConn creates the directory + opens a connection
+ok 1 - getLanceConn creates the directory + opens a connection
+  ---
+  duration_ms: 7.975916
+  type: 'test'
+  ...
+# Subtest: subsequent getLanceConn calls return the same instance
+ok 2 - subsequent getLanceConn calls return the same instance
+  ---
+  duration_ms: 2.488709
+  type: 'test'
+  ...
+# Subtest: concurrent first-callers share the init promise
+ok 3 - concurrent first-callers share the init promise
+  ---
+  duration_ms: 1.367667
+  type: 'test'
+  ...
+# Subtest: close + reopen works (data persists)
+ok 4 - close + reopen works (data persists)
+  ---
+  duration_ms: 22.906959
+  type: 'test'
+  ...
+# Subtest: setLanceConnPath isolates between tests (different tmpdirs)
+ok 5 - setLanceConnPath isolates between tests (different tmpdirs)
+  ---
+  duration_ms: 13.597584
+  type: 'test'
+  ...
+# Subtest: openOrCreateTable creates the table on first call
+ok 6 - openOrCreateTable creates the table on first call
+  ---
+  duration_ms: 14.758416
+  type: 'test'
+  ...
+# Subtest: openOrCreateTable opens an existing table without re-seeding
+ok 7 - openOrCreateTable opens an existing table without re-seeding
+  ---
+  duration_ms: 12.185792
+  type: 'test'
+  ...
+# Subtest: openOrCreateTable rejects empty seed when creating
+ok 8 - openOrCreateTable rejects empty seed when creating
+  ---
+  duration_ms: 1.552375
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 445.072708

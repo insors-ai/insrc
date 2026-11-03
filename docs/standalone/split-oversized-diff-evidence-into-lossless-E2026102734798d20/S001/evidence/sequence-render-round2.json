@@ -1,0 +1,9 @@
+{
+  "renderer": "Installed Google Chrome headless, isolated temporary profile, local self-contained HTML",
+  "html": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/sequence-diagram.html",
+  "htmlSha256": "96a6f037404ca5d0183b7f66eafcd4cc3b2ea17cda0019d46fe66173db8c2bd3",
+  "screenshot": "docs/standalone/split-oversized-diff-evidence-into-lossless-E2026102734798d20/S001/evidence/sequence-render-round2.png",
+  "screenshotSha256": "414af4ac9647c0332866ba21bc745d67c0279fa48a89a90500dd58ee649ffdf5",
+  "observed": "Rendered screenshot inspected: all six participants and nine ordered messages are visible, labels are readable at default fit, no diagram clipping observed. Descriptions remain in the generated page.",
+  "limit": "Pan/zoom controls were visible but not exercised interactively."
+}

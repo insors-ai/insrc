@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: buildPerRoleKeyMap returns one entry per taxonomy role with the right shape
+ok 1 - buildPerRoleKeyMap returns one entry per taxonomy role with the right shape
+  ---
+  duration_ms: 1.301667
+  type: 'test'
+  ...
+# Subtest: a dotted roleId yields the roleId as a SINGLE literal 3rd segment (not a dot-split)
+ok 2 - a dotted roleId yields the roleId as a SINGLE literal 3rd segment (not a dot-split)
+  ---
+  duration_ms: 0.067042
+  type: 'test'
+  ...
+# Subtest: the merged (global + per-role) key map resolves both a global and a per-role key by nativeKey without collision
+ok 3 - the merged (global + per-role) key map resolves both a global and a per-role key by nativeKey without collision
+  ---
+  duration_ms: 0.165333
+  type: 'test'
+  ...
+# Subtest: declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)
+ok 4 - declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)
+  ---
+  duration_ms: 0.103875
+  type: 'test'
+  ...
+# Subtest: each per-role key is a machine-scoped enum with default = the role's defaultTier
+ok 5 - each per-role key is a machine-scoped enum with default = the role's defaultTier
+  ---
+  duration_ms: 0.218792
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 200.552042

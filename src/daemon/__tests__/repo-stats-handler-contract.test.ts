@@ -57,7 +57,7 @@ test("the repo.stats handler is READ-ONLY (no mutation of store/registry/queue/c
 
 test("collectRepoStats delegates to the pure buildRepoStats and RepoStats is declared", () => {
 	assert.match(repoStatsSrc, /export function buildRepoStats\(/, "buildRepoStats is exported");
-	assert.match(repoStatsSrc, /export function collectRepoStats\(/, "collectRepoStats is exported");
+	assert.match(repoStatsSrc, /export (async )?function collectRepoStats\(/, "collectRepoStats is exported");
 	assert.match(repoStatsSrc, /return buildRepoStats\(/, "collectRepoStats delegates all counting to buildRepoStats");
 	assert.match(typesSrc, /export interface RepoStats \{/, "src/shared/types.ts declares the RepoStats interface");
 });

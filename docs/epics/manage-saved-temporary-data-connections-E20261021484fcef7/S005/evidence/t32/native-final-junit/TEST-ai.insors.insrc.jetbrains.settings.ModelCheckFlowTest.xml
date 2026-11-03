@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.settings.ModelCheckFlowTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:21:07" hostname="subho-office-mac" time="0.002">
+  <properties/>
+  <testcase name="approve disabled when not run, reject with the check's id, only ticked non-rejected efforts sent, unknown-check offers check again, no tier write, restart confirmed then definitions re-read()" classname="ai.insors.insrc.jetbrains.settings.ModelCheckFlowTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

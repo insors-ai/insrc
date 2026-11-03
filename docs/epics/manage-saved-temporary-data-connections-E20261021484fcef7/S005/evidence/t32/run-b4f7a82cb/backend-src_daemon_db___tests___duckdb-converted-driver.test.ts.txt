@@ -1,0 +1,87 @@
+TAP version 13
+# Subtest: DuckDBFileDriver -- fixed-width via converter cache
+    # Subtest: describe + sample + aggregate
+    ok 1 - describe + sample + aggregate
+      ---
+      duration_ms: 195.224917
+      type: 'test'
+      ...
+    # Subtest: cache hit on re-open (sidecar valid)
+    ok 2 - cache hit on re-open (sidecar valid)
+      ---
+      duration_ms: 4.257375
+      type: 'test'
+      ...
+    1..2
+ok 1 - DuckDBFileDriver -- fixed-width via converter cache
+  ---
+  duration_ms: 200.368917
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- bson via converter cache
+    # Subtest: describe + aggregate
+    ok 1 - describe + aggregate
+      ---
+      duration_ms: 32.464709
+      type: 'test'
+      ...
+    1..1
+ok 2 - DuckDBFileDriver -- bson via converter cache
+  ---
+  duration_ms: 32.632458
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- avro via converter cache
+    # Subtest: describe + aggregate
+    ok 1 - describe + aggregate
+      ---
+      duration_ms: 28.674417
+      type: 'test'
+      ...
+    1..1
+ok 3 - DuckDBFileDriver -- avro via converter cache
+  ---
+  duration_ms: 28.829917
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- xlsx via converter cache (per-sheet glob)
+    # Subtest: aggregate over single-sheet workbook
+    ok 1 - aggregate over single-sheet workbook
+      ---
+      duration_ms: 43.6815
+      type: 'test'
+      ...
+    # Subtest: honors target -> per-sheet selection
+    ok 2 - honors target -> per-sheet selection
+      ---
+      duration_ms: 43.166167
+      type: 'test'
+      ...
+    1..2
+ok 4 - DuckDBFileDriver -- xlsx via converter cache (per-sheet glob)
+  ---
+  duration_ms: 87.122125
+  type: 'suite'
+  ...
+# Subtest: DuckDBFileDriver -- directory-of-bson (Phase 4.5)
+    # Subtest: aggregates across multiple bson files in a directory
+    ok 1 - aggregates across multiple bson files in a directory
+      ---
+      duration_ms: 60.987625
+      type: 'test'
+      ...
+    1..1
+ok 5 - DuckDBFileDriver -- directory-of-bson (Phase 4.5)
+  ---
+  duration_ms: 61.210667
+  type: 'suite'
+  ...
+1..5
+# tests 7
+# suites 5
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1373.675959

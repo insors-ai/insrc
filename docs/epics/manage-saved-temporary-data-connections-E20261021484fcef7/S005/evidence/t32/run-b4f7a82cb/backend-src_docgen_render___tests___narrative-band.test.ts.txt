@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: renderNarrativeBand: empty sections AND no sourceLink → "" (byte-identity anchor)
+ok 1 - renderNarrativeBand: empty sections AND no sourceLink → "" (byte-identity anchor)
+  ---
+  duration_ms: 0.563083
+  type: 'test'
+  ...
+# Subtest: renderNarrativeBand: a sections-only band is unchanged (no link element)
+ok 2 - renderNarrativeBand: a sections-only band is unchanged (no link element)
+  ---
+  duration_ms: 0.181791
+  type: 'test'
+  ...
+# Subtest: renderNarrativeBand: a sourceLink renders an escaped <a> in the band
+ok 3 - renderNarrativeBand: a sourceLink renders an escaped <a> in the band
+  ---
+  duration_ms: 0.075667
+  type: 'test'
+  ...
+# Subtest: renderNarrativeBand: a sourceLink with no sections still renders the band
+ok 4 - renderNarrativeBand: a sourceLink with no sections still renders the band
+  ---
+  duration_ms: 0.054833
+  type: 'test'
+  ...
+# Subtest: renderNarrativeBand: label + href are escaped — no markup injection
+ok 5 - renderNarrativeBand: label + href are escaped — no markup injection
+  ---
+  duration_ms: 0.190584
+  type: 'test'
+  ...
+# Subtest: assembleFallbackShell: renders the SAME narrated band + source link as the primary shell (parity)
+ok 6 - assembleFallbackShell: renders the SAME narrated band + source link as the primary shell (parity)
+  ---
+  duration_ms: 0.227834
+  type: 'test'
+  ...
+# Subtest: assembleFallbackShell: empty sections + no sourceLink → no band (byte-identity to pre-S001)
+ok 7 - assembleFallbackShell: empty sections + no sourceLink → no band (byte-identity to pre-S001)
+  ---
+  duration_ms: 0.180333
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 197.547625

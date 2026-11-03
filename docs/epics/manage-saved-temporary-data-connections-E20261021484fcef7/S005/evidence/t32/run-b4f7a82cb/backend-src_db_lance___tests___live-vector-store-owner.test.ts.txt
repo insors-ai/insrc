@@ -1,0 +1,22 @@
+TAP version 13
+# Subtest: vector store owner rule: no declaration other than the owner's exists, and without it the live vector store is refused
+ok 1 - vector store owner rule: no declaration other than the owner's exists, and without it the live vector store is refused
+  ---
+  duration_ms: 3.30375
+  type: 'test'
+  ...
+# Subtest: vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused
+ok 2 - vector store owner rule: live path refused with no declaration and nothing created; opens after declareLiveStoreOwner; a temporary path opens; relative path and symbolic link refused
+  ---
+  duration_ms: 8.222375
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 536.65425

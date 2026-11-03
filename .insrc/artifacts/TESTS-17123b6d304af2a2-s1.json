@@ -1,0 +1,551 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "17123b6d304af2a2",
+    "storyId": "s1",
+    "createdAt": "2026-11-01T18:52:29.474Z",
+    "updatedAt": "2026-11-01T20:53:40.807Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "epicSlug": "share-project-memory-across-agents-applications"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "00b9cc308",
+        "ranAt": "2026-11-01T18:52:29.474Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "public-v1-types-and-emitted-boundary",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "pure-public-import-without-native-or-daemon",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1401,
+            "titles": [
+              {
+                "title": "public-v1-types-and-emitted-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "pure-public-import-without-native-or-daemon",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "cf587b0f5",
+        "ranAt": "2026-11-01T19:03:05.834Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "node22-fs-ext-abi-and-separate-descriptor-probe",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/native.test.ts",
+                "title": "node22-fs-ext-abi-and-separate-descriptor-probe",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/native.test.ts",
+                "title": "native-load-failure-is-not-ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 770,
+            "titles": [
+              {
+                "title": "node22-fs-ext-abi-and-separate-descriptor-probe",
+                "result": "pass"
+              },
+              {
+                "title": "native-load-failure-is-not-ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "a9ef96ecd",
+        "ranAt": "2026-11-01T19:08:08.085Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "options-fail-before-side-effects",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/configuration.test.ts",
+                "title": "options-fail-before-side-effects",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "canonical-root-and-readonly-layout-validation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/configuration.test.ts",
+                "title": "canonical-root-and-readonly-layout-validation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/configuration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 924,
+            "titles": [
+              {
+                "title": "options-fail-before-side-effects",
+                "result": "pass"
+              },
+              {
+                "title": "canonical-root-and-readonly-layout-validation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "0ac3f8ba5",
+        "ranAt": "2026-11-01T20:53:40.807Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "exclusive-descriptor-and-owned-bootstrap",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/ownership.test.ts",
+                "title": "exclusive-descriptor-and-owned-bootstrap",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/ownership.test.ts",
+                "title": "layout-state-is-decided-under-ownership-after-one-preflight",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "native-callback-cleanup-and-inode-faults",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/ownership.test.ts",
+                "title": "native-callback-cleanup-and-inode-faults",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/ownership.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 523,
+            "titles": [
+              {
+                "title": "exclusive-descriptor-and-owned-bootstrap",
+                "result": "pass"
+              },
+              {
+                "title": "native-callback-cleanup-and-inode-faults",
+                "result": "pass"
+              },
+              {
+                "title": "layout-state-is-decided-under-ownership-after-one-preflight",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "43a7b4586",
+        "ranAt": "2026-11-01T19:18:50.331Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "one-underlying-call-complete-and-embed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+                "title": "one-underlying-call-complete-and-embed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cancel-timeout-rejection-and-bounded-backpressure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+                "title": "cancel-timeout-rejection-and-bounded-backpressure",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+                "title": "queued-cancellation-never-invokes-provider",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/model-dispatcher.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 504,
+            "titles": [
+              {
+                "title": "one-underlying-call-complete-and-embed",
+                "result": "pass"
+              },
+              {
+                "title": "cancel-timeout-rejection-and-bounded-backpressure",
+                "result": "pass"
+              },
+              {
+                "title": "queued-cancellation-never-invokes-provider",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "37054280a",
+        "ranAt": "2026-11-01T19:27:09.511Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "idempotent-drain-close-and-provider-ownership",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "foundation-data-methods-return-not-ready",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "foundation-data-methods-return-not-ready",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 877,
+            "titles": [
+              {
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "foundation-data-methods-return-not-ready",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "c2a922a5d",
+        "ranAt": "2026-11-01T19:36:53.272Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "same-process-package-copy-thread-process-contention",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contention.test.ts",
+                "title": "same-process-package-copy-thread-process-contention",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "killed-owner-release-stopped-owner-exclusion-and-aliases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/contention.test.ts",
+                "title": "killed-owner-release-stopped-owner-exclusion-and-aliases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/contention.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1406,
+            "titles": [
+              {
+                "title": "same-process-package-copy-thread-process-contention",
+                "result": "pass"
+              },
+              {
+                "title": "killed-owner-release-stopped-owner-exclusion-and-aliases",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "7172957d9",
+        "ranAt": "2026-11-01T19:42:27.065Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "packed-isolated-node22-consumer",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "packed-native-missing-import-versus-open",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "tarball-public-dependency-and-asset-allowlist",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 13092,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "8edd763c1",
+        "ranAt": "2026-11-01T19:50:58.195Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "manual-linux-ext4-node22-native-and-lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/project-memory-qualification.test.ts",
+                "title": "manual-linux-ext4-node22-native-and-lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "manual-linux-packed-consumer-and-natural-exit",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "scripts/__tests__/project-memory-qualification.test.ts",
+                "title": "manual-linux-packed-consumer-and-natural-exit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "scripts/__tests__/project-memory-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 646,
+            "titles": [
+              {
+                "title": "manual-linux-ext4-node22-native-and-lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "manual-linux-packed-consumer-and-natural-exit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "6024a6b89",
+        "ranAt": "2026-11-01T20:10:39.454Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "combined-s1-acceptance-evidence-and-boundary-check",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/FOUNDATION-EVIDENCE.md; refreshed macos-combined.tap: 19 pass, 0 fail/skip; Linux run 41345031980: 14 pass, 0 fail/skip, source matches current"
+            }
+          },
+          {
+            "name": "preserved-root-package-first-build",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S001/evidence/root-build.txt refreshed after de4da9d4c; npm run build exit 0"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

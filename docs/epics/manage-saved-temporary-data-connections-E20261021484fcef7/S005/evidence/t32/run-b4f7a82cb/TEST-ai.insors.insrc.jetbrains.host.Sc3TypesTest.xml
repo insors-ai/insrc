@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ai.insors.insrc.jetbrains.host.Sc3TypesTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-30T05:13:46" hostname="subho-office-mac" time="0.0">
+  <properties/>
+  <testcase name="MarkerDelimitedBlock carries beginMarker endMarker and body()" classname="ai.insors.insrc.jetbrains.host.Sc3TypesTest" time="0.0"/>
+  <testcase name="AiHostKind is the closed union of exactly the two agentic hosts()" classname="ai.insors.insrc.jetbrains.host.Sc3TypesTest" time="0.0"/>
+  <testcase name="AiHost carries kind plus absolute mcp and rules paths()" classname="ai.insors.insrc.jetbrains.host.Sc3TypesTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -22,6 +22,16 @@ import type { FeedbackDecision } from '../../../src/workflow/artifacts/provenanc
 import type { DocsArtifactSummary } from './protocol.js';
 
 /** One pending artifact's reviewable body, adapted from the daemon's ArtifactReviewView. */
+/** The daemon's `workflow.deliveryEvidence` answer for a record the review view opens by id
+ *  (a document-less record, e.g. an AMD amendment). ISSUE-6dbf14435972af7a. */
+interface DeliveryEvidenceView {
+  readonly artifactId: string;
+  readonly kind: string;
+  readonly meta?: Record<string, unknown> | undefined;
+  readonly body?: Record<string, unknown> | undefined;
+  readonly renderedMarkdown: string | null;
+}
+
 export interface DocsContent {
   readonly markdown: string;
   readonly openQuestions: readonly string[];
@@ -107,6 +117,10 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
   // id -> mdPath, retained across pending() so content() can resolve the .md
   // path the daemon requires from the artifactId the host holds (k5, daemon-tracked only).
   const mdPathById = new Map<string, string>();
+  // The pending ids whose mdPath is empty (document-less records, e.g. AMD): only these
+  // take the evidence read in content() — an id the map simply does not know yet still
+  // falls back to artifactContent with the id, as before (ISSUE-6dbf14435972af7a).
+  const noDocIds = new Set<string>();
   const resolvePath = (idOrPath: string): string => mdPathById.get(idOrPath) ?? idOrPath;
 
   return {
@@ -117,9 +131,13 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
       );
       if (isError(res)) throw new Error(res.error);
       mdPathById.clear();
+      noDocIds.clear();
       // Skip an empty mdPath (deriveMdPath's "unresolvable" sentinel) so resolvePath's `??`
       // fallback fires instead of sending an empty string the daemon would reject.
-      for (const a of res.artifacts) if (a.mdPath) mdPathById.set(a.artifactId, a.mdPath);
+      for (const a of res.artifacts) {
+        if (a.mdPath) mdPathById.set(a.artifactId, a.mdPath);
+        else noDocIds.add(a.artifactId);
+      }
       return res.artifacts.map((a): DocsArtifactSummary => ({
         id: a.artifactId,
         kind: a.kind,
@@ -136,10 +154,30 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
         where(),
       );
       if (isError(res)) throw new Error(res.error);
-      return res.artifacts.filter((a) => typeof a.mdPath === 'string' && a.mdPath !== '').map((a) => ({ id: a.artifactId, mdPath: a.mdPath }));
+      // ISSUE-6dbf14435972af7a: every pending record is presentable, including one with no
+      // document file (an empty mdPath, e.g. an AMD amendment) — it is presented by id.
+      return res.artifacts.map((a) => ({ id: a.artifactId, mdPath: a.mdPath }));
     },
 
     async content(idOrPath: string): Promise<DocsContent> {
+      // ISSUE-6dbf14435972af7a: an artifact id with no document (no mdPath mapping, e.g. an
+      // AMD amendment) is read through the daemon's evidence IPC, which renders the record.
+      if (noDocIds.has(idOrPath)) {
+        const ev = await client.rpc<DeliveryEvidenceView | DaemonError>(
+          'workflow.deliveryEvidence',
+          { ...where(), artifactId: idOrPath },
+        );
+        if (isError(ev)) throw new Error(ev.error);
+        const meta = (ev.meta ?? {}) as Record<string, unknown>;
+        const state = typeof meta['approvedAt'] === 'string' ? 'approved'
+          : typeof meta['rejectedAt'] === 'string' ? 'rejected' : 'pending';
+        return {
+          markdown: ev.renderedMarkdown ?? `# ${ev.artifactId}\n\n(no rendered document)`,
+          openQuestions: [],
+          blocked: false,
+          state,
+        };
+      }
       const res = await client.rpc<ArtifactReviewView | DaemonError>(
         'workflow.artifactContent',
         { ...where(), mdPath: resolvePath(idOrPath) },

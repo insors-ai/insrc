@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path
+ok 1 - attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path
+  ---
+  duration_ms: 1.993167
+  type: 'test'
+  ...
+# Subtest: attachment store: an oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written
+ok 2 - attachment store: an oversize paste or file, a mime outside the image list and a source that is not a regular file are refused with AttachmentRefused and nothing is written
+  ---
+  duration_ms: 6.037042
+  type: 'test'
+  ...
+# Subtest: attachment store: remove ignores an id that is not a plain file name in the session's directory, and remove and removeSession succeed when the target is gone
+ok 3 - attachment store: remove ignores an id that is not a plain file name in the session's directory, and remove and removeSession succeed when the target is gone
+  ---
+  duration_ms: 0.651083
+  type: 'test'
+  ...
+# Subtest: attachment store: sweep removes only directories of sessions not kept whose files are all older than the age
+ok 4 - attachment store: sweep removes only directories of sessions not kept whose files are all older than the age
+  ---
+  duration_ms: 0.479291
+  type: 'test'
+  ...
+# Subtest: attachment store: a failed write leaves no partial file
+ok 5 - attachment store: a failed write leaves no partial file
+  ---
+  duration_ms: 1.9645
+  type: 'test'
+  ...
+# Subtest: attachment store: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session
+ok 6 - attachment store: the start-up sweep keeps the attachments of a session in the keep set that holds a waiting message and clears an unreferenced old session
+  ---
+  duration_ms: 2.52625
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 216.539208

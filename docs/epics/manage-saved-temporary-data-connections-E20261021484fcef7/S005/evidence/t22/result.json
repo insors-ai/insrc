@@ -1,0 +1,10 @@
+{
+  "task": "t22",
+  "isolation": "Two actual workbench owner instances and two actual platform Project service containers create different Temporary rows for the same canonical root/ID, issue overlapping lane-local RPC counters starting at 1, switch A-B-A without losing overlays and dispose one without affecting the other.",
+  "negativeControls": "Wrong root, stale generation and forged capability rejected before list handlers execute. Unclaimed Saved reads exclude both owners' Temporary rows. Native APP gateway remains singleton/stateless with no session/capability fields.",
+  "fixtureReuse": "Extended existing signed-mutation peers with a second registered root and owned owner-factory; actual backend session/ticket/mutation handlers unchanged. Existing frontend default root selection remains explicit.",
+  "focused": "attempt1.tap: 2 Node cases / 1 native Project case pass; Kotlin decoder method spelling corrected to existing list() before compilation completed.",
+  "regression": "regression.tap: 11 Node cases pass (10 TypeScript mutation/removal, 1 bridge running 4 native removal cases). Earlier command named a nonexistent outcome bridge, which tsx ignored; actual native mutation bridge run separately in native-mutation.tap rather than claiming that file ran.",
+  "typechecks": { "backend": "pass", "vscode": "pass" },
+  "limits": "Controlled fixture drivers only. Does not establish production all-consumer Saved worker affinity; existing fail-closed admission stays unchanged. Live windows/90-second wall-clock lifecycle remain t26-t29. Full sweep remains t32."
+}

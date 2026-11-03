@@ -1,0 +1,258 @@
+{
+  "stage": "Source closure inventory, not runtime proof; actual source/compiled normal-sink evidence is analysis-diagnostics.test.ts",
+  "source": "production getLogger/log/console source scan, tests excluded",
+  "sites": [
+    {
+      "file": "src/analyze/docs-retrieval.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/search-text.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/classifier/driver.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/boot-validator.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/measure.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/scope.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/doc-constraint-enumerate.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/repo-ignore-filter.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/manifests-locate.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/capability-reuse-check.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/orchestrator/persistence.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/data-model-trace.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/executor/registry.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/module-profile.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/shaper-provider.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/symbol-locate.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/cache.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/synthesizer.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/invariants.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/doc-mention.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/executor/walker.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/class-hierarchy.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/bootstrap.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/planner/templates/bootstrap.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/doc-decision-trace.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/orchestrator/driver.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/decomposer.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/context/driver.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/planner/cache.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/usage-example.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/freeform-probe.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/db-connections-list.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/test-locate.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/executor/cache.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/db-table-describe.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/db-tables-list.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/executor.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/summariser/driver.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/convention-detect.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/config-trace.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/concept-resolve.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/explore/import-graph.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/planner/templates/registry.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-objects.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/planner/recursive.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-ci.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-helm.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-docker.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-kubernetes.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/infra/discovery-families.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/code/discovery-entrypoints.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/planner/driver.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/code/discovery-modules.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/data/discovery-connections.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/infra/inventory-terraform.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/code/surface-functional.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/data/schema-table.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/shared/adherence-topic-constraints.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/code/structure-module-tree.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/shared/adherence.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/shared/aggregator.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/docs/discovery-inventory.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    },
+    {
+      "file": "src/analyze/runtimes/docs/family-summarise.ts",
+      "classification": "Analysis diagnostic invocation is lazy and captures immutable Session quiet policy before formatting. Explicit tuple at direct runtime/exploration boundaries; bound denial-only context for internal Saved-compatible helpers. Unsupported runtime families remain denied by runtime admission."
+    }
+  ]
+}

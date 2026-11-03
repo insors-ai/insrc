@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "eb6dc3067",
+  "version": "0.5.21",
+  "package": "vscode-plugin/insrc-vscode-0.5.21-s005-eb6dc3067.vsix",
+  "sha256": "bf76bdd751cd780c89c7a0cbb53b8d5f40351d937e5db1b3901277b1a754db8a",
+  "archiveVerified": true,
+  "shippedFeedbackBundleVerified": true,
+  "manualUI": "pending-user",
+  "independentCompletionReview": "pending",
+  "daemonRestarted": false
+}

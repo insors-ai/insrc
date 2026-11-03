@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)
+ok 1 - pending() maps PendingArtifact -> DocsArtifactSummary (id/kind/title/status, and the open-question count)
+  ---
+  duration_ms: 1.401792
+  type: 'test'
+  ...
+# Subtest: content(id) resolves the retained mdPath and maps renderedMarkdown/openQuestions/blocked
+ok 2 - content(id) resolves the retained mdPath and maps renderedMarkdown/openQuestions/blocked
+  ---
+  duration_ms: 0.169792
+  type: 'test'
+  ...
+# Subtest: content() maps approvable:false -> blocked:true
+ok 3 - content() maps approvable:false -> blocked:true
+  ---
+  duration_ms: 0.060084
+  type: 'test'
+  ...
+# Subtest: docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields
+ok 4 - docs review client: decide calls 'workflow.reviewDecision' once with the given path, without the id map, and throws on the error arm; content forwards the new view fields
+  ---
+  duration_ms: 0.617917
+  type: 'test'
+  ...
+# Subtest: MED-2: an empty mdPath (unresolvable sentinel) is NOT cached, so content falls back to the raw id (never send "")
+ok 5 - MED-2: an empty mdPath (unresolvable sentinel) is NOT cached, so content falls back to the raw id (never send "")
+  ---
+  duration_ms: 1.189584
+  type: 'test'
+  ...
+# Subtest: every method throws on the daemon { error } arm (never a silent empty result)
+ok 6 - every method throws on the daemon { error } arm (never a silent empty result)
+  ---
+  duration_ms: 0.13975
+  type: 'test'
+  ...
+# Subtest: t2: content() round-trips a view carrying all four structured records, each one unmodified
+ok 7 - t2: content() round-trips a view carrying all four structured records, each one unmodified
+  ---
+  duration_ms: 0.150291
+  type: 'test'
+  ...
+# Subtest: t2: content() on a view carrying none of the four yields all four ABSENT
+ok 8 - t2: content() on a view carrying none of the four yields all four ABSENT
+  ---
+  duration_ms: 0.115583
+  type: 'test'
+  ...
+# Subtest: t2: content() still throws on the daemon { error } arm — unavailable stays distinguishable from empty
+ok 9 - t2: content() still throws on the daemon { error } arm — unavailable stays distinguishable from empty
+  ---
+  duration_ms: 0.347041
+  type: 'test'
+  ...
+# Subtest: t2: source-scan — docs-review-client calls exactly its three daemon methods
+ok 10 - t2: source-scan — docs-review-client calls exactly its three daemon methods
+  ---
+  duration_ms: 0.505875
+  type: 'test'
+  ...
+# Subtest: t2/s3: content() carries sequenceDefinition through by REFERENCE, unmodified
+ok 11 - t2/s3: content() carries sequenceDefinition through by REFERENCE, unmodified
+  ---
+  duration_ms: 0.082417
+  type: 'test'
+  ...
+# Subtest: t2/s3: a view carrying sequenceDefinition but no other record leaves the other four ABSENT
+ok 12 - t2/s3: a view carrying sequenceDefinition but no other record leaves the other four ABSENT
+  ---
+  duration_ms: 0.061459
+  type: 'test'
+  ...
+# Subtest: t2/s3: DocsContent indexes sequenceDefinition off ArtifactReviewView rather than restating it
+ok 13 - t2/s3: DocsContent indexes sequenceDefinition off ArtifactReviewView rather than restating it
+  ---
+  duration_ms: 0.213667
+  type: 'test'
+  ...
+# Subtest: every call names the repository it is given, and none when no folder is open
+ok 14 - every call names the repository it is given, and none when no folder is open
+  ---
+  duration_ms: 0.165708
+  type: 'test'
+  ...
+# Subtest: docs review client: pending forwards openQuestions and workItemId when the daemon gives them and leaves them absent otherwise
+ok 15 - docs review client: pending forwards openQuestions and workItemId when the daemon gives them and leaves them absent otherwise
+  ---
+  duration_ms: 0.080958
+  type: 'test'
+  ...
+# Subtest: docs review client: pendingDocuments returns each pending document's id and path and skips one with no path
+ok 16 - docs review client: pendingDocuments returns each pending document's id and path and skips one with no path
+  ---
+  duration_ms: 0.147125
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 195.522125

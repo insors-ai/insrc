@@ -281,10 +281,10 @@ test('5.3: Java + Scala module entities share the jvm namespace row (no separate
 		});
 	}
 	const sm = repoRows.filter(r => r.row.kind === 'shared-modules');
-	assert.equal(sm.length, 4, 'four shared-modules rows always present');
+	assert.equal(sm.length, Object.keys(SHARED_MODULES_REPO_ID).length, 'one shared-modules row per namespace always present (seven since Epic c2ba6fa6 s9)');
 });
 
-test('5.3: every shared-modules namespace gets its own reserved repoId (4 distinct rows)', async () => {
+test('5.3: every shared-modules namespace gets its own reserved repoId (one distinct row each: seven since Epic c2ba6fa6 s9)', async () => {
 	// Trigger first-boot provisioning by opening the env.
 	const store = await getGraphStore();
 
@@ -298,23 +298,23 @@ test('5.3: every shared-modules namespace gets its own reserved repoId (4 distin
 		smCount++;
 		if (row.namespace !== undefined) namespaces.add(row.namespace);
 	}
-	assert.equal(smCount, 4, 'expected exactly 4 shared-modules rows');
+	assert.equal(smCount, 7, 'expected exactly 7 shared-modules rows (jvm, npm, python, go, cargo, nuget, native)');
 	assert.deepEqual(
 		[...namespaces].sort(),
-		['go', 'jvm', 'npm', 'python'],
-		'all four namespaces present',
+		['cargo', 'go', 'jvm', 'native', 'npm', 'nuget', 'python'],
+		'all seven namespaces present',
 	);
 
 	// Each namespace's reserved id is distinct.
 	const reservedIds = new Set(Object.values(SHARED_MODULES_REPO_ID));
-	assert.equal(reservedIds.size, 4, 'reserved IDs are pairwise distinct');
+	assert.equal(reservedIds.size, 7, 'reserved IDs are pairwise distinct');
 });
 
 test('5.3: reserved shared-modules row has empty path + namespace tag in storage', async () => {
 	await getGraphStore();
 	const store = await getGraphStore();
 
-	for (const namespace of ['jvm', 'npm', 'python', 'go'] as const) {
+	for (const namespace of ['jvm', 'npm', 'python', 'go', 'cargo', 'nuget', 'native'] as const) {
 		const reservedId = SHARED_MODULES_REPO_ID[namespace];
 		const buf = store.repo.get(encodeRepoKey(reservedId)) as Buffer | undefined;
 		assert.ok(buf, `reserved row for ${namespace} must be present`);

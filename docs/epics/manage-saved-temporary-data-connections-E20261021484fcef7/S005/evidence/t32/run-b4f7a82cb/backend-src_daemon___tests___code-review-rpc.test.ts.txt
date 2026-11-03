@@ -1,0 +1,76 @@
+TAP version 13
+# Subtest: T12 the daemon refuses to review code the daemon wrote: an error frame, no provider, no review
+ok 1 - T12 the daemon refuses to review code the daemon wrote: an error frame, no provider, no review
+  ---
+  duration_ms: 3.989375
+  type: 'test'
+  ...
+# Subtest: T4 the daemon reviews code that is controller-authored, and stamps the review as the daemon's
+ok 2 - T4 the daemon reviews code that is controller-authored, and stamps the review as the daemon's
+  ---
+  duration_ms: 1.369542
+  type: 'test'
+  ...
+# Subtest: T4 the daemon reviews code that is of unknown author (an older record), and stamps the review as the daemon's
+ok 3 - T4 the daemon reviews code that is of unknown author (an older record), and stamps the review as the daemon's
+  ---
+  duration_ms: 1.079917
+  type: 'test'
+  ...
+# Subtest: T4 with no BUILD record at all the author is unknown and the daemon reviews
+ok 4 - T4 with no BUILD record at all the author is unknown and the daemon reviews
+  ---
+  duration_ms: 0.524458
+  type: 'test'
+  ...
+# Subtest: the author is read from the BUILD record
+ok 5 - the author is read from the BUILD record
+  ---
+  duration_ms: 1.572083
+  type: 'test'
+  ...
+# Subtest: a declined subject is still an error frame, before the author is looked at
+ok 6 - a declined subject is still an error frame, before the author is looked at
+  ---
+  duration_ms: 0.766208
+  type: 'test'
+  ...
+# Subtest: T17 the degraded mode grounds on the diff, stamps the record degraded and caps a clean verdict at warn
+ok 7 - T17 the degraded mode grounds on the diff, stamps the record degraded and caps a clean verdict at warn
+  ---
+  duration_ms: 17.628208
+  type: 'test'
+  ...
+# Subtest: T17 a diff the daemon cannot read ends in one error frame naming the cause, and no record is written
+ok 8 - T17 a diff the daemon cannot read ends in one error frame naming the cause, and no record is written
+  ---
+  duration_ms: 30.024583
+  type: 'test'
+  ...
+# Subtest: T17 with no mode the request grounds on the graph and can pass, as before
+ok 9 - T17 with no mode the request grounds on the graph and can pass, as before
+  ---
+  duration_ms: 135.201834
+  type: 'test'
+  ...
+# Subtest: T17 with the full mode the request grounds on the graph and can pass, as before
+ok 10 - T17 with the full mode the request grounds on the graph and can pass, as before
+  ---
+  duration_ms: 2.79
+  type: 'test'
+  ...
+# Subtest: T17 a grounding mode the daemon does not know is refused, not read as full
+ok 11 - T17 a grounding mode the daemon does not know is refused, not read as full
+  ---
+  duration_ms: 1.082459
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 625.43875

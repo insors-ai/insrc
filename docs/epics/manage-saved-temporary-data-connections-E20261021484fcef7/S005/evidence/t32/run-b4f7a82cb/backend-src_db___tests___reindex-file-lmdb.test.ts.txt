@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: reindexFile on empty store creates entity rows
+ok 1 - reindexFile on empty store creates entity rows
+  ---
+  duration_ms: 125.125084
+  type: 'test'
+  ...
+# Subtest: reindexFile on empty parsed list with no existing is a no-op
+ok 2 - reindexFile on empty parsed list with no existing is a no-op
+  ---
+  duration_ms: 111.490416
+  type: 'test'
+  ...
+# Subtest: reindexFile: identical re-parse is a no-op
+ok 3 - reindexFile: identical re-parse is a no-op
+  ---
+  duration_ms: 115.79325
+  type: 'test'
+  ...
+# Subtest: reindexFile: adding an entity inserts the new + preserves existing
+ok 4 - reindexFile: adding an entity inserts the new + preserves existing
+  ---
+  duration_ms: 198.587292
+  type: 'test'
+  ...
+# Subtest: reindexFile: removing an entity tombstones it + keeps the rest
+ok 5 - reindexFile: removing an entity tombstones it + keeps the rest
+  ---
+  duration_ms: 245.937625
+  type: 'test'
+  ...
+# Subtest: reindexFile: replacing all entities tombstones the original set
+ok 6 - reindexFile: replacing all entities tombstones the original set
+  ---
+  duration_ms: 234.929459
+  type: 'test'
+  ...
+# Subtest: reindexFile: changed body updates the row
+ok 7 - reindexFile: changed body updates the row
+  ---
+  duration_ms: 200.406583
+  type: 'test'
+  ...
+# Subtest: reindexFile: tombstoning a referenced entity clears incident edges
+ok 8 - reindexFile: tombstoning a referenced entity clears incident edges
+  ---
+  duration_ms: 124.140583
+  type: 'test'
+  ...
+# Subtest: reindexFile preserves module stubs that already exist
+ok 9 - reindexFile preserves module stubs that already exist
+  ---
+  duration_ms: 107.14775
+  type: 'test'
+  ...
+# Subtest: reindexFile is idempotent: same parse twice produces the same row set
+ok 10 - reindexFile is idempotent: same parse twice produces the same row set
+  ---
+  duration_ms: 122.641
+  type: 'test'
+  ...
+# Subtest: reindexFile: contentHash unchanged + body unchanged -> no row mutation
+ok 11 - reindexFile: contentHash unchanged + body unchanged -> no row mutation
+  ---
+  duration_ms: 179.113625
+  type: 'test'
+  ...
+# Subtest: reindexFile auto-allocates a repoId on first sighting
+ok 12 - reindexFile auto-allocates a repoId on first sighting
+  ---
+  duration_ms: 222.572208
+  type: 'test'
+  ...
+# Subtest: reindexFile only touches entities of the specified file
+ok 13 - reindexFile only touches entities of the specified file
+  ---
+  duration_ms: 239.369708
+  type: 'test'
+  ...
+# Subtest: reindexFile result survives close + reopen
+ok 14 - reindexFile result survives close + reopen
+  ---
+  duration_ms: 214.761292
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2769.149292

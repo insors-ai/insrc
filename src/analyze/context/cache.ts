@@ -1,3 +1,4 @@
+import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -126,7 +127,7 @@ export function readBundle(
 		if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
 			return null;
 		}
-		log.warn({ path, err: (err as Error).message }, 'cache read failed; treating as miss');
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('warn', () => [{ path, err: (err as Error).message }, 'cache read failed; treating as miss']);
 		return null;
 	}
 
@@ -134,13 +135,13 @@ export function readBundle(
 	try {
 		parsed = JSON.parse(raw) as CacheFileBody;
 	} catch (err) {
-		log.warn({ path, err: (err as Error).message }, 'cache file is not valid JSON; discarding');
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('warn', () => [{ path, err: (err as Error).message }, 'cache file is not valid JSON; discarding']);
 		safeUnlink(path);
 		return null;
 	}
 
 	if (typeof parsed?.key !== 'string' || parsed.bundle === undefined) {
-		log.warn({ path }, 'cache file has unexpected shape; discarding');
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('warn', () => [{ path }, 'cache file has unexpected shape; discarding']);
 		safeUnlink(path);
 		return null;
 	}
@@ -148,7 +149,7 @@ export function readBundle(
 	if (parsed.key !== key.hash) {
 		// Mismatched key -- the slot belongs to a stale invocation. Discard
 		// so the next miss-write can land cleanly.
-		log.debug({ path, expected: key.hash, found: parsed.key }, 'cache key mismatch; discarding');
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('debug', () => [{ path, expected: key.hash, found: parsed.key }, 'cache key mismatch; discarding']);
 		safeUnlink(path);
 		return null;
 	}
@@ -157,14 +158,11 @@ export function readBundle(
 	// newer lastIndexedAt than the bundle's recorded value, the bundle
 	// reflects an older view of the indexed graph and must be rebuilt.
 	if (currentLastIndexedAt !== undefined && isStaleByIndexer(parsed.bundle, currentLastIndexedAt)) {
-		log.debug(
-			{
+		captureAnalysisDiagnostics(log, opts.connectionExecution).emit('debug', () => [{
 				path,
 				cached:   parsed.bundle.meta?.repoLastIndexedAt,
 				registry: currentLastIndexedAt,
-			},
-			'cached bundle stale (registry lastIndexedAt advanced); discarding',
-		);
+		}, 'cached bundle stale (registry lastIndexedAt advanced); discarding']);
 		safeUnlink(path);
 		return null;
 	}
@@ -243,7 +241,7 @@ function safeUnlink(path: string): void {
 		unlinkSync(path);
 	} catch (err) {
 		if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
-			log.debug({ path, err: (err as Error).message }, 'safeUnlink: non-ENOENT error');
+			captureAnalysisDiagnostics(log).emit('debug', () => [{ path, err: (err as Error).message }, 'safeUnlink: non-ENOENT error']);
 		}
 	}
 }

@@ -55,20 +55,34 @@ const view = ({ computedAtGeneration: _g, summaryModel: _m, ...rest }: Subsystem
 export async function writeSubsystems(repoPath: string, generation: number, groups: readonly SubsystemGroupRow[]): Promise<void> {
 	const repoId = await lookupRepoId(repoPath);
 	if (repoId === undefined) throw new Error(`writeSubsystems: ${repoPath} is not a registered repository`);
-	await withWriteTxn(s => {
-		const previous = new Map(rowsInTxn(s, repoId).map(r => [r.id, r]));
-		for (const { key } of s.subsystem.getRange(repoRange(repoId))) s.subsystem.remove(key);
-		for (const { key } of s.subsystemByFile.getRange(repoRange(repoId))) s.subsystemByFile.remove(key);
-		for (const g of groups) {
-			const kept = previous.get(g.id);
-			const row: SubsystemRow = {
-				...g, summary: kept?.summary ?? null, computedAtGeneration: generation,
-				...(kept?.summaryModel !== undefined && { summaryModel: kept.summaryModel }),
-			};
-			s.subsystem.put(subsystemKey(repoId, g.id), encodeSubsystemRow(row));
-			for (const file of g.files) s.subsystemByFile.put(fileKey(repoId, file), Buffer.from(g.id, 'utf8'));
-		}
-	});
+	await withWriteTxn(s => writeSubsystemsInTxn(s, repoId, generation, groups));
+}
+
+/** writeSubsystems inside the caller's write transaction (ISSUE-7d42b5dc: the subsystem pass publishes in one transaction). */
+export function writeSubsystemsInTxn(s: GraphStore, repoId: number, generation: number, groups: readonly SubsystemGroupRow[]): void {
+	const previous = new Map(rowsInTxn(s, repoId).map(r => [r.id, r]));
+	for (const { key } of [...s.subsystem.getRange(repoRange(repoId))]) s.subsystem.remove(key);
+	for (const { key } of [...s.subsystemByFile.getRange(repoRange(repoId))]) s.subsystemByFile.remove(key);
+	for (const g of groups) {
+		const kept = previous.get(g.id);
+		const row: SubsystemRow = {
+			...g, summary: kept?.summary ?? null, computedAtGeneration: generation,
+			...(kept?.summaryModel !== undefined && { summaryModel: kept.summaryModel }),
+		};
+		s.subsystem.put(subsystemKey(repoId, g.id), encodeSubsystemRow(row));
+		for (const file of g.files) s.subsystemByFile.put(fileKey(repoId, file), Buffer.from(g.id, 'utf8'));
+	}
+}
+
+/**
+ * Inside the caller's write transaction: stamp the stored groups at `generation`
+ * without changing them -- they are what the graph at that generation groups
+ * into (ISSUE-7d42b5dc). Summaries, ids and memberships are untouched.
+ */
+export function restampSubsystemsInTxn(s: GraphStore, repoId: number, generation: number): void {
+	for (const row of rowsInTxn(s, repoId)) {
+		s.subsystem.put(subsystemKey(repoId, row.id), encodeSubsystemRow({ ...row, computedAtGeneration: generation }));
+	}
 }
 
 /**

@@ -3,8 +3,11 @@
  * groups a graph-complete repository's code files into subsystems and writes
  * them, stamped with the generation it read.
  *
- * It runs only on a complete graph (lc1) and only when the stored subsystems
- * are older than the graph. The file graph comes from the stored relationships
+ * It runs only on a complete graph (lc1). It reads the whole repository only
+ * when it must (no contribution rows, nothing grouped yet, or its first pass for
+ * the repository in this process); otherwise it reads again only the files the
+ * store's changed-file record names, and regroups in memory from the per-file
+ * contribution rows only when one of them changed (ISSUE-7d42b5dc). The file graph comes from the stored relationships
  * between code entities of two files of the repository -- IMPORTS, CALLS,
  * INHERITS, IMPLEMENTS and REFERENCES -- each weighted by kind (inheritance 2,
  * the rest 1) and by how it was established (extracted 1, inferred or chosen
@@ -22,10 +25,16 @@
  */
 
 import type { DbClient } from '../db/client.js';
-import { entityU64ForId, listEntitiesForRepo } from '../db/entities.js';
+import { entityIdsByU64s, entityU64ForId, findEntitiesByFile, getEntitiesByIds, listEntitiesForRepo } from '../db/entities.js';
 import { outNeighbors } from '../db/graph/edges.js';
 import { readIndexState } from '../db/index-state.js';
-import { readSubsystems, writeSubsystemSummary, writeSubsystems, type SubsystemGroupRow, type SubsystemView } from '../db/subsystems.js';
+import { readSubsystems, restampSubsystemsInTxn, writeSubsystemSummary, writeSubsystems, type SubsystemGroupRow, type SubsystemView } from '../db/subsystems.js';
+import { getGraphStore, withWriteTxn } from '../db/graph/store.js';
+import { lookupRepoId } from '../db/repos.js';
+import {
+	clearContributionsInTxn, consumeChangedFilesInTxn, readChangedFilesInTxn, readContributionsInTxn, writeContributionInTxn,
+	type FileContributionRow,
+} from '../db/subsystem-changes.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
 import { buildSummariserProvider } from '../analyze/context/shaper-provider.js';
 import { SUBSYSTEM_SUMMARISER_PROMPT_PATH } from '../analyze/summariser/subsystem-prompt.js';
@@ -48,6 +57,9 @@ const GROUPING_KINDS = Object.keys(KIND_WEIGHT) as RelationKind[];
 /** How much a relationship counts, by how it was established (s7). */
 const EVIDENCE_WEIGHT: Readonly<Record<RelationEvidence, number>> = { extracted: 1, inferred: 0.8, chosen: 0.8, unknown: 0.6, model: 0.5 };
 
+/** How a pass obtained its groups (ISSUE-7d42b5dc). */
+export type SubsystemPassMode = 'full' | 'incremental' | 'unchanged';
+
 export interface SubsystemPassResult {
 	readonly ran:              boolean;
 	readonly reason?:          'graph-incomplete' | 'up-to-date' | undefined;
@@ -57,6 +69,14 @@ export interface SubsystemPassResult {
 	readonly summariesFailed:  number;
 	/** Shutdown, or a new generation, stopped the summaries; the rest wait for the next pass. */
 	readonly stopped:          boolean;
+	/** How the groups were obtained; absent when the graph is not complete. */
+	readonly mode?:            SubsystemPassMode | undefined;
+	/** The files whose contributions the pass computed. */
+	readonly filesRead:        number;
+	/** The grouping work's time, before the summaries. */
+	readonly elapsedMs:        number;
+	/** When the pass itself began (after any hand-over or wait): pacing measures from it. */
+	readonly startedAt:        number;
 }
 
 /** What the pass runs with: the model and the queue it yields to (the indexer supplies the queue's). */
@@ -144,67 +164,166 @@ export async function summariseSubsystem(
 /** Thrown inside a summary to stop the loop: shutdown, or a new generation. */
 class SummaryStop extends Error {}
 
-/** Group a graph-complete repository's code files into subsystems, store them, and summarise new ones. */
+/**
+ * Repositories that had a full pass in this process (ISSUE-7d42b5dc): the first
+ * pass for a repository in a process is full, so a store left behind by an older
+ * daemon, a restore or any unrecorded change is corrected once per start.
+ */
+const fullPassDone = new Set<string>();
+
+/** Test seam: forget which repositories had a full pass in this process. */
+export function _forgetFullPassesForTest(): void {
+	fullPassDone.clear();
+}
+
+/** A source or target of the file graph: a code entity or a file entity (the full pass's fileOfU64 rule). */
+const isEndpoint = (e: Entity): boolean => CODE_KINDS.has(e.kind) || e.kind === 'file';
+
+/**
+ * The contribution rows of `files` (repo-relative file -> its entities): each
+ * file's code-entity count and its outgoing grouping edges, aggregated per
+ * target file by kind and evidence weight, to code or file entities of OTHER
+ * files of the repository -- whatever the target file's code status, which the
+ * regroup applies. A file with no code entity has no row (undefined).
+ */
+async function contributionsOf(
+	files:      ReadonlyMap<string, readonly Entity[]>,
+	targetFile: (u64s: readonly bigint[]) => Promise<Map<bigint, string>>,
+): Promise<Map<string, FileContributionRow | undefined>> {
+	const out = new Map<string, FileContributionRow | undefined>();
+	for (const file of [...files.keys()].sort()) {
+		const entities = files.get(file)!;
+		const entityCount = entities.filter(e => CODE_KINDS.has(e.kind)).length;
+		if (entityCount === 0) { out.set(file, undefined); continue; }
+		const neighbours: { u64: bigint; kind: RelationKind; evidence: RelationEvidence }[] = [];
+		for (const e of entities) {
+			if (!isEndpoint(e)) continue;
+			const u64 = await entityU64ForId(e.id);
+			if (u64 === undefined) continue;
+			for (const n of await outNeighbors(u64, { kindFilter: GROUPING_KINDS, withEvidence: true })) {
+				neighbours.push({ u64: n.u64, kind: n.kind as RelationKind, evidence: n.evidence });
+			}
+		}
+		const fileOf = await targetFile([...new Set(neighbours.map(n => n.u64))]);
+		const byTarget = new Map<string, { weight: number; kinds: Partial<Record<RelationKind, number>> }>();
+		for (const n of neighbours) {
+			const to = fileOf.get(n.u64);
+			if (to === undefined || to === file) continue;
+			const edge = byTarget.get(to) ?? { weight: 0, kinds: {} };
+			edge.weight += (KIND_WEIGHT[n.kind] ?? 0) * EVIDENCE_WEIGHT[n.evidence];
+			edge.kinds[n.kind] = (edge.kinds[n.kind] ?? 0) + 1;
+			byTarget.set(to, edge);
+		}
+		out.set(file, { entityCount, out: [...byTarget.keys()].sort().map(to => ({ to, ...byTarget.get(to)! })) });
+	}
+	return out;
+}
+
+/**
+ * The groups of a repository's contribution rows: its code files (rows with
+ * entityCount > 0), the edges between two of them, and the directory hubs --
+ * the same graph the whole-repository read builds, in one deterministic order.
+ */
+function regroup(rows: ReadonlyMap<string, FileContributionRow>): SubsystemGroupRow[] {
+	// Only code files have rows (a file with no code entity has none), so the rows' files are the nodes.
+	const files = [...rows.keys()].sort();
+	const code = new Set(files);
+	const edges: FileEdge[] = [];
+	for (const a of files) {
+		for (const e of rows.get(a)!.out) if (code.has(e.to)) edges.push({ a, b: e.to, weight: e.weight, kinds: e.kinds });
+	}
+	const directories = directoryHubs(files);
+	return groupSubsystems({ files, edges: [...edges, ...directories.edges], hubs: directories.hubs }).map(g => ({
+		...g, entityCount: g.files.reduce((n, f) => n + (rows.get(f)?.entityCount ?? 0), 0),
+	}));
+}
+
+const sameRow = (a: FileContributionRow | undefined, b: FileContributionRow | undefined): boolean =>
+	JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+/**
+ * Group a graph-complete repository's code files into subsystems, store them,
+ * and summarise new ones (ISSUE-7d42b5dc: incrementally). Mode 'full' -- no
+ * contribution rows, groups never stored, or the first pass for the repository
+ * in this process -- reads the whole repository; otherwise only the files the
+ * changed-file record names are read again, and the groups are recomputed in
+ * memory from the contribution rows only when one of them changed ('incremental')
+ * or merely restamped ('unchanged').
+ */
 export async function runSubsystemPass(opts: { readonly db: DbClient; readonly repoPath: string } & SubsystemPassDeps): Promise<SubsystemPassResult> {
 	const { db, repoPath } = opts;
-	const none = { subsystems: 0, summariesWritten: 0, summariesFailed: 0, stopped: false };
+	const startedAt = Date.now();
+	const none = { subsystems: 0, summariesWritten: 0, summariesFailed: 0, stopped: false, filesRead: 0, elapsedMs: 0, startedAt };
 	const state = await readIndexState(repoPath);
 	const generation = state?.generation ?? 0;
 	if (state === undefined || !state.graphComplete) {
 		log.info({ repo: repoPath, generation }, 'subsystem pass: the graph is not complete; nothing grouped');
 		return { ran: false, reason: 'graph-incomplete', generation, ...none };
 	}
-	const stored = await readSubsystems(repoPath);
-	if (stored.computedAtGeneration === generation) {
-		// The groups are current; a summary that failed or was stopped is retried here.
-		const summaries = await summarise(db, repoPath, generation, undefined, opts);
-		return { ran: false, reason: 'up-to-date', generation, subsystems: stored.subsystems.length, ...summaries };
-	}
-
-	const entities = await listEntitiesForRepo(db, repoPath);
+	const repoId = await lookupRepoId(repoPath);
+	if (repoId === undefined) return { ran: false, reason: 'graph-incomplete', generation, ...none };
+	const store = await getGraphStore();
 	const rel = (file: string) => file.startsWith(repoPath + '/') ? file.slice(repoPath.length + 1) : file;
-	const code = entities.filter(e => CODE_KINDS.has(e.kind));
-	const codeFiles = new Set(code.map(e => rel(e.file)));
-	const entityCount = new Map<string, number>();
-	for (const e of code) entityCount.set(rel(e.file), (entityCount.get(rel(e.file)) ?? 0) + 1);
 
-	// Every relationship source of a code file (its code entities and its file entity), by u64.
-	const fileOfU64 = new Map<bigint, string>();
-	const sources: Entity[] = [];
-	for (const e of entities) {
-		if (!codeFiles.has(rel(e.file)) || !(CODE_KINDS.has(e.kind) || e.kind === 'file')) continue;
-		const u64 = await entityU64ForId(e.id);
-		if (u64 === undefined) continue;
-		fileOfU64.set(u64, rel(e.file));
-		sources.push(e);
-	}
+	const record = readChangedFilesInTxn(store, repoId);
+	const stored = await readSubsystems(repoPath);
+	const storedRows = readContributionsInTxn(store, repoId);
+	const full = storedRows.size === 0 || stored.computedAtGeneration === null || !fullPassDone.has(repoPath);
 
-	const byPair = new Map<string, { a: string; b: string; weight: number; kinds: Partial<Record<RelationKind, number>> }>();
-	for (const [u64, a] of fileOfU64) {
-		for (const n of await outNeighbors(u64, { kindFilter: GROUPING_KINDS, withEvidence: true })) {
-			const b = fileOfU64.get(n.u64);
-			if (b === undefined || b === a) continue;
-			const key = `${a}\u0000${b}`;
-			const edge = byPair.get(key) ?? { a, b, weight: 0, kinds: {} };
-			const kind = n.kind as RelationKind;   // one of GROUPING_KINDS: the read is filtered to them
-			edge.weight += (KIND_WEIGHT[kind] ?? 0) * EVIDENCE_WEIGHT[n.evidence];
-			edge.kinds[kind] = (edge.kinds[kind] ?? 0) + 1;
-			byPair.set(key, edge);
+	let computed: Map<string, FileContributionRow | undefined>;
+	let entities: Entity[] | undefined;
+	if (full) {
+		entities = await listEntitiesForRepo(db, repoPath);
+		const byFile = new Map<string, Entity[]>();
+		const fileOfU64 = new Map<bigint, string>();
+		for (const e of entities) {
+			const f = rel(e.file);
+			const list = byFile.get(f);
+			if (list === undefined) byFile.set(f, [e]); else list.push(e);
+			if (!isEndpoint(e)) continue;
+			const u64 = await entityU64ForId(e.id);
+			if (u64 !== undefined) fileOfU64.set(u64, f);
 		}
+		computed = await contributionsOf(byFile, async u64s => new Map(u64s.filter(u => fileOfU64.has(u)).map(u => [u, fileOfU64.get(u)!])));
+	} else {
+		const byFile = new Map<string, Entity[]>();
+		for (const { file } of record) byFile.set(file, await findEntitiesByFile(db, `${repoPath}/${file}`));
+		computed = await contributionsOf(byFile, async u64s => {
+			const ids = await entityIdsByU64s(u64s);
+			const byId = new Map((await getEntitiesByIds(db, [...ids.values()])).map(e => [e.id, e]));
+			const out = new Map<bigint, string>();
+			for (const [u64, id] of ids) {
+				const e = byId.get(id);
+				if (e !== undefined && e.repo === repoPath && isEndpoint(e)) out.set(u64, rel(e.file));
+			}
+			return out;
+		});
 	}
-	const files = [...codeFiles].sort();
-	const directories = directoryHubs(files);
-	const edges: FileEdge[] = [...byPair.values(), ...directories.edges];
-	const groups = groupSubsystems({ files, edges, hubs: directories.hubs });
 
-	const rows: SubsystemGroupRow[] = groups.map(g => ({
-		...g, entityCount: g.files.reduce((n, f) => n + (entityCount.get(f) ?? 0), 0),
-	}));
-	await writeSubsystems(repoPath, generation, rows);
-	log.info({ repo: repoPath, generation, files: files.length, subsystems: rows.length, sources: sources.length }, 'subsystem pass: grouped');
+	const changed = full || [...computed].some(([file, row]) => !sameRow(row, storedRows.get(file)));
+	const mode: SubsystemPassMode = full ? 'full' : changed ? 'incremental' : 'unchanged';
+	const rows = new Map(full ? [] : storedRows);
+	for (const [file, row] of computed) { if (row === undefined) rows.delete(file); else rows.set(file, row); }
+	const groups = changed ? regroup(rows) : undefined;
+
+	await withWriteTxn(s => {
+		if (full) clearContributionsInTxn(s, repoId);
+		for (const [file, row] of computed) writeContributionInTxn(s, repoId, file, row);
+		consumeChangedFilesInTxn(s, repoId, record);
+		if (groups === undefined) restampSubsystemsInTxn(s, repoId, generation);
+	});
+	if (groups !== undefined) await writeSubsystems(repoPath, generation, groups);
+	fullPassDone.add(repoPath);
+	const elapsedMs = Date.now() - startedAt;
+	const subsystems = groups?.length ?? stored.subsystems.length;
+	log.info({ repo: repoPath, generation, mode, filesRead: computed.size, files: rows.size, subsystems, elapsedMs }, 'subsystem pass: grouped');
 
 	const summaries = await summarise(db, repoPath, generation, entities, opts);
-	return { ran: true, generation, subsystems: rows.length, ...summaries };
+	log.info({ repo: repoPath, generation, mode, filesRead: computed.size, elapsedMs, subsystems, ...summaries }, 'subsystem pass: done');
+	return {
+		ran: groups !== undefined, ...(groups === undefined && { reason: 'up-to-date' as const }),
+		generation, subsystems, ...summaries, mode, filesRead: computed.size, elapsedMs, startedAt,
+	};
 }
 
 /** Summaries for the subsystems that have none, one model call at a time, each after code work. */

@@ -183,6 +183,11 @@ export interface ChatPanelHostDeps {
    */
   readonly continuationWaitMs?: number | undefined;
   /**
+   * E202611031bd72813:S001 t3: how often the active-chats list is recomputed and reposted so done
+   * chats age out (the 60 s purge timer). Default 60_000; tests set it low.
+   */
+  readonly activeListTimerMs?: number | undefined;
+  /**
    * Epic E20261014613abdb3 Story S001: builds this window's worker over the repository's chat queue,
    * given the host's runner. Present: typed messages go through the queue and run in order. Absent
    * (node:sqlite unavailable, or tests): messages start their turns directly, as before.
@@ -564,6 +569,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
+  // E202611031bd72813:S001 t3: the active-chats dropdown feed — recomputed (purge included) on every
+  // status change, on history refresh, and on a 60 s timer so done chats age out of the list.
+  const postActive = (): void => post({ type: 'active-list', chats: [...deps.store.activeChats()] });
+  let activeTimer: ReturnType<typeof setInterval> | undefined;
+  const startActiveTimer = (): void => {
+    if (activeTimer !== undefined) return;
+    activeTimer = setInterval(() => { if (!disposed) postActive(); }, deps.activeListTimerMs ?? 60_000);
+  };
 
   // Story E20261012ddc4ede1:S001: post a live event with the absolute transcript index of the row
   // it wrote (none for an event that writes no row), so the webview knows which row each node is.
@@ -684,6 +697,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // a failing status write is logged and never breaks a turn (same rule as trySaveSession)
     try {
       deps.store.setStatus(s.id, status);
+      postActive(); // keep the active-chats dropdown in sync on every transition
     } catch (err) {
       log.warn(`[chat] session ${s.id}: status not saved: ${err instanceof Error ? err.message : String(err)}`);
     }
@@ -2443,10 +2457,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       markViewGone();
       disposed = true;
       channel = undefined;
+      if (activeTimer !== undefined) {
+        clearInterval(activeTimer);
+        activeTimer = undefined;
+      }
     });
     channel.onMessage(handleMessage);
     channel.setHtml(renderShell());
     postInitialState();
+    postActive();
+    startActiveTimer();
   };
 
   return {

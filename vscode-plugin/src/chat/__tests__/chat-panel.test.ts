@@ -5728,3 +5728,28 @@ test('E202611031bd72813:S001 t2: an adapter failure (onError, not onTerminal) is
   const id = store.list()[0]!.id;
   await waitFor(() => store.get(id)?.status === 'done', 5000, 'onError (adapter failure) -> done');
 });
+
+test('E202611031bd72813:S001 t3: active-list is posted on open and on every status change; the timer recomputes it (purge)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [{ kind: 'done', turnId: 't1', ok: true, sessionId: 's1' }];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    activeListTimerMs: 20,
+  });
+  host.open();
+  const activeLists = () => fc.posted.filter((p) => p.payload.type === 'active-list');
+  await waitFor(() => activeLists().length >= 1, 5000, 'active-list posted on open');
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  await waitFor(() => activeLists().some((p) => (p.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id)), 5000, 'status change reposts active-list with the chat');
+  // age the done chat past the purge window (mutate the stored record directly) and let the timer fire
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  store.get(id)!.lastActivityAt = Date.now() - 31 * 60 * 1000;
+  await waitFor(() => activeLists().some((p) => !(p.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id)), 5000, '60s-style timer repost purges the aged done chat from the list');
+  assert.equal(store.get(id)?.status, 'done', 'purge is list-level: the row keeps its status');
+});

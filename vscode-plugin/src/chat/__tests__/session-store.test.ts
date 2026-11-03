@@ -419,20 +419,23 @@ test('E202611031bd72813:S001 t3: activeChats lists working/waiting always, done 
   store.setStatus(a.id, 'working');
   store.setStatus(b.id, 'waiting-input');
   store.setStatus(c.id, 'done');
-  const now = Date.now();
-  // done but recent -> still listed
-  let act = store.activeChats(now);
+  // fake clock: t0 = now; the done chat's lastActivityAt is t0
+  const t0 = 1_800_000_000_000;
+  const c0 = store.get(c.id)!;
+  memento.update(SESSION_PREFIX + c.id, { ...c0, status: 'done', lastActivityAt: t0 });
+  // done but recent -> still listed (fake clock at t0 + 1 min)
+  let act = store.activeChats(t0 + 60_000);
   assert.deepEqual(act.map((x) => x.id).sort(), [a.id, b.id, c.id].sort());
   // done and older than 30 min -> purged from the list (row untouched). Write the aged record
   // straight to the memento (save()'s monotonic guard would reject a backwards timestamp).
   const old = store.get(c.id)!;
-  memento.update(SESSION_PREFIX + c.id, { ...old, status: 'done', lastActivityAt: now - 31 * 60 * 1000 });
-  act = store.activeChats(now);
+  memento.update(SESSION_PREFIX + c.id, { ...old, status: 'done', lastActivityAt: t0 });
+  act = store.activeChats(t0 + 31 * 60 * 1000); // fake clock past the purge window
   assert.deepEqual(act.map((x) => x.id).sort(), [a.id, b.id].sort(), 'done >30min leaves the active list');
   assert.equal(store.get(c.id)?.status, 'done', 'purge is list-level only: the row is untouched');
   // old row without status -> not active
   const d = store.create('claude' as never);
-  assert.ok(!store.activeChats(now).some((x) => x.id === d.id));
+  assert.ok(!store.activeChats(t0 + 60_000).some((x) => x.id === d.id));
 });
 
 test('E202611031bd72813:S001 t3: capped store never evicts an active/waiting session or one with unresolved requests', () => {

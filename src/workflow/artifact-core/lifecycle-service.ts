@@ -9,6 +9,7 @@
  * head and its log, the checks and the write cannot be interleaved with another writer of the same artifact.
  */
 
+import { randomUUID } from 'node:crypto';
 import { ArtifactIds } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { checkIntegrity, isLifecycleOperation, nextLifecycle, rollUp, unitMembers } from './lifecycle.js';
@@ -22,6 +23,9 @@ import type { Actor, ChangeLogEntry, Lifecycle, Operation, Reference, Status } f
 import { emptyLifecycle } from './decode.js';
 
 const log = getLogger('lifecycle-service');
+
+/** The actor of an entry the service writes on nobody's behalf: the adoption of a raw content write. */
+const SYSTEM_ACTOR: Actor = { id: 'insrc:system', kind: 'system', properties: {} };
 
 /** What one call knows that the service does not: the override reason the approval in hand carries. */
 export interface EvidenceContext {
@@ -92,9 +96,14 @@ export class LifecycleService {
 		const { entry } = await store.updateAndLog(id, by, async current => {
 			const { changeLog, ...head } = current;
 
+			// A head one content change past its log (a raw writer changed it) is adopted: logged once the operation is known to be legal.
+			let adoption: ChangeLogEntry | undefined;
 			if (INTEGRITY_CHECKED.includes(op)) {
 				const integrity = checkIntegrity({ description: head.description, payload: head.payload, lifecycle: head.lifecycle }, changeLog);
-				if (!integrity.ok) throw new LifecycleConflictError(id, integrity.reason);
+				if (!integrity.ok) {
+					adoption = integrity.reason === 'head-ahead-of-log' ? this.adoptionOf(head, changeLog) : undefined;
+					if (adoption === undefined) throw new LifecycleConflictError(id, integrity.reason);
+				}
 			}
 
 			if (op === 'complete') {
@@ -110,6 +119,7 @@ export class LifecycleService {
 			// A unit is completed by its roll-up, which stands in for the approval a record needs, so it may start from any open status.
 			const cascade = op === 'complete' && isUnit;
 			const lifecycle = nextLifecycle(head, op, by, this.at(), cascade ? { ...detail, cascade } : detail);
+			if (adoption !== undefined) await this.adopt(id, adoption);
 
 			let members: string[] = [];
 			if (isUnit && key !== undefined && key.kind !== 'TASK' && (op === 'complete' || op === 'reopen')) {
@@ -226,6 +236,32 @@ export class LifecycleService {
 		return typeof this.deps.evidence === 'function' ? this.deps.evidence(ctx) : this.deps.evidence;
 	}
 
+	/**
+	 * The entry that logs a head a raw writer moved past its log, or undefined when the head is not such a head. The check of
+	 * the head's own hash has passed by the time this is asked (checkIntegrity answers hash-mismatch first), so the head is
+	 * adopted only when its content differs from the last logged revision: a revision number raised by hand, or content put
+	 * back to what was logged, is not a raw write and stays refused.
+	 */
+	private adoptionOf(head: { readonly lifecycle: Lifecycle }, changeLog: readonly ChangeLogEntry[]): ChangeLogEntry | undefined {
+		const tail = [...changeLog].reverse().find(e => e.revision !== undefined);
+		const revision = head.lifecycle.revision;
+		if (tail?.revision === undefined || tail.revision.contentHash === revision.contentHash) return undefined;
+		return {
+			id: randomUUID().replace(/-/g, ''),
+			actor: SYSTEM_ACTOR,
+			timestamp: this.at(),
+			operation: 'update',
+			revision: { number: revision.number, contentHash: revision.contentHash },
+			outcome: { result: 'adopted', summary: 'a content change written outside the store was logged when the head was approved, reviewed or completed' },
+		};
+	}
+
+	/** Append the adopted entry; the caller holds the artifact's queue, so no write of the store comes between it and the operation. */
+	private async adopt(id: string, entry: ChangeLogEntry): Promise<void> {
+		await this.deps.store.history.appendLog(id, entry);
+		log.info({ id, revision: entry.revision?.number }, 'adopted a content change written outside the store');
+	}
+
 	private at(): string { return (this.deps.now ?? (() => new Date()))().toISOString(); }
 
 	/** The last complete entry that no later reopen undid. */
@@ -252,14 +288,17 @@ export class LifecycleService {
 
 	/** Complete one member with its unit; a member with no head or already terminal is skipped. */
 	private async completeMember(member: string, unit: string, by: Actor): Promise<void> {
-		await this.deps.store.update(member, by, current => {
+		await this.deps.store.update(member, by, async current => {
 			if (['completed', 'withdrawn', 'superseded'].includes(current.lifecycle.status)) return undefined;
 			const { changeLog, ...head } = current;
 			// A member is held to the same check as the unit: its head and its log have to agree before it is frozen.
 			const integrity = checkIntegrity({ description: head.description, payload: head.payload, lifecycle: head.lifecycle }, changeLog);
-			if (!integrity.ok) throw new LifecycleConflictError(member, integrity.reason);
+			const adoption = !integrity.ok && integrity.reason === 'head-ahead-of-log' ? this.adoptionOf(head, changeLog) : undefined;
+			if (!integrity.ok && adoption === undefined) throw new LifecycleConflictError(member, integrity.reason);
+			const lifecycle = nextLifecycle(head, 'complete', by, this.at(), { cascade: true });
+			if (adoption !== undefined) await this.adopt(member, adoption);
 			return {
-				next: { ...head, lifecycle: nextLifecycle(head, 'complete', by, this.at(), { cascade: true }) },
+				next: { ...head, lifecycle },
 				options: { operation: 'complete', cascade: true, outcome: { result: 'completed', summary: `completed with ${unit}`, data: { frozenBy: unit } } },
 			};
 		}).catch(err => { if (err instanceof ArtifactNotFoundError) return false; throw err; });
